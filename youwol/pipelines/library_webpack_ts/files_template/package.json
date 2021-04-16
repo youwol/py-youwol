@@ -1,0 +1,43 @@
+{
+  "name": "{{name}}",
+  "version": "0.0.0",
+  "description": "{{description}}",
+  "author": "",
+  "keywords": [],
+  "main": "dist/{{name}}.js",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "yarn build:dev",
+    "build:dev": "webpack --mode development",
+    "build:prod": "webpack --mode production",
+    "test": "jest -c ./jest.config.js --rootDir .",
+    "test-coverage": "jest -c ./jest.config.js --rootDir . --collect-coverage --collectCoverageFrom=./src/lib/**/*.ts ",
+    "doc": "typedoc src/ --exclude src/index.ts --out dist/docs --theme default"
+  },
+  "dependencies": {
+  },
+  "peerDependencies": {
+  },
+  "devDependencies": {
+    "@types/node": "14.14.37",
+    "eslint": "7.23.0",
+    "ts-lib": "0.0.5",
+    "typescript": "4.2.3",
+    "webpack": "5.28.0",
+    "webpack-cli": "4.6.0",
+    "eslint-webpack-plugin": "2.5.3",
+    "ts-loader": "8.1.0",
+    "jest": "26.6.3",
+    "jest-junit": "12.0.0",
+    "ts-jest": "26.5.4",
+    "@types/jest": "26.0.22",
+    "typedoc":"0.20.34"
+  },
+  "youwol": {
+    "pipeline": {
+      "name": "yw_pipeline_webpack_ts",
+      "version": "0.0.0"
+    },
+    "cdnDependencies": {}
+  }
+}

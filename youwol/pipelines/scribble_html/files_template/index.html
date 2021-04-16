@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{title}}</title>
+
+<base href="{{base_path}}/">
+
+<head>
+    <script src="/api/assets-gateway/raw/package/QHlvdXdvbC9jZG4=/libraries/youwol/cdn/0.0.0/dist/@youwol/cdn.js"></script>
+    <link rel="stylesheet" href="/api/assets-gateway/raw/package/Ym9vdHN0cmFw/libraries/bootstrap/4.4.1/bootstrap.min.css">
+    <link rel="stylesheet" href="/api/assets-gateway/raw/package/Zm9udGF3ZXNvbWU=/libraries/fontawesome/5.12.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+
+<body class="p-5 d-flex flex-wrap justify-content-center" >
+
+    <div class="text-justify px-5" style="font-size:large; min-width:300px; max-width:600px">
+        <div class="w-100 text-center fas fa-2x fa-info-circle my-2 text-success"></div>
+        <p>
+            This 'scribble' application illustrates with a simple 'TODO' example how to use the library
+            <a href="https://www.npmjs.com/package/@youwol/flux-view">flux-view</a> to create reactive UI.
+            We tried to reproduce as much as possible the
+            <a href='https://codesandbox.io/s/github/vuejs/vuejs.org/tree/master/src/v2/examples/vue-20-todomvc?from-embed'>example of Vue</a>.
+        </p>
+        <p>
+            The code source of this file is located <i>{{src_folder}}</i> on your computer: do not hesitate to update it and refresh this
+            page.
+        </p>
+        <p>
+            You can check if other youwol pipelines already exists to create front-end applications (search for <i>yw_pipeline</i> in <a href="https://pypi.org/">pipy</a>)
+        </p>
+    </div>
+    <div class="px-2 w-50" style="min-width:300px; max-width:800px">
+        <div id='flux-view' class="py-5 w-100"> </div>
+        <p class='text-center'> Double click on an item to edit. </p>
+    </div>
+
+    <script type="module">
+      let cdn = window['@youwol/cdn']
+      /*
+      The cdn can be used to easily retrieve dependencies on-the-fly.
+      You provide the name & version of the target bundles you want to include.
+      Indirect dependencies not explicitly provided will also come, using their latest version.
+      */
+      await cdn.fetchBundles({
+        '@youwol/flux-view':'0.0.5',
+        'rxjs':'6.5.5'
+      }, window )
+      /*
+      Another way to fetch stylesheets (rather than using the 'link' element in the header):
+      cdn.fetchStyleSheets([
+          "bootstrap#4.4.1~bootstrap.min.css",
+          "fontawesome#5.12.1~css/all.min.css"
+      ])*/
+
+      let flux = window['@youwol/flux-view']
+
+      let classes = {
+        chevron:'fas fa-chevron-down p-2 fa-2x text-secondary',
+        itemViewContainer:'d-flex align-items-center justify-content-between item-view',
+        itemCheckContainer: 'border rounded-circle m-2 d-flex flex-column justify-content-center item-check-container',
+        itemDelete: 'delete fas fa-times text-danger float-right px-3',
+        itemSuccess: 'fas fa-check mx-auto text-success'
+      }
+      let Filter = {
+        ALL: 1,
+        ACTIVE: 2,
+        COMPLETED: 3
+      }
+
+      class AppState {
+
+        static STORAGE_KEY = "todos-barbouille";
+
+        constructor() {
+          this.items$ = new rxjs.BehaviorSubject(JSON.parse(localStorage.getItem(AppState.STORAGE_KEY) || "[]"))
+          this.items$.subscribe(items => {
+            localStorage.setItem(AppState.STORAGE_KEY, JSON.stringify(items));
+          })
+          this.completed$ = this.items$.pipe(
+            rxjs.operators.map(items => items.reduce((acc, item) => acc && item.done, true))
+            )
+          this.remaining$ = this.items$.pipe(
+            rxjs.operators.map(items => items.filter((item) => item.done))
+            )
+        }
+
+        toggleAll() {
+          let completed = this.getItems().reduce((acc, item) => acc && item.done, true)
+          this.items$.next(this.getItems().map(item => ({ id: item.id, name: item.name, done: !completed })))
+        }
+
+        addItem(name) {
+          let item = { id: Date.now(), name, completed: false }
+          this.items$.next([...this.getItems(), item])
+          return item
+        }
+
+        deleteItem(id) {
+          this.items$.next(this.getItems().filter(item => item.id != id))
+        }
+
+        toggleItem(id) {
+          let items = this.getItems().map(item => item.id == id ? { id: item.id, name: item.name, done: !item.done } : item)
+          this.items$.next(items)
+        }
+
+        setName(id, name) {
+          let items = this.getItems().map(item => item.id == id ? { id: item.id, name, done: item.done } : item)
+          this.items$.next(items)
+        }
+
+        getItems() {
+          return this.items$.getValue()
+        }
+      }
+
+      class AppView {
+
+        constructor(state) {
+
+          this.state = state
+          this.filterMode$ = new rxjs.BehaviorSubject(Filter.ALL)
+          this.filterFcts = {
+            [Filter.ALL]: (item) => true,
+            [Filter.ACTIVE]: (item) => !item.done,
+            [Filter.COMPLETED]: (item) => item.done
+          }
+          this.selectedItems$ = rxjs.combineLatest([state.items$, this.filterMode$]).pipe(
+            rxjs.operators.map(([items, mode]) => items.filter(item => this.filterFcts[mode](item)))
+          )
+        }
+
+        setFilter(mode) {
+          this.filterMode$.next(mode)
+        }
+
+        render() {
+          return flux.render({
+            tag: 'section', class: 'todoapp',
+            children: [
+              AppView.headerView(this.state),
+              AppView.listView(this),
+              AppView.footerView(this)
+            ],
+          })
+        }
+
+        static headerView(state) {
+
+          let completed$ = flux.attr$(state.completed$, (completed) => completed ? 'text-dark' : 'text-light',
+            { wrapper: (d) => `${d} ${classes.chevron}` })
+
+          return {
+            tag: 'header', class: 'header', children: [
+              { tag: 'h1', innerText: 'todos' },
+              {
+                class: ' d-flex align-items-center',
+                children: [
+                  { tag: 'i', class: completed$, onclick: () => state.toggleAll() },
+                  {
+                    tag: 'input', autofocus: 'autofocus', autocomplete: 'off',
+                    placeholder: "What needs to be done?", class: 'new-todo',
+                    onkeypress: (ev) => { (ev.key == "Enter") && state.addItem(ev.target.value) && (ev.target.value = "") }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+
+        static itemView(state, item) {
+
+          let edited$ = new rxjs.BehaviorSubject(false)
+          let content = flux.child$(
+            edited$,
+            (edited) => edited
+              ? {
+                tag: 'input', type: 'text', value: item.name,
+                onclick: (ev) => ev.stopPropagation(),
+                onkeypress: (ev) => {
+                  if(ev.key == "Enter") {
+                    // otherwise the onbluer event is triggered while the element does not exist anymore
+                    ev.target.onblur = () => {}
+                    state.setName(item.id, ev.target.value)
+                  }
+                },
+                onblur: (ev) => state.setName(item.id, ev.target.value)
+              }
+              : {
+                tag: 'span', innerText: item.name, class: item.done ? 'text-muted' : 'text-dark',
+                style: {
+                  font: "24px 'Helvetica Neue', Helvetica, Arial, sans-serif",
+                  'text-decoration': item.done ? 'line-through' : ''
+                },
+                ondblclick: (ev) => edited$.next(true)
+              },
+            { sideEffects: (_, elem) => elem.focus() }
+          )
+          return {
+            class: classes.itemViewContainer,
+            children: [
+              {
+                class: classes.itemCheckContainer,
+                onclick: () => state.toggleItem(item.id),
+                children: [
+                  { class: item.done ? classes.itemSuccess : '' }]
+              },
+              content,
+              {
+                tag: 'i', class: classes.itemDelete,
+                onclick: () => state.deleteItem(item.id)
+              }
+            ]
+          }
+        }
+
+        static listView(view) {
+
+          return flux.child$(
+            view.selectedItems$,
+            (items) => {
+              return {
+                class: 'fa-flex flex-column',
+                children: items.map(item => AppView.itemView(view.state, item))
+              }
+            })
+        }
+
+        static footerView(appView) {
+
+          let class$ = (target) => flux.attr$(appView.filterMode$, (mode) => mode == target ? 'selected' : '')
+          return {
+            class: 'd-flex align-items-center px-3 border-top py-2 text-secondary', children: [
+              {
+                tag: 'span',
+                innerText: flux.attr$(appView.state.remaining$, (items) => items.length, {
+                  wrapper: (d) => `${d} item${d > 1 ? 's' : ''} left`
+                })
+              },
+              {
+                class: 'd-flex align-items-center mx-auto',
+                children: [
+                  {
+                    tag: 'a', innerText: 'All', class: class$(Filter.ALL), href: '#/all',
+                    onclick: () => appView.setFilter(Filter.ALL)
+                  },
+                  {
+                    tag: 'a', innerText: 'Active', class: class$(Filter.ACTIVE), href: '#/active',
+                    onclick: () => appView.setFilter(Filter.ACTIVE)
+                  },
+                  {
+                    tag: 'a', innerText: 'Completed', class: class$(Filter.COMPLETED), href: '#/completed',
+                    onclick: () => appView.setFilter(Filter.COMPLETED)
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+      let state = new AppState()
+
+      let div = new AppView(state).render()
+      document.getElementById("flux-view").appendChild(div)
+    </script>
+  </body>
+</html>

@@ -1,0 +1,4 @@
+/backs/*/*
+!/backs/*/configurations.py
+/fronts/**/*.*
+!/fronts/**/__init__.py

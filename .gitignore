@@ -1,0 +1,12 @@
+youwol_data/**/*
+!youwol_data/yw_config.py
+!youwol_data/users-info.json
+!youwol_data/__init__.py
+youwol.egg-info
+*.pyc
+workspace/**
+build/
+dist/
+.virtualenv
+__pycache__
+.idea
