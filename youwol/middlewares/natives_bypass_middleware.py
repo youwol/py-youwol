@@ -5,12 +5,10 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp
-from starlette.websockets import WebSocket
 
-from youwol.configuration.models_back import TargetBack
-from youwol.configuration.models_service import get_target_from_base_path
 from youwol.configuration.youwol_configuration import YouwolConfiguration, yw_config
 from youwol.context import Context
+from youwol.errors import HTTPResponseException
 from youwol.routers.api import redirect_get_api, redirect_post_api, redirect_put_api, redirect_delete_api
 from youwol.routers.backends.utils import get_all_backends
 from youwol.web_socket import WebSocketsCache
@@ -70,7 +68,11 @@ class NativesBypassMiddleware(BaseHTTPMiddleware):
             self, request: Request, call_next: RequestResponseEndpoint
             ) -> Response:
 
-        config = await yw_config()
+        try:
+            config = await yw_config()
+        except HTTPResponseException as e:
+            return e.httpResponse
+
         context = Context(
             web_socket=WebSocketsCache.api_gateway,
             config=config,
