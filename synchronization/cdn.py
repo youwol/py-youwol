@@ -25,6 +25,7 @@ included_packages = [
     "tslib/1.10.0",
     "codemirror/5.52.0",
     "youwol/cdn-client/0.0.3",
+    "youwol/flux-svg-plots/0.0.0",
     "youwol/flux-core/0.0.7",
     "youwol/flux-view/0.0.6",
     "youwol/fv-button/0.0.3",
