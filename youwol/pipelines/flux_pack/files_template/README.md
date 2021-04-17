@@ -1,13 +1,5 @@
 # {{name}}
 
-<p>
-    <a href="https://github.com/kefranabg/readme-md-generator/graphs/commit-activity" target="_blank">
-        <img alt="Maintenance" src="https://img.shields.io/badge/Maintained%3F-yes-green.svg" />
-    </a>
-    <a href="https://github.com/kefranabg/readme-md-generator/blob/master/LICENSE" target="_blank">
-        <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg" />
-    </a>
-</p>
 
 {{description}}
 
@@ -41,14 +33,33 @@ yarn doc
 
 ## Developing Flux-Packs
 
-The [Youwol fullstack environment](https://pypi.org/project/youwol/) should be used when developing
-*flux-pack*. It offers an immersive experience of the YouWol ecosystem, with an environment that lets
-you work with your favorite stack.
+> The [Youwol fullstack environment](https://pypi.org/project/youwol/) should be used when developing
+> *flux-pack*. It offers an immersive experience of the YouWol ecosystem, and lets
+> you work with your favorite stack. Usually you've accessed this file using it anyway.
+> All the links in what follows assumed you've started this environment.
 
-Providing you've started this environment (on the default port 2000), 
-the documentation of [flux-core](https://github.com/youwol/flux-core) can be found 
-[here](http://localhost:2000/api/assets-gateway/raw/package/QHlvdXdvbC9mbHV4LWNvcmU=/latest/dist/docs/modules/core_concepts.html):
-this is where is presented what's needed to design modules for Flux.
+### Using your modules in a *flux-app*
+
+If not already done, *build, test & publish* the package from the [dashboard](/ui/dashboard-developer/).
+
+Start by creating a new *flux-app*:
+-    short version: follow [this link](/ui/flux-builder/?uri=%7B%22name%22%3A%22new%20flux-project%22%2C%22description%22%3A%22%22%2C%22runnerRendering%22%3A%7B%22layout%22%3A%22%22%2C%22style%22%3A%22%22%7D%2C%22builderRendering%22%3A%7B%22descriptionsBoxes%22%3A%5B%5D%2C%22modulesView%22%3A%5B%5D%2C%22connectionsView%22%3A%5B%5D%7D%2C%22requirements%22%3A%7B%22fluxComponents%22%3A%5B%5D%2C%22fluxPacks%22%3A%5B%5D%2C%22libraries%22%3A%7B%7D%2C%22loadingGraph%22%3A%7B%22graphType%22%3A%22sequential-v1%22%2C%22lock%22%3A%5B%5D%2C%22definition%22%3A%5B%5B%5D%5D%7D%7D%2C%22workflow%22%3A%7B%22modules%22%3A%5B%5D%2C%22connections%22%3A%5B%5D%2C%22plugins%22%3A%5B%5D%2C%22rootLayerTree%22%3A%7B%22layerId%22%3A%22rootLayer%22%2C%22moduleIds%22%3A%5B%5D%2C%22title%22%3A%22rootLayer%22%2C%22children%22%3A%5B%5D%7D%7D%7D), you won't be able to save your changes
+-   long version: from the [workspace](/ui/workspace-explorer/), navigate in the explorer into your **private** group,
+eventually create a drive and a folder, and with a right click select **new app**. You can now start its construction (click 
+on **construct** after having selected it in your workspace).
+
+Once opened, in the top *builder-panel*:
+-    right click + 'new module(s)'
+-    expand the 'explorer node'
+-    navigate to **private** / **default-drive** / ${name of your flux-pack}
+-    select 'A simple module' and click 'OK'
+
+
+### Starting designing your modules
+
+To go beyond the [[ SimpleModule | provided example]], you should have a first pass on the 
+[flux-core documentation](/api/assets-gateway/raw/package/QHlvdXdvbC9mbHV4LWNvcmU=/latest/dist/docs/modules/core_concepts.html).
+
 
 ### Version management 
 
