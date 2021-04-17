@@ -17,8 +17,7 @@ class Package(BaseModel):
 
     def cdn_base_path(self):
         asset_id = to_package_id(self.info.name)
-        name = self.info.name.replace("@","")
-        return f"/api/assets-gateway/raw/package/{asset_id}/libraries/{name}/{self.info.version}"
+        return f"/api/assets-gateway/raw/package/{asset_id}/{self.info.version}"
 
 
 class StatusResponse(BaseModel):
