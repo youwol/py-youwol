@@ -39,10 +39,10 @@ setup(
     data_files=data_files,
     package_data={
         'youwol_data': ['databases.zip'],
-        'youwol.services.fronts.local_dashboard': ['*.html', '*.js', '*.css', '*.map'],
-        'youwol.services.fronts.assets_browser_ui': ['*.html', '*.js', '*.css', '*.map'],
-        'youwol.services.fronts.flux_ui_builder': ['*.html', '*.js', '*.css', '*.map'],
-        'youwol.services.fronts.flux_ui_runner': ['*.html', '*.js', '*.css', '*.map']
+        'youwol.services.fronts.dashboard_developer': ['*.html', '*.js', '*.css', '*.map'],
+        'youwol.services.fronts.workspace_explorer': ['*.html', '*.js', '*.css', '*.map'],
+        'youwol.services.fronts.flux_builder': ['*.html', '*.js', '*.css', '*.map'],
+        'youwol.services.fronts.flux_runner': ['*.html', '*.js', '*.css', '*.map']
         },
     include_package_data=True,
     install_requires=[
