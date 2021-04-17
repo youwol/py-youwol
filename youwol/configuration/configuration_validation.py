@@ -9,7 +9,8 @@ from pydantic import BaseModel, ValidationError
 
 from youwol.configuration.models_base import Check, ErrorResponse, format_unknown_error, ConfigParameters
 from youwol.configuration.paths import PathsBook
-from youwol.configuration.user_configuration import YouwolConfiguration, UserConfiguration, LocalClients
+from youwol.configuration.user_configuration import YouwolConfiguration, UserConfiguration, LocalClients, General
+from youwol.errors import HTTPResponseException
 from youwol.main_args import get_main_arguments
 from youwol.utils_paths import parse_json
 
@@ -69,10 +70,42 @@ class ConfigurationLoadingStatus(BaseModel):
     checks: List[Check]
 
 
-class ConfigurationLoadingException(Exception):
+class ConfigurationLoadingException(HTTPResponseException):
 
-    def __init__(self, errors):
-        self.errors = errors
+    def __init__(self, status: ConfigurationLoadingStatus):
+
+        check = next(check for check in status.checks if isinstance(check.status, ErrorResponse))
+        super().__init__(
+            status_code=500,
+            title=check.name,
+            descriptions=[
+                "Loading and parsing the configuration file failed.",
+                f"Path of the config file: {status.path}"
+            ],
+            hints=check.status.hints,
+            footer="Try reloading the page after the issue resolution")
+        self.status = status
+
+
+async def login(user_email: str, general: General):
+
+    if user_email is None:
+        users_info = parse_json(general.usersInfo)
+        if 'default' in users_info:
+            user_email = users_info["default"]
+
+    if user_email is None:
+
+        raise HTTPResponseException(
+            status_code=401,
+            title="User has not been identified",
+            descriptions=[f"make sure your users info file ({general.usersInfo}) contains"],
+            hints=[
+                "a 'default' field is pointing to the desired default email address",
+                "the desired default email address is associated to an identity"
+                ]
+            )
+    return user_email
 
 
 async def safe_load(
@@ -283,10 +316,7 @@ async def safe_load(
     cdn_client = CdnClient(url_base=f"{base_path}/cdn-backend")
     assets_gateway_client = AssetsGatewayClient(url_base=f"{base_path}/assets-gateway")
 
-    if user_email is None:
-        users_info = parse_json(user_config.general.usersInfo)
-        if 'default' in users_info:
-            user_email = users_info["default"]
+    user_email = await login(user_email, user_config.general)
 
     return YouwolConfiguration(
             http_port=get_main_arguments().port,
