@@ -10,11 +10,13 @@ from synchronization.utils import create_empty_dbs
 
 
 platform_path = Path("/home/greinisch/Projects/platform/")
+open_source_path = Path("/home/greinisch/Projects/youwol-open-source/")
+
 system_path = Path(os.path.realpath(__file__)).parent.parent/"youwol_data"
 if (system_path/'databases').exists():
     shutil.rmtree(system_path/'databases')
 
-sync_services(platform_path)
+sync_services( platform_path, open_source_path)
 create_empty_dbs(system_path)
 sync_cdn(platform_path, system_path)
 sync_data(system_path)
