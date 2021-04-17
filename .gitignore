@@ -7,7 +7,11 @@ youwol.egg-info
 workspace/**
 build/
 dist/
-test_install/
+dist_history/
+test_install/**/*
+!test_install/README.md
+
 .virtualenv
+.publish_venv
 __pycache__
 .idea
