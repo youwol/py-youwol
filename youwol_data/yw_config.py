@@ -77,7 +77,7 @@ async def configuration(main_args: MainArguments, parameters: Dict[str, any]):
                     else flux_pack.BundleModeEnum.DEV
                     ),
                 "simple-pack": simple_ts_lib.pipeline(
-                    path=packages_path,
+                    skeleton_path=packages_path,
                     mode=simple_ts_lib.BundleModeEnum.PROD
                     if parameters["bundleMode"] == 'prod'
                     else simple_ts_lib.BundleModeEnum.DEV
