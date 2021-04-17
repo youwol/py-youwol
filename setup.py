@@ -14,10 +14,11 @@ for pipeline in ['fastapi', 'flux_pack', 'library_webpack_ts', 'scribble_html']:
     for root, dirs, files in os.walk(f"youwol/pipelines/{pipeline}/files_template", topdown=False):
         data_files.append((root, [f'{root}/{f}' for f in files]))
 
+
 setup(
     name='youwol',
     python_requires='~=3.6',
-    version='0.0.1',
+    version='0.0.2',
     description="Local YouWol environment",
     author="Guillaume Reinisch",
     author_email="reinisch.gui@youwol.com",
