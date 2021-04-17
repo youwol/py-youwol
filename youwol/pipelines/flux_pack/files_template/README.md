@@ -39,13 +39,18 @@ To generate code documentation:
 yarn doc
 ```
 
-## Usage 
+## Developing Flux-Packs
 
+The [Youwol fullstack environment](https://pypi.org/project/youwol/) should be used when developing
+*flux-pack*. It offers an immersive experience of the YouWol ecosystem, with an environment that lets
+you work with your favorite stack.
 
+Providing you've started this environment (on the default port 2000), 
+the documentation of [flux-core](https://github.com/youwol/flux-core) can be found 
+[here](http://localhost:2000/api/assets-gateway/raw/package/QHlvdXdvbC9mbHV4LWNvcmU=/latest/dist/docs/modules/core_concepts.html):
+this is where is presented what's needed to design modules for Flux.
 
-## Resources
-
-### Version management
+### Version management 
 
 In order to conveniently work within YouWol's environment, the following 
 approach regarding versioning is recommended:
@@ -67,4 +72,4 @@ you append a *-next* to the version you've started from (e.g. *0.1.2-next*).
 > If you plan to share your package, you'll need to publish it in a npm repository.
 > For public or private needs, the choice of this repository is yours.
 > For more advanced permission resolution related to YouWol's group, you'll need to use your 
-> GitLab environment.
+> YouWol's GitLab environment (not available yet).
