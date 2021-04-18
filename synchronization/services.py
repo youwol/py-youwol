@@ -23,28 +23,28 @@ def included_services(platform_path, open_source_path):
 
     return [
         ServiceInjection(
-            src=src_backend_services / 'CDN' / 'cdn-backend' / 'src' / 'youwol_cdn',
+            src=src_backend_services / 'cdn-backend' / 'src' / 'youwol_cdn',
             dst=dst_services / 'backs' / 'cdn',
             include=["/__init__.py", "/models.py", "/resources_initialization.py", "/root_paths.py", "/utils*",
                      "/initial_resources/**/*"]
             ),
         ServiceInjection(
-            src=src_backend_services / 'treedb' / 'treedb-backend' / 'src'/ 'youwol_treedb',
+            src=src_backend_services / 'treedb-backend' / 'src'/ 'youwol_treedb',
             dst=dst_services / 'backs' / 'treedb',
             include=["/__init__.py", "/models.py", "/root_paths.py", "/utils.py"]
             ),
         ServiceInjection(
-            src=src_backend_services / 'assets' / 'assets-backend' / 'src' / 'youwol_assets',
+            src=src_backend_services / 'assets-backend' / 'src' / 'youwol_assets',
             dst=dst_services / 'backs' / 'assets',
             include=["/__init__.py", "/models.py", "/root_paths.py", "/utils.py"]
             ),
         ServiceInjection(
-            src=src_backend_services / 'flux' / 'flux-backend' / 'src' / 'youwol_flux',
+            src=src_backend_services / 'flux-backend' / 'src' / 'youwol_flux',
             dst=dst_services / 'backs' / 'flux',
             include=["/__init__.py", "/models.py", "/root_paths.py", "/suggestions.py", "/utils.py"]
             ),
         ServiceInjection(
-            src=src_backend_services / 'assets' / 'assets-gateway' / 'src' / 'youwol_assets_gateway',
+            src=src_backend_services / 'assets-gateway' / 'src' / 'youwol_assets_gateway',
             dst=dst_services / 'backs' / 'assets_gateway',
             include=["/__init__.py", "/models.py", "/root_paths.py", "/package_drive.py", "/utils.py",
                      "/raw_stores/*", "/routers/*"]
