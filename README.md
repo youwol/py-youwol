@@ -84,7 +84,7 @@ Some common issues are listed at the end of this page, you may find a
 solution there if you encounter a problem during the installation.
 
 
-### Installation test
+### First steps
 
 From the created folder run youwol:
 
