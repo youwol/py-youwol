@@ -102,8 +102,7 @@ async def redirect_get_api(
             async with await session.get(url=url, params=params, headers=headers) as resp:
                 # if this is a GET request to assets-gateway we don't want caching as in local we can update assets
                 headers_resp = {
-                    **{k: v for k, v in resp.headers.items()},
-                    **({'cache-control': 'no-store'} if service_name == "assets-gateway" else {})
+                    **{k: v for k, v in resp.headers.items()}
                     }
 
                 content = await resp.read()
