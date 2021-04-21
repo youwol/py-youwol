@@ -93,10 +93,6 @@ class General(BaseModel):
     databasesFolder: TPath
 
     usersInfo: TPath
-    userInfo: Union[None,
-                    UserInfo,
-                    Callable[[Context], Awaitable[UserInfo]]
-                    ] = None
 
     secretsFile: TPath = None
     remoteGateways: List[RemoteGateway] = []
@@ -106,16 +102,15 @@ class General(BaseModel):
 
     async def get_user_info(self, context: Context) -> UserInfo:
 
-        if isinstance(self.userInfo, UserInfo):
-            return self.userInfo
-
-        if isinstance(self.userInfo, Callable):
-            getter = cast(Callable[[Context], Awaitable[any]], self.userInfo)
-            return await getter(context)
-
         users_info = parse_json(self.usersInfo)
+
         if context.config.userEmail in users_info:
-            return UserInfo(**users_info[context.config.userEmail])
+            data = users_info[context.config.userEmail]
+            # email can be "anonymous" or "default", they link to actual identities,
+            # in these cases data is here the linked email, we need to re-evaluate to get the identity
+            if isinstance(data, str):
+                data = users_info[data]
+            return UserInfo(**data)
 
         return UserInfo(
             id="anonymous",
@@ -129,19 +124,6 @@ class General(BaseModel):
         identified = secrets['identities'].keys() if 'identities' in secrets else []
 
         return list(identified) + ["anonymous"]
-
-    async def get_auth_token(self, remote_env: str, context: Context):
-        username = context.config.userId
-        secrets = parse_json(self.secretsFile)
-        client_id = secrets[remote_env]['clientId']
-        client_secret = secrets[remote_env]['clientSecret']
-        pwd = secrets[username]['clientSecret']
-        return await get_remote_auth_token(
-            username=username,
-            pwd=pwd,
-            client_id=client_id,
-            client_secret=client_secret,
-            )
 
     def get_secret(self, remote_env: str):
         secrets = parse_json(self.secretsFile)
