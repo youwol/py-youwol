@@ -1,14 +1,17 @@
+from typing import Optional
+
 import aiohttp
 from aiohttp import ClientConnectorError
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Form
 from starlette.datastructures import Headers
 from starlette.requests import Request
 from starlette.responses import Response
 
-from youwol.configuration.models_service import get_target_from_base_path
+from routers.environment.router import login as login_env
+from routers.environment.models import LoginBody
 from youwol.configuration.youwol_configuration import YouwolConfiguration, yw_config
 from youwol.context import Context
-from youwol.routers.backends.utils import get_all_backends, BackEnd
+from youwol.routers.backends.utils import get_all_backends
 from youwol.web_socket import WebSocketsCache
 
 import youwol.services.backs.cdn.root_paths as cdn
@@ -128,9 +131,10 @@ async def redirect_post_api(
 
     data = await request.body()
     headers = await get_headers(context)
+    params = request.query_params
 
     async with aiohttp.ClientSession(auto_decompress=False) as session:
-        async with await session.post(url=url, data=data, headers=headers) as resp:
+        async with await session.post(url=url, data=data, params=params, headers=headers) as resp:
             headers_resp = {k: v for k, v in resp.headers.items()}
             content = await resp.read()
             return Response(status_code=resp.status, content=content, headers=headers_resp)
@@ -152,9 +156,10 @@ async def redirect_put_api(
 
     data = await request.body()
     headers = await get_headers(context)
+    params = request.query_params
 
     async with aiohttp.ClientSession(auto_decompress=False) as session:
-        async with await session.put(url=url, data=data, headers=headers) as resp:
+        async with await session.put(url=url, data=data, params=params, headers=headers) as resp:
             headers_resp = {k: v for k, v in resp.headers.items()}
             content = await resp.read()
             return Response(status_code=resp.status, content=content, headers=headers_resp)
@@ -174,12 +179,13 @@ async def redirect_delete_api(
         )
 
     url = await get_backend_url(service_name, rest_of_path, context)
+    params = request.query_params
 
     data = await request.body()
     headers = await get_headers(context)
 
     async with aiohttp.ClientSession(auto_decompress=False) as session:
-        async with await session.delete(url=url, data=data, headers=headers) as resp:
+        async with await session.delete(url=url, data=data,  params=params, headers=headers) as resp:
             headers_resp = {k: v for k, v in resp.headers.items()}
             content = await resp.read()
             return Response(status_code=resp.status, content=content, headers=headers_resp)
