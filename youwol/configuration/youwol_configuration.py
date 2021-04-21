@@ -62,8 +62,12 @@ class YouwolConfigurationFactory:
         return status
 
     @staticmethod
-    async def login(email: str):
+    async def login(email: Union[str, None]):
         conf = YouwolConfigurationFactory.__cached_config
+        if email is None:
+            identities = parse_json(conf.userConfig.general.usersInfo)
+            email = identities['anonymous']
+
         new_conf = YouwolConfiguration(
             userConfig=conf.userConfig,
             userEmail=email,

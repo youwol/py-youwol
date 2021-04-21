@@ -116,10 +116,15 @@ async def login(
         request: Request,
         body: LoginBody
         ):
-
     await YouwolConfigurationFactory.login(body.email)
     new_conf = await yw_config()
     await status(request, new_conf)
+    context = Context(
+        request=request,
+        config=new_conf,
+        web_socket=WebSocketsCache.environment
+        )
+    return await new_conf.userConfig.general.get_user_info(context)
 
 
 @router.post("/configuration/parameters",

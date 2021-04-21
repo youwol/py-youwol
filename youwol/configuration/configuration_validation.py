@@ -89,6 +89,10 @@ class ConfigurationLoadingException(HTTPResponseException):
 
 async def login(user_email: str, general: General):
 
+    starting_user = get_main_arguments().email
+    if user_email is None and get_main_arguments().email:
+        user_email = starting_user
+
     if user_email is None:
         users_info = parse_json(general.usersInfo)
         if 'default' in users_info:

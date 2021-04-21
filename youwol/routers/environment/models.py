@@ -23,7 +23,7 @@ class SwitchResponse(BaseModel):
 
 
 class LoginBody(BaseModel):
-    email: str
+    email: Optional[str]
 
 
 class PostParametersBody(BaseModel):
