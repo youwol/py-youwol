@@ -70,13 +70,17 @@ class QueryBody(BaseModel):
         if '@' in query_str:
             [where_clauses_str, remaining] = query_str.split('@')
             if '#' in remaining:
-                [select_clauses_str, count_str] = query_str.split('#')
+                [select_clauses_str, count_str] = remaining.split('#')
         elif '#' in remaining:
             [where_clauses_str, count_str] = query_str.split('#')
 
-        where_clauses = [WhereClause(column=w.split('=')[0], relation='eq', term=w[w.find('=')+1:])
-                         for w in where_clauses_str.split(',')]
+        if where_clauses_str == "":
+            where_clauses = []
+        else:
+            where_clauses = [WhereClause(column=w.split('=')[0], relation='eq', term=w[w.find('=') + 1:])
+                             for w in where_clauses_str.split(',')]
+
         select_clauses = [SelectClause(selector=w) for w in select_clauses_str.split(',')] if select_clauses_str else []
-        return QueryBody(max_results= int(count_str) if count_str else 100,
+        return QueryBody(max_results=int(count_str) if count_str else 100,
                          select_clauses=select_clauses,
                          query=Query(where_clause=where_clauses))
