@@ -19,16 +19,16 @@ class AuthLocalMiddleware(BaseHTTPMiddleware):
             self, request: Request, call_next: RequestResponseEndpoint
             ) -> Response:
 
-        user_name = request.headers.get('user-name')
+        user_name = request.headers.get('Authorization')
         if await self.authenticate(user_name, request):
             response = await call_next(request)
         else:
             response = Response(content="Unauthorized", status_code=403)
         return response
 
-    async def authenticate(self, user_name: str, request: Request) -> bool:
+    async def authenticate(self, auth_token: str, request: Request) -> bool:
 
-        user_info = self.cache.get(user_name, None)
+        user_info = self.cache.get(auth_token, None)
         if user_info:
             request.state.user_info = user_info
             return True
@@ -40,6 +40,6 @@ class AuthLocalMiddleware(BaseHTTPMiddleware):
                 if resp.status == 200:
                     user_info = await resp.json()
                     request.state.user_info = user_info
-                    self.cache[user_name] = user_info
+                    self.cache[auth_token] = user_info
                     return True
                 return False
