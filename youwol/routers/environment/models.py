@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 from pydantic import BaseModel
 
@@ -8,7 +8,7 @@ from youwol.configuration.user_configuration import UserInfo, UserConfiguration
 
 class StatusResponse(BaseModel):
     configurationPath: str
-    configurationParameters: ConfigParameters
+    configurationParameters: Optional[ConfigParameters]
     configuration: UserConfiguration
     users: List[str]
     userInfo: UserInfo

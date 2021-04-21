@@ -2,6 +2,7 @@ import pprint
 from pathlib import Path
 from typing import Union, Dict, Any
 
+from utils_paths import parse_json
 from youwol.configuration.configuration_validation import (
     ConfigurationLoadingStatus, ConfigurationLoadingException,
     safe_load
@@ -49,7 +50,8 @@ class YouwolConfigurationFactory:
 
         params_values = params_values or {}
         cached = YouwolConfigurationFactory.__cached_config
-        params_values = {**cached.configurationParameters.get_values(), **params_values}
+        cached_params = cached.configurationParameters.get_values() if cached.configurationParameters else {}
+        params_values = {**cached_params, **params_values}
         conf, status = await safe_load(
             path=cached.pathsBook.config_path,
             params_values=params_values,
