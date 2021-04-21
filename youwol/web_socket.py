@@ -11,6 +11,8 @@ class WebSocketsCache:
     modules: WebSocket
     frontends: WebSocket
     assets: WebSocket
+    upload_packages: WebSocket
+
     environment: Union[WebSocket, None] = None
     api_gateway: Union[WebSocket, None] = None
     ui_gateway: Union[WebSocket, None] = None

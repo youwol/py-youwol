@@ -13,6 +13,7 @@ import youwol.routers.packages.router as packages
 import youwol.routers.frontends.router as frontends
 import youwol.routers.backends.router as backends
 import youwol.routers.environment.router as environment
+import youwol.routers.upload.router_packages as upload_packages
 
 from youwol.configurations import configuration, print_invite
 
@@ -48,6 +49,8 @@ app.include_router(environment.router, prefix=configuration.base_path+"/admin/en
 app.include_router(packages.router, prefix=configuration.base_path+"/admin/packages", tags=["packages"])
 app.include_router(frontends.router, prefix=configuration.base_path+"/admin/frontends", tags=["frontends"])
 app.include_router(backends.router, prefix=configuration.base_path+"/admin/backends", tags=["backends"])
+app.include_router(upload_packages.router, prefix=configuration.base_path+"/admin/upload/packages",
+                   tags=["upload packages"])
 
 
 @app.get(configuration.base_path + "/healthz")
