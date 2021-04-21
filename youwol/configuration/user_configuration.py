@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 from pathlib import Path
 from typing import List, Dict, NamedTuple, Any, Union, Callable, Awaitable, cast, Mapping
@@ -5,6 +6,7 @@ from typing import List, Dict, NamedTuple, Any, Union, Callable, Awaitable, cast
 import aiohttp
 from pydantic import BaseModel
 
+from models import ActionStep
 from youwol.configuration.models_back import BackEnds
 from youwol.configuration.models_base import ConfigParameters
 from youwol.configuration.models_front import FrontEnds
@@ -60,7 +62,7 @@ async def switch(default: T, cases: List[Case]) -> T:
 
 class RemoteGateway(BaseModel):
     name: str
-    url: str
+    host: str
 
 
 class LocalGateway(BaseModel):
@@ -151,6 +153,21 @@ class LocalClients(NamedTuple):
     assets_gateway_client: AssetsGatewayClient
 
 
+class DeadlinedCache(NamedTuple):
+
+    value: any
+    deadline: float
+    dependencies: Dict[str, str]
+
+    def is_valid(self, dependencies) -> bool:
+
+        for k, v in self.dependencies.items():
+            if k not in dependencies or dependencies[k] != v:
+                return False
+        margin = self.deadline - datetime.timestamp(datetime.now())
+        return margin > 0
+
+
 class YouwolConfiguration(NamedTuple):
 
     http_port: int
@@ -166,3 +183,37 @@ class YouwolConfiguration(NamedTuple):
     configurationParameters: ConfigParameters = ConfigParameters(parameters={})
 
     cache: Dict[str, Any] = {}
+
+    tokensCache: List[DeadlinedCache] = []
+
+    async def get_auth_token(self, context: Context):
+        username = self.userEmail
+        remote_host = self.userConfig.general.remoteGateways[0].host
+        dependencies = {"username": username, "host": remote_host, "type": "auth_token"}
+        cached_token = next((c for c in self.tokensCache if c.is_valid(dependencies)), None)
+        if cached_token:
+            return cached_token.value
+
+        secrets = parse_json(self.userConfig.general.secretsFile)
+        client_id = secrets[remote_host]['clientId']
+        client_secret = secrets[remote_host]['clientSecret']
+        pwd = secrets[username]['password']
+        access_token = await get_remote_auth_token(
+            username=username,
+            pwd=pwd,
+            client_id=client_id,
+            client_secret=client_secret,
+            )
+        deadline = datetime.timestamp(datetime.now()) + 1 * 60 * 60 * 1000
+        self.tokensCache.append(DeadlinedCache(value=access_token, deadline=deadline, dependencies=dependencies))
+
+        await context.info(step=ActionStep.STATUS, content="Access token renewed",
+                           json={"access_token": access_token})
+        return access_token
+
+    async def get_assets_gateway_client(self, context: Context) -> AssetsGatewayClient:
+
+        remote_host = self.userConfig.general.remoteGateways[0].host
+        auth_token = await self.get_auth_token(context=context)
+        headers = {"Authorization": f"Bearer {auth_token}"}
+        return AssetsGatewayClient(url_base=f"https://{remote_host}/api/assets-gateway", headers=headers)
