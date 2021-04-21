@@ -74,7 +74,7 @@ class LocalDocDbClient:
             **kwargs)
 
         if not response["documents"]:
-            raise HTTPException(status_code=404, detail="document not found in doc_db")
+            raise HTTPException(status_code=404, detail="document not found in doc_db: "+str(where_clauses))
 
         return response["documents"][0]
 
