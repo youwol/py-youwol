@@ -17,13 +17,14 @@ from youwol.routers.packages.models import Package, TargetId
 from youwol.routers.packages.utils import (
     src_check_sum, get_dependencies_recursive,
     create_packages_cache_entry, build_status_indirect, append_test_cache_entry, md5_update_from_file, test_status,
-    local_cdn_status, ensure_default_publish_location, copy_node_module_folder,
+    local_cdn_status, ensure_default_publish_location, copy_node_module_folder, extract_above_dependencies_recursive,
+    get_all_packages,
     )
 from youwol.utils_paths import copy_tree, matching_files, copy_file, parse_json, write_json
 from youwol.utils_misc import merge, execute_cmd_or_block
 from youwol.services.backs.cdn.configurations import get_configuration
 from youwol.services.backs.cdn.utils import publish_package, to_package_id
-from youwol_utils import YouWolException, exception_message
+from youwol_utils import exception_message
 
 
 def ensure_dependencies(
@@ -200,8 +201,13 @@ async def make_package(
     check_sum = md5_update_from_file(cdn_zip_path, sha_hash).hexdigest()
 
     # if there are destinations node_modules => we copy the built package into them
-    if package.pipeline.build and package.pipeline.build.destinationNodeModules:
-        for destination in package.pipeline.build.destinationNodeModules:
+    paths_book = context.config.pathsBook
+    all_packages = await get_all_packages(context=context)
+    above_dependencies = extract_above_dependencies_recursive(packages=all_packages, target_name=package.info.name)
+    node_modules_dependencies = [paths_book.node_modules(p.target.folder) for p in above_dependencies]
+    destination_node_modules = package.pipeline.build.destinationNodeModules + node_modules_dependencies
+    if package.pipeline.build and destination_node_modules:
+        for destination in destination_node_modules:
             node_modules_folder = config.pathsBook.node_module_dependency(Path(destination).parent, package.info.name)
             copy_node_module_folder(node_modules_folder, package, context)
 
