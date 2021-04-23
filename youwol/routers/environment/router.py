@@ -66,7 +66,7 @@ async def status(
 
     context = Context(config=config, request=request, web_socket=WebSocketsCache.environment)
     resp = StatusResponse(
-        configurationPath=str(config.pathsBook.config_path),
+        configurationPath=list(config.pathsBook.config_path.parts),
         configurationParameters=config.configurationParameters,
         users=config.userConfig.general.get_users_list(),
         userInfo=await config.userConfig.general.get_user_info(context),
@@ -101,7 +101,7 @@ async def switch_configuration(
         config=config,
         web_socket=WebSocketsCache.environment
         )
-    load_status = await YouwolConfigurationFactory.switch(body.path, context)
+    load_status = await YouwolConfigurationFactory.switch('/'.join(body.path), context)
 
     if load_status.validated:
         new_conf = await yw_config()

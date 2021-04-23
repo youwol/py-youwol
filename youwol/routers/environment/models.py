@@ -7,7 +7,7 @@ from youwol.configuration.user_configuration import UserInfo, UserConfiguration
 
 
 class StatusResponse(BaseModel):
-    configurationPath: str
+    configurationPath: List[str]
     configurationParameters: Optional[ConfigParameters]
     configuration: UserConfiguration
     users: List[str]
@@ -15,7 +15,7 @@ class StatusResponse(BaseModel):
 
 
 class SwitchConfigurationBody(BaseModel):
-    path: str
+    path: List[str]
 
 
 class SwitchResponse(BaseModel):
