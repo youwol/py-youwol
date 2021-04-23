@@ -97,9 +97,11 @@ class NativesBypassMiddleware(BaseHTTPMiddleware):
                 "details": str(e),
                 "trace": traceback.format_exception(exc_type, exc_value, exc_tb)
                 })
-            #raise e
+            raise e
         # the cache is disabled for assets (especially for packages)
         if "assets-gateway/raw/package" in str(request.url) and "-next" in str(request.url) and request.method == "GET":
             resp.headers.update({'cache-control': 'no-store'})
 
+        resp.headers.update({'Cross-Origin-Opener-Policy': 'same-origin'})
+        resp.headers.update({'Cross-Origin-Embedder-Policy': 'require-corp'})
         return resp
