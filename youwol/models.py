@@ -19,7 +19,7 @@ class ActionStep(Enum):
 
 class Action(Enum):
     INSTALL = "INSTALL"
-    SWITCH_CONF = "SWITCH_CONF"
+    CONF = "CONF"
     SYNC_USER = "SYNC_USER"
     BUILD = "BUILD"
     TEST = "TEST"
