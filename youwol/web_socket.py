@@ -13,6 +13,8 @@ class WebSocketsCache:
     assets: WebSocket
     upload_packages: WebSocket
 
+    system: Union[WebSocket, None] = None
+
     environment: Union[WebSocket, None] = None
     api_gateway: Union[WebSocket, None] = None
     ui_gateway: Union[WebSocket, None] = None

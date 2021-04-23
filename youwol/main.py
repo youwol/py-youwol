@@ -1,7 +1,8 @@
-from fastapi import FastAPI, APIRouter, Depends
+from fastapi import FastAPI, APIRouter, Depends, WebSocket
 import uvicorn
 from starlette.responses import RedirectResponse
 
+from web_socket import WebSocketsCache
 from youwol.configuration.youwol_configuration import yw_config
 from youwol.main_args import get_main_arguments
 
@@ -14,6 +15,7 @@ import youwol.routers.frontends.router as frontends
 import youwol.routers.backends.router as backends
 import youwol.routers.environment.router as environment
 import youwol.routers.upload.router_packages as upload_packages
+import youwol.routers.system.router as system
 
 from youwol.configurations import configuration, print_invite
 
@@ -45,6 +47,9 @@ app.add_middleware(NativesBypassMiddleware, api_bypass_base_paths=api_bypass_bas
 
 app.include_router(api.router, prefix=configuration.base_path+"/api", tags=["api"])
 app.include_router(ui.router, prefix=configuration.base_path+"/ui", tags=["ui"])
+
+app.include_router(system.router, prefix=configuration.base_path+"/admin/system",
+                   tags=["system"])
 app.include_router(environment.router, prefix=configuration.base_path+"/admin/environment", tags=["environment"])
 app.include_router(packages.router, prefix=configuration.base_path+"/admin/packages", tags=["packages"])
 app.include_router(frontends.router, prefix=configuration.base_path+"/admin/frontends", tags=["frontends"])
@@ -61,6 +66,7 @@ async def healthz():
 @app.get(configuration.base_path + '/')
 async def home():
     return RedirectResponse(url=f'/ui/local-dashboard')
+
 
 
 def main():

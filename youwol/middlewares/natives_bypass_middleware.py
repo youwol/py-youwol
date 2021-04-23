@@ -1,5 +1,6 @@
-from typing import List, cast, Union
-
+import traceback
+from typing import List, Union
+import sys
 from fastapi import HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
@@ -87,7 +88,16 @@ class NativesBypassMiddleware(BaseHTTPMiddleware):
         if config:
             return await redirect_api_local(request, api_base_path, config)
 
-        resp = await call_next(request)
+        try:
+            resp = await call_next(request)
+        except Exception as e:
+            exc_type, exc_value, exc_tb = sys.exc_info()
+            WebSocketsCache.system and await WebSocketsCache.system.send_json({
+                "type": "SystemError",
+                "details": str(e),
+                "trace": traceback.format_exception(exc_type, exc_value, exc_tb)
+                })
+            #raise e
         # the cache is disabled for assets (especially for packages)
         if "assets-gateway/raw/package" in str(request.url) and "-next" in str(request.url) and request.method == "GET":
             resp.headers.update({'cache-control': 'no-store'})
