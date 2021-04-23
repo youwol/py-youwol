@@ -201,6 +201,36 @@ async def publish_library_version(
             os.remove(zip_path)
 
 
+@router.post("/synchronize", summary="sync multiple assets")
+async def sync_multiple(
+        request: Request,
+        body: SyncMultipleBody,
+        config: YouwolConfiguration = Depends(yw_config)
+        ):
+
+    queue = asyncio.Queue()
+    for asset in body.assetIds:
+        queue.put_nowait(asset)
+
+    async def worker(_queue):
+        while True:
+            asset_id = await _queue.get()
+            await sync_package(request=request, asset_id=asset_id, config=config)
+            queue.task_done()
+
+    tasks = []
+    for i in range(5):
+        task = asyncio.get_event_loop().create_task(worker(queue))
+        tasks.append(task)
+
+    await queue.join()
+
+    for task in tasks:
+        task.cancel()
+
+    return {}
+
+
 @router.post("/{asset_id}", summary="execute action")
 async def sync_package(
         request: Request,
@@ -242,37 +272,11 @@ async def sync_package(
             raise e
 
     for version in to_sync_releases:
-        await publish_library_version(asset_id, version)
+        await publish_library_version(request=request, asset_id=asset_id, version=version, config=config)
 
     if not to_sync_releases:
         package = get_local_package(asset_id, config)
         await check_asset_status(package=package, context=context)
-
-    return {}
-
-
-@router.post("/synchronize", summary="sync multiple assets")
-async def sync_multiple(body: SyncMultipleBody):
-
-    queue = asyncio.Queue()
-    for asset in body.assetIds:
-        queue.put_nowait(asset)
-
-    async def worker(_queue):
-        while True:
-            asset_id = await _queue.get()
-            await sync_package(asset_id)
-            queue.task_done()
-
-    tasks = []
-    for i in range(5):
-        task = asyncio.get_event_loop().create_task(worker(queue))
-        tasks.append(task)
-
-    await queue.join()
-
-    for task in tasks:
-        task.cancel()
 
     return {}
 
