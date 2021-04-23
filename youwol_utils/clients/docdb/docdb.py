@@ -21,10 +21,9 @@ def post_keyspace_body(name: str, replication_factor: int):
 
 class UpdateType(Enum):
 
-    RECREATION = 1
-    MINOR_UPDATE = 2
-    MAJOR_UPDATE = 3
-    NONE = 4
+    MINOR_UPDATE = 1
+    MAJOR_UPDATE = 2
+    NONE = 3
 
 
 class Update(NamedTuple):
@@ -217,10 +216,10 @@ class DocDbClient:
                 print(f"Table '{self.table_name}' needs minor update, apply auto update ({str(update)})")
                 raise NotImplementedError(f"Auto update not implemented")
 
-            if update.type == UpdateType.RECREATION:
-                print(f"Table '{self.table_name}' needs recreation")
-                await self.delete_table(**kwargs)
-                table_exist = False
+            # if update.type == UpdateType.RECREATION:
+            #    print(f"Table '{self.table_name}' needs recreation")
+            #    await self.delete_table(**kwargs)
+            #    table_exist = False
 
             if update.type == UpdateType.NONE:
                 print(f"Table '{self.table_name}' schema up-to-date")
