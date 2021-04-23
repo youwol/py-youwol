@@ -150,7 +150,10 @@ async def dependencies(target_id: str, config: YouwolConfiguration = Depends(yw_
     below_dependencies = extract_below_dependencies_recursive(packages=packages, target_name=target_name)
     above_dependencies = extract_above_dependencies_recursive(packages=packages, target_name=target_name)
 
-    return DependenciesResponse(belowDependencies=below_dependencies, aboveDependencies=list(above_dependencies))
+    return DependenciesResponse(
+        belowDependencies=below_dependencies,
+        aboveDependencies=[p.info.name for p in above_dependencies]
+        )
 
 
 @router.post("/watch", summary="set libraries to automatic 'watch'")

@@ -371,9 +371,9 @@ def extract_below_dependencies_recursive(
 def extract_above_dependencies_recursive(
         packages: List[Package],
         target_name: str
-        ) -> Set[TargetId]:
+        ) -> List[Package]:
 
-    return {p.info.name for p in packages if target_name in p.info.projectDependencies.keys()}
+    return [p for p in packages if target_name in p.info.projectDependencies.keys()]
 
 
 def preparation(context: Context):
