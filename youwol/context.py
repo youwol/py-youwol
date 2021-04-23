@@ -87,10 +87,10 @@ class Context(NamedTuple):
         except ActionException as e:
             await ctx.abort(content=f"Exception during {action.name}: {e.message}")
             traceback.print_exc()
-        except Exception as _:
-            await ctx.abort(content=f"Exception during {action.name}")
+        except Exception as e:
+            await ctx.abort(content=f"Exception during {action.name}", json={"error": str(e)})
             traceback.print_exc()
-            raise
+            raise e
         else:
             await ctx.info(ActionStep.DONE, f"{action.name} done")
 
