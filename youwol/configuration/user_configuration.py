@@ -104,14 +104,10 @@ class General(BaseModel):
 
     async def get_user_info(self, context: Context) -> UserInfo:
 
-        users_info = parse_json(self.usersInfo)
+        users_info = parse_json(self.usersInfo)['users']
 
         if context.config.userEmail in users_info:
             data = users_info[context.config.userEmail]
-            # email can be "anonymous" or "default", they link to actual identities,
-            # in these cases data is here the linked email, we need to re-evaluate to get the identity
-            if isinstance(data, str):
-                data = users_info[data]
             return UserInfo(**data)
 
         return UserInfo(
@@ -122,10 +118,8 @@ class General(BaseModel):
             )
 
     def get_users_list(self) -> List[str]:
-        secrets = parse_json(self.secretsFile)
-        identified = secrets['identities'].keys() if 'identities' in secrets else []
-
-        return list(identified) + ["anonymous"]
+        users = list(parse_json(self.usersInfo)['users'].keys())
+        return users
 
     def get_secret(self, remote_env: str):
         secrets = parse_json(self.secretsFile)

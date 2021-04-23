@@ -63,14 +63,16 @@ async def get_yw_config_starter(main_args: MainArguments):
         if not (current_folder / 'secrets.json').exists():
             write_json({"identities": {email: "secret not used for now"}}, current_folder / 'secrets.json')
         user_info = {
-            "default": email,
-            email: {
-                "id": "user id not used for now",
-                "name": email,
-                "memberOf": [
-                    "/youwol-users"
-                    ],
-                "email": email
+            "policies": {"default": email},
+            "users": {
+                email: {
+                    "id": "user id not used for now",
+                    "name": email,
+                    "memberOf": [
+                        "/youwol-users"
+                        ],
+                    "email": email
+                    }
                 }
             }
         if not (current_folder/'users-info.json').exists():

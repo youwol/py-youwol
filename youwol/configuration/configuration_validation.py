@@ -95,8 +95,8 @@ async def login(user_email: str, general: General):
 
     if user_email is None:
         users_info = parse_json(general.usersInfo)
-        if 'default' in users_info:
-            user_email = users_info["default"]
+        if 'default' in users_info['policies']:
+            user_email = users_info['policies']["default"]
 
     if user_email is None:
 
