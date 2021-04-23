@@ -477,14 +477,19 @@ async def ensure_path(path_item: PathResp, assets_gateway_client: AssetsGatewayC
 
     folders = path_item.folders
     try:
-        await assets_gateway_client.get_tree_folder(folder_id=folders[0]['folder_id'])
+        if folders:
+            await assets_gateway_client.get_tree_folder(folder_id=folders[0]['folder_id'])
+        else:
+            await assets_gateway_client.get_tree_drive(drive_id=path_item.drive['drive_id'])
     except HTTPException as e:
         if e.status_code == 404:
-            if len(folders) == 1:
+            if len(folders) <= 1:
                 await ensure_drive(path_item.drive, assets_gateway_client)
             else:
                 await ensure_path(PathResp(drive=path_item.drive, group=path_item.group, folders=folders[1:]),
                                   assets_gateway_client)
+            if not folders:
+                return
             folder = folders[0]
             body = {"folderId":  folder['folder_id'], "name": folder['name']}
             await assets_gateway_client.create_folder(parent_folder_id=folder["parent_folder_id"], body=body)
