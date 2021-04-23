@@ -3,7 +3,7 @@ import os
 import sys
 import traceback
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Union
 
 from pydantic import BaseModel, ValidationError
 
@@ -21,7 +21,8 @@ from youwol_utils.clients.flux.flux import FluxClient
 from youwol_utils.clients.treedb.treedb import TreeDbClient
 
 from youwol.configurations import configuration as py_yw_config
-
+from youwol.context import Context
+from youwol.models import ActionStep
 
 class CheckConfPath(Check):
     name: str = "Configuration path exist?"
@@ -87,7 +88,7 @@ class ConfigurationLoadingException(HTTPResponseException):
         self.status = status
 
 
-async def login(user_email: str, general: General):
+async def login(user_email: Union[str, None], general: General, context: Union[Context, None]):
 
     starting_user = get_main_arguments().email
     if user_email is None and get_main_arguments().email:
@@ -109,13 +110,21 @@ async def login(user_email: str, general: General):
                 "the desired default email address is associated to an identity"
                 ]
             )
+    if user_email not in parse_json(general.usersInfo)['users']:
+        context and await context.info(
+            ActionStep.STATUS,
+            f"User {user_email} not registered in {general.usersInfo}: switch user",
+            json={"user_email": user_email, 'usersInfo':parse_json(general.usersInfo) })
+        return await login(user_email=None, general=general, context=context)
+
     return user_email
 
 
 async def safe_load(
         path: Path,
         params_values: Dict[str, Any],
-        user_email: str = None
+        user_email:  Union[str, None] = None,
+        context: Union[Context, None] = None,
         ) -> (YouwolConfiguration, ConfigurationLoadingStatus):
 
     check_conf_path = CheckConfPath()
@@ -320,7 +329,7 @@ async def safe_load(
     cdn_client = CdnClient(url_base=f"{base_path}/cdn-backend")
     assets_gateway_client = AssetsGatewayClient(url_base=f"{base_path}/assets-gateway")
 
-    user_email = await login(user_email, user_config.general)
+    user_email = await login( user_email=user_email, general=user_config.general, context=context)
 
     return YouwolConfiguration(
             http_port=get_main_arguments().port,

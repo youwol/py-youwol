@@ -24,9 +24,10 @@ class YouwolConfigurationFactory:
     async def switch(path: Union[str, Path],
                      context: Context) -> ConfigurationLoadingStatus:
 
-        async with context.start(Action.SWITCH_CONF) as ctx:
+        async with context.start(Action.CONF) as ctx:
             path = Path(path)
-            conf, status = await safe_load(path=path, params_values={})
+            conf, status = await safe_load(path=path, params_values={},context=context,
+                                           user_email=YouwolConfigurationFactory.__cached_config.userEmail)
             if not conf:
                 errors = [c.dict() for c in status.checks if isinstance(c.status, ErrorResponse)]
                 await ctx.abort(content='Failed to switch configuration',
