@@ -164,6 +164,19 @@ async def login(
     return new_conf.get_user_info()
 
 
+@router.post("/select-remote-gateway",
+             summary="select a remote")
+async def select_remote(
+        request: Request,
+        body: SelectRemoteBody,
+        config: YouwolConfiguration = Depends(yw_config)
+        ):
+    await YouwolConfigurationFactory.login(email=config.userEmail, remote_name=body.name)
+    new_conf = await yw_config()
+    await status(request, new_conf)
+    return new_conf.get_user_info()
+
+
 @router.post("/configuration/parameters",
              summary="update_parameters")
 async def update_parameters(

@@ -34,6 +34,10 @@ class LoginBody(BaseModel):
     email: Optional[str]
 
 
+class SelectRemoteBody(BaseModel):
+    name: str
+
+
 class PostParametersBody(BaseModel):
     values: Dict[str, Any]
 
