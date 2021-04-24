@@ -153,13 +153,7 @@ async def sync_user(
         web_socket=WebSocketsCache.environment
         )
     async with context.with_target(body.email).start(Action.SYNC_USER) as ctx:
-        secret = config.userConfig.general.get_secret(body.remoteEnvironment)
-        auth_token = await get_remote_auth_token(
-            username=body.email,
-            pwd=body.password,
-            client_id=secret.clientId,
-            client_secret=secret.clientSecret,
-            )
+        auth_token = await config.get_auth_token(ctx)
         await ctx.info(step=ActionStep.RUNNING, content="Retrieved auth token successfully.")
         user_info = await retrieve_user_info(auth_token)
         secrets = parse_json(config.userConfig.general.secretsFile)

@@ -446,7 +446,7 @@ async def select_packages(
 async def ensure_default_publish_location(context: Context):
 
     default_path = context.config.userConfig.general.defaultPublishLocation
-    user = await context.config.userConfig.general.get_user_info(context)
+    user = context.config.get_user_info()
     parts = default_path.split('/')
     group_id = private_group_id({"sub": user.id}) if parts[0] == 'private' else to_group_id(parts[0])
     drive_name, folders = parts[1], parts[2:]

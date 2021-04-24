@@ -50,12 +50,7 @@ async def get_user_info(
         config: YouwolConfiguration = Depends(yw_config)
         ):
 
-    context = Context(
-        web_socket=WebSocketsCache.api_gateway,
-        config=config,
-        request=request
-        )
-    user_info = await config.userConfig.general.get_user_info(context=context)
+    user_info = config.get_user_info()
     return {
         "sub": user_info.id,
         "email_verified": True,
