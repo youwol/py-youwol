@@ -3,8 +3,7 @@ import itertools
 from fastapi import APIRouter, WebSocket, Depends
 from starlette.requests import Request
 
-from youwol.configuration.user_configuration import YouwolConfiguration
-from youwol.configuration.youwol_configuration import yw_config, YouwolConfigurationFactory
+from youwol.configuration.youwol_configuration import yw_config, YouwolConfigurationFactory, YouwolConfiguration
 from youwol.context import Context, Action
 from youwol.routers.commons import SkeletonsResponse, list_skeletons, PostSkeletonBody, create_skeleton
 from youwol.routers.frontends.models import StatusResponse, AllStatusResponse

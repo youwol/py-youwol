@@ -4,7 +4,7 @@ from fastapi import APIRouter, WebSocket, Depends
 from starlette.requests import Request
 
 from youwol.configuration import ErrorResponse
-from youwol.configuration.user_configuration import YouwolConfiguration, get_remote_auth_token
+from youwol.configuration.youwol_configuration import YouwolConfiguration
 from youwol.configuration.youwol_configuration import yw_config, YouwolConfigurationFactory, ConfigurationLoadingStatus
 from youwol.context import Context, Action, ActionStep
 from youwol.routers.environment.models import (

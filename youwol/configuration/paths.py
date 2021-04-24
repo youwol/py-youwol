@@ -9,6 +9,7 @@ class PathsBook(NamedTuple):
     system_path: Path
     data_path: Path
     usersInfo: Path
+    remotesInfo: Path
     secret_path: Union[Path, None]
     pinnedPaths: Dict[str, Path] = {}
     youwol: Path = Path(youwol.__file__).parent

@@ -9,9 +9,11 @@ from pydantic import BaseModel, Json
 from starlette.requests import Request
 from starlette.websockets import WebSocket
 
-from youwol.configuration.user_configuration import YouwolConfiguration
 from youwol.models import Action, LogLevel, ActionStep
 from youwol_utils import JSON
+
+
+YouwolConfiguration = "youwol.configuration.youwol_configuration"
 
 
 class MessageWebSocket(BaseModel):

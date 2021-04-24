@@ -6,8 +6,7 @@ from asyncio import sleep
 from fastapi import APIRouter, WebSocket, Depends, HTTPException
 from starlette.requests import Request
 
-from youwol.configuration.user_configuration import YouwolConfiguration
-from youwol.configuration.youwol_configuration import yw_config, YouwolConfigurationFactory
+from youwol.configuration.youwol_configuration import yw_config, YouwolConfigurationFactory, YouwolConfiguration
 from youwol.configurations import configuration
 from youwol.context import Context
 from youwol.models import Action
