@@ -1,9 +1,15 @@
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
 
 from pydantic import BaseModel
 
 from youwol.configuration.models_base import ErrorResponse, ConfigParameters
-from youwol.configuration.user_configuration import UserInfo, UserConfiguration
+from youwol.configuration.user_configuration import UserInfo, UserConfiguration, RemoteGateway
+
+
+class RemoteGatewayInfo(BaseModel):
+    name: str
+    host: str
+    connected: Optional[bool]
 
 
 class StatusResponse(BaseModel):
@@ -12,6 +18,8 @@ class StatusResponse(BaseModel):
     configuration: UserConfiguration
     users: List[str]
     userInfo: UserInfo
+    remoteGatewayInfo: Optional[RemoteGatewayInfo]
+    remotesInfo: List[RemoteGatewayInfo]
 
 
 class SwitchConfigurationBody(BaseModel):

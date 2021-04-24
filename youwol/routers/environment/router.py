@@ -1,6 +1,8 @@
 import itertools
 
 from fastapi import APIRouter, WebSocket, Depends
+from aiohttp.web import HTTPException
+from aiohttp.client_exceptions import ClientConnectorError
 from starlette.requests import Request
 
 from youwol.configuration import ErrorResponse
@@ -9,7 +11,7 @@ from youwol.configuration.youwol_configuration import yw_config, YouwolConfigura
 from youwol.context import Context, Action, ActionStep
 from youwol.routers.environment.models import (
     StatusResponse, SwitchConfigurationBody, SyncUserBody, LoginBody,
-    PostParametersBody,
+    PostParametersBody, RemoteGatewayInfo, SelectRemoteBody,
     )
 from youwol.utils_low_level import to_json
 from youwol.utils_paths import parse_json, write_json
@@ -18,6 +20,35 @@ from youwol_utils import retrieve_user_info
 
 router = APIRouter()
 flatten = itertools.chain.from_iterable
+
+
+async def connect_to_remote(config: YouwolConfiguration, context: Context) -> bool:
+
+    remote_gateway_info = config.get_remote_info()
+    if not remote_gateway_info:
+        return False
+
+    try:
+        await config.get_auth_token(context)
+    except HTTPException as e:
+        await context.info(
+            ActionStep.STATUS,
+            "Authorization: HTTP Error",
+            json={'host': remote_gateway_info.host, 'error': str(e)})
+        return False
+    except ClientConnectorError as e:
+        await context.info(
+            ActionStep.STATUS,
+            "Authorization: Connection error (internet on?)",
+            json={'host': remote_gateway_info.host, 'error': str(e)})
+        return False
+    except RuntimeError as e:
+        await context.info(
+            ActionStep.STATUS,
+            "Authorization error",
+            json={'host': remote_gateway_info.host, 'error': str(e)})
+        return False
+    return True
 
 
 @router.websocket("/ws")
@@ -65,12 +96,22 @@ async def status(
         ):
 
     context = Context(config=config, request=request, web_socket=WebSocketsCache.environment)
+    connected = await connect_to_remote(config=config, context=context)
+
+    remote_gateway_info = config.get_remote_info()
+    if remote_gateway_info:
+        remote_gateway_info = RemoteGatewayInfo(name=remote_gateway_info.name,
+                                                host=remote_gateway_info.host,
+                                                connected=connected)
+    remotes_info = parse_json(config.userConfig.general.remotesInfo)['remotes'].values()
     resp = StatusResponse(
         configurationPath=list(config.pathsBook.config_path.parts),
         configurationParameters=config.configurationParameters,
         users=config.userConfig.general.get_users_list(),
-        userInfo=await config.userConfig.general.get_user_info(context),
-        configuration=config.userConfig
+        userInfo=config.get_user_info(),
+        configuration=config.userConfig,
+        remoteGatewayInfo=remote_gateway_info,
+        remotesInfo=list(remotes_info)
         )
 
     dict_resp = to_json(resp)
@@ -114,17 +155,13 @@ async def switch_configuration(
              summary="log in as specified user")
 async def login(
         request: Request,
-        body: LoginBody
+        body: LoginBody,
+        config: YouwolConfiguration = Depends(yw_config)
         ):
-    await YouwolConfigurationFactory.login(body.email)
+    await YouwolConfigurationFactory.login(email=body.email, remote_name=config.selectedRemote)
     new_conf = await yw_config()
     await status(request, new_conf)
-    context = Context(
-        request=request,
-        config=new_conf,
-        web_socket=WebSocketsCache.environment
-        )
-    return await new_conf.userConfig.general.get_user_info(context)
+    return new_conf.get_user_info()
 
 
 @router.post("/configuration/parameters",
