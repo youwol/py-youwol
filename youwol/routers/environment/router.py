@@ -30,6 +30,9 @@ async def connect_to_remote(config: YouwolConfiguration, context: Context) -> bo
 
     try:
         await config.get_auth_token(context)
+        client = await config.get_assets_gateway_client(context)
+        await client.healthz()
+        return True
     except HTTPException as e:
         await context.info(
             ActionStep.STATUS,
@@ -48,7 +51,12 @@ async def connect_to_remote(config: YouwolConfiguration, context: Context) -> bo
             "Authorization error",
             json={'host': remote_gateway_info.host, 'error': str(e)})
         return False
-    return True
+    except ContentTypeError as e:
+        await context.info(
+            ActionStep.STATUS,
+            "Failed to call healthz on assets-gateway",
+            json={'host': remote_gateway_info.host, 'error': str(e)})
+        return False
 
 
 @router.websocket("/ws")
