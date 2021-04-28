@@ -25,7 +25,7 @@ class MessageWebSocket(BaseModel):
 
 
 class ActionException(Exception):
-    def __init__(self, action: Action, message: str):
+    def __init__(self, action: str, message: str):
         self.action = action
         self.message = message
         super().__init__(self.message)
@@ -40,7 +40,7 @@ class UserCodeException(Exception):
 
 async def log(
         level: LogLevel,
-        action: Action,
+        action: str,
         step: ActionStep,
         target: str,
         content: Union[Json, str],
@@ -49,7 +49,7 @@ async def log(
         json: JSON = None,
         ):
     message = {
-        "action": action.name if action else "",
+        "action": str(action) if action else "",
         "target": target,
         "level": level.name,
         "step": step.name,
@@ -66,35 +66,35 @@ class Context(NamedTuple):
     config: YouwolConfiguration
     request: Request = None
     target: Union[str, None] = None
-    action: Union[Action, None] = None
+    action: Union[str, None] = None
     uid: Union[str, None] = None
 
     def with_target(self, name: str) -> 'Context':
         return Context(web_socket=self.web_socket, config=self.config, action=self.action, target=name)
 
-    def with_action(self, action: Action) -> 'Context':
+    def with_action(self, action: str) -> 'Context':
         return Context(web_socket=self.web_socket, config=self.config, target=self.target, action=action)
 
     @asynccontextmanager
     @async_generator
-    async def start(self, action: Action):
+    async def start(self, action: str):
         ctx = Context(web_socket=self.web_socket, config=self.config, target=self.target, action=action,
                       uid=str(uuid.uuid4()))
         try:
             await ctx.info(ActionStep.STARTED, "")
             await yield_(ctx)
         except UserCodeException as _:
-            await ctx.abort(content=f"Exception during {action.name} while executing custom code")
+            await ctx.abort(content=f"Exception during {action} while executing custom code")
             traceback.print_exc()
         except ActionException as e:
-            await ctx.abort(content=f"Exception during {action.name}: {e.message}")
+            await ctx.abort(content=f"Exception during {action}: {e.message}")
             traceback.print_exc()
         except Exception as e:
-            await ctx.abort(content=f"Exception during {action.name}", json={"error": str(e)})
+            await ctx.abort(content=f"Exception during {action}", json={"error": str(e)})
             traceback.print_exc()
             raise e
         else:
-            await ctx.info(ActionStep.DONE, f"{action.name} done")
+            await ctx.info(ActionStep.DONE, f"{action} done")
 
     async def debug(self, step: ActionStep, content: str, json: JSON = None):
         await log(level=LogLevel.DEBUG, action=self.action, step=step, target=self.target, content=content,

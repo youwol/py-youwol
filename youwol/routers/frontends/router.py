@@ -68,7 +68,7 @@ async def start(request: Request, name: str, config: YouwolConfiguration = Depen
     target = next(f for f in all_fronts if f.info.name == name)
 
     async def start_serving(t: FrontEnd):
-        async with context.with_target(name).start(Action.SERVE) as ctx:
+        async with context.with_target(name).start("Serve") as ctx:
             await serve(t, context=ctx)
             await status(request=request, config=config)
 

@@ -315,7 +315,7 @@ async def synchronize(
     src_check_sums = {t.info.name: src_check_sum(package=t, context=context) for t in all_targets}
 
     async def build_block(p: Package, prepare: bool):
-        async with context.with_target(p.info.name).start(Action.BUILD) as _ctx:
+        async with context.with_target(p.info.name).start("BUILD") as _ctx:
             if prepare:
                 await prepare_build(package=package, all_packages=all_targets,
                                     src_check_sums=src_check_sums, context=_ctx)
@@ -324,7 +324,7 @@ async def synchronize(
             return True
 
     async def test_block(p: Package, prepare: bool):
-        async with context.with_target(p.info.name).start(Action.TEST) as _ctx:
+        async with context.with_target(p.info.name).start("TEST") as _ctx:
             if prepare:
                 await prepare_test(package=package, all_packages=all_targets,
                                    src_check_sums=src_check_sums, context=_ctx)
@@ -333,7 +333,7 @@ async def synchronize(
             return return_code == 0
 
     async def cdn_block(p: Package):
-        async with context.with_target(p.info.name).start(Action.CDN) as _ctx:
+        async with context.with_target(p.info.name).start("CDN") as _ctx:
 
             await publish_local_cdn(package=p, context=_ctx)
             await local_cdn_status(package=p, src_check_sums=src_check_sums, context=_ctx)

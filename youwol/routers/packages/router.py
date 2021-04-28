@@ -129,7 +129,7 @@ async def install(
 
     context = Context(config=config, web_socket=WebSocketsCache.modules).with_target(target_name)
 
-    async with context.start(Action.INSTALL) as ctx:
+    async with context.start("Install") as ctx:
         packages = await get_all_packages(ctx)
         package = next(p for p in packages if p.info.name == target_name)
         await package.pipeline.install.exe(resource=package, context=ctx)
@@ -222,7 +222,7 @@ async def watch_target(package: Package, context: Context):
     #         logging.exception(e)
     #         return
     #
-    #     async with ctx.start(Action.CDN) as ctx:
+    #     async with ctx.start("CDN") as ctx:
     #         await publish_local_cdn(target, context=ctx)
     #
     #     await status(ctx.config)

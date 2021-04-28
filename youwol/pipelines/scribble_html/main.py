@@ -117,7 +117,7 @@ async def generate(
     name = parameters["name"]
     title = parameters["title"]
 
-    async with context.with_target(name).start(Action.INSTALL) as ctx:
+    async with context.with_target(name).start("Install") as ctx:
 
         folder_name = name.split('/')[1] if '/' in name else name
 

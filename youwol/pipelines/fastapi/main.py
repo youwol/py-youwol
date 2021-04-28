@@ -136,7 +136,7 @@ async def generate(
     name = parameters["service-name"]
     description = parameters["service-description"]
 
-    async with context.with_target(name).start(Action.INSTALL) as ctx:
+    async with context.with_target(name).start("Install") as ctx:
 
         path_folder = folder_path / name
 

@@ -110,33 +110,34 @@ async def get_all_packages(context: Context) -> List[Package]:
 
     # if 'packages' in context.config.cache:
     #    return context.config.cache['packages']
+    async with context.start("get all packages sorted") as ctx:
+        config = ctx.config
+        targets = list(flatten([(category, t) for t in targets]
+                               for category, targets in config.userConfig.packages.targets.items()))
 
-    config = context.config
-    targets = list(flatten([(category, t) for t in targets]
-                           for category, targets in config.userConfig.packages.targets.items()))
+        def to_info(t: TargetPackage):
+            path = t.folder / 'package.json'
+            return InfoPackage(**parse_json(path))
 
-    def to_info(t: TargetPackage):
-        path = t.folder / 'package.json'
-        return InfoPackage(**parse_json(path))
+        info_targets = [to_info(t) for _, t in targets]
 
-    info_targets = [to_info(t) for _, t in targets]
+        async def to_package(category: str, target: TargetPackage, info: InfoPackage):
+            return Package(
+                assetId=to_package_id(to_package_id(info.name)),
+                pipeline=await config.userConfig.packages.pipeline(category, target, info,
+                                                                   context.with_target(info.name)),
+                target=target,
+                info=info
+                )
 
-    async def to_package(category: str, target: TargetPackage, info: InfoPackage):
-        return Package(
-            assetId=to_package_id(to_package_id(info.name)),
-            pipeline=await config.userConfig.packages.pipeline(category, target, info, context.with_target(info.name)),
-            target=target,
-            info=info
-            )
+        packages = [await to_package(category, target, info) for (category, target), info in zip(targets, info_targets)]
+        all_names = [p.info.name for p in packages]
+        for p in packages:
+            all_dependencies = {**p.info.peerDependencies, **p.info.dependencies, **p.info.devDependencies}
+            p.info.projectDependencies = {k: v for k, v in all_dependencies.items() if k in all_names}
 
-    packages = [await to_package(category, target, info) for (category, target), info in zip(targets, info_targets)]
-    all_names = [p.info.name for p in packages]
-    for p in packages:
-        all_dependencies = {**p.info.peerDependencies, **p.info.dependencies, **p.info.devDependencies}
-        p.info.projectDependencies = {k: v for k, v in all_dependencies.items() if k in all_names}
-
-    context.config.cache['packages'] = sort_packages(packages)
-    return context.config.cache['packages']
+        ctx.config.cache['packages'] = sort_packages(packages=packages, context=ctx)
+        return context.config.cache['packages']
 
 
 def src_check_sum(package: Package, context: Context):
@@ -318,24 +319,24 @@ async def get_packages_status(context: Context) -> List[TargetStatus]:
 
     all_install_status = await asyncio.gather(*[
         install_status(package=p,
-                       context=context.with_target(p.info.name).with_action(Action.BUILD))
+                       context=context.with_target(p.info.name).with_action("BUILD"))
         for p in packages])
 
     all_build_status = await asyncio.gather(*[
         build_status_indirect(package=p,
                               src_check_sums=src_check_sums,
-                              context=context.with_target(p.info.name).with_action(Action.BUILD))
+                              context=context.with_target(p.info.name).with_action("BUILD"))
         for p in packages])
 
     all_test_status = await asyncio.gather(*[
         test_status(package=p,
                     src_check_sums=src_check_sums,
-                    context=context.with_target(p.info.name).with_action(Action.TEST))
+                    context=context.with_target(p.info.name).with_action("TEST"))
         for p in packages])
 
     all_cdn_status = await asyncio.gather(*[
         local_cdn_status(package=p, src_check_sums=src_check_sums,
-                         context=context.with_target(p.info.name).with_action(Action.CDN))
+                         context=context.with_target(p.info.name).with_action("CDN"))
         for p in packages])
 
     return [TargetStatus(target=p,

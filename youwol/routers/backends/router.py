@@ -125,7 +125,7 @@ async def install(
     all_backs = await get_all_backends(context=context)
     back = next(back for back in all_backs if back.assetId == asset_id)
 
-    async with context.with_target(back.info.name).start(Action.INSTALL) as ctx:
+    async with context.with_target(back.info.name).start("Install") as ctx:
 
         await back.pipeline.install.exe(resource=back, context=ctx)
 

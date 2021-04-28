@@ -133,7 +133,7 @@ class YouwolConfigurationFactory:
     async def switch(path: Union[str, Path],
                      context: Context) -> ConfigurationLoadingStatus:
 
-        async with context.start(Action.CONF) as ctx:
+        async with context.start("Switch Configuration") as ctx:
             path = Path(path)
             cached = YouwolConfigurationFactory.__cached_config
             conf, status = await safe_load(path=path, params_values={},
