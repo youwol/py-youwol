@@ -120,6 +120,38 @@ async def ws_endpoint(ws: WebSocket):
         _ = await ws.receive_text()
 
 
+@router.get("/{tree_id}/remote-path",
+            summary="return the remote path of the tree item",
+            response_model=PathResp)
+async def remote_path(
+        request: Request,
+        tree_id: str,
+        config: YouwolConfiguration = Depends(yw_config)
+        ) -> PathResp:
+
+    async def path_rec(current_folder) -> (List[str], List[str]):
+
+        folder, drive = await asyncio.gather(
+            client.get_tree_folder(folder_id=current_folder),
+            client.get_tree_drive(drive_id=current_folder),
+            return_exceptions=True
+            )
+        if isinstance(drive, dict):
+            return [drive['name']], [drive['driveId']]
+        parent = await path_rec(folder['parentFolderId'])
+        return parent[0] + [folder['name']], parent[1] + [folder['folderId']]
+
+    context = Context(config=config, request=request, web_socket=WebSocketsCache.upload_packages)
+    client = await config.get_assets_gateway_client(context)
+    tree_item = await client.get_tree_item(item_id=tree_id)
+    names_path, ids_path = await path_rec(tree_item['folderId'])
+    drive = await client.get_tree_drive(drive_id=ids_path[0])
+    return PathResp(
+        group=to_group_scope(tree_item['groupId']),
+        drive=drive,
+        folders=[{"name": name} for name in names_path[1:]] if names_path else []
+        )
+
 
 @router.get("/{tree_id}/path",
             summary="execute action",
