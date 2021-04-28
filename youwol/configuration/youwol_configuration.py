@@ -22,7 +22,7 @@ from youwol.models import ActionStep
 
 from configuration import (UserInfo, get_public_user_auth_token)
 from youwol.configurations import get_full_local_config, configuration as py_yw_config
-from youwol.context import Action, Context
+from youwol.context import Context
 
 from youwol.configuration.configuration_validation import (
     ConfigurationLoadingStatus, ConfigurationLoadingException,

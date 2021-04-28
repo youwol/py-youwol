@@ -45,8 +45,7 @@ async def is_running(request: Request, api_base_path: str, context: Context) -> 
     try:
         backends = await get_all_backends(context)
         service_name = api_base_path.split('api/')[1]
-        if service_name == "flux-backend":
-            print("toto")
+
         backend = next(backend for backend in backends if backend.info.name == service_name)
 
         if await is_backend_alive(request, backend.info.name, backend.pipeline.serve.health, config):
