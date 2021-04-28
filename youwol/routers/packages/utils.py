@@ -92,17 +92,40 @@ def md5_update_from_file(
     return current_hash
 
 
+def check_cyclic_dependency(package_name: str, compare_with_name: str,
+                            all_packages: List[Package], parents: List[str]) -> bool:
+
+    compare_with = next(p for p in all_packages if p.info.name == compare_with_name)
+    dependencies_name = compare_with.info.projectDependencies.keys()
+
+    if package_name in dependencies_name:
+        raise RuntimeError(f"Cyclic dependencies detected:\n { '=>'.join(parents)}" +
+                           f"=> {compare_with_name} => {package_name}""")
+
+    return (package_name in dependencies_name) or \
+        any(check_cyclic_dependency(package_name, compare_with, all_packages, parents + [compare_with_name])
+            for compare_with in dependencies_name)
+
+
 def sort_packages(
         packages: List[Package],
+        context: Context,
         sorted_packages: List[Package] = None
         ):
     if not packages:
         return sorted_packages
     sorted_packages = sorted_packages or []
     sorted_names = [k.info.name for k in sorted_packages]
+
     flags = [all(dep in sorted_names for dep in p.info.projectDependencies.keys()) for p in packages]
+    remaining = [p for p, f in zip(packages, flags) if not f]
+    if all(not f for f in flags):
+        for p in packages:
+            check_cyclic_dependency(p.info.name, p.info.name, packages, [])
+
     return sort_packages(
-        packages=[p for p, f in zip(packages, flags) if not f],
+        packages=remaining,
+        context=context,
         sorted_packages=sorted_packages + [p for p, f in zip(packages, flags) if f])
 
 
