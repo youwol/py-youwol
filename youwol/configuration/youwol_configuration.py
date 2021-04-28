@@ -92,12 +92,12 @@ class YouwolConfiguration(NamedTuple):
 
         return None
 
-    async def get_auth_token(self, context: Context):
+    async def get_auth_token(self, context: Context, use_cache=True):
         username = self.userEmail
         remote = self.get_remote_info()
         dependencies = {"username": username, "host": remote.host, "type": "auth_token"}
         cached_token = next((c for c in self.tokensCache if c.is_valid(dependencies)), None)
-        if cached_token:
+        if use_cache and cached_token:
             return cached_token.value
 
         secrets = parse_json(self.userConfig.general.secretsFile)
