@@ -1,0 +1,13 @@
+{   "policies": {
+        "default": "platform.youwol.com"
+    },
+    "remotes": {
+        "platform.youwol.com":{
+            "host":"platform.youwol.com",
+            "name":"production server",
+            "metadata": {
+                "keycloakClientId":"public-user"
+            }
+        }
+    }
+}
