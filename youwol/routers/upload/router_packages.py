@@ -16,10 +16,10 @@ from pydantic import BaseModel
 from fastapi import APIRouter, WebSocket, Depends
 
 from context import Context
-from models import ActionStep, Action
+from models import ActionStep
 from routers.packages.utils import get_all_packages
 from utils_low_level import to_json
-from youwol_utils import to_group_owner, to_group_scope
+from youwol_utils import to_group_scope
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 
 from youwol.configuration.youwol_configuration import YouwolConfiguration, yw_config
@@ -34,10 +34,16 @@ class PackageStatus(Enum):
     MISMATCH = 'PackageStatus.MISMATCH'
     SYNC = 'PackageStatus.SYNC'
     PROCESSING = 'PackageStatus.PROCESSING'
+    DONE = 'PackageStatus.DONE'
+
+
+class SyncTarget(BaseModel):
+    assetId: str
+    version: str
 
 
 class SyncMultipleBody(BaseModel):
-    assetIds: List[str]
+    assetIds: List[SyncTarget]
 
 
 class TreeItem(BaseModel):
@@ -114,6 +120,7 @@ async def ws_endpoint(ws: WebSocket):
         _ = await ws.receive_text()
 
 
+
 @router.get("/{tree_id}/path",
             summary="execute action",
             response_model=PathResp)
@@ -152,10 +159,11 @@ async def publish_library_version(
         config: YouwolConfiguration = Depends(yw_config)
         ):
     context = Context(config=config, request=request, web_socket=WebSocketsCache.upload_packages)
-    async with context.start(action=Action.SYNC) as ctx:
+    async with context.start(action="Sync") as ctx:
         library_name = decode_id(decode_id(asset_id))
         await ctx.web_socket.send_json({
             "assetId": asset_id,
+            "version": version,
             "libraryName": library_name,
             "status": str(PackageStatus.PROCESSING),
             'details': {
@@ -196,8 +204,23 @@ async def publish_library_version(
             zipper.close()
             await post_library(asset_id=asset_id, zip_path=zip_path, context=context)
         finally:
+            await ctx.info(
+                step=ActionStep.DONE,
+                content=f"{library_name}#{version}: synchronization done"
+                )
+            await ctx.web_socket.send_json({
+                "assetId": asset_id,
+                "version": version,
+                "libraryName": library_name,
+                "status": str(PackageStatus.DONE),
+                'details': {
+                    'version': version,
+                    'info': f'The version {version} is prepared for publishing.'
+                    }
+                })
+
             package = get_local_package(asset_id, config)
-            await check_asset_status(package, context=context)
+            await check_package_status(package, context=context)
             os.remove(zip_path)
 
 
@@ -214,8 +237,9 @@ async def sync_multiple(
 
     async def worker(_queue):
         while True:
-            asset_id = await _queue.get()
-            await sync_package(request=request, asset_id=asset_id, config=config)
+            target = await _queue.get()
+            await publish_library_version(request=request, asset_id=target.assetId, version=target.version,
+                                          config=config)
             queue.task_done()
 
     tasks = []
@@ -276,7 +300,7 @@ async def sync_package(
 
     if not to_sync_releases:
         package = get_local_package(asset_id, config)
-        await check_asset_status(package=package, context=context)
+        await check_package_status(package=package, context=context)
 
     return {}
 
@@ -383,54 +407,82 @@ async def sync_asset_metadata(
 
 async def check_all_status(packages: List[Any], context: Context):
 
-    await asyncio.gather(*[check_asset_status(package, context=context) for package in packages])
+    await asyncio.gather(*[check_package_status(package, context=context) for package in packages])
 
 
-async def check_asset_status(
+async def check_package_status(
         package: Library,
-        context: Context):
+        context: Context
+        ):
 
-    client = await context.config.get_assets_gateway_client(context)
-    await context.info(step=ActionStep.STATUS, content=f"Check status {package.libraryName}",
+    def get_status(_asset_status, _cdn_status, _tree_status):
+        return _cdn_status
+
+    async with context.start("Asset status") as ctx:
+        client = await context.config.get_assets_gateway_client(context)
+        await ctx.info(step=ActionStep.STATUS, content=f"Check status {package.libraryName}",
                        json=package.dict())
 
-    try:
-        resp = await client.get_raw_metadata(kind="package", raw_id=package.rawId)
-    except HTTPException as e:
-        if e.status_code != 404:
-            raise e
-        await context.web_socket.send_json({
+        asset_resp, metadata_resp, tree_resp = await asyncio.gather(
+            client.get_asset_metadata(asset_id=package.assetId),
+            client.get_raw_metadata(kind="package", raw_id=package.rawId),
+            client.get_tree_item(item_id=package.assetId),
+            loop=None,
+            return_exceptions=True
+            )
+        asset_status = PackageStatus.NOT_FOUND if isinstance(asset_resp, HTTPException) else PackageStatus.SYNC
+        tree_status = PackageStatus.NOT_FOUND if isinstance(tree_resp, HTTPException) else PackageStatus.SYNC
+
+        if isinstance(metadata_resp, HTTPException):
+            cdn_status = PackageStatus.NOT_FOUND
+            await ctx.web_socket.send_json({
+                "assetId": package.assetId,
+                "libraryName": package.libraryName,
+                "status": str(get_status(asset_status, cdn_status, tree_status)),
+                'assetStatus': str(asset_status),
+                'treeStatus': tree_status,
+                'cdnStatus': cdn_status,
+                'details': {}
+                })
+            return
+
+        remote_versions = {release['version']: release['fingerprint']
+                           for release in metadata_resp['releases']}
+        local_versions = {release.version: release.fingerprint
+                          for release in package.releases}
+
+        if remote_versions == local_versions:
+            cdn_status = PackageStatus.SYNC
+            await ctx.web_socket.send_json({
+                "assetId": package.assetId,
+                "libraryName": package.libraryName,
+                "status": str(get_status(asset_status, cdn_status, tree_status)),
+                'assetStatus': str(asset_status),
+                'treeStatus': str(tree_status),
+                'cdnStatus': str(cdn_status),
+                'details': {}
+                })
+            return
+
+        cdn_status = PackageStatus.MISMATCH
+
+        await ctx.web_socket.send_json({
             "assetId": package.assetId,
+            "treeId": tree_resp['treeId'],
+            "treeFolderId": tree_resp['folderId'],
             "libraryName": package.libraryName,
-            'status': str(PackageStatus.NOT_FOUND),
-            'details': {}
+            "status": str(get_status(asset_status, cdn_status, tree_status)),
+            'assetStatus': str(asset_status),
+            'treeStatus': str(tree_status),
+            'cdnStatus': str(cdn_status),
+            'details': {
+                "missing": [v for v, _ in local_versions.items() if v not in remote_versions],
+                "mismatch": [v for v, checksum in local_versions.items()
+                             if v in remote_versions and checksum != remote_versions[v]],
+                "sync": [v for v, checksum in local_versions.items()
+                         if v in remote_versions and checksum == remote_versions[v]]
+                }
             })
-        return
-
-    remote_versions = {release['version']: release['fingerprint'] for release in resp['releases']}
-    local_versions = {release.version: release.fingerprint for release in package.releases}
-
-    if remote_versions == local_versions:
-        await context.web_socket.send_json({
-            "assetId": package.assetId,
-            "libraryName": package.libraryName,
-            'status': str(PackageStatus.SYNC),
-            'details': {}
-            })
-        return
-
-    await context.web_socket.send_json({
-        "assetId": package.assetId,
-        "libraryName": package.libraryName,
-        "status": str(PackageStatus.MISMATCH),
-        'details': {
-            "missing": [v for v, _ in local_versions.items() if v not in remote_versions],
-            "mismatch": [v for v, checksum in local_versions.items()
-                         if v in remote_versions and checksum != remote_versions[v]],
-            "sync": [v for v, checksum in local_versions.items()
-                     if v in remote_versions and checksum == remote_versions[v]]
-            }
-        })
 
 
 async def post_library(
