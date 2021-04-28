@@ -2,9 +2,10 @@ import itertools
 
 from fastapi import APIRouter, WebSocket, Depends
 from aiohttp.web import HTTPException
-from aiohttp.client_exceptions import ClientConnectorError
+from aiohttp.client_exceptions import ClientConnectorError, ContentTypeError
 from starlette.requests import Request
 
+from configuration import get_public_user_auth_token
 from youwol.configuration import ErrorResponse
 from youwol.configuration.youwol_configuration import YouwolConfiguration
 from youwol.configuration.youwol_configuration import yw_config, YouwolConfigurationFactory, ConfigurationLoadingStatus
@@ -210,23 +211,35 @@ async def sync_user(
         config=config,
         web_socket=WebSocketsCache.environment
         )
-    async with context.with_target(body.email).start(Action.SYNC_USER) as ctx:
-        auth_token = await config.get_auth_token(ctx)
-        await ctx.info(step=ActionStep.RUNNING, content="Retrieved auth token successfully.")
+    async with context.with_target(body.email).start(f"Sync. user {body.email}") as ctx:
+
+        try:
+            auth_token = await get_public_user_auth_token(
+                username=body.email,
+                pwd=body.password,
+                client_id=config.get_remote_info().metadata['keycloakClientId']
+                )
+        except Exception as e:
+            raise RuntimeError(f"Can not authorize from email/pwd @ {config.get_remote_info().host}")
+
+        await ctx.info(step=ActionStep.RUNNING, content="Login successful")
+
+        secrets = parse_json(config.pathsBook.secret_path)
+        if body.email in secrets:
+            secrets[body.email] = {**secrets[body.email], **{"password": body.password}}
+        else:
+            secrets[body.email] = {"password": body.password}
+        write_json(secrets, config.pathsBook.secret_path)
+
         user_info = await retrieve_user_info(auth_token)
-        secrets = parse_json(config.userConfig.general.secretsFile)
-        identities = secrets['identities'] if 'identities' in secrets else {}
-        identities[body.email] = body.password
-        secrets['identities'] = identities
-        write_json(secrets, config.userConfig.general.secretsFile)
 
         users_info = parse_json(config.userConfig.general.usersInfo)
-        users_info[body.email] = {
+        users_info['users'][body.email] = {
             "id": user_info['sub'],
             "name": user_info['preferred_username'],
             "memberOf": user_info['memberof'],
             "email": user_info["email"]
             }
         write_json(users_info, config.userConfig.general.usersInfo)
-        await status(request=request, config=config)
-        return users_info[body.email]
+        await login(request=request, body=LoginBody(email=body.email), config= config)
+        return users_info['users'][body.email]
