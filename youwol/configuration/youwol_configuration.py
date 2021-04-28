@@ -105,11 +105,16 @@ class YouwolConfiguration(NamedTuple):
             raise RuntimeError(f"Can not find {username} in {str(self.userConfig.general.secretsFile)}")
 
         pwd = secrets[username]['password']
-        access_token = await get_public_user_auth_token(
-            username=username,
-            pwd=pwd,
-            client_id=remote.metadata['keycloakClientId']
-            )
+        try:
+            access_token = await get_public_user_auth_token(
+                username=username,
+                pwd=pwd,
+                client_id=remote.metadata['keycloakClientId']
+                )
+        except Exception as e:
+            raise RuntimeError(f"Can not authorize from email/pwd provided in " +
+                               f"{str(self.userConfig.general.secretsFile)} (error:{e})")
+
         deadline = datetime.timestamp(datetime.now()) + 1 * 60 * 60 * 1000
         self.tokensCache.append(DeadlinedCache(value=access_token, deadline=deadline, dependencies=dependencies))
 
