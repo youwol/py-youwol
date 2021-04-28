@@ -8,9 +8,7 @@
 <base href="{{base_path}}/">
 
 <head>
-    <script src="/api/assets-gateway/raw/package/QHlvdXdvbC9jZG4=/libraries/youwol/cdn/0.0.0/dist/@youwol/cdn.js"></script>
-    <link rel="stylesheet" href="/api/assets-gateway/raw/package/Ym9vdHN0cmFw/libraries/bootstrap/4.4.1/bootstrap.min.css">
-    <link rel="stylesheet" href="/api/assets-gateway/raw/package/Zm9udGF3ZXNvbWU=/libraries/fontawesome/5.12.1/css/all.min.css">
+    <script src="/api/assets-gateway/raw/package/QHlvdXdvbC9jZG4tY2xpZW50/latest/dist/@youwol/cdn-client.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -39,22 +37,21 @@
     </div>
 
     <script type="module">
-      let cdn = window['@youwol/cdn']
+      let cdn = window['@youwol/cdn-client']
       /*
       The cdn can be used to easily retrieve dependencies on-the-fly.
       You provide the name & version of the target bundles you want to include.
       Indirect dependencies not explicitly provided will also come, using their latest version.
       */
       await cdn.fetchBundles({
-        '@youwol/flux-view':'0.0.5',
+        '@youwol/flux-view':'latest',
         'rxjs':'6.5.5'
       }, window )
-      /*
-      Another way to fetch stylesheets (rather than using the 'link' element in the header):
-      cdn.fetchStyleSheets([
+
+      await cdn.fetchStyleSheets([
           "bootstrap#4.4.1~bootstrap.min.css",
           "fontawesome#5.12.1~css/all.min.css"
-      ])*/
+      ])
 
       let flux = window['@youwol/flux-view']
 
