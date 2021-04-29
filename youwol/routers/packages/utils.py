@@ -92,19 +92,22 @@ def md5_update_from_file(
     return current_hash
 
 
-def check_cyclic_dependency(package_name: str, compare_with_name: str,
-                            all_packages: List[Package], parents: List[str]) -> bool:
+def check_cyclic_dependency(
+        package_name: str,
+        all_packages: List[Package],
+        forbidden: List[str] = None) -> bool:
 
-    compare_with = next(p for p in all_packages if p.info.name == compare_with_name)
-    dependencies_name = compare_with.info.projectDependencies.keys()
+    forbidden = forbidden or [package_name]
+    package = next(p for p in all_packages if p.info.name == package_name)
+    dependencies_name = package.info.projectDependencies.keys()
+    errors = [f for f in forbidden if f in dependencies_name]
+    if errors:
+        raise RuntimeError(f"Cyclic dependencies detected:\n " +
+                           f"{'=>'.join(forbidden[1:] + [package_name] + [errors[0]])}""")
+    for d in dependencies_name:
+        check_cyclic_dependency(d, all_packages, forbidden + [package_name])
 
-    if package_name in dependencies_name:
-        raise RuntimeError(f"Cyclic dependencies detected:\n { '=>'.join(parents)}" +
-                           f"=> {compare_with_name} => {package_name}""")
-
-    return (package_name in dependencies_name) or \
-        any(check_cyclic_dependency(package_name, compare_with, all_packages, parents + [compare_with_name])
-            for compare_with in dependencies_name)
+    return True
 
 
 def sort_packages(
@@ -121,7 +124,7 @@ def sort_packages(
     remaining = [p for p, f in zip(packages, flags) if not f]
     if all(not f for f in flags):
         for p in packages:
-            check_cyclic_dependency(p.info.name, p.info.name, packages, [])
+            check_cyclic_dependency(p.info.name, packages)
 
     return sort_packages(
         packages=remaining,
