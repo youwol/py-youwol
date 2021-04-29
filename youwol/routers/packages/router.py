@@ -8,7 +8,7 @@ from starlette.requests import Request
 from watchgod import awatch, Change
 
 from youwol.configuration.youwol_configuration import YouwolConfiguration, yw_config, YouwolConfigurationFactory
-from youwol.context import Context, ActionStep, Action
+from youwol.context import Context, ActionStep
 from youwol.routers.commons import SkeletonsResponse, SkeletonResponse, PostSkeletonBody
 from youwol.routers.packages.synchronize import synchronize
 from youwol.web_socket import WebSocketsCache
@@ -228,7 +228,7 @@ async def watch_target(package: Package, context: Context):
     #     await status(ctx.config)
 
     async def handle_src_change():
-        ctx = context.with_target(package.info.name).with_action(Action.WATCH)
+        ctx = context.with_target(package.info.name).with_action("Watch changes")
         await ctx.info(
             ActionStep.STATUS,
             f"Watched changed on src folder of package '{package.info.name}' \n"
