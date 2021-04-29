@@ -184,6 +184,8 @@ async def path(tree_id: str,
 
 
 @router.post("/{asset_id}/{version}", summary="execute action")
+
+@router.post("/publish/{asset_id}/{version}", summary="execute action")
 async def publish_library_version(
         request: Request,
         asset_id: str,
@@ -287,7 +289,7 @@ async def sync_multiple(
     return {}
 
 
-@router.post("/{asset_id}", summary="execute action")
+@router.post("/publish/{asset_id}", summary="execute action")
 async def sync_package(
         request: Request,
         asset_id: str,
@@ -500,8 +502,6 @@ async def check_package_status(
 
         await ctx.web_socket.send_json({
             "assetId": package.assetId,
-            "treeId": tree_resp['treeId'],
-            "treeFolderId": tree_resp['folderId'],
             "libraryName": package.libraryName,
             "status": str(get_status(asset_status, cdn_status, tree_status)),
             'assetStatus': str(asset_status),
