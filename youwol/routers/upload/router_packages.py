@@ -19,11 +19,12 @@ from context import Context
 from models import ActionStep
 from routers.packages.utils import get_all_packages
 from utils_low_level import to_json
-from youwol_utils import to_group_scope
+from youwol_utils import to_group_scope, CdnClient
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 
 from youwol.configuration.youwol_configuration import YouwolConfiguration, yw_config
 from youwol.utils_paths import parse_json
+from youwol.services.backs.cdn.utils import to_package_name
 
 from youwol.web_socket import WebSocketsCache
 router = APIRouter()
@@ -183,7 +184,16 @@ async def path(tree_id: str,
         )
 
 
-@router.post("/{asset_id}/{version}", summary="execute action")
+@router.post("/register-asset/{asset_id}", summary="execute action")
+async def register_asset(
+        request: Request,
+        asset_id: str,
+        config: YouwolConfiguration = Depends(yw_config)):
+
+    local_cdn = config.localClients.cdn_client
+    resp = await local_cdn.get_versions(to_package_name(asset_id))
+    await publish_library_version(request, asset_id=asset_id, version=resp['versions'][-1], config=config)
+
 
 @router.post("/publish/{asset_id}/{version}", summary="execute action")
 async def publish_library_version(
