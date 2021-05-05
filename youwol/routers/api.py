@@ -65,14 +65,15 @@ async def get_user_info(
              summary="login with as new user")
 async def login(
         request: Request,
-        username: Optional[str] = Form(None)
+        username: Optional[str] = Form(None),
+        config: YouwolConfiguration = Depends(yw_config)
         ):
     """
     this end point should be defined in the user configuration file as it is usually intended
     to mock some auth service fro which we don't know the format of the request
     """
-    resp = await login_env(request=request, body=LoginBody(email=username))
-    return {"access_token": f"access_token_{resp.email}" }
+    resp = await login_env(request=request, body=LoginBody(email=username), config=config)
+    return {"access_token": f"access_token_{resp.email}"}
 
 
 @router.get("/{service_name}/{rest_of_path:path}")
