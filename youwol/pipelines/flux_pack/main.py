@@ -15,7 +15,7 @@ from youwol.configuration.models_package import (
     InstallPackage, BuildPackage, TestPackage, CDNPackage,
     PipelinePackage, TargetPackage,
     )
-from youwol.context import Context, ActionStep, Action
+from youwol.context import Context, ActionStep
 from youwol.routers.packages.models import Package
 
 
@@ -179,13 +179,17 @@ async def generate(
         src_path = Path(__file__).parent / "files_template"
         shutil.copytree(src_path, path_pack)
 
+        github_name = name.split('/')[-1]
+        link_documentation = f"https://youwol.github.io/${github_name}/dist/docs/index.html"
+
         for subdir, dirs, files in os.walk(path_pack):
             for filename in files:
                 try:
                     path = subdir + os.sep + filename
                     sed_inplace(path, "{{name}}", name)
-                    sed_inplace(path, "{{description}}", "")
+                    sed_inplace(path, "{{description}}", parameters["flux-pack-description"])
                     sed_inplace(path, "{{display_name}}", name)
+                    sed_inplace(path, "{{link_documentation}}", link_documentation)
                 except UnicodeError:
                     # Here when a file like python pyc has been found (binary file, not 'sedable')
                     pass

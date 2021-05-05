@@ -30,17 +30,31 @@ To generate code documentation:
 ```shell
 yarn doc
 ```
+## Documentation
 
-## Developing Flux-Packs
+You can find the documentation [here]({{link_documentation}}).
 
-> The [Youwol fullstack environment](https://pypi.org/project/youwol/) should be used when developing
+
+## Contributions
+
+The YouWol project is open-source as much as possible, 
+do not hesitate to contribute by creating branches and pull-requests.
+
+> The [Youwol fullstack environment](https://pypi.org/project/youwol/) (YouWol FSE) should be used when developing
 > *flux-pack*. It offers an immersive experience of the YouWol ecosystem, and lets
 > you work with your favorite stack. Usually you've accessed this file using it anyway.
 > All the links in what follows assumed you've started this environment.
 
-### Using your modules in a *flux-app*
+### Fetching the code
 
-If not already done, *build, test & publish* the package from the [dashboard](/ui/dashboard-developer/).
+Create a branch and includes the github folder
+into your workspace (as defined in your YouWol FSE's configuration file, under
+category 'flux-pack'). Reload the [dashboard](/ui/dashboard-developer/), 
+the package should now be listed (*My Computer=>Packages*).
+
+### Using modules in a *flux-app*
+
+*build, test & publish* the package from the [dashboard](/ui/dashboard-developer/).
 
 Start by creating a new *flux-app*:
 -    short version: follow [this link](/ui/flux-builder/?uri=%7B%22name%22%3A%22new%20flux-project%22%2C%22description%22%3A%22%22%2C%22runnerRendering%22%3A%7B%22layout%22%3A%22%22%2C%22style%22%3A%22%22%7D%2C%22builderRendering%22%3A%7B%22descriptionsBoxes%22%3A%5B%5D%2C%22modulesView%22%3A%5B%5D%2C%22connectionsView%22%3A%5B%5D%7D%2C%22requirements%22%3A%7B%22fluxComponents%22%3A%5B%5D%2C%22fluxPacks%22%3A%5B%5D%2C%22libraries%22%3A%7B%7D%2C%22loadingGraph%22%3A%7B%22graphType%22%3A%22sequential-v1%22%2C%22lock%22%3A%5B%5D%2C%22definition%22%3A%5B%5B%5D%5D%7D%7D%2C%22workflow%22%3A%7B%22modules%22%3A%5B%5D%2C%22connections%22%3A%5B%5D%2C%22plugins%22%3A%5B%5D%2C%22rootLayerTree%22%3A%7B%22layerId%22%3A%22rootLayer%22%2C%22moduleIds%22%3A%5B%5D%2C%22title%22%3A%22rootLayer%22%2C%22children%22%3A%5B%5D%7D%7D%7D), you won't be able to save your changes
@@ -51,13 +65,15 @@ on **construct** after having selected it in your workspace).
 Once opened, in the top *builder-panel*:
 -    right click + 'new module(s)'
 -    expand the 'explorer node'
--    navigate to **private** / **default-drive** / ${name of your flux-pack}
--    select 'A simple module' and click 'OK'
+-    navigate to **private** / **default-drive** / **{name}**
+-    select module(s) and validate
 
+### Implementing new features
 
-### Starting designing your modules
+You can start iterate in the code, *build, test & publish* each time
+you want to test your features in Flux. 
 
-To go beyond the [[ SimpleModule | provided example]], you should have a first pass on the 
+Documentation about designing modules in Flux can be found in the
 [flux-core documentation](/api/assets-gateway/raw/package/QHlvdXdvbC9mbHV4LWNvcmU=/latest/dist/docs/modules/core_concepts.html).
 
 
