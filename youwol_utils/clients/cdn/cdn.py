@@ -2,7 +2,7 @@ import hashlib
 
 from dataclasses import field, dataclass
 from pathlib import Path
-from typing import Dict, Union, List, Mapping
+from typing import Dict, Union, List
 import aiohttp
 
 from youwol_utils.clients import raise_exception_from_response
@@ -130,6 +130,16 @@ class CdnClient:
         files = {'file': open(zip_path, 'rb')}
         async with aiohttp.ClientSession(headers=self.headers) as session:
             async with await session.post(self.push_url, data=files, **kwargs) as resp:
+                if resp.status == 200:
+                    return await resp.json()
+                await raise_exception_from_response(resp, url=self.push_url, headers=self.headers)
+
+    async def delete_version(self, library_name: str, version: str, **kwargs):
+
+        url = f"{self.url_base}/libraries/{library_name}/{version}"
+
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with await session.delete(url, **kwargs) as resp:
                 if resp.status == 200:
                     return await resp.json()
                 await raise_exception_from_response(resp, url=self.push_url, headers=self.headers)
