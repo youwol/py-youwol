@@ -205,7 +205,10 @@ async def make_package(
     all_packages = await get_all_packages(context=context)
     above_dependencies = extract_above_dependencies_recursive(packages=all_packages, target_name=package.info.name)
     node_modules_dependencies = [paths_book.node_modules(p.target.folder) for p in above_dependencies]
-    destination_node_modules = package.pipeline.build.destinationNodeModules + node_modules_dependencies
+    destination_node_modules = []
+    if package.pipeline.build:
+        destination_node_modules = package.pipeline.build.destinationNodeModules
+    destination_node_modules = destination_node_modules + node_modules_dependencies
     if package.pipeline.build and destination_node_modules:
         for destination in destination_node_modules:
             node_modules_folder = config.pathsBook.node_module_dependency(Path(destination).parent, package.info.name)
