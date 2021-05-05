@@ -105,3 +105,4 @@ class NativesBypassMiddleware(BaseHTTPMiddleware):
                     "trace": traceback.format_exception(exc_type, exc_value, exc_tb)
                     })
                 raise e
+            raise e
