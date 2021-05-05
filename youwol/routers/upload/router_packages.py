@@ -4,22 +4,25 @@ import json
 import os
 import zipfile
 from collections import defaultdict
-from enum import Enum
 from itertools import groupby
 from pathlib import Path
 from typing import List, Any
 
 from starlette.requests import Request
 from fastapi import HTTPException
-from pydantic import BaseModel
 
 from fastapi import APIRouter, WebSocket, Depends
 
 from context import Context
 from models import ActionStep
 from routers.packages.utils import get_all_packages
+from routers.upload.messages import (
+    send_package_pending, send_version_pending, send_version_resolved,
+    send_package_resolved,
+    )
+from routers.upload.models import Library, Release, PathResp, PackageStatus, SyncMultipleBody, LibrariesList, TreeItem
 from utils_low_level import to_json
-from youwol_utils import to_group_scope, CdnClient
+from youwol_utils import to_group_scope
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 
 from youwol.configuration.youwol_configuration import YouwolConfiguration, yw_config
@@ -28,55 +31,6 @@ from youwol.services.backs.cdn.utils import to_package_name
 
 from youwol.web_socket import WebSocketsCache
 router = APIRouter()
-
-
-class PackageStatus(Enum):
-    NOT_FOUND = 'PackageStatus.NOT_FOUND'
-    MISMATCH = 'PackageStatus.MISMATCH'
-    SYNC = 'PackageStatus.SYNC'
-    PROCESSING = 'PackageStatus.PROCESSING'
-    DONE = 'PackageStatus.DONE'
-
-
-class SyncTarget(BaseModel):
-    assetId: str
-    version: str
-
-
-class SyncMultipleBody(BaseModel):
-    assetIds: List[SyncTarget]
-
-
-class TreeItem(BaseModel):
-    name: str
-    itemId: str
-    group: str
-    borrowed: bool
-    rawId: str
-
-
-class Release(BaseModel):
-    version: str
-    fingerprint: str
-
-
-class Library(BaseModel):
-    assetId: str
-    libraryName: str
-    namespace: str
-    treeItems: List[TreeItem]
-    releases: List[Release]
-    rawId: str
-
-
-class PathResp(BaseModel):
-    group: str
-    drive: dict
-    folders: List[Any]
-
-
-class LibrariesList(BaseModel):
-    libraries: List[Library]
 
 
 def decode_id(asset_id) -> str:
@@ -146,10 +100,10 @@ async def remote_path(
     client = await config.get_assets_gateway_client(context)
     tree_item = await client.get_tree_item(item_id=tree_id)
     names_path, ids_path = await path_rec(tree_item['folderId'])
-    drive = await client.get_tree_drive(drive_id=ids_path[0])
+
     return PathResp(
         group=to_group_scope(tree_item['groupId']),
-        drive=drive,
+        drive=await client.get_tree_drive(drive_id=ids_path[0]),
         folders=[{"name": name} for name in names_path[1:]] if names_path else []
         )
 
@@ -184,6 +138,50 @@ async def path(tree_id: str,
         )
 
 
+async def delete_library_version_generic(
+        request: Request,
+        asset_id: str,
+        version: str,
+        config: YouwolConfiguration = Depends(yw_config)):
+
+    context = Context(config=config, request=request, web_socket=WebSocketsCache.upload_packages)
+    library_name = to_package_name(to_package_name(asset_id))
+    local_package = get_local_package(asset_id=asset_id, config=config)
+
+    async with context.start(f"Delete {library_name}#{version}") as ctx:
+        await asyncio.gather(
+            send_version_pending(asset_id=asset_id, name=library_name, version=version, context=ctx),
+            send_package_pending(package=local_package, context=ctx)
+            )
+
+        local_cdn = config.localClients.cdn_client
+        assets_gateway = await config.get_assets_gateway_client(context)
+
+        local_resp, remote_resp = await asyncio.gather(
+            local_cdn.delete_version(library_name=library_name, version=version),
+            assets_gateway.cdn_delete_version(library_name=library_name, version=version),
+            return_exceptions=True
+            )
+        if isinstance(local_resp, Exception):
+            raise local_resp
+
+        if isinstance(remote_resp, Exception):
+            raise remote_resp
+
+        await check_package_status(package=local_package, context=context)
+        return {}
+
+
+@router.delete("/remove/{asset_id}/{version}", summary="execute action")
+async def delete_library_version(
+        request: Request,
+        asset_id: str,
+        version: str,
+        config: YouwolConfiguration = Depends(yw_config)):
+
+    return await delete_library_version_generic(request=request, asset_id=asset_id, version=version, config=config)
+
+
 @router.post("/register-asset/{asset_id}", summary="execute action")
 async def register_asset(
         request: Request,
@@ -203,19 +201,16 @@ async def publish_library_version(
         config: YouwolConfiguration = Depends(yw_config)
         ):
     context = Context(config=config, request=request, web_socket=WebSocketsCache.upload_packages)
+    local_package = get_local_package(asset_id=asset_id, config=config)
+
     async with context.start(action="Sync") as ctx:
         library_name = decode_id(decode_id(asset_id))
-        await ctx.web_socket.send_json({
-            "assetId": asset_id,
-            "version": version,
-            "libraryName": library_name,
-            "status": str(PackageStatus.PROCESSING),
-            'details': {
-                'version': version,
-                'info': f'The version {version} is prepared for publishing.'
-                }
-            })
-        await ctx.info(step=ActionStep.STARTED, content=f"{library_name}#{version}: synchronize")
+        await asyncio.gather(
+            send_version_pending(asset_id=asset_id, name=library_name, version=version, context=ctx),
+            send_package_pending(package=local_package, context=ctx),
+            ctx.info(step=ActionStep.STARTED, content=f"{library_name}#{version}: synchronize")
+            )
+
         base_path = config.pathsBook.local_storage / "cdn" / "youwol-users" / "libraries"
         namespace = None if '/' not in library_name else library_name.split('/')[0][1:]
         library_name = library_name if '/' not in library_name else library_name.split('/')[1]
@@ -241,7 +236,6 @@ async def publish_library_version(
                            "namespace": namespace,
                            "library_path": str(library_path)})
         try:
-
             zipper = zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED)
             for link in files_to_zip:
                 zipper.write(link[0], arcname=link[1])
@@ -252,19 +246,7 @@ async def publish_library_version(
                 step=ActionStep.DONE,
                 content=f"{library_name}#{version}: synchronization done"
                 )
-            await ctx.web_socket.send_json({
-                "assetId": asset_id,
-                "version": version,
-                "libraryName": library_name,
-                "status": str(PackageStatus.DONE),
-                'details': {
-                    'version': version,
-                    'info': f'The version {version} is prepared for publishing.'
-                    }
-                })
-
-            package = get_local_package(asset_id, config)
-            await check_package_status(package, context=context)
+            await check_package_status(package=local_package, context=context, target_versions=[version])
             os.remove(zip_path)
 
 
@@ -456,13 +438,20 @@ async def check_all_status(packages: List[Any], context: Context):
 
 async def check_package_status(
         package: Library,
-        context: Context
+        context: Context,
+        target_versions: List[str] = None
         ):
-
-    def get_status(_asset_status, _cdn_status, _tree_status):
-        return _cdn_status
+    target_versions = target_versions or [r.version for r in package.releases]
 
     async with context.start("Asset status") as ctx:
+
+        await asyncio.gather(
+            send_package_pending(package=package, context=ctx),
+            *[send_version_pending(asset_id=package.assetId, name=package.libraryName,
+                                   version=version, context=ctx)
+              for version in target_versions]
+            )
+
         client = await context.config.get_assets_gateway_client(context)
         await ctx.info(step=ActionStep.STATUS, content=f"Check status {package.libraryName}",
                        json=package.dict())
@@ -479,15 +468,11 @@ async def check_package_status(
 
         if isinstance(metadata_resp, HTTPException):
             cdn_status = PackageStatus.NOT_FOUND
-            await ctx.web_socket.send_json({
-                "assetId": package.assetId,
-                "libraryName": package.libraryName,
-                "status": str(get_status(asset_status, cdn_status, tree_status)),
-                'assetStatus': str(asset_status),
-                'treeStatus': tree_status,
-                'cdnStatus': cdn_status,
-                'details': {}
-                })
+            await send_package_resolved(package, asset_status, tree_status, cdn_status, ctx)
+            await asyncio.gather(*[
+                send_version_resolved(asset_id=package.assetId, name=package.libraryName, version=version,
+                                      status=PackageStatus.NOT_FOUND,  context=ctx)
+                for version in target_versions])
             return
 
         remote_versions = {release['version']: release['fingerprint']
@@ -495,36 +480,29 @@ async def check_package_status(
         local_versions = {release.version: release.fingerprint
                           for release in package.releases}
 
-        if remote_versions == local_versions:
+        for version, fingerprint in local_versions.items():
+            if version in remote_versions and remote_versions[version] == fingerprint and version in target_versions:
+                await send_version_resolved(asset_id=package.assetId, name=package.libraryName, version=version,
+                                            status=PackageStatus.SYNC, context=ctx)
+                continue
+            if version in remote_versions and remote_versions[version] != fingerprint and version in target_versions:
+                await send_version_resolved(asset_id=package.assetId, name=package.libraryName, version=version,
+                                            status=PackageStatus.MISMATCH, context=ctx)
+                continue
+            if version in target_versions:
+                await send_version_resolved(asset_id=package.assetId, name=package.libraryName, version=version,
+                                            status=PackageStatus.NOT_FOUND, context=ctx)
+
+        if all(version in remote_versions and remote_versions[version] == fingerprint
+               for version, fingerprint in local_versions.items()):
             cdn_status = PackageStatus.SYNC
-            await ctx.web_socket.send_json({
-                "assetId": package.assetId,
-                "libraryName": package.libraryName,
-                "status": str(get_status(asset_status, cdn_status, tree_status)),
-                'assetStatus': str(asset_status),
-                'treeStatus': str(tree_status),
-                'cdnStatus': str(cdn_status),
-                'details': {}
-                })
+
+            await send_package_resolved(package, asset_status, tree_status, cdn_status, ctx)
             return
 
         cdn_status = PackageStatus.MISMATCH
 
-        await ctx.web_socket.send_json({
-            "assetId": package.assetId,
-            "libraryName": package.libraryName,
-            "status": str(get_status(asset_status, cdn_status, tree_status)),
-            'assetStatus': str(asset_status),
-            'treeStatus': str(tree_status),
-            'cdnStatus': str(cdn_status),
-            'details': {
-                "missing": [v for v, _ in local_versions.items() if v not in remote_versions],
-                "mismatch": [v for v, checksum in local_versions.items()
-                             if v in remote_versions and checksum != remote_versions[v]],
-                "sync": [v for v, checksum in local_versions.items()
-                         if v in remote_versions and checksum == remote_versions[v]]
-                }
-            })
+        await send_package_resolved(package, asset_status, tree_status, cdn_status, ctx)
 
 
 async def post_library(

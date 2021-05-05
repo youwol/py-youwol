@@ -1,0 +1,54 @@
+from enum import Enum
+from typing import List, Any
+
+from pydantic import BaseModel
+
+
+class PackageStatus(Enum):
+    NOT_FOUND = 'PackageStatus.NOT_FOUND'
+    MISMATCH = 'PackageStatus.MISMATCH'
+    SYNC = 'PackageStatus.SYNC'
+    PROCESSING = 'PackageStatus.PROCESSING'
+    DONE = 'PackageStatus.DONE'
+
+
+
+class TreeItem(BaseModel):
+    name: str
+    itemId: str
+    group: str
+    borrowed: bool
+    rawId: str
+
+
+class Release(BaseModel):
+    version: str
+    fingerprint: str
+
+
+class Library(BaseModel):
+    assetId: str
+    libraryName: str
+    namespace: str
+    treeItems: List[TreeItem]
+    releases: List[Release]
+    rawId: str
+
+
+class PathResp(BaseModel):
+    group: str
+    drive: dict
+    folders: List[Any]
+
+
+class LibrariesList(BaseModel):
+    libraries: List[Library]
+
+
+class SyncTarget(BaseModel):
+    assetId: str
+    version: str
+
+
+class SyncMultipleBody(BaseModel):
+    assetIds: List[SyncTarget]
