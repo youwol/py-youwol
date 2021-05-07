@@ -92,6 +92,16 @@ class AssetsGatewayClient:
                     return await resp.json()
                 await raise_exception_from_response(resp)
 
+    async def get_groups(self, **kwargs):
+
+        url = f"{self.url_base}/groups"
+
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with await session.get(url=url,  **kwargs) as resp:
+                if resp.status == 200:
+                    return await resp.json()
+                await raise_exception_from_response(resp)
+
     async def get_drives(self, group_id: str,  **kwargs):
 
         url = f"{self.url_base}/tree/groups/{group_id}/drives"
