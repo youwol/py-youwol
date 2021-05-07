@@ -12,6 +12,7 @@ class WebSocketsCache:
     frontends: WebSocket
     assets: WebSocket
     upload_packages: WebSocket
+    download_packages: WebSocket
 
     system: Union[WebSocket, None] = None
 

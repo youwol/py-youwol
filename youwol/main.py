@@ -1,8 +1,7 @@
-from fastapi import FastAPI, APIRouter, Depends, WebSocket
+from fastapi import FastAPI, APIRouter, Depends
 import uvicorn
 from starlette.responses import RedirectResponse
 
-from web_socket import WebSocketsCache
 from youwol.configuration.youwol_configuration import yw_config
 from youwol.main_args import get_main_arguments
 
@@ -15,6 +14,7 @@ import youwol.routers.frontends.router as frontends
 import youwol.routers.backends.router as backends
 import youwol.routers.environment.router as environment
 import youwol.routers.upload.router_packages as upload_packages
+import youwol.routers.download.router_packages as download_packages
 import youwol.routers.system.router as system
 
 from youwol.configurations import configuration, print_invite
@@ -56,6 +56,8 @@ app.include_router(frontends.router, prefix=configuration.base_path+"/admin/fron
 app.include_router(backends.router, prefix=configuration.base_path+"/admin/backends", tags=["backends"])
 app.include_router(upload_packages.router, prefix=configuration.base_path+"/admin/upload/packages",
                    tags=["upload packages"])
+app.include_router(download_packages.router, prefix=configuration.base_path+"/admin/download/packages",
+                   tags=["download packages"])
 
 
 @app.get(configuration.base_path + "/healthz")
@@ -66,7 +68,6 @@ async def healthz():
 @app.get(configuration.base_path + '/')
 async def home():
     return RedirectResponse(url=f'/ui/local-dashboard')
-
 
 
 def main():
