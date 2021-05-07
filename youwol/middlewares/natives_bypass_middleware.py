@@ -10,7 +10,7 @@ from starlette.types import ASGIApp
 from youwol.configuration.youwol_configuration import YouwolConfiguration, yw_config
 from youwol.context import Context
 from youwol.errors import HTTPResponseException
-from youwol.routers.api import redirect_get_api, redirect_post_api, redirect_put_api, redirect_delete_api
+from youwol.routers.api import redirect_get_api, redirect_post_api, redirect_put_api, redirect_delete_api, redirect_get
 from youwol.routers.backends.utils import get_all_backends
 from youwol.web_socket import WebSocketsCache
 
@@ -79,6 +79,12 @@ class NativesBypassMiddleware(BaseHTTPMiddleware):
             request=request
             )
 
+        if request.url.path.startswith('/remote/api'):
+            auth_token = await config.get_auth_token(context=context)
+            headers = {"Authorization": f"Bearer {auth_token}"}
+            url = f"https://{config.selectedRemote}{request.url.path.split('/remote')[1]}"
+            return await redirect_get(request=request, new_url=url, headers=headers)
+
         api_base_path = next((skipped for skipped in self.api_bypass_base_paths
                               if request.url.path.startswith(skipped)),
                              None)
@@ -89,8 +95,8 @@ class NativesBypassMiddleware(BaseHTTPMiddleware):
 
         try:
             resp = await call_next(request)
-            if "assets-gateway/raw/package" in str(request.url) and "-next" in str(
-                    request.url) and request.method == "GET":
+            if "assets-gateway/raw/package" in request.url.path and "-next" in request.url.path\
+                    and request.method == "GET":
                 resp.headers.update({'cache-control': 'no-store'})
 
             resp.headers.update({'Cross-Origin-Opener-Policy': 'same-origin'})

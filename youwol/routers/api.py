@@ -1,4 +1,5 @@
-from typing import Optional
+import asyncio
+from typing import Optional, Mapping
 
 import aiohttp
 from aiohttp import ClientConnectorError
@@ -76,6 +77,23 @@ async def login(
     return {"access_token": f"access_token_{resp.email}"}
 
 
+async def redirect_get(
+        request: Request,
+        new_url: str,
+        headers: Mapping[str, str]
+        ):
+    params = request.query_params
+    async with aiohttp.ClientSession(auto_decompress=False) as session:
+        async with await session.get(url=new_url, params=params, headers=headers) as resp:
+            # if this is a GET request to assets-gateway we don't want caching as in local we can update assets
+            headers_resp = {
+                **{k: v for k, v in resp.headers.items()}
+                }
+
+            content = await resp.read()
+            return Response(status_code=resp.status, content=content, headers=headers_resp)
+
+
 @router.get("/{service_name}/{rest_of_path:path}")
 async def redirect_get_api(
         request: Request,
@@ -90,22 +108,16 @@ async def redirect_get_api(
         request=request
         )
     try:
-        url = await get_backend_url(service_name, rest_of_path, context)
+        url, headers = await asyncio.gather(
+            get_backend_url(service_name, rest_of_path, context),
+            get_headers(context)
+            )
     except (StopIteration, RuntimeError) as e:
-        raise Exception(f"Can not find url of service {service_name} (from url: {service_name}/{rest_of_path}), is it in your config file?")
-    headers = await get_headers(context)
-    params = request.query_params
+        raise Exception(f"Can not find url of service {service_name} (from url: {service_name}/{rest_of_path})," +
+                        " is it in your config file?")
 
     try:
-        async with aiohttp.ClientSession(auto_decompress=False) as session:
-            async with await session.get(url=url, params=params, headers=headers) as resp:
-                # if this is a GET request to assets-gateway we don't want caching as in local we can update assets
-                headers_resp = {
-                    **{k: v for k, v in resp.headers.items()}
-                    }
-
-                content = await resp.read()
-                return Response(status_code=resp.status, content=content, headers=headers_resp)
+        await redirect_get(request=request, new_url=url, headers=headers)
     except ClientConnectorError:
         raise HTTPException(status_code=500, detail=f"Can not connect to {service_name}")
 
