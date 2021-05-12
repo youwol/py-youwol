@@ -55,8 +55,8 @@ async def get_yw_config_starter(main_args: MainArguments):
         # create the default yw_config file
         shutil.copyfile(main_args.youwol_path.parent / 'youwol_data' / 'yw_config.py',
                         current_folder / 'yw_config.py')
-        shutil.copyfile(main_args.youwol_path.parent / 'youwol_data' / 'remotes-info.py',
-                        current_folder / 'remotes-info.py')
+        shutil.copyfile(main_args.youwol_path.parent / 'youwol_data' / 'remotes-info.json',
+                        current_folder / 'remotes-info.json')
 
         sed_inplace(current_folder / 'yw_config.py', '{{folder_path}}', str(current_folder))
 
