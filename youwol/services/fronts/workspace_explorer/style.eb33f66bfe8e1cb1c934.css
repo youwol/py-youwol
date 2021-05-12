@@ -1,0 +1,98 @@
+
+.fv-tree-arianeLine{
+    opacity: 0;
+    transition: opacity 1s;
+}
+#browser-tree-view:hover .fv-tree-arianeLine{
+    opacity: 0.2;
+}
+
+.favorite-item{
+    opacity: 0.0;
+    transition: 0.5s opacity
+}
+
+
+.favorite-bar:hover .favorite-item{
+    opacity: 0.3;
+}
+.favorite-bar:hover .favorite-item:hover{
+    opacity: 1;
+}
+
+
+.flux-project-card{
+    border: solid black;
+    transition: border 0.5s
+}
+.flux-project-card:hover{
+    border: solid white;
+}
+.flux-project-card:hover{
+    border: solid white;
+}
+.flux-project-card.selected{
+    border: solid #ffbb00;
+}
+
+.yw-border-selectable{
+    border: solid black;
+    transition: border 0.5s
+}
+.yw-border-selectable:hover{
+    border: solid white;
+}
+.yw-border-selectable:hover{
+    border: solid white;
+}
+.yw-border-selectable.selected{
+    border: solid #ffbb00;
+}
+
+body{
+    position: absolute;
+    width:100%
+}
+.hoverable:hover{
+    background-color: cornflowerblue;
+    cursor: pointer;
+}
+
+.selected.hoverable:hover{
+    background-color: dimgray;
+    color: white
+}
+
+
+.max-height-75vh{
+    max-height: 75vh;
+}
+
+
+
+.card-title{
+    position: absolute;
+    top: 50%;
+    background-color: rgba(7, 7, 7, 0.671);
+    color: white;
+    height: 35%;
+    padding: 5px;
+    text-align: center;
+    font-size: medium;
+    width:100%
+}
+.card-image{
+    padding:5px;
+    max-width: 100%;
+    max-height: 100%;
+    width: 100%;
+
+}
+.border-3{
+    border-width:3px !important;
+}
+.action-item{
+    cursor: pointer
+}
+
+/*# sourceMappingURL=style.eb33f66bfe8e1cb1c934.css.map*/
