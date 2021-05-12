@@ -162,6 +162,16 @@ class AssetsGatewayClient:
                     return await resp.json()
                 await raise_exception_from_response(resp)
 
+    async def cdn_get_package(self, library_name: str, version: str, **kwargs):
+
+        url = f"{self.url_base}/cdn/libraries/{library_name}/{version}"
+
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with await session.get(url, **kwargs) as resp:
+                if resp.status == 200:
+                    return await resp.read()
+                await raise_exception_from_response(resp, url=url, headers=self.headers)
+
     async def cdn_loading_graph(self, body, **kwargs):
 
         url = f"{self.url_base}/cdn/queries/loading-graph"
