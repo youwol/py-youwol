@@ -1,5 +1,5 @@
-from context import Context
-from routers.upload.models import Library, PackageStatus
+from youwol.context import Context
+from youwol.routers.upload.models import Library, PackageStatus
 
 
 async def send_package_pending(package: Library, context: Context):

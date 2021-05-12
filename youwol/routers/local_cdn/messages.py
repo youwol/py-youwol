@@ -1,7 +1,6 @@
-from context import Context
-from routers.local_cdn.models import PackagesStatus, PackageDetails
-from routers.upload.models import Library, PackageStatus
-from utils_low_level import to_json
+from youwol.context import Context
+from youwol.routers.local_cdn.models import PackagesStatus, PackageDetails
+from youwol.utils_low_level import to_json
 
 
 async def send_status(cdn_status: PackagesStatus, context: Context):

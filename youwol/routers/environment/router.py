@@ -5,7 +5,7 @@ from aiohttp.web import HTTPException
 from aiohttp.client_exceptions import ClientConnectorError, ContentTypeError
 from starlette.requests import Request
 
-from configuration import get_public_user_auth_token
+from youwol.configuration.user_configuration import get_public_user_auth_token
 from youwol.configuration import ErrorResponse
 from youwol.configuration.youwol_configuration import YouwolConfiguration
 from youwol.configuration.youwol_configuration import yw_config, YouwolConfigurationFactory, ConfigurationLoadingStatus

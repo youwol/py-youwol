@@ -1,5 +1,5 @@
-from context import Context
-from routers.upload.models import PackageStatus
+from youwol.context import Context
+from youwol.routers.upload.models import PackageStatus
 
 
 async def send_version_pending(raw_id: str, name: str,  version: str, context: Context):

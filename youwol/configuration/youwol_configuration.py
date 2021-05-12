@@ -20,7 +20,7 @@ from youwol.main_args import get_main_arguments
 from youwol.utils_paths import parse_json
 from youwol.models import ActionStep
 
-from configuration import (UserInfo, get_public_user_auth_token)
+from youwol.configuration.user_configuration import (UserInfo, get_public_user_auth_token)
 from youwol.configurations import get_full_local_config, configuration as py_yw_config
 from youwol.context import Context
 

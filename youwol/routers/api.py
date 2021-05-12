@@ -8,8 +8,8 @@ from starlette.datastructures import Headers
 from starlette.requests import Request
 from starlette.responses import Response
 
-from routers.environment.router import login as login_env
-from routers.environment.models import LoginBody
+from youwol.routers.environment.router import login as login_env
+from youwol.routers.environment.models import LoginBody
 from youwol.configuration.youwol_configuration import YouwolConfiguration, yw_config
 from youwol.context import Context
 from youwol.routers.backends.utils import get_all_backends

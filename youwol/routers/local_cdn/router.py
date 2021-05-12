@@ -5,11 +5,11 @@ from itertools import groupby
 from starlette.requests import Request
 from fastapi import APIRouter, WebSocket, Depends
 
-from context import Context
-from models import ActionStep
-from routers.local_cdn.messages import send_status, send_details
-from routers.local_cdn.models import PackagesStatus, Package, PackageVersion, VersionDetails, PackageDetails
-from utils_paths import parse_json, write_json
+from youwol.context import Context
+from youwol.models import ActionStep
+from youwol.routers.local_cdn.messages import send_status, send_details
+from youwol.routers.local_cdn.models import PackagesStatus, Package, PackageVersion, VersionDetails, PackageDetails
+from youwol.utils_paths import parse_json, write_json
 from youwol.configuration.youwol_configuration import YouwolConfiguration, yw_config
 from youwol.web_socket import WebSocketsCache
 router = APIRouter()

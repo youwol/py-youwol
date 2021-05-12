@@ -1,8 +1,6 @@
 import asyncio
 import os
-import uuid
 from pathlib import Path
-from random import random
 from typing import List
 
 from starlette.requests import Request
@@ -10,12 +8,12 @@ from starlette.requests import Request
 from fastapi import APIRouter, WebSocket, Depends
 from pydantic import BaseModel
 
-from configuration.youwol_configuration import yw_config, YouwolConfiguration
-from context import Context
-from models import ActionStep
-from routers.download.messages import send_version_resolved, send_version_pending
-from routers.upload.models import PackageStatus
-from utils_paths import parse_json
+from youwol.configuration.youwol_configuration import yw_config, YouwolConfiguration
+from youwol.context import Context
+from youwol.models import ActionStep
+from youwol.routers.download.messages import send_version_resolved, send_version_pending
+from youwol.routers.upload.models import PackageStatus
+from youwol.utils_paths import parse_json
 from youwol.web_socket import WebSocketsCache
 
 router = APIRouter()
