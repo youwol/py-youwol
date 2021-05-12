@@ -1,4 +1,7 @@
 import asyncio
+import os
+import uuid
+from pathlib import Path
 from random import random
 from typing import List
 
@@ -110,13 +113,25 @@ async def synchronize(
 
 async def download(request: Request, package: PackageVersion, config: YouwolConfiguration):
 
-    ctx = Context(config=config, request=request, web_socket=WebSocketsCache.download_packages)
+    context = Context(config=config, request=request, web_socket=WebSocketsCache.download_packages)
+    async with context.start("Download package") as ctx:
+        await send_version_pending(raw_id=package.rawId, name=package.name, version=package.version, context=ctx)
+        assets_gateway = await config.get_assets_gateway_client(context=ctx)
+        pack = await assets_gateway.cdn_get_package(library_name=package.name, version=package.version)
+        await ctx.info(step=ActionStep.STATUS, content=f"successfully got .zip package for {package.name}", json={})
 
-    await send_version_pending(raw_id=package.rawId, name=package.name, version=package.version, context=ctx)
+        try:
+            zip_path = Path('./') / "tmp_zips" / f'{package.rawId}.zip'
+            with open(zip_path, 'wb') as f:
+                f.write(pack)
+            local_cdn = config.localClients.cdn_client
+            await local_cdn.publish(zip_path=zip_path)
+        finally:
+            os.remove(zip_path)
+        await ctx.info(step=ActionStep.STATUS, content=f"successfully published {package.name}", json={})
 
-    await asyncio.sleep(4*random())
-    await send_version_resolved(raw_id=package.rawId, name=package.name, version=package.version,
-                                status=PackageStatus.SYNC, context=ctx)
+        await send_version_resolved(raw_id=package.rawId, name=package.name, version=package.version,
+                                    status=PackageStatus.SYNC, context=ctx)
 
 
 @router.get("/info/{raw_id}")
