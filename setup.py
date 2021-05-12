@@ -18,7 +18,7 @@ for pipeline in ['fastapi', 'flux_pack', 'library_webpack_ts', 'scribble_html']:
 setup(
     name='youwol',
     python_requires='~=3.6',
-    version='0.0.2',
+    version='0.0.3',
     description="Local YouWol environment",
     author="Guillaume Reinisch",
     author_email="reinisch.gui@youwol.com",
@@ -39,7 +39,7 @@ setup(
         ]),
     data_files=data_files,
     package_data={
-        'youwol_data': ['databases.zip'],
+        'youwol_data': ['databases.zip', 'remotes-info.json'],
         'youwol.services.fronts.dashboard_developer': ['*.html', '*.js', '*.css', '*.map'],
         'youwol.services.fronts.workspace_explorer': ['*.html', '*.js', '*.css', '*.map'],
         'youwol.services.fronts.flux_builder': ['*.html', '*.js', '*.css', '*.map'],
