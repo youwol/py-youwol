@@ -117,7 +117,7 @@ async def redirect_get_api(
                         " is it in your config file?")
 
     try:
-        await redirect_get(request=request, new_url=url, headers=headers)
+        return await redirect_get(request=request, new_url=url, headers=headers)
     except ClientConnectorError:
         raise HTTPException(status_code=500, detail=f"Can not connect to {service_name}")
 
