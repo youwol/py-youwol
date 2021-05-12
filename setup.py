@@ -54,7 +54,7 @@ setup(
         "python-multipart==0.0.5",
         "aiohttp==3.7.3",
         "async==0.6.2",
-        "websockets==8.1",
+        "websockets==9.0.1",
         "watchgod==0.7",
         "aiofiles==0.6.0",
         "async_generator==1.10",
