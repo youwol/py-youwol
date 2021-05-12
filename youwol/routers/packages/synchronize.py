@@ -207,7 +207,7 @@ async def make_package(
     node_modules_dependencies = [paths_book.node_modules(p.target.folder) for p in above_dependencies]
     destination_node_modules = []
     if package.pipeline.build:
-        destination_node_modules = package.pipeline.build.destinationNodeModules
+        destination_node_modules = package.pipeline.build.destinationNodeModules or []
     destination_node_modules = destination_node_modules + node_modules_dependencies
     if package.pipeline.build and destination_node_modules:
         for destination in destination_node_modules:
