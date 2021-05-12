@@ -115,9 +115,11 @@ def sort_packages(
         context: Context,
         sorted_packages: List[Package] = None
         ):
+
+    sorted_packages = sorted_packages or []
     if not packages:
         return sorted_packages
-    sorted_packages = sorted_packages or []
+
     sorted_names = [k.info.name for k in sorted_packages]
 
     flags = [all(dep in sorted_names for dep in p.info.projectDependencies.keys()) for p in packages]
