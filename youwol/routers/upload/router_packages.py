@@ -1,8 +1,6 @@
 import asyncio
 import base64
 import json
-import os
-import zipfile
 from collections import defaultdict
 from itertools import groupby
 from pathlib import Path
@@ -218,36 +216,14 @@ async def publish_library_version(
             if not namespace \
             else base_path / namespace / library_name / version
 
-        files_to_zip = []
-        ordered_files = {}
-        for subdir, dirs, files in os.walk(library_path):
-            ordered_files[subdir] = files
-            for filename in files:
-                file_path = Path(subdir) / filename
-                if filename == f"{version}.zip" or filename == "metadata.json":
-                    os.remove(file_path)  # in case of left over by a previous publish
-                else:
-                    files_to_zip.append([file_path, file_path.relative_to(library_path)])
-
-        zip_path = library_path / f"{version}.zip"
-        await ctx.info(step=ActionStep.STARTED, content=f"{library_name}#{version}: local data retrieved",
-                       json={
-                           "files_to_zip": ordered_files,
-                           "namespace": namespace,
-                           "library_path": str(library_path)})
         try:
-            zipper = zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED)
-            for link in files_to_zip:
-                zipper.write(link[0], arcname=link[1])
-            zipper.close()
-            await post_library(asset_id=asset_id, zip_path=zip_path, context=context)
+            await post_library(asset_id=asset_id, zip_path=library_path / "__original.zip", context=context)
         finally:
             await ctx.info(
                 step=ActionStep.DONE,
                 content=f"{library_name}#{version}: synchronization done"
                 )
             await check_package_status(package=local_package, context=context, target_versions=[version])
-            os.remove(zip_path)
 
 
 @router.post("/synchronize", summary="sync multiple assets")
@@ -537,7 +513,7 @@ async def post_library(
         if e.status_code != 404:
             raise e
 
-    data = {'file': open(zip_path, 'rb'), 'content_encoding': 'brotli'}
+    data = {'file': open(zip_path, 'rb'), 'content_encoding': 'identity'}
     parent_id = path_item.drive['drive_id']
     if len(path_item.folders) > 0:
         parent_id = path_item.folders[0]['folder_id']
