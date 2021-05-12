@@ -27,6 +27,10 @@ class PathsBook(NamedTuple):
         return self.data_path / 'storage'
 
     @property
+    def local_cdn_storage(self) -> Path:
+        return self.local_storage / 'cdn' / 'youwol-users'
+
+    @property
     def js_modules_store_path(self) -> Path:
         return self.system_path / "node_modules"
 
