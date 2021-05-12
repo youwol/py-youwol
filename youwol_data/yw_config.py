@@ -60,12 +60,7 @@ async def configuration(main_args: MainArguments, parameters: Dict[str, any]):
             secretsFile=yw_config_path / "secrets.json",
             usersInfo=yw_config_path / "users-info.json",
             systemFolder=system_path,
-            remoteGateways=[
-                RemoteGateway(
-                    name="dev.platform.youwol.com",
-                    url="dev.platform.youwol.com"
-                    )
-                ],
+            remotesInfo=yw_config_path / "remotes-info.json",
             defaultPublishLocation="private/default-drive"
             ),
         packages=Packages(
