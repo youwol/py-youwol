@@ -485,7 +485,7 @@ async def post_library(
         zip_path: Path,
         context: Context):
 
-    items_treedb = parse_json(context.config.pathsBook.local_docdb / "tree_db" / "items" / "data.json")
+    items_treedb = parse_json(context.config.pathsBook.local_treedb_docdb)
     tree_item = [item for item in items_treedb['documents']
                  if item['related_id'] == asset_id and not json.loads(item['metadata'])['borrowed']]
 
@@ -498,24 +498,27 @@ async def post_library(
     tree_id = tree_item['item_id']
     path_item = await path(tree_id, context.config)
     client = await context.config.get_assets_gateway_client(context)
-    # 1 retrieve eventual tree item and if here make sure the asset_id is the same
-    # item = await get_tree_item(tree_id=tree_id, env=env, headers=headers)
 
     try:
-        await client.get_tree_item(item_id=tree_id)
-        # if tree-item exists we use it
+        tree_item = await client.get_tree_item(item_id=tree_id)
+        parent_id = tree_item['folderId']
+
     except HTTPException as e:
-        if e.status_code == 404:
-            await context.info(step=ActionStep.RUNNING, content="Tree item not found, start creation",
-                               json={"treeItemPath": to_json(path_item)})
-            await ensure_path(path_item, client)
         if e.status_code != 404:
             raise e
 
+        await context.info(
+            step=ActionStep.RUNNING,
+            content="Tree item not found, start creation",
+            json={"treeItemPath": to_json(path_item)}
+            )
+        await ensure_path(path_item, client)
+        parent_id = path_item.drive['drive_id']
+        if len(path_item.folders) > 0:
+            parent_id = path_item.folders[0]['folder_id']
+
     data = {'file': open(zip_path, 'rb'), 'content_encoding': 'identity'}
-    parent_id = path_item.drive['drive_id']
-    if len(path_item.folders) > 0:
-        parent_id = path_item.folders[0]['folder_id']
+
     await client.put_asset_with_raw(kind='package', folder_id=parent_id,
                                     data=data, group_id=path_item.drive['group_id'])
 
