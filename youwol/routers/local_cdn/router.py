@@ -26,7 +26,7 @@ async def ws_endpoint(ws: WebSocket):
 
 
 @router.get("/status",
-            summary="modules status",
+            summary="local cdn status",
             response_model=PackagesStatus
             )
 async def status(
@@ -108,7 +108,7 @@ async def package_details_with_namespace(
     return await package_details_generic(request=request, package_name=namespace+'/'+package_name, config=config)
 
 
-async def delete_version_generic(
+async def delete_library_generic(
         request: Request,
         package_name: str,
         version: str,
@@ -131,7 +131,7 @@ async def delete_version_generic(
         return details
 
 
-@router.delete("/packages/{package_name}/{version}",
+@router.delete("/libraries/{package_name}/{version}",
                summary="modules status",
                response_model=PackageDetails
                )
@@ -142,10 +142,10 @@ async def delete_version_no_namespace(
         config: YouwolConfiguration = Depends(yw_config)
         ):
 
-    return await delete_version_generic(request=request, package_name=package_name, version=version, config=config)
+    return await delete_library_generic(request=request, package_name=package_name, version=version, config=config)
 
 
-@router.delete("/packages/{namespace}/{package_name}/{version}",
+@router.delete("/libraries/{namespace}/{package_name}/{version}",
                summary="modules status",
                response_model=PackageDetails
                )
@@ -156,5 +156,6 @@ async def delete_version_with_namespace(
         version: str,
         config: YouwolConfiguration = Depends(yw_config)
         ):
-    return await delete_version_generic(request=request, package_name=namespace+'/'+package_name,
+    return await delete_library_generic(request=request, package_name=namespace+'/'+package_name,
                                         version=version, config=config)
+
