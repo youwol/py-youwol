@@ -1,6 +1,7 @@
 from fastapi import FastAPI, APIRouter, Depends
 import uvicorn
-from starlette.responses import RedirectResponse
+from starlette.responses import RedirectResponse, JSONResponse
+from starlette.requests import Request
 
 from youwol.configuration.youwol_configuration import yw_config
 from youwol.main_args import get_main_arguments
@@ -19,6 +20,7 @@ import youwol.routers.system.router as system
 import youwol.routers.local_cdn.router as local_cdn
 
 from youwol.configurations import configuration, print_invite
+from youwol_utils import YouWolException, log_error
 
 app = FastAPI(
     title="Local Dashboard",
@@ -60,6 +62,20 @@ app.include_router(upload_packages.router, prefix=configuration.base_path+"/admi
                    tags=["upload packages"])
 app.include_router(download_packages.router, prefix=configuration.base_path+"/admin/download/packages",
                    tags=["download packages"])
+
+
+@app.exception_handler(YouWolException)
+async def youwol_exception_handler(request: Request, exc: YouWolException):
+
+    log_error(f"{exc.detail}", exc.parameters)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "type": exc.exceptionType,
+            "detail": f"{exc.detail}",
+            "parameters": exc.parameters
+            }
+        )
 
 
 @app.get(configuration.base_path + "/healthz")

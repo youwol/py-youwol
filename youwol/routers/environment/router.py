@@ -9,12 +9,12 @@ from youwol.configuration.user_configuration import get_public_user_auth_token
 from youwol.configuration import ErrorResponse
 from youwol.configuration.youwol_configuration import YouwolConfiguration
 from youwol.configuration.youwol_configuration import yw_config, YouwolConfigurationFactory, ConfigurationLoadingStatus
-from youwol.context import Context, Action, ActionStep
+from youwol.context import Context, ActionStep
 from youwol.routers.environment.models import (
     StatusResponse, SwitchConfigurationBody, SyncUserBody, LoginBody,
     PostParametersBody, RemoteGatewayInfo, SelectRemoteBody,
     )
-from youwol.utils_low_level import to_json
+from youwol.utils_low_level import to_json, start_web_socket
 from youwol.utils_paths import parse_json, write_json
 from youwol.web_socket import WebSocketsCache
 from youwol_utils import retrieve_user_info
@@ -81,8 +81,7 @@ async def ws_endpoint(ws: WebSocket):
                 "firstError": to_json(first_error)
                 })
 
-    while True:
-        _ = await ws.receive_text()
+    await start_web_socket(ws)
 
 
 @router.get("/file-content",

@@ -3,8 +3,9 @@ import itertools
 from fastapi import APIRouter, WebSocket, Depends
 from starlette.requests import Request
 
+from utils_low_level import start_web_socket
 from youwol.configuration.youwol_configuration import yw_config, YouwolConfigurationFactory, YouwolConfiguration
-from youwol.context import Context, Action
+from youwol.context import Context
 from youwol.routers.commons import SkeletonsResponse, list_skeletons, PostSkeletonBody, create_skeleton
 from youwol.routers.frontends.models import StatusResponse, AllStatusResponse
 from youwol.routers.frontends.utils import ping, get_all_fronts, FrontEnd, serve, kill
@@ -22,8 +23,7 @@ async def ws_endpoint(ws: WebSocket):
     await ws.accept()
     WebSocketsCache.frontends = ws
     await ws.send_json({})
-    while True:
-        _ = await ws.receive_text()
+    await start_web_socket(ws)
 
 
 @router.get("/status",

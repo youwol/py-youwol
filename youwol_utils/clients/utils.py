@@ -1,4 +1,4 @@
-from typing import Mapping, Union, NamedTuple
+from typing import Mapping, Union, NamedTuple, List
 
 from aiohttp import ClientResponse
 import base64
@@ -68,9 +68,16 @@ def ancestors_group_id(group_id):
 
 class YouWolException(HTTPException):
     def __init__(self, status_code: int, detail: str, **kwargs):
+        self.exceptionType = "YouWolException"
         self.status_code = status_code
         self.detail = detail
         self.parameters = kwargs
+
+
+class PackagesNotFound(YouWolException):
+    def __init__(self, detail: str, packages: List[str], **kwargs):
+        YouWolException.__init__(self, 404, detail, packages=packages, **kwargs)
+        self.exceptionType = "PackagesNotFound"
 
 
 def aiohttp_resp_parameters(resp: ClientResponse):
@@ -115,3 +122,17 @@ def get_valid_bucket_name(name):
 
 def get_valid_keyspace_name(name):
     return name.replace('-', "_")
+
+
+def log_info(message, **kwargs):
+    content = f"INFO:     {message}"
+    for name, value in kwargs.items():
+        content += "/n"
+        content += f"{name} : {str(value)}"
+
+    print(content)
+
+
+def log_error(message, json=None):
+    json_message = str(json) if json else ""
+    print(f"ERROR:     {message}", json_message)

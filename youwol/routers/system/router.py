@@ -3,6 +3,8 @@ from pathlib import Path
 from typing import List
 
 from fastapi import APIRouter, WebSocket
+
+from utils_low_level import start_web_socket
 from youwol.web_socket import WebSocketsCache
 
 from starlette.requests import Request
@@ -28,8 +30,7 @@ async def ws_endpoint(ws: WebSocket):
     await ws.accept()
     WebSocketsCache.system = ws
     await ws.send_json({})
-    while True:
-        _ = await ws.receive_text()
+    await start_web_socket(ws)
 
 
 @router.post("/folder-content",

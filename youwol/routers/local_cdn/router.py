@@ -5,6 +5,7 @@ from itertools import groupby
 from starlette.requests import Request
 from fastapi import APIRouter, WebSocket, Depends
 
+from utils_low_level import start_web_socket
 from youwol.context import Context
 from youwol.models import ActionStep
 from youwol.routers.local_cdn.messages import send_status, send_details
@@ -21,8 +22,7 @@ async def ws_endpoint(ws: WebSocket):
     await ws.accept()
     WebSocketsCache.local_cdn = ws
     await ws.send_json({})
-    while True:
-        _ = await ws.receive_text()
+    await start_web_socket(ws)
 
 
 @router.get("/status",

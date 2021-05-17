@@ -7,6 +7,7 @@ from fastapi import APIRouter, WebSocket, Depends
 from starlette.requests import Request
 from watchgod import awatch, Change
 
+from utils_low_level import start_web_socket
 from youwol.configuration.youwol_configuration import YouwolConfiguration, yw_config, YouwolConfigurationFactory
 from youwol.context import Context, ActionStep
 from youwol.routers.commons import SkeletonsResponse, SkeletonResponse, PostSkeletonBody
@@ -61,8 +62,7 @@ async def ws_endpoint(ws: WebSocket):
     WebSocketsCache.modules = ws
     WatchMgr.web_socket = ws
     await ws.send_json({})
-    while True:
-        _ = await ws.receive_text()
+    await start_web_socket(ws)
 
 
 @router.get("/status",

@@ -6,8 +6,10 @@ from enum import Enum
 from pathlib import Path, PosixPath
 from typing import Any, Union, Mapping, List
 import re
-
+from starlette.websockets import WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
+
+from youwol_utils import log_info
 
 JSON = Union[str, int, float, bool, None, Mapping[str, 'JSON'], List['JSON']]
 
@@ -88,3 +90,12 @@ def sed_inplace(filename, pattern, repl):
     # manner preserving file attributes (e.g., permissions).
     shutil.copystat(filename, tmp_file.name)
     shutil.move(tmp_file.name, filename)
+
+
+async def start_web_socket(ws: WebSocket):
+    while True:
+        try:
+            _ = await ws.receive_text()
+        except WebSocketDisconnect:
+            log_info(f'{ws.scope["client"]} - "WebSocket {ws.scope["path"]}" [disconnected]')
+            break

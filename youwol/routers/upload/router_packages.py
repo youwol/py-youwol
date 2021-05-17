@@ -19,7 +19,7 @@ from youwol.routers.upload.messages import (
     send_package_resolved,
     )
 from youwol.routers.upload.models import Library, Release, PathResp, PackageStatus, SyncMultipleBody, LibrariesList, TreeItem
-from youwol.utils_low_level import to_json
+from youwol.utils_low_level import to_json, start_web_socket
 from youwol_utils import to_group_scope
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 
@@ -69,8 +69,7 @@ async def ws_endpoint(ws: WebSocket):
     await ws.accept()
     WebSocketsCache.upload_packages = ws
     await ws.send_json({})
-    while True:
-        _ = await ws.receive_text()
+    await start_web_socket(ws)
 
 
 @router.get("/{tree_id}/remote-path",

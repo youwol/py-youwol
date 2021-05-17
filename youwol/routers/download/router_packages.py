@@ -8,6 +8,7 @@ from starlette.requests import Request
 from fastapi import APIRouter, WebSocket, Depends
 from pydantic import BaseModel
 
+from utils_low_level import start_web_socket
 from youwol.configuration.youwol_configuration import yw_config, YouwolConfiguration
 from youwol.context import Context
 from youwol.models import ActionStep
@@ -25,8 +26,7 @@ async def ws_endpoint(ws: WebSocket):
     await ws.accept()
     WebSocketsCache.download_packages = ws
     await ws.send_json({})
-    while True:
-        _ = await ws.receive_text()
+    await start_web_socket(ws)
 
 
 @router.get("/status",
