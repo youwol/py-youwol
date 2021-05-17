@@ -1,5 +1,6 @@
 youwol_data/**/*
 !youwol_data/yw_config.py
+!youwol_data/databases.zip
 !youwol_data/users-info.json
 !youwol_data/remotes-info.json
 !youwol_data/__init__.py
