@@ -20,7 +20,11 @@ class PathsBook(NamedTuple):
 
     @property
     def local_cdn_docdb(self) -> Path:
-        return self.data_path / 'docdb' / 'cdn' / 'libraries' / 'data.json'
+        return self.local_docdb / 'cdn' / 'libraries' / 'data.json'
+
+    @property
+    def local_treedb_docdb(self) -> Path:
+        return self.local_docdb / 'tree_db' / 'items' / 'data.json'
 
     @property
     def local_storage(self) -> Path:
