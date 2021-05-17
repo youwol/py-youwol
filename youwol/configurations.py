@@ -1,5 +1,6 @@
 import asyncio
 import os
+import sys
 import shutil
 import zipfile
 from pathlib import Path
@@ -100,6 +101,16 @@ async def get_full_local_config() -> Configuration:
 
 
 configuration: Configuration = asyncio.get_event_loop().run_until_complete(get_full_local_config())
+
+
+def assert_python():
+
+    print(f"Running with python:\n\t{sys.executable}\n\t{sys.version}")
+    version_info = sys.version_info
+    if not (version_info.major == 3 and version_info.minor == 6 and version_info.micro >= 8):
+        print(f"""Your version of python is not compatible with py-youwol:
+        Required: 3.6.x with x >= 8""")
+        exit(1)
 
 
 def print_invite(main_args: MainArguments):

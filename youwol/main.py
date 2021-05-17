@@ -19,7 +19,7 @@ import youwol.routers.download.router_packages as download_packages
 import youwol.routers.system.router as system
 import youwol.routers.local_cdn.router as local_cdn
 
-from youwol.configurations import configuration, print_invite
+from youwol.configurations import configuration, print_invite, assert_python
 from youwol_utils import YouWolException, log_error
 
 app = FastAPI(
@@ -90,6 +90,7 @@ async def home():
 
 def main():
     main_args = get_main_arguments()
+    assert_python()
     print_invite(main_args)
     uvicorn.run(app, host="localhost", port=configuration.http_port)
 
