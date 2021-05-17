@@ -3,7 +3,7 @@ import itertools
 from fastapi import APIRouter, WebSocket, Depends
 from starlette.requests import Request
 
-from utils_low_level import start_web_socket
+from youwol.utils_low_level import start_web_socket
 from youwol.configuration.youwol_configuration import yw_config, YouwolConfigurationFactory, YouwolConfiguration
 from youwol.context import Context
 from youwol.routers.commons import SkeletonsResponse, list_skeletons, PostSkeletonBody, create_skeleton

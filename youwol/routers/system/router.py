@@ -4,7 +4,7 @@ from typing import List
 
 from fastapi import APIRouter, WebSocket
 
-from utils_low_level import start_web_socket
+from youwol.utils_low_level import start_web_socket
 from youwol.web_socket import WebSocketsCache
 
 from starlette.requests import Request

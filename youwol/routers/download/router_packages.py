@@ -10,7 +10,7 @@ from pydantic import BaseModel
 
 from services.backs.assets_gateway.utils import raw_id_to_asset_id
 from youwol.routers.packages.utils import ensure_default_publish_location
-from utils_low_level import start_web_socket
+from youwol.utils_low_level import start_web_socket
 from youwol.configuration.youwol_configuration import yw_config, YouwolConfiguration
 from youwol.context import Context
 from youwol.models import ActionStep
