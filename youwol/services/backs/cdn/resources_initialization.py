@@ -5,7 +5,7 @@ from youwol_utils import WhereClause, QueryBody, Query, Path, flatten
 from .configurations import Configuration
 
 from .utils import format_download_form, post_storage_by_chunk, md5_from_folder
-from .utils_indexing import format_doc_db_record, post_indexes
+from .utils_indexing import format_doc_db_record, post_indexes, get_version_number_str
 
 
 async def init_resources(config: Configuration):
@@ -22,7 +22,8 @@ async def init_resources(config: Configuration):
         raise Exception("The table index is not up-to-date w/ bucket content, manual index-synchronisation needed")
 
     clauses = [[WhereClause(column="library_name", relation="eq", term=lib.split("#")[0]),
-                WhereClause(column="version", relation="eq", term=lib.split("#")[1])]
+                WhereClause(column="version_number", relation="eq", term=get_version_number_str(lib.split("#")[1]))
+                ]
                for lib in Configuration.required_libs]
     bodies = [QueryBody(query=Query(where_clause=c)) for c in clauses]
 
@@ -34,7 +35,7 @@ async def init_resources(config: Configuration):
         return
 
     print("post initial resources")
-    await synchronize( Path(__file__).parent / "initial_resources", "", config, headers=headers)
+    await synchronize(Path(__file__).parent / "initial_resources", "", config, headers=headers)
 
     print("### resources initialization done ###")
 

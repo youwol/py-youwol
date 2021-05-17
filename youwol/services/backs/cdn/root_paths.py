@@ -2,9 +2,7 @@ import asyncio
 import functools
 import itertools
 import shutil
-from io import BytesIO
 from pathlib import Path
-from zipfile import ZipFile
 
 from fastapi import UploadFile, File, HTTPException, Form, APIRouter, Depends
 
@@ -20,13 +18,14 @@ from .models import (
 from .resources_initialization import init_resources, synchronize
 from .utils import (
     extract_zip_file, to_package_id, create_tmp_folder,
-    to_package_name, get_query_version, get_query, loading_graph, get_url, fetch, format_response, publish_package,
+    to_package_name, get_query_version, loading_graph, get_url, fetch, format_response, publish_package,
+    get_query_latest,
     )
 from youwol_utils import (
-    RecordsResponse, GetRecordsBody, RecordsDocDb, RecordsStorage, flatten, generate_headers_downstream,
+    flatten, generate_headers_downstream, log_info, PackagesNotFound,
     )
 from youwol_utils.clients.docdb.models import WhereClause, QueryBody, Query, SelectClause
-
+from .utils_indexing import get_version_number_str
 
 router = APIRouter()
 
@@ -127,7 +126,7 @@ async def list_versions(
     headers = generate_headers_downstream(request.headers)
     doc_db = configuration.doc_db
     query = QueryBody(
-        max_results=100,
+        max_results=1000,
         select_clauses=[SelectClause(selector="versions"), SelectClause(selector="namespace")],
         query=Query(where_clause=[WhereClause(column="library_name", relation="eq", term=name)])
         )
@@ -201,7 +200,7 @@ async def delete_version_generic(
 
     doc = await doc_db.get_document(
         partition_keys={"library_name": f"@{namespace}/{library_name}"},
-        clustering_keys={"version": version},
+        clustering_keys={"version_number": get_version_number_str(version)},
         owner=configuration.owner,
         headers=headers)
     await doc_db.delete_document(doc=doc, owner=Configuration.owner, headers=headers)
@@ -252,58 +251,93 @@ async def resolve_loading_tree(
     headers = generate_headers_downstream(request.headers)
     libraries = {name: version for name, version in body.libraries.items()}
 
-    print(f"INFO: Start resolving loading graph: {libraries}")
+    log_info(f"Start resolving loading graph: {libraries}")
+
     latest_queries = [name for name, version in libraries.items() if version == "latest"]
-    versions_resp = await asyncio.gather(*[list_versions(request=request, name=name, configuration=configuration)
-                                           for name in latest_queries])
+    versions_resp = await asyncio.gather(*[
+        list_versions(request=request, name=name, configuration=configuration)
+        for name in latest_queries
+        ], return_exceptions=True)
+
+    if any(isinstance(v, Exception) for v in versions_resp):
+        packages_error = [f"{name}#latest"
+                          for e, name in zip(versions_resp, latest_queries)
+                          if isinstance(e, Exception)]
+        raise PackagesNotFound(
+            detail="Failed to retrieved latest version of package(s)",
+            packages=packages_error)
+
     latest_versions = {name: resp.versions[0] for name, resp in zip(latest_queries, versions_resp)}
     explicit_versions = {**libraries, **latest_versions}
 
-    queries = [doc_db.get_document(partition_keys={"library_name": name}, clustering_keys={"version": version},
+    log_info(f"Latest versions resolved", latest_versions=latest_versions, explicit_versions=explicit_versions)
+
+    queries = [doc_db.get_document(partition_keys={"library_name": name},
+                                   clustering_keys={"version_number": get_version_number_str(version)},
                                    owner=configuration.owner, headers=headers)
                for name, version in explicit_versions.items()]
 
-    dependencies = {d["library_name"]: d for d in await asyncio.gather(*queries)}
+    dependencies = await asyncio.gather(*queries, return_exceptions=True)
+
+    if any(isinstance(v, Exception) for v in dependencies):
+        packages_error = [f"{name}#{version}" for e, (name, version) in zip(dependencies, explicit_versions.items())
+                          if isinstance(e, Exception)]
+        raise PackagesNotFound(detail="Failed to retrieved explicit version of package(s)",
+                               packages=packages_error)
+
+    dependencies_dict = {d["library_name"]: d for d in dependencies}
 
     async def add_missing_dependencies(missing_previous_loop=None):
         """ It maybe the case where some dependencies are missing in the provided body,
         here we fetch using 'body.using' or the latest version of them"""
         flatten_dependencies = set(flatten([[p.split("#")[0] for p in package['dependencies']]
-                                            for package in dependencies.values()]))
+                                            for package in dependencies_dict.values()]))
 
-        missing = [d for d in flatten_dependencies if d not in dependencies]
+        missing = [d for d in flatten_dependencies if d not in dependencies_dict]
         if not missing:
-            return dependencies
+            return dependencies_dict
 
         if missing_previous_loop and missing == missing_previous_loop:
-            print(f"ERROR: Some dependencies can not be found in the CDN: {missing}")
-            raise HTTPException(status_code=404, detail=f"Some dependencies can not be found in the CDN: {missing}")
+            raise PackagesNotFound(
+                detail="Indirect dependencies not found in the CDN",
+                packages=missing
+                )
 
         def get_dependency(dependency):
             if dependency in body.using:
                 return get_query_version(configuration.doc_db, dependency, body.using[dependency], headers)
-            return get_query(configuration.doc_db, dependency + "#latest", headers)
+            return get_query_latest(configuration.doc_db, dependency, headers)
 
-        versions = await asyncio.gather(*[get_dependency(dependency) for dependency in missing])
+        versions = await asyncio.gather(
+            *[get_dependency(dependency) for dependency in missing],
+            return_exceptions=True
+            )
+        if any(len(v["documents"]) == 0 for v in versions):
+            raise PackagesNotFound(
+                detail="Failed to retrieve a version of indirect dependencies",
+                packages=[f"{name}#{body.using.get(name,'latest')}"
+                          for v, name in zip(versions, missing)
+                          if len(v["documents"]) == 0]
+                )
 
         versions = list(flatten([d['documents'] for d in versions]))
-        for latest in versions:
-            lib_name = latest["library_name"]
-            dependencies[lib_name] = latest
-        """ done adding missing dependencies #latest """
+        for version in versions:
+            lib_name = version["library_name"]
+            dependencies_dict[lib_name] = version
+
         return await add_missing_dependencies(missing_previous_loop=missing)
 
     await add_missing_dependencies()
     items_dict = {d["library_name"]: [to_package_id(d["library_name"]), get_url(d)]
-                  for d in dependencies.values()}
-    r = loading_graph([], dependencies.values(), items_dict)
+                  for d in dependencies_dict.values()}
+    r = loading_graph([], dependencies_dict.values(), items_dict)
 
     lock = [Library(name=d["library_name"], version=d["version"], namespace=d["namespace"],
-                    id=to_package_id(d["library_name"]), type=d["type"]) for d in dependencies.values()]
+                    id=to_package_id(d["library_name"]), type=d["type"]) for d in dependencies_dict.values()]
 
     return LoadingGraphResponseV1(graphType="sequential-v1", lock=lock, definition=r)
 
-
+"""
 @router.post("/queries/dependencies-latest", summary="get a library",
              response_model=DependenciesResponseV1)
 async def resolve_dependencies_latest(
@@ -347,19 +381,7 @@ async def resolve_dependencies_latest(
     return DependenciesResponseV1(libraries=dependencies,
                                   loadingGraph=LoadingGraphResponseV1(graphType="sequential-v1", lock=lock,
                                                                       definition=r))
-
-
-@router.post("/records",
-             response_model=RecordsResponse,
-             summary="retrieve records definition")
-async def records(_: GetRecordsBody):
-
-    #  doc_db = configuration.doc_db
-    #  For now the package records are supposed to be available in every env in public namespace.
-    #  Hence there is no need to package them
-    response = RecordsResponse(docdb=RecordsDocDb(keyspaces=[]), storage=RecordsStorage(buckets=[]))
-
-    return response
+"""
 
 
 @router.get("/queries/flux-packs", summary="list packs", response_model=ListPacksResponse)
@@ -489,5 +511,3 @@ async def get_resource(request: Request,
     path = '/'.join(forward_path.split('/')[0:-1])
     script = await fetch(request, path, file_id, storage)
     return format_response(script, file_id)
-
-

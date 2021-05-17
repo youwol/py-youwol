@@ -12,21 +12,6 @@ skipped_dependencies = []
 flatten = itertools.chain.from_iterable
 
 
-def get_dependencies(path: Union[Path, str]):
-    path = str(path)
-    # this first case is for backward compatibility, we can safely remove it I believe
-    if os.path.exists(path+"/description.json"):
-        data = json.loads(open(path+"/description.json").read())
-        return [d['id']+"#"+d.get('version', 'x') for d in data["dependencies"] if 'id' in d]
-
-    if os.path.exists(path+"/package.json"):
-        data = json.loads(open(path+"/package.json").read())
-        if "peerDependencies" not in data:
-            return[]
-        return [did+"#"+v for did, v in data["peerDependencies"].items() if did not in skipped_dependencies]
-    return []
-
-
 def get_files(path: Union[Path, str]):
 
     path = str(path)
@@ -78,6 +63,12 @@ def get_version_number(version_str: str) -> int:
                int(version_str.split('.')[2])*10 + delta)
 
 
+def get_version_number_str(version_str: str) -> str:
+    base = str(get_version_number(version_str))
+    version = '0'*(10-len(base)) + base
+    return version
+
+
 def get_library_id(name: str, version: str) -> str:
     return name + "#" + version
 
@@ -115,7 +106,7 @@ def format_doc_db_record(package_path: Path, fingerprint: str) -> Dict[str, str]
         "dependencies": [k+"#"+v for k, v in get_cdn_dependencies().items()],
         "bundle_min": "",
         "bundle": str(main),
-        "version_number": get_version_number(version),
+        "version_number": get_version_number_str(version),
         "path": str(path),
         "fingerprint": fingerprint
         }

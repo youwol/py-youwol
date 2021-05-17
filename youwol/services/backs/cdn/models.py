@@ -134,13 +134,13 @@ LIBRARIES_TABLE = TableBody(
         Column(name="dependencies", type="list<text>"),
         Column(name="bundle_min", type="text"),
         Column(name="bundle", type="text"),
-        Column(name="version_number", type="int"),
+        Column(name="version_number", type="text"),
         Column(name="path", type="text"),
         Column(name="fingerprint", type="text")
         ],
     partition_key=["library_name"],
-    clustering_columns=["version"],
+    clustering_columns=["version_number"],
     table_options=TableOptions(
-        clustering_order=[OrderingClause(name='version', order='DESC')]
+        clustering_order=[OrderingClause(name='version_number', order='DESC')]
         )
     )

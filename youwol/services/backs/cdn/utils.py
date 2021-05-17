@@ -13,7 +13,7 @@ from fastapi import HTTPException
 from starlette.responses import Response
 from typing.io import IO
 
-from .utils_indexing import format_doc_db_record
+from .utils_indexing import format_doc_db_record, get_version_number_str
 from youwol_utils import generate_headers_downstream, QueryBody, files_check_sum, shutil
 from youwol_utils.clients.docdb.models import Query, WhereClause, OrderingClause
 from .configurations import Configuration
@@ -220,7 +220,7 @@ def get_query_latest(doc_db, lib_name, headers):
     query = QueryBody(
         max_results=1,
         query=Query(where_clause=[WhereClause(column="library_name", relation="eq", term=lib_name)],
-                    ordering_clause=[OrderingClause(name="version", order="DESC")])
+                    ordering_clause=[OrderingClause(name="version_number", order="DESC")])
         )
     return doc_db.query(query_body=query, owner=Configuration.owner, headers=headers)
 
@@ -230,7 +230,8 @@ def get_query_version(doc_db, lib_name, version, headers):
     query = QueryBody(
         max_results=1,
         query=Query(where_clause=[WhereClause(column="library_name", relation="eq", term=lib_name),
-                                  WhereClause(column="version", relation="eq", term=version)])
+                                  WhereClause(column="version_number", relation="eq",
+                                              term=get_version_number_str(version))])
         )
 
     return doc_db.query(query_body=query, owner=Configuration.owner, headers=headers)
