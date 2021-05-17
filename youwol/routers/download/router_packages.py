@@ -8,7 +8,7 @@ from starlette.requests import Request
 from fastapi import APIRouter, WebSocket, Depends, HTTPException
 from pydantic import BaseModel
 
-from services.backs.assets_gateway.utils import raw_id_to_asset_id
+from youwol.services.backs.assets_gateway.utils import raw_id_to_asset_id
 from youwol.routers.packages.utils import ensure_default_publish_location
 from youwol.utils_low_level import start_web_socket
 from youwol.configuration.youwol_configuration import yw_config, YouwolConfiguration
