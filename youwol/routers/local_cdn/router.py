@@ -159,3 +159,47 @@ async def delete_version_with_namespace(
     return await delete_library_generic(request=request, package_name=namespace+'/'+package_name,
                                         version=version, config=config)
 
+
+async def delete_package_generic(
+        request: Request,
+        package_name: str,
+        config: YouwolConfiguration = Depends(yw_config)
+        ):
+
+    context = Context(config=config, request=request, web_socket=WebSocketsCache.local_cdn)
+
+    async with context.start(action=f"Delete {package_name}") as ctx:
+        await ctx.info(step=ActionStep.RUNNING, content=f"Delete {package_name}", json={})
+        data = parse_json(config.pathsBook.local_cdn_docdb)['documents']
+        remaining = [d for d in data if d["library_name"] != package_name]
+
+        storage_cdn_path = config.pathsBook.local_cdn_storage
+        folder_path = storage_cdn_path / 'libraries' / package_name.strip('@')
+        shutil.rmtree(folder_path)
+        write_json(data={"documents": remaining}, path=config.pathsBook.local_cdn_docdb)
+        details = await status(request=request, config=config)
+        return details
+
+
+@router.delete("/packages/{package_name}",
+               summary="modules status"
+               )
+async def delete_package_no_namespace(
+        request: Request,
+        package_name: str,
+        config: YouwolConfiguration = Depends(yw_config)
+        ):
+
+    return await delete_package_generic(request=request, package_name=package_name, config=config)
+
+
+@router.delete("/packages/{namespace}/{package_name}",
+               summary="modules status"
+               )
+async def delete_package_with_namespace(
+        request: Request,
+        namespace: str,
+        package_name: str,
+        config: YouwolConfiguration = Depends(yw_config)
+        ):
+    return await delete_package_generic(request=request, package_name=namespace+'/'+package_name, config=config)
