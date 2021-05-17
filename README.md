@@ -8,9 +8,6 @@ This environment provides:
 - a local version of the YouWol platform
 - a developer environment to extend the platform (npm packages, backends, frontends)
 
-What will come in the near future:
-- the ability to synchronize local resources from and to the deployed platform
-
 >The purpose of this full-stack environment is to provide a painless experience for developers who want to contribute to the 
 >platform, in particular in terms of flexibility regarding the integration with developers' favorite stacks.
 >Also the environment, while running in a browser, is completely 'locally sand-boxed' and there is no need
@@ -48,7 +45,7 @@ What will come in the near future:
 The YouWol FSE environment can be completed by installing *pipelines*, 
 those may require additional installation (e.g. *node*, *gcc*, etc); we refer the reader to their documentation.
 
-## Installation
+## Installation from pypi
 
 A good practice is to create a python virtual environment to host the *YouWol* python dependencies and to not 
 affect your global python installation. 
@@ -78,7 +75,32 @@ Then download and install *YouWol*:
 pip install youwol
 ```
 
-### Installation issues
+## Installation from source
+
+Clone the github repository, e.g. for master:
+```bash
+git clone https://github.com/youwol/py-youwol.git
+```
+Go through the installation steps described in the previous section, 
+but replace:
+```bash
+pip install youwol
+```
+by (from the cloned folder py-youwol):
+```bash
+python setup.py install
+```
+
+To update the installation with respect to new sources:
+-    activate the created virtual environment
+-    from py-youwol folder:
+```bash
+git pull
+python setup.py install
+```
+
+
+## Installation issues
 
 Some common issues are listed at the end of this page, you may find a 
 solution there if you encounter a problem during the installation.
