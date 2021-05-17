@@ -41,12 +41,11 @@ class LoadingGraphBody(BaseModel):
 async def ensure_permission(
         permission: str,
         request: Request,
-        namespace: str,
         library_name: str,
         configuration: Configuration):
 
     headers = generate_headers_downstream(request.headers)
-    asset_id = raw_id_to_asset_id(f"{namespace}/{library_name}")
+    asset_id = raw_id_to_asset_id(library_name)
     asset_id = raw_id_to_asset_id(asset_id)
 
     assets_db = configuration.assets_client
@@ -70,16 +69,15 @@ async def resolve_loading_tree(
 
 async def delete_version_generic(
         request: Request,
-        namespace: str,
         library_name: str,
         version: str,
         configuration: Configuration):
 
     headers = generate_headers_downstream(request.headers)
-    await ensure_permission('write', request, namespace, library_name, configuration)
+    await ensure_permission('write', request, library_name, configuration)
 
     cdn_client = configuration.cdn_client
-    return await cdn_client.delete_version(library_name=namespace+"/"+library_name, version=version, headers=headers)
+    return await cdn_client.delete_version(library_name=library_name, version=version, headers=headers)
 
 
 @router.delete("/libraries/{namespace}/{library_name}/{version}", summary="delete a specific version")
@@ -90,7 +88,7 @@ async def delete_version_with_namespace(
         version: str,
         configuration: Configuration = Depends(get_configuration)):
 
-    return await delete_version_generic(request=request, namespace=namespace, library_name=library_name,
+    return await delete_version_generic(request=request, library_name=f"{namespace}/{library_name}",
                                         version=version, configuration=configuration)
 
 
@@ -101,22 +99,21 @@ async def delete_version_no_namespace(
         version: str,
         configuration: Configuration = Depends(get_configuration)):
 
-    return await delete_version_generic(request=request, namespace="", library_name=library_name,
+    return await delete_version_generic(request=request, library_name=library_name,
                                         version=version, configuration=configuration)
 
 
 async def get_package_generic(
         request: Request,
-        namespace: str,
         library_name: str,
         version: str,
         configuration: Configuration):
 
     headers = generate_headers_downstream(request.headers)
-    await ensure_permission('read', request, namespace, library_name, configuration)
+    await ensure_permission('read', request, library_name, configuration)
 
     cdn_client = configuration.cdn_client
-    resp = await cdn_client.get_package(library_name=namespace+"/"+library_name, version=version, headers=headers)
+    resp = await cdn_client.get_package(library_name=library_name, version=version, headers=headers)
     return Response(resp, media_type='multipart/form-data')
 
 
@@ -128,7 +125,7 @@ async def get_package_with_namespace(
         version: str,
         configuration: Configuration = Depends(get_configuration)):
 
-    return await get_package_generic(request=request, namespace=namespace, library_name=library_name,
+    return await get_package_generic(request=request, library_name=f"{namespace}/{library_name}",
                                      version=version, configuration=configuration)
 
 
@@ -139,6 +136,6 @@ async def get_package_no_namespace(
         version: str,
         configuration: Configuration = Depends(get_configuration)):
 
-    return await get_package_generic(request=request, namespace="", library_name=library_name,
+    return await get_package_generic(request=request, library_name=library_name,
                                      version=version, configuration=configuration)
 
