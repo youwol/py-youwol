@@ -63,8 +63,11 @@ async def get_yw_config_starter(main_args: MainArguments):
 
         # create the default identities
         email = input("Your email address?")
+        password = input("Your YouWol password?")
+
         if not (current_folder / 'secrets.json').exists():
-            write_json({}, current_folder / 'secrets.json')
+            write_json({email: {'password': password}}, current_folder / 'secrets.json')
+
         user_info = {
             "policies": {"default": email},
             "users": {
