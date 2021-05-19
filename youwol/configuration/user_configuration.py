@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 from typing import List, Dict, NamedTuple, Union, Callable, Awaitable, Mapping
-
+from fastapi import HTTPException
 import aiohttp
 from pydantic import BaseModel
 
@@ -33,6 +33,8 @@ async def get_public_user_auth_token(username: str, pwd: str, client_id: str):
     url = "https://auth.youwol.com/auth/realms/youwol/protocol/openid-connect/token"
     async with aiohttp.ClientSession() as session:
         async with await session.post(url=url, data=form) as resp:
+            if resp.status != 200:
+                raise HTTPException(status_code=resp.status, detail=await resp.read())
             resp = await resp.json()
             return resp['access_token']
 
