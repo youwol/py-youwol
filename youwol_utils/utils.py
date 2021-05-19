@@ -222,6 +222,8 @@ async def retrieve_user_info(auth_token: str):
 
     async with aiohttp.ClientSession() as session:
         async with await session.post(url=url, headers=headers) as resp:
+            if resp.status != 200:
+                raise HTTPException(status_code=resp.status, detail=await resp.read())
             resp = await resp.json()
             return resp
 
