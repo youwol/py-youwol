@@ -234,13 +234,14 @@ async def post_metadata(
 
     body = {
         "libraries": {name: version for name, version in libraries.items() if name in used_packages},
-        "using":  {name: version for name, version in libraries.items() if 'flux-pack' not in used_packages}
+        "using": {name: version for name, version in libraries.items()}
         }
     loading_graph = await configuration.cdn_client.query_loading_graph(body=body, headers=headers)
+    flux_packs = [p['name'] for p in loading_graph['lock'] if p['type'] == 'flux-pack']
     print("Flux-Backend@Post metadata: got loading graph", loading_graph)
 
     used_libraries = {lib["name"]: lib["version"] for lib in loading_graph["lock"]}
-    requirements = Requirements(fluxComponents=[], fluxPacks=used_packages,
+    requirements = Requirements(fluxComponents=[], fluxPacks=flux_packs,
                                 libraries=used_libraries, loadingGraph=loading_graph)
 
     coroutines = update_metadata(project_id=project_id, name=metadata_body.name,

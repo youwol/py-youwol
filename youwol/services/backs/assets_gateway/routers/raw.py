@@ -150,11 +150,9 @@ async def update_raw_asset_generic(
     headers = generate_headers_downstream(request.headers)
     assets_stores = configuration.assets_stores()
     store = next(store for store in assets_stores if kind == store.path_name)
-    body = {"whereClauses": [{"column": "related_id", "relation": "eq", "term": raw_id}]}
-    query_result = await configuration.assets_client.query(body=body, headers=headers)
-    if not query_result['assets']:
-        raise HTTPException(status_code=404, detail="Asset not found")
-    asset = query_result['assets'][0]
+    asset_id = raw_id_to_asset_id(raw_id)
+    asset = await configuration.assets_client.get(asset_id=asset_id, headers=headers)
+
     meta = AssetMeta(name=asset["name"], description=asset["description"], kind=kind, groupId=asset["groupId"],
                      tags=asset['tags']
                      )
