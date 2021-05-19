@@ -3,14 +3,18 @@ import os
 import sys
 import shutil
 import zipfile
+from getpass import getpass
 from pathlib import Path
 
+from fastapi import HTTPException
 from cowpy import cow
 from dataclasses import dataclass
 
+from configuration import get_public_user_auth_token
 from youwol.main_args import get_main_arguments, MainArguments
 from youwol.utils_low_level import sed_inplace
 from youwol.utils_paths import write_json
+from youwol_utils import retrieve_user_info
 
 
 @dataclass(frozen=False)
@@ -41,53 +45,65 @@ async def get_yw_config_starter(main_args: MainArguments):
                  f" and no yw_config.py file is found in the current folder ({str(current_folder)}).\n"
                  "Do you want to create a new workspace with default settings (y/N)")
     # Ask to create fresh workspace with default settings
-    if resp == 'y' or resp == 'Y':
-
-        # create initial databases, at some point we may want to import from an existing one or from a 'store'
-        if not (current_folder / 'databases').exists():
-            shutil.copyfile(main_args.youwol_path.parent / 'youwol_data' / 'databases.zip',
-                            current_folder / 'databases.zip')
-
-            with zipfile.ZipFile(current_folder / 'databases.zip', 'r') as zip_ref:
-                zip_ref.extractall(current_folder)
-
-            os.remove(current_folder/'databases.zip')
-
-        # create the default yw_config file
-        shutil.copyfile(main_args.youwol_path.parent / 'youwol_data' / 'yw_config.py',
-                        current_folder / 'yw_config.py')
-        shutil.copyfile(main_args.youwol_path.parent / 'youwol_data' / 'remotes-info.json',
-                        current_folder / 'remotes-info.json')
-
-        sed_inplace(current_folder / 'yw_config.py', '{{folder_path}}', str(current_folder))
-
-        # create the default identities
-        email = input("Your email address?")
-        password = input("Your YouWol password?")
-
-        if not (current_folder / 'secrets.json').exists():
-            write_json({email: {'password': password}}, current_folder / 'secrets.json')
-
-        user_info = {
-            "policies": {"default": email},
-            "users": {
-                email: {
-                    "id": "user id not used for now",
-                    "name": email,
-                    "memberOf": [
-                        "/youwol-users"
-                        ],
-                    "email": email
-                    }
-                }
-            }
-        if not (current_folder/'users-info.json').exists():
-            write_json(user_info, current_folder / 'users-info.json')
-
-        return current_folder / 'yw_config.py'
-    else:
+    if not (resp == 'y' or resp == 'Y'):
         print("Exit youwol")
         exit()
+
+    # create the default identities
+    email = input("Your email address?")
+    pwd = getpass("Your YouWol password?")
+    token = None
+    try:
+        token = await get_public_user_auth_token(username=email, pwd=pwd, client_id='public-user')
+        print("token", token)
+    except HTTPException as e:
+        print(f"Can not retrieve authentication token:\n\tstatus code: {e.status_code}\n\tdetail:{e.detail}")
+        exit(1)
+
+    user_info = None
+    try:
+        user_info = await retrieve_user_info(auth_token=token)
+        print("user_info", user_info)
+    except HTTPException as e:
+        print(f"Can not retrieve user info:\n\tstatus code: {e.status_code}\n\tdetail:{e.detail}")
+        exit(1)
+    # create initial databases, at some point we may want to import from an existing one or from a 'store'
+    if not (current_folder / 'databases').exists():
+        shutil.copyfile(main_args.youwol_path.parent / 'youwol_data' / 'databases.zip',
+                        current_folder / 'databases.zip')
+
+        with zipfile.ZipFile(current_folder / 'databases.zip', 'r') as zip_ref:
+            zip_ref.extractall(current_folder)
+
+        os.remove(current_folder / 'databases.zip')
+
+    # create the default yw_config file
+    shutil.copyfile(main_args.youwol_path.parent / 'youwol_data' / 'yw_config.py',
+                    current_folder / 'yw_config.py')
+    shutil.copyfile(main_args.youwol_path.parent / 'youwol_data' / 'remotes-info.json',
+                    current_folder / 'remotes-info.json')
+
+    sed_inplace(current_folder / 'yw_config.py', '{{folder_path}}', str(current_folder))
+
+    if not (current_folder / 'secrets.json').exists():
+        write_json({email: {'password': pwd}}, current_folder / 'secrets.json')
+
+    user_info = {
+        "policies": {"default": email},
+        "users": {
+            email: {
+                "id": user_info['sub'],
+                "name": user_info['name'],
+                "memberOf": user_info['memberof'],
+                "email": user_info['email']
+                }
+            }
+        }
+
+    if not (current_folder/'users-info.json').exists():
+        write_json(user_info, current_folder / 'users-info.json')
+
+    return current_folder / 'yw_config.py'
 
 
 async def get_full_local_config() -> Configuration:

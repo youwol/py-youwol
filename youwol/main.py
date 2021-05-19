@@ -89,8 +89,8 @@ async def home():
 
 
 def main():
-    main_args = get_main_arguments()
     assert_python()
+    main_args = get_main_arguments()
     print_invite(main_args)
     uvicorn.run(app, host="localhost", port=configuration.http_port)
 
