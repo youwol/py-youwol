@@ -10,7 +10,7 @@ from fastapi import HTTPException
 from cowpy import cow
 from dataclasses import dataclass
 
-from configuration import get_public_user_auth_token
+from youwol.configuration import get_public_user_auth_token
 from youwol.main_args import get_main_arguments, MainArguments
 from youwol.utils_low_level import sed_inplace
 from youwol.utils_paths import write_json
