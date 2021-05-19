@@ -50,25 +50,25 @@ def included_services(platform_path, open_source_path):
                      "/raw_stores/*", "/routers/*"]
             ),
         ServiceInjection(
-            src=Path('..') / 'youwol-open-source' / 'npm' / 'flux' / 'flux-builder' / 'dist',
+            src=Path('..') / 'youwol-open-source' / 'npm' / '@youwol' / 'flux' / 'flux-builder' / 'dist',
             dst=dst_services / 'fronts' / 'flux_builder',
             include=["/*.html", "/*.js", "/*.css", "/*.map"],
             is_front=True
             ),
         ServiceInjection(
-            src=Path('..') / 'youwol-open-source' / 'npm' / 'flux' / 'flux-runner' / 'dist',
+            src=Path('..') / 'youwol-open-source' / 'npm' / '@youwol' / 'flux' / 'flux-runner' / 'dist',
             dst=dst_services / 'fronts' / 'flux_runner',
             include=["/*"],
             is_front=True
             ),
         ServiceInjection(
-            src=Path('..') / 'youwol-open-source' / 'npm' / 'workspace-explorer' / 'dist',
+            src=Path('..') / 'youwol-open-source' / 'npm' / '@youwol' / 'workspace-explorer' / 'dist',
             dst=dst_services / 'fronts' / 'workspace_explorer',
             include=["/*"],
             is_front=True
             ),
         ServiceInjection(
-            src=open_source_path / 'npm' / 'dashboard-developer' / 'dist',
+            src=open_source_path / 'npm' / '@youwol' / 'dashboard-developer' / 'dist',
             dst=dst_services / 'fronts' / 'dashboard_developer',
             include=["/*"],
             is_front=True
