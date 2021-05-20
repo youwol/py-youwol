@@ -83,7 +83,10 @@ async def redirect_get(
         headers: Mapping[str, str]
         ):
     params = request.query_params
-    async with aiohttp.ClientSession(auto_decompress=False) as session:
+    async with aiohttp.ClientSession(
+            connector=aiohttp.TCPConnector(verify_ssl=False),
+            auto_decompress=False) as session:
+
         async with await session.get(url=new_url, params=params, headers=headers) as resp:
             # if this is a GET request to assets-gateway we don't want caching as in local we can update assets
             headers_resp = {
@@ -141,7 +144,10 @@ async def redirect_post_api(
     headers = await get_headers(context)
     params = request.query_params
 
-    async with aiohttp.ClientSession(auto_decompress=False) as session:
+    async with aiohttp.ClientSession(
+            connector=aiohttp.TCPConnector(verify_ssl=False),
+            auto_decompress=False) as session:
+
         async with await session.post(url=url, data=data, params=params, headers=headers) as resp:
             headers_resp = {k: v for k, v in resp.headers.items()}
             content = await resp.read()
@@ -166,7 +172,10 @@ async def redirect_put_api(
     headers = await get_headers(context)
     params = request.query_params
 
-    async with aiohttp.ClientSession(auto_decompress=False) as session:
+    async with aiohttp.ClientSession(
+            connector=aiohttp.TCPConnector(verify_ssl=False),
+            auto_decompress=False) as session:
+
         async with await session.put(url=url, data=data, params=params, headers=headers) as resp:
             headers_resp = {k: v for k, v in resp.headers.items()}
             content = await resp.read()
@@ -192,7 +201,10 @@ async def redirect_delete_api(
     data = await request.body()
     headers = await get_headers(context)
 
-    async with aiohttp.ClientSession(auto_decompress=False) as session:
+    async with aiohttp.ClientSession(
+            connector=aiohttp.TCPConnector(verify_ssl=False),
+            auto_decompress=False) as session:
+
         async with await session.delete(url=url, data=data,  params=params, headers=headers) as resp:
             headers_resp = {k: v for k, v in resp.headers.items()}
             content = await resp.read()

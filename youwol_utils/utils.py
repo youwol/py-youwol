@@ -220,7 +220,7 @@ async def retrieve_user_info(auth_token: str):
     headers = {"authorization": f"Bearer {auth_token}"}
     url = "https://auth.youwol.com/auth/realms/youwol/protocol/openid-connect/userinfo"
 
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
         async with await session.post(url=url, headers=headers) as resp:
             if resp.status != 200:
                 raise HTTPException(status_code=resp.status, detail=await resp.read())

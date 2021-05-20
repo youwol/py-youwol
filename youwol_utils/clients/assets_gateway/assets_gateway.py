@@ -11,11 +11,16 @@ class AssetsGatewayClient:
     url_base: str
 
     headers: Dict[str, str] = field(default_factory=lambda: {})
-    connector = aiohttp.TCPConnector(verify_ssl=False)
+
+    @staticmethod
+    def get_aiohttp_connector():
+        return aiohttp.TCPConnector(verify_ssl=False)
 
     async def healthz(self, **kwargs):
         url = f"{self.url_base}/healthz"
-        async with aiohttp.ClientSession(headers=self.headers) as session:
+        async with aiohttp.ClientSession(
+                connector=self.get_aiohttp_connector(),
+                headers=self.headers) as session:
             async with await session.get(url=url, **kwargs) as resp:
                 if resp.status == 200:
                     return await resp.json()
@@ -26,7 +31,7 @@ class AssetsGatewayClient:
         # data = files = {'file': open(zip_path, 'rb')}
         url = f"{self.url_base}/assets/{kind}/location/{folder_id}"
         params = {"group-id": group_id} if group_id else {}
-        async with aiohttp.ClientSession(headers=self.headers) as session:
+        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
             async with await session.put(url=url, data=data, params=params, **kwargs) as resp:
                 if resp.status == 200:
                     return await resp.json()
@@ -37,7 +42,7 @@ class AssetsGatewayClient:
         url = f"{self.url_base}/raw/{kind}/metadata/{raw_id}"
         url = url if not rest_of_path else f"{url}/{rest_of_path}"
 
-        async with aiohttp.ClientSession(headers=self.headers) as session:
+        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
             async with await session.get(url=url,  **kwargs) as resp:
                 if resp.status == 200:
                     return await resp.json()
@@ -47,7 +52,7 @@ class AssetsGatewayClient:
 
         url = f"{self.url_base}/tree/items/{item_id}"
 
-        async with aiohttp.ClientSession(headers=self.headers) as session:
+        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
             async with await session.get(url=url, **kwargs) as resp:
                 if resp.status == 200:
                     return await resp.json()
@@ -57,7 +62,7 @@ class AssetsGatewayClient:
 
         url = f"{self.url_base}/tree/folders/{folder_id}"
 
-        async with aiohttp.ClientSession(headers=self.headers) as session:
+        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
             async with await session.get(url=url, **kwargs) as resp:
                 if resp.status == 200:
                     return await resp.json()
@@ -67,7 +72,7 @@ class AssetsGatewayClient:
 
         url = f"{self.url_base}/tree/folders/{parent_folder_id}"
 
-        async with aiohttp.ClientSession(headers=self.headers) as session:
+        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
             async with await session.put(url=url, json=body, **kwargs) as resp:
                 if resp.status == 200:
                     return await resp.json()
@@ -77,7 +82,7 @@ class AssetsGatewayClient:
 
         url = f"{self.url_base}/tree/drives/{drive_id}"
 
-        async with aiohttp.ClientSession(headers=self.headers) as session:
+        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
             async with await session.get(url=url, **kwargs) as resp:
                 if resp.status == 200:
                     return await resp.json()
@@ -86,7 +91,7 @@ class AssetsGatewayClient:
     async def create_drive(self, group_id: str, body, **kwargs):
 
         url = f"{self.url_base}/tree/groups/{group_id}/drives"
-        async with aiohttp.ClientSession(headers=self.headers) as session:
+        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
             async with await session.put(url=url, json=body, **kwargs) as resp:
                 if resp.status == 200:
                     return await resp.json()
@@ -96,7 +101,7 @@ class AssetsGatewayClient:
 
         url = f"{self.url_base}/groups"
 
-        async with aiohttp.ClientSession(headers=self.headers) as session:
+        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
             async with await session.get(url=url,  **kwargs) as resp:
                 if resp.status == 200:
                     return await resp.json()
@@ -106,7 +111,7 @@ class AssetsGatewayClient:
 
         url = f"{self.url_base}/tree/groups/{group_id}/drives"
 
-        async with aiohttp.ClientSession(headers=self.headers) as session:
+        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
             async with await session.get(url=url,  **kwargs) as resp:
                 if resp.status == 200:
                     return await resp.json()
@@ -116,7 +121,7 @@ class AssetsGatewayClient:
 
         url = f"{self.url_base}/assets/{asset_id}"
 
-        async with aiohttp.ClientSession(headers=self.headers) as session:
+        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
             async with await session.get(url=url,  **kwargs) as resp:
                 if resp.status == 200:
                     return await resp.json()
@@ -126,7 +131,7 @@ class AssetsGatewayClient:
 
         url = f"{self.url_base}/assets/{asset_id}"
 
-        async with aiohttp.ClientSession(headers=self.headers) as session:
+        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
             async with await session.post(url=url, json=body, **kwargs) as resp:
                 if resp.status == 200:
                     return await resp.json()
@@ -136,7 +141,7 @@ class AssetsGatewayClient:
 
         url = f"{self.url_base}/assets/{asset_id}/images/{filename}"
 
-        async with aiohttp.ClientSession(headers=self.headers) as session:
+        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
             async with await session.post(url=url, data=data, **kwargs) as resp:
                 if resp.status == 200:
                     return await resp.json()
@@ -146,7 +151,7 @@ class AssetsGatewayClient:
 
         url = f"{self.url_base}/assets/{asset_id}/images/{filename}"
 
-        async with aiohttp.ClientSession(headers=self.headers) as session:
+        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
             async with await session.delete(url=url, **kwargs) as resp:
                 if resp.status == 200:
                     return await resp.json()
@@ -156,7 +161,7 @@ class AssetsGatewayClient:
 
         url = f"{self.url_base}/cdn/libraries/{library_name}/{version}"
 
-        async with aiohttp.ClientSession(headers=self.headers) as session:
+        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
             async with await session.delete(url, **kwargs) as resp:
                 if resp.status == 200:
                     return await resp.json()
@@ -166,7 +171,7 @@ class AssetsGatewayClient:
 
         url = f"{self.url_base}/cdn/libraries/{library_name}/{version}"
 
-        async with aiohttp.ClientSession(headers=self.headers) as session:
+        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
             async with await session.get(url, **kwargs) as resp:
                 if resp.status == 200:
                     return await resp.read()
@@ -176,7 +181,7 @@ class AssetsGatewayClient:
 
         url = f"{self.url_base}/cdn/queries/loading-graph"
 
-        async with aiohttp.ClientSession(headers=self.headers) as session:
+        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
             async with await session.post(url, json=body, **kwargs) as resp:
                 if resp.status == 200:
                     return await resp.json()

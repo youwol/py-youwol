@@ -31,7 +31,7 @@ async def get_public_user_auth_token(username: str, pwd: str, client_id: str):
     form.add_field("client_id", client_id)
     form.add_field("grant_type", "password")
     url = "https://auth.youwol.com/auth/realms/youwol/protocol/openid-connect/token"
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
         async with await session.post(url=url, data=form) as resp:
             if resp.status != 200:
                 raise HTTPException(status_code=resp.status, detail=await resp.read())
