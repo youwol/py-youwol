@@ -99,8 +99,9 @@ class NativesBypassMiddleware(BaseHTTPMiddleware):
                     and request.method == "GET":
                 resp.headers.update({'cache-control': 'no-store'})
 
-            resp.headers.update({'Cross-Origin-Opener-Policy': 'same-origin'})
-            resp.headers.update({'Cross-Origin-Embedder-Policy': 'require-corp'})
+            if 'ui/flux-builder' in request.url.path:
+                resp.headers.update({'Cross-Origin-Opener-Policy': 'same-origin'})
+                resp.headers.update({'Cross-Origin-Embedder-Policy': 'require-corp'})
             return resp
         except Exception as e:
             if request.url.path.startswith("/admin"):
