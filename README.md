@@ -36,8 +36,8 @@ This environment provides:
 ## Requirements
 
 
-*   Tested on python *3.6.8* and *3.6.9*, should work on any 3.6.x with x>8. 
-    YouWol is **not working** on python 3.7 to 3.9 for now 
+*   Tested (lightly) on python *3.6*, *3.7*, *3.8* and *3.6.9*, we recommend *3.9.5*
+    as it is the python's version we use in YouWol
 *   We (strongly) recommend using one of the latest version of Google Chrome browser (e.g. >= 89). 
     Some features used by YouWol are available only on the latest releases of the major browsers, 
     also we did not have the time to thoroughly test the platform with other browsers than Chrome for now.
@@ -57,16 +57,16 @@ Then create and activate a virtual environment (feel free to pick any name inste
 the name of the virtual env is referred as *youwol_venv*): 
 -   For **Mac** and **Linux**:
 ```bash
-python3.6 -m venv .youwol_venv
+python3.9 -m venv .youwol_venv
 source .youwol_venv/bin/activate
 ```
 -   For **Windows**
 
-The installation hase been tested on python3.6.8, installed 
-from <a href='https://www.python.org/downloads/release/python-368/'> here </a>
+The installation hase been tested on python3.9.5, installed 
+from <a href='https://www.python.org/downloads/release/python-395/'> here </a>
 
 ```bash
-c:\Python368\python -m venv  .youwol_venv
+c:\Python395\python -m venv  .youwol_venv
 .youwol_venv\Scripts\activate.bat
 ```
 
