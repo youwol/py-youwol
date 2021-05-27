@@ -1,4 +1,3 @@
-import glob
 import os
 from pathlib import Path
 from setuptools import setup, find_packages
@@ -47,18 +46,18 @@ setup(
         },
     include_package_data=True,
     install_requires=[
-        "cowpy==1.1.0",
-        "aiohttp==3.7.3",
-        "fastapi==0.63.0",
-        "uvicorn==0.13.3",
+        "aiohttp==3.7.4.post0",
+        "fastapi==0.65.1",
+        "uvicorn==0.13.4",
         "python-multipart==0.0.5",
-        "aiohttp==3.7.3",
+        "aiohttp==3.7.4.post0",
         "async==0.6.2",
-        "websockets==9.0.1",
+        "websockets==9.0.2",
         "watchgod==0.7",
-        "aiofiles==0.6.0",
+        "aiofiles==0.7.0",
         "async_generator==1.10",
-        "pillow==8.1.0"
+        "pillow==8.2.0",
+        "cowpy==1.1.0"
         ],
     entry_points={
         'console_scripts': ['youwol=youwol.main:main']
