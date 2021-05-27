@@ -14,6 +14,7 @@ test_install/**/*
 !test_install/README.md
 
 .virtualenv
+.venv_*
 .publish_venv
 __pycache__
 .idea
