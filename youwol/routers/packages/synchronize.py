@@ -46,7 +46,7 @@ def ensure_dependencies(
         raise ActionException(
             context.action,
             f"Following dependencies of {package.info.name} do not exists in the youwol module's store" +
-            ": {str(missing_dependencies)}. Did you built them?")
+            f": {str(missing_dependencies)}. Did you built them?")
 
     return dependencies
 
