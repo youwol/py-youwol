@@ -1,3 +1,3 @@
-from typing import Union, Mapping, List
+from typing import Any, Dict
 
-JSON = Union[str, int, float, bool, None, Mapping[str, 'JSON'], List['JSON']]
+JSON = Dict[str, Any]
