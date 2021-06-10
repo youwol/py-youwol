@@ -93,11 +93,12 @@ async def raise_exception_from_response(raw_resp: ClientResponse, **kwargs):
     detail = None
 
     print(f"HTTPException with status code {raw_resp.status}")
-
+    parameters = {}
     try:
         resp = await raw_resp.json()
         if resp:
             detail = resp.get("detail", None) or resp.get("message", None) or ""
+            parameters = resp.get("parameters", None) or {}
     except ValueError:
         detail = raw_resp.reason
     except Exception:
@@ -109,7 +110,7 @@ async def raise_exception_from_response(raw_resp: ClientResponse, **kwargs):
         print(f"detail:", detail)
 
     print(raw_resp)
-    raise YouWolException(status_code=raw_resp.status, detail=detail, **kwargs)
+    raise YouWolException(status_code=raw_resp.status, detail=detail, **{**kwargs, ** parameters} )
 
 
 def get_default_owner(headers: Mapping[str, str]):
