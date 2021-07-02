@@ -109,7 +109,8 @@ class YouwolConfiguration(NamedTuple):
             access_token = await get_public_user_auth_token(
                 username=username,
                 pwd=pwd,
-                client_id=remote.metadata['keycloakClientId']
+                client_id=remote.metadata['keycloakClientId'],
+                openid_host=self.userConfig.general.openid_host
                 )
         except Exception as e:
             raise RuntimeError(f"Can not authorize from email/pwd provided in " +

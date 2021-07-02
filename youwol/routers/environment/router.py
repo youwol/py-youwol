@@ -216,7 +216,8 @@ async def sync_user(
             auth_token = await get_public_user_auth_token(
                 username=body.email,
                 pwd=body.password,
-                client_id=config.get_remote_info().metadata['keycloakClientId']
+                client_id=config.get_remote_info().metadata['keycloakClientId'],
+                openid_host=config.userConfig.general.openid_host
                 )
         except Exception as e:
             raise RuntimeError(f"Can not authorize from email/pwd @ {config.get_remote_info().host}")
@@ -230,7 +231,7 @@ async def sync_user(
             secrets[body.email] = {"password": body.password}
         write_json(secrets, config.pathsBook.secret_path)
 
-        user_info = await retrieve_user_info(auth_token)
+        user_info = await retrieve_user_info(auth_token=auth_token, openid_host=config.userConfig.general.openid_host)
 
         users_info = parse_json(config.userConfig.general.usersInfo)
         users_info['users'][body.email] = {

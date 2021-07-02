@@ -53,8 +53,10 @@ async def get_yw_config_starter(main_args: MainArguments):
     email = input("Your email address?")
     pwd = getpass("Your YouWol password?")
     token = None
+    default_openid_host = "gc.auth.youwol.com"
     try:
-        token = await get_public_user_auth_token(username=email, pwd=pwd, client_id='public-user')
+        token = await get_public_user_auth_token(username=email, pwd=pwd, client_id='public-user',
+                                                 openid_host=default_openid_host)
         print("token", token)
     except HTTPException as e:
         print(f"Can not retrieve authentication token:\n\tstatus code: {e.status_code}\n\tdetail:{e.detail}")
@@ -62,7 +64,7 @@ async def get_yw_config_starter(main_args: MainArguments):
 
     user_info = None
     try:
-        user_info = await retrieve_user_info(auth_token=token)
+        user_info = await retrieve_user_info(auth_token=token, openid_host=default_openid_host)
         print("user_info", user_info)
     except HTTPException as e:
         print(f"Can not retrieve user info:\n\tstatus code: {e.status_code}\n\tdetail:{e.detail}")

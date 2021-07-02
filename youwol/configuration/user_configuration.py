@@ -23,14 +23,14 @@ def parse_json(path: Union[str, Path]):
     return json.loads(open(str(path)).read())
 
 
-async def get_public_user_auth_token(username: str, pwd: str, client_id: str):
+async def get_public_user_auth_token(username: str, pwd: str, client_id: str, openid_host: str):
 
     form = aiohttp.FormData()
     form.add_field("username", username)
     form.add_field("password", pwd)
     form.add_field("client_id", client_id)
     form.add_field("grant_type", "password")
-    url = "https://auth.youwol.com/auth/realms/youwol/protocol/openid-connect/token"
+    url = f"https://{openid_host}/auth/realms/youwol/protocol/openid-connect/token"
     async with aiohttp.ClientSession(
             connector=aiohttp.TCPConnector(verify_ssl=False),
             timeout=aiohttp.ClientTimeout(total=5)) as session:
@@ -100,6 +100,8 @@ class General(BaseModel):
 
     secretsFile: TPath = None
     remotesInfo: TPath = None
+
+    openid_host: str
     localGateway: LocalGateway = LocalGateway()
     defaultPublishLocation: TPath = Path("private/default-publish")
     resources: Dict[str, Url] = {}

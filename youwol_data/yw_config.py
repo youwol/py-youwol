@@ -61,7 +61,8 @@ async def configuration(main_args: MainArguments, parameters: Dict[str, any]):
             usersInfo=yw_config_path / "users-info.json",
             systemFolder=system_path,
             remotesInfo=yw_config_path / "remotes-info.json",
-            defaultPublishLocation="private/default-drive"
+            defaultPublishLocation="private/default-drive",
+            openid_host="gc.auth.youwol.com"
             ),
         packages=Packages(
             pipelines={
