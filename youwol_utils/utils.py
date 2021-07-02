@@ -112,7 +112,7 @@ def full_local_fake_user(request):
         }
 
 
-async def get_access_token(client_id: str, client_secret: str, client_scope: str):
+async def get_access_token(client_id: str, client_secret: str, client_scope: str, openid_host: str):
 
     body = {
         "client_id": client_id,
@@ -120,7 +120,7 @@ async def get_access_token(client_id: str, client_secret: str, client_scope: str
         "client_secret": client_secret,
         "scope": client_scope
         }
-    url = "https://auth.youwol.com/auth/realms/youwol/protocol/openid-connect/token"
+    url = f"https://{openid_host}/auth/realms/youwol/protocol/openid-connect/token"
     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
 
     async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
@@ -134,15 +134,17 @@ async def get_headers_auth_admin_from_env():
     client_id = os.getenv("AUTH_CLIENT_ID")
     client_secret = os.getenv("AUTH_CLIENT_SECRET")
     client_scope = os.getenv("AUTH_CLIENT_SCOPE")
-    resp = await get_access_token(client_id=client_id, client_secret=client_secret, client_scope=client_scope)
+    openid_host = os.getenv("AUTH_HOST")
+    resp = await get_access_token(client_id=client_id, client_secret=client_secret, client_scope=client_scope,
+                                  openid_host=openid_host)
     access_token = resp['access_token']
     return {"Authorization": f"Bearer {access_token}"}
 
 
-async def get_headers_auth_admin_from_secrets_file(file_path: Path, url_cluster: str):
+async def get_headers_auth_admin_from_secrets_file(file_path: Path, url_cluster: str, openid_host: str):
 
     secret = json.loads(file_path.read_text())[url_cluster]
-    resp = await get_access_token(secret["clientId"], secret["clientSecret"], secret["scope"])
+    resp = await get_access_token(secret["clientId"], secret["clientSecret"], secret["scope"], openid_host=openid_host)
     access_token = resp['access_token']
     return {"Authorization": f"Bearer {access_token}"}
 
@@ -215,10 +217,10 @@ def get_content_encoding(file_name: str):
     return ""
 
 
-async def retrieve_user_info(auth_token: str):
+async def retrieve_user_info(auth_token: str, openid_host: str):
 
     headers = {"authorization": f"Bearer {auth_token}"}
-    url = "https://auth.youwol.com/auth/realms/youwol/protocol/openid-connect/userinfo"
+    url = f"https://{openid_host}/auth/realms/youwol/protocol/openid-connect/userinfo"
 
     async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
         async with await session.post(url=url, headers=headers) as resp:
@@ -228,7 +230,7 @@ async def retrieve_user_info(auth_token: str):
             return resp
 
 
-async def get_myself_auth_token(secret_path: Path):
+async def get_myself_auth_token(secret_path: Path, openid_host):
 
     secret = json.loads(open(str(secret_path)).read())
     form = aiohttp.FormData()
@@ -238,7 +240,7 @@ async def get_myself_auth_token(secret_path: Path):
     form.add_field("grant_type", "password")
     form.add_field("client_secret", secret["dev.platform.youwol.com"]["clientSecret"])
     form.add_field("scope", "email profile youwol_dev")
-    url = "https://auth.youwol.com/auth/realms/youwol/protocol/openid-connect/token"
+    url = f"https://{openid_host}/auth/realms/youwol/protocol/openid-connect/token"
     async with aiohttp.ClientSession() as session:
         async with await session.post(url=url, data=form) as resp:
             resp = await resp.json()
