@@ -41,7 +41,8 @@ async def get_headers(context: Context) -> Headers:
 async def get_backend_url(service_name: str, path: str, context: Context) -> str:
     backends = await get_all_backends(context)
     backend = next(backend for backend in backends if backend.info.name == service_name)
-    return f"http://localhost:{backend.info.port}/{path}"
+    end_point = backend.pipeline.serve.end_point(path, backend.target, context)
+    return f"http://localhost:{backend.info.port}/{end_point}"
 
 
 @router.get("/authorization/user-info",

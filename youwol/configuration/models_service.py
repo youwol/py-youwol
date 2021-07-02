@@ -12,14 +12,21 @@ URL = str
 
 
 class Serve(Action):
+
     health: URL = None
     openApi: Callable[[Any, Context], str] = None
+    mapper_end_points: Callable[[str, Target, Context], str] = None
 
     def open_api(self, resource: Any, context: Context):
         if not self.openApi:
             return None
 
         return self.openApi(resource, context)
+
+    def end_point(self, rest_of_path: str, target: Target, context: Context) -> str:
+        if not self.mapper_end_points:
+            return rest_of_path
+        return self.mapper_end_points(rest_of_path, target, context)
 
 
 def get_target_from_base_path(base_path: str, targets: Dict[str, any]):
