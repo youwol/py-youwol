@@ -187,7 +187,7 @@ async def register_asset(
 
     local_cdn = config.localClients.cdn_client
     resp = await local_cdn.get_versions(to_package_name(asset_id))
-    await publish_library_version(request, asset_id=asset_id, version=resp['versions'][-1], config=config)
+    await publish_library_version(request, asset_id=asset_id, version=resp['versions'][0], config=config)
 
 
 @router.post("/publish/{asset_id}/{version}", summary="execute action")
