@@ -93,6 +93,11 @@ def sync_services(platform_path: Path, open_source_path: Path):
         files = flatten([glob.glob(str(platform_path / service.src) + pattern, recursive=True)
                          for pattern in service.include])
         files = list(files)
+        if service.is_front:
+            shutil.copy(src=platform_path / service.src / '..' / 'package.json',
+                        dst=service.dst
+                        )
+
         for file in files:
             destination = platform_path / service.dst / Path(file).relative_to(platform_path / service.src)
             if Path(file).is_file():
