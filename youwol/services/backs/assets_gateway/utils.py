@@ -8,7 +8,7 @@ from starlette.requests import Request
 
 from youwol_utils import (
     to_group_id, flatten, generate_headers_downstream,
-    ReadPolicyEnumFactory, SharePolicyEnumFactory, base64,
+    ReadPolicyEnumFactory, SharePolicyEnumFactory, base64, log_info,
     )
 from .configurations import Configuration
 from .models import ItemResponse, AssetResponse, GroupAccess, FolderResponse
@@ -17,8 +17,9 @@ from .raw_stores.interface import AssetMeta
 
 async def init_resources(config: Configuration):
 
-    print("Ensure database resources")
+    log_info("Ensure database resources")
     headers = await config.admin_headers
+    log_info("Successfully retrieved authorization for resources creation")
     doc_db = config.data_client.docdb
     storage = config.data_client.storage
     table_ok, bucket_ok = await asyncio.gather(
@@ -27,7 +28,8 @@ async def init_resources(config: Configuration):
         )
     if not bucket_ok or not table_ok:
         raise Exception(f"Problem during resources initialisation: table ok? {table_ok}; bucket ok? {bucket_ok}")
-    print("resources initialization done")
+
+    log_info("resources initialization done")
 
 
 def chrono(t0):

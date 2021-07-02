@@ -10,7 +10,7 @@ from uuid import uuid4
 from fastapi import UploadFile, HTTPException
 
 from .configurations import Configuration
-from youwol_utils import JSON, DocDb, Storage, base64
+from youwol_utils import JSON, DocDb, Storage, base64, log_info
 from .models import Workflow, BuilderRendering, RunnerRendering, Project, Component, Requirements
 
 flatten = itertools.chain.from_iterable
@@ -26,14 +26,16 @@ class Constants(NamedTuple):
 
 
 async def init_resources(config: Configuration):
-    print("Init database resources")
+    log_info("Ensure database resources")
     headers = await config.admin_headers if config.admin_headers else {}
 
+    log_info("Successfully retrieved authorization for resources creation")
     await asyncio.gather(
         config.doc_db_component.ensure_table(headers=headers),
         config.doc_db.ensure_table(headers=headers),
         config.storage.ensure_bucket(headers=headers)
         )
+    log_info("resources initialization done")
 
 
 def read_json(folder: Path, name: str) -> JSON:

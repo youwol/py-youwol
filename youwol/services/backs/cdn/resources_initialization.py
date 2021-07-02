@@ -44,9 +44,10 @@ async def synchronize(dir_path: Path, zip_dir_name: str, configuration: any, hea
 
     paths = flatten([[Path(root) / f for f in files] for root, _, files in os.walk(str(dir_path))])
     paths = list(paths)
-    forms = [format_download_form(path, Path(), dir_path / zip_dir_name, False) for path in paths]
+    forms = await asyncio.gather(*[format_download_form(path, Path(), dir_path / zip_dir_name, False)
+                                   for path in paths])
 
-    await post_storage_by_chunk(configuration.storage, forms, 1, headers)
+    await post_storage_by_chunk(configuration.storage, list(forms), 1, headers)
 
     paths_index = flatten([[Path(root) / f for f in files if f == "package.json"]
                            for root, _, files in os.walk(str(dir_path))])

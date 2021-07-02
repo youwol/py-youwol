@@ -15,7 +15,7 @@ from starlette.requests import Request
 
 from youwol_utils import (
     chunks, Storage, get_content_type, user_info, generate_headers_downstream,
-    get_user_group_ids, ensure_group_permission, QueryBody, DocDb,
+    get_user_group_ids, ensure_group_permission, QueryBody, DocDb, log_info,
     )
 
 from .configurations import Configuration
@@ -25,24 +25,28 @@ flatten = itertools.chain.from_iterable
 
 
 async def init_resources(config: Configuration):
-    print("Ensure database resources")
+    log_info("Ensure database resources")
     headers = await config.admin_headers if config.admin_headers else {}
 
-    table1_ok, bucket_ok = await asyncio.gather(config.doc_db_asset.ensure_table(headers=headers),
-                                                config.storage.ensure_bucket(headers=headers))
-    table3_ok = await asyncio.gather(config.doc_db_access_policy.ensure_table(headers=headers))
-    table2_ok = await asyncio.gather(config.doc_db_access_history.ensure_table(headers=headers))
-
-    if not bucket_ok:
-        raise Exception("Problem during bucket initialisation")
+    log_info("Successfully retrieved authorization for resources creation")
+    log_info("Ensure assets table")
+    table1_ok = await config.doc_db_asset.ensure_table(headers=headers)
     if not table1_ok:
         raise Exception("Problem during docdb_asset resources initialisation")
+    log_info("Ensure assets bucket")
+    bucket_ok = await config.storage.ensure_bucket(headers=headers)
+    if not bucket_ok:
+        raise Exception("Problem during bucket initialisation")
+    log_info("Ensure access policy table")
+    table2_ok = await asyncio.gather(config.doc_db_access_policy.ensure_table(headers=headers))
     if not table2_ok:
-        raise Exception("Problem during docdb_access_history resources initialisation")
-    if not table3_ok:
         raise Exception("Problem during docdb_access_policy resources initialisation")
+    log_info("Ensure access history table")
+    table3_ok = await asyncio.gather(config.doc_db_access_history.ensure_table(headers=headers))
+    if not table3_ok:
+        raise Exception("Problem during docdb_access_history resources initialisation")
 
-    print("resources initialization done")
+    log_info("resources initialization done")
 
 
 def group_scope_to_owner(scope: str) -> Union[str, None]:

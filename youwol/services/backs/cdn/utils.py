@@ -3,21 +3,23 @@ import base64
 import itertools
 import json
 import os
+import time
 import zipfile
 from pathlib import Path
+from shutil import which
 from typing import Union, List, Mapping
 from uuid import uuid4
 import hashlib
 
 from fastapi import HTTPException
 from starlette.responses import Response
-from typing.io import IO
+from typing import IO
 
 from .utils_indexing import format_doc_db_record, get_version_number_str
-from youwol_utils import generate_headers_downstream, QueryBody, files_check_sum, shutil
+from youwol_utils import generate_headers_downstream, QueryBody, files_check_sum, shutil, log_info, log_error
 from youwol_utils.clients.docdb.models import Query, WhereClause, OrderingClause
 from .configurations import Configuration
-
+import brotli
 from .models import FormData, PublishResponse
 
 flatten = itertools.chain.from_iterable
@@ -51,7 +53,7 @@ def create_tmp_folder(zip_filename):
 def get_content_encoding(file_id):
 
     file_id = str(file_id)
-    if ".json" not in file_id and ".js" in file_id or ".css" in file_id:
+    if ".json" not in file_id and ".js" in file_id or ".css" in file_id or '.data' in file_id or '.wasm' in file_id:
         return "br"
     """ 
     if ".gz" in file_id:
@@ -76,6 +78,8 @@ def get_content_type(file_id):
         return "image / svg + xml"
     elif '.html' in file_id:
         return "text/html"
+    elif '.wasm' in file_id:
+        return 'application/wasm'
     return "application/octet-stream"
 
 
@@ -110,13 +114,33 @@ def loading_graph(downloaded, deque, items_dict):
     return [[items_dict[a] for a in to_add]] + loading_graph(downloaded + [r for r in to_add], new_deque, items_dict)
 
 
-def format_download_form(file_path: Path, base_path: Path, dir_path: Path, compress: bool, rename: str = None) \
+async def format_download_form(file_path: Path, base_path: Path, dir_path: Path, compress: bool, rename: str = None) \
         -> FormData:
 
     if compress and get_content_encoding(file_path) == "br":
-        os.system(f'brotli {str(file_path)}')
-        os.system(f'rm {str(file_path)}')
-        os.system(f'mv {str(file_path)}.br {str(file_path)}')
+        path_log = "/".join(file_path.parts[2:])
+        start = time.time()
+        if which('brotli'):
+            log_info(f'brotlify (system) {path_log} ...')
+            p = await asyncio.create_subprocess_shell(
+                cmd=f'brotli {str(file_path)}',
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                shell=True)
+
+            async for f in p.stderr:
+                log_error(f.decode('utf-8'))
+            await p.communicate()
+            os.system(f'rm {str(file_path)}')
+            os.system(f'mv {str(file_path)}.br {str(file_path)}')
+        else:
+            log_info(f'brotlify (python) {path_log}')
+            start = time.time()
+            compressed = brotli.compress(file_path.read_bytes())
+            with file_path.open("wb") as f:
+                f.write(compressed)
+        log_info(f'...{path_log} => {time.time() - start} s')
+
     data = open(str(file_path), 'rb').read()
     path_bucket = base_path / file_path.relative_to(dir_path) if not rename else base_path / rename
 
@@ -153,9 +177,9 @@ async def publish_package(file: IO, filename: str, content_encoding, configurati
 
     os.makedirs(dir_path)
     try:
-        print("extract .zip file...")
+        log_info("extract .zip file...")
         compressed_size = extract_zip_file(file, zip_path, dir_path, delete_original=False)
-        print("...zip extracted")
+        log_info("...zip extracted", compressed_size=compressed_size)
 
         package_path = next(flatten([[Path(root) / f for f in files if f == "package.json"]
                                      for root, _, files in os.walk(dir_path)]))
@@ -168,11 +192,12 @@ async def publish_package(file: IO, filename: str, content_encoding, configurati
 
         paths = flatten([[Path(root) / f for f in files] for root, _, files in os.walk(dir_path)])
         paths = [p for p in paths if p != zip_path]
-        form_original = format_download_form(zip_path, base_path, package_path.parent, need_compression,
-                                             '__original.zip')
-        forms = [format_download_form(path, base_path, package_path.parent, need_compression)
-                 for path in paths] + [form_original]
-
+        form_original = await format_download_form(zip_path, base_path, package_path.parent, need_compression,
+                                                   '__original.zip')
+        forms = await asyncio.gather(*[
+            format_download_form(path, base_path, package_path.parent, need_compression) for path in paths
+            ])
+        forms = list(forms) + [form_original]
         # the fingerprint in the md5 checksum of the included files after having eventually being compressed
         os.remove(zip_path)
         md5_stamp = md5_from_folder(dir_path)
@@ -181,16 +206,16 @@ async def publish_package(file: IO, filename: str, content_encoding, configurati
                                              content_type=form.content_type, owner=Configuration.owner, headers=headers)
                          for form in forms]
 
-        print(f"Clean directory {str(base_path)}")
+        log_info(f"Clean directory {str(base_path)}")
         await storage.delete_group(prefix=base_path, owner=Configuration.owner, headers=headers)
 
-        print(f"Send {len(post_requests)} files to storage")
+        log_info(f"Send {len(post_requests)} files to storage")
         await asyncio.gather(*post_requests)
         record = format_doc_db_record(package_path=package_path, fingerprint=md5_stamp)
-        print("Create docdb document")
+        log_info("Create docdb document", record=record)
         await configuration.doc_db.create_document(record, owner=Configuration.owner, headers=headers)
 
-        print("Done", md5_stamp)
+        log_info("Done", md5_stamp=md5_stamp)
         return PublishResponse(name=package_json["name"], version=version, compressedSize=compressed_size,
                                id=to_package_id(package_json["name"]), fingerprint=md5_stamp,
                                url=f"{to_package_id(package_json['name'])}/{record['version']}/{record['bundle']}")
@@ -199,7 +224,6 @@ async def publish_package(file: IO, filename: str, content_encoding, configurati
 
 
 def format_response(script, file_id):
-
     return Response(content=script, headers={
         "Content-Encoding": get_content_encoding(file_id),
         "Content-Type": get_content_type(file_id),

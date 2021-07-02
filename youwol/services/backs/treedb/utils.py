@@ -6,7 +6,7 @@ from starlette.requests import Request
 
 from youwol_utils import (
     DocDb, get_all_individual_groups, asyncio, ensure_group_permission, generate_headers_downstream, user_info,
-    get_user_group_ids,
+    get_user_group_ids, log_info,
     )
 from .configurations import Configuration
 
@@ -15,18 +15,23 @@ async def init_resources(
         config: Configuration
         ):
 
-    print("Ensure database resources")
+    log_info("Ensure database resources")
     headers = await config.admin_headers if config.admin_headers else {}
+    log_info("Successfully retrieved authorization for resources creation")
     doc_dbs = config.doc_dbs
+    log_info("Ensure items_db table")
     items_ok = await doc_dbs.items_db.ensure_table(headers=headers)
+    log_info("Ensure folders_db table")
     folders_ok = await doc_dbs.folders_db.ensure_table(headers=headers)
+    log_info("Ensure drives_db table")
     drives_ok = await doc_dbs.drives_db.ensure_table(headers=headers)
+    log_info("Ensure deleted_db table")
     deleted_ok = await doc_dbs.deleted_db.ensure_table(headers=headers)
 
     if not (items_ok and folders_ok and drives_ok and deleted_ok):
         raise Exception(f"Problem during docdb's table initialisation {[items_ok, folders_ok, drives_ok, deleted_ok]}")
 
-    print("resources initialization done")
+    log_info("resources initialization done")
 
 
 def to_group_id(

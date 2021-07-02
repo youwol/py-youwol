@@ -12,7 +12,7 @@ from starlette.responses import Response
 from .configurations import Configuration, get_configuration
 from .models import (
     PublishResponse, ListLibsResponse, Release, ListVersionsResponse, SyncResponse,
-    LoadingGraphResponseV1, LoadingGraphBody, DeleteBody, Library, DependenciesResponseV1, DependenciesLatestBody,
+    LoadingGraphResponseV1, LoadingGraphBody, DeleteBody, Library,
     ListPacksResponse, FluxPackSummary,
     )
 from .resources_initialization import init_resources, synchronize
@@ -43,6 +43,9 @@ async def publish(
         file: UploadFile = File(...),
         content_encoding: str = Form('identity'),
         configuration: Configuration = Depends(get_configuration)):
+
+    # https://www.toptal.com/python/beginners-guide-to-concurrency-and-parallelism-in-python
+    # Publish needs to be done using a queue to elt the cdn pods fully available to fetch resources
 
     headers = generate_headers_downstream(request.headers)
     return await publish_package(file.file, file.filename, content_encoding, configuration, headers)
