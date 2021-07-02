@@ -520,7 +520,7 @@ async def post_library(
     data = {'file': open(zip_path, 'rb'), 'content_encoding': 'identity'}
 
     await client.put_asset_with_raw(kind='package', folder_id=parent_id,
-                                    data=data, group_id=path_item.drive['group_id'])
+                                    data=data, group_id=path_item.drive['group_id'], timeout=600)
 
 
 async def ensure_path(path_item: PathResp, assets_gateway_client: AssetsGatewayClient):
