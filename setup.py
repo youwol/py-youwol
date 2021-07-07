@@ -56,6 +56,7 @@ setup(
         "watchgod==0.7",
         "aiofiles==0.7.0",
         "async_generator==1.10",
+        "brotlipy==0.7.0",
         "pillow==8.2.0",
         "cowpy==1.1.0"
         ],
