@@ -1,12 +1,12 @@
 {   "policies": {
-        "default": "platform.youwol.com"
+        "default": "gc.platform.youwol.com"
     },
     "remotes": {
-        "platform.youwol.com":{
-            "host":"platform.youwol.com",
+        "gc.platform.youwol.com":{
+            "host":"gc.platform.youwol.com",
             "name":"production server",
             "metadata": {
-                "keycloakClientId":"public-user"
+                "keycloakClientId":"public-dev"
             }
         }
     }
