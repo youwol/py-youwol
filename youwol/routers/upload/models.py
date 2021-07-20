@@ -12,6 +12,13 @@ class PackageStatus(Enum):
     DONE = 'PackageStatus.DONE'
 
 
+class FluxAppStatus(Enum):
+    NOT_FOUND = 'FluxAppStatus.NOT_FOUND'
+    MISMATCH = 'FluxAppStatus.MISMATCH'
+    SYNC = 'FluxAppStatus.SYNC'
+    PROCESSING = 'FluxAppStatus.PROCESSING'
+    DONE = 'FluxAppStatus.DONE'
+
 
 class TreeItem(BaseModel):
     name: str
