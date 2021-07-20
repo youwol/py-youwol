@@ -32,6 +32,10 @@ class FluxProjectsStore(RawStore):
         body = await request.body()
         body = json.loads((await request.body()).decode('utf8')) if body else None
 
+        if body['projectId']:
+            await self.client.update_project(project_id=body['projectId'], body=body, headers=headers)
+            return body['projectId'], AssetMeta(name=body["name"])
+
         if body is None:
             body = {
                 "name": metadata.name,
@@ -39,8 +43,6 @@ class FluxProjectsStore(RawStore):
                 "scope": to_group_scope(metadata.groupId),
                 "fluxPacks": []
                 }
-            resp = await self.client.create_project(body=body, headers=headers)
-            return resp['projectId'], AssetMeta()
 
         resp = await self.client.create_project(body=body, headers=headers)
         return resp['projectId'], AssetMeta()

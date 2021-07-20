@@ -1,6 +1,6 @@
 {
     "name": "@youwol/flux-runner",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "Flux runner application",
     "author": "greinisch@youwol.com",
     "main": "dist/index.html",
