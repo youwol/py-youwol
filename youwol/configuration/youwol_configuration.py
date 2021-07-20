@@ -130,6 +130,13 @@ class YouwolConfiguration(NamedTuple):
         headers = {"Authorization": f"Bearer {auth_token}"}
         return AssetsGatewayClient(url_base=f"https://{remote_host}/api/assets-gateway", headers=headers)
 
+    async def get_flux_client(self, context: Context) -> FluxClient:
+
+        remote_host = self.get_remote_info().host
+        auth_token = await self.get_auth_token(context=context)
+        headers = {"Authorization": f"Bearer {auth_token}"}
+        return FluxClient(url_base=f"https://{remote_host}/api/flux-backend", headers=headers)
+
 
 class YouwolConfigurationFactory:
 
