@@ -11,6 +11,7 @@ from fastapi import HTTPException
 
 from fastapi import APIRouter, WebSocket, Depends
 
+from youwol.routers.upload.shared_utils import ensure_path
 from youwol.context import Context
 from youwol.models import ActionStep
 from youwol.routers.packages.utils import get_all_packages
@@ -18,7 +19,8 @@ from youwol.routers.upload.messages import (
     send_package_pending, send_version_pending, send_version_resolved,
     send_package_resolved,
     )
-from youwol.routers.upload.models import Library, Release, PathResp, PackageStatus, SyncMultipleBody, LibrariesList, TreeItem
+from youwol.routers.upload.models import Library, Release, PathResp, PackageStatus, SyncMultipleBody, LibrariesList, \
+    TreeItem
 from youwol.utils_low_level import to_json, start_web_socket
 from youwol_utils import to_group_scope
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
@@ -521,37 +523,3 @@ async def post_library(
 
     await client.put_asset_with_raw(kind='package', folder_id=parent_id,
                                     data=data, group_id=path_item.drive['group_id'], timeout=600)
-
-
-async def ensure_path(path_item: PathResp, assets_gateway_client: AssetsGatewayClient):
-
-    folders = path_item.folders
-    try:
-        if folders:
-            await assets_gateway_client.get_tree_folder(folder_id=folders[0]['folder_id'])
-        else:
-            await assets_gateway_client.get_tree_drive(drive_id=path_item.drive['drive_id'])
-    except HTTPException as e:
-        if e.status_code == 404:
-            if len(folders) <= 1:
-                await ensure_drive(path_item.drive, assets_gateway_client)
-            else:
-                await ensure_path(PathResp(drive=path_item.drive, group=path_item.group, folders=folders[1:]),
-                                  assets_gateway_client)
-            if not folders:
-                return
-            folder = folders[0]
-            body = {"folderId":  folder['folder_id'], "name": folder['name']}
-            await assets_gateway_client.create_folder(parent_folder_id=folder["parent_folder_id"], body=body)
-
-
-async def ensure_drive(drive: Any,  assets_gateway_client: AssetsGatewayClient):
-
-    try:
-        await assets_gateway_client.get_tree_drive(drive_id=drive['drive_id'])
-    except HTTPException as e:
-        if e.status_code == 404:
-            body = {"driveId": drive['drive_id'], "name": drive['name']}
-            await assets_gateway_client.create_drive(group_id=drive['group_id'], body=body)
-            return
-        raise e
