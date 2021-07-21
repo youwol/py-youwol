@@ -42,10 +42,22 @@ class Library(BaseModel):
     rawId: str
 
 
+class Folder(BaseModel):
+    folderId: str
+    parentFolderId: str
+    name: str
+
+
+class Drive(BaseModel):
+    driveId: str
+    name: str
+    groupId: str
+
+
 class PathResp(BaseModel):
     group: str
-    drive: dict
-    folders: List[Any]
+    drive: Drive
+    folders: List[Folder]
 
 
 class LibrariesList(BaseModel):
