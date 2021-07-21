@@ -17,6 +17,7 @@ import youwol.routers.environment.router as environment
 import youwol.routers.upload.router_packages as upload_packages
 import youwol.routers.upload.router_flux_apps as upload_flux_apps
 import youwol.routers.download.router_packages as download_packages
+import youwol.routers.download.router_flux_apps as download_flux_apps
 import youwol.routers.system.router as system
 import youwol.routers.local_cdn.router as local_cdn
 
@@ -65,6 +66,8 @@ app.include_router(upload_flux_apps.router, prefix=configuration.base_path+"/adm
                    tags=["upload flux apps"])
 app.include_router(download_packages.router, prefix=configuration.base_path+"/admin/download/packages",
                    tags=["download packages"])
+app.include_router(download_flux_apps.router, prefix=configuration.base_path+"/admin/download/flux-apps",
+                   tags=["download flux apps"])
 
 
 @app.exception_handler(YouWolException)

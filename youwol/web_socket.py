@@ -14,6 +14,7 @@ class WebSocketsCache:
     upload_packages: WebSocket
     download_packages: WebSocket
     upload_flux_apps: WebSocket
+    download_flux_apps: WebSocket
     local_cdn: WebSocket
 
     system: Union[WebSocket, None] = None

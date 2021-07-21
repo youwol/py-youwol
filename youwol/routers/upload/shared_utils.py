@@ -67,3 +67,19 @@ def local_path(tree_id: str, config):
         )
 
 
+async def remote_path(tree_item: dict, assets_gtw_client: AssetsGatewayClient):
+
+    tree_drive = await assets_gtw_client.get_tree_drive(drive_id=tree_item['driveId'])
+
+    async def path_rec(parent_folder_id) -> List[Folder]:
+        folder = await assets_gtw_client.get_tree_folder(folder_id=parent_folder_id)
+        if folder['parentFolderId'] == folder['driveId']:
+            return [folder]
+        return [Folder(name=folder['name'], folderId=folder['folderId'], parentFolderId=folder['parentFolderId'])] \
+            + await path_rec(folder['parentFolderId'])
+
+    return PathResp(
+        group=to_group_scope(tree_item['groupId']),
+        drive=Drive(name=tree_drive['name'], driveId=tree_drive['driveId'], groupId=tree_drive['groupId']),
+        folders=await path_rec(tree_item['folderId'])
+        )
