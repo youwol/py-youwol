@@ -37,6 +37,16 @@ class AssetsGatewayClient:
                     return await resp.json()
                 await raise_exception_from_response(resp)
 
+    async def get_raw(self, kind: str, raw_id: str, **kwargs):
+
+        url = f"{self.url_base}/raw/{kind}/{raw_id}"
+
+        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
+            async with await session.get(url=url,  **kwargs) as resp:
+                if resp.status == 200:
+                    return await resp.json()
+                await raise_exception_from_response(resp)
+
     async def get_raw_metadata(self, kind: str, raw_id: str, rest_of_path: str = None, **kwargs):
 
         url = f"{self.url_base}/raw/{kind}/metadata/{raw_id}"
