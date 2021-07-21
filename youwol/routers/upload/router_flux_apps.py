@@ -60,7 +60,7 @@ async def publish(
         path_item = local_path(tree_item['treeId'], config=config)
         await ctx.info(
             step=ActionStep.RUNNING,
-            content="Path",
+            content="Data retrieved",
             json={"path_item": to_json(path_item), "flux-app": local_flux_app}
             )
 
