@@ -41,7 +41,7 @@ This environment provides:
 *   We (strongly) recommend using one of the latest version of Google Chrome browser (e.g. >= 89). 
     Some features used by YouWol are available only on the latest releases of the major browsers, 
     also we did not have the time to thoroughly test the platform with other browsers than Chrome for now.
-
+*   To build a flux-pack ensure a node version > v14.x 
 The YouWol FSE environment can be completed by installing *pipelines*, 
 those may require additional installation (e.g. *node*, *gcc*, etc); we refer the reader to their documentation.
 

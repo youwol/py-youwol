@@ -11,7 +11,7 @@ from fastapi import HTTPException
 
 from fastapi import APIRouter, WebSocket, Depends
 
-from youwol.routers.upload.shared_utils import ensure_path
+from youwol.routers.commons import ensure_path, local_path
 from youwol.context import Context
 from youwol.models import ActionStep
 from youwol.routers.packages.utils import get_all_packages
@@ -113,28 +113,7 @@ async def remote_path(
 async def path(tree_id: str,
                config: YouwolConfiguration = Depends(yw_config)) -> PathResp:
 
-    local_docdb = config.pathsBook.local_docdb
-    items_treedb = parse_json(local_docdb / "tree_db" / "items" / "data.json")
-    items_treedb = items_treedb['documents']
-    folders_treedb = parse_json(local_docdb / "tree_db" / "folders" / "data.json")
-    folders_treedb = folders_treedb['documents']
-    drives_treedb = parse_json(local_docdb / "tree_db" / "drives" / "data.json")
-    drives_treedb = drives_treedb['documents']
-
-    tree_item = next(item for item in items_treedb if item['item_id'] == tree_id)
-    tree_drive = next(item for item in drives_treedb if item['drive_id'] == tree_item['drive_id'])
-
-    def path_rec(parent_folder_id) -> List[Any]:
-        folder = next((item for item in folders_treedb if item['folder_id'] == parent_folder_id), None)
-        if not folder:
-            return []
-        return [folder] + path_rec(folder['parent_folder_id'])
-
-    return PathResp(
-        group=to_group_scope(tree_item['group_id']),
-        drive=tree_drive,
-        folders=path_rec(tree_item['folder_id'])
-        )
+    return local_path(tree_id=tree_id, config=config)
 
 
 async def delete_library_version_generic(
@@ -515,11 +494,11 @@ async def post_library(
             json={"treeItemPath": to_json(path_item)}
             )
         await ensure_path(path_item, client)
-        parent_id = path_item.drive['drive_id']
+        parent_id = path_item.drive.driveId
         if len(path_item.folders) > 0:
-            parent_id = path_item.folders[0]['folder_id']
+            parent_id = path_item.folders[0].folderId
 
     data = {'file': open(zip_path, 'rb'), 'content_encoding': 'identity'}
 
     await client.put_asset_with_raw(kind='package', folder_id=parent_id,
-                                    data=data, group_id=path_item.drive['group_id'], timeout=600)
+                                    data=data, group_id=path_item.drive.groupId, timeout=600)

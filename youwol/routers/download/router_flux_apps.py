@@ -5,7 +5,7 @@ from fastapi import APIRouter, WebSocket, Depends, Request
 
 from fastapi import HTTPException
 
-from youwol.routers.upload.shared_utils import ensure_path, remote_path
+from youwol.routers.commons import ensure_path, remote_path
 from youwol.context import Context
 from youwol.configuration.youwol_configuration import YouwolConfiguration, yw_config
 from youwol.routers.upload.models import FluxAppStatus
