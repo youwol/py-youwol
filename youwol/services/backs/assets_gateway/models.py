@@ -65,6 +65,7 @@ class ImportAssetsBody(BaseModel):
 class DriveResponse(BaseModel):
     driveId: str
     name: str
+    groupId: str
 
 
 class DrivesResponse(BaseModel):
@@ -72,6 +73,7 @@ class DrivesResponse(BaseModel):
 
 
 class FolderResponse(BaseModel):
+    driveId: str
     folderId: str
     parentFolderId: str
     name: str
@@ -107,6 +109,7 @@ class ItemResponse(BaseModel):
     rawId: str
     assetId: str
     groupId: str
+    driveId: str
     name: str
     kind: str
     borrowed: bool
