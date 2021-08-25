@@ -5,7 +5,39 @@ from aiohttp import ClientResponse
 from dataclasses import dataclass, field
 
 from youwol_utils.clients.docdb.models import TableBody, QueryBody, SecondaryIndex
+from youwol_utils.clients.docdb.models import TableBody, QueryBody, SecondaryIndex, Query, WhereClause
 from youwol_utils.clients.utils import raise_exception_from_response, aiohttp_resp_parameters
+
+
+def patch_query_body(query_body: QueryBody, table_body: TableBody) -> QueryBody:
+
+    """
+    This function is a workaround for queries involving columns with types ['int','bigint']
+    (maybe other types suffer from the same problem but have not been revealed so far).
+    In those cases, 'where_clauses.term' should be 'str(target_value)' and not 'target_value' as one can expect.
+    """
+    column_types = {
+        col.name: col.type for col in table_body.columns
+        }
+
+    def patch_clause(clause: WhereClause, types: Dict[str, str]) -> WhereClause:
+        if types[clause.column] in ['int', 'bigint']:
+            return WhereClause(column=clause.column, relation=clause.relation, term=f"{clause.term}")
+        return clause
+
+    query_body_corrected = QueryBody(
+        allow_filtering=query_body.allow_filtering,
+        max_results=query_body.max_results,
+        iterator=query_body.iterator,
+        mode=query_body.mode,
+        distinct=query_body.distinct,
+        select_clauses=query_body.select_clauses,
+        query=Query(
+            where_clause=[patch_clause(c, column_types) for c in query_body.query.where_clause],
+            ordering_clause=query_body.query.ordering_clause
+            )
+        )
+    return query_body_corrected
 
 
 def post_keyspace_body(name: str, replication_factor: int):
@@ -261,6 +293,8 @@ class DocDbClient:
 
         if isinstance(query_body, str):
             query_body = QueryBody.parse(query_body)
+
+        query_body = patch_query_body(query_body=query_body, table_body=self.table_body)
 
         params = {"owner": owner} if owner else {}
         async with aiohttp.ClientSession(headers=self.headers) as session:
