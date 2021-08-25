@@ -78,6 +78,21 @@ async def login(
     return {"access_token": f"access_token_{resp.email}"}
 
 
+@router.get("/authorization/keycloak-access-token",
+            summary="get keycloak access token of current user")
+async def keycloak_token(
+        request: Request,
+        config: YouwolConfiguration = Depends(yw_config)
+        ):
+    context = Context(
+        request=request,
+        config=config,
+        web_socket=WebSocketsCache.environment
+        )
+    token = await config.get_auth_token(context)
+    return {"access_token": token}
+
+
 async def redirect_get(
         request: Request,
         new_url: str,
