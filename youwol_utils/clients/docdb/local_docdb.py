@@ -16,7 +16,6 @@ class LocalDocDbClient:
     root_path: Path
     keyspace_name: str
     table_body: TableBody
-    version_table: str
     secondary_indexes: List[SecondaryIndex] = field(default_factory=lambda: [])
 
     @property
@@ -83,6 +82,7 @@ class LocalDocDbClient:
 
         if not headers:
             headers = {}
+
         if not owner:
             owner = get_default_owner(headers)
 
@@ -92,12 +92,19 @@ class LocalDocDbClient:
         if len(query_body.query.ordering_clause) > 1:
             raise Exception("Ordering emulated only for 1 ordering clause")
 
-        eq_clauses = [clause for clause in query_body.query.where_clause if clause.relation == "eq"] + \
-                     [WhereClause(column="owner", relation="eq", term=owner)]
-
         data = json.loads(self.data_path.read_text())["documents"]
 
-        r = [d for d in data if all([d[clause.column] == clause.term for clause in eq_clauses])]
+        where_clauses = [WhereClause(column="owner", relation="eq", term=owner)] + query_body.query.where_clause
+
+        def is_matching(doc):
+            for clause in where_clauses:
+                matching = clause.is_matching(doc)
+                if not matching:
+                    return False
+            return True
+
+        r = [doc for doc in data if is_matching(doc)]
+
         for ordering in self.table_body.table_options.clustering_order:
             order = ordering.order
             col = ordering.name
