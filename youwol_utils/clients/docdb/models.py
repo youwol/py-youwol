@@ -1,4 +1,4 @@
-from typing import List, Any
+from typing import List, Any, Dict
 
 from pydantic import BaseModel
 
@@ -22,6 +22,7 @@ class TableOptions(BaseModel):
 
 class TableBody(BaseModel):
     name: str
+    version: str
     columns: List[Column]
     partition_key: List[str]
     clustering_columns: List[str] = []
@@ -45,6 +46,16 @@ class WhereClause(BaseModel):
     column: str
     relation: str
     term: Any
+
+    def is_matching(self, doc: Dict[str, Any]) -> bool:
+        factory_clauses = {
+            "eq": lambda document, column, target: document[column] == target,
+            "lt": lambda document, column, target: document[column] < target,
+            "leq": lambda document, column, target: document[column] <= target,
+            "gt": lambda document, column, target: document[column] > target,
+            "geq": lambda document, column, target: document[column] >= target,
+            }
+        return factory_clauses[self.relation](doc, self.column, self.term)
 
 
 class Query(BaseModel):

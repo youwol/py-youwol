@@ -4,7 +4,6 @@ import aiohttp
 from aiohttp import ClientResponse
 from dataclasses import dataclass, field
 
-from youwol_utils.clients.docdb.models import TableBody, QueryBody, SecondaryIndex
 from youwol_utils.clients.docdb.models import TableBody, QueryBody, SecondaryIndex, Query, WhereClause
 from youwol_utils.clients.utils import raise_exception_from_response, aiohttp_resp_parameters
 
@@ -95,7 +94,6 @@ def get_update_description(previous_table: Dict[str, any], current_version: str)
 class DocDbClient:
 
     version_service = "v0-alpha1"
-    version_table: str  # in the form 'i.j', i increment => update not possible, j increment=>update possible
     table_body: TableBody
     url_base: str
     keyspace_name: str
@@ -201,7 +199,7 @@ class DocDbClient:
     async def _create_table(self, **kwargs):
 
         body = self.table_body.dict()
-        body['table_options']['comment'] += f" #{self.version_table}#"
+        body['table_options']['comment'] += f" #{self.table_body.version}#"
         if not self.table_body.clustering_columns:
             del body['clustering_columns']
             del body['table_options']['clustering_order']
@@ -239,7 +237,7 @@ class DocDbClient:
 
         if table_exist:
             table = await self.get_table(**kwargs)
-            update = get_update_description(table,  self.version_table)
+            update = get_update_description(table,  self.table_body.version)
 
             if update.type == UpdateType.MAJOR_UPDATE:
                 raise Exception(f"Major update needs to be manually done {str(update)}")
