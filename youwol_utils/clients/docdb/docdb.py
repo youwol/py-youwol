@@ -342,4 +342,14 @@ class DocDbClient:
             return f"?partitionKey={doc[self.table_body.partition_key[0]]}&" + \
                    f"clusteringKey={doc[self.table_body.clustering_columns[0]]}"
 
+        if len(self.table_body.partition_key) == 2 and len(self.table_body.clustering_columns) == 1:
+            return f"?partitionKey=({doc[self.table_body.partition_key[0]]}," + \
+                   f"{doc[self.table_body.partition_key[1]]})& " + \
+                   f"clusteringKey={doc[self.table_body.clustering_columns[0]]}"
+
+        if len(self.table_body.partition_key) == 1 and len(self.table_body.clustering_columns) == 2:
+            return f"?partitionKey={doc[self.table_body.partition_key[0]]}&" + \
+                   f"clusteringKey=({doc[self.table_body.clustering_columns[0]]}, " + \
+                   f"{doc[self.table_body.clustering_columns[1]]})"
+
         raise NotImplementedError()
