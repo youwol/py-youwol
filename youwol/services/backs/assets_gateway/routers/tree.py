@@ -253,9 +253,9 @@ async def borrow(
     tree_item['itemId'] = None
     tree_item['metadata'] = json.dumps(metadata)
     post_resp = await tree_db.create_item(folder_id=body.destinationFolderId, body=tree_item, headers=headers)
-    item = ItemResponse(treeId=post_resp['itemId'], folderId=post_resp['folderId'], rawId=asset.rawId,
-                        assetId=asset.assetId, groupId=entity['entity']['groupId'], name=asset.name, kind=asset.kind,
-                        borrowed=True)
+    item = ItemResponse(treeId=post_resp['itemId'], folderId=post_resp['folderId'], driveId=post_resp['driveId'],
+                        rawId=asset.rawId, assetId=asset.assetId, groupId=entity['entity']['groupId'], name=asset.name,
+                        kind=asset.kind, borrowed=True)
     return item
 
 
@@ -294,7 +294,7 @@ async def permissions(
         return PermissionsResponse(write=permission['write'], read=permission['read'], share=permission['share'],
                                    expiration=permission['expiration'])
 
-    return PermissionsResponse(write=False, read=False, expiration=None, share=None)
+    return PermissionsResponse(write=False, read=False, expiration=None, share=False)
 
 
 @router.get("/drives/{drive_id}/deleted", response_model=DeletedResponse,

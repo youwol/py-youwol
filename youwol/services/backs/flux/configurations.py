@@ -57,14 +57,12 @@ async def get_configuration():
 
     doc_db = LocalDocDbClient(root_path=config_yw.pathsBook.local_docdb,
                               keyspace_name=Configuration.namespace,
-                              table_body=PROJECTS_TABLE,
-                              version_table=Configuration.docdb_projects_table_version
+                              table_body=PROJECTS_TABLE
                               )
     doc_db_component = LocalDocDbClient(
         root_path=config_yw.pathsBook.local_docdb,
         keyspace_name=Configuration.namespace,
-        table_body=COMPONENTS_TABLE,
-        version_table=Configuration.docdb_components_table_version
+        table_body=COMPONENTS_TABLE
         )
 
     cdn_client = CdnClient(url_base=f"http://localhost:{py_yw_config.http_port}/api/cdn-backend")

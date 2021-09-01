@@ -123,6 +123,7 @@ class LoadingGraphBody(BaseModel):
 
 LIBRARIES_TABLE = TableBody(
     name='libraries',
+    version="1.0",
     columns=[
         Column(name="library_id", type="text"),
         Column(name="library_name", type="text"),

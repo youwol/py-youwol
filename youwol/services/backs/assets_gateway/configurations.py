@@ -63,8 +63,7 @@ async def get_configuration():
     storage = LocalStorageClient(root_path=config_yw.pathsBook.local_storage, bucket_name='data')
     docdb = LocalDocDbClient(root_path=config_yw.pathsBook.local_docdb,
                              keyspace_name='data',
-                             table_body=FILES_TABLE,
-                             version_table="0.0"
+                             table_body=FILES_TABLE
                              )
 
     data_client = DataClient(storage=cast(Any, storage), docdb=cast(Any, docdb))
@@ -76,8 +75,7 @@ async def get_configuration():
 
     def docdb_factory(keyspace: str, table: str, primary: str):
         return LocalDocDbClient(root_path=config_yw.pathsBook.local_docdb, keyspace_name=keyspace,
-                                table_body=TableBody(name=table, columns=[], partition_key=[primary]),
-                                version_table="0.0"
+                                table_body=TableBody(name=table, columns=[], partition_key=[primary], version="0.0"),
                                 )
 
     def storage_factory(bucket_name: str):

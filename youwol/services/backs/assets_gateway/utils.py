@@ -18,7 +18,7 @@ from .raw_stores.interface import AssetMeta
 async def init_resources(config: Configuration):
 
     log_info("Ensure database resources")
-    headers = await config.admin_headers
+    headers = await config.admin_headers if config.admin_headers else {}
     log_info("Successfully retrieved authorization for resources creation")
     doc_db = config.data_client.docdb
     storage = config.data_client.storage

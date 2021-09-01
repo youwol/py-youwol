@@ -49,18 +49,18 @@ async def get_configuration():
 
     doc_db_asset = LocalDocDbClient(root_path=config_yw.pathsBook.local_docdb,
                                     keyspace_name=Configuration.namespace,
-                                    table_body=ASSETS_TABLE,
-                                    version_table=Configuration.doc_db_asset_version_table)
+                                    table_body=ASSETS_TABLE
+                                    )
 
     doc_db_access_history = LocalDocDbInMemoryClient(root_path=config_yw.pathsBook.local_docdb,
                                                      keyspace_name=Configuration.namespace,
-                                                     table_body=ACCESS_HISTORY,
-                                                     version_table=Configuration.doc_db_access_history_version_table)
+                                                     table_body=ACCESS_HISTORY
+                                                     )
 
     doc_db_access_policy = LocalDocDbClient(root_path=config_yw.pathsBook.local_docdb,
                                             keyspace_name=Configuration.namespace,
-                                            table_body=ACCESS_POLICY,
-                                            version_table=Configuration.doc_db_access_policy_version_table)
+                                            table_body=ACCESS_POLICY
+                                            )
     config_yw_assets = Configuration(
         open_api_prefix='',
         base_path="/api/assets-backend",

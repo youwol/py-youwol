@@ -210,6 +210,7 @@ class PostAdaptorBody(BaseModel):
 
 PROJECTS_TABLE = TableBody(
     name='projects',
+    version="0.0",
     columns=[
         Column(name="path", type="text"),
         Column(name="project_id", type="text"),
@@ -224,6 +225,7 @@ PROJECTS_TABLE = TableBody(
 
 COMPONENTS_TABLE = TableBody(
     name='entities',
+    version="0.0",
     columns=[
         Column(name="path", type="text"),
         Column(name="component_id", type="text"),

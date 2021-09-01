@@ -155,6 +155,7 @@ class GetRecordsBody(BaseModel):
 
 FILES_TABLE = TableBody(
     name='items',
+    version="0.0",
     columns=[
         Column(name="item_id", type="text"),
         Column(name="folder_id", type="text"),
@@ -179,6 +180,7 @@ FILES_TABLE_RELATED_INDEX = SecondaryIndex(
 
 FOLDERS_TABLE = TableBody(
     name='folders',
+    version="0.0",
     columns=[
         Column(name="folder_id", type="text"),
         Column(name="parent_folder_id", type="text"),
@@ -199,6 +201,7 @@ FOLDERS_TABLE_PARENT_INDEX = SecondaryIndex(
 
 DRIVES_TABLE = TableBody(
     name='drives',
+    version="0.0",
     columns=[
         Column(name="drive_id", type="text"),
         Column(name="group_id", type="text"),
@@ -216,6 +219,7 @@ DRIVES_TABLE_PARENT_INDEX = SecondaryIndex(
 
 DELETED_TABLE = TableBody(
     name='deleted',
+    version="0.0",
     columns=[
         Column(name="deleted_id", type="text"),
         Column(name="drive_id", type="text"),
@@ -242,28 +246,24 @@ def create_doc_dbs(factory_db: TDocDb, **kwargs) -> DocDbs:
 
     files_db = factory_db(
         keyspace_name=DocDbs.keyspace_name,
-        version_table="0.0",
         table_body=FILES_TABLE,
         secondary_indexes=[FILES_TABLE_PARENT_INDEX, FILES_TABLE_RELATED_INDEX],
         **kwargs)
 
     folders_db = factory_db(
         keyspace_name=DocDbs.keyspace_name,
-        version_table="0.0",
         table_body=FOLDERS_TABLE,
         secondary_indexes=[FOLDERS_TABLE_PARENT_INDEX],
         **kwargs)
 
     drives_db = factory_db(
         keyspace_name=DocDbs.keyspace_name,
-        version_table="0.0",
         table_body=DRIVES_TABLE,
         secondary_indexes=[DRIVES_TABLE_PARENT_INDEX],
         **kwargs)
 
     deleted_db = factory_db(
         keyspace_name=DocDbs.keyspace_name,
-        version_table="0.0",
         table_body=DELETED_TABLE,
         secondary_indexes=[DELETED_TABLE_DRIVE_INDEX],
         **kwargs)

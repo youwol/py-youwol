@@ -43,7 +43,6 @@ async def get_configuration():
 
     doc_db = LocalDocDb(root_path=config_yw.pathsBook.local_docdb,
                         keyspace_name=Configuration.namespace,
-                        version_table="0.0",
                         table_body=LIBRARIES_TABLE)
 
     config_yw_cdn = Configuration(

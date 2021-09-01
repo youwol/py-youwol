@@ -79,6 +79,7 @@ class ParsedFile(NamedTuple):
 
 ASSETS_TABLE = TableBody(
     name='entities',
+    version='0.0',
     columns=[
         Column(name="asset_id", type="text"),
         Column(name="related_id", type="text"),
@@ -96,6 +97,7 @@ ASSETS_TABLE = TableBody(
 
 ACCESS_HISTORY = TableBody(
     name='access_history',
+    version='0.0',
     columns=[
         Column(name="record_id", type="text"),
         Column(name="asset_id", type="text"),
@@ -109,6 +111,7 @@ ACCESS_HISTORY = TableBody(
 
 ACCESS_POLICY = TableBody(
     name='access_policy',
+    version='0.0',
     columns=[
         Column(name="asset_id", type="text"),
         Column(name="related_id", type="text"),
