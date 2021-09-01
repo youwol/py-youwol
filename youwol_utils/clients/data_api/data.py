@@ -6,6 +6,7 @@ from youwol_utils.clients.docdb.models import Column
 
 FILES_TABLE = TableBody(
     name='entities',
+    version='0.0',
     columns=[
         Column(name="file_id", type="text"),
         Column(name="file_name", type="text"),
@@ -25,7 +26,6 @@ def get_remote_docdb_client(url_base: str, replication_factor: int):
     return DocDbClient(url_base=url_base,
                        keyspace_name='data',
                        table_body=FILES_TABLE,
-                       version_table="0.0",
                        replication_factor=replication_factor
                        )
 
@@ -38,8 +38,7 @@ def get_local_storage_client(platform_path: Path):
 def get_local_docdb_client(platform_path: Path):
     return LocalDocDbClient(root_path=platform_path.parent/'drive-shared'/'docdb',
                             keyspace_name='data',
-                            table_body=FILES_TABLE,
-                            version_table="0.0"
+                            table_body=FILES_TABLE
                             )
 
 

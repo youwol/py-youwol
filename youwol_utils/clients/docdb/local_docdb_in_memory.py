@@ -16,7 +16,6 @@ class LocalDocDbInMemoryClient:
     keyspace_name: str
 
     table_body: TableBody
-    version_table: str
     secondary_indexes: List[SecondaryIndex] = field(default_factory=lambda: [])
     data: Any = None
 
