@@ -250,7 +250,7 @@ async def borrow(
         raise HTTPException(status_code=403, detail='The resource can not be shared')
     metadata = json.loads(tree_item['metadata'])
     metadata['borrowed'] = True
-    tree_item['itemId'] = None
+    tree_item['itemId'] = body.itemId
     tree_item['metadata'] = json.dumps(metadata)
     post_resp = await tree_db.create_item(folder_id=body.destinationFolderId, body=tree_item, headers=headers)
     item = ItemResponse(treeId=post_resp['itemId'], folderId=post_resp['folderId'], driveId=post_resp['driveId'],

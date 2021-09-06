@@ -143,6 +143,7 @@ class MoveBody(BaseModel):
 
 class BorrowBody(BaseModel):
     destinationFolderId: str
+    itemId: str = None
 
 
 class QueryTreeBody(BaseModel):

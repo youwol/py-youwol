@@ -2,6 +2,7 @@ from typing import Callable, cast, Any
 
 from dataclasses import dataclass
 
+from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from .raw_stores.data import DataStore
 from .raw_stores.drive_pack import DrivePackStore
 from .raw_stores.group_showcase import GroupShowCaseStore
@@ -31,6 +32,7 @@ class Configuration:
     cdn_client: CdnClient
     treedb_client: TreeDbClient
     assets_client: AssetsClient
+    assets_gtw_client: AssetsGatewayClient
 
     docdb_factory: Callable[[str, str, str], DocDb]
     storage_factory: Callable[[str], Storage]
@@ -72,6 +74,7 @@ async def get_configuration():
 
     treedb_client = TreeDbClient(url_base=f"http://localhost:{py_yw_config.http_port}/api/treedb-backend")
     assets_client = AssetsClient(url_base=f"http://localhost:{py_yw_config.http_port}/api/assets-backend")
+    assets_gtw_client = AssetsGatewayClient(url_base=f"http://localhost:{py_yw_config.http_port}/api/assets-gateway")
 
     def docdb_factory(keyspace: str, table: str, primary: str):
         return LocalDocDbClient(root_path=config_yw.pathsBook.local_docdb, keyspace_name=keyspace,
@@ -91,7 +94,8 @@ async def get_configuration():
         treedb_client=treedb_client,
         assets_client=assets_client,
         docdb_factory=docdb_factory,
-        storage_factory=storage_factory
+        storage_factory=storage_factory,
+        assets_gtw_client=assets_gtw_client
         )
 
     return config_yw_assets_gateway
