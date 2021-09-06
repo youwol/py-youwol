@@ -68,6 +68,26 @@ class AssetsGatewayClient:
                     return await resp.json()
                 await raise_exception_from_response(resp)
 
+    async def get_permissions(self, item_id: str, **kwargs):
+
+        url = f"{self.url_base}/tree/{item_id}/permissions"
+
+        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
+            async with await session.get(url=url, **kwargs) as resp:
+                if resp.status == 200:
+                    return await resp.json()
+                await raise_exception_from_response(resp)
+
+    async def borrow_tree_item(self, tree_id: str, body, **kwargs):
+
+        url = f"{self.url_base}/tree/{tree_id}/borrow"
+
+        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
+            async with await session.post(url=url, json=body, **kwargs) as resp:
+                if resp.status == 200:
+                    return await resp.json()
+                await raise_exception_from_response(resp)
+
     async def get_tree_folder(self, folder_id: str, **kwargs):
 
         url = f"{self.url_base}/tree/folders/{folder_id}"
@@ -133,6 +153,24 @@ class AssetsGatewayClient:
 
         async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
             async with await session.get(url=url,  **kwargs) as resp:
+                if resp.status == 200:
+                    return await resp.json()
+                await raise_exception_from_response(resp)
+
+    async def get_asset_access(self, asset_id: str, **kwargs):
+        url = f"{self.url_base}/assets/{asset_id}/access"
+        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
+            async with await session.get(url=url,  **kwargs) as resp:
+                if resp.status == 200:
+                    return await resp.json()
+                await raise_exception_from_response(resp)
+
+    async def put_asset_access(self, asset_id: str, group_id: str, body, **kwargs):
+
+        url = f"{self.url_base}/assets/{asset_id}/access/{group_id}"
+
+        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
+            async with await session.put(url=url, json=body, **kwargs) as resp:
                 if resp.status == 200:
                     return await resp.json()
                 await raise_exception_from_response(resp)
