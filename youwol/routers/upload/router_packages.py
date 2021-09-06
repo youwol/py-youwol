@@ -4,7 +4,7 @@ import json
 from collections import defaultdict
 from itertools import groupby
 from pathlib import Path
-from typing import List, Any
+from typing import List, Any, Mapping
 
 from starlette.requests import Request
 from fastapi import HTTPException
@@ -461,22 +461,84 @@ async def check_package_status(
         await send_package_resolved(package, asset_status, tree_status, cdn_status, ctx)
 
 
+async def copy_asset_with_permissions(remote_client: AssetsGatewayClient, asset_id: str, data: Mapping[str, any],
+                                      folder_id: str, group_id: str, context: Context):
+
+    await remote_client.put_asset_with_raw(kind='package', folder_id=folder_id, data=data, group_id=group_id,
+                                           timeout=600)
+    local_assets_gtw = context.config.localClients.assets_gateway_client
+    access_info = await local_assets_gtw.get_asset_access(asset_id=asset_id)
+    await context.info(
+        step=ActionStep.RUNNING,
+        content="Permissions retrieved",
+        json={"access_info": access_info}
+        )
+    default_permission = access_info["ownerInfo"]["defaultAccess"]
+    groups = access_info["ownerInfo"]["exposingGroups"]
+    await asyncio.gather(
+        remote_client.put_asset_access(asset_id=asset_id, group_id='*', body=default_permission),
+        *[
+            remote_client.put_asset_access(asset_id=asset_id, group_id=g['groupId'], body=g['access'])
+            for g in groups
+            ]
+        )
+
+
+async def create_borrowed_item(borrowed_tree_id: str, item: Mapping[str, any], remote_client: AssetsGatewayClient,
+                               context: Context):
+
+    tree_id = item["item_id"]
+    try:
+        await remote_client.get_tree_item(item_id=tree_id)
+        return
+    except HTTPException as e:
+        if e.status_code != 404:
+            raise e
+
+        path_item = await path(tree_id, context.config)
+        await context.info(
+            step=ActionStep.RUNNING,
+            content="Borrowed tree item not found, start creation",
+            json={"treeItemPath": to_json(path_item)}
+            )
+        await ensure_path(path_item, remote_client)
+        parent_id = path_item.drive.driveId
+        if len(path_item.folders) > 0:
+            parent_id = path_item.folders[0].folderId
+
+    await remote_client.borrow_tree_item(tree_id=borrowed_tree_id,
+                                         body={
+                                             "itemId": tree_id,
+                                             "destinationFolderId": parent_id
+                                             })
+    await context.info(step=ActionStep.DONE, content="Borrowed item created")
+
+
 async def post_library(
         asset_id: str,
         zip_path: Path,
         context: Context):
 
     items_treedb = parse_json(context.config.pathsBook.local_treedb_docdb)
-    tree_item = [item for item in items_treedb['documents']
-                 if item['related_id'] == asset_id and not json.loads(item['metadata'])['borrowed']]
-
-    if not tree_item:
+    tree_items = [item for item in items_treedb['documents'] if item['related_id'] == asset_id]
+    master_tree_item = [item for item in tree_items if not json.loads(item['metadata'])['borrowed']]
+    borrowed_items = [item for item in tree_items if json.loads(item['metadata'])['borrowed']]
+    if not master_tree_item:
         raise Exception(f"No reference in the explorer to {asset_id}")
 
-    if len(tree_item) > 1:
+    if len(master_tree_item) > 1:
         raise Exception(f"Multiple non-borrowed reference to the same asset {asset_id}")
-    tree_item = tree_item[0]
-    tree_id = tree_item['item_id']
+    master_tree_item = master_tree_item[0]
+    await context.info(
+        step=ActionStep.RUNNING,
+        content="Found tree items of asset",
+        json={
+            "masterTreeItem": master_tree_item,
+            "borrowedTreeItems": [item for item in borrowed_items]
+            }
+        )
+
+    tree_id = master_tree_item['item_id']
     path_item = await path(tree_id, context.config)
     client = await context.config.get_assets_gateway_client(context)
 
@@ -499,6 +561,11 @@ async def post_library(
             parent_id = path_item.folders[0].folderId
 
     data = {'file': open(zip_path, 'rb'), 'content_encoding': 'identity'}
-
-    await client.put_asset_with_raw(kind='package', folder_id=parent_id,
-                                    data=data, group_id=path_item.drive.groupId, timeout=600)
+    await copy_asset_with_permissions(remote_client=client, asset_id=asset_id, data=data, folder_id=parent_id,
+                                      group_id=path_item.drive.groupId, context=context)
+    #await client.put_asset_with_raw(kind='package', folder_id=parent_id,
+    #                                data=data, group_id=path_item.drive.groupId, timeout=600)
+    await asyncio.gather(*[
+        create_borrowed_item(item=item, borrowed_tree_id=tree_id, remote_client=client, context=context)
+        for item in borrowed_items
+        ])
