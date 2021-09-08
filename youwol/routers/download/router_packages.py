@@ -1,5 +1,6 @@
 import asyncio
 import os
+import tempfile
 from pathlib import Path
 from typing import List
 
@@ -114,13 +115,14 @@ async def synchronize(
 async def download(request: Request, package: PackageVersion, config: YouwolConfiguration):
 
     async def publish_cdn_only(cdn_pack):
-        zip_path = Path('./') / "tmp_zips" / f'{package.rawId}.zip'
-        try:
-            with open(zip_path, 'wb') as file:
-                file.write(cdn_pack)
-            await config.localClients.cdn_client.publish(zip_path=zip_path)
-        finally:
-            os.remove(zip_path)
+        with tempfile.TemporaryDirectory("_py-youwol_synchronize") as tmpDir:
+            zip_path = Path(tmpDir) / f'{package.rawId}.zip'
+            try:
+                with open(zip_path, 'wb') as file:
+                    file.write(cdn_pack)
+                await config.localClients.cdn_client.publish(zip_path=zip_path)
+            finally:
+                os.remove(zip_path)
 
     context = Context(config=config, request=request, web_socket=WebSocketsCache.download_packages)
 
