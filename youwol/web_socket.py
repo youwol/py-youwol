@@ -14,6 +14,7 @@ class WebSocketsCache:
     upload_packages: WebSocket
     download_packages: WebSocket
     upload_flux_apps: WebSocket
+    upload_data: WebSocket
     download_flux_apps: WebSocket
     local_cdn: WebSocket
 

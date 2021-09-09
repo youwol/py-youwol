@@ -20,6 +20,13 @@ class FluxAppStatus(Enum):
     DONE = 'FluxAppStatus.DONE'
 
 
+class DataAssetStatus(Enum):
+    NOT_FOUND = 'DataAssetStatus.NOT_FOUND'
+    MISMATCH = 'DataAssetStatus.MISMATCH'
+    SYNC = 'DataAssetStatus.SYNC'
+    PROCESSING = 'DataAssetStatus.PROCESSING'
+    DONE = 'DataAssetStatus.DONE'
+
 class TreeItem(BaseModel):
     name: str
     itemId: str
