@@ -2,7 +2,7 @@ import asyncio
 import json
 import uuid
 from abc import ABC
-from typing import Union
+from typing import Union, Mapping
 
 from dataclasses import dataclass
 from fastapi import HTTPException
@@ -10,8 +10,8 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from youwol_utils import (
-    user_info, get_all_individual_groups, get_group, RecordsResponse, RecordsTable, RecordsKeyspace, RecordsDocDb,
-    RecordsStorage, RecordsBucket, to_group_id,
+    user_info, get_all_individual_groups, get_group,
+    # RecordsResponse, RecordsTable, RecordsKeyspace, RecordsDocDb, RecordsStorage, RecordsBucket, to_group_id,
     )
 from youwol_utils.clients.data_api.data import DataClient
 from .interface import (RawStore, RawId, AssetMeta, AssetImg)
@@ -29,10 +29,12 @@ class DataStore(RawStore, ABC):
     path_name = 'data'
     owner = '/youwol-users'
 
-    async def create_asset(self, request: Request, metadata: AssetMeta, headers) -> (RawId, AssetMeta):
+    async def create_asset(self, request: Request, metadata: AssetMeta, headers)\
+            -> (RawId, AssetMeta):
 
-        raw_id = str(uuid.uuid4())
-        file = (await request.form()).get('file')
+        form = await request.form()
+        file = form.get('file')
+        raw_id = form.get('rawId') if form.get('rawId') else str(uuid.uuid4())
 
         doc = {"file_id": raw_id,
                "file_name": file.filename,
@@ -72,8 +74,16 @@ class DataStore(RawStore, ABC):
 
     async def update_asset(self, request: Request, raw_id: str,  metadata: AssetMeta, rest_of_path: str, headers):
 
-        if rest_of_path != "metadata":
+        if rest_of_path not in ["metadata", "content"]:
             raise HTTPException(status_code=404, detail="End point not found")
+
+        if rest_of_path == "metadata":
+            return await self.update_metadata(request=request, raw_id=raw_id, metadata=metadata, headers=headers)
+
+        if rest_of_path == "content":
+            return await self.update_content(request=request, raw_id=raw_id, headers=headers)
+
+    async def update_metadata(self, request: Request, raw_id: str,  metadata: AssetMeta, headers: Mapping[str, str]):
 
         doc = await self.client.docdb.get_document(partition_keys={"file_id": raw_id}, clustering_keys={},
                                                    owner=self.owner, headers=headers)
@@ -90,6 +100,14 @@ class DataStore(RawStore, ABC):
 
         await self.client.docdb.create_document(doc=doc, owner=self.owner, headers=headers)
         return doc
+
+    async def update_content(self, request: Request, raw_id: str, headers: Mapping[str, str]):
+        form = await request.form()
+        file = form.get('file')
+        storage = self.client.storage
+        content = await file.read()
+        await storage.post_object(path=raw_id, content=content, content_type=file.content_type,
+                                  owner=self.owner, headers=headers)
 
     async def get_asset(self, request: Request, raw_id: str,  rest_of_path: Union[str, None], headers):
 
@@ -147,12 +165,12 @@ class DataStore(RawStore, ABC):
             docdb.delete_document(doc={"file_id": raw_id}, owner=self.owner, headers=headers)
             )
 
-    async def get_records(self, request: Request, raw_ids: str, group_id: str, headers):
-
-        storage, docdb = self.client.storage, self.client.docdb
-        table = RecordsTable(id=docdb.table_name, primaryKey="file_id", values=raw_ids)
-        keyspace = RecordsKeyspace(id=docdb.keyspace_name, groupId=to_group_id(self.owner), tables=[table])
-
-        bucket = RecordsBucket(id=storage.bucket_name, groupId=to_group_id(self.owner), paths=raw_ids)
-        response = RecordsResponse(docdb=RecordsDocDb(keyspaces=[keyspace]), storage=RecordsStorage(buckets=[bucket]))
-        return response
+    # async def get_records(self, request: Request, raw_ids: str, group_id: str, headers):
+    #
+    #     storage, docdb = self.client.storage, self.client.docdb
+    #     table = RecordsTable(id=docdb.table_name, primaryKey="file_id", values=raw_ids)
+    #     keyspace = RecordsKeyspace(id=docdb.keyspace_name, groupId=to_group_id(self.owner), tables=[table])
+    #
+    #     bucket = RecordsBucket(id=storage.bucket_name, groupId=to_group_id(self.owner), paths=raw_ids)
+    #     response = RecordsResponse(docdb=RecordsDocDb(keyspaces=[keyspace]), storage=RecordsStorage(buckets=[bucket]))
+    #     return response
