@@ -72,8 +72,15 @@ async def package_details_generic(
         bundle_path = folder_path / doc['bundle']
         files_count = sum([len(files) for r, d, files in os.walk(folder_path)])
         bundle_size = bundle_path.stat().st_size
-        return VersionDetails(name=doc['library_name'], version=doc['version'], versionNumber=doc['version_number'],
-                              filesCount=files_count, bundleSize=bundle_size)
+        return VersionDetails(
+            name=doc['library_name'],
+            version=doc['version'],
+            versionNumber=doc['version_number'],
+            filesCount=files_count,
+            bundleSize=bundle_size,
+            path=[part for part in folder_path.parts],
+            namespace=doc['namespace']
+            )
 
     versions = [format_version(d) for d in data]
     package_details = PackageDetails(name=package_name, versions=versions)

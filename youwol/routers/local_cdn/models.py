@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -23,9 +23,10 @@ class VersionDetails(BaseModel):
     versionNumber: int
     filesCount: int
     bundleSize: int
+    path: List[str]
+    namespace: str
 
 
 class PackageDetails(BaseModel):
     name: str
     versions: List[VersionDetails]
-
