@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 import aiohttp
 from dataclasses import dataclass, field
 
@@ -36,6 +36,18 @@ class AssetsGatewayClient:
                 if resp.status == 200:
                     return await resp.json()
                 await raise_exception_from_response(resp)
+
+    async def update_raw_asset(self, kind: str, raw_id: str, data: Any, rest_of_path: Optional[str] = None, **kwargs):
+        url = f"{self.url_base}/raw/{kind}/{raw_id}"
+        if rest_of_path:
+            url = url + f"/{rest_of_path}"
+
+        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
+            async with await session.post(url=url, data=data, **kwargs) as resp:
+                if resp.status == 200:
+                    return await resp.json()
+                await raise_exception_from_response(resp)
+        pass
 
     async def get_raw(self, kind: str, raw_id: str, **kwargs):
 
