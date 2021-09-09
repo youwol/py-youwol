@@ -1,6 +1,6 @@
 {
     "name": "dashboard-developer",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "description": "The dashboard for developers of YouWol",
     "main": "dist/index.html",
     "scripts": {
