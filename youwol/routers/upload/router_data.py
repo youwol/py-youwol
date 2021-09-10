@@ -5,7 +5,8 @@ from fastapi import APIRouter, WebSocket, Depends, Request
 
 from fastapi import HTTPException
 
-from youwol.routers.upload.utils import create_borrowed_items, synchronize_permissions
+from youwol.routers.upload.utils import synchronize_permissions_metadata_symlinks
+
 from youwol.routers.commons import local_path, ensure_path
 from youwol.context import Context
 from youwol.configuration.youwol_configuration import YouwolConfiguration, yw_config
@@ -45,11 +46,18 @@ async def publish(
         config: YouwolConfiguration = Depends(yw_config)
         ):
     context = Context(config=config, request=request, web_socket=WebSocketsCache.upload_data)
-    await context.web_socket.send_json({
-        "assetId": asset_id,
-        "status": str(DataAssetStatus.PROCESSING)
-        })
-    async with context.start(f"Upload Data") as ctx:
+
+    async with context.start(
+            f"Upload Data",
+            on_enter=lambda _ctx: _ctx.web_socket.send_json({
+                "assetId": asset_id,
+                "status": str(DataAssetStatus.PROCESSING)
+                }),
+            on_exit=lambda _ctx: _ctx.web_socket.send_json({
+                "assetId": asset_id,
+                "status": str(DataAssetStatus.DONE)
+                }),
+            ) as ctx:
 
         tree_item = await config.localClients.assets_gateway_client.get_tree_item(item_id=asset_id)
         data, access, metadata, raw_metadata = await get_local_data(asset_id=asset_id, raw_id=tree_item['rawId'],
@@ -89,8 +97,11 @@ async def publish(
             await ensure_path(path_item=path_item, assets_gateway_client=assets_gtw_client)
             await assets_gtw_client.put_asset_with_raw(kind='data', folder_id=tree_item['folderId'], data=form_data)
 
-        await create_borrowed_items(asset_id=asset_id, tree_id=tree_item['treeId'], assets_gtw_client=assets_gtw_client,
-                                    context=ctx)
-        await synchronize_permissions(assets_gtw_client=assets_gtw_client, asset_id=asset_id, context=context)
+        await synchronize_permissions_metadata_symlinks(
+            asset_id=asset_id,
+            tree_id=tree_item['treeId'],
+            assets_gtw_client=assets_gtw_client,
+            context=ctx
+            )
 
     return {}

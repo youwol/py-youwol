@@ -2,14 +2,30 @@ import asyncio
 import json
 from typing import Mapping
 
+from aiohttp import FormData, ClientSession
 from fastapi import HTTPException
 
+from configurations import configuration
 from youwol.configuration import parse_json
 from youwol.utils_low_level import to_json
 from youwol.models import ActionStep
 from youwol.routers.commons import local_path, ensure_path
 from youwol.context import Context
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
+
+
+async def synchronize_permissions_metadata_symlinks(
+        asset_id: str,
+        tree_id: str,
+        assets_gtw_client: AssetsGatewayClient,
+        context: Context
+        ):
+    await asyncio.gather(
+        create_borrowed_items(asset_id=asset_id, tree_id=tree_id, assets_gtw_client=assets_gtw_client,
+                              context=context),
+        synchronize_permissions(assets_gtw_client=assets_gtw_client, asset_id=asset_id, context=context),
+        synchronize_metadata(asset_id=asset_id, assets_gtw_client=assets_gtw_client, context=context)
+        )
 
 
 async def synchronize_permissions(assets_gtw_client: AssetsGatewayClient, asset_id: str, context: Context):
@@ -73,3 +89,48 @@ async def create_borrowed_item(borrowed_tree_id: str, item: Mapping[str, any], a
                                                 }
                                              )
     await context.info(step=ActionStep.DONE, content="Borrowed item created")
+
+
+async def synchronize_metadata(asset_id: str, assets_gtw_client: AssetsGatewayClient, context: Context):
+
+    local_assets_gtw: AssetsGatewayClient = context.config.localClients.assets_gateway_client
+    local_metadata, remote_metadata = await asyncio.gather(
+        local_assets_gtw.get_asset_metadata(asset_id=asset_id),
+        assets_gtw_client.get_asset_metadata(asset_id=asset_id)
+        )
+    missing_images_urls = [p for p in local_metadata['images'] if p not in remote_metadata['images']]
+    full_urls = [f"http://localhost:{configuration.http_port}{url}" for url in missing_images_urls]
+    filenames = [url.split('/')[-1] for url in full_urls]
+
+    await context.info(
+        step=ActionStep.RUNNING,
+        content="Synchronise metadata",
+        json={
+            'local_metadata': local_metadata,
+            'remote_metadata': remote_metadata,
+            'missing images': full_urls
+            }
+        )
+
+    async def download_img(session: ClientSession, url: str):
+        async with await session.get(url=url) as resp:
+            if resp.status == 200:
+                return await resp.read()
+
+    async with ClientSession() as http_session:
+        images_data = await asyncio.gather(*[download_img(http_session, url) for url in full_urls])
+
+    forms = []
+    for filename, value in zip(filenames, images_data):
+        form_data = FormData()
+        form_data.add_field(name='file', value=value, filename=filename)
+        forms.append(form_data)
+
+    await asyncio.gather(
+        assets_gtw_client.update_asset(asset_id=asset_id, body=local_metadata),
+        *[
+            assets_gtw_client.post_asset_image(asset_id=asset_id, filename=name, data=form)
+            for name, form in zip(filenames, forms)
+            ]
+        )
+
