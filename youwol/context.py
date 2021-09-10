@@ -3,7 +3,7 @@ import uuid
 
 from async_generator import async_generator, yield_, asynccontextmanager
 
-from typing import Union, NamedTuple, Any
+from typing import Union, NamedTuple, Any, Callable, Awaitable, Optional
 
 from pydantic import BaseModel, Json
 from starlette.requests import Request
@@ -61,6 +61,8 @@ async def log(
         }
     web_socket and await web_socket.send_json(message)
 
+CallableBlock = Callable[['Context'], Union[Awaitable, None]]
+
 
 class Context(NamedTuple):
 
@@ -79,24 +81,37 @@ class Context(NamedTuple):
 
     @asynccontextmanager
     @async_generator
-    async def start(self, action: str):
+    async def start(self, action: str, on_enter: CallableBlock = None, on_exit: CallableBlock = None):
         ctx = Context(web_socket=self.web_socket, config=self.config, target=self.target, action=action,
                       uid=str(uuid.uuid4()))
+
+        async def execute_block(block: Optional[CallableBlock]):
+            if not block:
+                return
+            block = block(ctx)
+            if isinstance(block, Awaitable):
+                await block
+
         try:
             await ctx.info(ActionStep.STARTED, "")
+            await execute_block(on_enter)
             await yield_(ctx)
         except UserCodeException as _:
             await ctx.abort(content=f"Exception during {action} while executing custom code")
+            await execute_block(on_exit)
             traceback.print_exc()
         except ActionException as e:
             await ctx.abort(content=f"Exception during {action}: {e.message}")
+            await execute_block(on_exit)
             traceback.print_exc()
         except Exception as e:
             await ctx.abort(content=f"Exception during {action}", json={"error": str(e)})
+            await execute_block(on_exit)
             traceback.print_exc()
             raise e
         else:
             await ctx.info(ActionStep.DONE, f"{action} done")
+            await execute_block(on_exit)
 
     async def debug(self, step: ActionStep, content: str, json: JSON = None):
         await log(level=LogLevel.DEBUG, action=self.action, step=step, target=self.target, content=content,

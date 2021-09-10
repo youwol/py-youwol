@@ -48,11 +48,18 @@ async def publish(
         config: YouwolConfiguration = Depends(yw_config)
         ):
     context = Context(config=config, request=request, web_socket=WebSocketsCache.upload_flux_apps)
-    await context.web_socket.send_json({
-        "assetId": asset_id,
-        "status": str(FluxAppStatus.PROCESSING)
-        })
-    async with context.start(f"Upload flux app") as ctx:
+
+    async with context.start(
+            f"Upload flux app",
+            on_enter=lambda _ctx: _ctx.web_socket.send_json({
+                "assetId": asset_id,
+                "status": str(FluxAppStatus.PROCESSING)
+                }),
+            on_exit=lambda _ctx: _ctx.web_socket.send_json({
+                "assetId": asset_id,
+                "status": str(FluxAppStatus.DONE)
+                }),
+            ) as ctx:
 
         raw_id = decode_id(asset_id)
         local_flux_app = await get_local_flux_app(raw_id=raw_id, config=config)
@@ -89,10 +96,5 @@ async def publish(
                 folder_id=tree_item['folderId'],
                 data=json.dumps(local_flux_app).encode()
                 )
-        finally:
-            await context.web_socket.send_json({
-                "assetId": asset_id,
-                "status": str(FluxAppStatus.DONE)
-                })
 
     return {}
