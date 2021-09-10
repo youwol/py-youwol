@@ -45,11 +45,18 @@ async def publish(
         config: YouwolConfiguration = Depends(yw_config)
         ):
     context = Context(config=config, request=request, web_socket=WebSocketsCache.upload_data)
-    await context.web_socket.send_json({
-        "assetId": asset_id,
-        "status": str(DataAssetStatus.PROCESSING)
-        })
-    async with context.start(f"Upload Data") as ctx:
+
+    async with context.start(
+            f"Upload Data",
+            on_enter=lambda _ctx: _ctx.web_socket.send_json({
+                "assetId": asset_id,
+                "status": str(DataAssetStatus.PROCESSING)
+                }),
+            on_exit=lambda _ctx: _ctx.web_socket.send_json({
+                "assetId": asset_id,
+                "status": str(DataAssetStatus.DONE)
+                }),
+            ) as ctx:
 
         tree_item = await config.localClients.assets_gateway_client.get_tree_item(item_id=asset_id)
         data, access, metadata, raw_metadata = await get_local_data(asset_id=asset_id, raw_id=tree_item['rawId'],
