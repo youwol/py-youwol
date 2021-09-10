@@ -11,7 +11,8 @@ from aiohttp import FormData
 from fastapi import HTTPException
 
 from youwol.configuration.models_base import FileListing
-from youwol.context import Context, ActionException, Action, ActionStep
+from youwol.models import Action
+from youwol.context import Context, ActionException, ActionStep
 from youwol.routers.packages.messages import PACKAGE_JSON_MISSING_CDN
 from youwol.routers.packages.models import Package, TargetId
 from youwol.routers.packages.utils import (
@@ -126,7 +127,7 @@ async def build_target(
             build_error=True,
             context=context)
         raise ActionException(
-            Action.BUILD,
+            str(Action.BUILD),
             f"Build failed at '{package.pipeline.build.run}'")
 
     await make_package(

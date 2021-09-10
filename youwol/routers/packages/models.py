@@ -3,7 +3,7 @@ from typing import NamedTuple, List, Union
 from pydantic import BaseModel, Json
 
 from youwol.configuration.models_package import TargetPackage, InfoPackage, PipelinePackage
-from youwol.context import Action
+from youwol.models import Action
 from youwol.services.backs.cdn.utils import to_package_id
 
 TargetId = str

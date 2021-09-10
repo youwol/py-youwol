@@ -9,9 +9,11 @@ from pydantic import BaseModel, Json
 from starlette.requests import Request
 from starlette.websockets import WebSocket
 
-from youwol.models import Action, LogLevel, ActionStep
+from youwol.models import LogLevel, ActionStep, Action
 from youwol_utils import JSON
 
+# This declaration is for backward compatibility, the error popup when refreshing the dashboard-developer page
+Action = Action
 
 YouwolConfiguration = "youwol.configuration.youwol_configuration"
 

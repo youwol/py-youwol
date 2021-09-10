@@ -13,7 +13,8 @@ from collections import OrderedDict
 
 from youwol.configuration.models_package import TargetPackage, InfoPackage
 from youwol.configuration.youwol_configuration import YouwolConfiguration
-from youwol.context import Context, Action, ActionStep
+from youwol.models import Action
+from youwol.context import Context, ActionStep
 from youwol.routers.packages.models import (
     BuildStatus, TestStatus, CdnStatus, Package, TargetStatus,
     ActionScope, TargetId, InstallStatus,
