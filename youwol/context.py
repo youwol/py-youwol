@@ -62,6 +62,7 @@ async def log(
     web_socket and await web_socket.send_json(message)
 
 CallableBlock = Callable[['Context'], Union[Awaitable, None]]
+CallableBlockException = Callable[[Exception, 'Context'], Union[Awaitable, None]]
 
 
 class Context(NamedTuple):
@@ -81,14 +82,16 @@ class Context(NamedTuple):
 
     @asynccontextmanager
     @async_generator
-    async def start(self, action: str, on_enter: CallableBlock = None, on_exit: CallableBlock = None):
+    async def start(self, action: str, on_enter: CallableBlock = None, on_exit: CallableBlock = None,
+                    on_exception: CallableBlockException = None):
         ctx = Context(web_socket=self.web_socket, config=self.config, target=self.target, action=action,
                       uid=str(uuid.uuid4()))
 
-        async def execute_block(block: Optional[CallableBlock]):
+        async def execute_block(block: Optional[Union[CallableBlock, CallableBlockException]],
+                                exception: Optional[Exception] = None):
             if not block:
                 return
-            block = block(ctx)
+            block = block(ctx) if not exception else block(exception, ctx)
             if isinstance(block, Awaitable):
                 await block
 
@@ -96,16 +99,19 @@ class Context(NamedTuple):
             await ctx.info(ActionStep.STARTED, "")
             await execute_block(on_enter)
             await yield_(ctx)
-        except UserCodeException as _:
+        except UserCodeException as e:
             await ctx.abort(content=f"Exception during {action} while executing custom code")
+            await execute_block(on_exception, e)
             await execute_block(on_exit)
             traceback.print_exc()
         except ActionException as e:
             await ctx.abort(content=f"Exception during {action}: {e.message}")
+            await execute_block(on_exception, e)
             await execute_block(on_exit)
             traceback.print_exc()
         except Exception as e:
             await ctx.abort(content=f"Exception during {action}", json={"error": str(e)})
+            await execute_block(on_exception, e)
             await execute_block(on_exit)
             traceback.print_exc()
             raise e
