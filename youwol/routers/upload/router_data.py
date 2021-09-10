@@ -5,7 +5,8 @@ from fastapi import APIRouter, WebSocket, Depends, Request
 
 from fastapi import HTTPException
 
-from youwol.routers.upload.utils import create_borrowed_items, synchronize_permissions
+from youwol.routers.upload.utils import synchronize_permissions_metadata_symlinks
+
 from youwol.routers.commons import local_path, ensure_path
 from youwol.context import Context
 from youwol.configuration.youwol_configuration import YouwolConfiguration, yw_config
@@ -96,8 +97,11 @@ async def publish(
             await ensure_path(path_item=path_item, assets_gateway_client=assets_gtw_client)
             await assets_gtw_client.put_asset_with_raw(kind='data', folder_id=tree_item['folderId'], data=form_data)
 
-        await create_borrowed_items(asset_id=asset_id, tree_id=tree_item['treeId'], assets_gtw_client=assets_gtw_client,
-                                    context=ctx)
-        await synchronize_permissions(assets_gtw_client=assets_gtw_client, asset_id=asset_id, context=context)
+        await synchronize_permissions_metadata_symlinks(
+            asset_id=asset_id,
+            tree_id=tree_item['treeId'],
+            assets_gtw_client=assets_gtw_client,
+            context=ctx
+            )
 
     return {}

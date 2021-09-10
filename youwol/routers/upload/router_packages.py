@@ -11,7 +11,7 @@ from fastapi import HTTPException
 
 from fastapi import APIRouter, WebSocket, Depends
 
-from youwol.routers.upload.utils import synchronize_permissions, create_borrowed_item
+from youwol.routers.upload.utils import synchronize_permissions_metadata_symlinks
 from youwol.routers.commons import ensure_path, local_path
 from youwol.context import Context
 from youwol.models import ActionStep
@@ -511,9 +511,9 @@ async def post_library(
     data = {'file': open(zip_path, 'rb'), 'content_encoding': 'identity'}
     await client.put_asset_with_raw(kind='package', folder_id=parent_id, data=data, group_id=path_item.drive.groupId,
                                     timeout=600)
-    await synchronize_permissions(assets_gtw_client=client, asset_id=asset_id, context=context)
-
-    await asyncio.gather(*[
-        create_borrowed_item(item=item, borrowed_tree_id=tree_id, assets_gtw_client=client, context=context)
-        for item in borrowed_items
-        ])
+    await synchronize_permissions_metadata_symlinks(
+        asset_id=asset_id,
+        tree_id=tree_id,
+        assets_gtw_client=client,
+        context=context
+        )
