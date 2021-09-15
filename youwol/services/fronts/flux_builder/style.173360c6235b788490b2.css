@@ -9,6 +9,27 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 .controls-panel.fullscreen{
     display: none  !important;
 }
+/* width */
+::-webkit-scrollbar {
+    width: 5px;
+  }
+  
+  /* Track */
+  ::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+  
+  /* Handle */
+  ::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+  }
+  
+  /* Handle on hover */
+  ::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
+
 .fill-parent{
     height:100%;
     width: 100%;
@@ -887,4 +908,4 @@ g.scatter-plot_flux-pack-plotly .mdle-color-stroke{
 */
 
 
-/*# sourceMappingURL=style.f121434daac8fd650a9d.css.map*/
+/*# sourceMappingURL=style.173360c6235b788490b2.css.map*/
