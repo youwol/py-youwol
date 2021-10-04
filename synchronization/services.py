@@ -41,7 +41,8 @@ def included_services(platform_path, open_source_path):
         ServiceInjection(
             src=src_backend_services / 'flux-backend' / 'src' / 'youwol_flux',
             dst=dst_services / 'backs' / 'flux',
-            include=["/__init__.py", "/models.py", "/root_paths.py", "/suggestions.py", "/utils.py"]
+            include=["/__init__.py", "/models.py", "/root_paths.py", "/suggestions.py", "/utils.py",
+                     "/workflow_new_project.py"]
             ),
         ServiceInjection(
             src=src_backend_services / 'assets-gateway' / 'src' / 'youwol_assets_gateway',
