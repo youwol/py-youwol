@@ -10,3 +10,4 @@ async_generator==1.10
 brotlipy==0.7.0
 Pillow==8.2.0
 cowpy==1.1.0
+advancedHtmlParser
