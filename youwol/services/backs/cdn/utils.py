@@ -223,12 +223,18 @@ async def publish_package(file: IO, filename: str, content_encoding, configurati
         shutil.rmtree(dir_path)
 
 
-def format_response(script, file_id):
-    return Response(content=script, headers={
-        "Content-Encoding": get_content_encoding(file_id),
-        "Content-Type": get_content_type(file_id),
-        "cache-control": "public, max-age=31536000"
-        })
+def format_response(content: bytes, file_id: str) -> Response:
+
+    return Response(
+        content=content,
+        headers={
+            "Content-Encoding": get_content_encoding(file_id),
+            "Content-Type": get_content_type(file_id),
+            "cache-control": "public, max-age=31536000",
+            'Cross-Origin-Opener-Policy': 'same-origin',
+            'Cross-Origin-Embedder-Policy': 'require-corp'
+            }
+        )
 
 
 def get_query(doc_db, lib_name_version, headers):

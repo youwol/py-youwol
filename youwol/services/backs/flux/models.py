@@ -56,7 +56,6 @@ class Workflow(BaseModel):
     modules: List[Module] = []
     connections: List[Connection] = []
     plugins: List[Plugin] = []
-    rootLayerTree: Dict  # this is a tree like structure , not sure we can model it in python with type annotations
 
 
 class ModuleView(BaseModel):
@@ -167,6 +166,7 @@ class UploadResponse(BaseModel):
 
 class Project(BaseModel):
     name: str
+    schemaVersion: str
     description: str
     requirements: Requirements
     workflow: Workflow

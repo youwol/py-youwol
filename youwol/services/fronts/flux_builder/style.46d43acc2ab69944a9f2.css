@@ -334,6 +334,9 @@ span.modified{
 rect.workspace-background{    
     fill:#e0e0e0
 }
+rect.workspace-background.child-layer{    
+    fill:#7d7e7e
+}
 rect.module.content{    
     fill:rgb(100, 100, 100);
     stroke:black;
@@ -342,6 +345,7 @@ rect.module.content{
     rx:10px;
     ry:10px
 }
+
 rect.module.flow.content{   
     opacity:0
 }
@@ -420,7 +424,7 @@ g.description-box.selected>rect{
     fill:#4c90ae;
 }
 .active-layer.content{
-    fill:#7d7e7e
+    fill:#e0e0e0
 }
 .active-layer.header.outline{
     fill:none;
@@ -908,4 +912,4 @@ g.scatter-plot_flux-pack-plotly .mdle-color-stroke{
 */
 
 
-/*# sourceMappingURL=style.173360c6235b788490b2.css.map*/
+/*# sourceMappingURL=style.46d43acc2ab69944a9f2.css.map*/

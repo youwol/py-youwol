@@ -1,4 +1,150 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Flux Builder</title><base href="/ui/flux-builder/"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/x-icon" href="favicon.ico"><script src="/api/assets-gateway/raw/package/QHlvdXdvbC9jZG4tY2xpZW50/0.0.8/dist/@youwol/cdn-client.js"></script><script defer="defer" src="main.fbf649b4f1c464faac46.js"></script><link href="style.173360c6235b788490b2.css" rel="stylesheet"></head><body><div id="main-container" class="vh-100 w-99 d-flex flex-column"><div id="panel__top" class="w-100 d-flex controls-panel flex-wrap" style="background-color:#444"><div id="panel__app-basic-actions" class="d-block position-relative p-1 mr-5"></div><div id="panel__app-layout-builder-actions" class="d-block position-relative" style="padding: 2px !important"></div><div id="panel__app-layout-render-actions" class="d-block position-relative" style="padding: 2px !important"></div><div id="panel__app-layout-actions" class="d-block position-relative" style="padding: 2px !important"></div><div id="panel__app-selection-actions" class="d-block position-relative p-1 mx-5"></div><div id="panel__app-component-actions" class="d-block position-relative p-1 mx-5"></div><div id="panel__app-tree-structure" class="d-block position-relative p-1 mx-5" style="height:35px"></div></div><div class="flex-grow-1" style="min-height: 0px;"><div id="builder-component"><div id="builder-row" class="d-flex h-100"><div id="wf-builder-view"></div><div id="panel__right_builder" class="panel__right controls-panel d-flex flex-column" style="font-size: 12px"><div id="panel__builder-actions-items" class="d-flex justify-content-between flex-align-switch flex-wrap" style="background-color:#444"><div id="panel__builder-managers-actions" class="d-flex position-relative flex-align-switch buttons-toolbox"></div><div id="panel__builder-show-actions" class="d-block position-relative"></div></div><div class="panel__right p-1 border border-dark w-100 flex-grow-1 d-flex flex-column" style="min-height:0px"><div id="panels-container-builder" class="panels-container" style="min-height:0px"><div id="attributes-panel" class="panel-builder text-left w-100 h-100 position-relative d-flex flex-column" style="padding-top: 0px;"></div></div></div></div></div></div><div id="render-component"><div id="editor-row" class="d-flex h-100"><div id="gjs"></div><div id="panel__right_render" class="panel__right border-top border-black controls-panel"><div class="d-flex justify-content-between flex-align-switch" style="background-color:#444"><div id="panel__layout-basic-actions" class="d-block position-relative flex-align-switch buttons-toolbox"></div><div id="panel__layout-devices-actions" class="d-block position-relative flex-align-switch buttons-toolbox"></div></div><div id="panel__layout-managers-actions" class="d-flex position-relative flex-align-switch justify-content-between"><div id="panel__render-panels-actions" class="d-block position-relative buttons-toolbox"></div><div id="panel__render-show-actions" class="d-block position-relative buttons-toolbox"></div></div><div id="panels-container-render" class="panel__right overflow-auto w-15 p-1 border border-dark w-100 panels-container" style="background-color:#444;height:calc(100% - 80px)"><div id="blocks"></div><div id="styles"></div><div id="traits"></div><div id="layers"></div><div id="codes"></div></div></div></div></div></div><div id="notifications-container"></div></div><div id="loading-screen" style="display: flex;justify-content: space-around; background-color: darkgrey;
-    color: green; font-family: monospace;font-size:small;"><div style="margin-top: auto;margin-bottom: auto; padding:40px;
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Flux Builder</title>
+
+    <base href="/ui/flux-builder/">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+    <script
+        src="/api/assets-gateway/raw/package/QHlvdXdvbC9jZG4tY2xpZW50/0.0.8/dist/@youwol/cdn-client.js"></script>
+
+    <!--The following import is actually replaced at build time to insert hash in the name (for caching)
+        See file webpack.config.js and plugin MiniCssExtractPlugin
+        <link rel="stylesheet" href="style.css" id='css-anchor'> -->
+
+<script defer src="main.f6030f768a745c6c4fde.js"></script><link href="style.46d43acc2ab69944a9f2.css" rel="stylesheet"></head>
+
+<body>
+    <div id="main-container" class="vh-100 w-99 d-flex flex-column">
+
+        <div id="panel__top" class="w-100 d-flex controls-panel flex-wrap" style="background-color:#444">
+            <div id="panel__app-basic-actions" class="d-block position-relative p-1 mr-5"></div>
+
+            <div id="panel__app-layout-builder-actions" class="d-block position-relative"
+                style="padding: 2px !important"></div>
+            <div id="panel__app-layout-render-actions" class="d-block position-relative"
+                style="padding: 2px !important"></div>
+            <div id="panel__app-layout-actions" class="d-block position-relative" style="padding: 2px !important"></div>
+            <div id="panel__app-selection-actions" class="d-block position-relative p-1 mx-5"></div>
+            <div id="panel__app-component-actions" class="d-block position-relative p-1 mx-5"></div>
+
+            <div id="panel__app-tree-structure" class="d-block position-relative p-1 mx-5" style="height:35px">
+            </div>
+
+        </div>
+
+        <div class="flex-grow-1" style='min-height: 0px;'>
+            <!--- Builder Editor -->
+
+            <div id="builder-component">
+                <div id="builder-row" class="d-flex h-100">
+                    <div id="wf-builder-view">
+                    </div>
+                    <div id="panel__right_builder" class="panel__right controls-panel d-flex flex-column"
+                        style="font-size: 12px">
+
+                        <div id="panel__builder-actions-items"
+                            class="d-flex justify-content-between flex-align-switch flex-wrap"
+                            style="background-color:#444">
+                            <div id="panel__builder-managers-actions"
+                                class="d-flex position-relative flex-align-switch buttons-toolbox"> </div>
+                            <div id="panel__builder-show-actions" class="d-block position-relative"> </div>
+                        </div>
+
+                        <div class="panel__right p-1 border border-dark w-100 flex-grow-1 d-flex flex-column"
+                            style="min-height:0px">
+                            <div id="panels-container-builder" class="panels-container" style="min-height:0px">
+                                <!--                          
+                            <div id="suggestions-panel"
+                                class="panel-builder text-left w-100 position-relative gjs-two-color"></div>
+                            <div id="extensions-panel" class="panel-builder v-flex text-left d-none"></div>
+                            
+                                <div id="attributes-panel" 
+                                class="panel-builder text-left w-100 h-100 position-relative d-flex flex-column"
+                                style="padding-top: 0px;"
+                                ></div>
+                                -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!--- Layout Editor -->
+            <div id="render-component">
+
+                <div id="editor-row" class="d-flex h-100">
+                    <div id="gjs"></div>
+
+                    <div id="panel__right_render" class="panel__right border-top border-black controls-panel">
+
+                        <div class="d-flex justify-content-between  flex-align-switch" style="background-color:#444">
+                            <div id="panel__layout-basic-actions"
+                                class="d-block position-relative flex-align-switch buttons-toolbox">
+                            </div>
+                            <div id="panel__layout-devices-actions"
+                                class="d-block position-relative flex-align-switch buttons-toolbox">
+                            </div>
+                        </div>
+                        <div id="panel__layout-managers-actions"
+                            class="d-flex position-relative  flex-align-switch justify-content-between ">
+
+                            <div id="panel__render-panels-actions" class="d-block position-relative buttons-toolbox ">
+                            </div>
+                            <div id="panel__render-show-actions" class="d-block position-relative buttons-toolbox ">
+                            </div>
+                        </div>
+
+
+                        <div id="panels-container-render"
+                            class="panel__right overflow-auto w-15  p-1 border border-dark w-100 panels-container "
+                            style="background-color:#444;height:calc(100% - 80px)">
+                            <div id="blocks"></div>
+                            <div id="styles"></div>
+                            <div id="traits"></div>
+                            <div id="layers"></div>
+                            <div id="codes"></div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="notifications-container">
+
+        </div>
+    </div>
+    <div id="loading-screen" style="display: flex;justify-content: space-around; background-color: darkgrey;
+    color: green; font-family: monospace;font-size:small; ">
+        <div style="margin-top: auto;margin-bottom: auto; padding:40px;
         background-color: black; border-radius: 25px;min-width: 50%; max-height:75hv; overflow: auto;
-        display: flex;"><div style="display: flex;justify-content: space-around;"><div id="youwol-logo-loading-screen" style="white-space: pre-wrap; margin-top: auto; margin-bottom: auto;"></div></div><div style="width: 50px;"></div><div id="content-loading-screen" style="margin-top: auto;margin-bottom: auto;"></div></div></div></body></html>
+        display: flex;"
+        >
+            <div  style="display: flex;justify-content: space-around;" >
+                <div id="youwol-logo-loading-screen" style="white-space: pre-wrap; margin-top: auto; margin-bottom: auto;"> 
+                </div>   
+            </div> 
+            <div  style="width: 50px; ">
+
+            </div>
+            <div  id="content-loading-screen" style="margin-top: auto;margin-bottom: auto; ">
+
+            </div>
+        </div>
+    </div>
+
+    <!-- 
+    The following import is actually replaced at build time to insert hash in the bundle name (for caching)
+    See file webpack.config.js and plugin HtmlWebpackPlugin
+    <script src="main.bundle.js"></script> 
+    -->
+</body>
+
+</html>

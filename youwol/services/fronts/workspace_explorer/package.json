@@ -1,6 +1,6 @@
 {
     "name": "@youwol/workspace-explorer",
-    "version": "0.0.3",
+    "version": "0.0.3-next",
     "description": "The workspace explorer of YouWol",
     "author": "greinisch@youwol.com",
     "main": "dist/index.html",

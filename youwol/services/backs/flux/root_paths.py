@@ -16,13 +16,14 @@ from .models import (
 
 from .utils import (
     init_resources, Constants, create_tmp_folder, extract_zip_file, retrieve_project, update_project,
-    create_project_from_json, update_metadata, update_component, retrieve_component,
+    create_project_from_json, update_metadata, update_component, retrieve_component, convert_project_to_current_version,
     )
 from youwol_utils import (
     User, Request, user_info, get_all_individual_groups, Group, private_group_id, to_group_id,
     generate_headers_downstream, asyncio, chunks, check_permission_or_raise, RecordsResponse, GetRecordsBody,
-    RecordsTable, RecordsKeyspace, RecordsBucket, RecordsDocDb, RecordsStorage, get_group, Query, QueryBody,
+    RecordsTable, RecordsKeyspace, RecordsBucket, RecordsDocDb, RecordsStorage, get_group, Query, QueryBody, log_info,
     )
+from .workflow_new_project import workflow_new_project
 
 router = APIRouter()
 flatten = itertools.chain.from_iterable
@@ -98,8 +99,10 @@ async def get_project(
     headers = generate_headers_downstream(request.headers)
     owner = configuration.default_owner
 
-    project = await retrieve_project(project_id=project_id, owner=owner, storage=configuration.storage,
-                                     docdb=configuration.doc_db, headers=headers)
+    project = await retrieve_project(project_id=project_id, owner=owner, storage=configuration.storage, headers=headers)
+
+    if project.schemaVersion != Configuration.currentSchemaVersion:
+        project = convert_project_to_current_version(project)
 
     return project
 
@@ -115,15 +118,16 @@ async def new_project(
     headers = generate_headers_downstream(request.headers)
 
     project_id = str(uuid.uuid4())
-    workflow = Workflow(modules=[], connections=[], rootLayerTree=Constants.wf_root_layer)
+    workflow = workflow_new_project
     builder_rendering = BuilderRendering(modulesView=[], connectionsView=[], descriptionsBoxes=[])
     runner_rendering = RunnerRendering(layout="", style="")
-    requirements = Requirements(fluxPacks=[], fluxComponents=[],
-                                libraries=[],
-                                loadingGraph=LoadingGraph(graphType="sequential-v1", lock=[], definition=[[]]))
+    requirements = Requirements(fluxPacks=[], fluxComponents=[], libraries={},
+                                loadingGraph=LoadingGraph(graphType="sequential-v1", lock=[], definition=[[]])
+                                )
 
-    project = Project(name=project_body.name, description=project_body.description, workflow=workflow,
-                      builderRendering=builder_rendering, runnerRendering=runner_rendering, requirements=requirements)
+    project = Project(name=project_body.name, schemaVersion=Configuration.currentSchemaVersion,
+                      description=project_body.description, workflow=workflow, builderRendering=builder_rendering,
+                      runnerRendering=runner_rendering, requirements=requirements)
 
     coroutines = update_project(project_id=project_id, owner=configuration.default_owner, project=project,
                                 storage=configuration.storage, docdb=configuration.doc_db, headers=headers)
@@ -141,9 +145,8 @@ async def duplicate(
 
     headers = generate_headers_downstream(request.headers)
     owner = configuration.default_owner
-    project = await retrieve_project(
-        project_id=project_id, owner=owner, storage=configuration.storage,  docdb=configuration.doc_db,
-        headers=headers)
+    project = await retrieve_project(project_id=project_id, owner=owner, storage=configuration.storage,
+                                     headers=headers)
 
     project_id = str(uuid.uuid4())
 
@@ -219,18 +222,19 @@ async def post_metadata(
     doc_db, storage, cdn = configuration.doc_db, configuration.storage, configuration.cdn_client
     owner = configuration.default_owner
 
-    req, workflow = await asyncio.gather(
+    req, workflow, description = await asyncio.gather(
         storage.get_json(path="projects/{}/requirements.json".format(project_id), owner=owner, headers=headers),
-        storage.get_json(path="projects/{}/workflow.json".format(project_id), owner=owner, headers=headers)
+        storage.get_json(path="projects/{}/workflow.json".format(project_id), owner=owner, headers=headers),
+        storage.get_json(path="projects/{}/description.json".format(project_id), owner=owner, headers=headers)
         )
-    print("Flux-Backend@Post metadata: got requirements and workflow")
+    log_info("Flux-Backend@Post metadata: got requirements and workflow")
     libraries = {**req['libraries'], **metadata_body.libraries}
 
     def get_package_id(factory_id: Union[str, Mapping[str, str]]):
         return "@youwol/" + factory_id.split("@")[1] if isinstance(factory_id, str) else factory_id['pack']
 
     used_packages = {get_package_id(m["factoryId"]) for m in workflow["modules"] + workflow["plugins"]}
-    print("Flux-Backend@Post metadata: used_packages", used_packages)
+    log_info("Flux-Backend@Post metadata: used_packages", used_packages=used_packages)
 
     body = {
         "libraries": {name: version for name, version in libraries.items() if name in used_packages},
@@ -238,15 +242,15 @@ async def post_metadata(
         }
     loading_graph = await configuration.cdn_client.query_loading_graph(body=body, headers=headers)
     flux_packs = [p['name'] for p in loading_graph['lock'] if p['type'] == 'flux-pack']
-    print("Flux-Backend@Post metadata: got loading graph", loading_graph)
+    log_info("Flux-Backend@Post metadata: got loading graph", loading_graph=loading_graph)
 
     used_libraries = {lib["name"]: lib["version"] for lib in loading_graph["lock"]}
     requirements = Requirements(fluxComponents=[], fluxPacks=flux_packs,
                                 libraries=used_libraries, loadingGraph=loading_graph)
 
-    coroutines = update_metadata(project_id=project_id, name=metadata_body.name,
-                                 description=metadata_body.description, requirements=requirements,
-                                 owner=owner, storage=storage, docdb=doc_db, headers=headers)
+    coroutines = update_metadata(project_id=project_id, schema_version=description['schemaVersion'],
+                                 name=metadata_body.name, description=metadata_body.description,
+                                 requirements=requirements, owner=owner, storage=storage, docdb=doc_db, headers=headers)
     await asyncio.gather(*coroutines)
     return {}
 

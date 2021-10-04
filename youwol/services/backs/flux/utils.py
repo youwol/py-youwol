@@ -6,6 +6,7 @@ import zipfile
 from pathlib import Path
 from typing import Union, List, Tuple, Coroutine, NamedTuple, Mapping
 from uuid import uuid4
+import AdvancedHTMLParser
 
 from fastapi import UploadFile, HTTPException
 
@@ -22,7 +23,8 @@ ProjectId = str
 class Constants(NamedTuple):
     user_group = None
     public_group: str = "/youwol-users"
-    wf_root_layer = {"layerId": "rootLayer", "title": "rootLayer", "children": [], "moduleIds": []}
+    wf_root_layer = {"layerId": "rootLayer", "title": "rootLayer", "children": [], "moduleIds": [],
+                     "html": "", "css": ""}
 
 
 async def init_resources(config: Configuration):
@@ -50,11 +52,13 @@ def create_project_from_json(folder: Path) -> (ProjectId, Project):
     runner_rendering = read_json(folder, "runnerRendering.json")
     requirements = read_json(folder, "requirements.json")
     project = Project(name=description["name"],
+                      schemaVersion=description["schemaVersion"] if "schemaVersion" in description else "0.0",
                       description=description["description"],
                       workflow=Workflow(**workflow),
                       builderRendering=BuilderRendering(**builder_rendering),
                       runnerRendering=RunnerRendering(**runner_rendering),
-                      requirements=Requirements(**requirements))
+                      requirements=Requirements(**requirements)
+                      )
     return str(folder), project
 
 
@@ -62,7 +66,7 @@ def update_project(project_id: str, owner: Union[str, None], project: Project, s
                    docdb: DocDb, headers: Mapping[str, str]) -> List[Coroutine]:
 
     base_path = f"projects/{project_id}"
-    description = {"description": project.description, "name": project.name}
+    description = {"description": project.description, "name": project.name, "schemaVersion": project.schemaVersion}
     post_files_request = [
         storage.post_json(path="{}/workflow.json".format(base_path), json=project.workflow.dict(), owner=owner,
                           headers=headers) if project.workflow else None,
@@ -84,12 +88,12 @@ def update_project(project_id: str, owner: Union[str, None], project: Project, s
     return [*post_files_request, docdb_request]
 
 
-def update_metadata(project_id: str, name: str, description: str, owner: Union[str, None],
+def update_metadata(project_id: str, name: str, description: str, schema_version: str, owner: Union[str, None],
                     requirements: Requirements, storage: Storage, docdb: DocDb, headers: Mapping[str, str]) \
         -> List[Coroutine]:
 
     base_path = f"projects/{project_id}"
-    description = {"description": description, "name": name}
+    description = {"description": description, schema_version: schema_version, "name": name}
     post_files_request = [
         storage.post_json(path="{}/requirements.json".format(base_path), json=requirements.dict(), owner=owner,
                           headers=headers) if requirements else None,
@@ -104,8 +108,7 @@ def update_metadata(project_id: str, name: str, description: str, owner: Union[s
     return [*post_files_request, docdb_request]
 
 
-async def retrieve_project(project_id: str, owner: Union[None, str], storage: Storage,  docdb: DocDb,
-                           headers: Mapping[str, str]) \
+async def retrieve_project(project_id: str, owner: Union[None, str], storage: Storage, headers: Mapping[str, str]) \
         -> (Project, Group):
 
     workflow, builder_rendering, runner_rendering, requirements, description = await asyncio.gather(
@@ -121,9 +124,14 @@ async def retrieve_project(project_id: str, owner: Union[None, str], storage: St
                          owner=owner, headers=headers)
         )
 
-    project = Project(name=description["name"], description=description["description"], requirements=requirements,
-                      workflow=Workflow(**workflow), builderRendering=BuilderRendering(**builder_rendering),
-                      runnerRendering=RunnerRendering(**runner_rendering))
+    project = Project(name=description["name"],
+                      schemaVersion=description["schemaVersion"] if "schemaVersion" in description else "0.0",
+                      description=description["description"],
+                      requirements=requirements,
+                      workflow=Workflow(**workflow),
+                      builderRendering=BuilderRendering(**builder_rendering),
+                      runnerRendering=RunnerRendering(**runner_rendering)
+                      )
 
     return project
 
@@ -175,9 +183,8 @@ async def update_component(component_id: str, owner: Union[str, None], component
 async def retrieve_component(component_id: str, owner: Union[None, str], storage: Storage,
                              doc_db_component: DocDb, headers: Mapping[str, str]) -> Component:
 
-    doc_db_response = await doc_db_component.query(
-        where_clauses=[{"column": "component_id", "relation": "eq", "term": component_id}],
-        select_clauses=[], ordering_clauses=[], owner=owner, max_results=1, allow_filtering=True, headers=headers)
+    doc_db_response = await doc_db_component.query(query_body=f"component_id={component_id}#1", owner=owner,
+                                                   headers=headers)
 
     if not doc_db_response["documents"]:
         raise HTTPException(status_code=404, detail="component not found")
@@ -259,14 +266,6 @@ def create_component_document(component_id, name, description, packages, bucket,
         }
 
 
-"""
-def get_content_encoding(file_id):
-    if ".js" in file_id or ".css" in file_id:
-        return "br"
-    return "identity"
-"""
-
-
 async def get_json_files(base_path: str, files: List[str], storage, headers):
 
     futures = [storage.get_json(path=base_path + "/" + f, headers=headers)for f in files]
@@ -291,3 +290,41 @@ def to_group_scope(group_id: str) -> str:
         return 'private'
     b = str.encode(group_id)
     return base64.urlsafe_b64decode(b).decode()
+
+
+def convert_project_to_current_version(project: Project):
+
+    def patch_layers_tree(layer, components):
+        layer_parser = AdvancedHTMLParser.AdvancedHTMLParser()
+        if layer["layerId"] not in components:
+            layer['html'] = ""
+            layer['css'] = ""
+            return layer
+        layer_parser.parseStr(components[layer["layerId"]])
+        for child_layer in layer['children']:
+            component_id = f"Component_{child_layer['layerId']}"
+            element = layer_parser.getElementById(component_id)
+            if element:
+                [c.remove() for c in element.getChildren()]
+        layer['html'] = layer_parser.getHTML()
+        layer['css'] = ""
+        for child_layer in layer['children']:
+            patch_layers_tree(child_layer, components)
+
+        return layer
+
+    return project
+    if project.schemaVersion == Configuration.currentSchemaVersion:
+        return project
+
+    if project.schemaVersion == "0.0":
+        parser = AdvancedHTMLParser.AdvancedHTMLParser()
+        parser.parseStr(project.runnerRendering.layout)
+        child_components = parser.getElementsByClassName('flux-component')
+        components_inner_html = {c.attributes['id'].strip("Component_"): c.getHTML() for c in child_components}
+        components_inner_html['rootLayer'] = project.runnerRendering.layout
+        project.workflow.rootLayerTree = patch_layers_tree(project.workflow.rootLayerTree, components_inner_html)
+        project.schemaVersion = "1.0"
+        return project
+
+    raise RuntimeError(f"Project conversion from schema's version {project.schemaVersion} not defined")

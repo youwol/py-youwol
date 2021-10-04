@@ -39,11 +39,7 @@ class PackagesStore(RawStore, ABC):
             async with await session.get(url=url, headers=headers) as resp:
                 if resp.status == 200:
                     content = await resp.read()
-                    return Response(content=content, headers={
-                        "Content-Encoding": resp.headers.get("Content-Encoding"),
-                        "Content-Type": resp.headers.get("Content-Type"),
-                        "cache-control": resp.headers.get("cache-control")
-                        })
+                    return Response(content=content, headers={h: resp.headers.get(h) for h in resp.headers.keys()})
                 await raise_exception_from_response(resp, url=url, headers=headers)
 
     async def get_asset_metadata(self, request: Request, raw_id: str, rest_of_path: Union[str, None], headers):
