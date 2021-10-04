@@ -71,7 +71,7 @@ async def create_borrowed_item(borrowed_tree_id: str, item: Mapping[str, any], a
         if e.status_code != 404:
             raise e
 
-        path_item = await local_path(tree_id=tree_id, config=context.config)
+        path_item = local_path(tree_id=tree_id, config=context.config)
         await context.info(
             step=ActionStep.RUNNING,
             content="Borrowed tree item not found, start creation",
