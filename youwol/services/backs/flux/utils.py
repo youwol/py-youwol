@@ -93,7 +93,7 @@ def update_metadata(project_id: str, name: str, description: str, schema_version
         -> List[Coroutine]:
 
     base_path = f"projects/{project_id}"
-    description = {"description": description, schema_version: schema_version, "name": name}
+    description = {"description": description, "schemaVersion": schema_version, "name": name}
     post_files_request = [
         storage.post_json(path="{}/requirements.json".format(base_path), json=requirements.dict(), owner=owner,
                           headers=headers) if requirements else None,
@@ -313,7 +313,6 @@ def convert_project_to_current_version(project: Project):
 
         return layer
 
-    return project
     if project.schemaVersion == Configuration.currentSchemaVersion:
         return project
 

@@ -10,12 +10,12 @@ from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 
 from .configurations import Configuration, get_configuration
 from .models import (
-    Projects, ProjectSnippet, Project, NewProjectResponse, NewProject, Workflow,
+    Projects, ProjectSnippet, Project, NewProjectResponse, NewProject,
     BuilderRendering, RunnerRendering, Requirements, LoadingGraph, UploadResponse, EditMetadata, Component,
     )
 
 from .utils import (
-    init_resources, Constants, create_tmp_folder, extract_zip_file, retrieve_project, update_project,
+    init_resources, create_tmp_folder, extract_zip_file, retrieve_project, update_project,
     create_project_from_json, update_metadata, update_component, retrieve_component, convert_project_to_current_version,
     )
 from youwol_utils import (
@@ -248,6 +248,7 @@ async def post_metadata(
     requirements = Requirements(fluxComponents=[], fluxPacks=flux_packs,
                                 libraries=used_libraries, loadingGraph=loading_graph)
 
+    schema_version = description['schemaVersion'] if 'schemaVersion' else '0.0'
     coroutines = update_metadata(project_id=project_id, schema_version=description['schemaVersion'],
                                  name=metadata_body.name, description=metadata_body.description,
                                  requirements=requirements, owner=owner, storage=storage, docdb=doc_db, headers=headers)
