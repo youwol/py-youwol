@@ -6,13 +6,15 @@ import zipfile
 from pathlib import Path
 from typing import Union, List, Tuple, Coroutine, NamedTuple, Mapping
 from uuid import uuid4
-import AdvancedHTMLParser
 
 from fastapi import UploadFile, HTTPException
 
+from .backward_compatibility import convert_project_to_current_version
 from .configurations import Configuration
 from youwol_utils import JSON, DocDb, Storage, base64, log_info
-from .models import Workflow, BuilderRendering, RunnerRendering, Project, Component, Requirements
+from .models import (
+    Workflow, BuilderRendering, RunnerRendering, Project, Component, Requirements, DeprecatedData
+    )
 
 flatten = itertools.chain.from_iterable
 Filename = str
@@ -23,8 +25,6 @@ ProjectId = str
 class Constants(NamedTuple):
     user_group = None
     public_group: str = "/youwol-users"
-    wf_root_layer = {"layerId": "rootLayer", "title": "rootLayer", "children": [], "moduleIds": [],
-                     "html": "", "css": ""}
 
 
 async def init_resources(config: Configuration):
@@ -52,7 +52,7 @@ def create_project_from_json(folder: Path) -> (ProjectId, Project):
     runner_rendering = read_json(folder, "runnerRendering.json")
     requirements = read_json(folder, "requirements.json")
     project = Project(name=description["name"],
-                      schemaVersion=description["schemaVersion"] if "schemaVersion" in description else "0.0",
+                      schemaVersion=description["schemaVersion"] if "schemaVersion" in description else "0",
                       description=description["description"],
                       workflow=Workflow(**workflow),
                       builderRendering=BuilderRendering(**builder_rendering),
@@ -108,8 +108,13 @@ def update_metadata(project_id: str, name: str, description: str, schema_version
     return [*post_files_request, docdb_request]
 
 
-async def retrieve_project(project_id: str, owner: Union[None, str], storage: Storage, headers: Mapping[str, str]) \
-        -> (Project, Group):
+async def retrieve_project(
+        project_id: str,
+        owner: Union[None, str],
+        storage: Storage,
+        headers: Mapping[str, str]
+        ) \
+        -> (Project, Group, dict):
 
     workflow, builder_rendering, runner_rendering, requirements, description = await asyncio.gather(
         storage.get_json(path="projects/{}/workflow.json".format(project_id),
@@ -124,14 +129,21 @@ async def retrieve_project(project_id: str, owner: Union[None, str], storage: St
                          owner=owner, headers=headers)
         )
 
+    deprecated_data = {}
+    if 'rootLayerTree' in workflow:
+        deprecated_data = DeprecatedData(rootLayerTree=workflow['rootLayerTree'])
+
     project = Project(name=description["name"],
-                      schemaVersion=description["schemaVersion"] if "schemaVersion" in description else "0.0",
+                      schemaVersion=description["schemaVersion"] if "schemaVersion" in description else "0",
                       description=description["description"],
                       requirements=requirements,
                       workflow=Workflow(**workflow),
                       builderRendering=BuilderRendering(**builder_rendering),
                       runnerRendering=RunnerRendering(**runner_rendering)
                       )
+
+    if project.schemaVersion != Configuration.currentSchemaVersion:
+        project = convert_project_to_current_version(project, deprecated_data)
 
     return project
 
@@ -290,40 +302,3 @@ def to_group_scope(group_id: str) -> str:
         return 'private'
     b = str.encode(group_id)
     return base64.urlsafe_b64decode(b).decode()
-
-
-def convert_project_to_current_version(project: Project):
-
-    def patch_layers_tree(layer, components):
-        layer_parser = AdvancedHTMLParser.AdvancedHTMLParser()
-        if layer["layerId"] not in components:
-            layer['html'] = ""
-            layer['css'] = ""
-            return layer
-        layer_parser.parseStr(components[layer["layerId"]])
-        for child_layer in layer['children']:
-            component_id = f"Component_{child_layer['layerId']}"
-            element = layer_parser.getElementById(component_id)
-            if element:
-                [c.remove() for c in element.getChildren()]
-        layer['html'] = layer_parser.getHTML()
-        layer['css'] = ""
-        for child_layer in layer['children']:
-            patch_layers_tree(child_layer, components)
-
-        return layer
-
-    if project.schemaVersion == Configuration.currentSchemaVersion:
-        return project
-
-    if project.schemaVersion == "0.0":
-        parser = AdvancedHTMLParser.AdvancedHTMLParser()
-        parser.parseStr(project.runnerRendering.layout)
-        child_components = parser.getElementsByClassName('flux-component')
-        components_inner_html = {c.attributes['id'].strip("Component_"): c.getHTML() for c in child_components}
-        components_inner_html['rootLayer'] = project.runnerRendering.layout
-        project.workflow.rootLayerTree = patch_layers_tree(project.workflow.rootLayerTree, components_inner_html)
-        project.schemaVersion = "1.0"
-        return project
-
-    raise RuntimeError(f"Project conversion from schema's version {project.schemaVersion} not defined")

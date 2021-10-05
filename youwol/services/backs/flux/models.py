@@ -240,67 +240,6 @@ COMPONENTS_TABLE = TableBody(
     )
 
 
-"""
-class DocdbSchemas(NamedTuple):
+class DeprecatedData(BaseModel):
+    rootLayerTree: dict
 
-    components = {
-        "columns": [
-            {
-                "name": "path",
-                "type": "text"
-                },
-            {
-                "name": "component_id",
-                "type": "text"
-                },
-            {
-                "name": "bucket",
-                "type": "text"
-                },
-            {
-                "name": "description",
-                "type": "text"
-                },
-            {
-                "name": "name",
-                "type": "text"
-                },
-            {
-                "name": "packages",
-                "type": "list<text>"
-                },
-            {
-                "name": "has_view",
-                "type": "boolean"
-                }
-            ]
-        }
-    projects = {
-        "columns": [
-            {
-                "name": "path",
-                "type": "text"
-                },
-            {
-                "name": "project_id",
-                "type": "text"
-                },
-            {
-                "name": "bucket",
-                "type": "text"
-                },
-            {
-                "name": "description",
-                "type": "text"
-                },
-            {
-                "name": "name",
-                "type": "text"
-                },
-            {
-                "name": "packages",
-                "type": "list<text>"
-                }
-            ]
-        }
-"""

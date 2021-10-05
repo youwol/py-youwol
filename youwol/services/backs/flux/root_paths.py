@@ -16,7 +16,7 @@ from .models import (
 
 from .utils import (
     init_resources, create_tmp_folder, extract_zip_file, retrieve_project, update_project,
-    create_project_from_json, update_metadata, update_component, retrieve_component, convert_project_to_current_version,
+    create_project_from_json, update_metadata, update_component, retrieve_component
     )
 from youwol_utils import (
     User, Request, user_info, get_all_individual_groups, Group, private_group_id, to_group_id,
@@ -100,9 +100,6 @@ async def get_project(
     owner = configuration.default_owner
 
     project = await retrieve_project(project_id=project_id, owner=owner, storage=configuration.storage, headers=headers)
-
-    if project.schemaVersion != Configuration.currentSchemaVersion:
-        project = convert_project_to_current_version(project)
 
     return project
 
@@ -248,8 +245,8 @@ async def post_metadata(
     requirements = Requirements(fluxComponents=[], fluxPacks=flux_packs,
                                 libraries=used_libraries, loadingGraph=loading_graph)
 
-    schema_version = description['schemaVersion'] if 'schemaVersion' else '0.0'
-    coroutines = update_metadata(project_id=project_id, schema_version=description['schemaVersion'],
+    schema_version = description['schemaVersion'] if 'schemaVersion' else '0'
+    coroutines = update_metadata(project_id=project_id, schema_version=schema_version,
                                  name=metadata_body.name, description=metadata_body.description,
                                  requirements=requirements, owner=owner, storage=storage, docdb=doc_db, headers=headers)
     await asyncio.gather(*coroutines)

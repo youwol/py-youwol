@@ -37,8 +37,7 @@ class Configuration:
     replication_factor: int = 2
 
     default_owner = "/youwol-users"
-    docdb_projects_table_version = "0.0"
-    docdb_components_table_version = "0.0"
+    currentSchemaVersion = "1"
 
 
 config_yw_flux = None
