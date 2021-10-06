@@ -5,7 +5,7 @@ from typing import Dict
 from youwol.utils_paths import ensure_folders
 from youwol.configuration import (
     BackEnds, TargetBack, ConfigParameters, parameter_enum, FrontEnds, Packages,
-    UserConfiguration, General, RemoteGateway, TargetFront,
+    UserConfiguration, General, TargetFront,
     )
 from youwol.main_args import MainArguments
 
