@@ -1,13 +1,6 @@
 
 .flux-builder-only{
-    display:none
-}
-.flux-replica-template{
-    display:none
-}
-.flux-fill-parent{
-    height:100%;
-    width:100%;
+    display:none !important
 }
 
 #notifications-container{
@@ -22,4 +15,4 @@
     background-color: rgba(54,55,55,0.7);
 }
 
-/*# sourceMappingURL=style.003b3cc81f156b8f36d2.css.map*/
+/*# sourceMappingURL=style.dbe3a272b86d53703878.css.map*/

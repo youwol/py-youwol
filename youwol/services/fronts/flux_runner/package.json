@@ -1,6 +1,6 @@
 {
     "name": "@youwol/flux-runner",
-    "version": "0.0.5-next",
+    "version": "0.0.6",
     "description": "Flux runner application",
     "author": "greinisch@youwol.com",
     "main": "dist/index.html",
@@ -17,9 +17,9 @@
     },
     "license": "MIT",
     "dependencies": {
-        "@youwol/cdn-client": "0.x",
-        "@youwol/flux-core": "0.x",
-        "@youwol/flux-view": "0.x",
+        "@youwol/cdn-client": "~0.0.8",
+        "@youwol/flux-core": "~0.0.21",
+        "@youwol/flux-view": "~0.0.10",
         "lodash": "4.x",
         "reflect-metadata": "0.x",
         "rxjs": "6.x"
@@ -49,10 +49,11 @@
             "version": "0.0.0"
         },
         "cdnDependencies": {
-            "@youwol/cdn-client": "0.x",
-            "@youwol/flux-core": "0.x",
-            "@youwol/flux-view": "0.x",
+            "@youwol/cdn-client": "~0.0.8",
+            "@youwol/flux-core": "~0.0.21",
+            "@youwol/flux-view": "~0.0.10",
             "lodash": "4.x",
+            "reflect-metadata": "0.x",
             "rxjs": "6.x"
         }
     }

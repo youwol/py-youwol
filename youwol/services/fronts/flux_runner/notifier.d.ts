@@ -1,10 +1,8 @@
 import { Environment } from '@youwol/flux-core';
+import { Stream$ } from '@youwol/flux-view';
+import { Observable } from 'rxjs';
 /**
- * Plug the notification system to the application environment.
- *
- * For now, only module's errors (ModuleError in flux-core) are handled.
- *
- * @param environment application's environment
+ * Most of this file is replicated from flux-builder => factorization needed
  */
 export declare function plugNotifications(environment: Environment): void;
 /**
@@ -12,6 +10,8 @@ export declare function plugNotifications(environment: Environment): void;
  * HTML document.
  *
  * For now, only module's errors (ModuleError in flux-core) are handled.
+ *
+ * Notification can be associated to custom [[INotifierAction | action]]
  */
 export declare class Notifier {
     static classesIcon: {
@@ -28,30 +28,35 @@ export declare class Notifier {
      *
      * @param message content
      * @param title title
+     * @param actions available actions
      */
-    static notify({ message, title }: {
-        message: any;
-        title: any;
+    static notify({ message, title, classIcon, timeout }: {
+        message?: string | Stream$<unknown, string>;
+        classIcon: string | Stream$<unknown, string>;
+        title: string;
+        timeout?: Observable<any>;
     }): void;
     /**
      * Popup a notification with level=='Error'
      *
      * @param message content
      * @param title title
+     * @param actions available actions
      */
     static error({ message, title }: {
-        message: any;
-        title: any;
+        message: string;
+        title: string;
     }): void;
     /**
      * Popup a notification with level=='Warning'
      *
      * @param message content
      * @param title title
+     * @param actions available actions
      */
     static warning({ message, title }: {
-        message: any;
-        title: any;
+        message: string;
+        title: string;
     }): void;
     private static popup;
 }
