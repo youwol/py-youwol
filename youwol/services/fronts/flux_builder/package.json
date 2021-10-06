@@ -18,8 +18,8 @@
     "license": "MIT",
     "dependencies": {
         "@youwol/cdn-client": "~0.0.8",
-        "@youwol/flux-core": "~0.0.20",
-        "@youwol/flux-svg-plots": "0.x",
+        "@youwol/flux-core": "~0.0.21",
+        "@youwol/flux-svg-plots": "~0.0.0",
         "@youwol/flux-view": "~0.0.10",
         "@youwol/fv-button": "~0.0.3",
         "@youwol/fv-context-menu": "~0.0.0",
@@ -68,8 +68,8 @@
         },
         "cdnDependencies": {
             "@youwol/cdn-client": "~0.0.8",
-            "@youwol/flux-core": "~0.0.20",
-            "@youwol/flux-svg-plots": "0.x",
+            "@youwol/flux-core": "~0.0.21",
+            "@youwol/flux-svg-plots": "~0.0.0",
             "@youwol/flux-view": "~0.0.10",
             "@youwol/fv-button": "~0.0.3",
             "@youwol/fv-context-menu": "~0.0.0",
