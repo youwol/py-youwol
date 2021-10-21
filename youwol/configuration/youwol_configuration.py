@@ -9,7 +9,7 @@ from typing import List, Dict, Any, Union, NamedTuple, Optional
 
 from pydantic import ValidationError
 
-from youwol_utils import CdnClient
+from youwol_utils import CdnClient, StorageClient, DocDbClient, TableBody, SecondaryIndex
 from youwol_utils.clients.assets.assets import AssetsClient
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from youwol_utils.clients.flux.flux import FluxClient
@@ -136,6 +136,32 @@ class YouwolConfiguration(NamedTuple):
         auth_token = await self.get_auth_token(context=context)
         headers = {"Authorization": f"Bearer {auth_token}"}
         return FluxClient(url_base=f"https://{remote_host}/api/flux-backend", headers=headers)
+
+    async def get_storage_client(self, bucket_name: str, context: Context) -> StorageClient:
+
+        remote_host = self.get_remote_info().host
+        auth_token = await self.get_auth_token(context=context)
+        headers = {"Authorization": f"Bearer {auth_token}"}
+        return StorageClient(
+            url_base=f"https://{remote_host}/api/storage",
+            bucket_name=bucket_name,
+            headers=headers
+            )
+
+    async def get_docdb_client(self, keyspace_name: str, table_body: TableBody, secondary_indexes: List[SecondaryIndex],
+                               context: Context) -> DocDbClient:
+
+        remote_host = self.get_remote_info().host
+        auth_token = await self.get_auth_token(context=context)
+        headers = {"Authorization": f"Bearer {auth_token}"}
+        return DocDbClient(
+            url_base=f"https://{remote_host}/api/docdb",
+            table_body=table_body,
+            secondary_indexes=secondary_indexes,
+            keyspace_name=keyspace_name,
+            replication_factor=2,
+            headers=headers
+            )
 
 
 class YouwolConfigurationFactory:
