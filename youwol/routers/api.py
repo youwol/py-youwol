@@ -19,6 +19,7 @@ import youwol.services.backs.cdn.root_paths as cdn
 import youwol.services.backs.treedb.root_paths as treedb
 import youwol.services.backs.assets.root_paths as assets
 import youwol.services.backs.flux.root_paths as flux
+import youwol.services.backs.stories.root_paths as stories
 import youwol.services.backs.assets_gateway.root_paths as assets_gateway
 
 
@@ -29,7 +30,8 @@ cached_headers = None
 router.include_router(cdn.router, prefix="/cdn-backend", tags=["cdn"])
 router.include_router(treedb.router, prefix="/treedb-backend", tags=["treedb"])
 router.include_router(assets.router, prefix="/assets-backend", tags=["assets"])
-router.include_router(flux.router, prefix="/flux-backend", tags=["assets"])
+router.include_router(flux.router, prefix="/flux-backend", tags=["flux"])
+router.include_router(stories.router, prefix="/stories-backend", tags=["stories"])
 router.include_router(assets_gateway.router, prefix="/assets-gateway", tags=["assets-gateway"])
 
 

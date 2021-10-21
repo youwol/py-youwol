@@ -46,6 +46,7 @@ api_bypass_base_paths = [
     "/api/flux-backend",
     "/api/treedb-backend",
     "/api/assets-backend",
+    "/api/stories-backend",
     "/api/assets-gateway"
     ]
 
