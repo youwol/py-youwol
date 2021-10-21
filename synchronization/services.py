@@ -51,6 +51,11 @@ def included_services(platform_path, open_source_path):
                      "/raw_stores/*", "/routers/*"]
             ),
         ServiceInjection(
+            src=src_backend_services / 'stories-backend' / 'src' / 'youwol_stories',
+            dst=dst_services / 'backs' / 'stories',
+            include=["/__init__.py", "/models.py", "/root_paths.py", "/utils.py", "/all_icons_emojipedia.py"]
+            ),
+        ServiceInjection(
             src=Path('..') / 'youwol-open-source' / 'npm' / '@youwol' / 'flux' / 'flux-builder' / 'dist',
             dst=dst_services / 'fronts' / 'flux_builder',
             include=["/*.html", "/*.js", "/*.css", "/*.map"],
@@ -65,6 +70,12 @@ def included_services(platform_path, open_source_path):
         ServiceInjection(
             src=Path('..') / 'youwol-open-source' / 'npm' / '@youwol' / 'workspace-explorer' / 'dist',
             dst=dst_services / 'fronts' / 'workspace_explorer',
+            include=["/*"],
+            is_front=True
+            ),
+        ServiceInjection(
+            src=Path('..') / 'youwol-open-source' / 'npm' / '@youwol' / 'stories' / 'dist',
+            dst=dst_services / 'fronts' / 'stories',
             include=["/*"],
             is_front=True
             ),
