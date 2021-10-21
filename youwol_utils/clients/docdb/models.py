@@ -1,4 +1,4 @@
-from typing import List, Any, Dict, Optional
+from typing import List, Any, Dict
 
 from pydantic import BaseModel
 
@@ -49,13 +49,17 @@ class WhereClause(BaseModel):
 
     def is_matching(self, doc: Dict[str, Any]) -> bool:
         factory_clauses = {
-            "eq": lambda document, column, target: document[column] == target,
-            "lt": lambda document, column, target: document[column] < target,
-            "leq": lambda document, column, target: document[column] <= target,
-            "gt": lambda document, column, target: document[column] > target,
-            "geq": lambda document, column, target: document[column] >= target,
+            "eq": lambda _value, _target: value == target,
+            "lt": lambda _value, _target: value < target,
+            "leq": lambda _value, _target: value <= target,
+            "gt": lambda _value, _target: value > target,
+            "geq": lambda _value, _target: value >= target,
             }
-        return factory_clauses[self.relation](doc, self.column, self.term)
+        target = self.term
+        value = doc[self.column]
+        if isinstance(value, float) or isinstance(value, int):
+            target = float(target)
+        return factory_clauses[self.relation](value, target)
 
 
 class Query(BaseModel):
@@ -74,6 +78,23 @@ class QueryBody(BaseModel):
 
     @staticmethod
     def parse(query_str):
+
+        def parse_clause(clause: str):
+            def parse_clause_specific(symbol, relation):
+                return WhereClause(column=clause.split(symbol)[0],
+                                   relation=relation,
+                                   term=clause[clause.find(symbol) + len(symbol):])
+            if ">=" in clause:
+                return parse_clause_specific(">=", "geq")
+            if ">" in clause:
+                return parse_clause_specific(">", "gt")
+            if "<=" in clause:
+                return parse_clause_specific("<=", "leq")
+            if "<" in clause:
+                return parse_clause_specific("<", "lt")
+            if "=" in clause:
+                return parse_clause_specific("=", "eq")
+
         remaining = query_str
         where_clauses_str = query_str
         select_clauses_str = None
@@ -88,8 +109,7 @@ class QueryBody(BaseModel):
         if where_clauses_str == "":
             where_clauses = []
         else:
-            where_clauses = [WhereClause(column=w.split('=')[0], relation='eq', term=w[w.find('=') + 1:])
-                             for w in where_clauses_str.split(',')]
+            where_clauses = [parse_clause(w) for w in where_clauses_str.split(',')]
 
         select_clauses = [SelectClause(selector=w) for w in select_clauses_str.split(',')] if select_clauses_str else []
         return QueryBody(max_results=int(count_str) if count_str else 100,
