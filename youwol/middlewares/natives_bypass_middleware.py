@@ -99,7 +99,7 @@ class NativesBypassMiddleware(BaseHTTPMiddleware):
                     and request.method == "GET":
                 resp.headers.update({'cache-control': 'no-store'})
 
-            if any([t in request.url.path for t in ['ui/flux-builder', 'ui/flux-runner', 'ui/network']]):
+            if any([t in request.url.path for t in ['ui/flux-builder', 'ui/flux-runner', 'ui/network', 'ui/stories']]):
                 resp.headers.update({'Cross-Origin-Opener-Policy': 'same-origin'})
                 resp.headers.update({'Cross-Origin-Embedder-Policy': 'require-corp'})
             return resp

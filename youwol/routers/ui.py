@@ -50,10 +50,8 @@ async def redirect_get_ui(
             path = Path(frontend.target.folder) / path_dist / rest_of_path
             return FileResponse(str(path))
     except (StopIteration, AttributeError):
-        # No Target with matching name exist => if 'flux-builder', 'flux-runner', or 'assets-browser-ui'
-        # => use dist files
-        if service_name not in ['flux-builder', 'flux-runner', 'workspace-explorer', 'dashboard-developer',
-                                'code-editor-ui']:
+        # No Target with matching name exist => for 'native' services use ./dist files
+        if service_name not in ['flux-builder', 'flux-runner', 'workspace-explorer', 'dashboard-developer', 'stories']:
             raise HTTPException(status_code=404, detail=f"Service {service_name} not known.")
         mappings = {
             'flux-builder': youwol_flux_builder,
