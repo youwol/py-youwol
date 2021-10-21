@@ -55,12 +55,22 @@ class LocalDocDbClient:
         self.data_path.open('w').write('{"documents":[]}')
 
     async def get_document(self, partition_keys: Dict[str, any], clustering_keys: Dict[str, any],
-                           owner: Union[str, None], **kwargs):
+                           owner: Union[str, None], allow_filtering: bool = False,  **kwargs):
+
+        valid_for_indexes = [all([k in partition_keys for k in self.table_body.partition_key])] +\
+                            [len(partition_keys.keys()) == 1 and
+                             index.identifier.column_name == list(partition_keys.keys())[0]
+                             for index in self.secondary_indexes]
+
+        query_valid = any(valid_for_indexes)
+
+        if not allow_filtering and not query_valid:
+            raise Exception("The query can not proceed")
 
         where_clauses = [{"column": k, "relation": "eq", "term": partition_keys[k]}
-                         for k in self.table_body.partition_key] + \
+                         for k in partition_keys.keys()] + \
                         [{"column": k, "relation": "eq", "term": clustering_keys[k]}
-                         for k in self.table_body.clustering_columns]
+                         for k in clustering_keys.keys()]
 
         query = QueryBody(
             max_results=1,
@@ -105,12 +115,13 @@ class LocalDocDbClient:
 
         r = [doc for doc in data if is_matching(doc)]
 
+        query_ordering = {clause.name: clause.order for clause in query_body.query.ordering_clause}
         for ordering in self.table_body.table_options.clustering_order:
             order = ordering.order
             col = ordering.name
             sorted_result = sorted(r, key=lambda doc: doc[col])
             r = sorted_result
-            if order == "DESC":
+            if order == "DESC" or (col in query_ordering and query_ordering[col] == "DESC"):
                 r.reverse()
 
         return {"documents": r[0:query_body.max_results]}
