@@ -165,5 +165,5 @@ class LocalStorageClient:
 
     async def get_text(self, path: str, owner: Union[str, None], headers: Mapping[str, str] = None,
                        **kwargs):
-
-        return str(await self.get_bytes(path, owner, headers, **kwargs))
+        raw = await self.get_bytes(path, owner, headers, **kwargs)
+        return raw.decode("utf-8")
