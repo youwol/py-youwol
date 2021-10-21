@@ -3,10 +3,12 @@ from typing import Callable, cast, Any
 from dataclasses import dataclass
 
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
+from .raw_stores.story import StoriesStore
 from .raw_stores.data import DataStore
 from .raw_stores.drive_pack import DrivePackStore
 from .raw_stores.group_showcase import GroupShowCaseStore
 from .raw_stores.package import PackagesStore
+from youwol_utils.clients.stories.stories import StoriesClient
 from youwol_utils import (
     CdnClient, DocDb, Storage, LocalDocDbClient, LocalStorageClient, TableBody
     )
@@ -30,6 +32,7 @@ class Configuration:
     data_client: DataClient
     flux_client: FluxClient
     cdn_client: CdnClient
+    stories_client: StoriesClient
     treedb_client: TreeDbClient
     assets_client: AssetsClient
     assets_gtw_client: AssetsGatewayClient
@@ -46,6 +49,7 @@ class Configuration:
             PackagesStore(client=self.cdn_client),
             GroupShowCaseStore(client=None),
             DataStore(client=self.data_client),
+            StoriesStore(client=self.stories_client),
             DrivePackStore(client=self.data_client)
             ]
 
@@ -71,7 +75,7 @@ async def get_configuration():
     data_client = DataClient(storage=cast(Any, storage), docdb=cast(Any, docdb))
     flux_client = FluxClient(url_base=f"http://localhost:{py_yw_config.http_port}/api/flux-backend")
     cdn_client = CdnClient(url_base=f"http://localhost:{py_yw_config.http_port}/api/cdn-backend")
-
+    stories_client = StoriesClient(url_base=f"http://localhost:{py_yw_config.http_port}/api/stories-backend")
     treedb_client = TreeDbClient(url_base=f"http://localhost:{py_yw_config.http_port}/api/treedb-backend")
     assets_client = AssetsClient(url_base=f"http://localhost:{py_yw_config.http_port}/api/assets-backend")
     assets_gtw_client = AssetsGatewayClient(url_base=f"http://localhost:{py_yw_config.http_port}/api/assets-gateway")
@@ -91,6 +95,7 @@ async def get_configuration():
         data_client=data_client,
         flux_client=flux_client,
         cdn_client=cdn_client,
+        stories_client=stories_client,
         treedb_client=treedb_client,
         assets_client=assets_client,
         docdb_factory=docdb_factory,
