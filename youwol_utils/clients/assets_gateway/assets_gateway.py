@@ -26,10 +26,10 @@ class AssetsGatewayClient:
                     return await resp.json()
                 await raise_exception_from_response(resp)
 
-    async def put_asset_with_raw(self, kind: str, folder_id: str, data: Any, group_id: str = None, **kwargs):
+    async def put_asset_with_raw(self, kind: str, folder_id: str, data: Any, rest_of_path="", group_id: str = None,
+                                 **kwargs):
 
-        # data = files = {'file': open(zip_path, 'rb')}
-        url = f"{self.url_base}/assets/{kind}/location/{folder_id}"
+        url = f"{self.url_base}/assets/{kind}/location/{folder_id}{rest_of_path}"
         params = {"group-id": group_id} if group_id else {}
         async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
             async with await session.put(url=url, data=data, params=params, **kwargs) as resp:
