@@ -143,10 +143,37 @@ async def get(
 @router.put("/{kind}/location/{folder_id}",
             response_model=NewAssetResponse,
             summary="create an asset with initial raw content")
+async def put_asset_with_raw_0(
+        request: Request,
+        kind: str,
+        folder_id: str,
+        group_id: str = Query(None, alias="group-id"),
+        configuration: Configuration = Depends(get_configuration)):
+
+    return await put_asset_with_raw(request=request, kind=kind, folder_id=folder_id, rest_of_path="", group_id=group_id,
+                                    configuration=configuration)
+
+
+@router.put("/{kind}/location/{folder_id}/{rest_of_path:path}",
+            response_model=NewAssetResponse,
+            summary="create an asset with initial raw content")
+async def put_asset_with_raw_1(
+        request: Request,
+        kind: str,
+        folder_id: str,
+        rest_of_path: str,
+        group_id: str = Query(None, alias="group-id"),
+        configuration: Configuration = Depends(get_configuration)):
+
+    return await put_asset_with_raw(request=request, kind=kind, folder_id=folder_id, rest_of_path=rest_of_path,
+                                    group_id=group_id, configuration=configuration)
+
+
 async def put_asset_with_raw(
         request: Request,
         kind: str,
         folder_id: str,
+        rest_of_path: str,
         group_id: str = Query(None, alias="group-id"),
         configuration: Configuration = Depends(get_configuration)):
 
@@ -167,7 +194,8 @@ async def put_asset_with_raw(
     get_parent_time, now = chrono(now)
     metadata = AssetMeta(name=f"new {kind}", description="", kind=kind, groupId=group_id, tags=[])
 
-    raw_id, meta_new = await store.create_asset(request=request, metadata=metadata, headers=headers)
+    raw_id, meta_new = await store.create_asset(request=request, metadata=metadata, rest_of_path=rest_of_path,
+                                                headers=headers)
 
     create_raw, now = chrono(now)
     asset_id = raw_id_to_asset_id(raw_id)

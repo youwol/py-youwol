@@ -12,7 +12,17 @@ class StoriesStore(RawStore):
 
     path_name = 'story'
 
-    async def create_asset(self, request: Request, metadata: AssetMeta, headers) -> (RawId, AssetMeta):
+    async def create_asset(self, request: Request, metadata: AssetMeta, rest_of_path: str, headers) -> \
+            (RawId, AssetMeta):
+
+        if rest_of_path == "publish":
+            form = await request.form()
+            form = {
+                'file': await form.get('file').read(),
+                'content_encoding': form.get('content_encoding', 'identity')
+                }
+            resp = await self.client.publish_story(data=form, headers=headers)
+            return resp['storyId'], AssetMeta(name=resp['title'])
 
         body = await request.body()
         body = json.loads(body.decode('utf8')) if body else None
@@ -22,15 +32,16 @@ class StoriesStore(RawStore):
                 "title": metadata.name
                 }
 
-        if 'storyId' in body:
-            raise NotImplementedError("StoriesStore@create_asset with given storyId")
-
         resp = await self.client.create_story(body=body, headers=headers)
-        return resp['storyId'], AssetMeta()
+        return resp['storyId'], AssetMeta(name=resp['title'])
 
     async def sync_asset_metadata(self, request: Request, raw_id: str, metadata: AssetMeta, headers):
 
-        raise NotImplementedError("StoriesStore@sync_asset_metadata")
+        await self.client.update_story(
+            story_id=raw_id,
+            body={"title": metadata.name},
+            headers=headers
+            )
 
     async def update_asset(self, request: Request, raw_id: str,  metadata: AssetMeta, rest_of_path: str, headers):
 

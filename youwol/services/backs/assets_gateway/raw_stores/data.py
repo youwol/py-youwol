@@ -29,7 +29,7 @@ class DataStore(RawStore, ABC):
     path_name = 'data'
     owner = '/youwol-users'
 
-    async def create_asset(self, request: Request, metadata: AssetMeta, headers)\
+    async def create_asset(self, request: Request, metadata: AssetMeta, rest_of_path: str, headers)\
             -> (RawId, AssetMeta):
 
         form = await request.form()

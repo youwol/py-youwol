@@ -27,7 +27,7 @@ class FluxProjectsStore(RawStore):
 
     path_name = 'flux-project'
 
-    async def create_asset(self, request: Request, metadata: AssetMeta, headers) -> (RawId, AssetMeta):
+    async def create_asset(self, request: Request, metadata: AssetMeta, rest_of_path: str, headers) -> (RawId, AssetMeta):
 
         body = await request.body()
         body = json.loads((await request.body()).decode('utf8')) if body else None

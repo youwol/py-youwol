@@ -15,7 +15,7 @@ class PackagesStore(RawStore, ABC):
 
     path_name = 'package'
 
-    async def create_asset(self, request: Request, metadata: AssetMeta, headers) -> (RawId, AssetMeta):
+    async def create_asset(self, request: Request, metadata: AssetMeta, rest_of_path: str, headers) -> (RawId, AssetMeta):
 
         form = await request.form()
         form = {

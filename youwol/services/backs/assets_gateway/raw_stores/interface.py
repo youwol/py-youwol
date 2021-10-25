@@ -27,7 +27,7 @@ class RawStore:
 
     client: Any
 
-    async def create_asset(self, request: Request, metadata: AssetMeta, headers) -> (RawId, AssetMeta):
+    async def create_asset(self, request: Request, metadata: AssetMeta, rest_of_path: str, headers) -> (RawId, AssetMeta):
         raise NotImplementedError
 
     async def sync_asset_metadata(self, request: Request, raw_id: str, metadata: AssetMeta, headers):
