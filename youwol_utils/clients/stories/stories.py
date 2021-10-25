@@ -24,11 +24,33 @@ class StoriesClient:
 
                 await raise_exception_from_response(resp, **kwargs)
 
+    async def publish_story(self, data, **kwargs):
+
+        url = f"{self.url_base}/stories"
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with await session.post(url=url, data=data, **kwargs) as resp:
+                if resp.status == 200:
+                    resp = await resp.json()
+                    return resp
+
+                await raise_exception_from_response(resp, **kwargs)
+
     async def get_story(self, story_id: str, **kwargs):
 
         url = f"{self.url_base}/stories/{story_id}"
         async with aiohttp.ClientSession(headers=self.headers) as session:
             async with await session.get(url=url, **kwargs) as resp:
+                if resp.status == 200:
+                    resp = await resp.json()
+                    return resp
+
+                await raise_exception_from_response(resp, **kwargs)
+
+    async def update_story(self, story_id: str,  body, **kwargs):
+
+        url = f"{self.url_base}/stories/{story_id}"
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with await session.post(url=url, json=body, **kwargs) as resp:
                 if resp.status == 200:
                     resp = await resp.json()
                     return resp
