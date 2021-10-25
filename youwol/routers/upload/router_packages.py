@@ -508,7 +508,7 @@ async def post_library(
         if len(path_item.folders) > 0:
             parent_id = path_item.folders[0].folderId
 
-    data = {'file': open(zip_path, 'rb'), 'content_encoding': 'identity'}
+    data = {'file': zip_path.read_bytes(), 'content_encoding': 'identity'}
     await client.put_asset_with_raw(kind='package', folder_id=parent_id, data=data, group_id=path_item.drive.groupId,
                                     timeout=600)
     await synchronize_permissions_metadata_symlinks(
