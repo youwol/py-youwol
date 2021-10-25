@@ -1,15 +1,18 @@
 import asyncio
 import itertools
 import math
+import tempfile
 import uuid
+from pathlib import Path
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 
 from fastapi import Query as QueryParam
 from starlette.responses import Response
 
 from youwol_utils.clients.docdb.models import OrderingClause, QueryBody
+from youwol_utils.utils_paths import parse_json
 from .all_icons_emojipedia import (
     icons_smileys_people, icons_animals, icons_foods, icons_activities, icons_travel,
     icons_objects, icons_symbols, icons_flags,
@@ -22,11 +25,11 @@ from youwol_utils import (
     )
 from .models import (
     StoryResp, PutStoryBody, GetDocumentResp, GetChildrenResp, PutDocumentBody, DeleteResp,
-    PostContentBody, PostDocumentBody
+    PostContentBody, PostDocumentBody, PostStoryBody,
     )
 from .utils import (
     query_document, position_start,
-    position_next, position_format,
+    position_next, position_format, format_document_resp, extract_zip_file,
     )
 
 router = APIRouter()
@@ -102,7 +105,91 @@ async def put_story(
             headers=headers
             )
         )
-    return await get_story(request=request, story_id=story_id, configuration=configuration)
+    return StoryResp(
+        storyId=story_id,
+        title=body.title,
+        authors=[user['sub']],
+        rootDocumentId=root_doc_id
+        )
+
+
+@router.post(
+    "/stories",
+    response_model=StoryResp,
+    summary="publish a story from zip file")
+async def publish_story(
+        request: Request,
+        file: UploadFile = File(...),
+        configuration: Configuration = Depends(get_configuration)
+        ):
+
+    headers = generate_headers_downstream(request.headers)
+    owner = Configuration.default_owner
+    doc_db_stories = configuration.doc_db_stories
+    doc_db_docs = configuration.doc_db_documents
+    storage = configuration.storage
+
+    with tempfile.TemporaryDirectory() as tmp_folder:
+        dir_path = Path(tmp_folder)
+        zip_path = (dir_path / file.filename).with_suffix('.zip')
+        extract_zip_file(file.file, zip_path=zip_path, dir_path=dir_path)
+        data = parse_json(dir_path / 'data.json')
+        story = data['story']
+        story_id = story['story_id']
+        documents = data['documents']
+        docs = await doc_db_stories.query(
+            query_body=f"story_id={story_id}#1",
+            owner=Configuration.default_owner,
+            headers=headers
+            )
+        if docs['documents']:
+            await delete_story(request, story_id=story_id, configuration=configuration)
+        await asyncio.gather(
+            doc_db_stories.create_document(doc=story, owner=owner, headers=headers),
+            *[doc_db_docs.create_document(doc=doc, owner=owner, headers=headers)
+              for doc in documents],
+            *[storage.post_object(path=doc['content_id'], content=(dir_path / doc['content_id']).read_text(),
+                                  content_type=Configuration.text_content_type, owner=owner, headers=headers)
+              for doc in documents]
+            )
+        return StoryResp(
+            storyId=story['story_id'],
+            title=next(d for d in documents if d['document_id'] == story['root_document_id'])['title'],
+            authors=story['authors'],
+            rootDocumentId=story['root_document_id']
+            )
+
+
+@router.post(
+    "/stories/{story_id}",
+    response_model=StoryResp,
+    summary="retrieve a story")
+async def post_story(
+        request: Request,
+        story_id: str,
+        body: PostStoryBody,
+        configuration: Configuration = Depends(get_configuration)
+        ):
+
+    headers = generate_headers_downstream(request.headers)
+    doc_db_stories = configuration.doc_db_stories
+    doc_db_docs = configuration.doc_db_documents
+    story_resp = await doc_db_stories.query(
+        query_body=f"story_id={story_id}#1",
+        owner=Configuration.default_owner,
+        headers=headers
+        )
+    story = story_resp['documents'][0]
+    docs_resp = await doc_db_docs.query(
+        query_body=f"document_id={story['root_document_id']}#1",
+        owner=Configuration.default_owner,
+        headers=headers
+        )
+    doc = {**docs_resp['documents'][0], **{"title": body.title}}
+    await doc_db_docs.update_document(doc=doc, owner=Configuration.default_owner, headers=headers)
+
+    return StoryResp(storyId=story_id, rootDocumentId=story['root_document_id'], title=body.title,
+                     authors=story['authors'])
 
 
 @router.get(
@@ -283,17 +370,18 @@ async def put_document(
         if not documents_resp['documents'] \
         else position_next(documents_resp['documents'][0]['position'])
 
+    doc = {
+        "document_id": document_id,
+        "parent_document_id": body.parentDocumentId,
+        "story_id": story_id,
+        "content_id": content_id,
+        "title": body.title,
+        "position": order_token,
+        "complexity_order": 0,
+        }
     await asyncio.gather(
         doc_db_docs.create_document(
-            doc={
-                "document_id": document_id,
-                "parent_document_id": body.parentDocumentId,
-                "story_id": story_id,
-                "content_id": content_id,
-                "title": body.title,
-                "position": order_token,
-                "complexity_order": 0,
-                },
+            doc=doc,
             owner=Configuration.default_owner,
             headers=headers
             ),
@@ -306,8 +394,7 @@ async def put_document(
             )
         )
 
-    return GetDocumentResp(storyId=story_id, documentId=document_id, parentDocumentId=body.parentDocumentId,
-                           title=body.title, position=order_token, contentId=content_id)
+    return format_document_resp(doc)
 
 
 @router.post(
@@ -329,12 +416,13 @@ async def post_document(
     docs = await doc_db_docs.query(query_body=f"document_id={document_id}#1", owner=configuration.default_owner,
                                    headers=headers)
     document = docs['documents'][0]
+    doc = {
+        **document,
+        **{"title": body.title}
+        }
     coroutines = [
         doc_db_docs.update_document(
-            doc={
-                **document,
-                **{"title": body.title}
-                },
+            doc=doc,
             owner=Configuration.default_owner,
             headers=headers
             )
@@ -351,7 +439,7 @@ async def post_document(
             )
 
     await asyncio.gather(*coroutines)
-    return await get_document(request=request, document_id=document_id, configuration=configuration)
+    return format_document_resp(doc)
 
 
 @router.delete(

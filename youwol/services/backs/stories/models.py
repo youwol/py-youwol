@@ -20,6 +20,10 @@ class PutStoryBody(BaseModel):
     title: str
 
 
+class PostStoryBody(BaseModel):
+    title: str
+
+
 class GetDocumentResp(BaseModel):
     storyId: str
     documentId: str
