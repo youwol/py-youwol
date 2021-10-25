@@ -16,6 +16,7 @@ import youwol.routers.backends.router as backends
 import youwol.routers.environment.router as environment
 import youwol.routers.upload.router_packages as upload_packages
 import youwol.routers.upload.router_flux_apps as upload_flux_apps
+import youwol.routers.upload.router_stories as upload_stories
 import youwol.routers.upload.router_data as upload_data
 import youwol.routers.download.router_packages as download_packages
 import youwol.routers.download.router_flux_apps as download_flux_apps
@@ -66,6 +67,8 @@ app.include_router(upload_packages.router, prefix=configuration.base_path+"/admi
                    tags=["upload packages"])
 app.include_router(upload_flux_apps.router, prefix=configuration.base_path+"/admin/upload/flux-apps",
                    tags=["upload flux apps"])
+app.include_router(upload_stories.router, prefix=configuration.base_path+"/admin/upload/stories",
+                   tags=["upload stories"])
 app.include_router(upload_data.router, prefix=configuration.base_path+"/admin/upload/data",
                    tags=["upload data"])
 app.include_router(download_packages.router, prefix=configuration.base_path+"/admin/download/packages",

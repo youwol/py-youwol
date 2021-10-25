@@ -23,6 +23,14 @@ class PathsBook(NamedTuple):
         return self.local_docdb / 'cdn' / 'libraries' / 'data.json'
 
     @property
+    def local_stories_docdb(self) -> Path:
+        return self.local_docdb / 'stories' / 'stories' / 'data.json'
+
+    @property
+    def local_stories_documents_docdb(self) -> Path:
+        return self.local_docdb / 'stories' / 'documents' / 'data.json'
+
+    @property
     def local_treedb_docdb(self) -> Path:
         return self.local_docdb / 'tree_db' / 'items' / 'data.json'
 
@@ -33,6 +41,10 @@ class PathsBook(NamedTuple):
     @property
     def local_cdn_storage(self) -> Path:
         return self.local_storage / 'cdn' / 'youwol-users'
+
+    @property
+    def local_stories_storage(self) -> Path:
+        return self.local_storage / 'stories' / 'youwol-users'
 
     @property
     def js_modules_store_path(self) -> Path:

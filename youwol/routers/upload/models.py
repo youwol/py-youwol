@@ -20,6 +20,12 @@ class FluxAppStatus(Enum):
     DONE = 'FluxAppStatus.DONE'
 
 
+class StoryStatus(Enum):
+    NOT_FOUND = 'StoryStatus.NOT_FOUND'
+    PROCESSING = 'StoryStatus.PROCESSING'
+    DONE = 'StoryStatus.DONE'
+
+
 class DataAssetStatus(Enum):
     NOT_FOUND = 'DataAssetStatus.NOT_FOUND'
     MISMATCH = 'DataAssetStatus.MISMATCH'
