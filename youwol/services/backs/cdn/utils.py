@@ -223,14 +223,14 @@ async def publish_package(file: IO, filename: str, content_encoding, configurati
         shutil.rmtree(dir_path)
 
 
-def format_response(content: bytes, file_id: str) -> Response:
+def format_response(content: bytes, file_id: str, max_age: str = "31536000") -> Response:
 
     return Response(
         content=content,
         headers={
             "Content-Encoding": get_content_encoding(file_id),
             "Content-Type": get_content_type(file_id),
-            "cache-control": "public, max-age=31536000",
+            "cache-control": f"public, max-age={max_age}",
             'Cross-Origin-Opener-Policy': 'same-origin',
             'Cross-Origin-Embedder-Policy': 'require-corp'
             }

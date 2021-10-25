@@ -499,6 +499,7 @@ async def get_resource(request: Request,
     # rest_of_path: $asset_id/$version/$path
     parts = rest_of_path.split('/')
     version = parts[1]
+    max_age = "31536000"
     try:
         package_name = to_package_name(parts[0])
     except Exception:
@@ -507,10 +508,12 @@ async def get_resource(request: Request,
     if version == 'latest':
         versions_resp = await list_versions(request=request, name=package_name, configuration=configuration)
         version = versions_resp.versions[0]
+        max_age = "60"
 
     forward_path = f"libraries/{package_name.replace('@', '')}/{version}/{'/'.join(parts[2:])}"
     storage = configuration.storage
     file_id = forward_path.split('/')[-1]
     path = '/'.join(forward_path.split('/')[0:-1])
     script = await fetch(request, path, file_id, storage)
-    return format_response(script, file_id)
+
+    return format_response(script, file_id, max_age=max_age)
