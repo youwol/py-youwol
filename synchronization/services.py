@@ -48,7 +48,7 @@ def included_services(platform_path, open_source_path):
             src=src_backend_services / 'assets-gateway' / 'src' / 'youwol_assets_gateway',
             dst=dst_services / 'backs' / 'assets_gateway',
             include=["/__init__.py", "/models.py", "/root_paths.py", "/package_drive.py", "/utils.py",
-                     "/raw_stores/*", "/routers/*"]
+                     "/all_icons_emojipedia.py", "/raw_stores/*", "/routers/*"]
             ),
         ServiceInjection(
             src=src_backend_services / 'stories-backend' / 'src' / 'youwol_stories',
