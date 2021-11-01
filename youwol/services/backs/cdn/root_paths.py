@@ -499,6 +499,8 @@ async def get_resource(request: Request,
     # rest_of_path: $asset_id/$version/$path
     parts = rest_of_path.split('/')
     version = parts[1]
+
+    # default browser's caching time, do not apply for 'latest' and '*-next'
     max_age = "31536000"
     try:
         package_name = to_package_name(parts[0])
@@ -509,6 +511,9 @@ async def get_resource(request: Request,
         versions_resp = await list_versions(request=request, name=package_name, configuration=configuration)
         version = versions_resp.versions[0]
         max_age = "60"
+
+    if '-next' in version:
+        max_age = "0"
 
     forward_path = f"libraries/{package_name.replace('@', '')}/{version}/{'/'.join(parts[2:])}"
     storage = configuration.storage
