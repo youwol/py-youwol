@@ -6,7 +6,7 @@ from youwol_utils import (
     User, user_info, get_all_individual_groups, Group, private_group_id, to_group_id,
     GroupsResponse,
     )
-from .routers import tree, assets, raw, cdn
+from .routers import tree, assets, raw, cdn, misc
 
 
 router = APIRouter()
@@ -37,6 +37,13 @@ router.include_router(
     prefix="/cdn",
     dependencies=[Depends(get_configuration)],
     tags=["cdn"]
+    )
+
+router.include_router(
+    misc.router,
+    prefix="/misc",
+    dependencies=[Depends(get_configuration)],
+    tags=["misc"]
     )
 
 
