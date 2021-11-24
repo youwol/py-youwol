@@ -1,5 +1,5 @@
 import traceback
-from typing import List, Union
+from typing import List, Union, Tuple
 import sys
 from fastapi import HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
@@ -79,9 +79,15 @@ class NativesBypassMiddleware(BaseHTTPMiddleware):
             request=request
             )
 
-        if request.url.path.startswith('/remote/api'):
+        if not request.headers.get('authorization'):
             auth_token = await config.get_auth_token(context=context)
-            headers = {"Authorization": f"Bearer {auth_token}"}
+            # How to set request headers before path operation is executed :
+            # https://github.com/tiangolo/fastapi/issues/2727
+            auth_header: Tuple[bytes, bytes] = "authorization".encode(), f"Bearer {auth_token}".encode()
+            request.headers.__dict__["_list"].append(auth_header)
+
+        if request.url.path.startswith('/remote/api'):
+            headers = {"authorization": request.headers.get('authorization')}
             url = f"https://{config.selectedRemote}{request.url.path.split('/remote')[1]}"
             return await redirect_get(request=request, new_url=url, headers=headers)
 
