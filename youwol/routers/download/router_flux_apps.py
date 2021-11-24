@@ -50,7 +50,7 @@ async def publish(
         assets_gtw_client = await config.get_assets_gateway_client(context=context)
         raw_id = decode_id(asset_id)
         flux_app = await assets_gtw_client.get_raw(kind='flux-project', raw_id=raw_id)
-        flux_app = json.load(flux_app)
+        flux_app = json.loads(flux_app.decode("utf-8"))
         tree_item = await assets_gtw_client.get_tree_item(item_id=asset_id)
         path_item = await remote_path(tree_item=tree_item, assets_gtw_client=assets_gtw_client)
         await ctx.info(
