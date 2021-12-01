@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import List, Dict, NamedTuple, Union, Callable, Awaitable, Mapping
+from typing import List, Dict, NamedTuple, Union, Callable, Awaitable, Mapping, Any
 from fastapi import HTTPException
 import aiohttp
 from pydantic import BaseModel
@@ -90,6 +90,12 @@ class Secret(BaseModel):
 
 
 Url = str
+JSON = Any
+
+
+class Command(BaseModel):
+    name: str
+    onTriggered: Callable[[JSON, Context], Union[Awaitable[JSON], JSON]]
 
 
 class General(BaseModel):
@@ -120,6 +126,7 @@ class UserConfiguration(BaseModel):
     packages: Packages = Packages()
     frontends: FrontEnds = FrontEnds()
     backends: BackEnds = BackEnds()
+    customCommands: List[Command] = []
 
     class Config:
         json_encoders = {

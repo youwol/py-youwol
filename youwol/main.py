@@ -28,6 +28,7 @@ import youwol.routers.download.router_packages as download_packages
 import youwol.routers.download.router_flux_apps as download_flux_apps
 import youwol.routers.system.router as system
 import youwol.routers.local_cdn.router as local_cdn
+import youwol.routers.custom_commands.router as custom_commands
 
 from youwol.configurations import configuration, print_invite, assert_python
 from youwol_utils import YouWolException, log_error
@@ -84,6 +85,8 @@ app.include_router(download_packages.router, prefix=configuration.base_path+"/ad
                    tags=["download packages"])
 app.include_router(download_flux_apps.router, prefix=configuration.base_path+"/admin/download/flux-apps",
                    tags=["download flux apps"])
+app.include_router(custom_commands.router, prefix=configuration.base_path+"/admin/custom-commands",
+                   tags=["custom commands"])
 
 
 @app.exception_handler(YouWolException)
