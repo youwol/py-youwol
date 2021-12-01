@@ -139,6 +139,15 @@ class AssetsGatewayClient:
                     return await resp.json()
                 await raise_exception_from_response(resp)
 
+    async def get_default_user_drive(self, **kwargs):
+
+        url = f"{self.url_base}/tree/default-drive"
+        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
+            async with await session.get(url=url, **kwargs) as resp:
+                if resp.status == 200:
+                    return await resp.json()
+                await raise_exception_from_response(resp)
+
     async def get_groups(self, **kwargs):
 
         url = f"{self.url_base}/groups"
