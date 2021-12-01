@@ -98,7 +98,8 @@ async def youwol_exception_handler(request: Request, exc: YouWolException):
         content={
             "type": exc.exceptionType,
             "detail": f"{exc.detail}",
-            "parameters": exc.parameters
+            "parameters": exc.parameters,
+            "url": request.url.path
             }
         )
 
