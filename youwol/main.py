@@ -3,11 +3,12 @@ import uvicorn
 from starlette.responses import RedirectResponse, JSONResponse
 from starlette.requests import Request
 
+from middlewares.frontends_middleware import FrontsMiddleware
 from youwol.configuration.youwol_configuration import yw_config
 from youwol.main_args import get_main_arguments
 
 from youwol.middlewares.auth_middleware import AuthMiddleware
-from youwol.middlewares.natives_bypass_middleware import NativesBypassMiddleware
+from youwol.middlewares.backends_middleware import BackendsMiddleware
 from youwol.routers import api, ui
 
 import youwol.routers.packages.router as packages
@@ -33,6 +34,12 @@ app = FastAPI(
 
 web_socket = None
 
+
+app.add_middleware(FrontsMiddleware,
+                   frontends_base_path=['ui/flux-builder', 'ui/flux-runner', 'ui/network', 'ui/stories',
+                                        'ui/workspace-explorer', 'ui/exhibition-halls']
+                   )
+app.add_middleware(BackendsMiddleware)
 app.add_middleware(AuthMiddleware)
 
 
@@ -42,16 +49,6 @@ def get_web_socket():
 
 router = APIRouter()
 
-api_bypass_base_paths = [
-    "/api/cdn-backend",
-    "/api/flux-backend",
-    "/api/treedb-backend",
-    "/api/assets-backend",
-    "/api/stories-backend",
-    "/api/assets-gateway"
-    ]
-
-app.add_middleware(NativesBypassMiddleware, api_bypass_base_paths=api_bypass_base_paths)
 
 app.include_router(api.router, prefix=configuration.base_path+"/api", tags=["api"])
 app.include_router(ui.router, prefix=configuration.base_path+"/ui", tags=["ui"])

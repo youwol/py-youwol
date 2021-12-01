@@ -1,8 +1,12 @@
+from typing import Tuple
+
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint, DispatchFunction
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp
+from youwol.context import Context
 
+from web_socket import WebSocketsCache
 from youwol.configuration.youwol_configuration import yw_config
 from youwol.routers.api import get_user_info
 
@@ -21,6 +25,20 @@ class AuthMiddleware(BaseHTTPMiddleware):
             ) -> Response:
 
         config = await yw_config()
+        context = Context(
+            web_socket=WebSocketsCache.api_gateway,
+            config=config,
+            request=request
+            )
+
+        if not request.headers.get('authorization'):
+            auth_token = await config.get_auth_token(context=context)
+            # A bit ugly, not very safe ... coming from:
+            # How to set request headers before path operation is executed
+            # https://github.com/tiangolo/fastapi/issues/2727
+            auth_header: Tuple[bytes, bytes] = "authorization".encode(), f"Bearer {auth_token}".encode()
+            request.headers.__dict__["_list"].append(auth_header)
+
         if await self.authenticate(config.userEmail, request):
             response = await call_next(request)
         else:
