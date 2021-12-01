@@ -10,6 +10,13 @@ from aiohttp.web import HTTPException
 from aiohttp.client_exceptions import ClientConnectorError, ContentTypeError
 from starlette.requests import Request
 
+import youwol.services.backs.cdn.configurations as cdn
+import youwol.services.backs.treedb.configurations as treedb
+import youwol.services.backs.flux.configurations as flux
+import youwol.services.backs.stories.configurations as stories
+import youwol.services.backs.assets.configurations as assets
+import youwol.services.backs.assets_gateway.configurations as assets_gtw
+
 import youwol.services.fronts.flux_builder as flux_builder
 import youwol.services.fronts.flux_runner as flux_runner
 import youwol.services.fronts.workspace_explorer as workspace_explorer
@@ -165,6 +172,10 @@ async def switch_configuration(
 
     if load_status.validated:
         new_conf = await yw_config()
+        await asyncio.gather(*[
+           service.get_configuration(new_conf) for service in [cdn, treedb, flux, stories, assets, assets_gtw]
+           ])
+
         await status(request, new_conf)
 
     return load_status
