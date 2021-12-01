@@ -140,6 +140,16 @@ class UserConfiguration(BaseModel):
             }
 
 
+class DefaultDrive(BaseModel):
+    driveId: str
+    driveName: str
+    downloadFolderId: str
+    downloadFolderName: str
+    homeFolderId: str
+    homeFolderName: str
+    groupId: str
+
+
 class LocalClients(NamedTuple):
 
     treedb_client: TreeDbClient

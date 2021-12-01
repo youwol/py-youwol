@@ -22,7 +22,7 @@ from youwol.main_args import get_main_arguments
 from youwol.utils_paths import parse_json
 from youwol.models import ActionStep
 
-from youwol.configuration.user_configuration import (UserInfo, get_public_user_auth_token)
+from youwol.configuration.user_configuration import (UserInfo, get_public_user_auth_token, DefaultDrive)
 from youwol.configurations import get_full_local_config, configuration as py_yw_config
 from youwol.context import Context
 
@@ -71,6 +71,7 @@ class YouwolConfiguration(NamedTuple):
     configurationParameters: ConfigParameters = ConfigParameters(parameters={})
 
     cache: Dict[str, Any] = {}
+    private_cache: Dict[str, Any] = {}
 
     tokensCache: List[DeadlinedCache] = []
 
@@ -164,6 +165,15 @@ class YouwolConfiguration(NamedTuple):
             replication_factor=2,
             headers=headers
             )
+
+    async def get_default_drive(self) -> DefaultDrive:
+
+        if self.private_cache.get("default-drive"):
+            return self.private_cache.get("default-drive")
+
+        default_drive = await self.localClients.assets_gateway_client.get_default_user_drive()
+        self.private_cache["default-drive"] = DefaultDrive(**default_drive)
+        return DefaultDrive(**default_drive)
 
 
 class YouwolConfigurationFactory:
