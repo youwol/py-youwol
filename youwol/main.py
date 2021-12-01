@@ -3,7 +3,12 @@ import uvicorn
 from starlette.responses import RedirectResponse, JSONResponse
 from starlette.requests import Request
 
+from asset_auto_download import start_thread_asset_auto_download
 from middlewares.frontends_middleware import FrontsMiddleware
+
+
+from middlewares.loading_graph_middleware import LoadingGraphMiddleware
+from middlewares.missing_asset_middleware import MissingAssetsMiddleware
 from youwol.configuration.youwol_configuration import yw_config
 from youwol.main_args import get_main_arguments
 
@@ -34,10 +39,17 @@ app = FastAPI(
 
 web_socket = None
 
+download_queue, new_loop = start_thread_asset_auto_download()
 
 app.add_middleware(FrontsMiddleware,
                    frontends_base_path=['ui/flux-builder', 'ui/flux-runner', 'ui/network', 'ui/stories',
                                         'ui/workspace-explorer', 'ui/exhibition-halls']
+                   )
+app.add_middleware(LoadingGraphMiddleware)
+app.add_middleware(MissingAssetsMiddleware,
+                   assets_kind=['flux-project', 'package', 'story', 'data'],
+                   download_queue=download_queue,
+                   download_event_loop=new_loop
                    )
 app.add_middleware(BackendsMiddleware)
 app.add_middleware(AuthMiddleware)
