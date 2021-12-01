@@ -17,6 +17,7 @@ from youwol_utils.clients.treedb.treedb import TreeDbClient
 TPath = Union[str, Path]
 
 Context = 'youwol.context.Context'
+YouwolConfiguration = 'youwol.configuration.YouwolConfiguration'
 
 
 def parse_json(path: Union[str, Path]):
@@ -121,12 +122,17 @@ class General(BaseModel):
         return Secret(**secrets[remote_env])
 
 
+class Events(BaseModel):
+    onLoad: Callable[[YouwolConfiguration, Context], Union[None, Any]] = None
+
+
 class UserConfiguration(BaseModel):
     general: General
     packages: Packages = Packages()
     frontends: FrontEnds = FrontEnds()
     backends: BackEnds = BackEnds()
     customCommands: List[Command] = []
+    events: Events = None
 
     class Config:
         json_encoders = {

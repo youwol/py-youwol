@@ -1,3 +1,4 @@
+import inspect
 from datetime import datetime
 import json
 import os
@@ -9,6 +10,7 @@ from typing import List, Dict, Any, Union, NamedTuple, Optional
 
 from pydantic import ValidationError
 
+from youwol.web_socket import WebSocketsCache
 from youwol_utils import CdnClient, StorageClient, DocDbClient, TableBody, SecondaryIndex
 from youwol_utils.clients.assets.assets import AssetsClient
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
@@ -188,6 +190,7 @@ class YouwolConfigurationFactory:
                                     "all checks": [c.dict() for c in status.checks]})
                 return status
             await ctx.info(step=ActionStep.STATUS, content='Switched to new conf. successful', json=status.dict())
+            await YouwolConfigurationFactory.trigger_on_load(config=conf)
             YouwolConfigurationFactory.__cached_config = conf
         return status
 
@@ -233,6 +236,7 @@ class YouwolConfigurationFactory:
             cache={}
             )
         YouwolConfigurationFactory.__cached_config = new_conf
+        await YouwolConfigurationFactory.trigger_on_load(config=conf)
         return new_conf
 
     @staticmethod
@@ -246,6 +250,7 @@ class YouwolConfigurationFactory:
             raise ConfigurationLoadingException(status)
 
         YouwolConfigurationFactory.__cached_config = conf
+        await YouwolConfigurationFactory.trigger_on_load(config=conf)
         return YouwolConfigurationFactory.__cached_config
 
     @staticmethod
@@ -263,6 +268,20 @@ class YouwolConfigurationFactory:
             cache={}
             )
         YouwolConfigurationFactory.__cached_config = new_conf
+
+    @staticmethod
+    async def trigger_on_load(config: YouwolConfiguration):
+
+        context = Context(config=config, web_socket=WebSocketsCache.environment)
+        if not config.userConfig.events or not config.userConfig.events.onLoad:
+            return
+        on_load_cb = config.userConfig.events.onLoad
+
+        data = await on_load_cb(config, context) \
+            if inspect.iscoroutinefunction(on_load_cb) \
+            else on_load_cb(config, context)
+
+        await context.info(step=ActionStep.STATUS, content="Applied onLoad event's callback", json=data)
 
 
 async def yw_config() -> YouwolConfiguration:
