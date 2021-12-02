@@ -92,18 +92,9 @@ app.include_router(custom_commands.router, prefix=configuration.base_path+"/admi
 
 
 @app.exception_handler(YouWolException)
-async def youwol_exception_handler(request: Request, exc: YouWolException):
+async def exception_handler(request: Request, exc: YouWolException):
 
-    log_error(f"{exc.detail}", exc.parameters)
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={
-            "type": exc.exceptionType,
-            "detail": f"{exc.detail}",
-            "parameters": exc.parameters,
-            "url": request.url.path
-            }
-        )
+    return await youwol_exception_handler(request, exc)
 
 
 @app.get(configuration.base_path + "/healthz")

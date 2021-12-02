@@ -1,5 +1,7 @@
+import functools
 from typing import Mapping, Union, NamedTuple, List
-
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 from aiohttp import ClientResponse
 import base64
 
@@ -80,6 +82,20 @@ class PackagesNotFound(YouWolException):
         self.exceptionType = "PackagesNotFound"
 
 
+async def youwol_exception_handler(request: Request, exc: YouWolException):
+
+    log_error(f"{exc.detail}", exc.parameters)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "type": exc.exceptionType,
+            "detail": f"{exc.detail}",
+            "parameters": exc.parameters,
+            "url": request.url.path
+            }
+        )
+
+
 def aiohttp_resp_parameters(resp: ClientResponse):
 
     return {
@@ -137,3 +153,9 @@ def log_info(message, **kwargs):
 def log_error(message, json=None):
     json_message = str(json) if json else ""
     print(f"ERROR:     {message}", json_message)
+
+
+def auto_port_number(service_name: str):
+    port = functools.reduce(lambda acc, e: acc + ord(e), service_name, 0)
+    # need to check if somebody is already listening
+    return 2000 + port % 1000
