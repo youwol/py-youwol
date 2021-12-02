@@ -1,11 +1,11 @@
 from fastapi import FastAPI, APIRouter, Depends
 import uvicorn
-from starlette.responses import RedirectResponse, JSONResponse
+from starlette.responses import RedirectResponse
 from starlette.requests import Request
 
 from asset_auto_download import start_thread_asset_auto_download
-from middlewares.frontends_middleware import FrontsMiddleware
-
+from middlewares.cross_origin_middleware import CrossOriginMiddleware
+from middlewares.live_serving_cdn_middleware import LiveServingCdnMiddleware
 
 from middlewares.loading_graph_middleware import LoadingGraphMiddleware
 from middlewares.missing_asset_middleware import MissingAssetsMiddleware
@@ -13,7 +13,7 @@ from youwol.configuration.youwol_configuration import yw_config
 from youwol.main_args import get_main_arguments
 
 from youwol.middlewares.auth_middleware import AuthMiddleware
-from youwol.middlewares.backends_middleware import BackendsMiddleware
+from youwol.middlewares.live_serving_backends_middleware import LiveServingBackendsMiddleware
 from youwol.routers import api, ui
 
 import youwol.routers.packages.router as packages
@@ -31,7 +31,7 @@ import youwol.routers.local_cdn.router as local_cdn
 import youwol.routers.custom_commands.router as custom_commands
 
 from youwol.configurations import configuration, print_invite, assert_python
-from youwol_utils import YouWolException, log_error
+from youwol_utils import YouWolException, youwol_exception_handler
 
 app = FastAPI(
     title="Local Dashboard",
@@ -42,17 +42,19 @@ web_socket = None
 
 download_queue, new_loop = start_thread_asset_auto_download()
 
-app.add_middleware(FrontsMiddleware,
+app.add_middleware(CrossOriginMiddleware,
                    frontends_base_path=['ui/flux-builder', 'ui/flux-runner', 'ui/network', 'ui/stories',
                                         'ui/workspace-explorer', 'ui/exhibition-halls']
                    )
+app.add_middleware(LiveServingCdnMiddleware)
+
 app.add_middleware(LoadingGraphMiddleware)
 app.add_middleware(MissingAssetsMiddleware,
                    assets_kind=['flux-project', 'package', 'story', 'data'],
                    download_queue=download_queue,
                    download_event_loop=new_loop
                    )
-app.add_middleware(BackendsMiddleware)
+app.add_middleware(LiveServingBackendsMiddleware)
 app.add_middleware(AuthMiddleware)
 
 

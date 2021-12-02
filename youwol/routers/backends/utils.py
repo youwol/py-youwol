@@ -1,4 +1,3 @@
-import functools
 import itertools
 import os
 from pathlib import Path
@@ -11,6 +10,7 @@ from pydantic import BaseModel
 from youwol.configuration.models_back import PipelineBack, InfoBack, TargetBack
 from youwol.context import Context
 from youwol.routers.backends.models import TargetStatus, InstallStatus
+from youwol_utils import auto_port_number
 
 flatten = itertools.chain.from_iterable
 
@@ -63,9 +63,7 @@ async def ping(url: str):
 
 def get_port_number(target: TargetBack):
     name = Path(target.folder).name
-    port = functools.reduce(lambda acc, e: acc + ord(e), name, 0)
-    # need to check if somebody is already listening
-    return 2000 + port % 1000
+    return auto_port_number(name)
 
 
 async def serve(back: BackEnd, context: Context):

@@ -6,12 +6,12 @@ from asyncio import sleep
 from fastapi import APIRouter, WebSocket, Depends, HTTPException
 from starlette.requests import Request
 
+from middlewares.redirect import redirect_get_api
 from youwol.utils_low_level import start_web_socket
 from youwol.configuration.youwol_configuration import yw_config, YouwolConfigurationFactory, YouwolConfiguration
 from youwol.configurations import configuration
 from youwol.context import Context
 
-from youwol.routers.api import redirect_get_api
 from youwol.routers.backends.utils import get_all_backends, BackEnd, get_status, get_port_number
 from youwol.routers.backends.models import StatusResponse, AllStatusResponse
 from youwol.routers.backends.utils import ping

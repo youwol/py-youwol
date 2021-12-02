@@ -5,7 +5,7 @@ from starlette.responses import Response
 from starlette.types import ASGIApp
 
 
-class FrontsMiddleware(BaseHTTPMiddleware):
+class CrossOriginMiddleware(BaseHTTPMiddleware):
 
     def __init__(self,
                  app: ASGIApp,

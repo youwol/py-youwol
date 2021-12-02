@@ -3,14 +3,15 @@ import traceback
 from typing import Union
 import sys
 
+from aiohttp import ClientConnectorError
 from fastapi import HTTPException
 
-from middlewares.redirect import redirect_api_remote, redirect_api_local
+from configuration import TargetBack
+from middlewares.redirect import redirect_api_remote, redirect_api_local, redirect_get_api, redirect_get
 from youwol.configuration.youwol_configuration import YouwolConfiguration, yw_config
 from youwol.context import Context
 from youwol.errors import HTTPResponseException
-from youwol.routers.api import redirect_get_api
-from youwol.routers.backends.utils import get_all_backends
+from youwol.routers.backends.utils import get_all_backends, BackEnd
 from youwol.web_socket import WebSocketsCache
 
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
@@ -19,23 +20,24 @@ from starlette.responses import Response
 from starlette.types import ASGIApp
 
 
-async def is_backend_alive(request: Request, service_name: str, health_url: str, config: YouwolConfiguration) -> bool:
-
+async def is_local_backend_alive(request: Request, backend: BackEnd) -> bool:
+    headers = {"Authorization": request.headers.get("authorization")}
     try:
-        resp = await redirect_get_api(request, service_name, health_url[1:], config)
-        if resp.status_code == 200:
-            return True
-    except HTTPException:
+        await redirect_get(
+            request=request,
+            new_url=f"http://localhost:{backend.info.port}/{backend.pipeline.serve.health.strip('/')}",
+            headers=headers)
+        return True
+    except ClientConnectorError:
         return False
 
-
-async def is_running(request: Request, api_base_path: str, context: Context) -> Union[None, YouwolConfiguration]:
+"""
+async def is_running(request: Request, backend: TargetBack) -> Union[None, YouwolConfiguration]:
 
     config = await yw_config()
     try:
         backends = await get_all_backends(context)
         service_name = api_base_path.split('api/')[1]
-
         backend = next(backend for backend in backends if backend.info.name == service_name)
 
         if await is_backend_alive(request, backend.info.name, backend.pipeline.serve.health, config):
@@ -43,9 +45,10 @@ async def is_running(request: Request, api_base_path: str, context: Context) -> 
         return None
     except (StopIteration, AttributeError):
         return None
+"""
 
 
-class BackendsMiddleware(BaseHTTPMiddleware):
+class LiveServingBackendsMiddleware(BaseHTTPMiddleware):
 
     def __init__(self,
                  app: ASGIApp
@@ -66,23 +69,28 @@ class BackendsMiddleware(BaseHTTPMiddleware):
             config=config,
             request=request
             )
-
+        if 'youwol-infra' in request.url.path:
+            print('youwol-infra')
         if request.url.path.startswith('/remote/api'):
             return await redirect_api_remote(
                 request=request,
                 redirect_url=f"https://{config.selectedRemote}{request.url.path.split('/remote')[1]}")
 
-        config_backends = itertools.chain.from_iterable([t for t in config.userConfig.backends.targets.values()])
-        api_base_paths = [t.basePath for t in config_backends if t.basePath]
-        api_base_path = next((base_path for base_path in api_base_paths
-                              if request.url.path.startswith(base_path)),
-                             None)
+        backends = await get_all_backends(context)
+        backend = next((backend for backend in backends
+                        if backend.target.basePath and request.url.path.startswith(backend.target.basePath)),
+                       None)
+        if not backend:
+            return await call_next(request)
 
-        config = await is_running(request=request, api_base_path=api_base_path, context=context)
+        running = await is_local_backend_alive(request=request, backend=backend)
 
         try:
-            if config:
-                return await redirect_api_local(request, api_base_path, config)
+            if running:
+                return await redirect_api_local(request,
+                                                backend.info.name,
+                                                request.url.path.split(backend.target.basePath)[1].strip('/'),
+                                                config)
 
             return await call_next(request)
 
