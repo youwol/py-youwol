@@ -14,8 +14,6 @@ from youwol.configuration.youwol_configuration import YouwolConfiguration, yw_co
 from youwol.context import Context
 from youwol.web_socket import WebSocketsCache
 
-#from routers.api import redirect_get_api, redirect_post_api, redirect_put_api, redirect_delete_api, redirect_get
-
 
 async def get_headers(context: Context) -> Headers:
     with_headers = await context.config.userConfig.general.localGateway.with_headers(context)
@@ -97,7 +95,7 @@ async def redirect_get_api(
             get_backend_url(service_name, rest_of_path, context),
             get_headers(context)
             )
-    except (StopIteration, RuntimeError) as e:
+    except (StopIteration, RuntimeError):
         raise Exception(f"Can not find url of service {service_name} (from url: {service_name}/{rest_of_path})," +
                         " is it in your config file?")
 
