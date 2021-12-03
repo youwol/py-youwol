@@ -8,7 +8,7 @@ from youwol.context import Context
 
 from web_socket import WebSocketsCache
 from youwol.configuration.youwol_configuration import yw_config
-from youwol.routers.api import get_user_info
+from youwol.routers.authorization import get_user_info
 
 
 class AuthMiddleware(BaseHTTPMiddleware):
