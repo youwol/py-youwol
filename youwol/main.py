@@ -14,7 +14,6 @@ from youwol.main_args import get_main_arguments
 
 from youwol.middlewares.auth_middleware import AuthMiddleware
 from youwol.middlewares.live_serving_backends_middleware import LiveServingBackendsMiddleware
-from youwol.routers import api, ui
 
 from youwol.routers import native_backends, admin, authorization
 
@@ -56,7 +55,6 @@ def get_web_socket():
     return web_socket
 
 
-app.include_router(ui.router, prefix=configuration.base_path+"/ui", tags=["ui"])
 @app.exception_handler(YouWolException)
 async def exception_handler(request: Request, exc: YouWolException):
 
