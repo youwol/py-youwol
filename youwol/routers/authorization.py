@@ -1,41 +1,18 @@
-import asyncio
-from typing import Optional, Mapping
+from typing import Optional
 
-import aiohttp
-from aiohttp import ClientConnectorError
-from fastapi import APIRouter, HTTPException, Depends, Form
-from starlette.datastructures import Headers
+from fastapi import APIRouter, Depends, Form
 from starlette.requests import Request
-from starlette.responses import Response
 
 from youwol.routers.environment.router import login as login_env
 from youwol.routers.environment.models import LoginBody
 from youwol.configuration.youwol_configuration import YouwolConfiguration, yw_config
 from youwol.context import Context
-from youwol.routers.backends.utils import get_all_backends
 from youwol.web_socket import WebSocketsCache
 
-import youwol.services.backs.cdn.root_paths as cdn
-import youwol.services.backs.treedb.root_paths as treedb
-import youwol.services.backs.assets.root_paths as assets
-import youwol.services.backs.flux.root_paths as flux
-import youwol.services.backs.stories.root_paths as stories
-import youwol.services.backs.assets_gateway.root_paths as assets_gateway
-
-
 router = APIRouter()
-cached_headers = None
 
 
-router.include_router(cdn.router, prefix="/cdn-backend", tags=["cdn"])
-router.include_router(treedb.router, prefix="/treedb-backend", tags=["treedb"])
-router.include_router(assets.router, prefix="/assets-backend", tags=["assets"])
-router.include_router(flux.router, prefix="/flux-backend", tags=["flux"])
-router.include_router(stories.router, prefix="/stories-backend", tags=["stories"])
-router.include_router(assets_gateway.router, prefix="/assets-gateway", tags=["assets-gateway"])
-
-
-@router.get("/authorization/user-info",
+@router.get("/user-info",
             summary="retrieve user info")
 async def get_user_info(
         request: Request,
@@ -53,7 +30,7 @@ async def get_user_info(
         }
 
 
-@router.post("/authorization/login",
+@router.post("/login",
              summary="login with as new user")
 async def login(
         request: Request,
@@ -68,7 +45,7 @@ async def login(
     return {"access_token": f"access_token_{resp.email}"}
 
 
-@router.get("/authorization/keycloak-access-token",
+@router.get("/keycloak-access-token",
             summary="get keycloak access token of current user")
 async def keycloak_token(
         request: Request,
@@ -81,4 +58,3 @@ async def keycloak_token(
         )
     token = await config.get_auth_token(context)
     return {"access_token": token}
-

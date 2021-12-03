@@ -16,6 +16,7 @@ from youwol.middlewares.auth_middleware import AuthMiddleware
 from youwol.middlewares.live_serving_backends_middleware import LiveServingBackendsMiddleware
 from youwol.routers import api, ui
 
+from youwol.routers import native_backends, admin, authorization
 
 from youwol.configurations import configuration, print_invite, assert_python
 from youwol_utils import YouWolException, youwol_exception_handler
@@ -44,20 +45,18 @@ app.add_middleware(MissingAssetsMiddleware,
 app.add_middleware(LiveServingBackendsMiddleware)
 app.add_middleware(AuthMiddleware)
 
+router = APIRouter()
+
+app.include_router(native_backends.router, tags=["native backends"])
 app.include_router(admin.router, prefix=configuration.base_path + "/admin", tags=["admin"])
+app.include_router(authorization.router, prefix=configuration.base_path + "/authorization", tags=["authorization"])
+
 
 def get_web_socket():
     return web_socket
 
 
-router = APIRouter()
-
-
-app.include_router(api.router, prefix=configuration.base_path+"/api", tags=["api"])
 app.include_router(ui.router, prefix=configuration.base_path+"/ui", tags=["ui"])
-
-
-
 @app.exception_handler(YouWolException)
 async def exception_handler(request: Request, exc: YouWolException):
 
