@@ -16,19 +16,6 @@ from youwol.middlewares.auth_middleware import AuthMiddleware
 from youwol.middlewares.live_serving_backends_middleware import LiveServingBackendsMiddleware
 from youwol.routers import api, ui
 
-import youwol.routers.packages.router as packages
-import youwol.routers.frontends.router as frontends
-import youwol.routers.backends.router as backends
-import youwol.routers.environment.router as environment
-import youwol.routers.upload.router_packages as upload_packages
-import youwol.routers.upload.router_flux_apps as upload_flux_apps
-import youwol.routers.upload.router_stories as upload_stories
-import youwol.routers.upload.router_data as upload_data
-import youwol.routers.download.router_packages as download_packages
-import youwol.routers.download.router_flux_apps as download_flux_apps
-import youwol.routers.system.router as system
-import youwol.routers.local_cdn.router as local_cdn
-import youwol.routers.custom_commands.router as custom_commands
 
 from youwol.configurations import configuration, print_invite, assert_python
 from youwol_utils import YouWolException, youwol_exception_handler
@@ -57,6 +44,7 @@ app.add_middleware(MissingAssetsMiddleware,
 app.add_middleware(LiveServingBackendsMiddleware)
 app.add_middleware(AuthMiddleware)
 
+app.include_router(admin.router, prefix=configuration.base_path + "/admin", tags=["admin"])
 
 def get_web_socket():
     return web_socket
@@ -68,27 +56,6 @@ router = APIRouter()
 app.include_router(api.router, prefix=configuration.base_path+"/api", tags=["api"])
 app.include_router(ui.router, prefix=configuration.base_path+"/ui", tags=["ui"])
 
-app.include_router(system.router, prefix=configuration.base_path+"/admin/system",
-                   tags=["system"])
-app.include_router(environment.router, prefix=configuration.base_path+"/admin/environment", tags=["environment"])
-app.include_router(packages.router, prefix=configuration.base_path+"/admin/packages", tags=["packages"])
-app.include_router(frontends.router, prefix=configuration.base_path+"/admin/frontends", tags=["frontends"])
-app.include_router(backends.router, prefix=configuration.base_path+"/admin/backends", tags=["backends"])
-app.include_router(local_cdn.router, prefix=configuration.base_path+"/admin/local-cdn", tags=["local-cdn"])
-app.include_router(upload_packages.router, prefix=configuration.base_path+"/admin/upload/packages",
-                   tags=["upload packages"])
-app.include_router(upload_flux_apps.router, prefix=configuration.base_path+"/admin/upload/flux-apps",
-                   tags=["upload flux apps"])
-app.include_router(upload_stories.router, prefix=configuration.base_path+"/admin/upload/stories",
-                   tags=["upload stories"])
-app.include_router(upload_data.router, prefix=configuration.base_path+"/admin/upload/data",
-                   tags=["upload data"])
-app.include_router(download_packages.router, prefix=configuration.base_path+"/admin/download/packages",
-                   tags=["download packages"])
-app.include_router(download_flux_apps.router, prefix=configuration.base_path+"/admin/download/flux-apps",
-                   tags=["download flux apps"])
-app.include_router(custom_commands.router, prefix=configuration.base_path+"/admin/custom-commands",
-                   tags=["custom commands"])
 
 
 @app.exception_handler(YouWolException)
