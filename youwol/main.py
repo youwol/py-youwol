@@ -3,7 +3,7 @@ import uvicorn
 from starlette.responses import RedirectResponse
 from starlette.requests import Request
 
-from asset_auto_download import start_thread_asset_auto_download
+from asset_auto_download import get_thread_asset_auto_download
 from middlewares.live_serving_cdn_middleware import LiveServingCdnMiddleware
 
 from middlewares.loading_graph_middleware import LoadingGraphMiddleware
@@ -26,17 +26,15 @@ app = FastAPI(
 
 web_socket = None
 
-download_queue, new_loop = start_thread_asset_auto_download()
-
+download_queue, download_event_loop = get_thread_asset_auto_download()
 app.add_middleware(LiveServingCdnMiddleware)
-
+app.add_middleware(LiveServingBackendsMiddleware)
 app.add_middleware(LoadingGraphMiddleware)
 app.add_middleware(MissingAssetsMiddleware,
                    assets_kind=['flux-project', 'package', 'story', 'data'],
                    download_queue=download_queue,
-                   download_event_loop=new_loop
+                   download_event_loop=download_event_loop
                    )
-app.add_middleware(LiveServingBackendsMiddleware)
 app.add_middleware(AuthMiddleware)
 
 router = APIRouter()
