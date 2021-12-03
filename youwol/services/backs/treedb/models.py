@@ -94,6 +94,12 @@ class ItemsResponse(BaseModel):
     items: List[ItemResponse]
 
 
+class PathResponse(BaseModel):
+    item: ItemResponse
+    folders: List[FolderResponse]
+    drive: DriveResponse
+
+
 WhereClause = dict
 
 

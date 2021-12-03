@@ -13,7 +13,7 @@ from .configurations import Configuration, get_configuration
 from .models import (
     GroupsResponse, Group, DriveResponse, DriveBody, DrivesResponse, RenameBody,
     FolderResponse, FolderBody, ItemResponse, ItemBody, ItemsResponse, MoveResponse, MoveItemBody, EntityResponse,
-    ChildrenResponse, PurgeResponse, GetRecordsBody,
+    ChildrenResponse, PurgeResponse, GetRecordsBody, PathResponse,
     )
 from .utils import (
     ensure_post_permission, convert_out, ensure_get_permission, get_parent,
@@ -256,6 +256,26 @@ async def get_items_by_related_id(
                                           max_count=100, configuration=configuration)
 
     return ItemsResponse(items=[ItemResponse(**convert_out(item)) for item in items])
+
+
+@router.get("/items/{item_id}/path",
+            summary="get the path of an item",
+            response_model=PathResponse)
+async def get_path(
+        request: Request,
+        item_id: str,
+        configuration: Configuration = Depends(get_configuration)
+        ):
+
+    item = await get_item(request=request, item_id=item_id, configuration=configuration)
+    drive = await get_drive(request=request, drive_id=item.driveId, configuration=configuration)
+
+    folders = [await get_folder(request=request, folder_id=item.folderId, configuration=configuration)]
+    while folders[0].parentFolderId != folders[0].driveId:
+        folders = [await get_folder(request=request, folder_id=folders[0].parentFolderId, configuration=configuration)]\
+               + folders
+
+    return PathResponse(item=item, folders=folders, drive=drive)
 
 
 @router.post("/move",
