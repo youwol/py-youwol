@@ -152,3 +152,23 @@ class LocalClients(NamedTuple):
     flux_client: FluxClient
     cdn_client: CdnClient
     assets_gateway_client: AssetsGatewayClient
+
+
+class RemoteClients(NamedTuple):
+
+    @staticmethod
+    async def get_assets_gateway_client(context: Context) -> AssetsGatewayClient:
+
+        remote_host = context.config.get_remote_info().host
+        auth_token = await context.config.get_auth_token(context=context)
+        headers = {"Authorization": f"Bearer {auth_token}"}
+        return AssetsGatewayClient(url_base=f"https://{remote_host}/api/assets-gateway", headers=headers)
+
+    @staticmethod
+    async def get_treedb_client(context: Context) -> TreeDbClient:
+
+        remote_host = context.config.get_remote_info().host
+        auth_token = await context.config.get_auth_token(context=context)
+        headers = {"Authorization": f"Bearer {auth_token}"}
+        return TreeDbClient(url_base=f"https://{remote_host}/api/treedb-backend", headers=headers)
+
