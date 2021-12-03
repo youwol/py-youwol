@@ -5,6 +5,7 @@ from fastapi import APIRouter, WebSocket, Depends, Request
 
 from fastapi import HTTPException
 
+from services.backs.treedb.models import PathResponse
 from youwol.routers.commons import ensure_path, remote_path
 from youwol.context import Context
 from youwol.configuration.youwol_configuration import YouwolConfiguration, yw_config
@@ -56,7 +57,7 @@ async def publish(
         await ctx.info(
             step=ActionStep.RUNNING,
             content="Data retrieved",
-            json={"path_item": to_json(path_item), "flux-app": flux_app}
+            json={"path_item": path_item, "flux-app": flux_app}
             )
         local_assets_gtw = config.localClients.assets_gateway_client
         try:
@@ -74,7 +75,7 @@ async def publish(
                 content="Project not already found => start creation"
                 )
 
-            await ensure_path(path_item=path_item, assets_gateway_client=local_assets_gtw)
+            await ensure_path(path_item=PathResponse(**path_item), assets_gateway_client=local_assets_gtw)
             # The next line is somehow a patch that will allow to create a project from existing data
             flux_app['projectId'] = raw_id
             # The next line is a hack because sometimes the name of the flux project is not the name of the tree item

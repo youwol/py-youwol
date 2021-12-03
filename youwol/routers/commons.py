@@ -120,4 +120,4 @@ def local_path(tree_id: str, config):
 async def remote_path(tree_item: dict, context: Context):
 
     treedb = await RemoteClients.get_treedb_client(context)
-    return await treedb.get_path(item_id=tree_item['item_id'])
+    return await treedb.get_path(item_id=tree_item['treeId'])
