@@ -1,4 +1,4 @@
-from typing import List, Any, Union
+from typing import List, Any, Union, Optional
 from pydantic import BaseModel
 
 from youwol_utils import PermissionsResp, ReadPolicyEnum, SharePolicyEnum
@@ -28,6 +28,13 @@ class Metadata(BaseModel):
     tags: List[str]
 
 
+class PermissionsResponse(BaseModel):
+    read: bool
+    write: bool
+    share: bool
+    expiration: Union[int, None]
+
+
 class AssetResponse(BaseModel):
 
     assetId: str
@@ -39,13 +46,12 @@ class AssetResponse(BaseModel):
     rawId: str
     groupId: str
     tags: List[str]
+    permissions: Optional[PermissionsResponse]
 
 
-class PermissionsResponse(BaseModel):
-    read: bool
-    write: bool
-    share: bool
-    expiration: Union[int, None]
+class AssetWithPermissionResponse(AssetResponse):
+
+    permissions: Optional[PermissionsResponse]
 
 
 class NewAssetResponse(AssetResponse):
@@ -65,6 +71,20 @@ class ImportAssetsBody(BaseModel):
 class DriveResponse(BaseModel):
     driveId: str
     name: str
+    groupId: str
+
+
+class DefaultDriveResponse(BaseModel):
+    driveId: str
+    driveName: str
+    downloadFolderId: str
+    downloadFolderName: str
+    homeFolderId: str
+    homeFolderName: str
+    systemFolderId: str
+    systemFolderName: str
+    systemPackagesFolderId: str
+    systemPackagesFolderName: str
     groupId: str
 
 

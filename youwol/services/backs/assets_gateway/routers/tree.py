@@ -6,17 +6,30 @@ from fastapi import APIRouter, UploadFile, File, Depends
 from starlette.requests import Request
 
 from ..configurations import Configuration, get_configuration
-from youwol_utils import (generate_headers_downstream, is_authorized_write, HTTPException)
+from youwol_utils import (
+    generate_headers_downstream, is_authorized_write, HTTPException, user_info, YouWolException,
+    private_group_id,
+    )
 from ..models import (
     DrivesResponse, ChildrenResponse, DriveBody, DriveResponse,
     FolderResponse, FolderBody, DeletedResponse, MoveBody, ItemResponse, BorrowBody, PermissionsResponse, PutFolderBody,
-    PutDriveBody,
+    PutDriveBody, DefaultDriveResponse
     )
 from ..package_drive import (pack_drive, unpack_drive, MockFile)
 from ..routers.assets import get_asset_by_tree_id
 from ..utils import to_item_resp, regroup_asset, to_folder_resp
 
 router = APIRouter()
+
+
+@router.get("/default-drive",
+            response_model=DefaultDriveResponse, summary="get user's default drive")
+async def get_default_user_drive(
+        request: Request,
+        configuration: Configuration = Depends(get_configuration)
+        ):
+    user = user_info(request)
+    return await get_default_drive(request=request, group_id=private_group_id(user), configuration=configuration)
 
 
 @router.get("/groups/{group_id}/drives", response_model=DrivesResponse, summary="list drives of a group")
@@ -31,6 +44,79 @@ async def get_drives(
     drives_resp = await treedb.get_drives(group_id=group_id, headers=headers)
     drives = [DriveResponse(**drive) for drive in drives_resp['drives']]
     return DrivesResponse(drives=drives)
+
+
+@router.get("/groups/{group_id}/default-drive",
+            response_model=DefaultDriveResponse, summary="get group's default drive")
+async def get_default_drive(
+        request: Request,
+        group_id: str,
+        configuration: Configuration = Depends(get_configuration)
+        ):
+
+    headers = generate_headers_downstream(request.headers)
+    treedb = configuration.treedb_client
+    default_drive_id = f"{group_id}_default-drive"
+    try:
+        await treedb.get_drive(drive_id=default_drive_id, headers=headers)
+    except YouWolException as e:
+        if e.status_code != 404:
+            raise e
+        await treedb.create_drive(group_id=group_id,
+                                  body={"name": "Default drive", "driveId": default_drive_id},
+                                  headers=headers)
+
+    default_download_id = f"{default_drive_id}_download"
+    try:
+        await treedb.get_folder(folder_id=default_download_id, headers=headers)
+    except YouWolException as e:
+        if e.status_code != 404:
+            raise e
+        await treedb.create_folder(parent_folder_id=default_drive_id,
+                                   body={"name": "Download", "folderId": default_download_id},
+                                   headers=headers)
+    default_home_id = f"{default_drive_id}_home"
+    try:
+        await treedb.get_folder(folder_id=default_home_id, headers=headers)
+    except YouWolException as e:
+        if e.status_code != 404:
+            raise e
+        await treedb.create_folder(parent_folder_id=default_drive_id,
+                                   body={"name": "Home", "folderId": default_home_id},
+                                   headers=headers)
+
+    default_system_id = f"{default_drive_id}_system"
+    try:
+        await treedb.get_folder(folder_id=default_system_id, headers=headers)
+    except YouWolException as e:
+        if e.status_code != 404:
+            raise e
+        await treedb.create_folder(parent_folder_id=default_drive_id,
+                                   body={"name": "System", "folderId": default_system_id},
+                                   headers=headers)
+    default_system_packages_id = f"{default_drive_id}_system_packages"
+    try:
+        await treedb.get_folder(folder_id=default_system_packages_id, headers=headers)
+    except YouWolException as e:
+        if e.status_code != 404:
+            raise e
+        await treedb.create_folder(parent_folder_id=default_system_id,
+                                   body={"name": "Packages", "folderId": default_system_packages_id},
+                                   headers=headers)
+
+    return DefaultDriveResponse(
+        groupId=group_id,
+        driveId=default_drive_id,
+        driveName="Default drive",
+        downloadFolderId=default_download_id,
+        downloadFolderName="Download",
+        homeFolderId=default_home_id,
+        homeFolderName="Home",
+        systemFolderId=default_system_id,
+        systemFolderName="System",
+        systemPackagesFolderId=default_system_packages_id,
+        systemPackagesFolderName="Packages"
+        )
 
 
 @router.put("/groups/{group_id}/drives", response_model=DriveResponse, summary="create a new drive")

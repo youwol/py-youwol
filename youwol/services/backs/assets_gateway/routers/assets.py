@@ -134,9 +134,11 @@ async def get(
 
     headers = generate_headers_downstream(request.headers)
     assets_client = configuration.assets_client
-    asset = await assets_client.get(asset_id=asset_id, headers=headers)
-
-    resp = to_asset_resp(asset)
+    asset, permissions = await asyncio.gather(
+        assets_client.get(asset_id=asset_id, headers=headers),
+        assets_client.get_permissions(asset_id=asset_id, headers=headers)
+        )
+    resp = to_asset_resp(asset=asset, permissions=permissions)
     return resp
 
 

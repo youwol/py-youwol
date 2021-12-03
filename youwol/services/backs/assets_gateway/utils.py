@@ -2,7 +2,7 @@ import asyncio
 import json
 import time
 from datetime import datetime
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Union
 
 from starlette.requests import Request
 
@@ -11,7 +11,7 @@ from youwol_utils import (
     ReadPolicyEnumFactory, SharePolicyEnumFactory, base64, log_info,
     )
 from .configurations import Configuration
-from .models import ItemResponse, AssetResponse, GroupAccess, FolderResponse
+from .models import ItemResponse, AssetResponse, GroupAccess, FolderResponse, AssetWithPermissionResponse
 from .raw_stores.interface import AssetMeta
 
 
@@ -75,9 +75,12 @@ def to_folder_resp(folder) -> FolderResponse:
                           driveId=folder["driveId"])
 
 
-def to_asset_resp(asset):
+def to_asset_resp(asset, permissions=None) -> Union[AssetResponse, AssetWithPermissionResponse]:
 
     group_id = asset['groupId'] if 'groupId' in asset else to_group_id(asset['scope'])
+    if permissions:
+        return AssetWithPermissionResponse(
+            **{**asset, **{"rawId": asset["relatedId"], "groupId": group_id, "permissions": permissions}})
     return AssetResponse(**{**asset, **{"rawId": asset["relatedId"], "groupId": group_id}})
 
 
@@ -116,7 +119,7 @@ async def regroup_asset(
     # from here we change the owner of the group, extra care is needed
     store = next(store for store in assets_stores if store.path_name == asset.kind)
     body_asset = {**asset.dict(), **{"groupId": new_group_id}}
-    body_raw = AssetMeta(groupId=new_group_id)
+    body_raw = AssetMeta(**body_asset)
     await asyncio.gather(
         assets_db.update_asset(asset_id=asset.assetId, body=body_asset, headers=headers),
         store.sync_asset_metadata(request=request, raw_id=asset.rawId, metadata=body_raw, headers=headers)
@@ -126,7 +129,8 @@ async def regroup_asset(
                                 **{"groupId": new_group_id,
                                    "treeId": tree_item['itemId'],
                                    "borrowed": False,
-                                   "folderId": tree_item['folderId']}
+                                   "folderId": tree_item['folderId'],
+                                   "driveId": tree_item['driveId']}
                                 })
     return new_asset
 
