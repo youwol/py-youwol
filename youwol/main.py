@@ -56,12 +56,12 @@ async def exception_handler(request: Request, exc: YouWolException):
 
 @app.get(configuration.base_path + "/healthz")
 async def healthz():
-    return {"status": "youwol ok"}
+    return {"status": "py-youwol ok"}
 
 
 @app.get(configuration.base_path + '/')
 async def home():
-    return RedirectResponse(url=f'/ui/local-dashboard')
+    return RedirectResponse(url=f'/applications/dashboard-developer/latest')
 
 
 def main():

@@ -144,9 +144,9 @@ def print_invite(main_args: MainArguments):
 Running with configuration file: {main_args.config_path}
 
 To start youwol please follow this link: 
-http://localhost:{main_args.port}/ui/workspace-explorer/
+http://localhost:{main_args.port}/applications/@youwol/workspace-explorer/latest
 
 To create and manage assets on your computer please follow this link: 
-http://localhost:{main_args.port}/ui/dashboard-developer/
+http://localhost:{main_args.port}/applications/dashboard-developer/latest
 """)
     print(msg)
