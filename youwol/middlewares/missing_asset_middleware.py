@@ -34,29 +34,29 @@ class MissingAssetsMiddleware(BaseHTTPMiddleware):
             self, request: Request, call_next: RequestResponseEndpoint
             ) -> Response:
 
+        if not any(f'/api/assets-gateway/raw/{kind}' in request.url.path for kind in self.assets_kind)\
+           or not request.method == "GET":
+            return await call_next(request)
+
         try:
             config = await yw_config()
         except HTTPResponseException as e:
             return e.httpResponse
 
         context = Context(
-            web_socket=WebSocketsCache.api_gateway,
+            web_socket=WebSocketsCache.environment,
             config=config,
             request=request
             )
 
         resp = await call_next(request)
+        if resp.status_code == 404:
+            resp = await redirect_api_remote(request)
+            headers = {"Authorization": request.headers.get("authorization")}
 
-        if any(f'/api/assets-gateway/raw/{kind}' in request.url.path for kind in self.assets_kind)\
-                and request.method == "GET":
-
-            if resp.status_code == 404:
-                resp = await redirect_api_remote(request)
-                headers = {"Authorization": request.headers.get("authorization")}
-                asyncio.run_coroutine_threadsafe(
-                    enqueue_asset(self.download_queue, request.url.path, context, headers),
-                    self.download_event_loop
-                    )
-                return resp
-
+            asyncio.run_coroutine_threadsafe(
+                enqueue_asset(self.download_queue, request.url.path, context, headers),
+                self.download_event_loop
+                )
+            return resp
         return resp
