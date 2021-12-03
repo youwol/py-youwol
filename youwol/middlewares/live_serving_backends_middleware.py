@@ -1,14 +1,10 @@
-import itertools
 import traceback
-from typing import Union
 import sys
 
 from aiohttp import ClientConnectorError
-from fastapi import HTTPException
 
-from configuration import TargetBack
-from middlewares.redirect import redirect_api_remote, redirect_api_local, redirect_get_api, redirect_get
-from youwol.configuration.youwol_configuration import YouwolConfiguration, yw_config
+from middlewares.redirect import redirect_api_remote, redirect_api_local, redirect_get
+from youwol.configuration.youwol_configuration import yw_config
 from youwol.context import Context
 from youwol.errors import HTTPResponseException
 from youwol.routers.backends.utils import get_all_backends, BackEnd
@@ -30,22 +26,6 @@ async def is_local_backend_alive(request: Request, backend: BackEnd) -> bool:
         return True
     except ClientConnectorError:
         return False
-
-"""
-async def is_running(request: Request, backend: TargetBack) -> Union[None, YouwolConfiguration]:
-
-    config = await yw_config()
-    try:
-        backends = await get_all_backends(context)
-        service_name = api_base_path.split('api/')[1]
-        backend = next(backend for backend in backends if backend.info.name == service_name)
-
-        if await is_backend_alive(request, backend.info.name, backend.pipeline.serve.health, config):
-            return config
-        return None
-    except (StopIteration, AttributeError):
-        return None
-"""
 
 
 class LiveServingBackendsMiddleware(BaseHTTPMiddleware):
@@ -69,8 +49,7 @@ class LiveServingBackendsMiddleware(BaseHTTPMiddleware):
             config=config,
             request=request
             )
-        if 'youwol-infra' in request.url.path:
-            print('youwol-infra')
+
         if request.url.path.startswith('/remote/api'):
             return await redirect_api_remote(
                 request=request,
