@@ -4,7 +4,6 @@ from starlette.responses import RedirectResponse
 from starlette.requests import Request
 
 from asset_auto_download import start_thread_asset_auto_download
-from middlewares.cross_origin_middleware import CrossOriginMiddleware
 from middlewares.live_serving_cdn_middleware import LiveServingCdnMiddleware
 
 from middlewares.loading_graph_middleware import LoadingGraphMiddleware
@@ -29,10 +28,6 @@ web_socket = None
 
 download_queue, new_loop = start_thread_asset_auto_download()
 
-app.add_middleware(CrossOriginMiddleware,
-                   frontends_base_path=['ui/flux-builder', 'ui/flux-runner', 'ui/network', 'ui/stories',
-                                        'ui/workspace-explorer', 'ui/exhibition-halls']
-                   )
 app.add_middleware(LiveServingCdnMiddleware)
 
 app.add_middleware(LoadingGraphMiddleware)
