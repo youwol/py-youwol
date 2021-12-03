@@ -1,4 +1,4 @@
-from typing import Callable, cast, Any
+from typing import Callable, cast, Any, Optional
 
 from dataclasses import dataclass
 
@@ -20,12 +20,14 @@ from youwol_utils.clients.data_api.data import (
 from youwol_utils.clients.flux.flux import FluxClient
 from .raw_stores.flux_project import FluxProjectsStore
 
-from youwol.configuration.youwol_configuration import yw_config
+from youwol.configuration.youwol_configuration import yw_config, YouwolConfiguration
 from youwol.configurations import configuration as py_yw_config
 
 
 @dataclass(frozen=True)
 class Configuration:
+
+    yw_config: YouwolConfiguration
     open_api_prefix: str
     base_path: str
 
@@ -54,17 +56,17 @@ class Configuration:
             ]
 
 
-config_yw_assets_gateway = None
+config_yw_assets_gateway: Optional[Configuration] = None
 
 
-async def get_configuration():
+async def get_configuration(config_yw=None):
 
     global config_yw_assets_gateway
+    if not config_yw:
+        config_yw = await yw_config()
 
-    if config_yw_assets_gateway:
+    if config_yw_assets_gateway and config_yw_assets_gateway.yw_config == config_yw:
         return config_yw_assets_gateway
-
-    config_yw = await yw_config()
 
     storage = LocalStorageClient(root_path=config_yw.pathsBook.local_storage, bucket_name='data')
     docdb = LocalDocDbClient(root_path=config_yw.pathsBook.local_docdb,
@@ -90,6 +92,7 @@ async def get_configuration():
                                   bucket_name=bucket_name)
 
     config_yw_assets_gateway = Configuration(
+        yw_config=config_yw,
         open_api_prefix='',
         base_path="/api/assets-gateway",
         data_client=data_client,

@@ -1,8 +1,8 @@
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
 from dataclasses import dataclass
 
-from youwol.configuration.youwol_configuration import yw_config
+from youwol.configuration.youwol_configuration import yw_config, YouwolConfiguration
 from youwol_utils import get_valid_bucket_name
 from .models import create_doc_dbs, DocDbs, namespace
 from youwol_utils.clients.docdb.local_docdb import LocalDocDbClient
@@ -14,6 +14,8 @@ logger.info("Setup treedb-backend")
 
 @dataclass(frozen=True)
 class Configuration:
+
+    yw_config: YouwolConfiguration
 
     open_api_prefix: str
     base_path: str
@@ -32,17 +34,17 @@ class Configuration:
     public_owner = '/youwol-users'
 
 
-config_yw_treedb = None
+config_yw_treedb: Optional[Configuration] = None
 
 
-async def get_configuration():
+async def get_configuration(config_yw=None):
 
     global config_yw_treedb
+    if not config_yw:
+        config_yw = await yw_config()
 
-    if config_yw_treedb:
+    if config_yw_treedb and config_yw_treedb.yw_config == config_yw:
         return config_yw_treedb
-
-    config_yw = await yw_config()
 
     doc_dbs = create_doc_dbs(
         factory_db=LocalDocDbClient,
@@ -50,6 +52,7 @@ async def get_configuration():
         )
 
     config_yw_treedb = Configuration(
+        yw_config=config_yw,
         open_api_prefix='',
         base_path="/api/treedb-backend",
         doc_dbs=doc_dbs,

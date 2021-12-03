@@ -1,9 +1,9 @@
-from typing import Callable, Union, Type
+from typing import Callable, Union, Type, Optional
 
 from dataclasses import dataclass
 
 from .models import STORIES_TABLE, DOCUMENTS_TABLE, DOCUMENTS_TABLE_BY_ID
-from youwol.configuration.youwol_configuration import yw_config
+from youwol.configuration.youwol_configuration import yw_config, YouwolConfiguration
 from youwol_utils import (
     LocalDocDbClient, LocalStorageClient, DocDbClient, StorageClient, CacheClient, LocalCacheClient,
     )
@@ -18,6 +18,8 @@ AuthMiddleware = Union[Type[Middleware], Type[AuthLocalMiddleware]]
 
 @dataclass(frozen=True)
 class Configuration:
+
+    yw_config: YouwolConfiguration
 
     open_api_prefix: str
     base_path: str
@@ -41,17 +43,18 @@ class Configuration:
     text_content_type = "text/plain"
 
 
-config_yw_stories = None
+config_yw_stories: Optional[Configuration] = None
 
 
-async def get_configuration():
+async def get_configuration(config_yw=None):
 
     global config_yw_stories
+    if not config_yw:
+        config_yw = await yw_config()
 
-    if config_yw_stories:
+    if config_yw_stories and config_yw_stories.yw_config == config_yw:
         return config_yw_stories
 
-    config_yw = await yw_config()
     storage = LocalStorageClient(
         root_path=config_yw.pathsBook.local_storage,
         bucket_name=Configuration.namespace
@@ -71,6 +74,7 @@ async def get_configuration():
         )
 
     config_yw_stories = Configuration(
+        yw_config=config_yw,
         open_api_prefix='',
         base_path="/api/stories-backend",
         storage=storage,

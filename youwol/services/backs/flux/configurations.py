@@ -1,8 +1,8 @@
-from typing import Callable
+from typing import Callable, Optional
 
 from dataclasses import dataclass
 
-from youwol.configuration.youwol_configuration import yw_config
+from youwol.configuration.youwol_configuration import yw_config, YouwolConfiguration
 from youwol_utils import (
     LocalDocDbClient, LocalStorageClient, CdnClient
     )
@@ -14,6 +14,7 @@ from youwol.configurations import configuration as py_yw_config
 @dataclass(frozen=True)
 class Configuration:
 
+    yw_config: YouwolConfiguration
     open_api_prefix: str
     base_path: str
     storage: LocalStorageClient
@@ -40,17 +41,18 @@ class Configuration:
     currentSchemaVersion = "1"
 
 
-config_yw_flux = None
+config_yw_flux: Optional[Configuration] = None
 
 
-async def get_configuration():
+async def get_configuration(config_yw=None):
 
     global config_yw_flux
+    if not config_yw:
+        config_yw = await yw_config()
 
-    if config_yw_flux:
+    if config_yw_flux and config_yw_flux.yw_config == config_yw:
         return config_yw_flux
 
-    config_yw = await yw_config()
     storage = LocalStorageClient(root_path=config_yw.pathsBook.local_storage,
                                  bucket_name=Configuration.namespace)
 
@@ -67,6 +69,7 @@ async def get_configuration():
     cdn_client = CdnClient(url_base=f"http://localhost:{py_yw_config.http_port}/api/cdn-backend")
 
     config_yw_flux = Configuration(
+        yw_config=config_yw,
         open_api_prefix='',
         base_path="/api/flux-backend",
         storage=storage,

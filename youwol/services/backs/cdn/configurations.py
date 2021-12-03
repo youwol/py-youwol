@@ -1,8 +1,8 @@
-from typing import Union, Any, Coroutine, Dict
+from typing import Union, Any, Coroutine, Dict, Optional
 
 from dataclasses import dataclass
 
-from youwol.configuration.youwol_configuration import yw_config
+from youwol.configuration.youwol_configuration import yw_config, YouwolConfiguration
 from .models import LIBRARIES_TABLE
 from youwol_utils.clients.docdb.local_docdb import LocalDocDbClient as LocalDocDb
 from youwol_utils.clients.storage.local_storage import LocalStorageClient as LocalStorage
@@ -12,6 +12,7 @@ from youwol_utils.clients.docdb.docdb import DocDbClient as DocDb
 @dataclass(frozen=True)
 class Configuration:
 
+    yw_config: YouwolConfiguration
     required_libs = ["tslib#1.10.0", "rxjs#6.5.5", "lodash#4.17.15", "reflectmetadata#0.1.13", "bootstrap#4.4.1"]
 
     open_api_prefix: str
@@ -26,17 +27,17 @@ class Configuration:
     owner: str = "/youwol-users"
 
 
-config_yw_cdn = None
+config_yw_cdn: Optional[Configuration] = None
 
 
-async def get_configuration():
+async def get_configuration(config_yw=None):
 
     global config_yw_cdn
+    if not config_yw:
+        config_yw = await yw_config()
 
-    if config_yw_cdn:
+    if config_yw_cdn and config_yw_cdn.yw_config == config_yw:
         return config_yw_cdn
-
-    config_yw = await yw_config()
 
     storage = LocalStorage(root_path=config_yw.pathsBook.local_storage,
                            bucket_name=Configuration.namespace)
@@ -46,6 +47,7 @@ async def get_configuration():
                         table_body=LIBRARIES_TABLE)
 
     config_yw_cdn = Configuration(
+        yw_config=config_yw,
         open_api_prefix='',
         base_path="/api/cdn-backend",
         storage=storage,
