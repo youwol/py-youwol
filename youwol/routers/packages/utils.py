@@ -22,8 +22,6 @@ from youwol.routers.packages.models import (
 
 from youwol.utils_paths import matching_files, parse_json, copy_tree
 from youwol.services.backs.cdn.utils import to_package_id
-from youwol_utils import to_group_id, private_group_id
-from youwol_utils.clients.treedb.treedb_utils import ensure_pathname
 
 flatten = itertools.chain.from_iterable
 
@@ -474,12 +472,6 @@ async def select_packages(
 
 async def ensure_default_publish_location(context: Context):
 
-    default_path = context.config.userConfig.general.defaultPublishLocation
-    user = context.config.get_user_info()
-    parts = default_path.split('/')
-    group_id = private_group_id({"sub": user.id}) if parts[0] == 'private' else to_group_id(parts[0])
-    drive_name, folders = parts[1], parts[2:]
-    treedb_client = context.config.localClients.treedb_client
-    folder_id = await ensure_pathname(group_id=group_id, drive_name=drive_name, folders_name=folders,
-                                      treedb_client=treedb_client, headers={})
-    return folder_id
+    config: YouwolConfiguration = context.config
+    default_drive = await config.get_default_drive()
+    return default_drive.downloadFolderId
