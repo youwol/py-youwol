@@ -126,11 +126,17 @@ class Events(BaseModel):
     onLoad: Callable[[YouwolConfiguration, Context], Union[None, Any]] = None
 
 
+class CDN(BaseModel):
+    automaticUpdate: bool = True
+    liveServers: Dict[str, Union[str, int]] = {}
+
+
 class UserConfiguration(BaseModel):
     general: General
     packages: Packages = Packages()
     frontends: FrontEnds = FrontEnds()
     backends: BackEnds = BackEnds()
+    cdn: CDN = CDN()
     customCommands: List[Command] = []
     events: Events = None
 

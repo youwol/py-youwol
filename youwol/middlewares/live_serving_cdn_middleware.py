@@ -1,5 +1,3 @@
-import itertools
-
 from asset_auto_download import encode_id
 from configuration.youwol_configuration import yw_config
 from aiohttp import ClientConnectorError, ClientSession
@@ -31,15 +29,16 @@ class LiveServingCdnMiddleware(BaseHTTPMiddleware):
         except HTTPResponseException as e:
             return e.httpResponse
 
-        config_frontends = itertools.chain.from_iterable([t for t in config.userConfig.frontends.targets.values()])
-        matching_urls = [(f"/api/cdn-backend/resources/{encode_id(t.basePath)}", t)
-                         for t in config_frontends if t.basePath]
-        match = next(((url, front) for url, front in matching_urls if request.url.path.startswith(url)), None)
+        live_servers = config.userConfig.cdn.liveServers
+        matching_urls = [(package_name, f"/api/cdn-backend/resources/{encode_id(package_name)}", port)
+                         for package_name, port in live_servers.items()]
+        match = next(((package_name, url, port) for package_name, url, port in matching_urls
+                      if request.url.path.startswith(url)), None)
 
         if match:
-            url, frontend = match
+            package_name, url, port = match
             rest_of_path = request.url.path.split('/')[-1]
-            url = f"http://localhost:{frontend.port}/{rest_of_path}"
+            url = f"http://localhost:{port}/{rest_of_path}"
             try:
                 # Try to connect to a dev server
                 async with ClientSession(auto_decompress=False) as session:
