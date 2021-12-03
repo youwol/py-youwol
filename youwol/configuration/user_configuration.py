@@ -110,7 +110,6 @@ class General(BaseModel):
 
     openid_host: str
     localGateway: LocalGateway = LocalGateway()
-    defaultPublishLocation: TPath = Path("private/default-publish")
     resources: Dict[str, Url] = {}
 
     def get_users_list(self) -> List[str]:
@@ -144,16 +143,6 @@ class UserConfiguration(BaseModel):
         json_encoders = {
             Path: lambda v: str(v)
             }
-
-
-class DefaultDrive(BaseModel):
-    driveId: str
-    driveName: str
-    downloadFolderId: str
-    downloadFolderName: str
-    homeFolderId: str
-    homeFolderName: str
-    groupId: str
 
 
 class LocalClients(NamedTuple):

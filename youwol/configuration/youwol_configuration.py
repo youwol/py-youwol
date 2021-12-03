@@ -10,6 +10,7 @@ from typing import List, Dict, Any, Union, NamedTuple, Optional
 
 from pydantic import ValidationError
 
+from services.backs.assets_gateway.models import DefaultDriveResponse
 from youwol.web_socket import WebSocketsCache
 from youwol_utils import CdnClient, StorageClient, DocDbClient, TableBody, SecondaryIndex
 from youwol_utils.clients.assets.assets import AssetsClient
@@ -22,7 +23,7 @@ from youwol.main_args import get_main_arguments
 from youwol.utils_paths import parse_json
 from youwol.models import ActionStep
 
-from youwol.configuration.user_configuration import (UserInfo, get_public_user_auth_token, DefaultDrive)
+from youwol.configuration.user_configuration import (UserInfo, get_public_user_auth_token)
 from youwol.configurations import get_full_local_config, configuration as py_yw_config
 from youwol.context import Context
 
@@ -30,7 +31,7 @@ from youwol.configuration.configuration_validation import (
     ConfigurationLoadingStatus, ConfigurationLoadingException,
     CheckConfPath, CheckValidTextFile, CheckValidPythonScript, CheckValidConfigParametersFunction,
     CheckValidConfigurationFunction, CheckSystemFolderWritable, CheckDatabasesFolderHealthy, CheckSecretPathExist,
-    CheckSecretHealthy, CheckDefaultPublishPath,
+    CheckSecretHealthy
     )
 from youwol.configuration.models_base import ErrorResponse, format_unknown_error, ConfigParameters
 from youwol.configuration.paths import PathsBook
@@ -166,14 +167,14 @@ class YouwolConfiguration(NamedTuple):
             headers=headers
             )
 
-    async def get_default_drive(self) -> DefaultDrive:
+    async def get_default_drive(self) -> DefaultDriveResponse:
 
         if self.private_cache.get("default-drive"):
             return self.private_cache.get("default-drive")
 
         default_drive = await self.localClients.assets_gateway_client.get_default_user_drive()
-        self.private_cache["default-drive"] = DefaultDrive(**default_drive)
-        return DefaultDrive(**default_drive)
+        self.private_cache["default-drive"] = DefaultDriveResponse(**default_drive)
+        return DefaultDriveResponse(**default_drive)
 
 
 class YouwolConfigurationFactory:
@@ -367,7 +368,6 @@ async def safe_load(
     check_database_folder_healthy = CheckDatabasesFolderHealthy()
     check_secret_exists = CheckSecretPathExist()
     check_secret_healthy = CheckSecretHealthy()
-    check_default_publish = CheckDefaultPublishPath()
 
     def get_status(validated: bool = False):
         return ConfigurationLoadingStatus(
@@ -382,8 +382,7 @@ async def safe_load(
                 check_system_folder_writable,
                 check_database_folder_healthy,
                 check_secret_exists,
-                check_secret_healthy,
-                check_default_publish
+                check_secret_healthy
                 ]
             )
 
@@ -536,16 +535,6 @@ async def safe_load(
 
     if not paths_book.remotesInfo.exists():
         open(paths_book.remotesInfo, "w").write(json.dumps({"remotes": {}}))
-
-    path_default_publish = user_config.general.defaultPublishLocation
-    if len(path_default_publish.split('/')) < 2:
-        check_default_publish.status = ErrorResponse(
-            reason=f"The default publish path 'defaultPublishLocation' needs to at least specify group and drive names"
-                   + ", e.g.: {group_name}/{drive_name}",
-            hints=[f"The default publish location if 'defaultPublishLocation' is not specified is "
-                   + "'private/default-drive'"]
-            )
-        return None, get_status()
 
     if not paths_book.secret_path.exists():
         base_secrets = {

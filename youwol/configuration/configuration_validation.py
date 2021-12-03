@@ -42,10 +42,6 @@ class CheckSecretHealthy(Check):
     name: str = "Secrets are valid?"
 
 
-class CheckDefaultPublishPath(Check):
-    name: str = "Default publish path is valid?"
-
-
 class ConfigurationLoadingStatus(BaseModel):
 
     path: str
