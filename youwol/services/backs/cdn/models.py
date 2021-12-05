@@ -87,6 +87,7 @@ class Library(BaseModel):
     id: str
     namespace: str
     type: str
+    fingerprint: str
 
 
 class LoadingGraphResponseV1(BaseModel):

@@ -44,7 +44,7 @@ async def get_raw_resource(
                     content=await resp.read(),
                     headers={
                         **{k: v for k, v in resp.headers.items()},
-                        **(cors_headers if resource == "index.html" else {})
+                        **cors_headers
                         }
                     )
             await raise_exception_from_response(resp)

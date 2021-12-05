@@ -4,7 +4,7 @@ import itertools
 import shutil
 from pathlib import Path
 
-from fastapi import UploadFile, File, HTTPException, Form, APIRouter, Depends
+from fastapi import UploadFile, File, HTTPException, Form, APIRouter, Depends, Query as QueryParam
 
 from starlette.requests import Request
 from starlette.responses import Response
@@ -119,17 +119,16 @@ async def sync(request: Request,
         shutil.rmtree(dir_path)
 
 
-@router.get("/queries/library", summary="list versions of a library",
-            response_model=ListVersionsResponse)
 async def list_versions(
         request: Request,
         name: str,
+        max_results: int = 1000,
         configuration: Configuration = Depends(get_configuration)):
 
     headers = generate_headers_downstream(request.headers)
     doc_db = configuration.doc_db
     query = QueryBody(
-        max_results=1000,
+        max_results=max_results,
         select_clauses=[SelectClause(selector="versions"), SelectClause(selector="namespace")],
         query=Query(where_clause=[WhereClause(column="library_name", relation="eq", term=name)])
         )
@@ -336,55 +335,10 @@ async def resolve_loading_tree(
     r = loading_graph([], dependencies_dict.values(), items_dict)
 
     lock = [Library(name=d["library_name"], version=d["version"], namespace=d["namespace"],
-                    id=to_package_id(d["library_name"]), type=d["type"]) for d in dependencies_dict.values()]
+                    id=to_package_id(d["library_name"]), type=d["type"], fingerprint=d["fingerprint"])
+            for d in dependencies_dict.values()]
 
     return LoadingGraphResponseV1(graphType="sequential-v1", lock=lock, definition=r)
-
-"""
-@router.post("/queries/dependencies-latest", summary="get a library",
-             response_model=DependenciesResponseV1)
-async def resolve_dependencies_latest(
-        request: Request,
-        body: DependenciesLatestBody,
-        configuration: Configuration = Depends(get_configuration)
-        ):
-
-    doc_db = configuration.doc_db
-    headers = generate_headers_downstream(request.headers)
-
-    async def fetch_dependencies(libraries, fetched=None):
-        if not libraries:
-            return {}
-        if not fetched:
-            fetched = {}
-        queries = [get_query(doc_db, lib, headers) for lib in libraries if lib not in fetched.keys()]
-        dependencies_0 = await asyncio.gather(*queries)
-        dependencies_0 = flatten([d["documents"] for d in dependencies_0])
-        dependencies_0 = {d["library_name"]: d for d in dependencies_0}
-
-        dependencies_1 = [[d.split('#')[0] for d in lib["dependencies"]] for lib in dependencies_0.values()]
-        dependencies_1 = set(flatten(dependencies_1))
-        return {**dependencies_0, ** await fetch_dependencies(dependencies_1, {**fetched, **dependencies_0})}
-
-    dependencies_all = await fetch_dependencies(body.libraries)
-
-    all_names = set(flatten([[d.split("#")[0] for d in d0["dependencies"]]
-                             for d0 in dependencies_all.values()]))
-    unresolved = [d for d in all_names if d not in dependencies_all]
-    if unresolved:
-        raise HTTPException(status_code=404, detail=f"Unresolved references in CDN: {unresolved}")
-
-    items_dict = {d["library_name"]: [to_package_id(d["library_name"]), get_url(d)]
-                  for d in dependencies_all.values()}
-    r = loading_graph([], dependencies_all.values(), items_dict)
-    dependencies = {v["library_name"]: v["version"] for v in dependencies_all.values()}
-    lock = [Library(name=v["library_name"], version=v["version"], namespace=v["namespace"],
-                    id=to_package_id(v["library_name"]), type=v["type"]) for v in dependencies_all.values()]
-
-    return DependenciesResponseV1(libraries=dependencies,
-                                  loadingGraph=LoadingGraphResponseV1(graphType="sequential-v1", lock=lock,
-                                                                      definition=r))
-"""
 
 
 @router.get("/queries/flux-packs", summary="list packs", response_model=ListPacksResponse)
@@ -454,12 +408,33 @@ async def get_package_generic(
         request: Request,
         library_name: str,
         version: str,
+        metadata: bool = False,
         configuration: Configuration = Depends(get_configuration)
         ):
 
+    headers = generate_headers_downstream(request.headers)
     if version == 'latest':
-        versions_resp = await list_versions(request=request, name=library_name, configuration=configuration)
+        versions_resp = await list_versions(request=request, name=library_name, max_results=1,
+                                            configuration=configuration)
         version = versions_resp.versions[0]
+
+    doc_db = configuration.doc_db
+
+    if metadata:
+        try:
+            d = await doc_db.get_document(
+                partition_keys={"library_name": library_name},
+                clustering_keys={"version_number": get_version_number_str(version)},
+                owner=configuration.owner,
+                headers=headers)
+            return Library(name=d["library_name"], version=d["version"], namespace=d["namespace"],
+                           id=to_package_id(d["library_name"]), type=d["type"], fingerprint=d["fingerprint"])
+        except HTTPException as e:
+            if e.status_code == 404:
+                raise PackagesNotFound(
+                    detail="Failed to retrieve a package",
+                    packages=[f"{library_name}#{version}"]
+                    )
 
     headers = generate_headers_downstream(request.headers)
     storage = configuration.storage
@@ -468,16 +443,17 @@ async def get_package_generic(
     return Response(content, media_type='multipart/form-data')
 
 
-@router.get("/libraries/{namespace}/{library_name}/{version}", summary="delete a specific version")
+@router.get("/libraries/{namespace}/{library_name}/{version}", summary="retrieve original zip file of package")
 async def get_package_with_namespace(
         request: Request,
         namespace: str,
         library_name: str,
         version: str,
+        metadata: bool = False,
         configuration: Configuration = Depends(get_configuration)):
     namespace = '@'+namespace.strip('@')
     return await get_package_generic(request=request, library_name=namespace + "/"+library_name,
-                                     version=version, configuration=configuration)
+                                     version=version, metadata=metadata, configuration=configuration)
 
 
 @router.get("/libraries/{library_name}/{version}", summary="delete a specific version")
@@ -485,10 +461,11 @@ async def get_package_no_namespace(
         request: Request,
         library_name: str,
         version: str,
+        metadata: bool = False,
         configuration: Configuration = Depends(get_configuration)):
 
     return await get_package_generic(request=request, library_name=library_name, version=version,
-                                     configuration=configuration)
+                                     metadata=metadata, configuration=configuration)
 
 
 @router.get("/resources/{rest_of_path:path}", summary="get a library")
