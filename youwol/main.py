@@ -45,6 +45,7 @@ app.add_middleware(MissingAssetsMiddleware,
                    )
 app.add_middleware(LoadingGraphMiddleware)
 app.add_middleware(AuthMiddleware)
+app.add_middleware(BrowserCachingMiddleware)
 
 router = APIRouter()
 
