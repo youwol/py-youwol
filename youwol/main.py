@@ -1,13 +1,16 @@
-from fastapi import FastAPI, APIRouter, Depends
+from fastapi import FastAPI, APIRouter, Depends, WebSocket
 import uvicorn
 from starlette.responses import RedirectResponse
 from starlette.requests import Request
 
 from asset_auto_download import get_thread_asset_auto_download
+from middlewares.browser_caching_middleware import BrowserCachingMiddleware
 from middlewares.live_serving_cdn_middleware import LiveServingCdnMiddleware
 
 from middlewares.loading_graph_middleware import LoadingGraphMiddleware
 from middlewares.missing_asset_middleware import MissingAssetsMiddleware
+from utils_low_level import start_web_socket
+from web_socket import WebSocketsCache
 from youwol.configuration.youwol_configuration import yw_config
 from youwol.main_args import get_main_arguments
 
@@ -26,15 +29,21 @@ app = FastAPI(
 
 web_socket = None
 
-download_queue, download_event_loop = get_thread_asset_auto_download()
+
+def on_update_available(name: str, version: str):
+    print("Update available", name, version)
+
+
+download_queue, download_event_loop = get_thread_asset_auto_download(on_update_available)
+
 app.add_middleware(LiveServingCdnMiddleware)
 app.add_middleware(LiveServingBackendsMiddleware)
-app.add_middleware(LoadingGraphMiddleware)
 app.add_middleware(MissingAssetsMiddleware,
                    assets_kind=['flux-project', 'package', 'story', 'data'],
                    download_queue=download_queue,
                    download_event_loop=download_event_loop
                    )
+app.add_middleware(LoadingGraphMiddleware)
 app.add_middleware(AuthMiddleware)
 
 router = APIRouter()
@@ -62,6 +71,15 @@ async def healthz():
 @app.get(configuration.base_path + '/')
 async def home():
     return RedirectResponse(url=f'/applications/dashboard-developer/latest')
+
+
+@router.websocket("/ws")
+async def ws_endpoint(ws: WebSocket):
+
+    await ws.accept()
+    WebSocketsCache.regularChannel = ws
+    await ws.send_json({})
+    await start_web_socket(ws)
 
 
 def main():
