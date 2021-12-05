@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from starlette.requests import Request
-from starlette.responses import Response
+from starlette.responses import Response, JSONResponse
 
 from ..configurations import Configuration, get_configuration
 
@@ -107,14 +107,18 @@ async def get_package_generic(
         request: Request,
         library_name: str,
         version: str,
+        metadata: bool,
         configuration: Configuration):
 
     headers = generate_headers_downstream(request.headers)
     await ensure_permission('read', request, library_name, configuration)
 
     cdn_client = configuration.cdn_client
-    resp = await cdn_client.get_package(library_name=library_name, version=version, headers=headers)
-    return Response(resp, media_type='multipart/form-data')
+    resp = await cdn_client.get_package(library_name=library_name, version=version, metadata=metadata,
+                                        headers=headers)
+    return JSONResponse(resp) \
+        if metadata \
+        else Response(resp, media_type='multipart/form-data')
 
 
 @router.get("/libraries/{namespace}/{library_name}/{version}", summary="delete a specific version")
@@ -123,10 +127,11 @@ async def get_package_with_namespace(
         namespace: str,
         library_name: str,
         version: str,
+        metadata: bool = False,
         configuration: Configuration = Depends(get_configuration)):
 
     return await get_package_generic(request=request, library_name=f"{namespace}/{library_name}",
-                                     version=version, configuration=configuration)
+                                     version=version, metadata=metadata, configuration=configuration)
 
 
 @router.get("/libraries/{library_name}/{version}", summary="delete a specific version")
@@ -134,8 +139,9 @@ async def get_package_no_namespace(
         request: Request,
         library_name: str,
         version: str,
+        metadata: bool = False,
         configuration: Configuration = Depends(get_configuration)):
 
     return await get_package_generic(request=request, library_name=library_name,
-                                     version=version, configuration=configuration)
+                                     version=version, metadata=metadata, configuration=configuration)
 
