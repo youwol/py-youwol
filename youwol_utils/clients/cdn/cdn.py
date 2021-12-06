@@ -144,14 +144,14 @@ class CdnClient:
                     return await resp.json()
                 await raise_exception_from_response(resp, url=self.push_url, headers=self.headers)
 
-    async def get_package(self, library_name: str, version: str, **kwargs):
+    async def get_package(self, library_name: str, version: str, metadata: bool = False, **kwargs):
 
         url = f"{self.url_base}/libraries/{library_name}/{version}"
-
+        params = {"metadata": str(metadata)}
         async with aiohttp.ClientSession(headers=self.headers) as session:
-            async with await session.get(url, **kwargs) as resp:
+            async with await session.get(url=url, params=params, **kwargs) as resp:
                 if resp.status == 200:
-                    return await resp.read()
+                    return await resp.json() if metadata else await resp.read()
                 await raise_exception_from_response(resp, url=self.push_url, headers=self.headers)
 
     async def get_records(self, body, **kwargs):

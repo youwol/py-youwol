@@ -50,13 +50,20 @@ class MissingAssetsMiddleware(BaseHTTPMiddleware):
             )
 
         resp = await call_next(request)
+        headers = {"Authorization": request.headers.get("authorization")}
+
         if resp.status_code == 404:
             resp = await redirect_api_remote(request)
-            headers = {"Authorization": request.headers.get("authorization")}
-
             asyncio.run_coroutine_threadsafe(
                 enqueue_asset(self.download_queue, request.url.path, context, headers),
                 self.download_event_loop
                 )
             return resp
+
+        if '/latest/' in request.url.path:
+            asyncio.run_coroutine_threadsafe(
+                enqueue_asset(self.download_queue, request.url.path, context, headers),
+                self.download_event_loop
+                )
+
         return resp
