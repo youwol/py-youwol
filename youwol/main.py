@@ -4,6 +4,7 @@ from starlette.responses import RedirectResponse
 from starlette.requests import Request
 
 from auto_download.auto_download_thread import AssetDownloadThread
+from auto_download.flux_project import DownloadFluxProjectTask
 from auto_download.package import DownloadPackageTask
 from context import Context
 from youwol.middlewares.browser_caching_middleware import BrowserCachingMiddleware
@@ -41,6 +42,7 @@ def on_update_available(name: str, version: str):
 download_thread = AssetDownloadThread(
     factories={
         "package": DownloadPackageTask,
+        "flux-project": DownloadFluxProjectTask,
         },
     worker_count=4
     )
