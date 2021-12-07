@@ -9,6 +9,7 @@ from pydantic import BaseModel, Json
 from starlette.requests import Request
 from starlette.websockets import WebSocket
 
+from auto_download.auto_download_thread import AssetDownloadThread
 from youwol.models import LogLevel, ActionStep, Action
 from youwol_utils import JSON
 
@@ -68,11 +69,14 @@ CallableBlockException = Callable[[Exception, 'Context'], Union[Awaitable, None]
 class Context(NamedTuple):
 
     web_socket: WebSocket
+
     config: YouwolConfiguration
     request: Request = None
     target: Union[str, None] = None
     action: Union[str, None] = None
     uid: Union[str, None] = None
+
+    download_thread: AssetDownloadThread = None
 
     def with_target(self, name: str) -> 'Context':
         return Context(web_socket=self.web_socket, config=self.config, action=self.action, target=name)

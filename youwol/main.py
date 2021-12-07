@@ -3,7 +3,9 @@ import uvicorn
 from starlette.responses import RedirectResponse
 from starlette.requests import Request
 
-from asset_auto_download import get_thread_asset_auto_download
+from auto_download.auto_download_thread import AssetDownloadThread
+from auto_download.package import DownloadPackageTask
+from context import Context
 from youwol.middlewares.browser_caching_middleware import BrowserCachingMiddleware
 from youwol.middlewares.dynamic_routing_middleware import DynamicRoutingMiddleware
 from youwol.middlewares.auth_middleware import AuthMiddleware
@@ -36,7 +38,15 @@ def on_update_available(name: str, version: str):
     print("Update available", name, version)
 
 
-download_queue, download_event_loop = get_thread_asset_auto_download(on_update_available)
+download_thread = AssetDownloadThread(
+    factories={
+        "package": DownloadPackageTask,
+        },
+    worker_count=4
+    )
+download_thread.start()
+Context.download_thread = download_thread
+
 app.add_middleware(
     DynamicRoutingMiddleware,
     dynamic_dispatch_rules=[
