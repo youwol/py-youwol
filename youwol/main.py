@@ -4,6 +4,7 @@ from starlette.responses import RedirectResponse
 from starlette.requests import Request
 
 from auto_download.auto_download_thread import AssetDownloadThread
+from auto_download.data import DownloadDataTask
 from auto_download.flux_project import DownloadFluxProjectTask
 from auto_download.package import DownloadPackageTask
 from context import Context
@@ -43,6 +44,7 @@ download_thread = AssetDownloadThread(
     factories={
         "package": DownloadPackageTask,
         "flux-project": DownloadFluxProjectTask,
+        "data": DownloadDataTask
         },
     worker_count=4
     )
