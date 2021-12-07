@@ -4,18 +4,19 @@ from starlette.responses import RedirectResponse
 from starlette.requests import Request
 
 from asset_auto_download import get_thread_asset_auto_download
-from middlewares.browser_caching_middleware import BrowserCachingMiddleware
-from middlewares.live_serving_cdn_middleware import LiveServingCdnMiddleware
+from youwol.middlewares.browser_caching_middleware import BrowserCachingMiddleware
+from youwol.middlewares.dynamic_routing_middleware import DynamicRoutingMiddleware
+from youwol.middlewares.auth_middleware import AuthMiddleware
+import youwol.middlewares.dynamic_routing.live_serving_cdn_rules as live_serving_cdn
+import youwol.middlewares.dynamic_routing.live_serving_backends_rules as live_serving_backend
+import youwol.middlewares.dynamic_routing.loading_graph_rules as loading_graph
+import youwol.middlewares.dynamic_routing.missing_asset_rules as missing_asset
 
-from middlewares.loading_graph_middleware import LoadingGraphMiddleware
-from middlewares.missing_asset_middleware import MissingAssetsMiddleware
 from utils_low_level import start_web_socket
 from web_socket import WebSocketsCache
 from youwol.configuration.youwol_configuration import yw_config
 from youwol.main_args import get_main_arguments
 
-from youwol.middlewares.auth_middleware import AuthMiddleware
-from youwol.middlewares.live_serving_backends_middleware import LiveServingBackendsMiddleware
 
 from youwol.routers import native_backends, admin, authorization
 
@@ -35,15 +36,18 @@ def on_update_available(name: str, version: str):
 
 
 download_queue, download_event_loop = get_thread_asset_auto_download(on_update_available)
+app.add_middleware(
+    DynamicRoutingMiddleware,
+    dynamic_dispatch_rules=[
+        loading_graph.GetLoadingGraphDispatch(),
+        missing_asset.GetRawDispatch(),
+        missing_asset.GetMetadataDispatch(),
+        missing_asset.PostMetadataDispatch(),
+        live_serving_backend.LiveServingBackendDispatch(),
+        live_serving_cdn.LiveServingCdnDispatch()
+        ]
+    )
 
-app.add_middleware(LiveServingCdnMiddleware)
-app.add_middleware(LiveServingBackendsMiddleware)
-app.add_middleware(MissingAssetsMiddleware,
-                   assets_kind=['flux-project', 'package', 'story', 'data'],
-                   download_queue=download_queue,
-                   download_event_loop=download_event_loop
-                   )
-app.add_middleware(LoadingGraphMiddleware)
 app.add_middleware(AuthMiddleware)
 app.add_middleware(BrowserCachingMiddleware)
 
