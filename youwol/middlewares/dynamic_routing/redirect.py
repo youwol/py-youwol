@@ -1,9 +1,11 @@
 import asyncio
+import json
 from typing import Mapping
 
 import aiohttp
 from aiohttp import ClientConnectorError
 from fastapi import HTTPException, Depends
+from pydantic.main import BaseModel
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -38,6 +40,10 @@ async def redirect_api_remote(request: Request, redirect_url: str = None):
         resp = await redirect_get(request, new_path, headers)
         return resp
 
+    if request.method == 'POST':
+        resp = await redirect_post(request, new_path, headers)
+        return resp
+
     return None
 
 
@@ -69,13 +75,32 @@ async def redirect_get(
             auto_decompress=False) as session:
 
         async with await session.get(url=new_url, params=params, headers=headers) as resp:
-            # if this is a GET request to assets-gateway we don't want caching as in local we can update assets
-            headers_resp = {
-                **{k: v for k, v in resp.headers.items()}
-                }
-
             content = await resp.read()
-            return Response(status_code=resp.status, content=content, headers=headers_resp)
+            return Response(status_code=resp.status, content=content, headers={k: v for k, v in resp.headers.items()})
+
+
+async def redirect_post(
+        request: Request,
+        new_url: str,
+        headers: Mapping[str, str]
+        ):
+    params = request.query_params
+    if request.state.body and isinstance(request.state.body, BaseModel):
+        data = str.encode(json.dumps(request.state.body.dict()))
+    elif request.state.body and not isinstance(request.state.body, BaseModel):
+        # Should be Json
+        data = str.encode(json.dumps(request.state.body))
+    else:
+        # <!> If the body has already been fetched it will hang forever
+        data = await request.body()
+
+    async with aiohttp.ClientSession(
+            connector=aiohttp.TCPConnector(verify_ssl=False),
+            auto_decompress=False) as session:
+
+        async with await session.post(url=new_url, data=data, params=params, headers=headers) as resp:
+            content = await resp.read()
+            return Response(status_code=resp.status, content=content, headers={k: v for k, v in resp.headers.items()})
 
 
 async def redirect_get_api(
