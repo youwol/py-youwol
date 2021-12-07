@@ -114,6 +114,16 @@ class AssetsGatewayClient:
                     return await resp.json()
                 await raise_exception_from_response(resp)
 
+    async def get_tree_folder_children(self, folder_id: str, **kwargs):
+
+        url = f"{self.url_base}/tree/folders/{folder_id}/children"
+
+        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
+            async with await session.get(url=url, **kwargs) as resp:
+                if resp.status == 200:
+                    return await resp.json()
+                await raise_exception_from_response(resp)
+
     async def create_folder(self, parent_folder_id: str, body, **kwargs):
 
         url = f"{self.url_base}/tree/folders/{parent_folder_id}"
