@@ -49,13 +49,17 @@ class AssetsGatewayClient:
                 await raise_exception_from_response(resp)
         pass
 
-    async def get_raw(self, kind: str, raw_id: str, **kwargs):
+    async def get_raw(self, kind: str, raw_id: str, content_type=None, **kwargs):
 
         url = f"{self.url_base}/raw/{kind}/{raw_id}"
 
         async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
             async with await session.get(url=url,  **kwargs) as resp:
                 if resp.status == 200:
+                    if content_type == "application/json":
+                        return await resp.json()
+                    if content_type == "text/html":
+                        return await resp.text()
                     return await resp.read()
                 await raise_exception_from_response(resp)
 
