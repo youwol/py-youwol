@@ -4,8 +4,9 @@ from dataclasses import dataclass
 
 from youwol.configuration.youwol_configuration import yw_config, YouwolConfiguration
 from youwol_utils import (
-    LocalDocDbClient, LocalStorageClient, CdnClient
+    LocalDocDbClient, LocalStorageClient
     )
+from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from .models import PROJECTS_TABLE, COMPONENTS_TABLE
 
 from youwol.configurations import configuration as py_yw_config
@@ -20,7 +21,7 @@ class Configuration:
     storage: LocalStorageClient
     doc_db: LocalDocDbClient
     doc_db_component: LocalDocDbClient
-    cdn_client: CdnClient
+    assets_gtw_client: AssetsGatewayClient
 
     namespace: str = "flux"
 
@@ -66,7 +67,7 @@ async def get_configuration(config_yw=None):
         table_body=COMPONENTS_TABLE
         )
 
-    cdn_client = CdnClient(url_base=f"http://localhost:{py_yw_config.http_port}/api/cdn-backend")
+    assets_gtw_client = AssetsGatewayClient(url_base=f"http://localhost:{py_yw_config.http_port}/api/assets-gateway")
 
     config_yw_flux = Configuration(
         yw_config=config_yw,
@@ -75,6 +76,6 @@ async def get_configuration(config_yw=None):
         storage=storage,
         doc_db=doc_db,
         doc_db_component=doc_db_component,
-        cdn_client=cdn_client
+        assets_gtw_client=assets_gtw_client
         )
     return config_yw_flux

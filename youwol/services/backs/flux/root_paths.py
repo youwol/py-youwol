@@ -216,7 +216,7 @@ async def post_metadata(
         configuration: Configuration = Depends(get_configuration)):
 
     headers = generate_headers_downstream(request.headers)
-    doc_db, storage, cdn = configuration.doc_db, configuration.storage, configuration.cdn_client
+    doc_db, storage, assets_gtw = configuration.doc_db, configuration.storage, configuration.assets_gtw_client
     owner = configuration.default_owner
 
     req, workflow, description = await asyncio.gather(
@@ -237,7 +237,7 @@ async def post_metadata(
         "libraries": {name: version for name, version in libraries.items() if name in used_packages},
         "using": {name: version for name, version in libraries.items()}
         }
-    loading_graph = await configuration.cdn_client.query_loading_graph(body=body, headers=headers)
+    loading_graph = await assets_gtw.cdn_loading_graph(body=body, headers=headers)
     flux_packs = [p['name'] for p in loading_graph['lock'] if p['type'] == 'flux-pack']
     log_info("Flux-Backend@Post metadata: got loading graph", loading_graph=loading_graph)
 
@@ -340,19 +340,6 @@ async def delete_component(
                          storage.delete_group(prefix=base_path, owner=owner, headers=headers))
 
     return {"status": "deleted", "componentId": component_id}
-
-
-@router.get("/flux-packs", summary="list of available package")
-async def list_packages(
-        request: Request,
-        namespace=None,
-        configuration: Configuration = Depends(get_configuration)
-        ):
-
-    headers = generate_headers_downstream(request.headers)
-    packages = await configuration.cdn_client.query_packs(namespace=namespace, headers=headers)
-
-    return packages
 
 
 def group_scope_to_id(scope: str) -> str:
