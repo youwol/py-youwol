@@ -269,6 +269,9 @@ async def update_asset(
         body: UpdateAssetBody,
         configuration: Configuration = Depends(get_configuration)):
 
+    # The next line provide a way to re-use the body of the request latter on in a middleware if needed
+    request.state.body = body
+
     headers = generate_headers_downstream(request.headers)
     assets_client, treedb_client = configuration.assets_client, configuration.treedb_client
     assets_stores = configuration.assets_stores()
