@@ -7,6 +7,7 @@ from asset_auto_download import get_thread_asset_auto_download
 from youwol.middlewares.browser_caching_middleware import BrowserCachingMiddleware
 from youwol.middlewares.dynamic_routing_middleware import DynamicRoutingMiddleware
 from youwol.middlewares.auth_middleware import AuthMiddleware
+import youwol.middlewares.dynamic_routing.workspace_explorer_rules as workspace_explorer
 import youwol.middlewares.dynamic_routing.live_serving_cdn_rules as live_serving_cdn
 import youwol.middlewares.dynamic_routing.live_serving_backends_rules as live_serving_backend
 import youwol.middlewares.dynamic_routing.loading_graph_rules as loading_graph
@@ -39,6 +40,9 @@ download_queue, download_event_loop = get_thread_asset_auto_download(on_update_a
 app.add_middleware(
     DynamicRoutingMiddleware,
     dynamic_dispatch_rules=[
+        workspace_explorer.GetChildrenDispatch(),
+        workspace_explorer.GetPermissionsDispatch(),
+        workspace_explorer.GetItemDispatch(),
         loading_graph.GetLoadingGraphDispatch(),
         missing_asset.GetRawDispatch(),
         missing_asset.GetMetadataDispatch(),
