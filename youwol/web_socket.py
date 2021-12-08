@@ -7,7 +7,7 @@ from starlette.websockets import WebSocket
 @dataclass(frozen=False)
 class WebSocketsCache:
 
-    regularChannel: WebSocket
+    userChannel: WebSocket
 
     backends: WebSocket
     modules: WebSocket
