@@ -96,11 +96,11 @@ async def home():
     return RedirectResponse(url=f'/applications/dashboard-developer/latest')
 
 
-@router.websocket("/ws")
+@app.websocket(configuration.base_path + "/ws")
 async def ws_endpoint(ws: WebSocket):
 
     await ws.accept()
-    WebSocketsCache.regularChannel = ws
+    WebSocketsCache.userChannel = ws
     await ws.send_json({})
     await start_web_socket(ws)
 
