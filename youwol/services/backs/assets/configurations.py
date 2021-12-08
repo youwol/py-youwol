@@ -2,7 +2,7 @@ from typing import Callable
 
 from dataclasses import dataclass
 
-from youwol.configuration.youwol_configuration import yw_config
+from youwol.configuration.youwol_configuration import yw_config, YouwolConfiguration
 from .models import ASSETS_TABLE, ACCESS_HISTORY, ACCESS_POLICY
 from youwol_utils import Storage, DocDb, LocalStorageClient, LocalDocDbInMemoryClient
 from youwol_utils.clients.docdb.local_docdb import LocalDocDbClient
@@ -14,6 +14,9 @@ logger.info("Setup assets-backend")
 
 @dataclass(frozen=True)
 class Configuration:
+
+    yw_config: YouwolConfiguration
+
     open_api_prefix: str
     base_path: str
     storage: Storage
@@ -35,14 +38,13 @@ class Configuration:
 config_yw_assets = None
 
 
-async def get_configuration():
-
+async def get_configuration(config_yw=None):
     global config_yw_assets
+    if not config_yw:
+        config_yw = await yw_config()
 
-    if config_yw_assets:
+    if config_yw_assets and config_yw_assets.yw_config == config_yw:
         return config_yw_assets
-
-    config_yw = await yw_config()
 
     storage = LocalStorageClient(root_path=config_yw.pathsBook.local_storage,
                                  bucket_name=Configuration.namespace)
@@ -62,6 +64,7 @@ async def get_configuration():
                                             table_body=ACCESS_POLICY
                                             )
     config_yw_assets = Configuration(
+        yw_config=config_yw,
         open_api_prefix='',
         base_path="/api/assets-backend",
         storage=storage,
