@@ -12,6 +12,7 @@ import youwol.routers.download.router_packages as download_packages
 import youwol.routers.download.router_flux_apps as download_flux_apps
 import youwol.routers.system.router as system
 import youwol.routers.local_cdn.router as local_cdn
+import youwol.routers.commands.router as commands
 import youwol.routers.custom_commands.router as custom_commands
 
 
@@ -40,5 +41,7 @@ router.include_router(download_packages.router, prefix=configuration.base_path+"
                       tags=["download packages"])
 router.include_router(download_flux_apps.router, prefix=configuration.base_path+"/download/flux-apps",
                       tags=["download flux apps"])
+router.include_router(commands.router, prefix=configuration.base_path+"/commands",
+                      tags=["commands"])
 router.include_router(custom_commands.router, prefix=configuration.base_path+"/custom-commands",
                       tags=["custom commands"])
