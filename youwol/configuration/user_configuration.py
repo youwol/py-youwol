@@ -172,3 +172,11 @@ class RemoteClients(NamedTuple):
         headers = {"Authorization": f"Bearer {auth_token}"}
         return TreeDbClient(url_base=f"https://{remote_host}/api/treedb-backend", headers=headers)
 
+    @staticmethod
+    async def get_flux_client(context: Context) -> FluxClient:
+        # <!> this method will be removed as FluxClient should not be reachable
+        remote_host = context.config.get_remote_info().host
+        auth_token = await context.config.get_auth_token(context=context)
+        headers = {"Authorization": f"Bearer {auth_token}"}
+        return FluxClient(url_base=f"https://{remote_host}/api/flux-backend", headers=headers)
+
