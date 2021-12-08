@@ -16,7 +16,7 @@ class BodyCommand(BaseModel):
     pass
 
 
-@router.post("/{command_name}", summary="upload a flux app")
+@router.post("/{command_name}", summary="execute a custom command")
 async def execute_command(
         request: Request,
         command_name: str,
