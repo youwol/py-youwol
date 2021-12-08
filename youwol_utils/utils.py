@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import itertools
 import json
 import os
@@ -253,3 +254,13 @@ def exception_message(error: Exception):
         return error.detail
 
     return str(error)
+
+
+def decode_id(asset_id) -> str:
+    b = str.encode(asset_id)
+    return base64.urlsafe_b64decode(b).decode()
+
+
+def encode_id(raw_id) -> str:
+    b = str.encode(raw_id)
+    return base64.urlsafe_b64encode(b).decode()
