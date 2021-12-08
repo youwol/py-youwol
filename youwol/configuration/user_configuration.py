@@ -12,6 +12,7 @@ from youwol_utils import CdnClient
 from youwol_utils.clients.assets.assets import AssetsClient
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from youwol_utils.clients.flux.flux import FluxClient
+from youwol_utils.clients.stories.stories import StoriesClient
 from youwol_utils.clients.treedb.treedb import TreeDbClient
 
 TPath = Union[str, Path]
@@ -180,3 +181,10 @@ class RemoteClients(NamedTuple):
         headers = {"Authorization": f"Bearer {auth_token}"}
         return FluxClient(url_base=f"https://{remote_host}/api/flux-backend", headers=headers)
 
+    @staticmethod
+    async def get_stories_client(context: Context) -> StoriesClient:
+        # <!> this method will be removed as StoriesClient should not be reachable
+        remote_host = context.config.get_remote_info().host
+        auth_token = await context.config.get_auth_token(context=context)
+        headers = {"Authorization": f"Bearer {auth_token}"}
+        return StoriesClient(url_base=f"https://{remote_host}/api/stories-backend", headers=headers)
