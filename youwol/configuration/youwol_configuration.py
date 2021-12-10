@@ -6,10 +6,11 @@ import sys
 import traceback
 import pprint
 from pathlib import Path
-from typing import List, Dict, Any, Union, NamedTuple, Optional
+from typing import List, Dict, Any, Union, Optional
 
-from pydantic import ValidationError
+from pydantic import ValidationError, BaseModel
 
+from configuration.clients import LocalClients
 from services.backs.assets_gateway.models import DefaultDriveResponse
 from youwol.web_socket import WebSocketsCache
 
@@ -28,7 +29,7 @@ from youwol.configuration.configuration_validation import (
     CheckValidConfigurationFunction, CheckSystemFolderWritable, CheckDatabasesFolderHealthy, CheckSecretPathExist,
     CheckSecretHealthy
     )
-from youwol.configuration.models_base import ErrorResponse, format_unknown_error, ConfigParameters
+from youwol.configuration.models_base import ErrorResponse, format_unknown_error, ConfigParameters, Project, Pipeline
 from youwol.configuration.paths import PathsBook
 from youwol.configuration.user_configuration import (
     UserConfiguration, General,
@@ -62,6 +63,7 @@ class YouwolConfiguration(BaseModel):
 
     pathsBook: PathsBook
 
+    projects: List[Project]
 
     configurationParameters: ConfigParameters = ConfigParameters(parameters={})
 
@@ -514,6 +516,20 @@ async def safe_load(
         general=user_config.general,
         context=context)
 
+    projects = []
+    for path in user_config.targets:
+        scope = {}
+        source = path.read_text()
+        exec(source, scope)
+        pipeline: Pipeline = scope.get('pipeline')(user_config)
+        project = Project(
+            name=pipeline.projectName(path.parent),
+            version=pipeline.projectVersion(path.parent),
+            pipeline=pipeline,
+            path=path.parent
+            )
+        projects.append(project)
+
     return YouwolConfiguration(
             http_port=get_main_arguments().port,
             userEmail=user_email,
@@ -521,4 +537,5 @@ async def safe_load(
             userConfig=user_config,
             configurationParameters=parameters,
             pathsBook=paths_book,
+            projects=projects
         ), get_status(validated=True)

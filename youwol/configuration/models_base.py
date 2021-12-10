@@ -156,10 +156,55 @@ class StepEnum(Enum):
     SERVE = 'serve'
 
 
+class Artifact(BaseModel):
+    id: str = ""
+    get: Callable[[], Union[Any, Awaitable[Any]]]
+
+
+class PipelineStepStatus(Enum):
+    OK = "OK"
+    KO = "KO"
+    outdated = "outdated"
+    none = "none"
+
+
+class PipelineStep(BaseModel):
+
+    id: str = ""
+    artifacts: List[Any] = []
+    requireArtifacts = []
+    run: Any = None
+    status: Callable[['Project'], PipelineStepStatus] = None
+
+    def execute(self):
+        # prepare run ... zip?
+        # fingerprint of source
+        # run
+        # post run (copy artifacts, etc + associate fingerprint)
+        pass
+
+
 class Pipeline(BaseModel):
 
+    id: str
+    language: str = None
+    compiler: str = None
+    output: str = None
+    description: str = ""
     skeleton: Union[Skeleton, Callable[[YouwolConfiguration], Skeleton]] = None
+    steps: List[PipelineStep]
+    flow: List[str]
     extends: str = None
+    dependencies: Callable[['Project'], List[str]] = None
+    projectName: Callable[[Path], str]
+    projectVersion: Callable[[Path], str]
+
+
+class Project(BaseModel):
+    pipeline: Pipeline
+    path: Path
+    name: str
+    version: str
 
 
 class Asset(BaseModel):

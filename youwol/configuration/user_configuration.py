@@ -1,10 +1,11 @@
 import json
 from pathlib import Path
-from typing import List, Dict, NamedTuple, Union, Callable, Awaitable, Mapping, Any
+from typing import List, Dict, NamedTuple, Union, Callable, Awaitable, Mapping, Any, Iterable
 from fastapi import HTTPException
 import aiohttp
 from pydantic import BaseModel
 
+from .models_base import Pipeline
 
 TPath = Union[str, Path]
 
@@ -123,7 +124,12 @@ class CDN(BaseModel):
 
 class UserConfiguration(BaseModel):
     general: General
+    targets: Iterable[Union[str, Path]] = []
     cdn: CDN = CDN()
     customCommands: List[Command] = []
+    customPipelines: List[Pipeline] = []
     events: Events = None
 
+    def get_custom_pipeline(self, pipeline_id: str):
+        pipeline = next(pipeline for pipeline in self.customPipelines if pipeline.id == pipeline_id)
+        return pipeline
