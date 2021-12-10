@@ -66,7 +66,7 @@ app.add_middleware(
         missing_asset.GetRawDispatch(),
         missing_asset.GetMetadataDispatch(),
         missing_asset.PostMetadataDispatch(),
-        live_serving_backend.LiveServingBackendDispatch(),
+        # live_serving_backend.LiveServingBackendDispatch(),
         ]
     )
 
