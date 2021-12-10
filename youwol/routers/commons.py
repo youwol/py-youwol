@@ -85,7 +85,7 @@ async def ensure_drive(drive: DriveResponse,  assets_gateway_client: AssetsGatew
             return
         raise e
 
-
+"""
 def local_path(tree_id: str, config):
     local_docdb = config.pathsBook.local_docdb
     items_treedb = parse_json(local_docdb / "tree_db" / "items" / "data.json")
@@ -112,6 +112,13 @@ def local_path(tree_id: str, config):
         drive=Drive(name=tree_drive['name'], driveId=tree_drive['drive_id'], groupId=tree_drive['group_id']),
         folders=folders
         )
+"""
+
+
+async def local_path(tree_item: dict, context: Context):
+
+    treedb = LocalClients.get_treedb_client(context)
+    return await treedb.get_path(item_id=tree_item['treeId'])
 
 
 async def remote_path(tree_item: dict, context: Context):
