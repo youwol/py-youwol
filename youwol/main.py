@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import FastAPI, APIRouter, Depends, WebSocket
 import uvicorn
 from starlette.responses import RedirectResponse
@@ -7,6 +9,7 @@ from auto_download.auto_download_thread import AssetDownloadThread
 from auto_download.data import DownloadDataTask
 from auto_download.flux_project import DownloadFluxProjectTask
 from auto_download.package import DownloadPackageTask
+from youwol.configuration.configuration_validation import ConfigurationLoadingException
 from context import Context
 from youwol.middlewares.browser_caching_middleware import BrowserCachingMiddleware
 from youwol.middlewares.dynamic_routing_middleware import DynamicRoutingMiddleware
@@ -55,6 +58,7 @@ Context.download_thread = download_thread
 app.add_middleware(
     DynamicRoutingMiddleware,
     dynamic_dispatch_rules=[
+        live_serving_cdn.LiveServingCdnDispatch(),
         workspace_explorer.GetChildrenDispatch(),
         workspace_explorer.GetPermissionsDispatch(),
         workspace_explorer.GetItemDispatch(),
@@ -63,7 +67,6 @@ app.add_middleware(
         missing_asset.GetMetadataDispatch(),
         missing_asset.PostMetadataDispatch(),
         live_serving_backend.LiveServingBackendDispatch(),
-        live_serving_cdn.LiveServingCdnDispatch()
         ]
     )
 
