@@ -36,9 +36,9 @@ from youwol.configuration.user_configuration import (
     )
 
 
-class DeadlinedCache(NamedTuple):
+class DeadlinedCache(BaseModel):
 
-    value: any
+    value: Any
     deadline: float
     dependencies: Dict[str, str]
 
@@ -51,7 +51,7 @@ class DeadlinedCache(NamedTuple):
         return margin > 0
 
 
-class YouwolConfiguration(NamedTuple):
+class YouwolConfiguration(BaseModel):
 
     http_port: int
 
