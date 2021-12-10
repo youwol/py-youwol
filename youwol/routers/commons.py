@@ -4,9 +4,6 @@ from pydantic import BaseModel
 
 from configuration.clients import RemoteClients, LocalClients
 from services.backs.treedb.models import PathResponse, DriveResponse
-from youwol.configuration import parse_json
-from youwol.routers.upload.models import PathResp, Folder, Drive
-from youwol_utils import to_group_scope
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from fastapi import HTTPException
 from youwol.configuration.models_base import SkeletonParameter, Pipeline

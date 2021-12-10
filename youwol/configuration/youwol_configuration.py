@@ -12,11 +12,6 @@ from pydantic import ValidationError
 
 from services.backs.assets_gateway.models import DefaultDriveResponse
 from youwol.web_socket import WebSocketsCache
-from youwol_utils import CdnClient, StorageClient, DocDbClient, TableBody, SecondaryIndex
-from youwol_utils.clients.assets.assets import AssetsClient
-from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
-from youwol_utils.clients.flux.flux import FluxClient
-from youwol_utils.clients.treedb.treedb import TreeDbClient
 
 from youwol.errors import HTTPResponseException
 from youwol.main_args import get_main_arguments
@@ -24,7 +19,7 @@ from youwol.utils_paths import parse_json
 from youwol.models import ActionStep
 
 from youwol.configuration.user_configuration import (UserInfo, get_public_user_auth_token)
-from youwol.configurations import get_full_local_config, configuration as py_yw_config
+from youwol.configurations import get_full_local_config
 from youwol.context import Context
 
 from youwol.configuration.configuration_validation import (
@@ -36,7 +31,7 @@ from youwol.configuration.configuration_validation import (
 from youwol.configuration.models_base import ErrorResponse, format_unknown_error, ConfigParameters
 from youwol.configuration.paths import PathsBook
 from youwol.configuration.user_configuration import (
-    UserConfiguration, LocalClients, General,
+    UserConfiguration, General,
     RemoteGateway,
     )
 
@@ -502,13 +497,6 @@ async def safe_load(
         open(paths_book.secrets, "w").write(json.dumps(base_secrets))
 
     if not paths_book.packages_cache_path.exists():
-
-    base_path = f"http://localhost:{py_yw_config.http_port}/api"
-    assets_client = AssetsClient(url_base=f"{base_path}/assets-backend")
-    treedb_client = TreeDbClient(url_base=f"{base_path}/treedb-backend")
-    flux_client = FluxClient(url_base=f"{base_path}/flux-backend")
-    cdn_client = CdnClient(url_base=f"{base_path}/cdn-backend")
-    assets_gateway_client = AssetsGatewayClient(url_base=f"{base_path}/assets-gateway")
         open(paths_book.secrets, "w").write(json.dumps({}))
 
     user_email, selected_remote = await login(
@@ -524,12 +512,4 @@ async def safe_load(
             userConfig=user_config,
             configurationParameters=parameters,
             pathsBook=paths_book,
-            localClients=LocalClients(
-                assets_client=assets_client,
-                treedb_client=treedb_client,
-                flux_client=flux_client,
-                cdn_client=cdn_client,
-                assets_gateway_client=assets_gateway_client
-                ),
-            cache={}
         ), get_status(validated=True)

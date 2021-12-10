@@ -5,9 +5,6 @@ from fastapi import HTTPException
 import aiohttp
 from pydantic import BaseModel
 
-from youwol.configuration.models_back import BackEnds
-from youwol.configuration.models_front import FrontEnds
-from youwol.configuration.models_package import Packages
 
 TPath = Union[str, Path]
 
@@ -105,7 +102,6 @@ class General(BaseModel):
 
     openid_host: str
     localGateway: LocalGateway = LocalGateway()
-    resources: Dict[str, Url] = {}
 
     def get_users_list(self) -> List[str]:
         users = list(parse_json(self.usersInfo)['users'].keys())
@@ -127,14 +123,7 @@ class CDN(BaseModel):
 
 class UserConfiguration(BaseModel):
     general: General
-    packages: Packages = Packages()
-    frontends: FrontEnds = FrontEnds()
-    backends: BackEnds = BackEnds()
     cdn: CDN = CDN()
     customCommands: List[Command] = []
     events: Events = None
 
-    class Config:
-        json_encoders = {
-            Path: lambda v: str(v)
-            }
