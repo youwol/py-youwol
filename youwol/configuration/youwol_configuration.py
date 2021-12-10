@@ -519,14 +519,14 @@ async def safe_load(
     projects = []
     for path in user_config.targets:
         scope = {}
-        source = path.read_text()
+        source = (path / '.yw_pipeline' / 'yw_pipeline.py').read_text()
         exec(source, scope)
         pipeline: Pipeline = scope.get('pipeline')(user_config)
         project = Project(
-            name=pipeline.projectName(path.parent),
-            version=pipeline.projectVersion(path.parent),
+            name=pipeline.projectName(path),
+            version=pipeline.projectVersion(path),
             pipeline=pipeline,
-            path=path.parent
+            path=path
             )
         projects.append(project)
 
