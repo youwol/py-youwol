@@ -3,7 +3,7 @@ from typing import List
 from pydantic import BaseModel
 
 from youwol.configuration.models_base import Check, ErrorResponse
-from youwol.errors import HTTPResponseException
+from colorama import Fore, Style
 
 
 class CheckConfPath(Check):
@@ -49,18 +49,18 @@ class ConfigurationLoadingStatus(BaseModel):
     checks: List[Check]
 
 
-class ConfigurationLoadingException(HTTPResponseException):
+class ConfigurationLoadingException(Exception):
 
     def __init__(self, status: ConfigurationLoadingStatus):
 
-        check = next(check for check in status.checks if isinstance(check.status, ErrorResponse))
-        super().__init__(
-            status_code=500,
-            title=check.name,
-            descriptions=[
-                "Loading and parsing the configuration file failed.",
-                f"Path of the config file: {status.path}"
-                ],
-            hints=check.status.hints,
-            footer="Try reloading the page after the issue resolution")
+        self.failed_check = next(check for check in status.checks if isinstance(check.status, ErrorResponse))
         self.status = status
+
+    def __str__(self):
+        return f"""{Fore.LIGHTRED_EX}Loading and parsing the configuration file failed{Style.RESET_ALL}.
+        The configuration file is located at {self.status.path}
+        The first failing step is: 
+            {self.failed_check.name}: {Fore.LIGHTYELLOW_EX}{self.failed_check.status.reason}{Style.RESET_ALL}
+            hints: {'/n'.join([hint for hint in self.failed_check.status.hints])}
+        """
+
