@@ -105,6 +105,15 @@ async def ws_endpoint(ws: WebSocket):
     await start_web_socket(ws)
 
 
+@router.get("/configuration",
+            response_model=YouwolConfiguration,
+            summary="configuration")
+async def configuration(
+        config: YouwolConfiguration = Depends(yw_config)
+        ):
+    return config
+
+
 @router.get("/file-content",
             summary="text content of the configuration file")
 async def file_content(
