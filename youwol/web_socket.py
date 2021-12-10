@@ -7,8 +7,6 @@ from starlette.websockets import WebSocket
 @dataclass(frozen=False)
 class WebSocketsCache:
 
-    userChannel: WebSocket
-
     backends: WebSocket
     modules: WebSocket
     frontends: WebSocket
@@ -21,6 +19,7 @@ class WebSocketsCache:
     download_flux_apps: WebSocket
     local_cdn: WebSocket
 
+    userChannel: Union[WebSocket, None] = None
     system: Union[WebSocket, None] = None
 
     environment: Union[WebSocket, None] = None

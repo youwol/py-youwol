@@ -1,7 +1,10 @@
 import asyncio
 import itertools
+from typing import List, Optional
 
 from fastapi import APIRouter, WebSocket, Depends
+from pydantic import BaseModel
+
 from aiohttp.web import HTTPException
 from aiohttp.client_exceptions import ClientConnectorError, ContentTypeError
 from starlette.requests import Request
@@ -14,13 +17,13 @@ import youwol.services.backs.assets.configurations as assets
 import youwol.services.backs.assets_gateway.configurations as assets_gtw
 from configuration.clients import RemoteClients
 
-from youwol.configuration.user_configuration import get_public_user_auth_token
+from youwol.configuration.user_configuration import get_public_user_auth_token, UserInfo
 from youwol.configuration import ErrorResponse
 from youwol.configuration.youwol_configuration import YouwolConfiguration
 from youwol.configuration.youwol_configuration import yw_config, YouwolConfigurationFactory, ConfigurationLoadingStatus
 from youwol.context import Context, ActionStep
 from youwol.routers.environment.models import (
-    StatusResponse, SwitchConfigurationBody, SyncUserBody, LoginBody,
+    SwitchConfigurationBody, SyncUserBody, LoginBody,
     PostParametersBody, RemoteGatewayInfo, SelectRemoteBody, SyncComponentBody, ComponentsUpdate
     )
 from youwol.utils_low_level import to_json, start_web_socket
@@ -30,6 +33,14 @@ from youwol_utils import retrieve_user_info
 
 router = APIRouter()
 flatten = itertools.chain.from_iterable
+
+
+class StatusResponse(BaseModel):
+    configuration: YouwolConfiguration
+    users: List[str]
+    userInfo: UserInfo
+    remoteGatewayInfo: Optional[RemoteGatewayInfo]
+    remotesInfo: List[RemoteGatewayInfo]
 
 
 async def connect_to_remote(config: YouwolConfiguration, context: Context) -> bool:
@@ -113,7 +124,7 @@ async def status(
         config: YouwolConfiguration = Depends(yw_config)
         ):
 
-    context = Context(config=config, request=request, web_socket=WebSocketsCache.environment)
+    context = Context(config=config, request=request, web_socket=WebSocketsCache.userChannel)
     connected = await connect_to_remote(config=config, context=context)
 
     remote_gateway_info = config.get_remote_info()
@@ -123,25 +134,18 @@ async def status(
                                                 connected=connected)
     remotes_info = parse_json(config.userConfig.general.remotesInfo)['remotes'].values()
     resp = StatusResponse(
-        configurationPath=list(config.pathsBook.config_path.parts),
-        configurationParameters=config.configurationParameters,
         users=config.userConfig.general.get_users_list(),
         userInfo=config.get_user_info(),
-        configuration=config.userConfig,
+        configuration=config,
         remoteGatewayInfo=remote_gateway_info,
         remotesInfo=list(remotes_info)
         )
 
     dict_resp = to_json(resp)
-
-    WebSocketsCache.environment and await WebSocketsCache.environment.send_json({
+    await WebSocketsCache.userChannel.send_json({
         **{"type": "Environment"},
         **dict_resp
         })
-    WebSocketsCache.environment and await WebSocketsCache.environment.send_json({
-        "type": "ConfigurationUpdated"
-        })
-    await context.info(step=ActionStep.STATUS, content="Current configuration", json=dict_resp)
 
     return resp
 
