@@ -1,22 +1,22 @@
 from pathlib import Path
-from typing import NamedTuple, Union, Dict
+from typing import Union
+from pydantic import BaseModel
 import youwol
 
 
-class PathsBook(NamedTuple):
+class PathsBook(BaseModel):
 
-    config_path: Path
-    system_path: Path
-    data_path: Path
+    config: Path
+    system: Path
+    databases: Path
     usersInfo: Path
     remotesInfo: Path
-    secret_path: Union[Path, None]
-    pinnedPaths: Dict[str, Path] = {}
+    secrets: Union[Path, None]
     youwol: Path = Path(youwol.__file__).parent
 
     @property
     def local_docdb(self) -> Path:
-        return self.data_path / 'docdb'
+        return self.databases / 'docdb'
 
     @property
     def local_cdn_docdb(self) -> Path:
@@ -36,7 +36,7 @@ class PathsBook(NamedTuple):
 
     @property
     def local_storage(self) -> Path:
-        return self.data_path / 'storage'
+        return self.databases / 'storage'
 
     @property
     def local_cdn_storage(self) -> Path:
@@ -48,7 +48,7 @@ class PathsBook(NamedTuple):
 
     @property
     def js_modules_store_path(self) -> Path:
-        return self.system_path / "node_modules"
+        return self.system / "node_modules"
 
     def cdn_zip_path(self, name: str, version: str) -> Path:
         return self.store_node_module(name) / (version+'.zip')

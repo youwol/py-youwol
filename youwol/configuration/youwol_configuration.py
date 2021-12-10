@@ -177,7 +177,7 @@ class YouwolConfigurationFactory:
         cached_params = cached.configurationParameters.get_values() if cached.configurationParameters else {}
         params_values = {**cached_params, **params_values}
         conf, status = await safe_load(
-            path=cached.pathsBook.config_path,
+            path=cached.pathsBook.config,
             params_values=params_values,
             user_email=cached.userEmail,
             selected_remote=cached.selectedRemote
@@ -199,7 +199,7 @@ class YouwolConfigurationFactory:
             userEmail=email,
             selectedRemote=remote_name,
             pathsBook=conf.pathsBook,
-            localClients=conf.localClients,
+            projects=conf.projects,
             configurationParameters=conf.configurationParameters,
             http_port=get_main_arguments().port,
             cache={}
@@ -231,7 +231,7 @@ class YouwolConfigurationFactory:
             userEmail=conf.userEmail,
             selectedRemote=conf.selectedRemote,
             pathsBook=conf.pathsBook,
-            localClients=conf.localClients,
+            projects=conf.projects,
             configurationParameters=conf.configurationParameters,
             http_port=get_main_arguments().port,
             cache={}
@@ -426,7 +426,8 @@ async def safe_load(
 
     except ValidationError as err:
         check_valid_conf_fct.status = ErrorResponse(
-            reason=f"Parsing the 'configuration' object to UserConfiguration failed.",
+            reason=f"Parsing the object returned by the function 'async def configuration(...)' " +
+                   "to UserConfiguration failed.",
             hints=[f"{str(err)}"])
         return None, get_status()
     except TypeError as err:
@@ -455,30 +456,30 @@ async def safe_load(
 
     secrets_file = user_config.general.secretsFile
     paths_book = PathsBook(
-        config_path=path,
-        data_path=Path(user_config.general.databasesFolder),
-        system_path=Path(user_config.general.systemFolder),
-        secret_path=Path(secrets_file) if secrets_file else None,
+        config=path,
+        databases=Path(user_config.general.databasesFolder),
+        system=Path(user_config.general.systemFolder),
+        secrets=Path(secrets_file) if secrets_file else None,
         usersInfo=Path(user_config.general.usersInfo),
         remotesInfo=Path(user_config.general.remotesInfo)
         )
 
-    if not os.access(paths_book.system_path.parent, os.W_OK):
+    if not os.access(paths_book.system.parent, os.W_OK):
         check_system_folder_writable.status = ErrorResponse(
-            reason=f"Can not write in folder {str(paths_book.system_path.parent)}",
-            hints=[f"Ensure you have permission to write in {paths_book.system_path}."]
+            reason=f"Can not write in folder {str(paths_book.system.parent)}",
+            hints=[f"Ensure you have permission to write in {paths_book.system}."]
             )
         return None, get_status()
 
-    if not paths_book.system_path.exists():
-        os.mkdir(paths_book.system_path)
+    if not paths_book.system.exists():
+        os.mkdir(paths_book.system)
 
     check_system_folder_writable.status = True
 
-    if not os.access(paths_book.system_path, os.W_OK):
+    if not os.access(paths_book.system, os.W_OK):
         check_system_folder_writable.status = ErrorResponse(
-            reason=f"Can not write in folder {str(paths_book.system_path)}",
-            hints=[f"Ensure you have permission to write in {paths_book.system_path}."]
+            reason=f"Can not write in folder {str(paths_book.system)}",
+            hints=[f"Ensure you have permission to write in {paths_book.system}."]
             )
         return None, get_status()
 
@@ -494,14 +495,13 @@ async def safe_load(
     if not paths_book.remotesInfo.exists():
         open(paths_book.remotesInfo, "w").write(json.dumps({"remotes": {}}))
 
-    if not paths_book.secret_path.exists():
+    if not paths_book.secrets.exists():
         base_secrets = {
             "identities": {}
             }
-        open(paths_book.secret_path, "w").write(json.dumps(base_secrets))
+        open(paths_book.secrets, "w").write(json.dumps(base_secrets))
 
     if not paths_book.packages_cache_path.exists():
-        open(paths_book.secret_path, "w").write(json.dumps({}))
 
     base_path = f"http://localhost:{py_yw_config.http_port}/api"
     assets_client = AssetsClient(url_base=f"{base_path}/assets-backend")
@@ -509,6 +509,7 @@ async def safe_load(
     flux_client = FluxClient(url_base=f"{base_path}/flux-backend")
     cdn_client = CdnClient(url_base=f"{base_path}/cdn-backend")
     assets_gateway_client = AssetsGatewayClient(url_base=f"{base_path}/assets-gateway")
+        open(paths_book.secrets, "w").write(json.dumps({}))
 
     user_email, selected_remote = await login(
         user_email=user_email,
