@@ -5,7 +5,7 @@ from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response, JSONResponse
 
-from configuration import RemoteClients
+from configuration.clients import RemoteClients, LocalClients
 from context import Context
 from .common import DispatchingRule
 from services.backs.assets_gateway.models import ChildrenResponse, ItemResponse, FolderResponse
@@ -34,7 +34,7 @@ class GetChildrenDispatch(DispatchingRule):
                     context: Context
                     ) -> Response:
 
-        local_gtw = context.config.localClients.assets_gateway_client
+        local_gtw = LocalClients.get_assets_gateway_client(context=context)
         remote_gtw = await RemoteClients.get_assets_gateway_client(context=context)
         folder_id = request.url.path.split('/api/assets-gateway/tree/folders/')[1].split('/')[0]
 
@@ -91,7 +91,7 @@ class GetPermissionsDispatch(DispatchingRule):
                     context: Context
                     ) -> Response:
 
-        local_gtw = context.config.localClients.assets_gateway_client
+        local_gtw = LocalClients.get_assets_gateway_client(context=context)
         remote_gtw = await RemoteClients.get_assets_gateway_client(context=context)
         item_id = request.url.path.split('/api/assets-gateway/tree/')[1].split('/')[0]
 
@@ -119,7 +119,7 @@ class GetItemDispatch(DispatchingRule):
                     context: Context
                     ) -> Response:
 
-        local_gtw = context.config.localClients.assets_gateway_client
+        local_gtw = LocalClients.get_assets_gateway_client(context=context)
         remote_gtw = await RemoteClients.get_assets_gateway_client(context=context)
         item_id = request.url.path.split('/api/assets-gateway/tree/items/')[1]
 

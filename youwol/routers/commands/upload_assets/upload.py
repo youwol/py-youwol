@@ -6,7 +6,8 @@ from aiohttp import FormData, ClientSession
 from starlette.requests import Request
 from fastapi import HTTPException, WebSocket
 
-from configuration import YouwolConfiguration, RemoteClients
+from configuration import YouwolConfiguration
+from configuration.clients import RemoteClients
 from configurations import configuration
 from routers.commands.upload_assets.data import UploadDataTask
 from routers.commands.upload_assets.flux_project import UploadFluxProjectTask

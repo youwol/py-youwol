@@ -5,6 +5,7 @@ from threading import Thread
 from typing import Dict, Any
 
 from auto_download.models import DownloadLogger
+from configuration.clients import RemoteClients
 from youwol_utils import YouWolException
 
 
@@ -29,7 +30,7 @@ async def process_download_asset(
 
         raw_id = url.split('/api/assets-gateway/raw/')[1].split('/')[1]
         asset_id = encode_id(raw_id)
-        remote_gtw_client = await context.config.get_assets_gateway_client(context=context)
+        remote_gtw_client = await RemoteClients.get_assets_gateway_client(context=context)
         try:
             asset = await remote_gtw_client.get_asset_metadata(asset_id=asset_id, headers=headers)
             raw_id = decode_id(asset_id)

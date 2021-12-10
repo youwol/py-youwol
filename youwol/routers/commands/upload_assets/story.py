@@ -3,7 +3,8 @@ import tempfile
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
-from configuration import RemoteClients, YouwolConfiguration
+from configuration import YouwolConfiguration
+from configuration.clients import RemoteClients
 from routers.commands.upload_assets.models import UploadTask
 
 from utils_paths import parse_json, write_json

@@ -67,7 +67,6 @@ class YouwolConfiguration(NamedTuple):
 
     pathsBook: PathsBook
 
-    localClients: LocalClients
 
     configurationParameters: ConfigParameters = ConfigParameters(parameters={})
 
@@ -127,52 +126,11 @@ class YouwolConfiguration(NamedTuple):
                            json={"host": remote.host, "access_token": access_token})
         return access_token
 
-    async def get_assets_gateway_client(self, context: Context) -> AssetsGatewayClient:
-
-        remote_host = self.get_remote_info().host
-        auth_token = await self.get_auth_token(context=context)
-        headers = {"Authorization": f"Bearer {auth_token}"}
-        return AssetsGatewayClient(url_base=f"https://{remote_host}/api/assets-gateway", headers=headers)
-
-    async def get_flux_client(self, context: Context) -> FluxClient:
-
-        remote_host = self.get_remote_info().host
-        auth_token = await self.get_auth_token(context=context)
-        headers = {"Authorization": f"Bearer {auth_token}"}
-        return FluxClient(url_base=f"https://{remote_host}/api/flux-backend", headers=headers)
-
-    async def get_storage_client(self, bucket_name: str, context: Context) -> StorageClient:
-
-        remote_host = self.get_remote_info().host
-        auth_token = await self.get_auth_token(context=context)
-        headers = {"Authorization": f"Bearer {auth_token}"}
-        return StorageClient(
-            url_base=f"https://{remote_host}/api/storage",
-            bucket_name=bucket_name,
-            headers=headers
-            )
-
-    async def get_docdb_client(self, keyspace_name: str, table_body: TableBody, secondary_indexes: List[SecondaryIndex],
-                               context: Context) -> DocDbClient:
-
-        remote_host = self.get_remote_info().host
-        auth_token = await self.get_auth_token(context=context)
-        headers = {"Authorization": f"Bearer {auth_token}"}
-        return DocDbClient(
-            url_base=f"https://{remote_host}/api/docdb",
-            table_body=table_body,
-            secondary_indexes=secondary_indexes,
-            keyspace_name=keyspace_name,
-            replication_factor=2,
-            headers=headers
-            )
-
-    async def get_default_drive(self) -> DefaultDriveResponse:
+    async def get_default_drive(self, context: Context) -> DefaultDriveResponse:
 
         if self.private_cache.get("default-drive"):
             return self.private_cache.get("default-drive")
-
-        default_drive = await self.localClients.assets_gateway_client.get_default_user_drive()
+        default_drive = await LocalClients.get_assets_gateway_client(context).get_default_user_drive()
         self.private_cache["default-drive"] = DefaultDriveResponse(**default_drive)
         return DefaultDriveResponse(**default_drive)
 

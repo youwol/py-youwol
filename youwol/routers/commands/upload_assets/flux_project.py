@@ -1,7 +1,7 @@
 import json
 
 from dataclasses import dataclass
-from configuration import RemoteClients
+from configuration.clients import RemoteClients
 from routers.commands.upload_assets.models import UploadTask
 
 from youwol_utils import JSON

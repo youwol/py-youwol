@@ -1,7 +1,7 @@
 import asyncio
 from dataclasses import dataclass
 
-from configuration import RemoteClients
+from configuration.clients import RemoteClients
 from aiohttp import FormData
 
 from routers.commands.upload_assets.models import UploadTask

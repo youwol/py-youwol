@@ -5,6 +5,7 @@ from auto_download.common import (
     create_asset_local
     )
 from auto_download.models import DownloadTask
+from configuration.clients import LocalClients, RemoteClients
 
 from youwol_utils.clients.flux.flux import FluxClient
 
@@ -17,7 +18,7 @@ class DownloadFluxProjectTask(DownloadTask):
 
     async def is_local_up_to_date(self):
 
-        local_flux: FluxClient = self.context.config.localClients.flux_client
+        local_flux: FluxClient = LocalClients.get_flux_client(context=self.context)
         try:
             await local_flux.get_project(project_id=self.raw_id)
             return True
@@ -33,12 +34,12 @@ class DownloadFluxProjectTask(DownloadTask):
             retrieved['projectId'] = self.raw_id
             return json.dumps(retrieved).encode()
 
-        remote_gtw = await self.context.config.get_assets_gateway_client(context=self.context)
-        default_owning_folder_id = (await self.context.config.get_default_drive()).downloadFolderId
+        remote_gtw = await RemoteClients.get_assets_gateway_client(context=self.context)
+        default_drive = await self.context.config.get_default_drive(context=self.context)
         await create_asset_local(
             asset_id=self.asset_id,
             kind='flux-project',
-            default_owning_folder_id=default_owning_folder_id,
+            default_owning_folder_id=default_drive.downloadFolderId,
             get_raw_data=lambda: remote_gtw.get_raw(kind='flux-project', raw_id=self.raw_id,
                                                     content_type="application/json"),
             to_post_raw_data=to_saved_project,

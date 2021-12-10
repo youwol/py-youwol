@@ -2,7 +2,7 @@ from typing import List, Dict, Any
 
 from pydantic import BaseModel
 
-from configuration import RemoteClients
+from configuration.clients import RemoteClients, LocalClients
 from services.backs.treedb.models import PathResponse, DriveResponse
 from youwol.configuration import parse_json
 from youwol.routers.upload.models import PathResp, Folder, Drive

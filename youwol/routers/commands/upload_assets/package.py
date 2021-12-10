@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from typing import List
 
-from configuration import RemoteClients, parse_json, YouwolConfiguration
+from configuration import parse_json, YouwolConfiguration
+from configuration.clients import RemoteClients
 from fastapi import HTTPException
 from pydantic import BaseModel
 

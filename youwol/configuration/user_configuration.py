@@ -8,12 +8,6 @@ from pydantic import BaseModel
 from youwol.configuration.models_back import BackEnds
 from youwol.configuration.models_front import FrontEnds
 from youwol.configuration.models_package import Packages
-from youwol_utils import CdnClient
-from youwol_utils.clients.assets.assets import AssetsClient
-from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
-from youwol_utils.clients.flux.flux import FluxClient
-from youwol_utils.clients.stories.stories import StoriesClient
-from youwol_utils.clients.treedb.treedb import TreeDbClient
 
 TPath = Union[str, Path]
 
@@ -144,47 +138,3 @@ class UserConfiguration(BaseModel):
         json_encoders = {
             Path: lambda v: str(v)
             }
-
-
-class LocalClients(NamedTuple):
-
-    treedb_client: TreeDbClient
-    assets_client: AssetsClient
-    flux_client: FluxClient
-    cdn_client: CdnClient
-    assets_gateway_client: AssetsGatewayClient
-
-
-class RemoteClients(NamedTuple):
-
-    @staticmethod
-    async def get_assets_gateway_client(context: Context) -> AssetsGatewayClient:
-
-        remote_host = context.config.get_remote_info().host
-        auth_token = await context.config.get_auth_token(context=context)
-        headers = {"Authorization": f"Bearer {auth_token}"}
-        return AssetsGatewayClient(url_base=f"https://{remote_host}/api/assets-gateway", headers=headers)
-
-    @staticmethod
-    async def get_treedb_client(context: Context) -> TreeDbClient:
-
-        remote_host = context.config.get_remote_info().host
-        auth_token = await context.config.get_auth_token(context=context)
-        headers = {"Authorization": f"Bearer {auth_token}"}
-        return TreeDbClient(url_base=f"https://{remote_host}/api/treedb-backend", headers=headers)
-
-    @staticmethod
-    async def get_flux_client(context: Context) -> FluxClient:
-        # <!> this method will be removed as FluxClient should not be reachable
-        remote_host = context.config.get_remote_info().host
-        auth_token = await context.config.get_auth_token(context=context)
-        headers = {"Authorization": f"Bearer {auth_token}"}
-        return FluxClient(url_base=f"https://{remote_host}/api/flux-backend", headers=headers)
-
-    @staticmethod
-    async def get_stories_client(context: Context) -> StoriesClient:
-        # <!> this method will be removed as StoriesClient should not be reachable
-        remote_host = context.config.get_remote_info().host
-        auth_token = await context.config.get_auth_token(context=context)
-        headers = {"Authorization": f"Bearer {auth_token}"}
-        return StoriesClient(url_base=f"https://{remote_host}/api/stories-backend", headers=headers)

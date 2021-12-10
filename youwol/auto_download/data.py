@@ -7,7 +7,7 @@ from auto_download.common import (
     create_asset_local,
     )
 from auto_download.models import DownloadLogger, DownloadTask
-from configuration import RemoteClients
+from configuration.clients import RemoteClients, LocalClients
 from context import Context
 from services.backs.treedb.models import ItemsResponse
 from youwol_utils.clients.assets.assets import AssetsClient
@@ -23,7 +23,7 @@ class DownloadDataTask(DownloadTask):
 
     async def is_local_up_to_date(self):
 
-        local_assets: AssetsClient = self.context.config.localClients.assets_client
+        local_assets: AssetsClient = LocalClients.get_assets_client(context=self.context)
         try:
             await local_assets.get(asset_id=self.asset_id)
             return True
@@ -35,13 +35,13 @@ class DownloadDataTask(DownloadTask):
 
     async def create_local_asset(self):
 
-        remote_gtw = await self.context.config.get_assets_gateway_client(context=self.context)
-        default_owning_folder_id = (await self.context.config.get_default_drive()).downloadFolderId
+        remote_gtw = await RemoteClients.get_assets_gateway_client(context=self.context)
+        default_drive = await self.context.config.get_default_drive(context=self.context)
 
         await create_asset_local(
             asset_id=self.asset_id,
             kind='data',
-            default_owning_folder_id=default_owning_folder_id,
+            default_owning_folder_id=default_drive.downloadFolderId,
             get_raw_data=lambda: remote_gtw.get_raw(kind='data', raw_id=self.raw_id),
             to_post_raw_data=lambda data: {"file": data, "rawId": self.raw_id},
             context=self.context

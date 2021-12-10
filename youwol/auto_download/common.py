@@ -4,7 +4,7 @@ from typing import List, Callable, Awaitable, TypeVar
 from fastapi import HTTPException
 
 
-from configuration import RemoteClients
+from configuration.clients import RemoteClients, LocalClients
 from context import Context
 from services.backs.treedb.models import PathResponse, ItemResponse, ItemsResponse, DriveResponse
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
@@ -104,8 +104,8 @@ async def create_asset_local(
         context: Context
         ):
 
-    local_treedb: TreeDbClient = context.config.localClients.treedb_client
-    local_gtw: AssetsGatewayClient = context.config.localClients.assets_gateway_client
+    local_treedb: TreeDbClient = LocalClients.get_treedb_client(context)
+    local_gtw: AssetsGatewayClient = LocalClients.get_assets_gateway_client(context)
     remote_gtw = await RemoteClients.get_assets_gateway_client(context)
     remote_treedb = await RemoteClients.get_treedb_client(context)
 

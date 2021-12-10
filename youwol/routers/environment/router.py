@@ -12,6 +12,7 @@ import youwol.services.backs.flux.configurations as flux
 import youwol.services.backs.stories.configurations as stories
 import youwol.services.backs.assets.configurations as assets
 import youwol.services.backs.assets_gateway.configurations as assets_gtw
+from configuration.clients import RemoteClients
 
 from youwol.configuration.user_configuration import get_public_user_auth_token
 from youwol.configuration import ErrorResponse
@@ -39,7 +40,7 @@ async def connect_to_remote(config: YouwolConfiguration, context: Context) -> bo
 
     try:
         await config.get_auth_token(context)
-        client = await config.get_assets_gateway_client(context)
+        client = await RemoteClients.get_assets_gateway_client(context)
         await client.healthz()
         return True
     except HTTPException as e:
