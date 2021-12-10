@@ -1,7 +1,7 @@
 import asyncio
 import shutil
 import tempfile
-from collections import Callable
+from collections import Callable, Iterable
 from enum import Enum
 from pathlib import Path, PosixPath
 from typing import Any, Union, Mapping, List
@@ -25,6 +25,8 @@ def to_json(obj: BaseModel) -> JSON:
             return "function"
         if isinstance(v, Enum):
             return v.name
+        if isinstance(v, Iterable) and not isinstance(v, list) and not isinstance(v, str):
+            v = list(v)
         return v
 
     base = obj.dict()
