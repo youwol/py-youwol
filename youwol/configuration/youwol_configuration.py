@@ -129,6 +129,15 @@ class YouwolConfiguration(BaseModel):
         self.private_cache["default-drive"] = DefaultDriveResponse(**default_drive)
         return DefaultDriveResponse(**default_drive)
 
+    def __str__(self):
+
+        return f"""Configuration path: {self.pathsBook.config}
+- cdn packages count: {len(parse_json(self.pathsBook.local_cdn_docdb)['documents'])}
+- assets count: {len(parse_json(self.pathsBook.local_docdb / 'assets' / 'entities' / 'data.json' )['documents'])}
+- list of projects:
+{ chr(10).join([str(p.path) + f" ({p.pipeline.id})" for p in self.projects])}
+"""
+
 
 class YouwolConfigurationFactory:
 

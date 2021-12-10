@@ -10,12 +10,13 @@ from fastapi import HTTPException
 from cowpy import cow
 from dataclasses import dataclass
 
-from youwol.configuration import get_public_user_auth_token
+from youwol.configuration import get_public_user_auth_token, YouwolConfiguration
 from youwol.main_args import get_main_arguments, MainArguments
 from youwol.utils_low_level import sed_inplace
 from youwol.utils_paths import write_json
 from youwol_utils import retrieve_user_info
 
+from colorama import Fore, Style
 
 @dataclass(frozen=False)
 class Configuration:
@@ -138,15 +139,13 @@ def assert_python():
         exit(1)
 
 
-def print_invite(main_args: MainArguments):
+def print_invite(main_args: MainArguments, conf: YouwolConfiguration):
 
+    print(f"""{Fore.GREEN} Configuration loaded successfully {Style.RESET_ALL}.
+""")
+    print(conf)
     msg = cow.milk_random_cow(f"""
-Running with configuration file: {main_args.config_path}
-
-To start youwol please follow this link: 
+All good, you can now browse to
 http://localhost:{main_args.port}/applications/@youwol/workspace-explorer/latest
-
-To create and manage assets on your computer please follow this link: 
-http://localhost:{main_args.port}/applications/dashboard-developer/latest
 """)
     print(msg)

@@ -18,8 +18,9 @@ import youwol.middlewares.dynamic_routing.loading_graph_rules as loading_graph
 import youwol.middlewares.dynamic_routing.missing_asset_rules as missing_asset
 
 from utils_low_level import start_web_socket
-from web_socket import WebSocketsCache
-from youwol.configuration.youwol_configuration import yw_config
+
+from youwol.web_socket import WebSocketsCache
+from youwol.configuration.youwol_configuration import yw_config, YouwolConfigurationFactory
 from youwol.main_args import get_main_arguments
 
 
@@ -105,10 +106,27 @@ async def ws_endpoint(ws: WebSocket):
     await start_web_socket(ws)
 
 
+def load_initial_config():
+
+    main_args = get_main_arguments()
+
+    async def load():
+        try:
+            conf = await YouwolConfigurationFactory.get()
+            print_invite(main_args=main_args, conf=conf)
+        except ConfigurationLoadingException as e:
+            print(e)
+            exit()
+
+    loop = asyncio.get_event_loop()
+    tasks = [loop.create_task(load())]
+    loop.run_until_complete(asyncio.wait(tasks))
+    loop.close()
+
+
 def main():
     assert_python()
-    main_args = get_main_arguments()
-    print_invite(main_args)
+    load_initial_config()
     uvicorn.run(app, host="localhost", port=configuration.http_port)
 
 
