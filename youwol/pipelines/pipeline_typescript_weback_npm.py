@@ -92,7 +92,7 @@ class TestStep(PipelineStep):
     run: str
     artifacts: List[Artifact]
     sources = FileListing(
-        include=["src/lib/test", "src/index.ts"]
+        include=["src/tests", "src/index.ts"]
         )
 
 
