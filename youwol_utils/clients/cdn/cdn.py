@@ -2,7 +2,7 @@ import hashlib
 
 from dataclasses import field, dataclass
 from pathlib import Path
-from typing import Dict, Union, List
+from typing import Dict, Union, List, Iterable
 import aiohttp
 
 from youwol_utils.clients import raise_exception_from_response
@@ -15,7 +15,7 @@ def md5_update_from_file(filename: Union[str, Path], current_hash):
     return current_hash
 
 
-def files_check_sum(paths: List[Path]):
+def files_check_sum(paths: Iterable[Path]):
 
     sha_hash = hashlib.md5()
 

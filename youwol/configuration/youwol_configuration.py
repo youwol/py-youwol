@@ -11,13 +11,14 @@ from typing import List, Dict, Any, Union, Optional
 from pydantic import ValidationError, BaseModel
 
 from configuration.clients import LocalClients
+from models import Label
 from services.backs.assets_gateway.models import DefaultDriveResponse
 from youwol.web_socket import WebSocketsCache
 
 from youwol.errors import HTTPResponseException
 from youwol.main_args import get_main_arguments
 from youwol.utils_paths import parse_json
-from youwol.models import ActionStep
+
 
 from youwol.configuration.user_configuration import (UserInfo, get_public_user_auth_token)
 from youwol.configurations import get_full_local_config
@@ -35,6 +36,7 @@ from youwol.configuration.user_configuration import (
     UserConfiguration, General,
     RemoteGateway,
     )
+from youwol_utils import encode_id
 
 
 class DeadlinedCache(BaseModel):
@@ -522,8 +524,10 @@ async def safe_load(
         source = (path / '.yw_pipeline' / 'yw_pipeline.py').read_text()
         exec(source, scope)
         pipeline: Pipeline = scope.get('pipeline')(user_config)
+        name = pipeline.projectName(path)
         project = Project(
-            name=pipeline.projectName(path),
+            name=name,
+            id=encode_id(name),
             version=pipeline.projectVersion(path),
             pipeline=pipeline,
             path=path

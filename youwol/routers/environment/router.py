@@ -2,7 +2,7 @@ import asyncio
 import itertools
 from typing import List, Optional
 
-from fastapi import APIRouter, WebSocket, Depends
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from aiohttp.web import HTTPException
@@ -82,31 +82,6 @@ async def connect_to_remote(config: YouwolConfiguration, context: Context) -> bo
         return False
 
 
-@router.websocket("/ws")
-async def ws_endpoint(ws: WebSocket):
-
-    YouwolConfigurationFactory.clear_cache()
-    await ws.accept()
-    WebSocketsCache.environment = ws
-    await ws.send_json({})
-
-    load_status = await YouwolConfigurationFactory.reload()
-    if not load_status.validated:
-        config = await yw_config()
-        context = Context(config=config, web_socket=WebSocketsCache.environment)
-        first_error = next(c for c in load_status.checks if isinstance(c.status, ErrorResponse))
-        await context.error(
-            step=ActionStep.STATUS,
-            content="Failed to re-load configuration, configuration not updated",
-            json={
-                "status": to_json(load_status),
-                "firstError": to_json(first_error)
-                })
-
-    # start_thread_asset_auto_download()
-    await start_web_socket(ws)
-
-
 @router.get("/configuration",
             response_model=YouwolConfiguration,
             summary="configuration")
@@ -123,7 +98,7 @@ async def file_content(
         ):
 
     return {
-        "content": config.pathsBook.config_path.read_text()
+        "content": config.pathsBook.config.read_text()
         }
 
 
@@ -136,29 +111,26 @@ async def status(
         ):
 
     context = Context(config=config, request=request, web_socket=WebSocketsCache.userChannel)
-    connected = await connect_to_remote(config=config, context=context)
-
-    remote_gateway_info = config.get_remote_info()
-    if remote_gateway_info:
-        remote_gateway_info = RemoteGatewayInfo(name=remote_gateway_info.name,
-                                                host=remote_gateway_info.host,
-                                                connected=connected)
-    remotes_info = parse_json(config.userConfig.general.remotesInfo)['remotes'].values()
-    resp = StatusResponse(
-        users=config.userConfig.general.get_users_list(),
-        userInfo=config.get_user_info(),
-        configuration=config,
-        remoteGatewayInfo=remote_gateway_info,
-        remotesInfo=list(remotes_info)
-        )
-
-    dict_resp = to_json(resp)
-    await WebSocketsCache.userChannel.send_json({
-        **{"type": "Environment"},
-        **dict_resp
-        })
-
-    return resp
+    response: Optional[StatusResponse] = None
+    async with context.start(
+            action="Get environment status",
+            succeeded_data=lambda _ctx: ('EnvironmentStatusResponse', response)
+            ) as _ctx:
+        connected = await connect_to_remote(config=config, context=context)
+        remote_gateway_info = config.get_remote_info()
+        if remote_gateway_info:
+            remote_gateway_info = RemoteGatewayInfo(name=remote_gateway_info.name,
+                                                    host=remote_gateway_info.host,
+                                                    connected=connected)
+        remotes_info = parse_json(config.userConfig.general.remotesInfo)['remotes'].values()
+        response = StatusResponse(
+            users=config.userConfig.general.get_users_list(),
+            userInfo=config.get_user_info(),
+            configuration=config,
+            remoteGatewayInfo=remote_gateway_info,
+            remotesInfo=list(remotes_info)
+            )
+        return response
 
 
 @router.post("/switch-configuration",
