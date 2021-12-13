@@ -1,3 +1,4 @@
+import asyncio
 import itertools
 from datetime import datetime
 from typing import Optional, Tuple
@@ -7,17 +8,17 @@ from fastapi import APIRouter, Depends
 from starlette.requests import Request
 
 from configuration import Project, PipelineStep
-from context import Context, ActionException
+from context import Context, CommandException
 from models import Label
 from routers.projects.implementation import (
-    run, get_fingerprint, create_artifacts, artifacts_path, artifact_path,
+    run, get_fingerprint, create_artifacts, artifacts_path,
     get_status, Manifest,
     )
 from utils_low_level import to_json
 from utils_paths import write_json
 from youwol.web_socket import WebSocketsCache
 
-from routers.projects.models import PipelineStepStatusResponse
+from routers.projects.models import PipelineStepStatusResponse, PipelineStatusResponse
 from youwol.configuration.youwol_configuration import YouwolConfiguration
 from youwol.configuration.youwol_configuration import yw_config
 
@@ -42,11 +43,11 @@ async def pipeline_step_status(
         project_id: str,
         step_id: str,
         config: YouwolConfiguration = Depends(yw_config)
-        ):
+        ) -> PipelineStepStatusResponse:
     context = Context(request=request, config=config, web_socket=WebSocketsCache.userChannel)
     response: Optional[PipelineStepStatusResponse] = None
     async with context.start(
-            action="Get pipeline-status",
+            action="Get pipeline status",
             labels=[Label.INFO],
             succeeded_data=lambda _ctx: ('PipelineStepStatusResponse', response),
             with_attributes={
@@ -57,15 +58,9 @@ async def pipeline_step_status(
             ) as ctx:
 
         project, step = await get_project_step(project_id, step_id, ctx)
+        response = await get_status(project=project, step=step, context=ctx)
+        return response
 
-        step_status = await get_status(project=project, step=step, context=ctx)
-        response = PipelineStepStatusResponse(
-            projectId=project.id,
-            stepId=step_id,
-            artifacts={artifact.id: artifact_path(project=project, step=step, artifact=artifact, context=ctx)
-                       for artifact in step.artifacts},
-            status=step_status
-            )
 
 
 @router.post("/{project_id}/steps/{step_id}/run",
@@ -90,11 +85,14 @@ async def run_pipeline_step(
                                                       config=config)
             ) as ctx:
         project, step = await get_project_step(project_id, step_id, ctx)
-
+        error_run = None
         try:
-            succeeded = await run(project=project, step=step, context=ctx)
-        except ActionException:
-            pass
+            outputs = await run(project=project, step=step, context=ctx)
+            succeeded = True
+        except CommandException as e:
+            outputs = e.outputs
+            error_run = e
+            succeeded = False
 
         fingerprint, files = await get_fingerprint(project=project, step=step, context=ctx)
         (context.config.pathsBook.system / project.name / step.id).mkdir(parents=True, exist_ok=True)
@@ -102,12 +100,13 @@ async def run_pipeline_step(
         manifest = Manifest(succeeded=succeeded if succeeded is not None else False,
                             fingerprint=fingerprint,
                             creationDate=datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+                            cmdOutputs=outputs,
                             files=[str(f) for f in files])
-        
+
         write_json(manifest.dict(), path / "manifest.json")
         await ctx.info(text="Manifest updated", data=manifest)
 
         if not succeeded:
-            raise ActionException(action=f"${project.name}#{step.id}", message="Failed running script")
+            raise error_run
 
         await create_artifacts(project=project, step=step, fingerprint=fingerprint, context=ctx)

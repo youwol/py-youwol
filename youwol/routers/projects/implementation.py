@@ -3,18 +3,12 @@ import zipfile
 from typing import Optional, List
 from pydantic import BaseModel
 from configuration import Project, PipelineStep, Artifact, PipelineStepStatus
-from context import Context, ActionException
+from context import Context, CommandException
 from models import Label
+from routers.projects.models import PipelineStepStatusResponse, Manifest
 from utils_low_level import merge
 from utils_paths import matching_files, parse_json
 from youwol_utils import files_check_sum
-
-
-class Manifest(BaseModel):
-    succeeded: bool
-    fingerprint: str
-    creationDate: str
-    files: List[str]
 
 
 def artifacts_path(project: Project, step: PipelineStep, context: Context):
@@ -25,7 +19,7 @@ def artifact_path(project: Project, step: PipelineStep, artifact: Artifact, cont
     return artifacts_path(project=project, step=step, context=context) / f"{artifact.id}.zip"
 
 
-async def get_status(project: Project, step: PipelineStep, context: Context) -> PipelineStepStatus:
+async def get_status(project: Project, step: PipelineStep, context: Context) -> PipelineStepStatusResponse:
 
     async with context.start(
             action="get status",
@@ -36,7 +30,13 @@ async def get_status(project: Project, step: PipelineStep, context: Context) -> 
 
         if not (path / 'manifest.json').exists():
             await ctx.info(text="No manifest found => status is none")
-            return PipelineStepStatus.none
+            return PipelineStepStatusResponse(
+                projectId=project.id,
+                stepId=step.id,
+                artifacts={artifact.id: artifact_path(project=project, step=step, artifact=artifact, context=ctx)
+                           for artifact in step.artifacts},
+                status=PipelineStepStatus.none
+                )
 
         manifest = Manifest(**parse_json(path / 'manifest.json'))
         await ctx.info(text="Manifest retrieved", data=manifest)
@@ -45,9 +45,23 @@ async def get_status(project: Project, step: PipelineStep, context: Context) -> 
         await ctx.info(text="Actual fingerprint", data=fingerprint)
         if manifest.fingerprint != fingerprint:
             await ctx.info(text="Outdated entry", data={'actual fp': fingerprint, 'saved fp': manifest.fingerprint})
-            return PipelineStepStatus.outdated
+            return PipelineStepStatusResponse(
+                projectId=project.id,
+                stepId=step.id,
+                manifest=manifest,
+                artifacts={artifact.id: artifact_path(project=project, step=step, artifact=artifact, context=ctx)
+                           for artifact in step.artifacts},
+                status=PipelineStepStatus.outdated
+                )
 
-        return PipelineStepStatus.OK if manifest.succeeded else PipelineStepStatus.KO
+        return PipelineStepStatusResponse(
+                projectId=project.id,
+                stepId=step.id,
+                manifest=manifest,
+                artifacts={artifact.id: artifact_path(project=project, step=step, artifact=artifact, context=ctx)
+                           for artifact in step.artifacts},
+                status=PipelineStepStatus.OK if manifest.succeeded else PipelineStepStatus.KO
+                )
 
 
 async def run(project: Project, step: PipelineStep, context: Context):
@@ -58,7 +72,12 @@ async def run(project: Project, step: PipelineStep, context: Context):
     async with context.start(
             action="run command",
             labels=[Label.BASH],
-            with_attributes={'projectId': project.id, 'stepId': step.id, 'command': step.run}
+            with_attributes={
+                'projectId': project.id,
+                'stepId': step.id,
+                'command': step.run,
+                'event': 'PipelineStatusPending:run'
+                }
             ) as ctx:
 
         p = await asyncio.create_subprocess_shell(
@@ -67,17 +86,18 @@ async def run(project: Project, step: PipelineStep, context: Context):
             stderr=asyncio.subprocess.PIPE,
             shell=True
             )
-
+        outputs = []
         async for f in merge(p.stdout, p.stderr):
-            await ctx.info(text=f.decode('utf-8'))
+            outputs.append(f.decode('utf-8'))
+            await ctx.info(text=outputs[-1])
 
         await p.communicate()
 
         return_code = p.returncode
 
         if return_code > 0:
-            raise ActionException(action=f"${project.name}#{step.id}", message=f"{step.run} failed")
-        return True
+            raise CommandException(command=f"{project.name}#{step.id} ({step.run})", outputs=outputs)
+        return outputs
 
 
 async def get_fingerprint(project: Project, step: PipelineStep, context: Context):
