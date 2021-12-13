@@ -62,6 +62,34 @@ async def pipeline_step_status(
         return response
 
 
+@router.get("/{project_id}",
+            response_model=PipelineStatusResponse,
+            summary="status")
+async def project_status(
+        request: Request,
+        project_id: str,
+        config: YouwolConfiguration = Depends(yw_config)
+        ):
+    context = Context(request=request, config=config, web_socket=WebSocketsCache.userChannel)
+    response: Optional[PipelineStatusResponse] = None
+    async with context.start(
+            action="Get project status",
+            labels=[Label.INFO],
+            succeeded_data=lambda _ctx: ('PipelineStatusResponse', response),
+            with_attributes={
+                'projectId': project_id
+                }
+            ) as ctx:
+
+        project = next(p for p in ctx.config.projects if p.id == project_id)
+
+        steps_status = await asyncio.gather(*[
+            pipeline_step_status(request=request, project_id=project_id, step_id=step.id, config=config)
+            for step in project.pipeline.steps
+            ])
+        response = PipelineStatusResponse(projectId=project_id, steps=[s for s in steps_status])
+        return response
+
 
 @router.post("/{project_id}/steps/{step_id}/run",
              summary="status")
