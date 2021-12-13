@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Dict, Any, Callable, Union, Awaitable
 
 from youwol.context import Context, ActionStep, UserCodeException
-from youwol.routers.packages.models import Package
+from youwol.routers.packages_deprecated.models import Package
 from youwol.utils_low_level import merge
 
 TKey = Any

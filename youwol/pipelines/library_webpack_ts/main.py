@@ -16,7 +16,7 @@ from youwol.configuration.models_package import (
     PipelinePackage, TargetPackage,
     )
 from youwol.context import Context, ActionStep, Action
-from youwol.routers.packages.models import Package
+from youwol.routers.packages_deprecated.models import Package
 
 
 class BundleModeEnum(Enum):

@@ -14,7 +14,7 @@ from youwol.configuration.models_back import PipelineBack, InstallBack, ServeBac
 from youwol.configuration.models_base import Skeleton, SkeletonParameter, Pipeline, Check, ErrorResponse
 
 from youwol.context import Context, ActionStep, Action
-from youwol.routers.packages.models import Package
+from youwol.routers.packages_deprecated.models import Package
 
 
 class FastApiPipeline(PipelineBack):
