@@ -26,6 +26,13 @@ class MessageWebSocket(BaseModel):
     content: Union[Json, str]
 
 
+class CommandException(Exception):
+    def __init__(self, command: str, outputs: List[str]):
+        self.command = command
+        self.outputs = outputs
+        super().__init__(f"{self.command} failed")
+
+
 class ActionException(Exception):
     def __init__(self, action: str, message: str):
         self.action = action
