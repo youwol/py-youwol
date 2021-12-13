@@ -158,7 +158,8 @@ class StepEnum(Enum):
 
 class Artifact(BaseModel):
     id: str = ""
-    get: Callable[[], Union[Any, Awaitable[Any]]]
+    files: FileListing
+    url: str = None
 
 
 class PipelineStepStatus(Enum):
@@ -168,20 +169,15 @@ class PipelineStepStatus(Enum):
     none = "none"
 
 
+Runnable = Union[str, Callable[['Project', Context], None], Callable[['Project', Context], Awaitable[None]]]
+
+
 class PipelineStep(BaseModel):
 
     id: str = ""
-    artifacts: List[Any] = []
-    requireArtifacts = []
-    run: Any = None
-    status: Callable[['Project'], PipelineStepStatus] = None
-
-    def execute(self):
-        # prepare run ... zip?
-        # fingerprint of source
-        # run
-        # post run (copy artifacts, etc + associate fingerprint)
-        pass
+    artifacts: List[Artifact] = []
+    sources: FileListing = None
+    run: Runnable = None
 
 
 class Pipeline(BaseModel):
@@ -204,6 +200,7 @@ class Project(BaseModel):
     pipeline: Pipeline
     path: Path
     name: str
+    id: str  # base64 encoded Project.name
     version: str
 
 
