@@ -11,14 +11,14 @@ from youwol.utils_low_level import start_web_socket
 from youwol.configuration.youwol_configuration import YouwolConfiguration, yw_config, YouwolConfigurationFactory
 from youwol.context import Context, ActionStep
 from youwol.routers.commons import SkeletonsResponse, SkeletonResponse, PostSkeletonBody
-from youwol.routers.packages.synchronize import synchronize
+from youwol.routers.packages_deprecated.synchronize import synchronize
 from youwol.web_socket import WebSocketsCache
 
-from youwol.routers.packages.models import (
+from youwol.routers.packages_deprecated.models import (
     Package, StatusResponse, AllStatusResponse, TargetStatus,
     DependenciesResponse, ActionModule, AutoWatchBody
     )
-from youwol.routers.packages.utils import (
+from youwol.routers.packages_deprecated.utils import (
     get_packages_status, get_all_packages,
     extract_below_dependencies_recursive, extract_above_dependencies_recursive, select_packages,
     )

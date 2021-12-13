@@ -13,9 +13,9 @@ from fastapi import HTTPException
 from youwol.configuration.models_base import FileListing
 from youwol.models import Action
 from youwol.context import Context, ActionException, ActionStep
-from youwol.routers.packages.messages import PACKAGE_JSON_MISSING_CDN
-from youwol.routers.packages.models import Package, TargetId
-from youwol.routers.packages.utils import (
+from youwol.routers.packages_deprecated.messages import PACKAGE_JSON_MISSING_CDN
+from youwol.routers.packages_deprecated.models import Package, TargetId
+from youwol.routers.packages_deprecated.utils import (
     src_check_sum, get_dependencies_recursive,
     create_packages_cache_entry, build_status_indirect, append_test_cache_entry, md5_update_from_file, test_status,
     local_cdn_status, ensure_default_publish_location, copy_node_module_folder, extract_above_dependencies_recursive,
