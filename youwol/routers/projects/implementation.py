@@ -169,4 +169,4 @@ async def create_artifact(
             zipper.write(filename=f, arcname=f.relative_to(project.path))
         zipper.close()
 
-        await context.info(text="Zip file created", data={'path': str(destination_path / artifact.id)})
+        await context.info(text="Zip file created", data={'path': str(destination_path)})
