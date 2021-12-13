@@ -103,12 +103,7 @@ async def run_pipeline_step(
                             fingerprint=fingerprint,
                             creationDate=datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
                             files=[str(f) for f in files])
-        # {
-        #     "status": "OK" if ok else "KO",
-        #     "fingerprint": checksum,
-        #     "creationDate": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
-        #     "files": list([str(f) for f in files])
-        #     }
+        
         write_json(manifest.dict(), path / "manifest.json")
         await ctx.info(text="Manifest updated", data=manifest)
 
