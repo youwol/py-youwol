@@ -7,7 +7,8 @@ from fastapi import HTTPException
 from pydantic import BaseModel
 
 from context import Context
-from models import ActionStep
+from models import Label
+
 from routers.commands.upload_assets.models import UploadTask
 from youwol_utils import decode_id
 
@@ -111,8 +112,8 @@ class UploadPackageTask(UploadTask):
                                                     timeout=600)
             finally:
                 await ctx.info(
-                    step=ActionStep.DONE,
-                    content=f"{library_name}#{version}: synchronization done"
+                    labels=[Label.DONE],
+                    text=f"{library_name}#{version}: synchronization done"
                     )
                 # await check_package_status(package=local_package, context=context, target_versions=[version])
 

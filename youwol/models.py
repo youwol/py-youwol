@@ -8,10 +8,16 @@ class LogLevel(Enum):
     ERROR = "ERROR"
 
 
-class ActionStep(Enum):
+class Label(Enum):
     STARTED = "STARTED"
     PREPARATION = "PREPARATION"
+    BASH = "BASH"
     STATUS = "STATUS"
+    INFO = "INFO"
+    LOG_INFO = "LOG_INFO"
+    LOG_DEBUG = "LOG_DEBUG"
+    LOG_ERROR = "LOG_ERROR"
+    LOG_ABORT = "LOG_ABORT"
     RUNNING = "RUNNING"
     PACKAGING = "PACKAGING"
     DONE = "DONE"

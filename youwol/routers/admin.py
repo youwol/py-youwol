@@ -1,7 +1,8 @@
 from fastapi import APIRouter
 from youwol.configurations import configuration
 
-import youwol.routers.packages.router as packages
+# import youwol.routers.packages.router as packages
+import youwol.routers.projects.router as projects
 import youwol.routers.backends.router as backends
 import youwol.routers.environment.router as environment
 import youwol.routers.system.router as system
@@ -17,8 +18,8 @@ router.include_router(system.router, prefix=configuration.base_path+"/system",
                       tags=["system"])
 router.include_router(environment.router, prefix=configuration.base_path+"/environment",
                       tags=["environment"])
-router.include_router(packages.router, prefix=configuration.base_path+"/packages",
-                      tags=["packages"])
+router.include_router(projects.router, prefix=configuration.base_path+"/projects",
+                      tags=["projects"])
 router.include_router(backends.router, prefix=configuration.base_path+"/backends",
                       tags=["backends"])
 router.include_router(local_cdn.router, prefix=configuration.base_path+"/local-cdn",

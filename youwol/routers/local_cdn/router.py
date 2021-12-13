@@ -5,9 +5,9 @@ from itertools import groupby
 from starlette.requests import Request
 from fastapi import APIRouter, WebSocket, Depends
 
+from models import Label
 from youwol.utils_low_level import start_web_socket
 from youwol.context import Context
-from youwol.models import ActionStep
 from youwol.routers.local_cdn.messages import send_status, send_details
 from youwol.routers.local_cdn.models import PackagesStatus, Package, PackageVersion, VersionDetails, PackageDetails
 from youwol.utils_paths import parse_json, write_json
@@ -125,7 +125,7 @@ async def delete_library_generic(
     context = Context(config=config, request=request, web_socket=WebSocketsCache.local_cdn)
 
     async with context.start(action=f"Delete {package_name}@{version}") as ctx:
-        await ctx.info(step=ActionStep.RUNNING, content=f"Delete {package_name}@{version}", json={})
+        await ctx.info(labels=[Label.RUNNING], text=f"Delete {package_name}@{version}", data={})
         data = parse_json(config.pathsBook.local_cdn_docdb)['documents']
         doc = next(d for d in data if d["library_name"] == package_name and d['version'] == version)
         remaining = [d for d in data if not (d["library_name"] == package_name and d['version'] == version)]
@@ -176,7 +176,7 @@ async def delete_package_generic(
     context = Context(config=config, request=request, web_socket=WebSocketsCache.local_cdn)
 
     async with context.start(action=f"Delete {package_name}") as ctx:
-        await ctx.info(step=ActionStep.RUNNING, content=f"Delete {package_name}", json={})
+        await ctx.info(labels=[Label.RUNNING], text=f"Delete {package_name}", data={})
         data = parse_json(config.pathsBook.local_cdn_docdb)['documents']
         remaining = [d for d in data if d["library_name"] != package_name]
 

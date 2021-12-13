@@ -119,8 +119,8 @@ class YouwolConfiguration(BaseModel):
         deadline = datetime.timestamp(datetime.now()) + 1 * 60 * 60 * 1000
         self.tokensCache.append(DeadlinedCache(value=access_token, deadline=deadline, dependencies=dependencies))
 
-        await context.info(step=ActionStep.STATUS, content="Access token renewed",
-                           json={"host": remote.host, "access_token": access_token})
+        await context.info(labels=[Label.STATUS], text="Access token renewed",
+                           data={"host": remote.host, "access_token": access_token})
         return access_token
 
     async def get_default_drive(self, context: Context) -> DefaultDriveResponse:
@@ -164,7 +164,7 @@ class YouwolConfigurationFactory:
                                     "errors": errors,
                                     "all checks": [c.dict() for c in status.checks]})
                 return status
-            await ctx.info(step=ActionStep.STATUS, content='Switched to new conf. successful', json=status.dict())
+            await ctx.info(labels=[Label.STATUS], text='Switched to new conf. successful', data=status.dict())
             await YouwolConfigurationFactory.trigger_on_load(config=conf)
             YouwolConfigurationFactory.__cached_config = conf
         return status
@@ -256,7 +256,7 @@ class YouwolConfigurationFactory:
             if inspect.iscoroutinefunction(on_load_cb) \
             else on_load_cb(config, context)
 
-        await context.info(step=ActionStep.STATUS, content="Applied onLoad event's callback", json=data)
+        await context.info(labels=[Label.STATUS], text="Applied onLoad event's callback", data=data)
 
 
 async def yw_config() -> YouwolConfiguration:
@@ -291,9 +291,9 @@ async def login(
             )
     if user_email not in parse_json(general.usersInfo)['users']:
         context and await context.info(
-            ActionStep.STATUS,
-            f"User {user_email} not registered in {general.usersInfo}: switch user",
-            json={"user_email": user_email, 'usersInfo': parse_json(general.usersInfo)
+            labels=[Label.STATUS],
+            text=f"User {user_email} not registered in {general.usersInfo}: switch user",
+            data={"user_email": user_email, 'usersInfo': parse_json(general.usersInfo)
                   }
             )
         return await login(user_email=None, selected_remote=selected_remote, general=general, context=context)

@@ -16,17 +16,19 @@ import youwol.services.backs.stories.configurations as stories
 import youwol.services.backs.assets.configurations as assets
 import youwol.services.backs.assets_gateway.configurations as assets_gtw
 from configuration.clients import RemoteClients
+from models import Label
+from youwol.context import Context
 
 from youwol.configuration.user_configuration import get_public_user_auth_token, UserInfo
-from youwol.configuration import ErrorResponse
+
 from youwol.configuration.youwol_configuration import YouwolConfiguration
 from youwol.configuration.youwol_configuration import yw_config, YouwolConfigurationFactory, ConfigurationLoadingStatus
-from youwol.context import Context, ActionStep
+
 from youwol.routers.environment.models import (
     SwitchConfigurationBody, SyncUserBody, LoginBody,
     PostParametersBody, RemoteGatewayInfo, SelectRemoteBody, SyncComponentBody, ComponentsUpdate
     )
-from youwol.utils_low_level import to_json, start_web_socket
+
 from youwol.utils_paths import parse_json, write_json
 from youwol.web_socket import WebSocketsCache
 from youwol_utils import retrieve_user_info
@@ -56,27 +58,27 @@ async def connect_to_remote(config: YouwolConfiguration, context: Context) -> bo
         return True
     except HTTPException as e:
         await context.info(
-            ActionStep.STATUS,
-            "Authorization: HTTP Error",
-            json={'host': remote_gateway_info.host, 'error': str(e)})
+            labels=[Label.STATUS],
+            text="Authorization: HTTP Error",
+            data={'host': remote_gateway_info.host, 'error': str(e)})
         return False
     except ClientConnectorError as e:
         await context.info(
-            ActionStep.STATUS,
-            "Authorization: Connection error (internet on?)",
-            json={'host': remote_gateway_info.host, 'error': str(e)})
+            labels=[Label.STATUS],
+            text="Authorization: Connection error (internet on?)",
+            data={'host': remote_gateway_info.host, 'error': str(e)})
         return False
     except RuntimeError as e:
         await context.info(
-            ActionStep.STATUS,
-            "Authorization error",
-            json={'host': remote_gateway_info.host, 'error': str(e)})
+            labels=[Label.STATUS],
+            text="Authorization error",
+            data={'host': remote_gateway_info.host, 'error': str(e)})
         return False
     except ContentTypeError as e:
         await context.info(
-            ActionStep.STATUS,
-            "Failed to call healthz on assets-gateway",
-            json={'host': remote_gateway_info.host, 'error': str(e)})
+            labels=[Label.STATUS],
+            text="Failed to call healthz on assets-gateway",
+            data={'host': remote_gateway_info.host, 'error': str(e)})
         return False
 
 

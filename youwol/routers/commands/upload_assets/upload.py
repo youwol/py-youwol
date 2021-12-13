@@ -9,6 +9,7 @@ from fastapi import HTTPException, WebSocket
 from configuration import YouwolConfiguration
 from configuration.clients import RemoteClients
 from configurations import configuration
+from models import Label
 from routers.commands.upload_assets.data import UploadDataTask
 from routers.commands.upload_assets.flux_project import UploadFluxProjectTask
 from routers.commands.upload_assets.models import UploadTask
@@ -17,7 +18,7 @@ from routers.commands.upload_assets.story import UploadStoryTask
 from services.backs.treedb.models import PathResponse
 from youwol.configuration import parse_json
 from youwol.utils_low_level import to_json
-from youwol.models import ActionStep
+
 from youwol.routers.commons import local_path, ensure_path
 from youwol.context import Context
 from youwol_utils import decode_id, JSON
@@ -46,9 +47,9 @@ async def synchronize_permissions(assets_gtw_client: AssetsGatewayClient, asset_
     local_assets_gtw = context.config.localClients.assets_gateway_client
     access_info = await local_assets_gtw.get_asset_access(asset_id=asset_id)
     await context.info(
-        step=ActionStep.RUNNING,
-        content="Permissions retrieved",
-        json={"access_info": access_info}
+        labels=[Label.RUNNING],
+        text="Permissions retrieved",
+        data={"access_info": access_info}
         )
     default_permission = access_info["ownerInfo"]["defaultAccess"]
     groups = access_info["ownerInfo"]["exposingGroups"]
@@ -84,11 +85,11 @@ async def create_borrowed_item(borrowed_tree_id: str, item: Mapping[str, any], a
         if e.status_code != 404:
             raise e
 
-        path_item = local_path(tree_id=tree_id, config=context.config)
+        path_item = await local_path(tree_id=tree_id, config=context.config)
         await context.info(
-            step=ActionStep.RUNNING,
-            content="Borrowed tree item not found, start creation",
-            json={"treeItemPath": to_json(path_item)}
+            labels=[Label.RUNNING],
+            text="Borrowed tree item not found, start creation",
+            data={"treeItemPath": to_json(path_item)}
             )
         await ensure_path(path_item, assets_gtw_client)
         parent_id = path_item.drive.driveId
@@ -101,7 +102,7 @@ async def create_borrowed_item(borrowed_tree_id: str, item: Mapping[str, any], a
                                                  "destinationFolderId": parent_id
                                                 }
                                              )
-    await context.info(step=ActionStep.DONE, content="Borrowed item created")
+    await context.info(labels=[Label.DONE], text="Borrowed item created")
 
 
 async def synchronize_metadata(asset_id: str, assets_gtw_client: AssetsGatewayClient, context: Context):
@@ -117,9 +118,9 @@ async def synchronize_metadata(asset_id: str, assets_gtw_client: AssetsGatewayCl
     filenames = [url.split('/')[-1] for url in full_urls]
 
     await context.info(
-        step=ActionStep.RUNNING,
-        content="Synchronise metadata",
-        json={
+        labels=[Label.RUNNING],
+        text="Synchronise metadata",
+        data={
             'local_metadata': local_metadata,
             'remote_metadata': remote_metadata,
             'missing images': full_urls
@@ -185,9 +186,9 @@ async def upload_asset(
         local_data = await factory.get_raw()
         path_item = await local_treedb.get_path(item_id=tree_item['itemId'])
         await ctx.info(
-            step=ActionStep.STATUS,
-            content="Data retrieved",
-            json={"path_item": path_item, "raw data": local_data}
+            labels=[Label.STATUS],
+            text="Data retrieved",
+            data={"path_item": path_item, "raw data": local_data}
             )
 
         assets_gtw_client = await RemoteClients.get_assets_gateway_client(context=context)
@@ -196,16 +197,16 @@ async def upload_asset(
         try:
             await assets_gtw_client.get_asset_metadata(asset_id=asset_id)
             await ctx.info(
-                step=ActionStep.STATUS,
-                content="Asset already found in deployed environment"
+                labels=[Label.STATUS],
+                text="Asset already found in deployed environment"
                 )
             await factory.update_raw(data=local_data, folder_id=tree_item['folderId'])
         except HTTPException as e:
             if e.status_code != 404:
                 raise e
             await ctx.info(
-                step=ActionStep.RUNNING,
-                content="Project not already found => start creation"
+                labels=[Label.RUNNING],
+                text="Project not already found => start creation"
                 )
             await factory.create_raw(data=local_data, folder_id=tree_item['folderId'])
             # local_flux_app['projectId'] = raw_id

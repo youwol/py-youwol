@@ -9,7 +9,7 @@ from typing import List, Union, Type, Set, Dict, Any, Callable, Awaitable
 
 from pydantic import BaseModel, Json
 
-from youwol.models import ActionStep
+from models import Label
 from youwol.utils_low_level import merge
 
 Context = 'youwol.dashboard.back.context.Context'
@@ -109,7 +109,7 @@ class Action(BaseModel):
             shell=True)
 
         async for f in merge(p.stdout, p.stderr):
-            await context.info(ActionStep.RUNNING, f.decode('utf-8'))
+            await context.info(labeks=[Label.RUNNING], text=f.decode('utf-8'))
 
         return await p.communicate()
 
