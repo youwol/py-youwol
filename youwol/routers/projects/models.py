@@ -20,6 +20,11 @@ class ArtifactResponse(BaseModel):
     id: str
     path: Path
 
+
+class ArtifactsResponse(BaseModel):
+    artifacts: List[ArtifactResponse]
+
+
 class PipelineStepStatusResponse(BaseModel):
     projectId: str
     flowId: str

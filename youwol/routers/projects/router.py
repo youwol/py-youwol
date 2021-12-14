@@ -119,6 +119,34 @@ async def project_status(
         return response
 
 
+@router.get("/{project_id}/flows/{flow_id}/artifacts",
+            response_model=ArtifactsResponse,
+            summary="status")
+async def project_artifacts(
+        request: Request,
+        project_id: str,
+        flow_id: str,
+        config: YouwolConfiguration = Depends(yw_config)
+        ):
+    context = Context(request=request, config=config, web_socket=WebSocketsCache.userChannel)
+    response: Optional[ArtifactsResponse] = None
+    async with context.start(
+            action="Get project's artifact",
+            labels=[Label.INFO],
+            succeeded_data=lambda _ctx: ('ArtifactsResponse', response),
+            with_attributes={
+                'projectId': project_id,
+                'flowId': flow_id
+                }
+            ) as ctx:
+
+        project, flow, steps = await get_project_flow_steps(project_id=project_id, flow_id=flow_id, context=ctx)
+        eventual_artifacts = [(a, artifact_path(project=project, flow_id=flow_id, step=s, artifact=a, context=ctx))
+                              for s in steps for a in s.artifacts]
+        actual_artifacts = [ArtifactResponse(id=a.id, path=path) for a, path in eventual_artifacts
+                            if path.exists() and path.is_dir()]
+        response = ArtifactsResponse(artifacts=actual_artifacts)
+        return response
 
 
 @router.post("/{project_id}/flows/{flow_id}/steps/{step_id}/run",
