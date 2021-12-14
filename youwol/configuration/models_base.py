@@ -180,6 +180,11 @@ class PipelineStep(BaseModel):
     run: Runnable = None
 
 
+class Flow(BaseModel):
+    name: str
+    dag: List[str]
+
+
 class Pipeline(BaseModel):
 
     id: str
@@ -189,7 +194,7 @@ class Pipeline(BaseModel):
     description: str = ""
     skeleton: Union[Skeleton, Callable[[YouwolConfiguration], Skeleton]] = None
     steps: List[PipelineStep]
-    flow: List[str]
+    flows: List[Flow]
     extends: str = None
     dependencies: Callable[['Project'], List[str]] = None
     projectName: Callable[[Path], str]

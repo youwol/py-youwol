@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Any, Union, List
 
+from configuration import Flow
 from context import Context
 from youwol.configuration import (
     Pipeline, parse_json, Skeleton, SkeletonParameter, PipelineStep, FileListing,
@@ -35,6 +36,13 @@ def get_dependencies(project: Any):
     return package_json.get("dependencies", {}).keys() + \
         package_json.get("peerDependencies", []).keys() + \
         package_json.get("devDependencies", []).keys()
+
+
+class SyncFromDownstreamStep(PipelineStep):
+    id: str = "sync-deps"
+    run: Runnable = ""
+
+    artifacts: List[Artifact] = []
 
 
 class BuildStep(PipelineStep):
@@ -153,6 +161,7 @@ def pipeline():
         dependencies=lambda project: get_dependencies(project),
         skeleton=lambda ctx: create_skeleton(ctx),
         steps=[
+            SyncFromDownstreamStep(),
             BuildStep(id="build-dev", run="yarn build:dev"),
             BuildStep(id="build-prod", run="yarn build:prod"),
             DocStep(),
@@ -163,11 +172,20 @@ def pipeline():
             PublishCdnLocalStep(),
             PublishCdnRemoteStep()
             ],
-        flow=[
-            "build-dev > test > publish-local > publish-remote ",
-            "build-prod > test",
-            "build-dev > doc > publish-remote",
-            "build-prod > doc",
-            "build-dev > test-coverage"
+        flows=[
+            Flow(
+                name="prod",
+                dag=[
+                    "sync-deps > build-prod > test > publish-local > publish-remote ",
+                    "build-prod > doc > publish-remote",
+                    "build-prod > test-coverage"
+                    ]
+                ),
+            Flow(
+                name="dev",
+                dag=[
+                    "sync-deps > build-dev > publish-local"
+                    ]
+                )
             ]
         )

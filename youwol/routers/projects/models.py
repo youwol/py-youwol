@@ -16,10 +16,16 @@ class Manifest(BaseModel):
     cmdOutputs: List[str] = []
 
 
+class ArtifactResponse(BaseModel):
+    id: str
+    path: Path
+
 class PipelineStepStatusResponse(BaseModel):
     projectId: str
+    flowId: str
     stepId: PipelineStepId
-    artifacts: dict[ArtifactId, Path]
+    artifactFolder: Path
+    artifacts: List[ArtifactResponse]
     manifest: Optional[Manifest] = None
     status: PipelineStepStatus
 
