@@ -2,15 +2,14 @@ import itertools
 import json
 import os
 import shutil
+import zipfile
 from fnmatch import fnmatch
 from json import JSONDecodeError
 from os import PathLike
 from pathlib import Path
-from typing import cast, Union, List, Set
+from typing import cast, Union, List, Set, Tuple
 
-from youwol.configuration import TargetPackage
-from youwol.configuration.models_base import FileListing
-
+from youwol_utils.utils_paths import FileListing
 
 flatten = itertools.chain.from_iterable
 
@@ -58,16 +57,16 @@ def matching_files(
     patterns_folder_ignore = [p for p in patterns.ignore if '*' in p]
 
     def is_selected(filepath: Path):
-        if any(fnmatch(filepath, pattern) for pattern in patterns.ignore):
+        if any(fnmatch(str(filepath), pattern) for pattern in patterns.ignore):
             return False
-        return any(fnmatch(filepath, pattern) for pattern in patterns.include)
+        return any(fnmatch(str(filepath), pattern) for pattern in patterns.include)
 
     def to_skip_branch(path: Path):
         if str(path) == ".":
             return False
-        if any(fnmatch(path, pattern) for pattern in patterns_folder_ignore):
+        if any(fnmatch(str(path), pattern) for pattern in patterns_folder_ignore):
             return True
-        if any(fnmatch(path, pattern)for pattern in patterns_folder_include):
+        if any(fnmatch(str(path), pattern)for pattern in patterns_folder_include):
             return False
         if any(pattern.startswith(str(path)) for pattern in patterns_folder_include):
             return False
@@ -94,7 +93,6 @@ def ensure_folders(*paths: Union[str, Path]):
     return r
 
 
-def get_targets(folders: List[Union[str, Path]], pipeline_name: str, target_type: type = TargetPackage):
 def create_zip_file(path: Path, files_to_zip: List[Tuple[Path, str]]):
     zipper = zipfile.ZipFile(path, 'w', zipfile.ZIP_DEFLATED)
     for path, name in files_to_zip:
@@ -102,6 +100,7 @@ def create_zip_file(path: Path, files_to_zip: List[Tuple[Path, str]]):
     zipper.close()
 
 
+def get_targets(folders: List[Union[str, Path]], pipeline_name: str, target_type: type):
 
     targets = list(flatten(get_targets_generic(folder, pipeline_name, target_type) for folder in folders))
     return targets
