@@ -9,7 +9,7 @@ from youwol.web_socket import WebSocketsCache
 
 from starlette.requests import Request
 from pydantic import BaseModel
-
+from fastapi.responses import FileResponse
 
 router = APIRouter()
 
@@ -30,6 +30,13 @@ async def ws_endpoint(ws: WebSocket):
     WebSocketsCache.system = ws
     await ws.send_json({})
     await start_web_socket(ws)
+
+
+@router.get("/file/{rest_of_path:path}",
+            summary="return file content")
+async def get_file(rest_of_path: str):
+
+    return FileResponse(rest_of_path)
 
 
 @router.post("/folder-content",
