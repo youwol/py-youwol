@@ -95,6 +95,13 @@ def ensure_folders(*paths: Union[str, Path]):
 
 
 def get_targets(folders: List[Union[str, Path]], pipeline_name: str, target_type: type = TargetPackage):
+def create_zip_file(path: Path, files_to_zip: List[Tuple[Path, str]]):
+    zipper = zipfile.ZipFile(path, 'w', zipfile.ZIP_DEFLATED)
+    for path, name in files_to_zip:
+        zipper.write(filename=path, arcname=name)
+    zipper.close()
+
+
 
     targets = list(flatten(get_targets_generic(folder, pipeline_name, target_type) for folder in folders))
     return targets
