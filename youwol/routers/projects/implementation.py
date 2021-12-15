@@ -1,23 +1,41 @@
-import asyncio
 import os
 import shutil
-from pathlib import Path
-from typing import Optional
-from configuration import Project, PipelineStep, Artifact, PipelineStepStatus
-from context import Context, CommandException
-from models import Label
+from typing import Tuple, List
+from configuration import Project, PipelineStep, Artifact, Flow
+from configuration.paths import PathsBook
+from context import Context
 from routers.projects.models import PipelineStepStatusResponse, Manifest, ArtifactResponse
-from utils_low_level import merge
+from utils_low_level import to_json
 from utils_paths import matching_files, parse_json
-from youwol_utils import files_check_sum
 
 
-def artifacts_path(project: Project, flow_id: str, step: PipelineStep, context: Context):
-    return context.config.pathsBook.system / project.name / flow_id / step.id
+async def get_project_step(
+        project_id: str,
+        step_id: str,
+        context: Context
+        ) -> Tuple[Project, PipelineStep]:
+    project = next(p for p in context.config.projects if p.id == project_id)
+    step = next(s for s in project.pipeline.steps if s.id == step_id)
+
+    await context.info(text="project & step retrieved",
+                       data={'project': to_json(project), 'step': to_json(step)})
+    return project, step
 
 
-def artifact_path(project: Project, flow_id: str, step: PipelineStep, artifact: Artifact, context: Context) -> Path:
-    return artifacts_path(project=project, flow_id=flow_id, step=step, context=context) / f"artifact-{artifact.id}"
+async def get_project_flow_steps(
+        project_id: str,
+        flow_id: str,
+        context: Context
+        ) -> Tuple[Project, Flow, List[PipelineStep]]:
+
+    project = next(p for p in context.config.projects if p.id == project_id)
+    flow = next(f for f in project.pipeline.flows if f.name == flow_id)
+    steps = project.get_flow_steps(flow_id=flow_id)
+
+    await context.info(text="project & flow & steps retrieved",
+                       data={'project': to_json(project), 'flow': to_json(flow),
+                             'steps': [s.id for s in steps]})
+    return project, flow, steps
 
 
 async def get_status(
@@ -31,109 +49,42 @@ async def get_status(
             action="get status",
             with_attributes={'projectId': project.id, 'flowId': flow_id, 'stepId': step.id}
             ) as ctx:
+        paths: PathsBook = ctx.config.pathsBook
+        path = paths.artifacts_step(project_name=project.name, flow_id=flow_id, step_id=step.id)
+        manifest = Manifest(**parse_json(path / 'manifest.json')) if (path / 'manifest.json').exists() else None
 
-        path = artifacts_path(project=project, flow_id=flow_id, step=step, context=ctx)
-        artifacts = [
-            ArtifactResponse(
-                id=artifact.id,
-                path=artifact_path(project=project, flow_id=flow_id, step=step, artifact=artifact, context=ctx))
-            for artifact in step.artifacts]
+        status = await step.get_status(project=project, flow_id=flow_id, last_manifest=manifest, context=context)
 
-        if not (path / 'manifest.json').exists():
-            await ctx.info(text="No manifest found => status is none")
-            return PipelineStepStatusResponse(
-                projectId=project.id,
-                flowId=flow_id,
-                stepId=step.id,
-                artifactFolder=path,
-                artifacts=artifacts,
-                status=PipelineStepStatus.none
-                )
+        def format_artifact(artifact: Artifact):
+            _path = paths.artifact(project_name=project.name, flow_id=flow_id, step_id=step.id, artifact_id=artifact.id)
+            opening_url = f"{_path}/{artifact.openingUrl}" if artifact.openingUrl else None
+            return ArtifactResponse(id=artifact.id, openingUrl=opening_url, path=_path)
 
-        manifest = Manifest(**parse_json(path / 'manifest.json'))
-        await ctx.info(text="Manifest retrieved", data=manifest)
-
-        fingerprint, _ = await get_fingerprint(project=project, step=step, context=ctx)
-        await ctx.info(text="Actual fingerprint", data=fingerprint)
-        if manifest.fingerprint != fingerprint:
-            await ctx.info(text="Outdated entry", data={'actual fp': fingerprint, 'saved fp': manifest.fingerprint})
-            return PipelineStepStatusResponse(
-                projectId=project.id,
-                flowId=flow_id,
-                stepId=step.id,
-                manifest=manifest,
-                artifactFolder=path,
-                artifacts=artifacts,
-                status=PipelineStepStatus.outdated
-                )
+        artifacts = [format_artifact(artifact) for artifact in step.artifacts]
 
         return PipelineStepStatusResponse(
-                projectId=project.id,
-                flowId=flow_id,
-                stepId=step.id,
-                manifest=manifest,
-                artifactFolder=path,
-                artifacts=artifacts,
-                status=PipelineStepStatus.OK if manifest.succeeded else PipelineStepStatus.KO
-                )
+            projectId=project.id,
+            flowId=flow_id,
+            stepId=step.id,
+            manifest=manifest,
+            artifactFolder=path,
+            artifacts=artifacts,
+            status=status
+            )
 
 
-async def run(project: Project, step: PipelineStep, context: Context):
-
-    if not isinstance(step.run, str):
-        raise RuntimeError("Ony run command as string are supported for now")
+async def run(project: Project, flow_id: str, step: PipelineStep, context: Context):
 
     async with context.start(
-            action="run command",
-            labels=[Label.BASH],
+            action="run function",
             with_attributes={
                 'projectId': project.id,
                 'stepId': step.id,
-                'command': step.run,
                 'event': 'PipelineStatusPending:run'
                 }
             ) as ctx:
 
-        p = await asyncio.create_subprocess_shell(
-            cmd=f"(cd  {str(project.path)} && {step.run})",
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-            shell=True
-            )
-        outputs = []
-        async for f in merge(p.stdout, p.stderr):
-            outputs.append(f.decode('utf-8'))
-            await ctx.info(text=outputs[-1], labels=[Label.BASH])
-
-        await p.communicate()
-
-        return_code = p.returncode
-
-        if return_code > 0:
-            raise CommandException(command=f"{project.name}#{step.id} ({step.run})", outputs=outputs)
-        return outputs
-
-
-async def get_fingerprint(project: Project, step: PipelineStep, context: Context):
-
-    checksum: Optional[str] = None
-
-    async with context.start(
-            action="fingerprint",
-            succeeded_data=lambda _ctx: ("fingerprint", checksum),
-            with_attributes={'projectId': project.id, 'stepId': step.id}
-            ) as ctx:
-
-        if step.sources:
-            files = matching_files(
-                folder=project.path,
-                patterns=step.sources
-                )
-            await ctx.info(text='got file listing', data=[str(f) for f in files])
-            checksum = files_check_sum(files)
-            return checksum, files
-
-        raise RuntimeError("fingerprint can only be FileListing for now")
+        return await step.execute_run(project, flow_id, ctx)
 
 
 async def create_artifacts(
@@ -180,14 +131,14 @@ async def create_artifact(
             patterns=artifact.files
             )
 
+        paths: PathsBook = ctx.config.pathsBook
         await ctx.info(text='got files listing', data=[str(f) for f in files])
-        destination_folder = artifact_path(project=project, flow_id=flow_id, step=step, artifact=artifact, context=ctx)
-        # zipper = zipfile.ZipFile(destination_path, 'w', zipfile.ZIP_DEFLATED)
+        destination_folder = paths.artifact(project_name=project.name, flow_id=flow_id, step_id=step.id,
+                                            artifact_id=artifact.id)
+
         for f in files:
             destination_path = destination_folder / f.relative_to(project.path)
             os.makedirs(os.path.dirname(destination_path), exist_ok=True)
             shutil.copy(src=f, dst=destination_path)
-            # zipper.write(filename=f, arcname=f.relative_to(project.path))
-        # zipper.close()
 
         await context.info(text="Zip file created", data={'path': str(destination_path)})

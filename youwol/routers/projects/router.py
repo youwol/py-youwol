@@ -1,20 +1,22 @@
 import asyncio
+import collections.abc
 import itertools
 from datetime import datetime
-from typing import Optional, Tuple, List
+from typing import Optional
 
 from fastapi import APIRouter, Depends
 
 from starlette.requests import Request
 
-from configuration import Project, PipelineStep, Flow
+from configuration import Project
+from configuration.paths import PathsBook
 from context import Context, CommandException
 from models import Label
 from routers.projects.implementation import (
-    run, get_fingerprint, create_artifacts, artifacts_path,
-    get_status, Manifest, artifact_path,
+    run, create_artifacts,
+    get_status, Manifest, get_project_step, get_project_flow_steps,
     )
-from utils_low_level import to_json
+
 from utils_paths import write_json
 from youwol.web_socket import WebSocketsCache
 
@@ -27,36 +29,6 @@ from youwol.configuration.youwol_configuration import yw_config
 
 router = APIRouter()
 flatten = itertools.chain.from_iterable
-
-
-async def get_project_step(
-        project_id: str,
-        step_id: str,
-        context: Context
-        ) -> Tuple[Project, PipelineStep]:
-    project = next(p for p in context.config.projects if p.id == project_id)
-    step = next(s for s in project.pipeline.steps if s.id == step_id)
-
-    await context.info(text="project & step retrieved",
-                       data={'project': to_json(project), 'step': to_json(step)})
-    return project, step
-
-
-async def get_project_flow_steps(
-        project_id: str,
-        flow_id: str,
-        context: Context
-        ) -> Tuple[Project, Flow, List[PipelineStep]]:
-
-    project = next(p for p in context.config.projects if p.id == project_id)
-    flow = next(f for f in project.pipeline.flows if f.name == flow_id)
-    involved_steps = set([step.strip() for b in flow.dag for step in b.split('>')])
-    steps = [step for step in project.pipeline.steps if step.id in involved_steps]
-
-    await context.info(text="project & flow & steps retrieved",
-                       data={'project': to_json(project), 'flow': to_json(flow),
-                             'steps': [s for s in involved_steps]})
-    return project, flow, steps
 
 
 @router.get("/{project_id}/flows/{flow_id}/steps/{step_id}",
@@ -140,8 +112,11 @@ async def project_artifacts(
                 }
             ) as ctx:
 
+        paths: PathsBook = ctx.config.pathsBook
+
         project, flow, steps = await get_project_flow_steps(project_id=project_id, flow_id=flow_id, context=ctx)
-        eventual_artifacts = [(a, artifact_path(project=project, flow_id=flow_id, step=s, artifact=a, context=ctx))
+        eventual_artifacts = [(a, paths.artifact(project_name=project.name, flow_id=flow_id, step_id=s.id,
+                                                 artifact_id=a.id))
                               for s in steps for a in s.artifacts]
         actual_artifacts = [ArtifactResponse(id=a.id, path=path) for a, path in eventual_artifacts
                             if path.exists() and path.is_dir()]
@@ -160,6 +135,19 @@ async def run_pipeline_step(
         ):
     context = Context(request=request, config=config, web_socket=WebSocketsCache.userChannel)
 
+    def refresh_status_downstream_steps():
+        """
+        Downstream steps may depend on this guy => request status on them.
+        Shortcut => request status on all the steps of the flow (not only subsequent)
+        """
+        _project: Project = next(p for p in context.config.projects if p.id == project_id)
+        steps = _project.get_flow_steps(flow_id=flow_id)
+        return asyncio.gather(*[
+            pipeline_step_status(request=request, project_id=project_id, flow_id=flow_id, step_id=_step.id,
+                                 config=config)
+            for _step in steps
+            ])
+
     async with context.start(
             action="Run pipeline-step",
             labels=[Label.INFO],
@@ -169,22 +157,30 @@ async def run_pipeline_step(
                 'flowId': flow_id,
                 'stepId': step_id
                 },
-            on_exit=lambda _ctx: pipeline_step_status(request=request, project_id=project_id, flow_id=flow_id,
-                                                      step_id=step_id, config=config)
+            on_exit=lambda _ctx: refresh_status_downstream_steps()
             ) as ctx:
         project, step = await get_project_step(project_id, step_id, ctx)
         error_run = None
         try:
-            outputs = await run(project=project, step=step, context=ctx)
+            outputs = await run(project=project, flow_id=flow_id, step=step, context=ctx)
             succeeded = True
         except CommandException as e:
             outputs = e.outputs
             error_run = e
             succeeded = False
 
-        fingerprint, files = await get_fingerprint(project=project, step=step, context=ctx)
+        paths: PathsBook = ctx.config.pathsBook
+        if isinstance(outputs, collections.abc.Mapping) and 'fingerprint' in outputs:
+            await ctx.info(text="'sources' attribute not provided => expect fingerprint from run's output",
+                           data={'run-output': outputs})
+            fingerprint = outputs['fingerprint']
+            files = []
+        else:
+            await ctx.info(text="'sources' attribute provided => fingerprint computed from it")
+            fingerprint, files = await step.get_fingerprint(project=project, flow_id=flow_id, context=ctx)
+
         (context.config.pathsBook.system / project.name / flow_id / step.id).mkdir(parents=True, exist_ok=True)
-        path = artifacts_path(project=project, flow_id=flow_id, step=step, context=context)
+        path = paths.artifacts_step(project_name=project.name, flow_id=flow_id, step_id=step.id)
         manifest = Manifest(succeeded=succeeded if succeeded is not None else False,
                             fingerprint=fingerprint,
                             creationDate=datetime.now().strftime("%d/%m/%Y %H:%M:%S"),

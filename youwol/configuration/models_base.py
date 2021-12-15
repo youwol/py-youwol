@@ -1,19 +1,24 @@
 import asyncio
 import collections
+import glob
 import sys
 import traceback
 from enum import Enum
 from functools import reduce
 from pathlib import Path
-from typing import List, Union, Type, Set, Dict, Any, Callable, Awaitable
+from typing import List, Union, Type, Set, Dict, Any, Callable, Awaitable, Iterable, cast, Optional
 
 from pydantic import BaseModel, Json
 
+from context import CommandException
 from models import Label
+from utils_paths import matching_files
 from youwol.utils_low_level import merge
+from youwol_utils import JSON, files_check_sum
 
 Context = 'youwol.dashboard.back.context.Context'
 YouwolConfiguration = 'youwol.dashboard.back.configuration.youwol_configuration.YouwolConfiguration'
+FlowId = str
 
 
 class ErrorResponse(BaseModel):
@@ -159,7 +164,7 @@ class StepEnum(Enum):
 class Artifact(BaseModel):
     id: str = ""
     files: FileListing
-    url: str = None
+    openingUrl: str = None
 
 
 class PipelineStepStatus(Enum):
@@ -169,15 +174,129 @@ class PipelineStepStatus(Enum):
     none = "none"
 
 
-Runnable = Union[str, Callable[['Project', Context], None], Callable[['Project', Context], Awaitable[None]]]
+class Manifest(BaseModel):
+    succeeded: bool
+    fingerprint: str
+    creationDate: str
+    files: List[str]
+    cmdOutputs: Union[List[str], Dict] = []
+
+
+RunImplicit = Callable[
+    ['Project', FlowId, Context],
+    Union[JSON, Awaitable[JSON]]
+    ]
+SourcesFct = Callable[
+    ['Project', FlowId, Context],
+    Union[Any, Awaitable[Any]]
+    ]
+
+SourcesFctImplicit = Callable[
+    ['Project', FlowId, Context],
+    Union[FileListing, Awaitable[FileListing]]
+    ]
+SourcesFctExplicit = Callable[
+    ['Project', FlowId, Context],
+    Union[Iterable[Path], Awaitable[Iterable[Path]]]
+    ]
+
+StatusFct = Callable[
+    ['Project', Optional[Manifest], Context],
+    Union[PipelineStepStatus, Awaitable[PipelineStepStatus]]
+    ]
+
+
+class ExplicitNone(BaseModel):
+    pass
 
 
 class PipelineStep(BaseModel):
 
     id: str = ""
+
     artifacts: List[Artifact] = []
-    sources: FileListing = None
-    run: Runnable = None
+
+    sources: Union[FileListing, SourcesFctImplicit, SourcesFctExplicit] = None
+
+    async def get_sources(self, project: 'Project', flow_id: FlowId, context: Context) -> Optional[Iterable[Path]]:
+
+        if self.sources is None:
+            return None
+
+        if isinstance(self.sources, FileListing):
+            return matching_files(folder=project.path, patterns=self.sources)
+        sources_fct = cast(SourcesFct, self.sources)
+        r = await sources_fct(project, flow_id, context)
+        return matching_files(folder=project.path, patterns=r) if isinstance(r, FileListing) else r
+
+    status: StatusFct = None
+
+    async def get_status(self, project: 'Project', flow_id: str, last_manifest: Optional[Manifest], context: Context) \
+            -> PipelineStepStatus:
+
+        if last_manifest is None:
+            await context.info(text="No manifest found => status is none")
+            return PipelineStepStatus.none
+
+        await context.info(text="Manifest retrieved", data=last_manifest)
+
+        fingerprint, _ = await self.get_fingerprint(project=project, flow_id=flow_id, context=context)
+        await context.info(text="Actual fingerprint", data=fingerprint)
+
+        if last_manifest.fingerprint != fingerprint:
+            await context.info(text="Outdated entry",
+                               data={'actual fp': fingerprint, 'saved fp': last_manifest.fingerprint})
+            return PipelineStepStatus.outdated
+
+        return PipelineStepStatus.OK if last_manifest.succeeded else PipelineStepStatus.KO
+
+    run: Union[str, RunImplicit, ExplicitNone]
+
+    async def execute_run(self, project: 'Project', flow_id: FlowId, context: Context):
+
+        if isinstance(self.run, ExplicitNone):
+            raise RuntimeError("When 'ExplicitNone' is provided, the step must overrides the 'execute_run' method")
+
+        if isinstance(self.run, str):
+            await context.info(f'Run cmd {self.run}')
+            return await self.__execute_run_cmd(project=project, run_cmd=self.run, context=context)
+
+        try:
+            run = cast(self.run, Callable[['Project', str, Context], Awaitable[JSON]])
+            await context.info(f'Run custom function')
+            outputs = await run(project, flow_id, context)
+        except Exception as e:
+            raise CommandException(command=f"custom run function", outputs=[str(e)])
+
+        return outputs
+
+    async def get_fingerprint(self, project: 'Project', flow_id: FlowId, context: Context):
+
+        files = await self.get_sources(project=project, flow_id=flow_id, context=context)
+        await context.info(text='got file listing', data=[str(f) for f in files])
+        checksum = files_check_sum(files)
+        return checksum, files
+
+    async def __execute_run_cmd(self, project: 'Project', run_cmd: str, context: Context):
+
+        p = await asyncio.create_subprocess_shell(
+            cmd=f"(cd  {str(project.path)} && {run_cmd})",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            shell=True
+            )
+        outputs = []
+        async for f in merge(p.stdout, p.stderr):
+            outputs.append(f.decode('utf-8'))
+            await context.info(text=outputs[-1], labels=[Label.BASH])
+
+        await p.communicate()
+
+        return_code = p.returncode
+
+        if return_code > 0:
+            raise CommandException(command=f"{project.name}#{self.id} ({self.run})", outputs=outputs)
+        return outputs
 
 
 class Flow(BaseModel):
@@ -207,6 +326,32 @@ class Project(BaseModel):
     name: str
     id: str  # base64 encoded Project.name
     version: str
+
+    async def get_artifact_files(self, flow_id: str, artifact_id: str, context: Context) -> List[Path]:
+
+        steps = self.get_flow_steps(flow_id=flow_id)
+        step = next((s for s in steps if artifact_id in [a.id for a in s.artifacts]), None)
+        if not step:
+            artifacts_id = [a.id for s in steps for a in s.artifacts]
+            await context.error(text=f"Can not find artifact '{artifact_id}' in given flow '{flow_id}'",
+                                data={"artifacts_id": artifacts_id})
+        folder = context.config.pathsBook.artifact(project_name=self.name, flow_id=flow_id, step_id=step.id,
+                                                   artifact_id=artifact_id)
+
+        if not folder.exists() or not folder.is_dir():
+            return []
+        return [Path(p) for p in glob.glob(str(folder) + '/**/*', recursive=True) if Path(p).is_file()]
+
+    def get_flow_steps(
+            self,
+            flow_id: str
+            ) -> List[PipelineStep]:
+
+        flow = next(f for f in self.pipeline.flows if f.name == flow_id)
+        involved_steps = set([step.strip() for b in flow.dag for step in b.split('>')])
+        steps = [step for step in self.pipeline.steps if step.id in involved_steps]
+
+        return steps
 
 
 class Asset(BaseModel):

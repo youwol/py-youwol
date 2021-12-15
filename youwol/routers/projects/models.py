@@ -1,24 +1,19 @@
 from pathlib import Path
-from typing import List, Any, Optional
+from typing import List, Optional
 
 from pydantic import BaseModel
+
+from configuration import Manifest
 from youwol.configuration import PipelineStepStatus
 
 ArtifactId = str
 PipelineStepId = str
 
 
-class Manifest(BaseModel):
-    succeeded: bool
-    fingerprint: str
-    creationDate: str
-    files: List[str]
-    cmdOutputs: List[str] = []
-
-
 class ArtifactResponse(BaseModel):
     id: str
     path: Path
+    openingUrl: Optional[str]
 
 
 class ArtifactsResponse(BaseModel):
