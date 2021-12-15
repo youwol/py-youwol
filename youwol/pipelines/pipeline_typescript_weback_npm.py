@@ -1,11 +1,12 @@
 from pathlib import Path
 from typing import Any, Union, List
-
-from configuration import Flow
+from configuration import Flow, SourcesFctImplicit
 from context import Context
+from pipelines.publish_cdn import PublishCdnLocalStep, PublishCdnRemoteStep
+
 from youwol.configuration import (
     Pipeline, parse_json, Skeleton, SkeletonParameter, PipelineStep, FileListing,
-    Artifact, Runnable, Project, PipelineStepStatus
+    Artifact, Project
     )
 
 
@@ -40,14 +41,14 @@ def get_dependencies(project: Any):
 
 class SyncFromDownstreamStep(PipelineStep):
     id: str = "sync-deps"
-    run: Runnable = ""
+    run: str = ""
 
     artifacts: List[Artifact] = []
 
 
 class BuildStep(PipelineStep):
     id: str
-    run: Runnable
+    run: str
     sources: FileListing = FileListing(
         include=["package.json", "webpack.config.js", "src/lib", "src/index.ts"],
         ignore=["**/auto_generated.ts"]
@@ -65,8 +66,8 @@ class BuildStep(PipelineStep):
 
 class DocStep(PipelineStep):
     id = 'doc'
-    run: Runnable = "yarn doc"
-    sources = FileListing(
+    run: str = "yarn doc"
+    sources: FileListing = FileListing(
         include=["src/lib", "src/index.ts"],
         ignore=["**/auto_generated.ts"]
         )
@@ -76,7 +77,8 @@ class DocStep(PipelineStep):
             id='docs',
             files=FileListing(
                 include=["dist/docs"],
-                )
+                ),
+            openingUrl='dist/docs/index.html'
             )
         ]
 
@@ -87,11 +89,13 @@ test_result: Artifact = Artifact(
             include=["junit.xml"],
             )
         )
+
 test_coverage: Artifact = Artifact(
     id='test-coverage',
     files=FileListing(
         include=["coverage"],
-        )
+        ),
+    openingUrl='coverage/lcov-report/index.html'
     )
 
 
@@ -99,55 +103,17 @@ class TestStep(PipelineStep):
     id: str
     run: str
     artifacts: List[Artifact]
-    sources = FileListing(
-        include=["src/tests", "src/index.ts"]
-        )
 
+    @staticmethod
+    async def _sources(project: Project, flow_id: str, _context: Context):
+        steps_in_flow = project.get_flow_steps(flow_id=flow_id)
+        build_step = next(s for s in steps_in_flow if isinstance(s, BuildStep))
 
-def cdn_local_status(_project, _context):
-    """
-    compare check sum of sources with LocalClients.cdn_client.check_sum(project.name, project.version)
-    """
-    return PipelineStepStatus.KO
+        return FileListing(
+            include=build_step.sources.include + ["src/tests"]
+            )
 
-
-class PublishCdnLocalStep(PipelineStep):
-    id = 'publish-local'
-
-    # @staticmethod
-    # def sources(project: Project, context: Context):
-    #     return [
-    #         project.path / 'package.json',
-    #         project.path / 'webpack.config.js'
-    #         ] + \
-    #         project.get_artifact('dist') + \
-    #         project.get_artifact('doc')
-
-    def run(self, project: Project, context: Context):
-        """
-        open a tmp.zip and add PublishCdnLocalStep.sources(project, context)
-
-        send the tmp.zip using LocalClients.cdn_backend()
-        """
-        pass
-
-
-def cdn_remote_status(_project: Project, _context: Context):
-    """
-    switch:
-        + the (_project.name, _project.version) not in remote CDN => PipelineStepStatus.none
-        + the (_project.name, _project.version) in remote CDN and fingerprint match local CDN fingerprint =>
-            PipelineStatus.OK
-        + otherwise => PipelineStatus.KO
-    """
-    return PipelineStepStatus.KO
-
-
-class PublishCdnRemoteStep(PipelineStep):
-    id = 'publish-remote'
-
-    def run(self, project: Project, context: Context):
-        pass
+    sources: SourcesFctImplicit = lambda p, f, ctx: TestStep._sources(p, f, ctx)
 
 
 def pipeline():
@@ -167,10 +133,10 @@ def pipeline():
             DocStep(),
             TestStep(id="test", run="yarn test", artifacts=[test_result]),
             TestStep(id="test-coverage", run="yarn test-coverage",
-                     artifacts=[test_result, test_coverage]
+                     artifacts=[test_coverage]
                      ),
-            PublishCdnLocalStep(),
-            PublishCdnRemoteStep()
+            PublishCdnLocalStep(packaged_artifacts=['dist', 'docs']),
+            PublishCdnRemoteStep(packaged_artifacts=['dist', 'docs'])
             ],
         flows=[
             Flow(
@@ -184,7 +150,8 @@ def pipeline():
             Flow(
                 name="dev",
                 dag=[
-                    "sync-deps > build-dev > publish-local"
+                    "sync-deps > build-dev > publish-local",
+                    "build-dev > doc > publish-local"
                     ]
                 )
             ]
