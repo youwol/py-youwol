@@ -32,14 +32,14 @@ async def create_cdn_zip(
 
 class PublishCdnBase(PipelineStep):
 
-    packaged_artifacts: List[str]
+    packagedArtifacts: List[str]
     run: ExplicitNone = ExplicitNone()
 
     async def packaged_files(self, project: Project, flow_id: str, context: Context):
 
         files = await asyncio.gather(*[
             project.get_artifact_files(flow_id=flow_id, artifact_id=artifact_id, context=context)
-            for artifact_id in self.packaged_artifacts
+            for artifact_id in self.packagedArtifacts
             ])
         return list(itertools.chain.from_iterable(files))
 

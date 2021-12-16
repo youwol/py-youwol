@@ -137,8 +137,8 @@ def pipeline():
             TestStep(id="test-coverage", run="yarn test-coverage",
                      artifacts=[test_coverage]
                      ),
-            PublishCdnLocalStep(packaged_artifacts=['dist', 'docs']),
-            PublishCdnRemoteStep(packaged_artifacts=['dist', 'docs'])
+            PublishCdnLocalStep(packagedArtifacts=['dist', 'docs']),
+            PublishCdnRemoteStep(packagedArtifacts=['dist', 'docs'])
             ],
         flows=[
             Flow(
