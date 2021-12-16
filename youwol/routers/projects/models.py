@@ -33,3 +33,9 @@ class PipelineStepStatusResponse(BaseModel):
 class PipelineStatusResponse(BaseModel):
     projectId: str
     steps: List[PipelineStepStatusResponse]
+
+
+class ProjectStatusResponse(BaseModel):
+    projectId: str
+    projectName: str
+    orderedDependencies: List[str]

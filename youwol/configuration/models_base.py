@@ -315,7 +315,7 @@ class Pipeline(BaseModel):
     steps: List[PipelineStep]
     flows: List[Flow]
     extends: str = None
-    dependencies: Callable[['Project'], List[str]] = None
+    dependencies: Callable[['Project', Context], Set[str]] = None
     projectName: Callable[[Path], str]
     projectVersion: Callable[[Path], str]
 
@@ -326,6 +326,11 @@ class Project(BaseModel):
     name: str
     id: str  # base64 encoded Project.name
     version: str
+
+    async def get_ordered_dependencies(self, context: Context) -> List['Project']:
+        all_dependencies = self.pipeline.dependencies(self, context)
+        projects = [p for p in context.config.projects if p.name in all_dependencies]
+        return projects
 
     async def get_artifact_files(self, flow_id: str, artifact_id: str, context: Context) -> List[Path]:
 

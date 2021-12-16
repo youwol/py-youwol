@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Union, List
+from typing import Union, List
 from configuration import Flow, SourcesFctImplicit
 from context import Context
 from pipelines.publish_cdn import PublishCdnLocalStep, PublishCdnRemoteStep
@@ -32,11 +32,13 @@ def create_skeleton(path: Union[Path, str]):
         )
 
 
-def get_dependencies(project: Any):
+def get_dependencies(project: Project):
     package_json = parse_json(project.path / "package.json")
-    return package_json.get("dependencies", {}).keys() + \
-        package_json.get("peerDependencies", []).keys() + \
-        package_json.get("devDependencies", []).keys()
+    return set({
+        **package_json.get("dependencies", {}),
+        **package_json.get("peerDependencies", {}),
+        **package_json.get("devDependencies", {})
+        }.keys())
 
 
 class SyncFromDownstreamStep(PipelineStep):
@@ -124,7 +126,7 @@ def pipeline():
         output="javascript",
         projectName=lambda path: parse_json(path / "package.json")["name"],
         projectVersion=lambda path: parse_json(path / "package.json")["version"],
-        dependencies=lambda project: get_dependencies(project),
+        dependencies=lambda project, ctx: get_dependencies(project),
         skeleton=lambda ctx: create_skeleton(ctx),
         steps=[
             SyncFromDownstreamStep(),

@@ -60,6 +60,34 @@ async def pipeline_step_status(
         return response
 
 
+@router.get("/{project_id}",
+            response_model=ProjectStatusResponse,
+            summary="status")
+async def project_status(
+        request: Request,
+        project_id: str,
+        config: YouwolConfiguration = Depends(yw_config)
+        ):
+    context = Context(request=request, config=config, web_socket=WebSocketsCache.userChannel)
+    response: Optional[ProjectStatusResponse] = None
+    async with context.start(
+            action="Get project status",
+            labels=[Label.INFO],
+            succeeded_data=lambda _ctx: ('ProjectStatusResponse', response),
+            with_attributes={
+                'projectId': project_id
+                }
+            ) as ctx:
+        project: Project = next(p for p in context.config.projects if p.id == project_id)
+        dependencies = await project.get_ordered_dependencies(ctx)
+        response = ProjectStatusResponse(
+            projectId=project_id,
+            projectName=project.name,
+            orderedDependencies=[d.name for d in dependencies]
+            )
+        return response
+
+
 @router.get("/{project_id}/flows/{flow_id}",
             response_model=PipelineStatusResponse,
             summary="status")
