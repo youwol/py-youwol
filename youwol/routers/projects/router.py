@@ -22,7 +22,7 @@ from youwol.web_socket import WebSocketsCache
 
 from routers.projects.models import (
     PipelineStepStatusResponse, PipelineStatusResponse, ArtifactsResponse,
-    ArtifactResponse,
+    ArtifactResponse, ProjectStatusResponse,
     )
 from youwol.configuration.youwol_configuration import YouwolConfiguration
 from youwol.configuration.youwol_configuration import yw_config
@@ -91,7 +91,7 @@ async def project_status(
 @router.get("/{project_id}/flows/{flow_id}",
             response_model=PipelineStatusResponse,
             summary="status")
-async def project_status(
+async def flow_status(
         request: Request,
         project_id: str,
         flow_id: str,
@@ -100,7 +100,7 @@ async def project_status(
     context = Context(request=request, config=config, web_socket=WebSocketsCache.userChannel)
     response: Optional[PipelineStatusResponse] = None
     async with context.start(
-            action="Get project status",
+            action=f"Get flow '{flow_id}' status",
             labels=[Label.INFO],
             succeeded_data=lambda _ctx: ('PipelineStatusResponse', response),
             with_attributes={
