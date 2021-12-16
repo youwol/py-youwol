@@ -14,15 +14,14 @@ from context import Context, CommandException
 from models import Label
 from routers.projects.implementation import (
     run, create_artifacts,
-    get_status, Manifest, get_project_step, get_project_flow_steps,
+    get_status, Manifest, get_project_step, get_project_flow_steps, format_artifact_response,
     )
 
 from utils_paths import write_json
 from youwol.web_socket import WebSocketsCache
 
 from routers.projects.models import (
-    PipelineStepStatusResponse, PipelineStatusResponse, ArtifactsResponse,
-    ArtifactResponse, ProjectStatusResponse,
+    PipelineStepStatusResponse, PipelineStatusResponse, ArtifactsResponse, ProjectStatusResponse,
     )
 from youwol.configuration.youwol_configuration import YouwolConfiguration
 from youwol.configuration.youwol_configuration import yw_config
@@ -143,11 +142,14 @@ async def project_artifacts(
         paths: PathsBook = ctx.config.pathsBook
 
         project, flow, steps = await get_project_flow_steps(project_id=project_id, flow_id=flow_id, context=ctx)
-        eventual_artifacts = [(a, paths.artifact(project_name=project.name, flow_id=flow_id, step_id=s.id,
-                                                 artifact_id=a.id))
+        eventual_artifacts = [(a, s, paths.artifact(project_name=project.name, flow_id=flow_id, step_id=s.id,
+                                                    artifact_id=a.id))
                               for s in steps for a in s.artifacts]
-        actual_artifacts = [ArtifactResponse(id=a.id, path=path) for a, path in eventual_artifacts
-                            if path.exists() and path.is_dir()]
+
+        actual_artifacts = [format_artifact_response(project=project, flow_id=flow_id, step=s, artifact=a,
+                                                     context=ctx)
+                            for a, s, path in eventual_artifacts if path.exists() and path.is_dir()]
+
         response = ArtifactsResponse(artifacts=actual_artifacts)
         return response
 

@@ -161,10 +161,15 @@ class StepEnum(Enum):
     SERVE = 'serve'
 
 
+class Link(BaseModel):
+    name: str
+    url: str
+
+
 class Artifact(BaseModel):
     id: str = ""
     files: FileListing
-    openingUrl: str = None
+    links: List[Link] = []
 
 
 class PipelineStepStatus(Enum):

@@ -1,7 +1,7 @@
 import os
 import shutil
 from typing import Tuple, List
-from configuration import Project, PipelineStep, Artifact, Flow
+from configuration import Project, PipelineStep, Artifact, Flow, Link
 from configuration.paths import PathsBook
 from context import Context
 from routers.projects.models import PipelineStepStatusResponse, Manifest, ArtifactResponse
@@ -38,6 +38,23 @@ async def get_project_flow_steps(
     return project, flow, steps
 
 
+def format_artifact_response(
+        project: Project,
+        flow_id: str,
+        step: PipelineStep,
+        artifact: Artifact,
+        context: Context
+        ) -> ArtifactResponse:
+    paths: PathsBook = context.config.pathsBook
+
+    path = paths.artifact(project_name=project.name, flow_id=flow_id, step_id=step.id, artifact_id=artifact.id)
+    return ArtifactResponse(
+        id=artifact.id,
+        links=[Link(name=link.name, url=f"{path}/{link.url}") for link in artifact.links],
+        path=path
+        )
+
+
 async def get_status(
         project: Project,
         flow_id: str,
@@ -55,12 +72,9 @@ async def get_status(
 
         status = await step.get_status(project=project, flow_id=flow_id, last_manifest=manifest, context=context)
 
-        def format_artifact(artifact: Artifact):
-            _path = paths.artifact(project_name=project.name, flow_id=flow_id, step_id=step.id, artifact_id=artifact.id)
-            opening_url = f"{_path}/{artifact.openingUrl}" if artifact.openingUrl else None
-            return ArtifactResponse(id=artifact.id, openingUrl=opening_url, path=_path)
-
-        artifacts = [format_artifact(artifact) for artifact in step.artifacts]
+        artifacts = [format_artifact_response(project=project, flow_id=flow_id, step=step, artifact=artifact,
+                                              context=ctx)
+                     for artifact in step.artifacts]
 
         return PipelineStepStatusResponse(
             projectId=project.id,

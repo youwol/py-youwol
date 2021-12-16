@@ -3,8 +3,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from configuration import Manifest
-from youwol.configuration import PipelineStepStatus
+from youwol.configuration import PipelineStepStatus, Manifest, Link
 
 ArtifactId = str
 PipelineStepId = str
@@ -13,7 +12,7 @@ PipelineStepId = str
 class ArtifactResponse(BaseModel):
     id: str
     path: Path
-    openingUrl: Optional[str]
+    links: List[Link] = []
 
 
 class ArtifactsResponse(BaseModel):

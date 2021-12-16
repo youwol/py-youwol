@@ -1,8 +1,10 @@
 from pathlib import Path
 from typing import Union, List
-from configuration import Flow, SourcesFctImplicit
-from context import Context
-from pipelines.publish_cdn import PublishCdnLocalStep, PublishCdnRemoteStep
+
+from configuration import Link
+from youwol.configuration import Flow, SourcesFctImplicit
+from youwol.context import Context
+from youwol.pipelines.publish_cdn import PublishCdnLocalStep, PublishCdnRemoteStep
 
 from youwol.configuration import (
     Pipeline, parse_json, Skeleton, SkeletonParameter, PipelineStep, FileListing,
@@ -80,7 +82,12 @@ class DocStep(PipelineStep):
             files=FileListing(
                 include=["dist/docs"],
                 ),
-            openingUrl='dist/docs/index.html'
+            links=[
+                Link(
+                    name='documentation',
+                    url='dist/docs/index.html'
+                    )
+                ]
             )
         ]
 
@@ -97,7 +104,12 @@ test_coverage: Artifact = Artifact(
     files=FileListing(
         include=["coverage"],
         ),
-    openingUrl='coverage/lcov-report/index.html'
+    links=[
+        Link(
+            name='Coverage',
+            url='coverage/lcov-report/index.html'
+            )
+        ]
     )
 
 
