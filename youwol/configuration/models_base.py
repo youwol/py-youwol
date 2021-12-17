@@ -335,14 +335,17 @@ class Project(BaseModel):
     id: str  # base64 encoded Project.name
     version: str
 
-    def get_dependencies(self, recursive: bool, context: Context) -> List['Project']:
-        flatten = itertools.chain.from_iterable
+    def get_dependencies(self, recursive: bool, context: Context, ignore: List[str] = None) -> List['Project']:
+        ignore = ignore or []
         all_dependencies = self.pipeline.dependencies(self, context)
-        dependencies = [p for p in context.config.projects if p.name in all_dependencies]
+        dependencies = [p for p in context.config.projects if p.name in all_dependencies and p.name not in ignore]
+        ignore = ignore + [p.name for p in dependencies]
         if not recursive:
             return dependencies
-        dependencies_rec = [*dependencies,
-                            *flatten([p.get_dependencies(recursive=recursive, context=context) for p in dependencies])]
+        dependencies_rec = functools.reduce(lambda acc, e: acc+e, [
+            dependencies,
+            *[p.get_dependencies(recursive=recursive, context=context, ignore=ignore) for p in dependencies]
+            ])
 
         return dependencies_rec
 
