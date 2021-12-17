@@ -74,7 +74,7 @@ class UploadPackageTask(UploadTask):
 
     async def get_raw(self):
         local_package = get_local_package(asset_id=self.asset_id, config=self.context.config)
-        assets_gateway_client = await self.context.config.get_assets_gateway_client(context=self.context)
+        assets_gateway_client = await RemoteClients.get_assets_gateway_client(context=self.context)
 
         to_sync_releases = [v.version for v in local_package.releases]
         try:
@@ -91,19 +91,15 @@ class UploadPackageTask(UploadTask):
         mismatch = [v for v, checksum in local_versions.items()
                     if v in remote_versions and checksum != remote_versions[v]]
         to_sync_releases = missing + mismatch
+        await self.context.info(text="package's versions to sync. resolved",
+                                data={"missing": missing, "mismatch": mismatch})
+
         return to_sync_releases
 
     async def publish_version(self, folder_id: str, version: str):
 
         remote_gtw = await RemoteClients.get_assets_gateway_client(self.context)
         async with self.context.start(action="Sync") as ctx:
-            """
-            await asyncio.gather(
-                send_version_pending(asset_id=asset_id, name=library_name, version=version, context=ctx),
-                send_package_pending(package=local_package, context=ctx),
-                ctx.info(step=ActionStep.STARTED, content=f"{library_name}#{version}: synchronize")
-                )
-            """
             library_name, zip_path = get_zip_path(asset_id=self.asset_id, version=version, context=self.context)
 
             try:
