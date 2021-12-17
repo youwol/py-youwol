@@ -114,6 +114,8 @@ class PublishCdnRemoteStep(PipelineStep):
     async def get_status(self, project: Project, flow_id: str, last_manifest: Optional[Manifest], context: Context) \
             -> PipelineStepStatus:
 
+        if last_manifest and not last_manifest.succeeded:
+            return PipelineStepStatus.KO
         local_cdn = LocalClients.get_cdn_client(context=context)
         remote_gtw = await RemoteClients.get_assets_gateway_client(context=context)
 
