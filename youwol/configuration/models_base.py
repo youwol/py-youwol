@@ -1,19 +1,22 @@
 import asyncio
 import collections
+import functools
 import glob
 import itertools
 import sys
 import traceback
 from enum import Enum
 from functools import reduce
+from operator import or_
 from pathlib import Path
-from typing import List, Union, Type, Set, Dict, Any, Callable, Awaitable, Iterable, cast, Optional
+from typing import List, Union, Type, Set, Dict, Any, Callable, Awaitable, Iterable, cast, Optional, FrozenSet
 
 from pydantic import BaseModel, Json
 
-from context import CommandException
-from models import Label
-from utils_paths import matching_files
+from youwol.configuration.paths import PathsBook
+from youwol.context import CommandException
+from youwol.models import Label
+from youwol.utils_paths import matching_files, parse_json
 from youwol.utils_low_level import merge
 from youwol_utils import JSON, files_check_sum
 
