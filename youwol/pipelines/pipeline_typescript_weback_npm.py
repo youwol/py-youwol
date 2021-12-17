@@ -158,7 +158,7 @@ def pipeline():
                 name="prod",
                 dag=[
                     "sync-deps > build-prod > test > publish-local > publish-remote ",
-                    "build-prod > doc > publish-remote",
+                    "build-prod > doc > publish-local",
                     "build-prod > test-coverage"
                     ]
                 ),
