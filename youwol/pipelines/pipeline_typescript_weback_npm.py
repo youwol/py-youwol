@@ -151,7 +151,7 @@ def pipeline():
                      artifacts=[test_coverage]
                      ),
             PublishCdnLocalStep(packagedArtifacts=['dist', 'docs']),
-            PublishCdnRemoteStep(packagedArtifacts=['dist', 'docs'])
+            PublishCdnRemoteStep()
             ],
         flows=[
             Flow(
