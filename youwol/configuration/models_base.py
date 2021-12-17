@@ -1,6 +1,7 @@
 import asyncio
 import collections
 import glob
+import itertools
 import sys
 import traceback
 from enum import Enum
@@ -332,10 +333,16 @@ class Project(BaseModel):
     id: str  # base64 encoded Project.name
     version: str
 
-    async def get_ordered_dependencies(self, context: Context) -> List['Project']:
+    def get_dependencies(self, recursive: bool, context: Context) -> List['Project']:
+        flatten = itertools.chain.from_iterable
         all_dependencies = self.pipeline.dependencies(self, context)
-        projects = [p for p in context.config.projects if p.name in all_dependencies]
-        return projects
+        dependencies = [p for p in context.config.projects if p.name in all_dependencies]
+        if not recursive:
+            return dependencies
+        dependencies_rec = [*dependencies,
+                            *flatten([p.get_dependencies(recursive=recursive, context=context) for p in dependencies])]
+
+        return dependencies_rec
 
     async def get_artifact_files(self, flow_id: str, artifact_id: str, context: Context) -> List[Path]:
 

@@ -34,7 +34,19 @@ class PipelineStatusResponse(BaseModel):
     steps: List[PipelineStepStatusResponse]
 
 
+class ChildToParentConnections(BaseModel):
+    id: str
+    parentIds: List[str]
+
+
+class DependenciesResponse(BaseModel):
+    above: List[str]
+    below: List[str]
+    dag: List[ChildToParentConnections]
+    simpleDag: List[ChildToParentConnections]
+
+
 class ProjectStatusResponse(BaseModel):
     projectId: str
     projectName: str
-    orderedDependencies: List[str]
+    workspaceDependencies: DependenciesResponse

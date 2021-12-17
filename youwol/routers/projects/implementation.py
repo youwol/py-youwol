@@ -4,7 +4,9 @@ from typing import Tuple, List
 from configuration import Project, PipelineStep, Artifact, Flow, Link
 from configuration.paths import PathsBook
 from context import Context
-from routers.projects.models import PipelineStepStatusResponse, Manifest, ArtifactResponse
+from routers.projects.models import (
+    PipelineStepStatusResponse, Manifest, ArtifactResponse
+    )
 from utils_low_level import to_json
 from utils_paths import matching_files, parse_json
 
