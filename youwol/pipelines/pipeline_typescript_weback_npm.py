@@ -62,7 +62,8 @@ class BuildStep(PipelineStep):
         Artifact(
             id='dist',
             files=FileListing(
-                include=["package.json", "dist/lib", "dist/@youwol"],
+                include=["package.json", "dist"],
+                ignore=["dist/docs"]
                 )
             )
         ]
