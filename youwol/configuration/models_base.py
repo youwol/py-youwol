@@ -375,6 +375,13 @@ class Project(BaseModel):
 
         return steps
 
+    def get_manifest(self, flow_id: FlowId, step: PipelineStep, context: Context):
+        paths_book: PathsBook = context.config.pathsBook
+        manifest_path = paths_book.artifacts_manifest(project_name=self.name, flow_id=flow_id, step_id=step.id)
+        if not manifest_path.exists():
+            return None
+        return Manifest(**parse_json(manifest_path))
+
 
 class Asset(BaseModel):
 

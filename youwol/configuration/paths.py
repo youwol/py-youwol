@@ -93,3 +93,6 @@ class PathsBook(BaseModel):
     def artifact(self, project_name: str, flow_id: str, step_id: str, artifact_id: str) -> Path:
         return self.artifacts_step(project_name=project_name, flow_id=flow_id, step_id=step_id) \
                / f"artifact-{artifact_id}"
+
+    def artifacts_manifest(self, project_name: str, flow_id: str, step_id: str):
+        return self.artifacts_step(project_name=project_name, flow_id=flow_id, step_id=step_id) / 'manifest.json'
