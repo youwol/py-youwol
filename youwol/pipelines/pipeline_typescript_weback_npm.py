@@ -43,11 +43,82 @@ def get_dependencies(project: Project):
         }.keys())
 
 
+class InputDataDependency(NamedTuple):
+    project: Project
+    dist_folder: Path
+    src_folder: Path
+    dist_files: Iterable[Path]
+    src_files: Iterable[Path]
+    checksum: str
+
+
 class SyncFromDownstreamStep(PipelineStep):
     id: str = "sync-deps"
-    run: str = ""
+    run: ExplicitNone = ""
 
     artifacts: List[Artifact] = []
+
+    @staticmethod
+    async def get_input_data(project: Project, flow_id: str, context: Context) -> Mapping[str, InputDataDependency]:
+        paths_book: PathsBook = context.config.pathsBook
+
+        project_step = [(d, next((s for s in d.get_flow_steps(flow_id=flow_id) if isinstance(s, BuildStep)), None))
+                        for d in project.get_dependencies(recursive=True, context=context)
+                        ]
+
+        def is_succeeded(p: Project, s: BuildStep):
+            manifest = p.get_manifest(flow_id=flow_id, step=s, context=context)
+            return manifest.succeeded if manifest else False
+
+        dependencies = [(project, step) for project, step in project_step
+                        if step is not None and is_succeeded(project, step)]
+
+        dist_folders = {project.name: paths_book.artifact(project.name, flow_id, step.id, step.artifacts[0].id)
+                        for project, step in dependencies}
+        dist_files = {name: list_files(folder) for name, folder in dist_folders.items()}
+        src_files = {p.name: list_files(p.path / 'src') for p, s in dependencies}
+        return {project.name: InputDataDependency(
+            project=project,
+            dist_folder=dist_folders[project.name],
+            src_folder=project.path / 'src',
+            dist_files=dist_files[project.name],
+            src_files=src_files[project.name],
+            checksum=files_check_sum(dist_files[project.name] + src_files[project.name]))
+            for project, step in dependencies}
+
+    async def get_status(self, project: Project, flow_id: str,
+                         last_manifest: Optional[Manifest], context: Context) -> PipelineStepStatus:
+
+        async with context.start(action="get status of project's dependencies") as ctx:
+            if last_manifest is None:
+                return PipelineStepStatus.none
+            await ctx.info(text='previous manifest', data=to_json(last_manifest))
+            data = await SyncFromDownstreamStep.get_input_data(project=project, flow_id=flow_id, context=context)
+            prev_checksums = last_manifest.cmdOutputs['checksums']
+            ok = len(data.keys()) == len(prev_checksums.keys())\
+                and all(k in prev_checksums and prev_checksums[k] == v.checksum for k, v in data.items())
+
+            return PipelineStepStatus.OK if ok else PipelineStepStatus.outdated
+
+    async def execute_run(self, project: Project, flow_id: FlowId, context: Context):
+
+        async with context.start(action="run synchronization of workspace dependencies") as ctx:
+
+            data = await SyncFromDownstreamStep.get_input_data(project=project, flow_id=flow_id, context=ctx)
+
+            destination_folders = {name: project.path / 'node_modules' / name for name in data.keys()}
+            for name, p in data.items():
+                shutil.rmtree(destination_folders[name])
+                copy_tree(p.dist_folder, destination_folders[name])
+                for file in p.src_files:
+                    destination = destination_folders[name] / 'src' / file.relative_to(p.src_folder)
+                    copy_file(source=file, destination=destination, create_folders=True)
+
+            all_files = functools.reduce(lambda acc, e: acc + e.src_files + e.dist_files, data.values(), [])
+            return {
+                'fingerprint': files_check_sum(all_files),
+                'checksums': {name: d.checksum for name, d in data.items()}
+                }
 
 
 class BuildStep(PipelineStep):
