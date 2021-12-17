@@ -94,10 +94,11 @@ class PublishCdnLocalStep(PipelineStep):
                 raise e
 
         data = {'file': zip_path.read_bytes(), 'content_encoding': 'identity'}
-        await local_gtw.put_asset_with_raw(kind='package', folder_id=folder_id, data=data, timeout=600)
+        resp = await local_gtw.put_asset_with_raw(kind='package', folder_id=folder_id, data=data, timeout=600)
+        await context.info(text="Asset posted in assets_gtw", data=resp)
         local_cdn = LocalClients.get_cdn_client(context=context)
         resp = await local_cdn.get_package(library_name=project.name, version=project.version, metadata=True)
-
+        await context.info(text="Package retrieved from local cdn", data=resp)
         resp['src_files_fingerprint'] = files_check_sum(files)
         base_path = context.config.pathsBook.artifacts_flow(project_name=project.name, flow_id=flow_id)
         resp['src_base_path'] = str(base_path)

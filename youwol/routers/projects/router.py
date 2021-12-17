@@ -81,7 +81,7 @@ async def project_status(
         project: Project = next(p for p in context.config.projects if p.id == project_id)
 
         workspace_dependencies = await resolve_project_dependencies(project=project, context=context)
-
+        await ctx.info("Project dependencies retrieved", data=workspace_dependencies)
         response = ProjectStatusResponse(
             projectId=project_id,
             projectName=project.name,

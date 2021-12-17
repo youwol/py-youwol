@@ -228,7 +228,14 @@ async def upload_asset(
             )
 
         local_data = await factory.get_raw()
-        path_item = await local_treedb.get_path(item_id=tree_item['itemId'])
+        try:
+            path_item = await local_treedb.get_path(item_id=tree_item['itemId'])
+        except HTTPException as e:
+            if e.status_code == 404:
+                await ctx.error(text=f"Can not get path of item with id '{tree_item['itemId']}'",
+                                data={"tree_item": tree_item, "error_detail": e.detail})
+            raise e
+
         await ctx.info(
             labels=[Label.STATUS],
             text="Data retrieved",
