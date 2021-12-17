@@ -1,3 +1,4 @@
+import glob
 import hashlib
 import itertools
 import json
@@ -16,6 +17,10 @@ class FileListing(BaseModel):
 
 
 flatten = itertools.chain.from_iterable
+
+
+def list_files(folder: Path, rec=True) -> List[Path]:
+    return [Path(p) for p in glob.glob(str(folder)+'/**/*', recursive=rec) if Path(p).is_file()]
 
 
 def copy_tree(source: Path, destination: Path, replace: bool = False):
