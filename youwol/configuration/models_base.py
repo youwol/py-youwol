@@ -182,7 +182,7 @@ class PipelineStepStatus(Enum):
 
 class Manifest(BaseModel):
     succeeded: bool
-    fingerprint: str
+    fingerprint: Optional[str]
     creationDate: str
     files: List[str]
     cmdOutputs: Union[List[str], Dict] = []
@@ -279,6 +279,8 @@ class PipelineStep(BaseModel):
     async def get_fingerprint(self, project: 'Project', flow_id: FlowId, context: Context):
 
         files = await self.get_sources(project=project, flow_id=flow_id, context=context)
+        if files is None:
+            return None, []
         await context.info(text='got file listing', data=[str(f) for f in files])
         checksum = files_check_sum(files)
         return checksum, files
