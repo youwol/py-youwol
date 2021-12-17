@@ -66,16 +66,16 @@ def matching_files(
     patterns_folder_ignore = [p for p in patterns.ignore if '*' in p]
 
     def is_selected(filepath: Path):
-        if any(fnmatch(filepath, pattern) for pattern in patterns.ignore):
+        if any(fnmatch(str(filepath), pattern) for pattern in patterns.ignore):
             return False
-        return any(fnmatch(filepath, pattern) for pattern in patterns.include)
+        return any(fnmatch(str(filepath), pattern) for pattern in patterns.include)
 
     def to_skip_branch(path: Path):
         if str(path) == ".":
             return False
-        if any(fnmatch(path, pattern) for pattern in patterns_folder_ignore):
+        if any(fnmatch(str(path), pattern) for pattern in patterns_folder_ignore):
             return True
-        if any(fnmatch(path, pattern)for pattern in patterns_folder_include):
+        if any(fnmatch(str(path), pattern)for pattern in patterns_folder_include):
             return False
         if any(pattern.startswith(str(path)) for pattern in patterns_folder_include):
             return False
