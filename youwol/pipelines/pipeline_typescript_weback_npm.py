@@ -121,6 +121,27 @@ class SyncFromDownstreamStep(PipelineStep):
                 }
 
 
+class PreconditionChecksStep(PipelineStep):
+    id: str = 'checks'
+    run: str = ''
+
+    async def get_status(self, project: Project, flow_id: str,
+                         last_manifest: Optional[Manifest], context: Context) -> PipelineStepStatus:
+        return PipelineStepStatus.OK
+
+
+class InitStep(PipelineStep):
+    id: str = 'init'
+    run: str = 'yarn'
+
+    async def get_status(self, project: Project, flow_id: str,
+                         last_manifest: Optional[Manifest], context: Context) -> PipelineStepStatus:
+
+        if project.path / 'node_modules':
+            return PipelineStepStatus.OK
+        return PipelineStepStatus.none
+
+
 class BuildStep(PipelineStep):
     id: str
     run: str
@@ -213,6 +234,8 @@ def pipeline():
         dependencies=lambda project, ctx: get_dependencies(project),
         skeleton=lambda ctx: create_skeleton(ctx),
         steps=[
+            PreconditionChecksStep(),
+            InitStep(),
             SyncFromDownstreamStep(),
             BuildStep(id="build-dev", run="yarn build:dev"),
             BuildStep(id="build-prod", run="yarn build:prod"),
@@ -228,7 +251,7 @@ def pipeline():
             Flow(
                 name="prod",
                 dag=[
-                    "sync-deps > build-prod > test > publish-local > publish-remote ",
+                    "checks > init > sync-deps > build-prod > test > publish-local > publish-remote ",
                     "build-prod > doc > publish-local",
                     "build-prod > test-coverage"
                     ]
