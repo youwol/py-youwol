@@ -1,6 +1,7 @@
 import asyncio
 import collections.abc
 import itertools
+import shutil
 from datetime import datetime
 from typing import Optional
 
@@ -8,21 +9,21 @@ from fastapi import APIRouter, Depends
 
 from starlette.requests import Request
 
-from configuration import Project
-from configuration.paths import PathsBook
-from context import Context, CommandException
-from models import Label
-from routers.projects.implementation import (
+from youwol.configuration import Project
+from youwol.configuration.paths import PathsBook
+from youwol.context import Context, CommandException
+from youwol.models import Label
+from youwol.routers.projects.dependencies import resolve_project_dependencies
+from youwol.routers.projects.implementation import (
     run, create_artifacts,
-    get_status, Manifest, get_project_step, get_project_flow_steps, format_artifact_response,
+    get_status, Manifest, get_project_step, get_project_flow_steps, format_artifact_response
     )
 
-from utils_paths import write_json
+from youwol.utils_paths import write_json
 from youwol.web_socket import WebSocketsCache
 
-from routers.projects.models import (
-    PipelineStepStatusResponse, PipelineStatusResponse, ArtifactsResponse, ProjectStatusResponse,
-    )
+from youwol.routers.projects.models import (
+    PipelineStepStatusResponse, PipelineStatusResponse, ArtifactsResponse, ProjectStatusResponse )
 from youwol.configuration.youwol_configuration import YouwolConfiguration
 from youwol.configuration.youwol_configuration import yw_config
 
@@ -211,8 +212,11 @@ async def run_pipeline_step(
             await ctx.info(text="'sources' attribute provided => fingerprint computed from it")
             fingerprint, files = await step.get_fingerprint(project=project, flow_id=flow_id, context=ctx)
 
-        (context.config.pathsBook.system / project.name / flow_id / step.id).mkdir(parents=True, exist_ok=True)
         path = paths.artifacts_step(project_name=project.name, flow_id=flow_id, step_id=step.id)
+        if path.exists() and path.is_dir():
+            shutil.rmtree(path)
+        path.mkdir(parents=True, exist_ok=False)
+
         manifest = Manifest(succeeded=succeeded if succeeded is not None else False,
                             fingerprint=fingerprint,
                             creationDate=datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
