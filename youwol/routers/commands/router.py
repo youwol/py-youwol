@@ -28,4 +28,4 @@ async def execute_command(
         return HTTPException(status_code=404, detail=f"Command {command_name} not found")
     context = Context(config=config, request=request, web_socket=WebSocketsCache.environment)
 
-    return await command(request, body, context)
+    return await command(body, context)
