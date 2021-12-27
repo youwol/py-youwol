@@ -49,6 +49,7 @@ class DeadlinedCache(BaseModel):
 
 
 class YouwolConfiguration(BaseModel):
+    pipelines: Dict[str, Pipeline]
     localGateway: LocalGateway
     available_profiles: List[str]
     http_port: int
@@ -168,6 +169,8 @@ class YouwolConfigurationFactory:
             selected_remote=cached.selectedRemote
         )
 
+        await YouwolConfigurationFactory.trigger_on_load(config=conf)
+        print(conf)
         YouwolConfigurationFactory.__cached_config = conf
 
     @staticmethod
@@ -187,6 +190,7 @@ class YouwolConfigurationFactory:
             localGateway=conf.localGateway,
             available_profiles=conf.available_profiles,
             commands=conf.commands,
+            pipelines=conf.pipelines
         )
         YouwolConfigurationFactory.__cached_config = new_conf
         await YouwolConfigurationFactory.trigger_on_load(config=conf)
@@ -214,7 +218,8 @@ class YouwolConfigurationFactory:
             cache={},
             localGateway=conf.localGateway,
             available_profiles=conf.available_profiles,
-            commands=conf.commands
+            commands=conf.commands,
+            pipelines=conf.pipelines
         )
         YouwolConfigurationFactory.__cached_config = new_conf
 
@@ -399,7 +404,8 @@ async def safe_load(
         )
         projects.append(project)
 
-    return YouwolConfiguration(
+    youwol_configuration = YouwolConfiguration(
+        pipelines={},
         active_profile=configuration.get_profile(),
         available_profiles=configuration.get_available_profiles(),
         openid_host=configuration.get_openid_host(),
@@ -416,6 +422,8 @@ async def safe_load(
         commands={key:get_python_function(source_function=source) for (key, source) in configuration.get_commands().items()},
         localGateway=LocalGateway(),
     )
+
+    return configuration.customize(youwol_configuration)
 
 
 async def safe_load_python(path: Path, profile: str) -> Configuration:

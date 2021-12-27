@@ -174,7 +174,7 @@ async def skeletons(
         config: YouwolConfiguration = Depends(yw_config)
         ):
     resp_skeletons = [SkeletonResponse(name=name, description=p.skeleton.description, parameters=p.skeleton.parameters)
-                      for name, p in config.userConfig.packages.pipelines.items() if p.skeleton]
+                      for name, p in config.pipelines.items() if p.skeleton]
 
     return SkeletonsResponse(skeletons=resp_skeletons)
 
@@ -189,7 +189,7 @@ async def create_skeletons(
         ):
 
     ctx = Context(config=config, web_socket=WebSocketsCache.modules)
-    pipeline = config.userConfig.packages.pipelines[pipeline]
+    pipeline = config.pipelines[pipeline]
     skeleton = pipeline.skeleton
     await skeleton.generate(pipeline.skeleton.folder, body.parameters, pipeline, ctx)
     await YouwolConfigurationFactory.reload()

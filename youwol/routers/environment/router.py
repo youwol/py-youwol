@@ -158,7 +158,6 @@ async def update_parameters(
         request: Request,
         body: PostParametersBody
         ):
-    print(body)
     await YouwolConfigurationFactory.reload(body.profile)
     new_conf = await yw_config()
     await status(request, new_conf)

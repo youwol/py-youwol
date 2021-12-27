@@ -8,12 +8,12 @@ from typing import List, Union, Optional, Dict, Callable
 from appdirs import AppDirs
 from pydantic import BaseModel
 
-from youwol.configuration.python_function_runner import PythonSourceFunction
+from youwol.configuration.python_function_runner import PythonSourceFunction, get_python_function
 from youwol.main_args import get_main_arguments
 
 default_http_port: int = 2000
 default_openid_host: str = "gc.auth.youwol.com"
-default_path_config: Path = Path("py_youwol_config.json")
+default_path_config: Path = Path("config.json")
 
 
 class ConfigPortRange(BaseModel):
@@ -239,6 +239,15 @@ class Configuration:
             result[key] = PythonSourceFunction(path=Path(conf.source), name=conf.function)
 
         return result
+
+    def customize(self, youwol_configuration):
+        if not self.effective_config_data.customize:
+            return youwol_configuration
+
+        conf = ensure_source_file(self.effective_config_data.customize, self.effective_config_data.source,
+                                  self.app_dirs.user_config_dir)
+        return get_python_function(PythonSourceFunction(path=Path(conf.source),
+                                                        name=conf.function))(youwol_configuration)
 
 
 class PathException(RuntimeError):
