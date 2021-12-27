@@ -131,6 +131,7 @@ def main():
     assert_python()
     load_initial_config()
     uvicorn.run(app, host="localhost", port=configuration.http_port)
+    Context.download_thread.join()
 
 
 if __name__ == "__main__":

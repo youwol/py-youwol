@@ -4,8 +4,8 @@ import uuid
 from threading import Thread
 from typing import Dict, Any
 
-from auto_download.models import DownloadLogger
-from configuration.clients import RemoteClients
+from youwol.auto_download.models import DownloadLogger
+from youwol.configuration.clients import RemoteClients
 from youwol_utils import YouWolException
 
 
@@ -75,7 +75,7 @@ class AssetDownloadThread(Thread):
     def start(self):
         super().start()
         tasks = []
-        for i in range(4):
+        for i in range(self.worker_count):
             coroutine = process_download_asset(
                 queue=self.download_queue,
                 downloaded_ids=self.downloaded_ids,
@@ -84,8 +84,6 @@ class AssetDownloadThread(Thread):
                 )
             task = self.event_loop.create_task(coroutine)
             tasks.append(task)
-
-        asyncio.run_coroutine_threadsafe(self.download_queue.join(), self.event_loop)
 
     def enqueue_asset(self, url: str, context, headers):
 
@@ -96,3 +94,11 @@ class AssetDownloadThread(Thread):
             enqueue_asset(),
             self.event_loop
             )
+
+    def join(self, timeout=0):
+        async def stop_loop():
+            await self.download_queue.join()
+            self.event_loop.stop()
+
+        asyncio.run_coroutine_threadsafe(stop_loop(), self.event_loop)
+        super().join(timeout)
