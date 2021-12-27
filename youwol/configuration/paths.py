@@ -96,3 +96,9 @@ class PathsBook(BaseModel):
 
     def artifacts_manifest(self, project_name: str, flow_id: str, step_id: str):
         return self.artifacts_step(project_name=project_name, flow_id=flow_id, step_id=step_id) / 'manifest.json'
+
+    def __str__(self):
+        return f"""
+ * config: {self.config}
+ * databases: {self.databases}
+ * system: {self.system}"""

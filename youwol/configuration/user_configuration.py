@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import List, Dict, NamedTuple, Union, Callable, Awaitable, Mapping, Any, Iterable
+from typing import List, Dict, NamedTuple, Union, Callable, Awaitable, Mapping, Any, Optional
 from fastapi import HTTPException
 import aiohttp
 from pydantic import BaseModel
@@ -89,34 +89,8 @@ Url = str
 JSON = Any
 
 
-class Command(BaseModel):
-    name: str
-    onTriggered: Callable[[JSON, Context], Union[Awaitable[JSON], JSON]]
-
-
-class General(BaseModel):
-    systemFolder: TPath
-    databasesFolder: TPath
-
-    usersInfo: TPath
-
-    secretsFile: TPath = None
-    remotesInfo: TPath = None
-
-    openid_host: str
-    localGateway: LocalGateway = LocalGateway()
-
-    def get_users_list(self) -> List[str]:
-        users = list(parse_json(self.usersInfo)['users'].keys())
-        return users
-
-    def get_secret(self, remote_env: str):
-        secrets = parse_json(self.secretsFile)
-        return Secret(**secrets[remote_env])
-
-
 class Events(BaseModel):
-    onLoad: Callable[[YouwolConfiguration, Context], Union[None, Any]] = None
+    onLoad: Callable[[YouwolConfiguration, Context], Optional[Any]] = None
 
 
 class CDN(BaseModel):

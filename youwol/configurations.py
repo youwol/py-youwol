@@ -18,6 +18,7 @@ from youwol_utils import retrieve_user_info
 
 from colorama import Fore, Style
 
+
 @dataclass(frozen=False)
 class Configuration:
 
@@ -146,6 +147,6 @@ def print_invite(main_args: MainArguments, conf: YouwolConfiguration):
     print(conf)
     msg = cow.milk_random_cow(f"""
 All good, you can now browse to
-http://localhost:{main_args.port}/applications/@youwol/workspace-explorer/latest
+http://localhost:{conf.http_port}/applications/@youwol/workspace-explorer/latest
 """)
     print(msg)

@@ -1,4 +1,3 @@
-import asyncio
 import itertools
 from typing import List, Optional
 
@@ -9,23 +8,17 @@ from aiohttp.web import HTTPException
 from aiohttp.client_exceptions import ClientConnectorError, ContentTypeError
 from starlette.requests import Request
 
-import youwol.services.backs.cdn.configurations as cdn
-import youwol.services.backs.treedb.configurations as treedb
-import youwol.services.backs.flux.configurations as flux
-import youwol.services.backs.stories.configurations as stories
-import youwol.services.backs.assets.configurations as assets
-import youwol.services.backs.assets_gateway.configurations as assets_gtw
-from configuration.clients import RemoteClients
-from models import Label
+from youwol.configuration.clients import RemoteClients
+from youwol.models import Label
 from youwol.context import Context
 
 from youwol.configuration.user_configuration import get_public_user_auth_token, UserInfo
 
 from youwol.configuration.youwol_configuration import YouwolConfiguration
-from youwol.configuration.youwol_configuration import yw_config, YouwolConfigurationFactory, ConfigurationLoadingStatus
+from youwol.configuration.youwol_configuration import yw_config, YouwolConfigurationFactory
 
 from youwol.routers.environment.models import (
-    SwitchConfigurationBody, SyncUserBody, LoginBody,
+    SyncUserBody, LoginBody,
     PostParametersBody, RemoteGatewayInfo, SelectRemoteBody, SyncComponentBody, ComponentsUpdate
     )
 
@@ -122,42 +115,15 @@ async def status(
             remote_gateway_info = RemoteGatewayInfo(name=remote_gateway_info.name,
                                                     host=remote_gateway_info.host,
                                                     connected=connected)
-        remotes_info = parse_json(config.userConfig.general.remotesInfo)['remotes'].values()
+        remotes_info = parse_json(config.pathsBook.remotesInfo)['remotes'].values()
         response = StatusResponse(
-            users=config.userConfig.general.get_users_list(),
+            users=config.get_users_list(),
             userInfo=config.get_user_info(),
             configuration=config,
             remoteGatewayInfo=remote_gateway_info,
             remotesInfo=list(remotes_info)
             )
         return response
-
-
-@router.post("/switch-configuration",
-             response_model=ConfigurationLoadingStatus,
-             summary="switch configuration")
-async def switch_configuration(
-        request: Request,
-        body: SwitchConfigurationBody,
-        config: YouwolConfiguration = Depends(yw_config)
-        ):
-
-    context = Context(
-        request=request,
-        config=config,
-        web_socket=WebSocketsCache.environment
-        )
-    load_status = await YouwolConfigurationFactory.switch('/'.join(body.path), context)
-
-    if load_status.validated:
-        new_conf = await yw_config()
-        await asyncio.gather(*[
-           service.get_configuration(new_conf) for service in [cdn, treedb, flux, stories, assets, assets_gtw]
-           ])
-
-        await status(request, new_conf)
-
-    return load_status
 
 
 @router.post("/login",
@@ -186,14 +152,14 @@ async def select_remote(
     return new_conf.get_user_info()
 
 
-@router.post("/configuration/parameters",
-             summary="update_parameters")
+@router.post("/configuration/profile",
+             summary="switch_profile")
 async def update_parameters(
         request: Request,
         body: PostParametersBody
         ):
     print(body)
-    await YouwolConfigurationFactory.reload(body.values)
+    await YouwolConfigurationFactory.reload(body.profile)
     new_conf = await yw_config()
     await status(request, new_conf)
 
@@ -218,30 +184,30 @@ async def sync_user(
                 username=body.email,
                 pwd=body.password,
                 client_id=config.get_remote_info().metadata['keycloakClientId'],
-                openid_host=config.userConfig.general.openid_host
+                openid_host=config.openid_host
                 )
         except Exception:
             raise RuntimeError(f"Can not authorize from email/pwd @ {config.get_remote_info().host}")
 
         await ctx.info(step=ActionStep.RUNNING, content="Login successful")
 
-        secrets = parse_json(config.pathsBook.secret_path)
+        secrets = parse_json(config.pathsBook.secrets)
         if body.email in secrets:
             secrets[body.email] = {**secrets[body.email], **{"password": body.password}}
         else:
             secrets[body.email] = {"password": body.password}
-        write_json(secrets, config.pathsBook.secret_path)
+        write_json(secrets, config.pathsBook.secrets)
 
-        user_info = await retrieve_user_info(auth_token=auth_token, openid_host=config.userConfig.general.openid_host)
+        user_info = await retrieve_user_info(auth_token=auth_token, openid_host=config.openid_host)
 
-        users_info = parse_json(config.userConfig.general.usersInfo)
+        users_info = parse_json(config.pathsBook.usersInfo)
         users_info['users'][body.email] = {
             "id": user_info['sub'],
             "name": user_info['preferred_username'],
             "memberOf": user_info['memberof'],
             "email": user_info["email"]
             }
-        write_json(users_info, config.userConfig.general.usersInfo)
+        write_json(users_info, config.pathsBook.usersInfo)
         await login(request=request, body=LoginBody(email=body.email), config=config)
         return users_info['users'][body.email]
 

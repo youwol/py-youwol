@@ -4,43 +4,37 @@ import json
 import os
 import sys
 import traceback
-import pprint
 from pathlib import Path
 from typing import List, Dict, Any, Union, Optional
+from pydantic import BaseModel
 
-from pydantic import ValidationError, BaseModel
-
-from configuration.clients import LocalClients
-from models import Label
-from services.backs.assets_gateway.models import DefaultDriveResponse
+from youwol.configuration.models_config import Configuration
+from youwol.models import Label
+from youwol.configuration.clients import LocalClients
+from youwol.configuration.python_function_runner import get_python_function, PythonSourceFunction
+from youwol.services.backs.assets_gateway.models import DefaultDriveResponse
 from youwol.web_socket import WebSocketsCache
 
 from youwol.errors import HTTPResponseException
 from youwol.main_args import get_main_arguments
 from youwol.utils_paths import parse_json
 
-
-from youwol.configuration.user_configuration import (UserInfo, get_public_user_auth_token)
+from youwol.configuration.user_configuration import (UserInfo, get_public_user_auth_token, CDN, Events,
+                                                     LocalGateway, RemoteGateway)
 from youwol.configurations import get_full_local_config
 from youwol.context import Context
 
 from youwol.configuration.configuration_validation import (
     ConfigurationLoadingStatus, ConfigurationLoadingException,
-    CheckConfPath, CheckValidTextFile, CheckValidPythonScript, CheckValidConfigParametersFunction,
     CheckValidConfigurationFunction, CheckSystemFolderWritable, CheckDatabasesFolderHealthy, CheckSecretPathExist,
     CheckSecretHealthy
-    )
-from youwol.configuration.models_base import ErrorResponse, format_unknown_error, ConfigParameters, Project, Pipeline
+)
+from youwol.configuration.models_base import ErrorResponse, Project, Pipeline, format_unknown_error
 from youwol.configuration.paths import PathsBook
-from youwol.configuration.user_configuration import (
-    UserConfiguration, General,
-    RemoteGateway,
-    )
 from youwol_utils import encode_id
 
 
 class DeadlinedCache(BaseModel):
-
     value: Any
     deadline: float
     dependencies: Dict[str, str]
@@ -55,19 +49,23 @@ class DeadlinedCache(BaseModel):
 
 
 class YouwolConfiguration(BaseModel):
-
+    localGateway: LocalGateway
+    available_profiles: List[str]
     http_port: int
+    openid_host: str
+    events: Optional[Events]
+    active_profile: Optional[str]
+    cdn: Optional[CDN]
+    commands: Dict[str, Any]
 
     userEmail: Optional[str]
     selectedRemote: Optional[str]
 
-    userConfig: UserConfiguration
+    # userConfig: UserConfiguration
 
     pathsBook: PathsBook
 
     projects: List[Project]
-
-    configurationParameters: ConfigParameters = ConfigParameters(parameters={})
 
     cache: Dict[str, Any] = {}
     private_cache: Dict[str, Any] = {}
@@ -76,17 +74,21 @@ class YouwolConfiguration(BaseModel):
 
     def get_user_info(self) -> UserInfo:
 
-        users_info = parse_json(self.userConfig.general.usersInfo)['users']
+        users_info = parse_json(self.pathsBook.usersInfo)['users']
 
         if self.userEmail in users_info:
             data = users_info[self.userEmail]
             return UserInfo(**data)
 
-        raise Exception(f"User '{self.userEmail}' not reference in '{str(self.userConfig.general.usersInfo)}")
+        raise Exception(f"User '{self.userEmail}' not reference in '{str(self.pathsBook.usersInfo)}")
+
+    def get_users_list(self) -> List[str]:
+        users = list(parse_json(self.pathsBook.usersInfo)['users'].keys())
+        return users
 
     def get_remote_info(self) -> Optional[RemoteGateway]:
 
-        info = parse_json(self.userConfig.general.remotesInfo)['remotes']
+        info = parse_json(self.pathsBook.remotesInfo)['remotes']
 
         if self.selectedRemote in info:
             data = info[self.selectedRemote]
@@ -102,9 +104,9 @@ class YouwolConfiguration(BaseModel):
         if use_cache and cached_token:
             return cached_token.value
 
-        secrets = parse_json(self.userConfig.general.secretsFile)
+        secrets = parse_json(self.pathsBook.secrets)
         if username not in secrets:
-            raise RuntimeError(f"Can not find {username} in {str(self.userConfig.general.secretsFile)}")
+            raise RuntimeError(f"Can not find {username} in {str(self.pathsBook.secrets)}")
 
         pwd = secrets[username]['password']
         try:
@@ -112,11 +114,11 @@ class YouwolConfiguration(BaseModel):
                 username=username,
                 pwd=pwd,
                 client_id=remote.metadata['keycloakClientId'],
-                openid_host=self.userConfig.general.openid_host
-                )
+                openid_host=self.openid_host
+            )
         except Exception as e:
             raise RuntimeError(f"Can not authorize from email/pwd provided in " +
-                               f"{str(self.userConfig.general.secretsFile)} (error:{e})")
+                               f"{str(self.pathsBook.secrets)} (error:{e})")
 
         deadline = datetime.timestamp(datetime.now()) + 1 * 60 * 60 * 1000
         self.tokensCache.append(DeadlinedCache(value=access_token, deadline=deadline, dependencies=dependencies))
@@ -136,40 +138,19 @@ class YouwolConfiguration(BaseModel):
     def __str__(self):
 
         return f"""Configuration path: {self.pathsBook.config}
+- active profile: {self.active_profile if self.active_profile else "Default profile"}
+- directories: {self.pathsBook}
 - cdn packages count: {len(parse_json(self.pathsBook.local_cdn_docdb)['documents'])}
-- assets count: {len(parse_json(self.pathsBook.local_docdb / 'assets' / 'entities' / 'data.json' )['documents'])}
+- assets count: {len(parse_json(self.pathsBook.local_docdb / 'assets' / 'entities' / 'data.json')['documents'])}
 - list of projects:
-{ chr(10).join([str(p.path) + f" ({p.pipeline.id})" for p in self.projects])}
+{chr(10).join([f"  * {p.path} ({p.pipeline.id})" for p in self.projects])}
+- list of live servers:
+{chr(10).join(f"  * serving '{server_key}' on port {server_port}" for (server_key, server_port) in self.cdn.liveServers.items())}
 """
 
 
 class YouwolConfigurationFactory:
-
-    __cached_config: YouwolConfiguration = None
-
-    @staticmethod
-    async def switch(path: Union[str, Path],
-                     context: Context) -> ConfigurationLoadingStatus:
-
-        async with context.start("Switch Configuration") as ctx:
-            path = Path(path)
-            cached = YouwolConfigurationFactory.__cached_config
-            conf, status = await safe_load(path=path, params_values={},
-                                           user_email=cached.userEmail,
-                                           selected_remote=cached.selectedRemote,
-                                           context=context)
-            if not conf:
-                errors = [c.dict() for c in status.checks if isinstance(c.status, ErrorResponse)]
-                await ctx.abort(content='Failed to switch configuration',
-                                json={
-                                    "first error": next(e for e in errors),
-                                    "errors": errors,
-                                    "all checks": [c.dict() for c in status.checks]})
-                return status
-            await ctx.info(labels=[Label.STATUS], text='Switched to new conf. successful', data=status.dict())
-            await YouwolConfigurationFactory.trigger_on_load(config=conf)
-            YouwolConfigurationFactory.__cached_config = conf
-        return status
+    __cached_config: Optional[YouwolConfiguration] = None
 
     @staticmethod
     async def get():
@@ -178,40 +159,35 @@ class YouwolConfigurationFactory:
         return config
 
     @staticmethod
-    async def reload(params_values: Dict[str, Any] = None):
-
-        params_values = params_values or {}
+    async def reload(profile: str = None):
         cached = YouwolConfigurationFactory.__cached_config
-        cached_params = cached.configurationParameters.get_values() if cached.configurationParameters else {}
-        params_values = {**cached_params, **params_values}
-        conf, status = await safe_load(
+        conf = await safe_load(
             path=cached.pathsBook.config,
-            params_values=params_values,
+            profile=profile or get_main_arguments().profile,
             user_email=cached.userEmail,
             selected_remote=cached.selectedRemote
-            )
-        if not conf:
-            return status
+        )
 
         YouwolConfigurationFactory.__cached_config = conf
-        return status
 
     @staticmethod
     async def login(email: Union[str, None], remote_name: Union[str, None], context: Context = None):
-
         conf = YouwolConfigurationFactory.__cached_config
-        email, remote_name = await login(email, remote_name, conf.userConfig.general, context)
+        email, remote_name = await login(email, remote_name, conf.pathsBook.usersInfo,
+                                         conf.pathsBook.remotesInfo, context)
 
         new_conf = YouwolConfiguration(
-            userConfig=conf.userConfig,
+            openid_host=conf.openid_host,
             userEmail=email,
             selectedRemote=remote_name,
             pathsBook=conf.pathsBook,
             projects=conf.projects,
-            configurationParameters=conf.configurationParameters,
-            http_port=get_main_arguments().port,
-            cache={}
-            )
+            http_port=conf.http_port,
+            cache={},
+            localGateway=conf.localGateway,
+            available_profiles=conf.available_profiles,
+            commands=conf.commands,
+        )
         YouwolConfigurationFactory.__cached_config = new_conf
         await YouwolConfigurationFactory.trigger_on_load(config=conf)
         return new_conf
@@ -219,12 +195,7 @@ class YouwolConfigurationFactory:
     @staticmethod
     async def init():
         path = (await get_full_local_config()).starting_yw_config_path
-        conf, status = await safe_load(path=path, params_values={}, user_email=None, selected_remote=None)
-        if not conf:
-            for check in status.checks:
-                if isinstance(check.status, ErrorResponse):
-                    pprint.pprint(check)
-            raise ConfigurationLoadingException(status)
+        conf = await safe_load(path=path, profile=get_main_arguments().profile, user_email=None, selected_remote=None)
 
         YouwolConfigurationFactory.__cached_config = conf
         await YouwolConfigurationFactory.trigger_on_load(config=conf)
@@ -232,27 +203,27 @@ class YouwolConfigurationFactory:
 
     @staticmethod
     def clear_cache():
-
         conf = YouwolConfigurationFactory.__cached_config
         new_conf = YouwolConfiguration(
-            userConfig=conf.userConfig,
+            openid_host=conf.openid_host,
             userEmail=conf.userEmail,
             selectedRemote=conf.selectedRemote,
             pathsBook=conf.pathsBook,
             projects=conf.projects,
-            configurationParameters=conf.configurationParameters,
-            http_port=get_main_arguments().port,
-            cache={}
-            )
+            http_port=conf.http_port,
+            cache={},
+            localGateway=conf.localGateway,
+            available_profiles=conf.available_profiles,
+            commands=conf.commands
+        )
         YouwolConfigurationFactory.__cached_config = new_conf
 
     @staticmethod
     async def trigger_on_load(config: YouwolConfiguration):
-
         context = Context(config=config, web_socket=WebSocketsCache.environment)
-        if not config.userConfig.events or not config.userConfig.events.onLoad:
+        if not config.events or not config.events.onLoad:
             return
-        on_load_cb = config.userConfig.events.onLoad
+        on_load_cb = config.events.onLoad
 
         data = await on_load_cb(config, context) \
             if inspect.iscoroutinefunction(on_load_cb) \
@@ -268,42 +239,39 @@ async def yw_config() -> YouwolConfiguration:
 async def login(
         user_email: Union[str, None],
         selected_remote: Union[str, None],
-        general: General,
+        users_info_path: Path,
+        remotes_info: Path,
         context: Union[Context, None]) -> (str, str):
-
-    starting_user = get_main_arguments().email
-    if user_email is None and starting_user is not None:
-        user_email = starting_user
-
     if user_email is None:
-        users_info = parse_json(general.usersInfo)
+        users_info = parse_json(users_info_path)
         if 'default' in users_info['policies']:
             user_email = users_info['policies']["default"]
 
     if user_email is None:
-
         raise HTTPResponseException(
             status_code=401,
             title="User has not been identified",
-            descriptions=[f"make sure your users info file ({general.usersInfo}) contains"],
+            descriptions=[f"make sure your users info file ({users_info_path}) contains"],
             hints=[
                 "a 'default' field is pointing to the desired default email address",
                 "the desired default email address is associated to an identity"
-                ]
-            )
-    if user_email not in parse_json(general.usersInfo)['users']:
+            ]
+        )
+    if user_email not in parse_json(users_info_path)['users']:
         context and await context.info(
             labels=[Label.STATUS],
-            text=f"User {user_email} not registered in {general.usersInfo}: switch user",
-            data={"user_email": user_email, 'usersInfo': parse_json(general.usersInfo)
+            text=f"User {user_email} not registered in {users_info_path}: switch user",
+            data={"user_email": user_email, 'usersInfo': parse_json(users_info_path)
                   }
-            )
-        return await login(user_email=None, selected_remote=selected_remote, general=general, context=context)
+        )
+        return await login(user_email=None, selected_remote=selected_remote, users_info_path=users_info_path,
+                           remotes_info=remotes_info,
+                           context=context)
 
-    if general.remotesInfo is None:
+    if remotes_info is None:
         return user_email, None
 
-    remotes_info = parse_json(general.remotesInfo)
+    remotes_info = parse_json(remotes_info)
     remotes = remotes_info['remotes']
 
     if selected_remote in remotes:
@@ -319,17 +287,11 @@ async def login(
 
 async def safe_load(
         path: Path,
-        params_values: Dict[str, Any],
-        user_email:  Union[str, None],
-        selected_remote:  Union[RemoteGateway, None],
-        context: Union[Context, None] = None,
-        ) -> (YouwolConfiguration, ConfigurationLoadingStatus):
-
-    check_conf_path = CheckConfPath()
-    check_valid_text = CheckValidTextFile()
-    check_valid_python = CheckValidPythonScript()
-    check_valid_conf_param_fct = CheckValidConfigParametersFunction()
-    check_valid_conf_fct = CheckValidConfigurationFunction()
+        profile: str,
+        user_email: Optional[str],
+        selected_remote: Optional[RemoteGateway],
+        context: Optional[Context] = None,
+) -> YouwolConfiguration:
     check_system_folder_writable = CheckSystemFolderWritable()
     check_database_folder_healthy = CheckDatabasesFolderHealthy()
     check_secret_exists = CheckSecretPathExist()
@@ -340,144 +302,39 @@ async def safe_load(
             path=str(path),
             validated=validated,
             checks=[
-                check_conf_path,
-                check_valid_text,
-                check_valid_python,
-                check_valid_conf_param_fct,
-                check_valid_conf_fct,
                 check_system_folder_writable,
                 check_database_folder_healthy,
                 check_secret_exists,
                 check_secret_healthy
-                ]
-            )
+            ]
+        )
 
-    if not path.exists():
-        check_conf_path.status = ErrorResponse(
-            reason="The specified configuration path does not exist.",
-            hints=[f"Double check the location '{str(path)}' do exist."]
-            )
-        return None, get_status()
-
-    check_conf_path.status = True
-    try:
-        source = Path(path).read_text()
-    except Exception as e:
-        print(e)
-        check_valid_text.status = ErrorResponse(
-            reason="The specified configuration path is not a valid text file.",
-            hints=[f"Double check the file at location '{str(path)}' is a valid text file."]
-            )
-        return None, get_status()
-
-    check_valid_text.status = True
-    try:
-        scope = {}
-        exec(source, scope)
-    except SyntaxError as err:
-        error_class = err.__class__.__name__
-        detail = err.args[0]
-        line_number = err.lineno
-        check_valid_python.status = ErrorResponse(
-            reason=f"There is a syntax error in the python file.",
-            hints=[f"{error_class} at line {line_number}: {detail}"]
-            )
-        return None, get_status()
-    except Exception as err:
-        check_valid_python.status = format_unknown_error(
-            reason=f"There was an exception parsing your python file.",
-            error=err)
-        return None, get_status()
-
-    check_valid_python.status = True
-
-    if 'configuration' not in scope:
-        check_valid_conf_fct.status = ErrorResponse(
-                reason=f"The configuration file need to define a 'configuration' function.",
-                hints=[f"""Make sure the configuration file include a function with signature :
-                'async def configuration(main_args: MainArguments)."""])
-        return None, get_status()
-
-    #  Look up for 'configuration_parameters' if any
-    parameters = None
-    if 'configuration_parameters' in scope:
-        try:
-            parameters = await scope.get('configuration_parameters')()
-            parameters = parameters.with_updates(params_values)
-        except Exception as err:
-            check_valid_conf_param_fct.status = format_unknown_error(
-                reason="Failed to retrieved configuration parameters when executing 'configuration_parameters'",
-                error=err
-                )
-            return None, get_status()
-
-    if parameters and not isinstance(parameters, ConfigParameters):
-        check_valid_conf_param_fct.status = ErrorResponse(
-            reason="The function 'configuration_parameters' must return an instance of 'ConfigParameters'",
-            hints=[""]
-            )
-        return None, get_status()
-
-    check_valid_conf_param_fct.status = True
+    loaders = {
+        ".py": safe_load_python,
+        ".json": safe_load_json
+    }
 
     try:
-        main_args = get_main_arguments()
-        user_config: UserConfiguration = \
-            await scope.get('configuration')(main_args, parameters.get_values()) if parameters is not None else \
-            await scope.get('configuration')(main_args)
+        configuration: Configuration = await loaders[path.suffix](path, profile)
+    except KeyError as k:
+        print(f"Unknown suffix : ${k}")
+        raise ConfigurationLoadingException(get_status(False))
 
-        if not isinstance(user_config, UserConfiguration):
-            check_valid_conf_fct.status = ErrorResponse(
-                reason=f"The function 'configuration' must return an instance of type 'UserConfiguration'",
-                hints=[f"You can have a look at the default_config_yw.py located in 'py-youwol/system'"])
-            return None, get_status()
-
-    except ValidationError as err:
-        check_valid_conf_fct.status = ErrorResponse(
-            reason=f"Parsing the object returned by the function 'async def configuration(...)' " +
-                   "to UserConfiguration failed.",
-            hints=[f"{str(err)}"])
-        return None, get_status()
-    except TypeError as err:
-
-        ex_type, ex, tb = sys.exc_info()
-        traceback.print_tb(tb)
-        check_valid_conf_fct.status = ErrorResponse(
-            reason=f"Misused of configuration function",
-            hints=[f"details: {str(err)}"])
-        return None, get_status()
-    except FileNotFoundError as err:
-        check_valid_conf_fct.status = ErrorResponse(
-            reason=f"File or directory not found: {err.filename}",
-            hints=["Make sure the intended path is correct. "
-                   "You may also want to create the directory in your config. file"])
-        return None, get_status()
-    except Exception as err:
-        ex_type, ex, tb = sys.exc_info()
-        traceback.print_tb(tb)
-        check_valid_conf_fct.status = format_unknown_error(
-                reason=f"There was an exception calling the 'configuration'.",
-                error=err)
-        return None, get_status()
-
-    check_valid_conf_fct.status = True
-
-    secrets_file = user_config.general.secretsFile
     paths_book = PathsBook(
         config=path,
-        databases=Path(user_config.general.databasesFolder),
-        system=Path(user_config.general.systemFolder),
-        secrets=Path(secrets_file) if secrets_file else None,
-        usersInfo=Path(user_config.general.usersInfo),
-        remotesInfo=Path(user_config.general.remotesInfo)
-        )
+        databases=Path(configuration.get_data_dir()),
+        system=Path(configuration.get_cache_dir()),
+        secrets=Path(configuration.config_dir / Path("secrets.json")),
+        usersInfo=Path(configuration.config_dir / Path("users-info.json")),
+        remotesInfo=Path(configuration.config_dir / Path("remotes-info.json"))
+    )
 
     if not os.access(paths_book.system.parent, os.W_OK):
         check_system_folder_writable.status = ErrorResponse(
             reason=f"Can not write in folder {str(paths_book.system.parent)}",
             hints=[f"Ensure you have permission to write in {paths_book.system}."]
-            )
-        return None, get_status()
+        )
+        raise ConfigurationLoadingException(get_status(False))
 
     if not paths_book.system.exists():
         os.mkdir(paths_book.system)
@@ -488,8 +345,8 @@ async def safe_load(
         check_system_folder_writable.status = ErrorResponse(
             reason=f"Can not write in folder {str(paths_book.system)}",
             hints=[f"Ensure you have permission to write in {paths_book.system}."]
-            )
-        return None, get_status()
+        )
+        raise ConfigurationLoadingException(get_status(False))
 
     if not paths_book.store_node_modules.exists():
         os.mkdir(paths_book.store_node_modules)
@@ -506,7 +363,7 @@ async def safe_load(
     if not paths_book.secrets.exists():
         base_secrets = {
             "identities": {}
-            }
+        }
         open(paths_book.secrets, "w").write(json.dumps(base_secrets))
 
     if not paths_book.packages_cache_path.exists():
@@ -515,15 +372,23 @@ async def safe_load(
     user_email, selected_remote = await login(
         user_email=user_email,
         selected_remote=selected_remote,
-        general=user_config.general,
+        users_info_path=paths_book.usersInfo,
+        remotes_info=paths_book.remotesInfo,
         context=context)
 
     projects = []
-    for path in user_config.targets:
-        scope = {}
-        source = (path / '.yw_pipeline' / 'yw_pipeline.py').read_text()
-        exec(source, scope)
-        pipeline: Pipeline = scope.get('pipeline')(user_config)
+
+    targets_dirs = []
+    for projects_dir in configuration.get_projects_dirs():
+        for subdir in os.listdir(projects_dir):
+            if (projects_dir / Path(subdir) / '.yw_pipeline').exists():
+                targets_dirs.append(projects_dir / Path(subdir))
+
+    for path in targets_dirs:
+        pipeline: Pipeline = get_python_function(PythonSourceFunction(path=path / '.yw_pipeline' / 'yw_pipeline.py',
+                                                                      name='pipeline'))(configuration)
+        if not pipeline:
+            raise Exception(f"Unknown pipeline for project {path}")
         name = pipeline.projectName(path)
         project = Project(
             name=name,
@@ -531,15 +396,74 @@ async def safe_load(
             version=pipeline.projectVersion(path),
             pipeline=pipeline,
             path=path
-            )
+        )
         projects.append(project)
 
     return YouwolConfiguration(
-            http_port=get_main_arguments().port,
-            userEmail=user_email,
-            selectedRemote=selected_remote,
-            userConfig=user_config,
-            configurationParameters=parameters,
-            pathsBook=paths_book,
-            projects=projects
-        ), get_status(validated=True)
+        active_profile=configuration.get_profile(),
+        available_profiles=configuration.get_available_profiles(),
+        openid_host=configuration.get_openid_host(),
+        http_port=configuration.get_http_port(),
+        userEmail=user_email,
+        selectedRemote=selected_remote,
+        events=Events(onLoad=get_python_function(configuration.get_events()["on_load"])) if "on_load" in configuration.get_events() else None,
+        cdn=CDN(
+            automaticUpdate=configuration.get_cdn_auto_update(),
+            liveServers=configuration.get_live_servers()
+        ),
+        pathsBook=paths_book,
+        projects=projects,
+        commands={key:get_python_function(source_function=source) for (key, source) in configuration.get_commands().items()},
+        localGateway=LocalGateway(),
+    )
+
+
+async def safe_load_python(path: Path, profile: str) -> Configuration:
+    check_valid_conf_fct = CheckValidConfigurationFunction()
+
+    def get_status(validated: bool = False):
+        return ConfigurationLoadingStatus(
+            path=str(path),
+            validated=validated,
+            checks=[
+                check_valid_conf_fct,
+            ]
+        )
+
+    try:
+        main_args = get_main_arguments()
+        user_config: Configuration = await get_python_function(
+            PythonSourceFunction(path=path, name='configuration'))(main_args, profile)
+        if not isinstance(user_config, Configuration):
+            check_valid_conf_fct.status = ErrorResponse(
+                reason=f"The function 'configuration' must return an instance of type 'UserConfiguration'",
+                hints=[f"You can have a look at the default_config_yw.py located in 'py-youwol/system'"])
+            raise ConfigurationLoadingException(get_status(False))
+    # except ValidationError as err:
+    #     check_valid_conf_fct.status = ErrorResponse(
+    #         reason=f"Parsing the object returned by the function 'async def configuration(...)' " +
+    #                "to UserConfiguration failed.",
+    #         hints=[f"{str(err)}"])
+    #     raise ConfigurationLoadingException(get_status(False))
+    # except TypeError as err:
+    #     ex_type, ex, tb = sys.exc_info()
+    #     traceback.print_tb(tb)
+    #     check_valid_conf_fct.status = ErrorResponse(
+    #         reason=f"Misused of configuration function",
+    #         hints=[f"details: {str(err)}"])
+    #     raise ConfigurationLoadingException(get_status(False))
+    except Exception as err:
+        ex_type, ex, tb = sys.exc_info()
+        traceback.print_tb(tb)
+        check_valid_conf_fct.status = format_unknown_error(
+            reason=f"There was an exception calling the 'configuration'.",
+            error=err)
+        raise ConfigurationLoadingException(get_status(False))
+
+    return user_config
+
+
+async def safe_load_json(path: Optional[Path], profile: Optional[str]) -> Configuration:
+    configuration = Configuration(path=path, profile=profile)
+
+    return configuration

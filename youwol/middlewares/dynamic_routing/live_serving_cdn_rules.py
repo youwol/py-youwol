@@ -1,7 +1,7 @@
-from auto_download.auto_download_thread import encode_id
+from youwol.auto_download.auto_download_thread import encode_id
 from aiohttp import ClientConnectorError, ClientSession
 
-from context import Context
+from youwol.context import Context
 
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
@@ -15,7 +15,7 @@ class LiveServingCdnDispatch(DispatchingRule):
     @staticmethod
     def get_match(request: Request, context: Context):
 
-        live_servers = context.config.userConfig.cdn.liveServers
+        live_servers = context.config.cdn.liveServers
         matching_urls = [(package_name, f"/api/assets-gateway/raw/package/{encode_id(package_name)}", port)
                          for package_name, port in live_servers.items()] + \
                         [(package_name, f"/api/cdn-backend/resources/{encode_id(package_name)}", port)

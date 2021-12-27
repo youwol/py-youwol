@@ -1,11 +1,9 @@
 from enum import Enum
-from typing import List, Dict, Any, Optional
+from typing import List, Optional
 
 from pydantic import BaseModel
 
-from configuration import YouwolConfiguration
 from youwol.configuration.models_base import ErrorResponse
-from youwol.configuration.user_configuration import UserInfo
 
 
 class RemoteGatewayInfo(BaseModel):
@@ -31,7 +29,7 @@ class SelectRemoteBody(BaseModel):
 
 
 class PostParametersBody(BaseModel):
-    values: Dict[str, Any]
+    profile: str
 
 
 class SyncUserBody(BaseModel):

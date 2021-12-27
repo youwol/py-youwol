@@ -4,11 +4,13 @@ from starlette.responses import Response
 
 from starlette.datastructures import Headers
 
+from youwol.routers.backends.utils import get_all_backends
+from youwol.configuration.youwol_configuration import YouwolConfiguration, yw_config
 from youwol.context import Context
 
 
 async def get_headers(context: Context) -> Headers:
-    with_headers = await context.config.userConfig.general.localGateway.with_headers(context)
+    with_headers = await context.config.localGateway.with_headers(context)
     return Headers(headers={**context.request.headers, **with_headers})
 
 
