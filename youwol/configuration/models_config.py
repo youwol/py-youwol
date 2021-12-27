@@ -1,11 +1,15 @@
+import os
+import shutil
+import zipfile
 from enum import Enum
 from pathlib import Path
-from typing import List, Union, Optional, Dict
+from typing import List, Union, Optional, Dict, Callable
 
 from appdirs import AppDirs
 from pydantic import BaseModel
 
 from youwol.configuration.python_function_runner import PythonSourceFunction
+from youwol.main_args import get_main_arguments
 
 default_http_port: int = 2000
 default_openid_host: str = "gc.auth.youwol.com"
@@ -62,6 +66,7 @@ class ConfigBase(BaseModel):
     source: Optional[str]
     events: Dict[str, Union[str, ConfigSource]] = {}
     customCommands: Dict[str, Union[str, ConfigSource]] = {}
+    customize: Optional[Union[str, ConfigSource]] = None
 
 
 def replace_with(parent: ConfigBase, replacement: ConfigBase) -> ConfigBase:
@@ -103,7 +108,7 @@ class ConfigProfile(ConfigBase):
 
 
 class ConfigWhole(ConfigBase):
-    projectsDirs: Union[str, List[str]]
+    projectsDirs: Optional[Union[str, List[str]]]
     profiles: Optional[Dict[str, ConfigProfile]] = {}
     profile: Optional[str]
 
@@ -116,14 +121,26 @@ class Configuration:
     active_profile: Optional[str] = None
     app_dirs = AppDirs(appname="py-youwol", appauthor="Youwol")
 
-    def __init__(self, path: Optional[Path], profile: Optional[str]):
+    def __init__(self, path: Optional[Path] = None, profile: Optional[str] = None):
 
         path = path if path else default_path_config
-        self.path = ensure_file_exists(path, root_candidates=[Path().cwd(), self.app_dirs.user_config_dir, Path().home()],
-                                       default_root=self.app_dirs.user_config_dir, default_content="{}")
-        self.path = (Path(self.app_dirs.user_config_dir) / self.path) if not path.is_absolute() else path
+        (final_path, exists) = existing_path_or_default(path,
+                                                        root_candidates=[Path().cwd(),
+                                                                         self.app_dirs.user_config_dir,
+                                                                         Path().home()],
+                                                        default_root=self.app_dirs.user_config_dir)
+
+        self.path = final_path
         self.config_dir = self.path.parent
-        self.config_data = ConfigWhole.parse_file(self.path)
+        if exists:
+            if not final_path.is_file():
+                raise PathException(f"'{str(final_path)}' is not a file")
+            else:
+                self.config_data = ConfigWhole.parse_file(self.path)
+        else:
+            self.config_data = ConfigWhole.parse_raw("{}")
+
+
         if profile:
             self.set_profile(profile)
         else:
@@ -150,15 +167,27 @@ class Configuration:
         return self.effective_config_data.httpPort if self.effective_config_data.httpPort else default_http_port
 
     def get_data_dir(self) -> Path:
+        def create_data_dir(final_path: Path):
+            final_path.parent.mkdir(parents=True)
+            shutil.copyfile(get_main_arguments().youwol_path.parent / 'youwol_data' / 'databases.zip',
+                            final_path.parent / 'databases.zip')
+
+            with zipfile.ZipFile(final_path.parent / 'databases.zip', 'r') as zip_ref:
+                zip_ref.extractall(final_path.parent)
+
+            os.remove(final_path.parent / 'databases.zip')
+
         path = self.effective_config_data.dataDir if self.effective_config_data.dataDir else "databases"
-        return ensure_dir_exists(path, root_candidates=self.app_dirs.user_data_dir)
+        return ensure_dir_exists(path, root_candidates=self.app_dirs.user_data_dir, create=create_data_dir)
 
     def get_cache_dir(self) -> Path:
         path = self.effective_config_data.cacheDir if self.effective_config_data.cacheDir else "system"
         return ensure_dir_exists(path, root_candidates=self.app_dirs.user_cache_dir)
 
     def get_projects_dirs(self) -> List[Path]:
-        if isinstance(self.effective_config_data.projectsDirs, str):
+        if not self.effective_config_data.projectsDirs:
+            return [ensure_dir_exists("Projects", root_candidates=Path.home())]
+        elif isinstance(self.effective_config_data.projectsDirs, str):
             return [ensure_dir_exists(self.effective_config_data.projectsDirs, root_candidates=Path().home())]
         else:
             return [ensure_dir_exists(path_str, root_candidates=Path().home()) for path_str in self.effective_config_data.projectsDirs]
@@ -216,10 +245,17 @@ class PathException(RuntimeError):
     path: str
 
 
+def default_create_dir(final_path: Path):
+    try:
+        final_path.mkdir(parents=True)
+    except Exception as e:
+        raise PathException(f"Error while creating '{str(final_path)}' : {e}")
+
+
 def ensure_dir_exists(path: Optional[Union[str, Path]],
                       root_candidates: Union[Union[str, Path], List[Union[str, Path]]],
                       default_root: Optional[Union[str, Path]] = None,
-                      create: bool = True) -> Path:
+                      create: Optional[Callable[[Path], None]] = default_create_dir) -> Path:
     path = path if path else "."
     (final_path, exists) = existing_path_or_default(path, root_candidates=root_candidates, default_root=default_root)
 
@@ -227,13 +263,7 @@ def ensure_dir_exists(path: Optional[Union[str, Path]],
         if not final_path.is_dir():
             raise PathException(f"'{str(final_path)}' is not a directory")
     else:
-        if create:
-            try:
-                final_path.mkdir(parents=True)
-            except Exception as e:
-                raise PathException(f"Error while creating '{str(final_path)}' : {e}")
-        else:
-            raise PathException(f"'{str(final_path)}' does not exist")
+        create(final_path)
 
     return final_path
 

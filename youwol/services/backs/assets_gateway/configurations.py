@@ -21,7 +21,7 @@ from youwol_utils.clients.flux.flux import FluxClient
 from .raw_stores.flux_project import FluxProjectsStore
 
 from youwol.configuration.youwol_configuration import yw_config, YouwolConfiguration
-from youwol.configurations import configuration as py_yw_config
+from youwol.configurations import api_configuration as py_yw_config
 
 
 @dataclass(frozen=True)

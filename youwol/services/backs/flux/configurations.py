@@ -9,7 +9,7 @@ from youwol_utils import (
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from .models import PROJECTS_TABLE, COMPONENTS_TABLE
 
-from youwol.configurations import configuration as py_yw_config
+from youwol.configurations import api_configuration as py_yw_config
 
 
 @dataclass(frozen=True)

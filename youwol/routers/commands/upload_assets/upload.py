@@ -5,15 +5,15 @@ from typing import Mapping, Dict, cast
 from aiohttp import FormData, ClientSession
 from fastapi import HTTPException
 
-from configuration.clients import RemoteClients, LocalClients
-from configurations import configuration
-from models import Label
-from routers.commands.upload_assets.data import UploadDataTask
-from routers.commands.upload_assets.flux_project import UploadFluxProjectTask
-from routers.commands.upload_assets.models import UploadTask
-from routers.commands.upload_assets.package import UploadPackageTask
-from routers.commands.upload_assets.story import UploadStoryTask
-from services.backs.treedb.models import PathResponse
+from youwol.configuration.clients import RemoteClients, LocalClients
+from youwol.configurations import api_configuration
+from youwol.models import Label
+from youwol.routers.commands.upload_assets.data import UploadDataTask
+from youwol.routers.commands.upload_assets.flux_project import UploadFluxProjectTask
+from youwol.routers.commands.upload_assets.models import UploadTask
+from youwol.routers.commands.upload_assets.package import UploadPackageTask
+from youwol.routers.commands.upload_assets.story import UploadStoryTask
+from youwol.services.backs.treedb.models import PathResponse
 from youwol.configuration import parse_json
 from youwol.utils_low_level import to_json
 
@@ -145,7 +145,7 @@ async def synchronize_metadata(asset_id: str, assets_gtw_client: AssetsGatewayCl
             assets_gtw_client.get_asset_metadata(asset_id=asset_id)
             )
         missing_images_urls = [p for p in local_metadata['images'] if p not in remote_metadata['images']]
-        full_urls = [f"http://localhost:{configuration.http_port}{url}" for url in missing_images_urls]
+        full_urls = [f"http://localhost:{api_configuration.http_port}{url}" for url in missing_images_urls]
         filenames = [url.split('/')[-1] for url in full_urls]
 
         await ctx.info(

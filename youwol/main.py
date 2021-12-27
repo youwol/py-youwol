@@ -24,12 +24,11 @@ from utils_low_level import start_web_socket
 
 from youwol.web_socket import WebSocketsCache
 from youwol.configuration.youwol_configuration import yw_config, YouwolConfigurationFactory
-from youwol.main_args import get_main_arguments
 
 
 from youwol.routers import native_backends, admin, authorization
 
-from youwol.configurations import configuration, print_invite, assert_python
+from youwol.configurations import api_configuration as configuration, print_invite, assert_python
 from youwol_utils import YouWolException, youwol_exception_handler
 
 app = FastAPI(
@@ -111,12 +110,10 @@ async def ws_endpoint(ws: WebSocket):
 
 def load_initial_config():
 
-    main_args = get_main_arguments()
-
     async def load():
         try:
             conf = await YouwolConfigurationFactory.get()
-            print_invite(main_args=main_args, conf=conf)
+            print_invite(conf=conf)
         except ConfigurationLoadingException as e:
             print(e)
             exit()
