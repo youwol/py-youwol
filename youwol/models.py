@@ -14,6 +14,7 @@ class Label(Enum):
     BASH = "BASH"
     STATUS = "STATUS"
     INFO = "INFO"
+    DELETE = "DELETE"
     LOG_INFO = "LOG_INFO"
     LOG_DEBUG = "LOG_DEBUG"
     LOG_ERROR = "LOG_ERROR"

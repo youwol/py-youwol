@@ -50,3 +50,18 @@ class ProjectStatusResponse(BaseModel):
     projectId: str
     projectName: str
     workspaceDependencies: DependenciesResponse
+
+
+class CdnVersionResponse(BaseModel):
+    name: str
+    version: str
+    versionNumber: int
+    filesCount: int
+    bundleSize: int
+    path: Path
+    namespace: str
+
+
+class CdnResponse(BaseModel):
+    name: str
+    versions: List[CdnVersionResponse]

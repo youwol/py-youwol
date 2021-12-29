@@ -1,6 +1,7 @@
 import asyncio
 import collections.abc
 import itertools
+import os
 import shutil
 from datetime import datetime
 from typing import Optional
@@ -23,9 +24,13 @@ from youwol.utils_paths import write_json
 from youwol.web_socket import WebSocketsCache
 
 from youwol.routers.projects.models import (
-    PipelineStepStatusResponse, PipelineStatusResponse, ArtifactsResponse, ProjectStatusResponse )
+    PipelineStepStatusResponse, PipelineStatusResponse, ArtifactsResponse, ProjectStatusResponse, CdnResponse,
+    CdnVersionResponse,
+    )
 from youwol.configuration.youwol_configuration import YouwolConfiguration
 from youwol.configuration.youwol_configuration import yw_config
+from youwol_utils import decode_id
+from youwol_utils.utils_paths import parse_json
 
 router = APIRouter()
 flatten = itertools.chain.from_iterable
@@ -87,6 +92,7 @@ async def project_status(
             projectName=project.name,
             workspaceDependencies=workspace_dependencies
             )
+        await cdn_status(request=request, project_id=project_id, config=config)
         return response
 
 
@@ -230,3 +236,47 @@ async def run_pipeline_step(
             raise error_run
 
         await create_artifacts(project=project, flow_id=flow_id, step=step, fingerprint=fingerprint, context=ctx)
+
+
+@router.get("/{project_id}/cdn",
+            response_model=CdnResponse,
+            summary="status")
+async def cdn_status(
+        request: Request,
+        project_id: str,
+        config: YouwolConfiguration = Depends(yw_config)
+        ):
+
+    context = Context(request=request, config=config, web_socket=WebSocketsCache.userChannel)
+    response: Optional[CdnResponse] = None
+    async with context.start(
+            action="Get local cdn status",
+            labels=[Label.INFO],
+            succeeded_data=lambda _ctx: ('CdnResponse', response),
+            with_attributes={'event': 'CdnResponsePending', 'projectId': project_id}
+            ) as _ctx:
+
+        data = parse_json(config.pathsBook.local_cdn_docdb)['documents']
+        data = [d for d in data if d["library_name"] == decode_id(project_id)]
+
+        def format_version(doc):
+            storage_cdn_path = config.pathsBook.local_cdn_storage
+            folder_path = storage_cdn_path / doc['path']
+            bundle_path = folder_path / doc['bundle']
+            files_count = sum([len(files) for r, d, files in os.walk(folder_path)])
+            bundle_size = bundle_path.stat().st_size
+            return CdnVersionResponse(
+                name=doc['library_name'],
+                version=doc['version'],
+                versionNumber=doc['version_number'],
+                filesCount=files_count,
+                bundleSize=bundle_size,
+                path=folder_path,
+                namespace=doc['namespace']
+                )
+
+        response = CdnResponse(
+            name=decode_id(project_id),
+            versions=[format_version(d) for d in data]
+            )
+        return response
