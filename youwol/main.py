@@ -16,7 +16,7 @@ from youwol.middlewares.dynamic_routing_middleware import DynamicRoutingMiddlewa
 from youwol.middlewares.auth_middleware import AuthMiddleware
 import youwol.middlewares.dynamic_routing.workspace_explorer_rules as workspace_explorer
 import youwol.middlewares.dynamic_routing.live_serving_cdn_rules as live_serving_cdn
-import youwol.middlewares.dynamic_routing.live_serving_backends_rules as live_serving_backend
+import youwol.middlewares.dynamic_routing.custom_dispatch_rules as custom_dispatch
 import youwol.middlewares.dynamic_routing.loading_graph_rules as loading_graph
 import youwol.middlewares.dynamic_routing.missing_asset_rules as missing_asset
 
@@ -66,7 +66,7 @@ app.add_middleware(
         missing_asset.GetRawDispatch(),
         missing_asset.GetMetadataDispatch(),
         missing_asset.PostMetadataDispatch(),
-        # live_serving_backend.LiveServingBackendDispatch(),
+        custom_dispatch.CustomDispatchesRule(),
         ]
     )
 
