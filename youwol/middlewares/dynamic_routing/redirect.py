@@ -1,20 +1,10 @@
-import asyncio
-import json
-from typing import Mapping
-
-import aiohttp
-from aiohttp import ClientConnectorError
-from fastapi import HTTPException, Depends
-from pydantic.main import BaseModel
+from aiohttp import ClientSession, TCPConnector
 from starlette.requests import Request
 from starlette.responses import Response
 
 from starlette.datastructures import Headers
 
-from routers.backends.utils import get_all_backends
-from youwol.configuration.youwol_configuration import YouwolConfiguration, yw_config
 from youwol.context import Context
-from youwol.web_socket import WebSocketsCache
 
 
 async def get_headers(context: Context) -> Headers:
@@ -22,192 +12,54 @@ async def get_headers(context: Context) -> Headers:
     return Headers(headers={**context.request.headers, **with_headers})
 
 
-async def get_backend_url(service_name: str, path: str, context: Context) -> str:
-    backends = await get_all_backends(context)
-    backend = next(backend for backend in backends if backend.info.name == service_name)
-    end_point = backend.pipeline.serve.end_point(path, backend.target, context)
-    return f"http://localhost:{backend.info.port}/{end_point}"
-
-
-async def redirect_api_remote(request: Request, redirect_url: str = None):
-
-    new_path = redirect_url if redirect_url else f'https://gc.platform.youwol.com{request.url.path}'
+async def redirect_api_remote(request: Request, context: Context):
     # One of the header item leads to a server error ... for now only provide authorization
     # headers = {k: v for k, v in request.headers.items()}
     headers = {"Authorization": request.headers.get("authorization")}
 
-    if request.method == 'GET':
-        resp = await redirect_get(request, new_path, headers)
-        return resp
-
-    if request.method == 'POST':
-        resp = await redirect_post(request, new_path, headers)
-        return resp
-
-    return None
-
-
-async def redirect_api_local(request: Request, service_name: str, rest_of_path: str, config: any):
-
-    """
-    service_name = base_path.split('api/')[1]
-    rest_of_path = request.url.path.split(f'/{service_name}/')[1]
-    """
-    if request.method == 'GET':
-        return await redirect_get_api(request, service_name, rest_of_path, config)
-    if request.method == 'POST':
-        return await redirect_post_api(request, service_name, rest_of_path, config)
-    if request.method == 'PUT':
-        return await redirect_put_api(request, service_name, rest_of_path, config)
-    if request.method == 'DELETE':
-        return await redirect_delete_api(request, service_name, rest_of_path, config)
-    pass
-
-
-async def redirect_get(
-        request: Request,
-        new_url: str,
-        headers: Mapping[str, str]
-        ):
-    params = request.query_params
-    async with aiohttp.ClientSession(
-            connector=aiohttp.TCPConnector(verify_ssl=False),
-            auto_decompress=False) as session:
-
-        async with await session.get(url=new_url, params=params, headers=headers) as resp:
-            content = await resp.read()
-            return Response(status_code=resp.status, content=content, headers={k: v for k, v in resp.headers.items()})
-
-
-async def redirect_post(
-        request: Request,
-        new_url: str,
-        headers: Mapping[str, str]
-        ):
-    params = request.query_params
-    if request.state.body and isinstance(request.state.body, BaseModel):
-        data = str.encode(json.dumps(request.state.body.dict()))
-    elif request.state.body and not isinstance(request.state.body, BaseModel):
-        # Should be Json
-        data = str.encode(json.dumps(request.state.body))
-    else:
-        # <!> If the body has already been fetched it will hang forever
-        data = await request.body()
-
-    async with aiohttp.ClientSession(
-            connector=aiohttp.TCPConnector(verify_ssl=False),
-            auto_decompress=False) as session:
-
-        async with await session.post(url=new_url, data=data, params=params, headers=headers) as resp:
-            content = await resp.read()
-            return Response(status_code=resp.status, content=content, headers={k: v for k, v in resp.headers.items()})
-
-
-async def redirect_get_api(
-        request: Request,
-        service_name: str,
-        rest_of_path: str,
-        config: YouwolConfiguration = Depends(yw_config)
-        ):
-
-    context = Context(
-        web_socket=WebSocketsCache.api_gateway,
-        config=config,
-        request=request
-        )
-    try:
-        url, headers = await asyncio.gather(
-            get_backend_url(service_name, rest_of_path, context),
-            get_headers(context)
-            )
-    except (StopIteration, RuntimeError):
-        raise Exception(f"Can not find url of service {service_name} (from url: {service_name}/{rest_of_path})," +
-                        " is it in your config file?")
-
-    try:
-        return await redirect_get(request=request, new_url=url, headers=headers)
-    except ClientConnectorError:
-        raise HTTPException(status_code=500, detail=f"Can not connect to {service_name}")
-
-
-async def redirect_post_api(
-        request: Request,
-        service_name: str,
-        rest_of_path: str,
-        config: YouwolConfiguration = Depends(yw_config)
-        ):
-    context = Context(
-        web_socket=WebSocketsCache.api_gateway,
-        config=config,
-        request=request
+    return await redirect_request(
+        incoming_request=request,
+        origin_base_path="/api",
+        destination_base_path="https://gc.platform.youwol.com/api",
+        headers=headers,
+        context=context
         )
 
-    url = await get_backend_url(service_name, rest_of_path, context)
 
-    data = await request.body()
-    headers = await get_headers(context)
-    params = request.query_params
+async def redirect_request(
+        incoming_request: Request,
+        origin_base_path: str,
+        destination_base_path: str,
+        context,
+        headers=None
+        ):
+    rest_of_path = incoming_request.url.path.split(origin_base_path)[1].strip('/')
+    headers = {k: v for k, v in incoming_request.headers.items()} if not headers else headers
+    redirect_url = f"{destination_base_path}/{rest_of_path}"
 
-    async with aiohttp.ClientSession(
-            connector=aiohttp.TCPConnector(verify_ssl=False),
-            auto_decompress=False) as session:
+    async def forward_response(response):
+        headers_resp = {k: v for k, v in response.headers.items()}
+        content = await response.read()
+        return Response(status_code=response.status, content=content, headers=headers_resp)
 
-        async with await session.post(url=url, data=data, params=params, headers=headers) as resp:
-            headers_resp = {k: v for k, v in resp.headers.items()}
-            content = await resp.read()
-            return Response(status_code=resp.status, content=content, headers=headers_resp)
+    params = incoming_request.query_params
+    # after this eventual call, a subsequent call to 'body()' will hang forever
+    data = await incoming_request.body() if incoming_request.method in ['POST', 'PUT', 'DELETE'] else None
 
+    async with ClientSession(connector=TCPConnector(verify_ssl=False), auto_decompress=False) as session:
 
-async def redirect_put_api(
-        request: Request,
-        service_name: str,
-        rest_of_path: str,
-        config: YouwolConfiguration = Depends(yw_config)):
+        if incoming_request.method == 'GET':
+            async with await session.get(url=redirect_url, params=params, headers=headers) as resp:
+                return await forward_response(resp)
 
-    context = Context(
-        web_socket=WebSocketsCache.api_gateway,
-        config=config,
-        request=request
-        )
-    url = await get_backend_url(service_name, rest_of_path, context)
+        if incoming_request.method == 'POST':
+            async with await session.post(url=redirect_url, data=data, params=params, headers=headers) as resp:
+                return await forward_response(resp)
 
-    data = await request.body()
-    headers = await get_headers(context)
-    params = request.query_params
+        if incoming_request.method == 'PUT':
+            async with await session.put(url=redirect_url, data=data, params=params, headers=headers) as resp:
+                return await forward_response(resp)
 
-    async with aiohttp.ClientSession(
-            connector=aiohttp.TCPConnector(verify_ssl=False),
-            auto_decompress=False) as session:
-
-        async with await session.put(url=url, data=data, params=params, headers=headers) as resp:
-            headers_resp = {k: v for k, v in resp.headers.items()}
-            content = await resp.read()
-            return Response(status_code=resp.status, content=content, headers=headers_resp)
-
-
-async def redirect_delete_api(
-        request: Request,
-        service_name: str,
-        rest_of_path: str,
-        config: YouwolConfiguration = Depends(yw_config)):
-
-    context = Context(
-        web_socket=WebSocketsCache.api_gateway,
-        config=config,
-        request=request
-        )
-
-    url = await get_backend_url(service_name, rest_of_path, context)
-    params = request.query_params
-
-    data = await request.body()
-    headers = await get_headers(context)
-
-    async with aiohttp.ClientSession(
-            connector=aiohttp.TCPConnector(verify_ssl=False),
-            auto_decompress=False) as session:
-
-        async with await session.delete(url=url, data=data,  params=params, headers=headers) as resp:
-            headers_resp = {k: v for k, v in resp.headers.items()}
-            content = await resp.read()
-            return Response(status_code=resp.status, content=content, headers=headers_resp)
+        if incoming_request.method == 'DELETE':
+            async with await session.delete(url=redirect_url, data=data,  params=params, headers=headers) as resp:
+                return await forward_response(resp)

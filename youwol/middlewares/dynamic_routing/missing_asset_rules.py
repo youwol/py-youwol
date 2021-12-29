@@ -22,7 +22,7 @@ class GetRawDispatch(DispatchingRule):
         resp = await call_next(request)
         if resp.status_code == 404:
             headers = {"Authorization": request.headers.get("authorization")}
-            resp = await redirect_api_remote(request)
+            resp = await redirect_api_remote(request, context=context)
             context.download_thread.enqueue_asset(url=request.url.path, context=context, headers=headers)
             return resp
         return resp
@@ -40,7 +40,7 @@ class GetMetadataDispatch(DispatchingRule):
                     ) -> Response:
 
         resp = await call_next(request)
-        return await redirect_api_remote(request) if resp.status_code == 404 else resp
+        return await redirect_api_remote(request, context=context) if resp.status_code == 404 else resp
 
 
 class PostMetadataDispatch(DispatchingRule):
@@ -55,4 +55,4 @@ class PostMetadataDispatch(DispatchingRule):
                     ) -> Response:
 
         resp = await call_next(request)
-        return await redirect_api_remote(request) if resp.status_code == 404 else resp
+        return await redirect_api_remote(request, context=context) if resp.status_code == 404 else resp
