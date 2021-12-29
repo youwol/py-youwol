@@ -127,10 +127,15 @@ class PublishCdnRemoteStep(PipelineStep):
             )
         if isinstance(remote_info, HTTPException) and remote_info.status_code == 404:
             return PipelineStepStatus.none
-        if isinstance(remote_info, Exception):
-            raise remote_info
-        remote_info = cast(Mapping, remote_info)
 
+        if isinstance(local_info, HTTPException) and local_info.status_code == 404:
+            return PipelineStepStatus.outdated
+
+        if isinstance(remote_info, Exception) or isinstance(local_info, Exception):
+            raise remote_info if isinstance(remote_info, Exception) else local_info
+
+        local_info = cast(Mapping, local_info)
+        remote_info = cast(Mapping, remote_info)
         local_fp, remote_fp = local_info['fingerprint'],  remote_info['fingerprint']
         if local_fp == remote_fp:
             return PipelineStepStatus.OK
