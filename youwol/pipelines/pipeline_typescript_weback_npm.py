@@ -99,13 +99,29 @@ class SyncFromDownstreamStep(PipelineStep):
         async with context.start(action="get status of project's dependencies") as ctx:
             if last_manifest is None:
                 return PipelineStepStatus.none
+            if not last_manifest.succeeded:
+                return PipelineStepStatus.KO
+
             await ctx.info(text='previous manifest', data=to_json(last_manifest))
             data = await SyncFromDownstreamStep.get_input_data(project=project, flow_id=flow_id, context=context)
             prev_checksums = last_manifest.cmdOutputs['checksums']
             ok = len(data.keys()) == len(prev_checksums.keys())\
                 and all(k in prev_checksums and prev_checksums[k] == v.checksum for k, v in data.items())
 
-            return PipelineStepStatus.OK if ok else PipelineStepStatus.outdated
+            if not ok:
+                return PipelineStepStatus.outdated
+
+            # Any of the inner dependencies code in node_modules should be checked to make sure
+            # no 'external' tool (e.g doing 'yarn') changed the node_module files
+            prev_node_module_checksums = last_manifest.cmdOutputs.get('nodeModuleChecksums', {})
+            node_module_checksums: Mapping[str, str] = {
+                name: SyncFromDownstreamStep.node_module_checksum(project=project, name=name)
+                for name in data.keys()
+                }
+            if not all(node_module_checksums[name] == prev_node_module_checksums.get(name, "") for name in data.keys()):
+                return PipelineStepStatus.outdated
+
+            return PipelineStepStatus.OK
 
     async def execute_run(self, project: Project, flow_id: FlowId, context: Context):
 
@@ -113,19 +129,34 @@ class SyncFromDownstreamStep(PipelineStep):
 
             data = await SyncFromDownstreamStep.get_input_data(project=project, flow_id=flow_id, context=ctx)
 
-            destination_folders = {name: project.path / 'node_modules' / name for name in data.keys()}
+            destination_folders: Mapping[str, Path] = {
+                name: project.path / 'node_modules' / name for name in data.keys()
+                }
             for name, p in data.items():
-                shutil.rmtree(destination_folders[name])
+                if destination_folders[name].exists():
+                    shutil.rmtree(destination_folders[name])
                 copy_tree(p.dist_folder, destination_folders[name])
                 for file in p.src_files:
                     destination = destination_folders[name] / 'src' / file.relative_to(p.src_folder)
                     copy_file(source=file, destination=destination, create_folders=True)
 
             all_files = functools.reduce(lambda acc, e: acc + e.src_files + e.dist_files, data.values(), [])
+
             return {
                 'fingerprint': files_check_sum(all_files),
-                'checksums': {name: d.checksum for name, d in data.items()}
+                'checksums': {name: d.checksum for name, d in data.items()},
+                'nodeModuleChecksums': {
+                    name: SyncFromDownstreamStep.node_module_checksum(project=project, name=name)
+                    for name in data.keys()
+                    }
                 }
+
+    @staticmethod
+    def node_module_checksum(project: Project, name: str) -> Optional[str]:
+
+        node_module_folder = project.path / 'node_modules' / name
+        files = list_files(node_module_folder)
+        return files_check_sum(files)
 
 
 class PreconditionChecksStep(PipelineStep):
@@ -153,7 +184,7 @@ class BuildStep(PipelineStep):
     id: str
     run: str
     sources: FileListing = FileListing(
-        include=["package.json", "webpack.config.js", "src/lib", "src/index.ts"],
+        include=["package.json", "webpack.config.js", "src/lib", "src/app", "src/index.ts"],
         ignore=["**/auto_generated.ts"]
         )
 
