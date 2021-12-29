@@ -144,4 +144,3 @@ async def get_package_no_namespace(
 
     return await get_package_generic(request=request, library_name=library_name,
                                      version=version, metadata=metadata, configuration=configuration)
-
