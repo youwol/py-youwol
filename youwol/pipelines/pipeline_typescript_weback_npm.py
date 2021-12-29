@@ -263,7 +263,7 @@ class TestStep(PipelineStep):
 
 def pipeline():
     return Pipeline(
-        id="typescript-webpack-npm",
+        id=__name__,
         language="typescript",
         compiler="webpack",
         output="javascript",

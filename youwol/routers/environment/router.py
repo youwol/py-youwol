@@ -188,7 +188,7 @@ async def sync_user(
         except Exception:
             raise RuntimeError(f"Can not authorize from email/pwd @ {config.get_remote_info().host}")
 
-        await ctx.info(step=ActionStep.RUNNING, content="Login successful")
+        await ctx.info(text="Login successful")
 
         secrets = parse_json(config.pathsBook.secrets)
         if body.email in secrets:
