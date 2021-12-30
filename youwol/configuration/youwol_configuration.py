@@ -9,6 +9,7 @@ from typing import List, Dict, Any, Union, Optional
 from pydantic import BaseModel
 
 from youwol.configuration.models_config import Configuration
+from youwol.middlewares.dynamic_routing.custom_dispatch_rules import AbstractDispatch
 from youwol.models import Label
 from youwol.configuration.clients import LocalClients
 from youwol.configuration.python_function_runner import get_python_function, PythonSourceFunction
@@ -19,8 +20,8 @@ from youwol.errors import HTTPResponseException
 from youwol.main_args import get_main_arguments
 from youwol.utils_paths import parse_json
 
-from youwol.configuration.user_configuration import (UserInfo, get_public_user_auth_token, CDN, Events,
-                                                     LocalGateway, RemoteGateway)
+from youwol.configuration.user_configuration import (UserInfo, get_public_user_auth_token, Events,
+                                                     LocalGateway, RemoteGateway, CDN)
 from youwol.configurations import get_full_local_config
 from youwol.context import Context
 
@@ -54,9 +55,11 @@ class YouwolConfiguration(BaseModel):
     available_profiles: List[str]
     http_port: int
     openid_host: str
-    events: Optional[Events]
+    events: Events
     active_profile: Optional[str]
-    cdn: Optional[CDN]
+    cdnAutomaticUpdate: bool
+    customDispatches: List[AbstractDispatch]
+    cdn: CDN
     commands: Dict[str, Any]
 
     userEmail: Optional[str]
@@ -146,7 +149,10 @@ class YouwolConfiguration(BaseModel):
 - list of projects:
 {chr(10).join([f"  * {p.path} ({p.pipeline.id})" for p in self.projects])}
 - list of live servers:
-{chr(10).join(f"  * serving '{server_key}' on port {server_port}" for (server_key, server_port) in self.cdn.liveServers.items())}
+{chr(10).join([f"  * serving '{server_key}' on port {server_port}" for (server_key, server_port) in self.cdn.liveServers.items()])}
+- list of redirections:
+{chr(10).join([f"  * redirecting '{dispatch.origin}' to '{dispatch.destination}'" for (dispatch)
+               in self.customDispatches ])}
 """
 
 
@@ -190,7 +196,11 @@ class YouwolConfigurationFactory:
             localGateway=conf.localGateway,
             available_profiles=conf.available_profiles,
             commands=conf.commands,
-            pipelines=conf.pipelines
+            pipelines=conf.pipelines,
+            customDispatches=conf.customDispatches,
+            cdnAutomaticUpdate=conf.cdnAutomaticUpdate,
+            cdn=conf.cdn,
+            events=conf.events
         )
         YouwolConfigurationFactory.__cached_config = new_conf
         await YouwolConfigurationFactory.trigger_on_load(config=conf)
@@ -219,7 +229,11 @@ class YouwolConfigurationFactory:
             localGateway=conf.localGateway,
             available_profiles=conf.available_profiles,
             commands=conf.commands,
-            pipelines=conf.pipelines
+            pipelines=conf.pipelines,
+            customDispatches=conf.customDispatches,
+            cdnAutomaticUpdate=conf.cdnAutomaticUpdate,
+            cdn=conf.cdn,
+            events=conf.events
         )
         YouwolConfigurationFactory.__cached_config = new_conf
 
@@ -412,15 +426,15 @@ async def safe_load(
         http_port=configuration.get_http_port(),
         userEmail=user_email,
         selectedRemote=selected_remote,
-        events=Events(onLoad=get_python_function(configuration.get_events()["on_load"])) if "on_load" in configuration.get_events() else None,
-        cdn=CDN(
-            automaticUpdate=configuration.get_cdn_auto_update(),
-            liveServers=configuration.get_live_servers()
-        ),
+        events=configuration.get_events(),
+        cdnAutomaticUpdate=configuration.get_cdn_auto_update(),
+        cdn=CDN(liveServers=configuration.get_live_servers()),
         pathsBook=paths_book,
         projects=projects,
-        commands={key:get_python_function(source_function=source) for (key, source) in configuration.get_commands().items()},
+        commands={key: get_python_function(source_function=source) for (key, source) in
+                  configuration.get_commands().items()},
         localGateway=LocalGateway(),
+        customDispatches=configuration.get_custom_dispatches()
     )
 
     return configuration.customize(youwol_configuration)

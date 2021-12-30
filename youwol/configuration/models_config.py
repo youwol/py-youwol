@@ -8,8 +8,10 @@ from typing import List, Union, Optional, Dict, Callable
 from appdirs import AppDirs
 from pydantic import BaseModel
 
+from youwol.configuration import Events
 from youwol.configuration.python_function_runner import PythonSourceFunction, get_python_function
 from youwol.main_args import get_main_arguments
+from youwol.middlewares.dynamic_routing.custom_dispatch_rules import AbstractDispatch, RedirectDispatch
 
 default_http_port: int = 2000
 default_openid_host: str = "gc.auth.youwol.com"
@@ -39,6 +41,11 @@ class ConfigSource(BaseModel):
     function: str
 
 
+class Dispatch(BaseModel):
+    origin: str
+    destination: str
+
+
 def ensure_source_file(arg: Union[str, ConfigSource], default_source: str, default_root: str) -> ConfigSource:
     result = arg
     if not isinstance(result, ConfigSource):
@@ -64,6 +71,7 @@ class ConfigBase(BaseModel):
     serversPortsRange: Optional[ConfigPortRange]
     cdn: Optional[ConfigCdn]
     source: Optional[str]
+    customDispatches: Optional[List[Dispatch]]
     events: Dict[str, Union[str, ConfigSource]] = {}
     customCommands: Dict[str, Union[str, ConfigSource]] = {}
     customize: Optional[Union[str, ConfigSource]] = None
@@ -83,6 +91,8 @@ def replace_with(parent: ConfigBase, replacement: ConfigBase) -> ConfigBase:
         source=replacement.source if replacement.source else parent.source,
         events=replacement.events if replacement.events else parent.events,
         customCommands=replacement.customCommands if replacement.customCommands else parent.customCommands,
+        customDispatches=replacement.customDispatches if replacement.customDispatches else parent.customDispatches,
+        customize=replacement.customize if replacement.customize else parent.customize
     )
 
 
@@ -139,7 +149,6 @@ class Configuration:
                 self.config_data = ConfigWhole.parse_file(self.path)
         else:
             self.config_data = ConfigWhole.parse_raw("{}")
-
 
         if profile:
             self.set_profile(profile)
@@ -215,14 +224,14 @@ class Configuration:
         return {server.name: server.port for server in
                 [ensure_port_defined(name_or_object) for name_or_object in self.effective_config_data.cdn.servers]}
 
-    def get_events(self) -> Dict[str, PythonSourceFunction]:
+    def get_events(self) -> Events:
         result = {}
 
         for (key, conf) in self.effective_config_data.events.items():
             conf = ensure_source_file(conf, self.effective_config_data.source, self.app_dirs.user_config_dir)
             result[key] = PythonSourceFunction(path=Path(conf.source), name=conf.function)
 
-        return result
+        return Events(onLoad=get_python_function(result["on_load"]) if "on_load" in result else None)
 
     def get_cdn_auto_update(self) -> bool:
         if self.effective_config_data.cdn:
@@ -248,6 +257,13 @@ class Configuration:
                                   self.app_dirs.user_config_dir)
         return get_python_function(PythonSourceFunction(path=Path(conf.source),
                                                         name=conf.function))(youwol_configuration)
+
+    def get_custom_dispatches(self) -> List[AbstractDispatch]:
+        if not self.effective_config_data.customDispatches:
+            return []
+
+        return [RedirectDispatch(origin=dispatch.origin, destination=dispatch.destination) for dispatch in
+                self.effective_config_data.customDispatches]
 
 
 class PathException(RuntimeError):

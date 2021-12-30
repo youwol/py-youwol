@@ -4,10 +4,7 @@ from typing import List, Dict, NamedTuple, Union, Callable, Awaitable, Mapping, 
 from fastapi import HTTPException
 import aiohttp
 from pydantic import BaseModel
-from starlette.requests import Request
 
-from middlewares.dynamic_routing.redirect import redirect_request
-from .models_base import Pipeline
 
 TPath = Union[str, Path]
 
@@ -94,45 +91,4 @@ class Events(BaseModel):
 
 
 class CDN(BaseModel):
-    automaticUpdate: bool = True
     liveServers: Dict[str, Union[str, int]] = {}
-
-
-class AbstractDispatch(BaseModel):
-
-    async def is_matching(self, incoming_request: Request, context: Context) -> bool:
-        raise NotImplementedError("AbstractDispatch.is_matching not implemented")
-
-    async def dispatch(self, incoming_request: Request, context: Context):
-        raise NotImplementedError("AbstractDispatch.dispatch not implemented")
-
-
-class RedirectDispatch(AbstractDispatch):
-
-    origin: str
-    destination: str
-
-    async def is_matching(self, incoming_request: Request, context: Context):
-        return incoming_request.url.path.startswith(self.origin)
-
-    async def dispatch(self, incoming_request: Request, context: Context):
-        return await redirect_request(
-            incoming_request=incoming_request,
-            origin_base_path=self.origin,
-            destination_base_path=self.destination,
-            context=context
-            )
-
-
-class UserConfiguration(BaseModel):
-    general: General
-    targets: Iterable[Union[str, Path]] = []
-    cdn: CDN = CDN()
-    customCommands: List[Command] = []
-    customPipelines: List[Pipeline] = []
-    customDispatches: List[AbstractDispatch] = []
-    events: Events = None
-
-    def get_custom_pipeline(self, pipeline_id: str):
-        pipeline = next(pipeline for pipeline in self.customPipelines if pipeline.id == pipeline_id)
-        return pipeline

@@ -1,5 +1,5 @@
 
-from context import Context
+from youwol.context import Context
 from .common import DispatchingRule
 from .redirect import redirect_api_remote
 

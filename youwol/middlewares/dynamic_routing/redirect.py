@@ -4,8 +4,6 @@ from starlette.responses import Response
 
 from starlette.datastructures import Headers
 
-from youwol.routers.backends.utils import get_all_backends
-from youwol.configuration.youwol_configuration import YouwolConfiguration, yw_config
 from youwol.context import Context
 
 
@@ -24,7 +22,6 @@ async def redirect_api_remote(request: Request, context: Context):
         origin_base_path="/api",
         destination_base_path="https://gc.platform.youwol.com/api",
         headers=headers,
-        context=context
         )
 
 
@@ -32,7 +29,6 @@ async def redirect_request(
         incoming_request: Request,
         origin_base_path: str,
         destination_base_path: str,
-        context,
         headers=None
         ):
     rest_of_path = incoming_request.url.path.split(origin_base_path)[1].strip('/')
