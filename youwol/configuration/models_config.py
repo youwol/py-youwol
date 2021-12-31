@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from youwol.configuration import Events
 from youwol.configuration.python_function_runner import PythonSourceFunction, get_python_function
 from youwol.main_args import get_main_arguments
-from youwol.middlewares.dynamic_routing.custom_dispatch_rules import AbstractDispatch, RedirectDispatch
+from youwol.middlewares.dynamic_routing.custom_dispatch_rules import AbstractDispatch, RedirectDispatch, AssetDispatch
 
 default_http_port: int = 2000
 default_openid_host: str = "gc.auth.youwol.com"
@@ -69,9 +69,9 @@ class ConfigBase(BaseModel):
     dataDir: Optional[str]
     cacheDir: Optional[str]
     serversPortsRange: Optional[ConfigPortRange]
-    cdn: Optional[ConfigCdn]
+    cdnAutoUpdate: Optional[bool]
+    dispatches: Optional[List[Union[str, Dispatch, ConfigCdnServer]]]
     source: Optional[str]
-    customDispatches: Optional[List[Dispatch]]
     events: Dict[str, Union[str, ConfigSource]] = {}
     customCommands: Dict[str, Union[str, ConfigSource]] = {}
     customize: Optional[Union[str, ConfigSource]] = None
@@ -87,12 +87,12 @@ def replace_with(parent: ConfigBase, replacement: ConfigBase) -> ConfigBase:
         dataDir=replacement.dataDir if replacement.dataDir else parent.dataDir,
         cacheDir=replacement.cacheDir if replacement.cacheDir else parent.cacheDir,
         serversPortsRange=replacement.serversPortsRange if replacement.serversPortsRange else parent.serversPortsRange,
-        cdn=replacement.cdn if replacement.cdn else parent.cdn,
         source=replacement.source if replacement.source else parent.source,
         events=replacement.events if replacement.events else parent.events,
         customCommands=replacement.customCommands if replacement.customCommands else parent.customCommands,
-        customDispatches=replacement.customDispatches if replacement.customDispatches else parent.customDispatches,
-        customize=replacement.customize if replacement.customize else parent.customize
+        dispatches=replacement.dispatches if replacement.dispatches else parent.dispatches,
+        customize=replacement.customize if replacement.customize else parent.customize,
+        cdnAutoUpdate=replacement.cdnAutoUpdate if replacement.cdnAutoUpdate else parent.cdnAutoUpdate
     )
 
 
@@ -199,30 +199,34 @@ class Configuration:
         elif isinstance(self.effective_config_data.projectsDirs, str):
             return [ensure_dir_exists(self.effective_config_data.projectsDirs, root_candidates=Path().home())]
         else:
-            return [ensure_dir_exists(path_str, root_candidates=Path().home()) for path_str in self.effective_config_data.projectsDirs]
+            return [ensure_dir_exists(path_str, root_candidates=Path().home())
+                    for path_str in self.effective_config_data.projectsDirs]
 
-    def get_live_servers(self) -> Dict[str, int]:
-        if not self.effective_config_data.cdn:
-            return {}
+    def get_dispatches(self) -> List[AbstractDispatch]:
+        if not self.effective_config_data.dispatches:
+            return []
 
-        port_range: ConfigPortRange = self.effective_config_data.serversPortsRange if self.effective_config_data.serversPortsRange else default_port_range
+        port_range: ConfigPortRange = self.effective_config_data.serversPortsRange \
+            if self.effective_config_data.serversPortsRange else default_port_range
 
-        assigned_ports = [cdnServer.port for cdnServer in self.effective_config_data.cdn.servers if
-                          isinstance(cdnServer, ConfigCdnServer)]
+        assigned_ports = [cdnServer.port for cdnServer
+                          in self.effective_config_data.dispatches if isinstance(cdnServer, ConfigCdnServer)]
 
-        def ensure_port_defined(server_definition: Union[str, ConfigCdnServer]) -> ConfigCdnServer:
-            if isinstance(server_definition, ConfigCdnServer):
-                return server_definition
+        def get_abstract_dispatch(dispatch: Union[str, ConfigCdnServer, Dispatch]) -> AbstractDispatch:
+            if isinstance(dispatch, ConfigCdnServer):
+                return AssetDispatch(package_name=dispatch.name, port=dispatch.port)
+
+            if isinstance(dispatch, Dispatch):
+                return RedirectDispatch(origin=dispatch.origin, destination=dispatch.destination)
 
             port = port_range.start
             while port in assigned_ports:
                 port = port + 1
 
             assigned_ports.append(port)
-            return ConfigCdnServer(name=server_definition, port=port)
+            return AssetDispatch(package_name=dispatch, port=port)
 
-        return {server.name: server.port for server in
-                [ensure_port_defined(name_or_object) for name_or_object in self.effective_config_data.cdn.servers]}
+        return [get_abstract_dispatch(dispatch=dispatch) for dispatch in self.effective_config_data.dispatches]
 
     def get_events(self) -> Events:
         result = {}
@@ -234,9 +238,8 @@ class Configuration:
         return Events(onLoad=get_python_function(result["on_load"]) if "on_load" in result else None)
 
     def get_cdn_auto_update(self) -> bool:
-        if self.effective_config_data.cdn:
-            if self.effective_config_data.cdn.auto_update:
-                return self.effective_config_data.cdn.auto_update
+        if self.effective_config_data.cdnAutoUpdate:
+            return self.effective_config_data.cdnAutoUpdate
 
         return True
 
@@ -257,13 +260,6 @@ class Configuration:
                                   self.app_dirs.user_config_dir)
         return get_python_function(PythonSourceFunction(path=Path(conf.source),
                                                         name=conf.function))(youwol_configuration)
-
-    def get_custom_dispatches(self) -> List[AbstractDispatch]:
-        if not self.effective_config_data.customDispatches:
-            return []
-
-        return [RedirectDispatch(origin=dispatch.origin, destination=dispatch.destination) for dispatch in
-                self.effective_config_data.customDispatches]
 
 
 class PathException(RuntimeError):

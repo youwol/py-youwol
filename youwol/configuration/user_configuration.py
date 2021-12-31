@@ -88,7 +88,3 @@ JSON = Any
 
 class Events(BaseModel):
     onLoad: Callable[[YouwolConfiguration, Context], Optional[Any]] = None
-
-
-class CDN(BaseModel):
-    liveServers: Dict[str, Union[str, int]] = {}

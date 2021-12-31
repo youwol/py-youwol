@@ -11,11 +11,9 @@ from starlette.websockets import WebSocket
 
 # from auto_download.auto_download_thread import AssetDownloadThread
 from utils_low_level import to_json
-from youwol.models import LogLevel, Action, Label
+from youwol.configuration import YouwolConfiguration
+from youwol.models import LogLevel, Label
 from youwol_utils import JSON
-
-
-YouwolConfiguration = "youwol.configuration.youwol_configuration"
 
 
 class MessageWebSocket(BaseModel):

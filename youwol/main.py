@@ -15,7 +15,6 @@ from youwol.middlewares.browser_caching_middleware import BrowserCachingMiddlewa
 from youwol.middlewares.dynamic_routing_middleware import DynamicRoutingMiddleware
 from youwol.middlewares.auth_middleware import AuthMiddleware
 import youwol.middlewares.dynamic_routing.workspace_explorer_rules as workspace_explorer
-import youwol.middlewares.dynamic_routing.live_serving_cdn_rules as live_serving_cdn
 import youwol.middlewares.dynamic_routing.custom_dispatch_rules as custom_dispatch
 import youwol.middlewares.dynamic_routing.loading_graph_rules as loading_graph
 import youwol.middlewares.dynamic_routing.missing_asset_rules as missing_asset
@@ -57,7 +56,7 @@ Context.download_thread = download_thread
 app.add_middleware(
     DynamicRoutingMiddleware,
     dynamic_dispatch_rules=[
-        live_serving_cdn.LiveServingCdnDispatch(),
+        custom_dispatch.CustomDispatchesRule(),
         workspace_explorer.GetChildrenDispatch(),
         workspace_explorer.GetPermissionsDispatch(),
         workspace_explorer.GetItemDispatch(),
@@ -65,7 +64,6 @@ app.add_middleware(
         missing_asset.GetRawDispatch(),
         missing_asset.GetMetadataDispatch(),
         missing_asset.PostMetadataDispatch(),
-        custom_dispatch.CustomDispatchesRule(),
         ]
     )
 

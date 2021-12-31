@@ -21,7 +21,7 @@ from youwol.main_args import get_main_arguments
 from youwol.utils_paths import parse_json
 
 from youwol.configuration.user_configuration import (UserInfo, get_public_user_auth_token, Events,
-                                                     LocalGateway, RemoteGateway, CDN)
+                                                     LocalGateway, RemoteGateway)
 from youwol.configurations import get_full_local_config
 from youwol.context import Context
 
@@ -59,13 +59,10 @@ class YouwolConfiguration(BaseModel):
     active_profile: Optional[str]
     cdnAutomaticUpdate: bool
     customDispatches: List[AbstractDispatch]
-    cdn: CDN
     commands: Dict[str, Any]
 
     userEmail: Optional[str]
     selectedRemote: Optional[str]
-
-    # userConfig: UserConfiguration
 
     pathsBook: PathsBook
 
@@ -148,11 +145,8 @@ class YouwolConfiguration(BaseModel):
 - assets count: {len(parse_json(self.pathsBook.local_docdb / 'assets' / 'entities' / 'data.json')['documents'])}
 - list of projects:
 {chr(10).join([f"  * {p.path} ({p.pipeline.id})" for p in self.projects])}
-- list of live servers:
-{chr(10).join([f"  * serving '{server_key}' on port {server_port}" for (server_key, server_port) in self.cdn.liveServers.items()])}
 - list of redirections:
-{chr(10).join([f"  * redirecting '{dispatch.origin}' to '{dispatch.destination}'" for (dispatch)
-               in self.customDispatches ])}
+{chr(10).join([f"  * {redirection}" for redirection in self.customDispatches])}
 """
 
 
@@ -199,7 +193,6 @@ class YouwolConfigurationFactory:
             pipelines=conf.pipelines,
             customDispatches=conf.customDispatches,
             cdnAutomaticUpdate=conf.cdnAutomaticUpdate,
-            cdn=conf.cdn,
             events=conf.events
         )
         YouwolConfigurationFactory.__cached_config = new_conf
@@ -232,7 +225,6 @@ class YouwolConfigurationFactory:
             pipelines=conf.pipelines,
             customDispatches=conf.customDispatches,
             cdnAutomaticUpdate=conf.cdnAutomaticUpdate,
-            cdn=conf.cdn,
             events=conf.events
         )
         YouwolConfigurationFactory.__cached_config = new_conf
@@ -428,13 +420,12 @@ async def safe_load(
         selectedRemote=selected_remote,
         events=configuration.get_events(),
         cdnAutomaticUpdate=configuration.get_cdn_auto_update(),
-        cdn=CDN(liveServers=configuration.get_live_servers()),
         pathsBook=paths_book,
         projects=projects,
         commands={key: get_python_function(source_function=source) for (key, source) in
                   configuration.get_commands().items()},
         localGateway=LocalGateway(),
-        customDispatches=configuration.get_custom_dispatches()
+        customDispatches=configuration.get_dispatches()
     )
 
     return configuration.customize(youwol_configuration)
