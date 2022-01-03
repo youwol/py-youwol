@@ -11,9 +11,10 @@ from starlette.websockets import WebSocket
 
 # from auto_download.auto_download_thread import AssetDownloadThread
 from utils_low_level import to_json
-from youwol.configuration import YouwolConfiguration
 from youwol.models import LogLevel, Label
 from youwol_utils import JSON
+
+YouwolConfiguration = 'youwol.configuration.YouwolConfiguration'
 
 
 class MessageWebSocket(BaseModel):
@@ -81,6 +82,7 @@ class Context(NamedTuple):
 
     with_attributes: JSON = {}
     download_thread: 'AssetDownloadThread' = None
+    succeeded_data: Union[JSON, BaseModel] = None
 
     async def send_response(self, response: BaseModel):
         await self.web_socket.send_json(to_json(response))

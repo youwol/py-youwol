@@ -2,13 +2,11 @@ import inspect
 from datetime import datetime
 import json
 import os
-import sys
-import traceback
 from pathlib import Path
 from typing import List, Dict, Any, Union, Optional
 from pydantic import BaseModel
 
-from youwol.configuration.models_config import Configuration
+from youwol.configuration.models_config import ConfigurationHandler, configuration_from_json, configuration_from_python
 from youwol.middlewares.dynamic_routing.custom_dispatch_rules import AbstractDispatch
 from youwol.models import Label
 from youwol.configuration.clients import LocalClients
@@ -27,10 +25,10 @@ from youwol.context import Context
 
 from youwol.configuration.configuration_validation import (
     ConfigurationLoadingStatus, ConfigurationLoadingException,
-    CheckValidConfigurationFunction, CheckSystemFolderWritable, CheckDatabasesFolderHealthy, CheckSecretPathExist,
+    CheckSystemFolderWritable, CheckDatabasesFolderHealthy, CheckSecretPathExist,
     CheckSecretHealthy
 )
-from youwol.configuration.models_base import ErrorResponse, Project, Pipeline, format_unknown_error
+from youwol.configuration.models_base import ErrorResponse, Project, Pipeline
 from youwol.configuration.paths import PathsBook
 from youwol_utils import encode_id
 
@@ -138,7 +136,8 @@ class YouwolConfiguration(BaseModel):
 
     def __str__(self):
 
-        return f"""Configuration path: {self.pathsBook.config}
+        return f"""
+Configuration loaded from '{self.pathsBook.config}'
 - active profile: {self.active_profile if self.active_profile else "Default profile"}
 - directories: {self.pathsBook}
 - cdn packages count: {len(parse_json(self.pathsBook.local_cdn_docdb)['documents'])}
@@ -321,23 +320,23 @@ async def safe_load(
         )
 
     loaders = {
-        ".py": safe_load_python,
-        ".json": safe_load_json
+        ".py": configuration_from_python,
+        ".json": configuration_from_json
     }
 
     try:
-        configuration: Configuration = await loaders[path.suffix](path, profile)
+        conf_handler: ConfigurationHandler = await loaders[path.suffix](path, profile)
     except KeyError as k:
         print(f"Unknown suffix : ${k}")
         raise ConfigurationLoadingException(get_status(False))
 
     paths_book = PathsBook(
         config=path,
-        databases=Path(configuration.get_data_dir()),
-        system=Path(configuration.get_cache_dir()),
-        secrets=Path(configuration.config_dir / Path("secrets.json")),
-        usersInfo=Path(configuration.config_dir / Path("users-info.json")),
-        remotesInfo=Path(configuration.config_dir / Path("remotes-info.json"))
+        databases=Path(conf_handler.get_data_dir()),
+        system=Path(conf_handler.get_cache_dir()),
+        secrets=Path(conf_handler.config_dir / Path("secrets.json")),
+        usersInfo=Path(conf_handler.config_dir / Path("users-info.json")),
+        remotesInfo=Path(conf_handler.config_dir / Path("remotes-info.json"))
     )
 
     if not os.access(paths_book.system.parent, os.W_OK):
@@ -390,14 +389,14 @@ async def safe_load(
     projects = []
 
     targets_dirs = []
-    for projects_dir in configuration.get_projects_dirs():
+    for projects_dir in conf_handler.get_projects_dirs():
         for subdir in os.listdir(projects_dir):
             if (projects_dir / Path(subdir) / '.yw_pipeline').exists():
                 targets_dirs.append(projects_dir / Path(subdir))
 
     for path in targets_dirs:
         pipeline: Pipeline = get_python_function(PythonSourceFunction(path=path / '.yw_pipeline' / 'yw_pipeline.py',
-                                                                      name='pipeline'))(configuration)
+                                                                      name='pipeline'))(conf_handler)
         if not pipeline:
             raise Exception(f"Unknown pipeline for project {path}")
         name = pipeline.projectName(path)
@@ -412,71 +411,20 @@ async def safe_load(
 
     youwol_configuration = YouwolConfiguration(
         pipelines={},
-        active_profile=configuration.get_profile(),
-        available_profiles=configuration.get_available_profiles(),
-        openid_host=configuration.get_openid_host(),
-        http_port=configuration.get_http_port(),
+        active_profile=conf_handler.get_profile(),
+        available_profiles=conf_handler.get_available_profiles(),
+        openid_host=conf_handler.get_openid_host(),
+        http_port=conf_handler.get_http_port(),
         userEmail=user_email,
         selectedRemote=selected_remote,
-        events=configuration.get_events(),
-        cdnAutomaticUpdate=configuration.get_cdn_auto_update(),
+        events=conf_handler.get_events(),
+        cdnAutomaticUpdate=conf_handler.get_cdn_auto_update(),
         pathsBook=paths_book,
         projects=projects,
         commands={key: get_python_function(source_function=source) for (key, source) in
-                  configuration.get_commands().items()},
+                  conf_handler.get_commands().items()},
         localGateway=LocalGateway(),
-        customDispatches=configuration.get_dispatches()
+        customDispatches=conf_handler.get_dispatches()
     )
 
-    return configuration.customize(youwol_configuration)
-
-
-async def safe_load_python(path: Path, profile: str) -> Configuration:
-    check_valid_conf_fct = CheckValidConfigurationFunction()
-
-    def get_status(validated: bool = False):
-        return ConfigurationLoadingStatus(
-            path=str(path),
-            validated=validated,
-            checks=[
-                check_valid_conf_fct,
-            ]
-        )
-
-    try:
-        main_args = get_main_arguments()
-        user_config: Configuration = await get_python_function(
-            PythonSourceFunction(path=path, name='configuration'))(main_args, profile)
-        if not isinstance(user_config, Configuration):
-            check_valid_conf_fct.status = ErrorResponse(
-                reason=f"The function 'configuration' must return an instance of type 'UserConfiguration'",
-                hints=[f"You can have a look at the default_config_yw.py located in 'py-youwol/system'"])
-            raise ConfigurationLoadingException(get_status(False))
-    # except ValidationError as err:
-    #     check_valid_conf_fct.status = ErrorResponse(
-    #         reason=f"Parsing the object returned by the function 'async def configuration(...)' " +
-    #                "to UserConfiguration failed.",
-    #         hints=[f"{str(err)}"])
-    #     raise ConfigurationLoadingException(get_status(False))
-    # except TypeError as err:
-    #     ex_type, ex, tb = sys.exc_info()
-    #     traceback.print_tb(tb)
-    #     check_valid_conf_fct.status = ErrorResponse(
-    #         reason=f"Misused of configuration function",
-    #         hints=[f"details: {str(err)}"])
-    #     raise ConfigurationLoadingException(get_status(False))
-    except Exception as err:
-        ex_type, ex, tb = sys.exc_info()
-        traceback.print_tb(tb)
-        check_valid_conf_fct.status = format_unknown_error(
-            reason=f"There was an exception calling the 'configuration'.",
-            error=err)
-        raise ConfigurationLoadingException(get_status(False))
-
-    return user_config
-
-
-async def safe_load_json(path: Optional[Path], profile: Optional[str]) -> Configuration:
-    configuration = Configuration(path=path, profile=profile)
-
-    return configuration
+    return conf_handler.customize(youwol_configuration)

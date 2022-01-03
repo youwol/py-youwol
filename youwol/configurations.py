@@ -9,7 +9,7 @@ from cowpy import cow
 from dataclasses import dataclass
 
 from youwol.configuration import get_public_user_auth_token, YouwolConfiguration
-from youwol.configuration.models_config import Configuration
+from youwol.configuration.util_paths import ensure_config_file_exists_or_create_it
 from youwol.main_args import get_main_arguments, MainArguments
 from youwol.utils_paths import write_json
 from youwol_utils import retrieve_user_info
@@ -33,13 +33,10 @@ Just a few post install actions to take care of and you are good to go.""")
 
 async def get_yw_config_starter(main_args: MainArguments):
 
-    conf = Configuration(path=main_args.config_path)
+    (conf_path, exists) = ensure_config_file_exists_or_create_it(main_args.config_path)
 
-    if conf.path.exists():
-        return conf.path
-    else:
-        conf.config_dir.mkdir(exist_ok=True)
-        conf.path.write_text("{}")
+    if exists:
+        return conf_path
 
     resp = input("No config path has been provided as argument (using --conf),"
                  f" and no file found in the default folder.\n"
@@ -72,10 +69,10 @@ async def get_yw_config_starter(main_args: MainArguments):
         exit(1)
 
     shutil.copyfile(main_args.youwol_path.parent / 'youwol_data' / 'remotes-info.json',
-                    conf.config_dir / 'remotes-info.json')
+                    conf_path.parent / 'remotes-info.json')
 
-    if not (conf.config_dir / 'secrets.json').exists():
-        write_json({email: {'password': pwd}}, conf.config_dir / 'secrets.json')
+    if not (conf_path.parent / 'secrets.json').exists():
+        write_json({email: {'password': pwd}}, conf_path.parent / 'secrets.json')
 
     user_info = {
         "policies": {"default": email},
@@ -89,10 +86,10 @@ async def get_yw_config_starter(main_args: MainArguments):
             }
         }
 
-    if not (conf.config_dir/'users-info.json').exists():
-        write_json(user_info, conf.config_dir / 'users-info.json')
+    if not (conf_path.parent/'users-info.json').exists():
+        write_json(user_info, conf_path.parent / 'users-info.json')
 
-    return conf.path
+    return conf_path.parent
 
 
 async def get_full_local_config() -> ApiConfiguration:
