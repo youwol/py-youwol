@@ -44,7 +44,7 @@ class RedirectDispatch(AbstractDispatch):
         return f"redirecting '{self.origin}' to '{self.destination}'"
 
 
-class AssetDispatch(AbstractDispatch):
+class CdnOverride(AbstractDispatch):
 
     package_name: str
     port: int
@@ -82,7 +82,7 @@ class AssetDispatch(AbstractDispatch):
                 return Response(content=content, headers={k: v for k, v in resp.headers.items()})
 
     def __str__(self):
-        return f"serving asset '{self.package_name}' from local port '{self.port}'"
+        return f"serving cdn package '{self.package_name}' from local port '{self.port}'"
 
 
 class CustomDispatchesRule(DispatchingRule):

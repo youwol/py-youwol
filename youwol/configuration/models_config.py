@@ -18,7 +18,7 @@ from youwol.configuration.python_function_runner import PythonSourceFunction, ge
 from youwol.configuration.util_paths import ensure_dir_exists, existing_path_or_default, fail_on_missing_dir, \
     PathException, app_dirs
 from youwol.main_args import get_main_arguments
-from youwol.middlewares.dynamic_routing.custom_dispatch_rules import AbstractDispatch, RedirectDispatch, AssetDispatch
+from youwol.middlewares.dynamic_routing.custom_dispatch_rules import AbstractDispatch, RedirectDispatch, CdnOverride
 
 
 class ConfigPortRange(BaseModel):
@@ -29,14 +29,20 @@ class ConfigPortRange(BaseModel):
 default_port_range: ConfigPortRange = ConfigPortRange(start=3000, end=4000)
 
 
-class ConfigAssetDispatch(BaseModel):
+class ConfigCdnOverride(BaseModel):
     name: str
     port: int
 
 
+ConfigPath = Union[str, Path]
+
+
 class ConfigSource(BaseModel):
-    source: Optional[str]
+    source: Optional[ConfigPath]
     function: str
+
+    def __str__(self):
+        return f"{self.source}#{self.function}"
 
 
 class ConfigRedirectionDispatch(BaseModel):
@@ -48,14 +54,14 @@ class ConfigurationProfile(BaseModel):
     httpPort: Optional[int]
     openIdHost: Optional[str]
     user: Optional[str]
-    projectsDirs: Optional[Union[str, List[str]]]
-    configDir: Optional[str]
-    dataDir: Optional[str]
-    cacheDir: Optional[str]
+    projectsDirs: Optional[Union[ConfigPath, List[ConfigPath]]]
+    configDir: Optional[ConfigPath]
+    dataDir: Optional[ConfigPath]
+    cacheDir: Optional[ConfigPath]
     serversPortsRange: Optional[ConfigPortRange]
     cdnAutoUpdate: Optional[bool]
-    dispatches: Optional[List[Union[str, ConfigRedirectionDispatch, ConfigAssetDispatch]]]
-    source: Optional[str]
+    dispatches: Optional[List[Union[str, ConfigRedirectionDispatch, ConfigCdnOverride]]]
+    source: Optional[ConfigPath]
     events: Dict[str, Union[str, ConfigSource]] = {}
     customCommands: Dict[str, Union[str, ConfigSource]] = {}
     customize: Optional[Union[str, ConfigSource]] = None
@@ -108,7 +114,6 @@ class Configuration(ConfigurationProfile):
 
 class ConfigurationHandler:
     path: Path
-    config_dir: Path
     config_data: Configuration
     effective_config_data: ConfigurationProfile
     active_profile: Optional[str] = None
@@ -116,7 +121,6 @@ class ConfigurationHandler:
     def __init__(self, path: Path, config_data: Configuration,  profile: Optional[str]):
         self.path = path
         self.config_data = config_data
-        self.config_dir = self.path.parent
         if profile:
             self.set_profile(profile)
         else:
@@ -141,6 +145,10 @@ class ConfigurationHandler:
 
     def get_http_port(self) -> int:
         return self.effective_config_data.httpPort if self.effective_config_data.httpPort else default_http_port
+
+    def get_config_dir(self) -> Path:
+        path = self.effective_config_data.configDir if self.effective_config_data.configDir else self.path.parent
+        return ensure_dir_exists(path, root_candidates=app_dirs.user_config_dir)
 
     def get_data_dir(self) -> Path:
         def create_data_dir(final_path: Path):
@@ -177,12 +185,12 @@ class ConfigurationHandler:
             if self.effective_config_data.serversPortsRange else default_port_range
 
         assigned_ports = [cdnServer.port for cdnServer
-                          in self.effective_config_data.dispatches if isinstance(cdnServer, ConfigAssetDispatch)]
+                          in self.effective_config_data.dispatches if isinstance(cdnServer, ConfigCdnOverride)]
 
         def get_abstract_dispatch(
-                dispatch: Union[str, ConfigAssetDispatch, ConfigRedirectionDispatch]) -> AbstractDispatch:
-            if isinstance(dispatch, ConfigAssetDispatch):
-                return AssetDispatch(package_name=dispatch.name, port=dispatch.port)
+                dispatch: Union[str, ConfigCdnOverride, ConfigRedirectionDispatch]) -> AbstractDispatch:
+            if isinstance(dispatch, ConfigCdnOverride):
+                return CdnOverride(package_name=dispatch.name, port=dispatch.port)
 
             if isinstance(dispatch, ConfigRedirectionDispatch):
                 return RedirectDispatch(origin=dispatch.origin, destination=dispatch.destination)
@@ -192,7 +200,7 @@ class ConfigurationHandler:
                 port = port + 1
 
             assigned_ports.append(port)
-            return AssetDispatch(package_name=dispatch, port=port)
+            return CdnOverride(package_name=dispatch, port=port)
 
         return [get_abstract_dispatch(dispatch=dispatch) for dispatch in self.effective_config_data.dispatches]
 
@@ -226,8 +234,14 @@ class ConfigurationHandler:
 
         conf = ensure_source_file(self.effective_config_data.customize, self.effective_config_data.source,
                                   app_dirs.user_config_dir)
-        return get_python_function(PythonSourceFunction(path=Path(conf.source),
+
+        try:
+            youwol_configuration = get_python_function(PythonSourceFunction(path=Path(conf.source),
                                                         name=conf.function))(youwol_configuration)
+        except Exception as e:
+            raise Exception(f"Error while executing customize function {conf}", e)
+
+        return youwol_configuration
 
 
 def ensure_source_file(arg: Union[str, ConfigSource], default_source: str, default_root: str) -> ConfigSource:
@@ -292,7 +306,7 @@ async def configuration_from_python(path: Path, profile: Optional[str]) -> Confi
             PythonSourceFunction(path=path, name='configuration'))(main_args, profile)
         if not isinstance(config_data, Configuration):
             check_valid_conf_fct.status = ErrorResponse(
-                reason=f"The function 'configuration' must return an instance of type 'UserConfiguration'",
+                reason=f"The function 'configuration' must return an instance of type 'Configuration'",
                 hints=[f"You can have a look at the default_config_yw.py located in 'py-youwol/system'"])
             raise ConfigurationLoadingException(get_status(False))
     # except ValidationError as err:

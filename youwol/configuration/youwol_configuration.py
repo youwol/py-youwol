@@ -28,7 +28,7 @@ from youwol.configuration.configuration_validation import (
     CheckSystemFolderWritable, CheckDatabasesFolderHealthy, CheckSecretPathExist,
     CheckSecretHealthy
 )
-from youwol.configuration.models_base import ErrorResponse, Project, Pipeline
+from youwol.configuration.models_base import ErrorResponse, Project
 from youwol.configuration.paths import PathsBook
 from youwol_utils import encode_id
 
@@ -48,7 +48,6 @@ class DeadlinedCache(BaseModel):
 
 
 class YouwolConfiguration(BaseModel):
-    pipelines: Dict[str, Pipeline]
     localGateway: LocalGateway
     available_profiles: List[str]
     http_port: int
@@ -139,7 +138,7 @@ class YouwolConfiguration(BaseModel):
         return f"""
 Configuration loaded from '{self.pathsBook.config}'
 - active profile: {self.active_profile if self.active_profile else "Default profile"}
-- directories: {self.pathsBook}
+- paths: {self.pathsBook}
 - cdn packages count: {len(parse_json(self.pathsBook.local_cdn_docdb)['documents'])}
 - assets count: {len(parse_json(self.pathsBook.local_docdb / 'assets' / 'entities' / 'data.json')['documents'])}
 - list of projects:
@@ -189,7 +188,6 @@ class YouwolConfigurationFactory:
             localGateway=conf.localGateway,
             available_profiles=conf.available_profiles,
             commands=conf.commands,
-            pipelines=conf.pipelines,
             customDispatches=conf.customDispatches,
             cdnAutomaticUpdate=conf.cdnAutomaticUpdate,
             events=conf.events
@@ -221,7 +219,6 @@ class YouwolConfigurationFactory:
             localGateway=conf.localGateway,
             available_profiles=conf.available_profiles,
             commands=conf.commands,
-            pipelines=conf.pipelines,
             customDispatches=conf.customDispatches,
             cdnAutomaticUpdate=conf.cdnAutomaticUpdate,
             events=conf.events
@@ -334,9 +331,9 @@ async def safe_load(
         config=path,
         databases=Path(conf_handler.get_data_dir()),
         system=Path(conf_handler.get_cache_dir()),
-        secrets=Path(conf_handler.config_dir / Path("secrets.json")),
-        usersInfo=Path(conf_handler.config_dir / Path("users-info.json")),
-        remotesInfo=Path(conf_handler.config_dir / Path("remotes-info.json"))
+        secrets=Path(conf_handler.get_config_dir() / Path("secrets.json")),
+        usersInfo=Path(conf_handler.get_config_dir() / Path("users-info.json")),
+        remotesInfo=Path(conf_handler.get_config_dir() / Path("remotes-info.json"))
     )
 
     if not os.access(paths_book.system.parent, os.W_OK):
@@ -387,30 +384,41 @@ async def safe_load(
         context=context)
 
     projects = []
-
     targets_dirs = []
+    nb_targets_dirs = len(targets_dirs)
     for projects_dir in conf_handler.get_projects_dirs():
-        for subdir in os.listdir(projects_dir):
-            if (projects_dir / Path(subdir) / '.yw_pipeline').exists():
-                targets_dirs.append(projects_dir / Path(subdir))
+        if (projects_dir / '.yw_pipeline').exists():
+            targets_dirs.append(projects_dir)
+        else:
+            for subdir in os.listdir(projects_dir):
+                if (projects_dir / Path(subdir) / '.yw_pipeline').exists():
+                    targets_dirs.append(projects_dir / Path(subdir))
+        nb_targets_dirs_found = len(targets_dirs) - nb_targets_dirs
+        nb_targets_dirs = len(targets_dirs)
+        if nb_targets_dirs_found == 0:
+            print(f"No project found in '{projects_dir}'")
+        else:
+            print(f"found {nb_targets_dirs_found} projects in '{projects_dir}'")
 
     for path in targets_dirs:
-        pipeline: Pipeline = get_python_function(PythonSourceFunction(path=path / '.yw_pipeline' / 'yw_pipeline.py',
-                                                                      name='pipeline'))(conf_handler)
-        if not pipeline:
-            raise Exception(f"Unknown pipeline for project {path}")
-        name = pipeline.projectName(path)
-        project = Project(
-            name=name,
-            id=encode_id(name),
-            version=pipeline.projectVersion(path),
-            pipeline=pipeline,
-            path=path
-        )
-        projects.append(project)
+        try:
+            pipeline = get_python_function(
+                PythonSourceFunction(path=path / '.yw_pipeline' / 'yw_pipeline.py', name='pipeline'))(conf_handler)
+
+            name = pipeline.projectName(path)
+            project = Project(
+                name=name,
+                id=encode_id(name),
+                version=pipeline.projectVersion(path),
+                pipeline=pipeline,
+                path=path
+            )
+            projects.append(project)
+
+        except Exception as e:
+            print(f"Could not load project in dir '{path}' : ", str(e))
 
     youwol_configuration = YouwolConfiguration(
-        pipelines={},
         active_profile=conf_handler.get_profile(),
         available_profiles=conf_handler.get_available_profiles(),
         openid_host=conf_handler.get_openid_host(),

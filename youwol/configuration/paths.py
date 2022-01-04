@@ -99,6 +99,6 @@ class PathsBook(BaseModel):
 
     def __str__(self):
         return f"""
- * config: {self.config}
- * databases: {self.databases}
- * system: {self.system}"""
+ * config file: {self.config}
+ * databases directory: {self.databases}
+ * system directory: {self.system}"""
