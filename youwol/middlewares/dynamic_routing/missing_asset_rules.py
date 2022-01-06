@@ -55,4 +55,5 @@ class PostMetadataDispatch(DispatchingRule):
                     ) -> Response:
 
         resp = await call_next(request)
-        return await redirect_api_remote(request, context=context) if resp.status_code == 404 else resp
+        return resp
+        # return await redirect_api_remote(request, context=context) if resp.status_code == 404 else resp
