@@ -85,59 +85,6 @@ class FileListing(BaseModel):
     ignore: List[str] = []
 
 
-class Target(BaseModel):
-    folder: Union[Path, str]
-
-
-class Action(BaseModel):
-
-    run: Union[str, Callable[[Any, Context], str], Callable[[Any, Context], Awaitable]]
-
-    async def exe(self, resource: Any, context: Context):
-
-        if isinstance(self.run, str):
-            return await Action.exe_cmd(cmd=self.run, resource=resource, context=context)
-
-        if isinstance(self.run, collections.Callable):
-            cmd = self.run(resource, context)
-            if isinstance(cmd, str):
-                return await Action.exe_cmd(cmd=cmd, resource=resource, context=context)
-
-            return await cmd
-
-    @staticmethod
-    async def exe_cmd(cmd: str, resource: Any, context: Context):
-
-        p = await asyncio.create_subprocess_shell(
-            cmd=cmd,
-            cwd=str(resource.target.folder),
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-            shell=True)
-
-        async for f in merge(p.stdout, p.stderr):
-            await context.info(labeks=[Label.RUNNING], text=f.decode('utf-8'))
-
-        return await p.communicate()
-
-
-class Install(Action):
-    isInstalled: Callable[[Any, Context], bool] = None
-
-    def is_installed(self, resource, context: Context):
-        if self.isInstalled is None:
-            return True
-        return self.isInstalled(resource, context)
-
-
-class Build(Action):
-    pass
-
-
-class Test(Action):
-    pass
-
-
 class SkeletonParameter(BaseModel):
     displayName: str
     id: str
@@ -153,14 +100,6 @@ class Skeleton(BaseModel):
     description: str
     parameters: List[SkeletonParameter]
     generate: Callable[[Path, Dict[str, any], 'Pipeline', Context], Awaitable] = None
-
-
-class StepEnum(Enum):
-    INSTALL = 'install'
-    BUILD = 'build'
-    TEST = 'test'
-    CDN = 'cdn'
-    SERVE = 'serve'
 
 
 class Link(BaseModel):
@@ -382,45 +321,3 @@ class Project(BaseModel):
         if not manifest_path.exists():
             return None
         return Manifest(**parse_json(manifest_path))
-
-
-class Asset(BaseModel):
-
-    def steps(self) -> Set[StepEnum]:
-        raise NotImplemented()
-
-    def PipelineType(self) -> Type:
-        raise NotImplemented()
-
-    pipelines: Dict[str, Any]
-
-
-async def resolve_category(
-        asset_type: Asset,
-        category: str,
-        target: Target,
-        info: BaseModel,
-        context: Context):
-
-    pipeline = asset_type.pipelines[category]
-    if not isinstance(pipeline, asset_type.PipelineType()):
-        pipeline = asset_type.PipelineType()(** await pipeline(target, info, context))
-
-    if not pipeline.extends:
-        return pipeline
-
-    def to_dict(t: Dict[str, Json]):
-        r = t or {}
-        return {k: v for k, v in r.items() if v}
-
-    extend = await resolve_category(asset_type, pipeline.extends, target, info, context)
-
-    def reduce_fct(acc_merged: Dict[str, Json], step: StepEnum):
-        step_name = step.name.lower()
-        step_ = {**to_dict(extend.dict()[step.name.lower()]),
-                 **to_dict(pipeline.dict()[step.name.lower()])}
-        return {**acc_merged, **{step_name: step_}}
-
-    merged = reduce(reduce_fct, asset_type.steps(), {})
-
-    return asset_type.PipelineType()(**merged)

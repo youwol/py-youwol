@@ -86,10 +86,6 @@ def replace_with(parent: ConfigurationProfile, replacement: ConfigurationProfile
     )
 
 
-def append(parent: ConfigurationProfile, appended: ConfigurationProfile) -> ConfigurationProfile:
-    pass
-
-
 class CascadeBaseProfile(Enum):
     REPLACE = "replace"
     APPEND = "append"

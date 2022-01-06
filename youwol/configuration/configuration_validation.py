@@ -63,4 +63,3 @@ class ConfigurationLoadingException(Exception):
             {self.failed_check.name}: {Fore.LIGHTYELLOW_EX}{self.failed_check.status.reason}{Style.RESET_ALL}
             hints: {'/n'.join([hint for hint in self.failed_check.status.hints])}
         """
-

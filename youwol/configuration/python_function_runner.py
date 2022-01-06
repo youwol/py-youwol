@@ -77,8 +77,4 @@ def get_python_function(source_function : PythonSourceFunction):
                 'async def configuration(main_args: MainArguments)."""])
         raise ConfigurationLoadingException(get_status(False))
 
-    fn = scope[source_function.name]
-
-    sig = signature(fn)
-
     return scope[source_function.name]
