@@ -13,7 +13,8 @@ from youwol_utils.clients.docdb.docdb import DocDbClient as DocDb
 class Configuration:
 
     yw_config: YouwolConfiguration
-    required_libs = ["tslib#1.10.0", "rxjs#6.5.5", "lodash#4.17.15", "reflectmetadata#0.1.13", "bootstrap#4.4.1"]
+    # there are no required libs in local install: they will be fetched from remote anyway
+    required_libs = []
 
     open_api_prefix: str
     base_path: str
