@@ -93,7 +93,7 @@ async def download_data(
         remote_treedb=remote_treedb,
         tree_items=ItemsResponse(**tree_items)
         )
-    default_folder_id = (await context.config.get_default_drive()).downloadFolderId
+    default_folder_id = (await context.config.get_default_drive(context=context)).downloadFolderId
     owning_folder_id = await get_local_owning_folder_id(
         owning_location=owning_location,
         local_treedb=local_treedb,
