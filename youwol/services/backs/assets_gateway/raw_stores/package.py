@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from starlette.requests import Request
 from starlette.responses import Response
 
-from youwol_utils import (raise_exception_from_response, RecordsResponse)
+from youwol_utils import (raise_exception_from_response)
 from .interface import (AssetMeta, RawStore, RawId)
 
 
@@ -15,7 +15,8 @@ class PackagesStore(RawStore, ABC):
 
     path_name = 'package'
 
-    async def create_asset(self, request: Request, metadata: AssetMeta, rest_of_path: str, headers) -> (RawId, AssetMeta):
+    async def create_asset(self, request: Request, metadata: AssetMeta, rest_of_path: str, headers) \
+            -> (RawId, AssetMeta):
 
         form = await request.form()
         form = {
@@ -47,9 +48,3 @@ class PackagesStore(RawStore, ABC):
 
     async def delete_asset(self, request: Request, raw_id, headers):
         pass
-
-    async def get_records(self, request: Request, raw_ids: str, group_id: str, headers):
-
-        body = {"ids": raw_ids, "groupId": group_id}
-        resp = await self.client.get_records(body=body, headers=headers)
-        return RecordsResponse(**resp)

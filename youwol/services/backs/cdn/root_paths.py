@@ -4,7 +4,7 @@ import itertools
 import shutil
 from pathlib import Path
 
-from fastapi import UploadFile, File, HTTPException, Form, APIRouter, Depends, Query as QueryParam
+from fastapi import UploadFile, File, HTTPException, Form, APIRouter, Depends
 
 from starlette.requests import Request
 from starlette.responses import Response

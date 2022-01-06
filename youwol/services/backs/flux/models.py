@@ -242,4 +242,3 @@ COMPONENTS_TABLE = TableBody(
 
 class DeprecatedData(BaseModel):
     rootLayerTree: dict
-

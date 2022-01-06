@@ -3,7 +3,7 @@ import itertools
 import json
 from typing import Dict
 
-from fastapi import APIRouter, UploadFile, File, Depends
+from fastapi import APIRouter, Depends
 from starlette.requests import Request
 
 from youwol_utils.clients.treedb.treedb import TreeDbClient
@@ -17,7 +17,7 @@ from ..models import (
     FolderResponse, FolderBody, DeletedResponse, MoveBody, ItemResponse, BorrowBody, PermissionsResponse, PutFolderBody,
     PutDriveBody, DefaultDriveResponse
     )
-from ..package_drive import (pack_drive, unpack_drive, MockFile)
+
 from ..routers.assets import get_asset_by_tree_id
 from ..utils import to_item_resp, regroup_asset, to_folder_resp
 
@@ -33,6 +33,25 @@ async def ensure_folder(
         ):
     try:
         return await treedb.get_folder(folder_id=folder_id, headers=headers)
+    except YouWolException as e:
+        if e.status_code != 404:
+            raise e
+        return await treedb.create_folder(
+            parent_folder_id=parent_folder_id,
+            body={"name": name, "folderId": folder_id},
+            headers=headers
+            )
+
+
+async def ensure_items(
+        folder_id: str,
+        parent_folder_id: str,
+        name: str,
+        treedb: TreeDbClient,
+        headers: Dict[str, str]
+        ):
+    try:
+        await treedb.get_folder(folder_id=folder_id, headers=headers)
     except YouWolException as e:
         if e.status_code != 404:
             raise e
@@ -433,47 +452,3 @@ async def purge(
 
     await asyncio.gather(*coroutines)
     return tree_items
-
-
-@router.put("/drives/{drive_id}/package",
-            summary="package drive in one zip-file")
-async def package(
-        request: Request,
-        drive_id: str,
-        configuration: Configuration = Depends(get_configuration)):
-
-    return await pack_drive(request=request, drive_id=drive_id, configuration=configuration)
-
-
-@router.put("/drives/{drive_id}/unpack",
-            summary="package drive in one zip-file")
-async def unpack(
-        request: Request,
-        drive_id: str,
-        file: UploadFile = File(...),
-        configuration: Configuration = Depends(get_configuration)):
-
-    return await unpack_drive(request=request, drive_id=drive_id, file=file, configuration=configuration)
-
-
-@router.put("/items/{tree_id}/unpack",
-            summary="unpack a drive-pack at current location")
-async def unpack(
-        request: Request,
-        tree_id: str,
-        configuration: Configuration = Depends(get_configuration)
-        ):
-
-    headers = generate_headers_downstream(request.headers)
-    asset, tree_item = await asyncio.gather(
-        get_asset_by_tree_id(request=request, tree_id=tree_id),
-        configuration.treedb_client.get_item(item_id=tree_id, headers=headers)
-        )
-
-    assets_stores = configuration.assets_stores()
-    # asset.kind should be 'drive-pack' & should be used instead of hard coded value
-    raw_store = next(store for store in assets_stores if store.path_name == "drive-pack")
-    data = await raw_store.get_asset(request=request, raw_id=asset.rawId, rest_of_path="", headers=headers)
-
-    return await unpack_drive(request=request, drive_id=tree_item['folderId'], file=MockFile("", asset.name, data.body),
-                              configuration=configuration)

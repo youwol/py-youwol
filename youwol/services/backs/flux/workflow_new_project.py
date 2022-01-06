@@ -2,6 +2,7 @@ from .models import Workflow, Module, FactoryId
 
 
 root_id = "root-component"
+# noinspection SpellCheckingInspection
 html = f"""
 <div id='Component_{root_id}' class='flux-element flux-component' data-gjs-name='{root_id}'>
     <div class='d-flex flex-column justify-content-around text-center h-100 fv-bg-background fv-text-primary'

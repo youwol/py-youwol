@@ -5,8 +5,6 @@ from dataclasses import dataclass
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from .raw_stores.story import StoriesStore
 from .raw_stores.data import DataStore
-from .raw_stores.drive_pack import DrivePackStore
-from .raw_stores.group_showcase import GroupShowCaseStore
 from .raw_stores.package import PackagesStore
 from youwol_utils.clients.stories.stories import StoriesClient
 from youwol_utils import (
@@ -42,6 +40,7 @@ class Configuration:
     docdb_factory: Callable[[str, str, str], DocDb]
     storage_factory: Callable[[str], Storage]
 
+    admin_headers = None
     replication_factor: int = 2
     to_package = ["flux-project", "data", "package", "group-showcase"]
 
@@ -49,10 +48,8 @@ class Configuration:
         return [
             FluxProjectsStore(client=self.flux_client),
             PackagesStore(client=self.cdn_client),
-            GroupShowCaseStore(client=None),
             DataStore(client=self.data_client),
-            StoriesStore(client=self.stories_client),
-            DrivePackStore(client=self.data_client)
+            StoriesStore(client=self.stories_client)
             ]
 
 

@@ -188,7 +188,7 @@ async def put_asset_with_raw(
 
     if not group_id:
         try:
-            parent = await  tree_db.get_folder(folder_id=folder_id, headers=headers)
+            parent = await tree_db.get_folder(folder_id=folder_id, headers=headers)
         except HTTPException:
             parent = await tree_db.get_drive(drive_id=folder_id, headers=headers)
         group_id = parent["groupId"]

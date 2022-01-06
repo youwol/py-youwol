@@ -1,5 +1,5 @@
 import base64
-from typing import Union, Mapping, List, Dict, Any, TypeVar
+from typing import Union, Mapping, List, Dict, Any
 
 from fastapi import HTTPException
 from starlette.requests import Request
@@ -29,7 +29,7 @@ async def init_resources(
     deleted_ok = await doc_dbs.deleted_db.ensure_table(headers=headers)
 
     if not (items_ok and folders_ok and drives_ok and deleted_ok):
-        raise Exception(f"Problem during docdb's table initialisation {[items_ok, folders_ok, drives_ok, deleted_ok]}")
+        raise Exception(f"Problem during doc-db's table initialisation {[items_ok, folders_ok, drives_ok, deleted_ok]}")
 
     log_info("resources initialization done")
 

@@ -1,4 +1,4 @@
-
+# noinspection SpellCheckingInspection
 icons_smileys_people = [
     ['😀', ' Grinning Face'],
     ['😃', ' Grinning Face with Big Eyes'],
@@ -465,6 +465,7 @@ icons_smileys_people = [
     ['💼', ' Briefcase'],
     ['🩸', ' Drop of Blood']
     ]
+# noinspection SpellCheckingInspection
 icons_animals = [
     ['🙈', ' See-No-Evil Monkey'],
     ['🙉', ' Hear-No-Evil Monkey'],
@@ -910,6 +911,7 @@ icons_activities = [
     ['🎬', ' Clapper Board'],
     ['🏹', ' Bow and Arrow']
     ]
+# noinspection SpellCheckingInspection
 icons_travel = [
     ['🚣', ' Person Rowing Boat'],
     ['🗾', ' Map of Japan'],
@@ -1045,6 +1047,7 @@ icons_travel = [
     ['🛄', ' Baggage Claim'],
     ['🛅', ' Left Luggage']
     ]
+# noinspection SpellCheckingInspection
 icons_objects = [
     ['💌', ' Love Letter'],
     ['🕳️', ' Hole'],
@@ -1280,6 +1283,7 @@ icons_objects = [
     ['🪧', ' Placard'],
     ['🚰', ' Potable Water']
     ]
+# noinspection SpellCheckingInspection
 icons_symbols = [
     ['💘', ' Heart with Arrow'],
     ['💝', ' Heart with Ribbon'],
@@ -1575,6 +1579,7 @@ icons_symbols = [
     ['🔳', ' White Square Button'],
     ['🔲', ' Black Square Button']
     ]
+# noinspection SpellCheckingInspection
 icons_flags = [
     ['🏁', ' Chequered Flag'],
     ['🚩', ' Triangular Flag'],
@@ -1848,4 +1853,5 @@ icons_flags = [
     ['🏴󠁵󠁳󠁴󠁸󠁿', ' Flag for Texas (US-TX)'],
     ['🏳&zwj;🟧&zwj;⬛&zwj;🟧', ' Refugee Nation Flag']
     ]
-icons_all = icons_smileys_people + icons_animals + icons_foods + icons_activities + icons_travel + icons_objects + icons_symbols + icons_flags
+icons_all = icons_smileys_people + icons_animals + icons_foods + icons_activities + icons_travel + icons_objects \
+            + icons_symbols + icons_flags

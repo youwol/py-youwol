@@ -43,6 +43,9 @@ class StoriesStore(RawStore):
             headers=headers
             )
 
+    async def get_asset_metadata(self, request: Request, raw_id: str, rest_of_path: Union[str, None], headers):
+        raise NotImplementedError("StoriesStore@get_asset_metadata: endpoint not found")
+
     async def update_asset(self, request: Request, raw_id: str,  metadata: AssetMeta, rest_of_path: str, headers):
 
         if rest_of_path.startswith('contents/'):
