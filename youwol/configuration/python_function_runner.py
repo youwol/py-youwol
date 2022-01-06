@@ -1,11 +1,10 @@
-from inspect import signature
 from pathlib import Path
 
 from pydantic import BaseModel
 
-from youwol.configuration import ErrorResponse, format_unknown_error
-from youwol.configuration.configuration_validation import ConfigurationLoadingStatus, CheckConfPath, CheckValidTextFile, \
-    CheckValidPythonScript, CheckValidConfigurationFunction, ConfigurationLoadingException
+from youwol.configuration.models_base import ErrorResponse, format_unknown_error
+from youwol.configuration.configuration_validation import ConfigurationLoadingStatus, CheckConfPath, \
+    CheckValidTextFile, CheckValidPythonScript, CheckValidConfigurationFunction, ConfigurationLoadingException
 
 
 class PythonSourceFunction(BaseModel):
@@ -13,7 +12,7 @@ class PythonSourceFunction(BaseModel):
     name: str
 
 
-def get_python_function(source_function : PythonSourceFunction):
+def get_python_function(source_function: PythonSourceFunction):
 
     check_conf_path = CheckConfPath()
     check_valid_text = CheckValidTextFile()

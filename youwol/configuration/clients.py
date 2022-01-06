@@ -1,6 +1,6 @@
-from context import Context
 from typing import List
 from youwol_utils import CdnClient, StorageClient, TableBody, SecondaryIndex, DocDbClient
+from youwol.context import Context
 from youwol_utils.clients.assets.assets import AssetsClient
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from youwol_utils.clients.flux.flux import FluxClient
@@ -44,7 +44,7 @@ class RemoteClients:
 
     @staticmethod
     async def get_storage_client(bucket_name: str, context: Context) -> StorageClient:
-
+        # <!> this method will be removed as StorageClient should not be reachable
         remote_host = context.config.get_remote_info().host
         auth_token = await context.config.get_auth_token(context=context)
         headers = {"Authorization": f"Bearer {auth_token}"}

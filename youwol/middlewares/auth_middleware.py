@@ -4,9 +4,9 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp
-from youwol.context import Context
 
-from web_socket import WebSocketsCache
+from youwol.context import Context
+from youwol.web_socket import WebSocketsCache
 from youwol.configuration.youwol_configuration import yw_config
 from youwol.routers.authorization import get_user_info
 

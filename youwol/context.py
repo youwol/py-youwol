@@ -1,20 +1,25 @@
+from __future__ import annotations
+
 import traceback
 import uuid
 
 from async_generator import async_generator, yield_, asynccontextmanager
 
-from typing import Union, NamedTuple, Any, Callable, Awaitable, Optional, List, Tuple
+from typing import Union, NamedTuple, Callable, Awaitable, Optional, List, Tuple
 
 from pydantic import BaseModel, Json
 from starlette.requests import Request
 from starlette.websockets import WebSocket
 
-# from auto_download.auto_download_thread import AssetDownloadThread
-from utils_low_level import to_json
+
+from youwol.exceptions import UserCodeException, ActionException
+from youwol.utils_low_level import to_json
 from youwol.models import LogLevel, Label
 from youwol_utils import JSON
 
-YouwolConfiguration = 'youwol.configuration.YouwolConfiguration'
+
+AssetDownloadThread = "youwol.auto_download.auto_download_thread"
+YouwolConfiguration = "youwol.configuration.youwol_configuration"
 
 
 class MessageWebSocket(BaseModel):

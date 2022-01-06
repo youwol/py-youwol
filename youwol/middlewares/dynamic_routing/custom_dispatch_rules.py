@@ -1,18 +1,14 @@
 import asyncio
 from typing import List, Optional
-
 from aiohttp import ClientSession, ClientConnectorError
-from pydantic import BaseModel
-
-from youwol_utils import encode_id, log_info
-from .common import DispatchingRule
-from youwol.context import Context
-
-
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
+from pydantic import BaseModel
 
+from youwol_utils import encode_id, log_info
+from youwol.middlewares.dynamic_routing.common import DispatchingRule
+from youwol.context import Context
 from .redirect import redirect_request
 
 

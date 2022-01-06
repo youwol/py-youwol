@@ -2,8 +2,8 @@ from typing import List, Dict, Any
 
 from pydantic import BaseModel
 
-from configuration.clients import RemoteClients, LocalClients
-from services.backs.treedb.models import PathResponse, DriveResponse
+from youwol.configuration.clients import RemoteClients, LocalClients
+from youwol.services.backs.treedb.models import PathResponse, DriveResponse
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from fastapi import HTTPException
 from youwol.configuration.models_base import SkeletonParameter, Pipeline

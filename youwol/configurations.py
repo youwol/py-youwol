@@ -8,13 +8,16 @@ from fastapi import HTTPException
 from cowpy import cow
 from dataclasses import dataclass
 
-from youwol.configuration import get_public_user_auth_token, YouwolConfiguration
+from youwol.utils_low_level import get_public_user_auth_token
 from youwol.configuration.util_paths import ensure_config_file_exists_or_create_it
 from youwol.main_args import get_main_arguments, MainArguments
 from youwol.utils_paths import write_json
 from youwol_utils import retrieve_user_info
 
 from colorama import Fore, Style
+
+
+YouwolConfiguration = "youwol.configuration.youwol_configuration"
 
 
 @dataclass(frozen=False)

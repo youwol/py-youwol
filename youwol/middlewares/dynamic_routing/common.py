@@ -3,7 +3,8 @@ from starlette.responses import Response
 from starlette.requests import Request
 
 from starlette.middleware.base import RequestResponseEndpoint
-from context import Context
+
+Context = 'youwol.context.Context'
 
 
 class DispatchingRule(ABC):

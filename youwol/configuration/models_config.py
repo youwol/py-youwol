@@ -1,3 +1,4 @@
+import importlib
 import os
 import shutil
 import sys
@@ -5,11 +6,11 @@ import traceback
 import zipfile
 from enum import Enum
 from pathlib import Path
-from typing import List, Union, Optional, Dict
+from typing import List, Union, Optional, Dict, Callable, Any, Awaitable, cast
 
 from pydantic import BaseModel
 
-from youwol.configuration import Events, ErrorResponse, format_unknown_error
+from youwol.configuration.models_base import format_unknown_error, ErrorResponse
 from youwol.configuration.configuration_validation import ConfigurationLoadingException, \
     CheckValidConfigurationFunction, ConfigurationLoadingStatus
 from youwol.configuration.defaults import default_path_projects_dir, default_path_data_dir, \
@@ -18,7 +19,13 @@ from youwol.configuration.python_function_runner import PythonSourceFunction, ge
 from youwol.configuration.util_paths import ensure_dir_exists, existing_path_or_default, fail_on_missing_dir, \
     PathException, app_dirs
 from youwol.main_args import get_main_arguments
-from youwol.middlewares.dynamic_routing.custom_dispatch_rules import AbstractDispatch, RedirectDispatch, CdnOverride
+from youwol.middlewares.dynamic_routing.custom_dispatch_rules import AbstractDispatch, RedirectDispatch, \
+    CdnOverrideDispatch
+
+
+Context = 'youwol.context.Context'
+YouwolConfiguration = 'youwol.configuration.YouwolConfiguration'
+
 
 
 class ConfigPortRange(BaseModel):

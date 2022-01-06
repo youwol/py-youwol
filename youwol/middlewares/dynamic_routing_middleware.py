@@ -3,7 +3,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp
 
-from context import Context
+from youwol.context import Context
 from youwol.web_socket import WebSocketsCache
 from youwol.configuration.youwol_configuration import yw_config
 

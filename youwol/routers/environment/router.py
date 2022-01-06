@@ -8,11 +8,12 @@ from aiohttp.web import HTTPException
 from aiohttp.client_exceptions import ClientConnectorError, ContentTypeError
 from starlette.requests import Request
 
+from youwol.configuration.models_config import UserInfo
 from youwol.configuration.clients import RemoteClients
 from youwol.models import Label
 from youwol.context import Context
 
-from youwol.configuration.user_configuration import get_public_user_auth_token, UserInfo
+from youwol.utils_low_level import get_public_user_auth_token
 
 from youwol.configuration.youwol_configuration import YouwolConfiguration
 from youwol.configuration.youwol_configuration import yw_config, YouwolConfigurationFactory

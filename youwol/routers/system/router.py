@@ -7,7 +7,6 @@ from fastapi import APIRouter, WebSocket
 from youwol.utils_low_level import start_web_socket
 from youwol.web_socket import WebSocketsCache
 
-from starlette.requests import Request
 from pydantic import BaseModel
 from fastapi.responses import FileResponse
 

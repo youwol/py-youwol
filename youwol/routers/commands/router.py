@@ -3,10 +3,10 @@ from starlette.requests import Request
 from pydantic.main import BaseModel
 
 from youwol.context import Context
-from routers.commands.commands_factory import commands_factory
+from youwol.routers.commands.commands_factory import commands_factory
 from youwol.configuration.youwol_configuration import YouwolConfiguration
 from youwol.configuration.youwol_configuration import yw_config
-from web_socket import WebSocketsCache
+from youwol.web_socket import WebSocketsCache
 
 router = APIRouter()
 

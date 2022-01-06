@@ -6,11 +6,11 @@ from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response, JSONResponse
 import youwol.services.backs.cdn.root_paths as cdn
-from context import Context
-from .common import DispatchingRule
+from youwol.context import Context
+from youwol.middlewares.dynamic_routing.common import DispatchingRule
 from youwol.services.backs.cdn.configurations import get_configuration
 from youwol.configuration.youwol_configuration import yw_config
-from services.backs.cdn.models import LoadingGraphBody
+from youwol.services.backs.cdn.models import LoadingGraphBody
 from youwol_utils import PackagesNotFound
 
 

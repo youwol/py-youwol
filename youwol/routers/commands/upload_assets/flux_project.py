@@ -1,11 +1,9 @@
 import json
-
 from dataclasses import dataclass
-from configuration.clients import RemoteClients
-from routers.commands.upload_assets.models import UploadTask
 
 from youwol_utils import JSON
-from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
+from youwol.configuration.clients import RemoteClients, LocalClients
+from youwol.routers.commands.upload_assets.models import UploadTask
 
 
 @dataclass

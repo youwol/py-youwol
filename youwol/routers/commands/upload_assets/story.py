@@ -3,11 +3,11 @@ import tempfile
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
-from configuration import YouwolConfiguration
-from configuration.clients import RemoteClients
-from routers.commands.upload_assets.models import UploadTask
 
-from utils_paths import parse_json, write_json
+from youwol.configuration.youwol_configuration import YouwolConfiguration
+from youwol.configuration.clients import RemoteClients
+from youwol.routers.commands.upload_assets.models import UploadTask
+from youwol.utils_paths import parse_json, write_json
 from youwol_utils import JSON
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 
@@ -55,4 +55,3 @@ class UploadStoryTask(UploadTask):
         # <!> stories_client will be removed as it should not be available
         stories_client = await RemoteClients.get_stories_client(context=self.context)
         await stories_client.publish_story(data={'file': data, 'content_encoding': 'identity'})
-

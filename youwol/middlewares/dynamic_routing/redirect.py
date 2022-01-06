@@ -2,14 +2,6 @@ from aiohttp import ClientSession, TCPConnector
 from starlette.requests import Request
 from starlette.responses import Response
 
-from starlette.datastructures import Headers
-
-from youwol.context import Context
-
-
-async def get_headers(context: Context) -> Headers:
-    with_headers = await context.config.localGateway.with_headers(context)
-    return Headers(headers={**context.request.headers, **with_headers})
 
 
 async def redirect_api_remote(request: Request, context: Context):

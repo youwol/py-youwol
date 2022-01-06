@@ -1,11 +1,12 @@
 import os
 import shutil
 from typing import Tuple, List
-from youwol.configuration import Project, PipelineStep, Artifact, Flow, Link
+from youwol.configuration.models_base import Project, PipelineStep, Artifact, Flow, Link, Manifest
 from youwol.configuration.paths import PathsBook
-from youwol.context import Context, CommandException
+from youwol.context import Context
+from youwol.exceptions import CommandException
 from youwol.routers.projects.models import (
-    PipelineStepStatusResponse, Manifest, ArtifactResponse
+    PipelineStepStatusResponse, ArtifactResponse
     )
 from youwol.utils_low_level import to_json
 from youwol.utils_paths import matching_files, parse_json

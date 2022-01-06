@@ -2,18 +2,17 @@ import asyncio
 import itertools
 from pathlib import Path
 from typing import Optional, cast, Mapping, List, Iterable
-
-from configuration import (
-    PipelineStep, Project, Manifest, PipelineStepStatus, FlowId, ExplicitNone,
-    )
-from configuration.clients import LocalClients, RemoteClients
-from configuration.paths import PathsBook
-from context import Context
 from fastapi import HTTPException
 
-from services.backs.assets_gateway.models import DefaultDriveResponse
+from youwol.configuration.models_base import (
+    PipelineStep, Project, Manifest, PipelineStepStatus, FlowId, ExplicitNone,
+    )
+from youwol.configuration.clients import LocalClients, RemoteClients
+from youwol.configuration.paths import PathsBook
+from youwol.context import Context
+from youwol.services.backs.assets_gateway.models import DefaultDriveResponse
 from youwol.routers.commands.upload_assets.upload import upload_asset
-from utils_paths import create_zip_file
+from youwol.utils_paths import create_zip_file
 from youwol_utils import encode_id, files_check_sum
 
 

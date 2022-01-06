@@ -5,11 +5,11 @@ from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response, JSONResponse
 
-from configuration.clients import RemoteClients, LocalClients
-from context import Context
-from .common import DispatchingRule
-from services.backs.assets_gateway.models import ChildrenResponse, ItemResponse, FolderResponse
-from utils_low_level import JSON
+from youwol.configuration.clients import RemoteClients, LocalClients
+from youwol.context import Context
+from youwol.middlewares.dynamic_routing.common import DispatchingRule
+from youwol.services.backs.assets_gateway.models import ChildrenResponse, ItemResponse, FolderResponse
+from youwol.utils_low_level import JSON
 
 PydanticType = TypeVar("PydanticType")
 

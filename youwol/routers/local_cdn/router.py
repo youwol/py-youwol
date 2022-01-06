@@ -5,7 +5,7 @@ from itertools import groupby
 from starlette.requests import Request
 from fastapi import APIRouter, WebSocket, Depends
 
-from models import Label
+from youwol.models import Label
 from youwol.utils_low_level import start_web_socket
 from youwol.context import Context
 from youwol.routers.local_cdn.messages import send_status, send_details

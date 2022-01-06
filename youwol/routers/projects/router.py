@@ -10,14 +10,14 @@ from fastapi import APIRouter, Depends
 
 from starlette.requests import Request
 
-from youwol.configuration import Project
+from youwol.configuration.models_base import Project, Manifest
 from youwol.configuration.paths import PathsBook
-from youwol.context import Context, CommandException
+from youwol.context import Context
+from youwol.exceptions import CommandException
 from youwol.models import Label
 from youwol.routers.projects.dependencies import resolve_project_dependencies
 from youwol.routers.projects.implementation import (
-    run, create_artifacts,
-    get_status, Manifest, get_project_step, get_project_flow_steps, format_artifact_response
+    run, create_artifacts, get_status, get_project_step, get_project_flow_steps, format_artifact_response
     )
 
 from youwol.utils_paths import write_json
@@ -74,6 +74,7 @@ async def project_status(
         config: YouwolConfiguration = Depends(yw_config)
         ):
     context = Context(request=request, config=config, web_socket=WebSocketsCache.userChannel)
+
     response: Optional[ProjectStatusResponse] = None
     async with context.start(
             action="Get project status",
