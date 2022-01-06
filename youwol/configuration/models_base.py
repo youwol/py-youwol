@@ -230,10 +230,10 @@ class PipelineStep(BaseModel):
             shell=True
             )
         outputs = []
-        async for f in merge(p.stdout, p.stderr):
-            outputs.append(f.decode('utf-8'))
-            await context.info(text=outputs[-1], labels=[Label.BASH])
-
+        async with stream.merge(p.stdout, p.stderr).stream() as messages_stream:
+            async for message in messages_stream:
+                outputs.append(message.decode('utf-8'))
+                await context.info(text=outputs[-1], labels=[Label.BASH])
         await p.communicate()
 
         return_code = p.returncode

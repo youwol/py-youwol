@@ -53,27 +53,6 @@ def to_json(obj: BaseModel) -> JSON:
     return base
 
 
-async def merge(*iterables):
-    # https://stackoverflow.com/questions/50901182/watch-stdout-and-stderr-of-a-subprocess-simultaneously
-    iter_next = {it.__aiter__(): None for it in iterables}
-    while iter_next:
-        for it, it_next in iter_next.items():
-            if it_next is None:
-                fut = asyncio.ensure_future(it.__anext__())
-                fut._orig_iter = it
-                iter_next[it] = fut
-        done, _ = await asyncio.wait(iter_next.values(),
-                                     return_when=asyncio.FIRST_COMPLETED)
-        for fut in done:
-            iter_next[fut._orig_iter] = None
-            try:
-                ret = fut.result()
-            except StopAsyncIteration:
-                del iter_next[fut._orig_iter]
-                continue
-            yield ret
-
-
 def sed_inplace(filename, pattern, repl):
     """"
     Perform the pure-Python equivalent of in-place `sed` substitution: e.g.,
