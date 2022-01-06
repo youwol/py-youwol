@@ -49,7 +49,7 @@ class DeadlinedCache(BaseModel):
 
 
 class YouwolConfiguration(BaseModel):
-    localGateway: LocalGateway
+
     available_profiles: List[str]
     http_port: int
     openid_host: str
@@ -169,7 +169,6 @@ class YouwolConfigurationFactory:
         )
 
         await YouwolConfigurationFactory.trigger_on_load(config=conf)
-        print(conf)
         YouwolConfigurationFactory.__cached_config = conf
 
     @staticmethod
@@ -186,7 +185,6 @@ class YouwolConfigurationFactory:
             projects=conf.projects,
             http_port=conf.http_port,
             cache={},
-            localGateway=conf.localGateway,
             available_profiles=conf.available_profiles,
             commands=conf.commands,
             customDispatches=conf.customDispatches,
@@ -217,7 +215,6 @@ class YouwolConfigurationFactory:
             projects=conf.projects,
             http_port=conf.http_port,
             cache={},
-            localGateway=conf.localGateway,
             available_profiles=conf.available_profiles,
             commands=conf.commands,
             customDispatches=conf.customDispatches,
@@ -432,7 +429,6 @@ async def safe_load(
         projects=projects,
         commands={key: get_python_function(source_function=source) for (key, source) in
                   conf_handler.get_commands().items()},
-        localGateway=LocalGateway(),
         customDispatches=conf_handler.get_dispatches()
     )
 

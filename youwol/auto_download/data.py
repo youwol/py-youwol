@@ -66,9 +66,9 @@ async def download_data(
         return
     downloaded_ids.add(raw_id)
 
-    local_gtw: AssetsGatewayClient = context.config.localClients.assets_gateway_client
-    local_treedb: TreeDbClient = context.config.localClients.treedb_client
-    local_data: AssetsGatewayClient = context.config.localClients.assets_gateway_client
+    local_gtw: AssetsGatewayClient = LocalClients.get_assets_gateway_client(context=context)
+    local_treedb: TreeDbClient = LocalClients.get_treedb_client(context=context)
+    local_data: AssetsGatewayClient = LocalClients.get_assets_gateway_client(context=context)
     remote_treedb = await RemoteClients.get_treedb_client(context)
 
     local_data, remote_data = await asyncio.gather(
