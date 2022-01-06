@@ -248,32 +248,26 @@ class ConfigurationHandler:
         return self.effective_config_data.cdnAutoUpdate
 
     def get_commands(self) -> Dict[str, PythonSourceFunction]:
-        result = {}
-
-        for (key, conf) in self.effective_config_data.customCommands:
-            conf = ensure_source_file(conf, self.effective_config_data.source, app_dirs.user_config_dir)
-            result[key] = PythonSourceFunction(path=Path(conf.source), name=conf.function)
-
-        return result
+        return {key: get_python_src(conf, self.effective_config_data.source)
+                for (key, conf) in self.effective_config_data.customCommands}
 
     def customize(self, youwol_configuration):
         if not self.effective_config_data.customize:
             return youwol_configuration
 
-        conf = ensure_source_file(self.effective_config_data.customize, self.effective_config_data.source,
-                                  app_dirs.user_config_dir)
+        python_src = get_python_src(self.effective_config_data.customize, self.effective_config_data.source)
 
         try:
-            youwol_configuration = get_python_function(PythonSourceFunction(path=Path(conf.source),
-                                                        name=conf.function))(youwol_configuration)
+            youwol_configuration = get_python_function(python_src)(youwol_configuration)
         except Exception as e:
-            raise Exception(f"Error while executing customize function {conf}", e)
+            raise Exception(f"Error while executing customize function {python_src.path}#{python_src.name}", e)
 
         return youwol_configuration
 
 
-def ensure_source_file(arg: Union[str, ConfigSource], default_source: str, default_root: str) -> ConfigSource:
+def get_python_src(arg: Union[str, ConfigSource], default_source: Path) -> PythonSourceFunction:
     result = arg
+    default_root = app_dirs.user_config_dir
     if not isinstance(result, ConfigSource):
         result = ConfigSource(function=arg)
 
@@ -283,7 +277,7 @@ def ensure_source_file(arg: Union[str, ConfigSource], default_source: str, defau
     if not Path(result.source).is_absolute():
         result.source = str(Path(default_root) / Path(result.source))
 
-    return result
+    return PythonSourceFunction(path=result.source, name=result.function)
 
 
 async def configuration_from_json(path: Path, profile: Optional[str]) -> ConfigurationHandler:
