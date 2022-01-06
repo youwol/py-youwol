@@ -132,6 +132,6 @@ def print_invite(conf: YouwolConfiguration):
     print(conf)
     msg = cow.milk_random_cow(f"""
 All good, you can now browse to
-http://localhost:{conf.http_port}/applications/@youwol/workspace-explorer/latest
+http://localhost:{conf.http_port}/applications/@youwol/platform/latest
 """)
     print(msg)

@@ -90,7 +90,7 @@ async def healthz():
 
 @app.get(configuration.base_path + '/')
 async def home():
-    return RedirectResponse(url=f'/applications/dashboard-developer/latest')
+    return RedirectResponse(url=f'/applications/@youwol/platform/latest')
 
 
 @app.websocket(configuration.base_path + "/ws")
