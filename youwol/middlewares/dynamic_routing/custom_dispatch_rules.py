@@ -40,7 +40,7 @@ class RedirectDispatch(AbstractDispatch):
         return f"redirecting '{self.origin}' to '{self.destination}'"
 
 
-class CdnOverride(AbstractDispatch):
+class CdnOverrideDispatch(AbstractDispatch):
 
     package_name: str
     port: int

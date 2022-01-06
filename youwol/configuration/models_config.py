@@ -27,6 +27,23 @@ Context = 'youwol.context.Context'
 YouwolConfiguration = 'youwol.configuration.YouwolConfiguration'
 
 
+class UserInfo(BaseModel):
+    id: str
+    name: str
+    email: str
+    memberOf: List[str]
+
+
+class RemoteGateway(BaseModel):
+    name: str
+    host: str
+    metadata: Dict[str, str]
+
+
+class Secret(BaseModel):
+    clientId: str
+    clientSecret: str
+
 
 class ConfigPortRange(BaseModel):
     start: int
@@ -34,11 +51,6 @@ class ConfigPortRange(BaseModel):
 
 
 default_port_range: ConfigPortRange = ConfigPortRange(start=3000, end=4000)
-
-
-class ConfigCdnOverride(BaseModel):
-    name: str
-    port: int
 
 
 ConfigPath = Union[str, Path]
@@ -52,9 +64,22 @@ class ConfigSource(BaseModel):
         return f"{self.source}#{self.function}"
 
 
-class ConfigRedirectionDispatch(BaseModel):
+class Events(BaseModel):
+    onLoad: Callable[[YouwolConfiguration, Context], Optional[Union[Any, Awaitable[Any]]]] = None
+
+
+class EventsImplicit(BaseModel):
+    onLoad: Union[ConfigSource, str]
+
+
+class Redirection(BaseModel):
     origin: str
     destination: str
+
+
+class CdnOverride(BaseModel):
+    name: str
+    port: int
 
 
 class ConfigurationProfile(BaseModel):
@@ -67,11 +92,11 @@ class ConfigurationProfile(BaseModel):
     cacheDir: Optional[ConfigPath]
     serversPortsRange: Optional[ConfigPortRange]
     cdnAutoUpdate: Optional[bool]
-    dispatches: Optional[List[Union[str, ConfigRedirectionDispatch, ConfigCdnOverride]]]
+    dispatches: Optional[List[Union[str, Redirection, CdnOverride]]]
     source: Optional[ConfigPath]
-    events: Dict[str, Union[str, ConfigSource]] = {}
+    events: Optional[Union[Events, EventsImplicit]]
     customCommands: Dict[str, Union[str, ConfigSource]] = {}
-    customize: Optional[Union[str, ConfigSource]] = None
+    customize: Optional[Union[str, ConfigSource]]
 
 
 def replace_with(parent: ConfigurationProfile, replacement: ConfigurationProfile) -> ConfigurationProfile:
@@ -188,14 +213,14 @@ class ConfigurationHandler:
             if self.effective_config_data.serversPortsRange else default_port_range
 
         assigned_ports = [cdnServer.port for cdnServer
-                          in self.effective_config_data.dispatches if isinstance(cdnServer, ConfigCdnOverride)]
+                          in self.effective_config_data.dispatches if isinstance(cdnServer, CdnOverride)]
 
         def get_abstract_dispatch(
-                dispatch: Union[str, ConfigCdnOverride, ConfigRedirectionDispatch]) -> AbstractDispatch:
-            if isinstance(dispatch, ConfigCdnOverride):
-                return CdnOverride(package_name=dispatch.name, port=dispatch.port)
+                dispatch: Union[str, CdnOverride, Redirection]) -> AbstractDispatch:
+            if isinstance(dispatch, CdnOverride):
+                return CdnOverrideDispatch(package_name=dispatch.name, port=dispatch.port)
 
-            if isinstance(dispatch, ConfigRedirectionDispatch):
+            if isinstance(dispatch, Redirection):
                 return RedirectDispatch(origin=dispatch.origin, destination=dispatch.destination)
 
             port = port_range.start
@@ -203,7 +228,7 @@ class ConfigurationHandler:
                 port = port + 1
 
             assigned_ports.append(port)
-            return CdnOverride(package_name=dispatch, port=port)
+            return CdnOverrideDispatch(package_name=dispatch, port=port)
 
         return [get_abstract_dispatch(dispatch=dispatch) for dispatch in self.effective_config_data.dispatches]
 
