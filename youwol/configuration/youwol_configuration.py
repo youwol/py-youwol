@@ -225,14 +225,12 @@ class YouwolConfigurationFactory:
 
     @staticmethod
     async def trigger_on_load(config: YouwolConfiguration):
+
         context = Context(config=config, web_socket=WebSocketsCache.environment)
         if not config.events or not config.events.onLoad:
             return
-        on_load_cb = config.events.onLoad
-
-        data = await on_load_cb(config, context) \
-            if inspect.iscoroutinefunction(on_load_cb) \
-            else on_load_cb(config, context)
+        on_load_cb = config.events.onLoad(config, context)
+        data = await on_load_cb if isinstance(on_load_cb, Awaitable) else on_load_cb
 
         await context.info(labels=[Label.STATUS], text="Applied onLoad event's callback", data=data)
 
