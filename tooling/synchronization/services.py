@@ -24,8 +24,7 @@ def included_services(platform_path, open_source_path):
         ServiceInjection(
             src=src_backend_services / 'cdn-backend' / 'src' / 'youwol_cdn',
             dst=dst_services / 'backs' / 'cdn',
-            include=["/__init__.py", "/models.py", "/resources_initialization.py", "/root_paths.py", "/utils*",
-                     "/initial_resources/**/*"]
+            include=["/__init__.py", "/models.py", "/resources_initialization.py", "/root_paths.py", "/utils*"]
             ),
         ServiceInjection(
             src=src_backend_services / 'treedb-backend' / 'src' / 'youwol_treedb',
