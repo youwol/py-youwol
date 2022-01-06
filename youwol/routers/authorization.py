@@ -15,7 +15,6 @@ router = APIRouter()
 @router.get("/user-info",
             summary="retrieve user info")
 async def get_user_info(
-        request: Request,
         config: YouwolConfiguration = Depends(yw_config)
         ):
 
@@ -39,7 +38,7 @@ async def login(
         ):
     """
     this end point should be defined in the user configuration file as it is usually intended
-    to mock some auth service fro which we don't know the format of the request
+    to mock some auth service from which we don't know the format of the request
     """
     resp = await login_env(request=request, body=LoginBody(email=username), config=config)
     return {"access_token": f"access_token_{resp.email}"}

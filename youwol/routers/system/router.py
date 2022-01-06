@@ -42,7 +42,6 @@ async def get_file(rest_of_path: str):
              response_model=FolderContentResp,
              summary="return the items in target folder")
 async def folder_content(
-        request: Request,
         body: FolderContentBody
         ):
 

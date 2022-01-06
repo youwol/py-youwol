@@ -52,7 +52,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
             request.state.user_info = user_info
             return True
 
-        user_info = await get_user_info(request=request, config=await yw_config())
+        user_info = await get_user_info(config=await yw_config())
         request.state.user_info = user_info
         self.cache[user_name] = user_info
         return True

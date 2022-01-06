@@ -3,8 +3,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 
-
-async def redirect_api_remote(request: Request, context: Context):
+async def redirect_api_remote(request: Request):
     # One of the header item leads to a server error ... for now only provide authorization
     # headers = {k: v for k, v in request.headers.items()}
     headers = {"Authorization": request.headers.get("authorization")}
