@@ -233,13 +233,17 @@ class ConfigurationHandler:
         return [get_abstract_dispatch(dispatch=dispatch) for dispatch in self.effective_config_data.dispatches]
 
     def get_events(self) -> Events:
-        result = {}
 
-        for (key, conf) in self.effective_config_data.events.items():
-            conf = ensure_source_file(conf, self.effective_config_data.source, app_dirs.user_config_dir)
-            result[key] = PythonSourceFunction(path=Path(conf.source), name=conf.function)
+        if self.effective_config_data.events is None:
+            return Events()
 
-        return Events(onLoad=get_python_function(result["on_load"]) if "on_load" in result else None)
+        if isinstance(self.effective_config_data.events, Events):
+            return self.effective_config_data.events
+
+        events: EventsImplicit = self.effective_config_data.events
+        python_src = get_python_src(events.onLoad, self.effective_config_data.source)
+
+        return Events(onLoad=get_python_function(python_src))
 
     def get_cdn_auto_update(self) -> bool:
         if not self.effective_config_data.cdnAutoUpdate:
