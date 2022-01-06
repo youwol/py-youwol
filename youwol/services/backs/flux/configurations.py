@@ -34,7 +34,7 @@ class Configuration:
     cache_prefix: str = "flux-backend_"
 
     unprotected_paths: Callable[[str], bool] = lambda url: \
-        url.path.split("/")[1] == "healthz" or url.path.split("/")[1] == "openapidocs"
+        url.path.split("/")[1] == "healthz" or url.path.split("/")[1] == "openapi-docs"
 
     replication_factor: int = 2
     admin_headers = None
