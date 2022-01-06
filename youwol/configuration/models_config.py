@@ -303,6 +303,7 @@ async def configuration_from_json(path: Path, profile: Optional[str]) -> Configu
 
 
 async def configuration_from_python(path: Path, profile: Optional[str]) -> ConfigurationHandler:
+
     (final_path, exists) = existing_path_or_default(path,
                                                     root_candidates=[Path().cwd(),
                                                                      app_dirs.user_config_dir,
@@ -315,6 +316,10 @@ async def configuration_from_python(path: Path, profile: Optional[str]) -> Confi
     if not final_path.is_file():
         raise PathException(f"'{str(final_path)}' is not a file")
 
+    python_paths = sys.path
+    if str(final_path.parent) not in python_paths:
+        python_paths.append(str(path.parent))
+
     check_valid_conf_fct = CheckValidConfigurationFunction()
 
     def get_status(validated: bool = False):
@@ -326,34 +331,44 @@ async def configuration_from_python(path: Path, profile: Optional[str]) -> Confi
             ]
         )
 
+    def format_syntax_error(syntax_error: SyntaxError):
+        check_valid_conf_fct.status = ErrorResponse(
+            reason=f"Syntax error detected in the configuration file ({syntax_error.filename})\n" +
+                   f"Error location: line {e.lineno}, near '{syntax_error.text.strip()}'",
+            hints=[syntax_error.msg])
+
+    main_args = get_main_arguments()
     try:
-        main_args = get_main_arguments()
-        config_data: Configuration = await get_python_function(
-            PythonSourceFunction(path=path, name='configuration'))(main_args, profile)
-        if not isinstance(config_data, Configuration):
-            check_valid_conf_fct.status = ErrorResponse(
-                reason=f"The function 'configuration' must return an instance of type 'Configuration'",
-                hints=[f"You can have a look at the default_config_yw.py located in 'py-youwol/system'"])
-            raise ConfigurationLoadingException(get_status(False))
-    # except ValidationError as err:
-    #     check_valid_conf_fct.status = ErrorResponse(
-    #         reason=f"Parsing the object returned by the function 'async def configuration(...)' " +
-    #                "to UserConfiguration failed.",
-    #         hints=[f"{str(err)}"])
-    #     raise ConfigurationLoadingException(get_status(False))
-    # except TypeError as err:
-    #     ex_type, ex, tb = sys.exc_info()
-    #     traceback.print_tb(tb)
-    #     check_valid_conf_fct.status = ErrorResponse(
-    #         reason=f"Misused of configuration function",
-    #         hints=[f"details: {str(err)}"])
-    #     raise ConfigurationLoadingException(get_status(False))
+        module_config = importlib.import_module(final_path.stem)
+    except SyntaxError as e:
+        format_syntax_error(syntax_error=e)
+        raise ConfigurationLoadingException(get_status(False))
+
+    if not hasattr(module_config, 'configuration'):
+        check_valid_conf_fct.status = ErrorResponse(
+            reason=f"The python configuration file does not contain an 'async def configuration(args, " +
+                   f"profile) -> Configuration' definition",
+            hints=[f"Define on in your python's configuration file."])
+        raise ConfigurationLoadingException(get_status(False))
+
+    try:
+        result = cast(Any, module_config).configuration(main_args, profile)
+        config_data: Configuration = await result if isinstance(result, Awaitable) else result
+    except SyntaxError as e:
+        format_syntax_error(syntax_error=e)
+        raise ConfigurationLoadingException(get_status(False))
     except Exception as err:
         ex_type, ex, tb = sys.exc_info()
         traceback.print_tb(tb)
         check_valid_conf_fct.status = format_unknown_error(
             reason=f"There was an exception calling the 'configuration'.",
             error=err)
+        raise ConfigurationLoadingException(get_status(False))
+
+    if not isinstance(config_data, Configuration):
+        check_valid_conf_fct.status = ErrorResponse(
+            reason=f"The function 'configuration' must return an instance of type 'Configuration'",
+            hints=[f"You can have a look at the default_config_yw.py located in 'py-youwol/system'"])
         raise ConfigurationLoadingException(get_status(False))
 
     return ConfigurationHandler(path=final_path, config_data=config_data, profile=profile)
