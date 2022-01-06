@@ -10,7 +10,7 @@ workspace/**
 build/
 dist/
 dist_history/
-test_install/**/*
+tooling/test_install/**/*
 !test_install/README.md
 
 .virtualenv
