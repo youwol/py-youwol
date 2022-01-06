@@ -54,10 +54,10 @@ def to_json(obj: BaseModel) -> JSON:
 
 
 def sed_inplace(filename, pattern, repl):
-    """"
-    Perform the pure-Python equivalent of in-place `sed` substitution: e.g.,
-    `sed -i -e 's/'${pattern}'/'${repl}' "${filename}"`.
-    """
+
+    # Perform the pure-Python equivalent of in-place `sed` substitution: e.g.,
+    # `sed -i -e 's/'${pattern}'/'${repl}' ${filename}"`.
+
     # For efficiency, precompile the passed regular expression.
     pattern_compiled = re.compile(pattern)
 
