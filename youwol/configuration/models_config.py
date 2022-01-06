@@ -4,13 +4,14 @@ import shutil
 import sys
 import traceback
 import zipfile
+from abc import ABC, abstractmethod
 from enum import Enum
 from pathlib import Path
-from typing import List, Union, Optional, Dict, Callable, Any, Awaitable, cast
+from typing import List, Union, Optional, Dict, Callable, Any, Awaitable, cast, TypeVar, Type
 
 from pydantic import BaseModel
 
-from youwol.configuration.models_base import format_unknown_error, ErrorResponse
+from youwol.configuration.models_base import format_unknown_error, ErrorResponse, Pipeline
 from youwol.configuration.configuration_validation import ConfigurationLoadingException, \
     CheckValidConfigurationFunction, ConfigurationLoadingStatus
 from youwol.configuration.defaults import default_path_projects_dir, default_path_data_dir, \
@@ -18,7 +19,7 @@ from youwol.configuration.defaults import default_path_projects_dir, default_pat
 from youwol.configuration.python_function_runner import PythonSourceFunction, get_python_function
 from youwol.configuration.util_paths import ensure_dir_exists, existing_path_or_default, fail_on_missing_dir, \
     PathException, app_dirs
-from youwol.main_args import get_main_arguments
+from youwol.main_args import get_main_arguments, MainArguments
 from youwol.middlewares.dynamic_routing.custom_dispatch_rules import AbstractDispatch, RedirectDispatch, \
     CdnOverrideDispatch
 
@@ -138,6 +139,23 @@ class ConfigurationProfileCascading(ConfigurationProfile):
 class Configuration(ConfigurationProfile):
     profiles: Optional[Dict[str, ConfigurationProfileCascading]] = {}
     profile: Optional[str]
+
+
+class IConfigurationFactory(ABC):
+
+    @abstractmethod
+    async def get(self, _main_args: MainArguments) -> Configuration:
+        return NotImplemented
+
+
+class IPipelineFactory(ABC):
+
+    def __init__(self, **kwargs):
+        pass
+
+    @abstractmethod
+    async def get(self) -> Pipeline:
+        return NotImplemented
 
 
 class ConfigurationHandler:
@@ -331,7 +349,7 @@ async def configuration_from_python(path: Path, profile: Optional[str]) -> Confi
             ]
         )
 
-    def format_syntax_error(syntax_error: SyntaxError):
+    def format_syntax_error(syntax_error: Union[SyntaxError, NameError]):
         check_valid_conf_fct.status = ErrorResponse(
             reason=f"Syntax error detected in the configuration file ({syntax_error.filename})\n" +
                    f"Error location: line {e.lineno}, near '{syntax_error.text.strip()}'",
@@ -343,16 +361,31 @@ async def configuration_from_python(path: Path, profile: Optional[str]) -> Confi
     except SyntaxError as e:
         format_syntax_error(syntax_error=e)
         raise ConfigurationLoadingException(get_status(False))
-
-    if not hasattr(module_config, 'configuration'):
+    except NameError as e:
         check_valid_conf_fct.status = ErrorResponse(
-            reason=f"The python configuration file does not contain an 'async def configuration(args, " +
-                   f"profile) -> Configuration' definition",
+            reason=f"Name error detected in the configuration file.\n",
+            hints=[str(e)])
+
+        raise ConfigurationLoadingException(get_status(False))
+
+    if not hasattr(module_config, 'ConfigurationFactory'):
+        check_valid_conf_fct.status = ErrorResponse(
+            reason=f"The python configuration file does not contain the definition"
+                   "'class ConfigurationFactory(IConfigurationFactory)'",
             hints=[f"Define on in your python's configuration file."])
         raise ConfigurationLoadingException(get_status(False))
 
+    maybe_factory = module_config.__getattribute__("ConfigurationFactory")
+
+    if not issubclass(maybe_factory, IConfigurationFactory):
+        check_valid_conf_fct.status = ErrorResponse(
+            reason=f"The ConfigurationFactory must implement 'IConfigurationFactory'",
+            hints=[f""])
+        raise ConfigurationLoadingException(get_status(False))
+
+    factory = cast(IConfigurationFactory, maybe_factory())
     try:
-        result = cast(Any, module_config).configuration(main_args, profile)
+        result = factory.get(main_args)
         config_data: Configuration = await result if isinstance(result, Awaitable) else result
     except SyntaxError as e:
         format_syntax_error(syntax_error=e)
@@ -372,3 +405,42 @@ async def configuration_from_python(path: Path, profile: Optional[str]) -> Confi
         raise ConfigurationLoadingException(get_status(False))
 
     return ConfigurationHandler(path=final_path, config_data=config_data, profile=profile)
+
+T = TypeVar('T')
+
+
+def load_class_from_module(
+        python_file_path: Path,
+        expected_class_name: str,
+        expected_base_class: Type[T],
+        **kwargs
+        ) -> T:
+
+    # check that filename does not contain invalid character for modules (e.g. '-' ,...)
+    python_paths = sys.path
+    if str(python_file_path.parent) not in python_paths:
+        python_paths.append(str(python_file_path.parent))
+
+    module_name = python_file_path.stem
+    try:
+        module = importlib.import_module(module_name)
+        if str(python_file_path.parent) in python_paths:
+            sys.path = [p for p in python_paths if p != str(python_file_path.parent)]
+
+    except SyntaxError:
+        raise Exception(f"{python_file_path} : Syntax error")
+    except NameError:
+        raise Exception(f"{python_file_path} :Name error")
+
+    if not hasattr(module, expected_class_name):
+        raise Exception(f"{python_file_path} : Expected class '{expected_class_name}' not found")
+
+    maybe_factory = module.__getattribute__(expected_class_name)
+
+    if not issubclass(maybe_factory, expected_base_class):
+        raise Exception(f"{python_file_path} : Expected class '{expected_class_name}' does not implements expected "
+                        f"interface")
+
+    factory = cast(expected_base_class, maybe_factory(**kwargs))
+    del sys.modules[module_name]
+    return factory

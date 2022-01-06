@@ -9,11 +9,11 @@ from pydantic import BaseModel
 from youwol.context import Context
 from youwol.utils_low_level import get_public_user_auth_token
 from youwol.configuration.models_config import ConfigurationHandler, configuration_from_json, \
-    configuration_from_python, Events, UserInfo, RemoteGateway
+    configuration_from_python, Events, UserInfo, RemoteGateway, load_class_from_module, IPipelineFactory
 from youwol.middlewares.dynamic_routing.custom_dispatch_rules import AbstractDispatch
 from youwol.models import Label
 from youwol.configuration.clients import LocalClients
-from youwol.configuration.python_function_runner import get_python_function, PythonSourceFunction
+from youwol.configuration.python_function_runner import get_python_function
 from youwol.services.backs.assets_gateway.models import DefaultDriveResponse
 from youwol.web_socket import WebSocketsCache
 
@@ -398,9 +398,12 @@ async def safe_load(
 
     for path in targets_dirs:
         try:
-            pipeline = get_python_function(
-                PythonSourceFunction(path=path / '.yw_pipeline' / 'yw_pipeline.py', name='pipeline'))(conf_handler)
-
+            pipeline_factory = load_class_from_module(
+                python_file_path=path / '.yw_pipeline' / 'yw_pipeline.py',
+                expected_class_name='PipelineFactory',
+                expected_base_class=IPipelineFactory
+            )
+            pipeline = await pipeline_factory.get()
             name = pipeline.projectName(path)
             project = Project(
                 name=name,
