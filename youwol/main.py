@@ -121,6 +121,8 @@ def load_initial_config():
 def main():
     assert_python()
     load_initial_config()
+    # noinspection PyTypeChecker
+    # app: incorrect type. More here: https://github.com/tiangolo/fastapi/issues/3927
     uvicorn.run(app, host="localhost", port=configuration.http_port)
     Context.download_thread.join()
 
