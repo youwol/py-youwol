@@ -29,6 +29,7 @@ class Configuration:
     unprotected_paths: Callable[[str], bool] = lambda url: \
         url.path.split("/")[-1] == "healthz" or url.path.split("/")[-1] == "openapi-docs"
     replication_factor: int = 2
+    admin_headers = None
     public_owner = '/youwol-users'
     doc_db_asset_version_table = "0.0"
     doc_db_access_history_version_table = "0.0"

@@ -37,7 +37,7 @@ class Configuration:
         url.path.split("/")[1] == "healthz" or url.path.split("/")[1] == "openapidocs"
 
     replication_factor: int = 2
-
+    admin_headers = None
     default_owner = "/youwol-users"
     currentSchemaVersion = "1"
 
