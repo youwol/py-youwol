@@ -51,9 +51,6 @@ async def log(
         }
     web_socket and await web_socket.send_json(message)
 
-CallableBlock = Callable[['Context'], Union[Awaitable, None]]
-CallableBlockException = Callable[[Exception, 'Context'], Union[Awaitable, None]]
-
 
 class Context(NamedTuple):
 
@@ -65,15 +62,11 @@ class Context(NamedTuple):
     parent_uid: Union[str, None] = None
 
     with_attributes: JSON = {}
-    download_thread: 'AssetDownloadThread' = None
-    succeeded_data: Union[JSON, BaseModel] = None
+    download_thread: AssetDownloadThread = None
 
     async def send_response(self, response: BaseModel):
         await self.web_socket.send_json(to_json(response))
         return response
-
-    def succeeded(self, data: Union[JSON, BaseModel]):
-        self.succeeded_data = data
 
     @asynccontextmanager
     @async_generator
@@ -81,7 +74,10 @@ class Context(NamedTuple):
                     action: str,
                     labels: List[Label] = None,
                     with_attributes: JSON = None,
-                    succeeded_data: Callable[['Context'], Tuple[str, Union[BaseModel, JSON, float, int, bool, str]]] = None,
+                    succeeded_data: Callable[
+                        [Context],
+                        Tuple[str, Union[BaseModel, JSON, float, int, bool, str]]
+                    ] = None,
                     on_enter: CallableBlock = None,
                     on_exit: CallableBlock = None,
                     on_exception: CallableBlockException = None):
@@ -147,3 +143,7 @@ class Context(NamedTuple):
         await log(level=LogLevel.ERROR,  text=text, labels=[Label.LOG_ABORT] + labels,
                   with_attributes=self.with_attributes, data=data, context_id=self.uid,
                   parent_context_id=self.parent_uid, web_socket=self.web_socket)
+
+
+CallableBlock = Callable[[Context], Union[Awaitable, None]]
+CallableBlockException = Callable[[Exception, Context], Union[Awaitable, None]]
