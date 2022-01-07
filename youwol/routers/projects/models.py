@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from youwol.configuration.models_base import PipelineStepStatus, Manifest, Link
+from youwol.configuration.models_project import PipelineStepStatus, Manifest, Link
 
 ArtifactId = str
 PipelineStepId = str

@@ -3,7 +3,7 @@ import shutil
 from pathlib import Path
 from typing import Union, List, Optional, NamedTuple, Iterable, Mapping
 
-from youwol.configuration.models_base import Manifest, PipelineStepStatus, Link, ExplicitNone, Flow, \
+from youwol.configuration.models_project import Manifest, PipelineStepStatus, Link, ExplicitNone, Flow, \
  SourcesFctImplicit,  Pipeline, parse_json, Skeleton, SkeletonParameter, PipelineStep, FileListing, \
  Artifact, Project, FlowId
 from youwol.configuration.paths import PathsBook

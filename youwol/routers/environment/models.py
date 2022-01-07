@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from youwol.configuration.models_base import ErrorResponse
+from youwol.configuration.models_project import ErrorResponse
 
 
 class RemoteGatewayInfo(BaseModel):

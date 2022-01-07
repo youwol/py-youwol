@@ -29,7 +29,7 @@ from youwol.configuration.configuration_validation import (
     CheckSystemFolderWritable, CheckDatabasesFolderHealthy, CheckSecretPathExist,
     CheckSecretHealthy
 )
-from youwol.configuration.models_base import ErrorResponse, Project
+from youwol.configuration.models_project import ErrorResponse, Project
 from youwol.configuration.paths import PathsBook
 from youwol_utils import encode_id
 

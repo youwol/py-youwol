@@ -2,7 +2,7 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
-from youwol.configuration.models_base import ErrorResponse, format_unknown_error
+from youwol.configuration.models_project import ErrorResponse, format_unknown_error
 from youwol.configuration.configuration_validation import ConfigurationLoadingStatus, CheckConfPath, \
     CheckValidTextFile, CheckValidPythonScript, CheckValidConfigurationFunction, ConfigurationLoadingException
 

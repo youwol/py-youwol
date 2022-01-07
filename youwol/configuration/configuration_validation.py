@@ -2,7 +2,7 @@ from typing import List
 
 from pydantic import BaseModel
 
-from youwol.configuration.models_base import Check, ErrorResponse
+from youwol.configuration.models_project import Check, ErrorResponse
 from colorama import Fore, Style
 
 

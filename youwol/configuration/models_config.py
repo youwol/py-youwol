@@ -11,7 +11,7 @@ from typing import List, Union, Optional, Dict, Callable, Any, Awaitable, cast, 
 
 from pydantic import BaseModel
 
-from youwol.configuration.models_base import format_unknown_error, ErrorResponse, Pipeline
+from youwol.configuration.models_project import format_unknown_error, ErrorResponse, Pipeline
 from youwol.configuration.configuration_validation import ConfigurationLoadingException, \
     CheckValidConfigurationFunction, ConfigurationLoadingStatus
 from youwol.configuration.defaults import default_path_projects_dir, default_path_data_dir, \

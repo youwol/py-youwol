@@ -124,6 +124,14 @@ class Manifest(BaseModel):
     cmdOutputs: Union[List[str], Dict] = []
 
 
+class ExplicitNone(BaseModel):
+    pass
+
+
+StatusFct = Callable[
+    ['Project', Optional[Manifest], Context],
+    Union[PipelineStepStatus, Awaitable[PipelineStepStatus]]
+]
 RunImplicit = Callable[
     ['Project', FlowId, Context],
     Union[JSON, Awaitable[JSON]]
@@ -132,7 +140,6 @@ SourcesFct = Callable[
     ['Project', FlowId, Context],
     Union[Any, Awaitable[Any]]
     ]
-
 SourcesFctImplicit = Callable[
     ['Project', FlowId, Context],
     Union[FileListing, Awaitable[FileListing]]
@@ -141,15 +148,6 @@ SourcesFctExplicit = Callable[
     ['Project', FlowId, Context],
     Union[Iterable[Path], Awaitable[Iterable[Path]]]
     ]
-
-StatusFct = Callable[
-    ['Project', Optional[Manifest], Context],
-    Union[PipelineStepStatus, Awaitable[PipelineStepStatus]]
-    ]
-
-
-class ExplicitNone(BaseModel):
-    pass
 
 
 class PipelineStep(BaseModel):

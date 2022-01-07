@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Optional, cast, Mapping, List, Iterable
 from fastapi import HTTPException
 
-from youwol.configuration.models_base import (
+from youwol.configuration.models_project import (
     PipelineStep, Project, Manifest, PipelineStepStatus, FlowId, ExplicitNone,
     )
 from youwol.configuration.clients import LocalClients, RemoteClients
