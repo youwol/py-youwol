@@ -177,7 +177,7 @@ async def sync_user(
         config=config,
         web_socket=WebSocketsCache.environment
         )
-    async with context.with_target(body.email).start(f"Sync. user {body.email}") as ctx:
+    async with context.start(f"Sync. user {body.email}") as ctx:
 
         try:
             auth_token = await get_public_user_auth_token(
