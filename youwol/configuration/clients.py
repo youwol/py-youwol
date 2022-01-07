@@ -57,7 +57,7 @@ class RemoteClients:
     @staticmethod
     async def get_docdb_client(keyspace_name: str, table_body: TableBody, secondary_indexes: List[SecondaryIndex],
                                context: Context) -> DocDbClient:
-
+        # <!> this method will be removed as StorageClient should not be reachable
         remote_host = context.config.get_remote_info().host
         auth_token = await context.config.get_auth_token(context=context)
         headers = {"Authorization": f"Bearer {auth_token}"}
