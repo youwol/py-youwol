@@ -54,6 +54,7 @@ class SyncResponse(BaseModel):
 
 class Release(BaseModel):
     version: str
+    version_number: int
     fingerprint: str
 
 
