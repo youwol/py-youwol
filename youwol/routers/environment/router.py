@@ -267,49 +267,4 @@ WebSocketsCache.environment and await WebSocketsCache.environment.send_json(to_j
 return response
 """
 
-@router.post("/sync-component",
-             summary="Synchronise a component w/ latest version"
-             )
-async def sync_component(
-        request: Request,
-        body: SyncComponentBody,
-        config: YouwolConfiguration = Depends(yw_config)
-        ):
     return
-"""
-pending = ComponentsUpdate(
-    components=[],
-    status=ComponentsUpdateStatus.PENDING)
-
-WebSocketsCache.environment and await WebSocketsCache.environment.send_json(to_json(pending))
-
-folder_paths = {
-    "@youwol/flux-builder": Path(flux_builder.__file__).parent,
-    "@youwol/flux-runner": Path(flux_runner.__file__).parent,
-    "@youwol/workspace-explorer": Path(workspace_explorer.__file__).parent
-    }
-context = Context(
-    request=request,
-    config=config,
-    web_socket=WebSocketsCache.environment
-    )
-async with context.start(action=f"Synchronise {body.name}") as ctx:
-    client = await config.get_assets_gateway_client(context=context)
-    zip_bytes = await client.cdn_get_package(library_name=body.name, version=body.version)
-
-    zip_content = zipfile.ZipFile(BytesIO(zip_bytes))
-    to_extract = [f for f in zip_content.namelist() if f.startswith('dist/') or f == "package.json"]
-    files = [zip_content.open(filename) for filename in to_extract]
-    folder_path = folder_paths[body.name]
-    await ctx.info(step=ActionStep.STATUS, content=f'{len(to_extract)} files to copy', json={'files': to_extract})
-    old_files = [f for f in os.listdir(folder_path) if f != '__init__.py' and not (folder_path / f).is_dir()]
-    for f in old_files:
-        os.remove(folder_path / f)
-
-    for name, file_bytes in zip(to_extract, files):
-        path = folder_path / name.split('/')[-1]
-        with open(path, 'wb') as file:
-            file.write(file_bytes.read())
-    await available_updates(request=request, config=config)
-    return {}
-"""
