@@ -11,6 +11,7 @@ from typing import List, Union, Optional, Dict, Callable, Any, Awaitable, cast, 
 
 from pydantic import BaseModel
 
+from youwol.configuration.models_dispatch import CdnOverrideDispatch, AbstractDispatch, RedirectDispatch
 from youwol.configuration.models_project import format_unknown_error, ErrorResponse, Pipeline
 from youwol.configuration.configuration_validation import ConfigurationLoadingException, \
     CheckValidConfigurationFunction, ConfigurationLoadingStatus
@@ -20,8 +21,6 @@ from youwol.configuration.python_function_runner import PythonSourceFunction, ge
 from youwol.configuration.util_paths import ensure_dir_exists, existing_path_or_default, fail_on_missing_dir, \
     PathException, app_dirs
 from youwol.main_args import get_main_arguments, MainArguments
-from youwol.middlewares.dynamic_routing.custom_dispatch_rules import AbstractDispatch, RedirectDispatch, \
-    CdnOverrideDispatch
 
 
 Context = 'youwol.context.Context'
@@ -73,16 +72,6 @@ class EventsImplicit(BaseModel):
     onLoad: Union[ConfigSource, str]
 
 
-class Redirection(BaseModel):
-    origin: str
-    destination: str
-
-
-class CdnOverride(BaseModel):
-    name: str
-    port: int
-
-
 class ConfigurationProfile(BaseModel):
     httpPort: Optional[int]
     openIdHost: Optional[str]
@@ -93,7 +82,7 @@ class ConfigurationProfile(BaseModel):
     cacheDir: Optional[ConfigPath]
     serversPortsRange: Optional[ConfigPortRange]
     cdnAutoUpdate: Optional[bool]
-    dispatches: Optional[List[Union[str, Redirection, CdnOverride]]]
+    dispatches: Optional[List[Union[str, RedirectDispatch, CdnOverrideDispatch, AbstractDispatch]]]
     source: Optional[ConfigPath]
     events: Optional[Union[Events, EventsImplicit]]
     customCommands: Dict[str, Union[str, ConfigSource]] = {}
@@ -230,23 +219,27 @@ class ConfigurationHandler:
         port_range: ConfigPortRange = self.effective_config_data.serversPortsRange \
             if self.effective_config_data.serversPortsRange else default_port_range
 
-        assigned_ports = [cdnServer.port for cdnServer
-                          in self.effective_config_data.dispatches if isinstance(cdnServer, CdnOverride)]
+        assigned_ports = [cdnServer.port for cdnServer in self.effective_config_data.dispatches
+                          if isinstance(cdnServer, CdnOverrideDispatch)]
 
         def get_abstract_dispatch(
-                dispatch: Union[str, CdnOverride, Redirection]) -> AbstractDispatch:
-            if isinstance(dispatch, CdnOverride):
-                return CdnOverrideDispatch(package_name=dispatch.name, port=dispatch.port)
+                dispatch: Union[str, AbstractDispatch]) -> AbstractDispatch:
 
-            if isinstance(dispatch, Redirection):
+            if isinstance(dispatch, CdnOverrideDispatch):
+                return CdnOverrideDispatch(packageName=dispatch.packageName, port=dispatch.port)
+
+            if isinstance(dispatch, RedirectDispatch):
                 return RedirectDispatch(origin=dispatch.origin, destination=dispatch.destination)
+
+            if isinstance(dispatch, AbstractDispatch):
+                return dispatch
 
             port = port_range.start
             while port in assigned_ports:
                 port = port + 1
 
             assigned_ports.append(port)
-            return CdnOverrideDispatch(package_name=dispatch, port=port)
+            return CdnOverrideDispatch(packageName=dispatch, port=port)
 
         return [get_abstract_dispatch(dispatch=dispatch) for dispatch in self.effective_config_data.dispatches]
 

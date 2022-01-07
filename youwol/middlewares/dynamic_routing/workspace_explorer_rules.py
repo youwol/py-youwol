@@ -1,13 +1,13 @@
 import asyncio
-from typing import Union, TypeVar, List
+from typing import Union, TypeVar, List, Optional
 
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response, JSONResponse
 
 from youwol.configuration.clients import RemoteClients, LocalClients
+from youwol.configuration.models_dispatch import AbstractDispatch
 from youwol.context import Context
-from youwol.middlewares.dynamic_routing.common import DispatchingRule
 from youwol.services.backs.assets_gateway.models import ChildrenResponse, ItemResponse, FolderResponse
 from youwol.utils_low_level import JSON
 
@@ -20,9 +20,10 @@ def cast_response(response: Union[JSON, BaseException], _type: PydanticType):
     return _type(**response)
 
 
-class GetChildrenDispatch(DispatchingRule):
+class GetChildrenDispatch(AbstractDispatch):
 
-    async def is_matching(self, request: Request, context: Context) -> bool:
+    @staticmethod
+    async def is_matching(request: Request) -> bool:
         return request.method == "GET" \
                and request.url.path.startswith("/api/assets-gateway/tree/") \
                and "/folders/" in request.url.path and request.url.path.endswith('/children') \
@@ -32,7 +33,10 @@ class GetChildrenDispatch(DispatchingRule):
                     request: Request,
                     call_next: RequestResponseEndpoint,
                     context: Context
-                    ) -> Response:
+                    ) -> Optional[Response]:
+
+        if not await GetChildrenDispatch.is_matching(request=request):
+            return None
 
         local_gtw = LocalClients.get_assets_gateway_client(context=context)
         remote_gtw = await RemoteClients.get_assets_gateway_client(context=context)
@@ -77,9 +81,10 @@ class GetChildrenDispatch(DispatchingRule):
             }
 
 
-class GetPermissionsDispatch(DispatchingRule):
+class GetPermissionsDispatch(AbstractDispatch):
 
-    async def is_matching(self, request: Request, context: Context) -> bool:
+    @staticmethod
+    async def is_matching(request: Request) -> bool:
         return request.method == "GET" \
                and request.url.path.startswith("/api/assets-gateway/tree/") \
                and request.url.path.endswith('/permissions') \
@@ -89,7 +94,10 @@ class GetPermissionsDispatch(DispatchingRule):
                     request: Request,
                     call_next: RequestResponseEndpoint,
                     context: Context
-                    ) -> Response:
+                    ) -> Optional[Response]:
+
+        if not await GetPermissionsDispatch.is_matching(request=request):
+            return None
 
         local_gtw = LocalClients.get_assets_gateway_client(context=context)
         remote_gtw = await RemoteClients.get_assets_gateway_client(context=context)
@@ -106,9 +114,10 @@ class GetPermissionsDispatch(DispatchingRule):
         return JSONResponse(local_resp)
 
 
-class GetItemDispatch(DispatchingRule):
+class GetItemDispatch(AbstractDispatch):
 
-    async def is_matching(self, request: Request, context: Context) -> bool:
+    @staticmethod
+    async def is_matching(request: Request) -> bool:
         return request.method == "GET" \
                and request.url.path.startswith('/api/assets-gateway/tree/items/') \
                and "Python" not in request.headers.get('user-agent')
@@ -117,7 +126,10 @@ class GetItemDispatch(DispatchingRule):
                     request: Request,
                     call_next: RequestResponseEndpoint,
                     context: Context
-                    ) -> Response:
+                    ) -> Optional[Response]:
+
+        if not await GetItemDispatch.is_matching(request=request):
+            return None
 
         local_gtw = LocalClients.get_assets_gateway_client(context=context)
         remote_gtw = await RemoteClients.get_assets_gateway_client(context=context)
