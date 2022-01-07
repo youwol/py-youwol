@@ -419,18 +419,19 @@ def load_class_from_module(
         module = importlib.import_module(module_name)
         if str(python_file_path.parent) in python_paths:
             sys.path = [p for p in python_paths if p != str(python_file_path.parent)]
-
     except SyntaxError:
         raise Exception(f"{python_file_path} : Syntax error")
     except NameError:
         raise Exception(f"{python_file_path} :Name error")
 
     if not hasattr(module, expected_class_name):
+        del sys.modules[module_name]
         raise Exception(f"{python_file_path} : Expected class '{expected_class_name}' not found")
 
     maybe_factory = module.__getattribute__(expected_class_name)
 
     if not issubclass(maybe_factory, expected_base_class):
+        del sys.modules[module_name]
         raise Exception(f"{python_file_path} : Expected class '{expected_class_name}' does not implements expected "
                         f"interface")
 
