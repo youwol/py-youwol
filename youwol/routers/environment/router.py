@@ -1,3 +1,4 @@
+import asyncio
 import itertools
 from typing import List, Optional
 
@@ -12,6 +13,7 @@ from youwol.configuration.models_config import UserInfo
 from youwol.configuration.clients import RemoteClients
 from youwol.models import Label
 from youwol.context import Context
+from youwol.routers.environment.implementation import get_latest_local_cdn_version, check_update
 
 from youwol.utils_low_level import get_public_user_auth_token
 
@@ -20,7 +22,7 @@ from youwol.configuration.youwol_configuration import yw_config, YouwolConfigura
 
 from youwol.routers.environment.models import (
     SyncUserBody, LoginBody,
-    PostParametersBody, RemoteGatewayInfo, SelectRemoteBody, SyncComponentBody, ComponentsUpdate
+    PostParametersBody, RemoteGatewayInfo, SelectRemoteBody, ComponentsUpdate
     )
 
 from youwol.utils_paths import parse_json, write_json
@@ -212,7 +214,7 @@ async def sync_user(
         return users_info['users'][body.email]
 
 
-@router.get("/available-updates",
+@router.get("/collect-updates",
             summary="Provides description of available updates",
             response_model=ComponentsUpdate
             )
@@ -220,51 +222,26 @@ async def available_updates(
         request: Request,
         config: YouwolConfiguration = Depends(yw_config)
         ):
-    return
-"""
-pending = ComponentsUpdate(
-    components=[],
-    status=ComponentsUpdateStatus.PENDING)
 
-WebSocketsCache.environment and await WebSocketsCache.environment.send_json(to_json(pending))
-
-context = Context(
-    request=request,
-    config=config,
-    web_socket=WebSocketsCache.environment
+    context = Context(
+        request=request,
+        config=config,
+        web_socket=WebSocketsCache.userChannel
     )
+    queue = asyncio.Queue()
 
-async def get_update_description(package_name: str, local_folder: Path):
-    local_version = parse_json(local_folder / 'package.json')['version']
-    client = await config.get_assets_gateway_client(context=context)
-    resp = await client.cdn_get_versions(package_id=to_package_id(package_name))
-    sync_status = ComponentsUpdateStatus.SYNC \
-        if local_version == resp['versions'][0] \
-        else ComponentsUpdateStatus.OUTDATED
+    async with context.start(
+            action="collect available updates",
+            with_attributes={'topic': 'collectUpdatesCdn'}) as ctx:
 
-    return ComponentUpdate(name=package_name, localVersion=local_version, latestVersion=resp['versions'][0],
-                           status=sync_status)
+        local_packages_latest = get_latest_local_cdn_version(ctx)
+        await ctx.info(text="local latest version of cdn packages retrieved",
+                       data={'packages': {f"{p.library_name}#{p.version}": p for p in local_packages_latest}})
+        for package in local_packages_latest:
+            queue.put_nowait(package)
 
-builder, runner, explorer = await asyncio.gather(
-    get_update_description(package_name="@youwol/flux-builder",
-                           local_folder=Path(flux_builder.__file__).parent),
-    get_update_description(package_name="@youwol/flux-runner",
-                           local_folder=Path(flux_runner.__file__).parent),
-    get_update_description(package_name="@youwol/workspace-explorer",
-                           local_folder=Path(workspace_explorer.__file__).parent)
-    )
-components = [builder, runner, explorer]
-glob_status = ComponentsUpdateStatus.SYNC \
-    if all([t.status == ComponentsUpdateStatus.SYNC for t in components]) \
-    else ComponentsUpdateStatus.OUTDATED
+        updates = [asyncio.create_task(check_update(queue=queue, context=ctx)) for _ in range(5)]
 
-response = ComponentsUpdate(
-    components=[builder, runner, explorer],
-    status=glob_status)
-
-WebSocketsCache.environment and await WebSocketsCache.environment.send_json(to_json(response))
-
-return response
-"""
+        await asyncio.gather(queue.join(), *updates)
 
     return
