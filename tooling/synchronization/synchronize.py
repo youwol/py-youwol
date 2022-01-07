@@ -1,5 +1,5 @@
 from pathlib import Path
-from synchronization.services import sync_services
+from tooling.synchronization.services import sync_services
 
 
 platform_path = Path("/home/greinisch/Projects/platform/")
