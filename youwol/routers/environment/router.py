@@ -1,4 +1,3 @@
-import asyncio
 import itertools
 from typing import List, Optional
 
@@ -13,7 +12,6 @@ from youwol.configuration.models_config import UserInfo
 from youwol.configuration.clients import RemoteClients
 from youwol.models import Label
 from youwol.context import Context
-from youwol.routers.environment.implementation import get_latest_local_cdn_version, check_update
 
 from youwol.utils_low_level import get_public_user_auth_token
 
@@ -21,9 +19,8 @@ from youwol.configuration.youwol_configuration import YouwolConfiguration
 from youwol.configuration.youwol_configuration import yw_config, YouwolConfigurationFactory
 
 from youwol.routers.environment.models import (
-    SyncUserBody, LoginBody,
-    PostParametersBody, RemoteGatewayInfo, SelectRemoteBody, ComponentsUpdate
-    )
+    SyncUserBody, LoginBody, RemoteGatewayInfo, SelectRemoteBody
+)
 
 from youwol.utils_paths import parse_json, write_json
 from youwol.web_socket import WebSocketsCache
@@ -155,17 +152,6 @@ async def select_remote(
     return new_conf.get_user_info()
 
 
-@router.post("/configuration/profile",
-             summary="switch_profile")
-async def update_parameters(
-        request: Request,
-        body: PostParametersBody
-        ):
-    await YouwolConfigurationFactory.reload(body.profile)
-    new_conf = await yw_config()
-    await status(request, new_conf)
-
-
 @router.post("/sync-user",
              summary="sync a new local user w/ remote one")
 async def sync_user(
@@ -212,36 +198,3 @@ async def sync_user(
         write_json(users_info, config.pathsBook.usersInfo)
         await login(request=request, body=LoginBody(email=body.email), config=config)
         return users_info['users'][body.email]
-
-
-@router.get("/collect-updates",
-            summary="Provides description of available updates",
-            response_model=ComponentsUpdate
-            )
-async def available_updates(
-        request: Request,
-        config: YouwolConfiguration = Depends(yw_config)
-        ):
-
-    context = Context(
-        request=request,
-        config=config,
-        web_socket=WebSocketsCache.userChannel
-    )
-    queue = asyncio.Queue()
-
-    async with context.start(
-            action="collect available updates",
-            with_attributes={'topic': 'collectUpdatesCdn'}) as ctx:
-
-        local_packages_latest = get_latest_local_cdn_version(ctx)
-        await ctx.info(text="local latest version of cdn packages retrieved",
-                       data={'packages': {f"{p.library_name}#{p.version}": p for p in local_packages_latest}})
-        for package in local_packages_latest:
-            queue.put_nowait(package)
-
-        updates = [asyncio.create_task(check_update(queue=queue, context=ctx)) for _ in range(5)]
-
-        await asyncio.gather(queue.join(), *updates)
-
-    return
