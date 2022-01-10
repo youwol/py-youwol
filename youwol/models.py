@@ -6,6 +6,7 @@ class LogLevel(Enum):
     INFO = "INFO"
     WARNING = "WARNING"
     ERROR = "ERROR"
+    DATA = "DATA"
 
 
 class Label(Enum):
@@ -21,7 +22,10 @@ class Label(Enum):
     LOG_ABORT = "LOG_ABORT"
     RUNNING = "RUNNING"
     PACKAGING = "PACKAGING"
+    PACKAGE_DOWNLOADING = "PACKAGE_DOWNLOADING"
+    DATA = "DATA"
     DONE = "DONE"
+    EXCEPTION = "EXCEPTION"
 
 
 class Action(Enum):

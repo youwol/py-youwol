@@ -5,14 +5,12 @@ import uuid
 
 from async_generator import async_generator, yield_, asynccontextmanager
 
-from typing import Union, NamedTuple, Callable, Awaitable, Optional, List, Tuple
+from typing import Union, NamedTuple, Callable, Awaitable, Optional, List, Tuple, TypeVar
 
 from pydantic import BaseModel, Json
 from starlette.requests import Request
 from starlette.websockets import WebSocket
 
-
-from youwol.exceptions import UserCodeException, ActionException
 from youwol.utils_low_level import to_json
 from youwol.models import LogLevel, Label
 from youwol_utils import JSON
@@ -36,7 +34,7 @@ async def log(
         labels: List[Label],
         web_socket: WebSocket,
         context_id: str,
-        data: JSON = None,
+        data: Union[JSON, BaseModel] = None,
         with_attributes:  JSON = None,
         parent_context_id: str = None,
         ):
@@ -96,30 +94,28 @@ class Context(NamedTuple):
                 await block
 
         try:
-            await ctx.info(text=action, labels=[Label.STARTED]+labels)
+            await ctx.info(text=action, labels=[Label.STARTED, *labels])
             await execute_block(on_enter)
             await yield_(ctx)
-
-        except UserCodeException as e:
-            await ctx.abort(text=f"Exception during {action} while executing custom code", labels=[])
-            await execute_block(on_exception, e)
-            await execute_block(on_exit)
-            traceback.print_exc()
-        except ActionException as e:
-            await ctx.abort(text=f"Exception during {action}: {e.message}", labels=[])
-            await execute_block(on_exception, e)
-            await execute_block(on_exit)
-            traceback.print_exc()
         except Exception as e:
-            await ctx.abort(text=f"Exception during {action}", data={"error": str(e)}, labels=[])
+            await ctx.abort(
+                text=f"Exception raised",
+                data=e.__dict__,
+                labels=[Label.EXCEPTION, *labels]
+            )
             await execute_block(on_exception, e)
             await execute_block(on_exit)
             traceback.print_exc()
             raise e
         else:
             data_type, data = succeeded_data(ctx) if succeeded_data else (None, None)
-            await ctx.info(text="", labels=[Label.DONE, data_type], data=data)
+            await ctx.info(text="", labels=[Label.DONE, data_type, *labels], data=data)
             await execute_block(on_exit)
+
+    async def send(self, data: BaseModel):
+        await log(level=LogLevel.DATA, text="", labels=[Label.DATA, data.__class__.__name__],
+                  with_attributes=self.with_attributes, data=data, context_id=self.uid,
+                  parent_context_id=self.parent_uid, web_socket=self.web_socket)
 
     async def debug(self, text: str, labels: List[Label] = None, data: Union[JSON, BaseModel] = None):
         labels = labels or []
