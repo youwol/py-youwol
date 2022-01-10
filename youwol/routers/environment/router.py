@@ -8,15 +8,14 @@ from aiohttp.web import HTTPException
 from aiohttp.client_exceptions import ClientConnectorError, ContentTypeError
 from starlette.requests import Request
 
-from youwol.configuration.models_config import UserInfo
-from youwol.configuration.clients import RemoteClients
+from youwol.environment.clients import RemoteClients
+from youwol.environment.models import UserInfo
+from youwol.environment.youwol_environment import yw_config, YouwolEnvironment, YouwolEnvironmentFactory
 from youwol.models import Label
 from youwol.context import Context
 
 from youwol.utils_low_level import get_public_user_auth_token
 
-from youwol.configuration.youwol_configuration import YouwolConfiguration
-from youwol.configuration.youwol_configuration import yw_config, YouwolConfigurationFactory
 
 from youwol.routers.environment.models import (
     SyncUserBody, LoginBody, RemoteGatewayInfo, SelectRemoteBody
@@ -31,14 +30,14 @@ flatten = itertools.chain.from_iterable
 
 
 class StatusResponse(BaseModel):
-    configuration: YouwolConfiguration
+    configuration: YouwolEnvironment
     users: List[str]
     userInfo: UserInfo
     remoteGatewayInfo: Optional[RemoteGatewayInfo]
     remotesInfo: List[RemoteGatewayInfo]
 
 
-async def connect_to_remote(config: YouwolConfiguration, context: Context) -> bool:
+async def connect_to_remote(config: YouwolEnvironment, context: Context) -> bool:
 
     remote_gateway_info = config.get_remote_info()
     if not remote_gateway_info:
@@ -76,10 +75,10 @@ async def connect_to_remote(config: YouwolConfiguration, context: Context) -> bo
 
 
 @router.get("/configuration",
-            response_model=YouwolConfiguration,
+            response_model=YouwolEnvironment,
             summary="configuration")
 async def configuration(
-        config: YouwolConfiguration = Depends(yw_config)
+        config: YouwolEnvironment = Depends(yw_config)
         ):
     return config
 
@@ -87,7 +86,7 @@ async def configuration(
 @router.get("/file-content",
             summary="text content of the configuration file")
 async def file_content(
-        config: YouwolConfiguration = Depends(yw_config)
+        config: YouwolEnvironment = Depends(yw_config)
         ):
 
     return {
@@ -100,7 +99,7 @@ async def file_content(
             summary="status")
 async def status(
         request: Request,
-        config: YouwolConfiguration = Depends(yw_config)
+        config: YouwolEnvironment = Depends(yw_config)
         ):
 
     context = Context(config=config, request=request, web_socket=WebSocketsCache.userChannel)
@@ -131,9 +130,9 @@ async def status(
 async def login(
         request: Request,
         body: LoginBody,
-        config: YouwolConfiguration = Depends(yw_config)
+        config: YouwolEnvironment = Depends(yw_config)
         ):
-    await YouwolConfigurationFactory.login(email=body.email, remote_name=config.selectedRemote)
+    await YouwolEnvironmentFactory.login(email=body.email, remote_name=config.selectedRemote)
     new_conf = await yw_config()
     await status(request, new_conf)
     return new_conf.get_user_info()
@@ -144,9 +143,9 @@ async def login(
 async def select_remote(
         request: Request,
         body: SelectRemoteBody,
-        config: YouwolConfiguration = Depends(yw_config)
+        config: YouwolEnvironment = Depends(yw_config)
         ):
-    await YouwolConfigurationFactory.login(email=config.userEmail, remote_name=body.name)
+    await YouwolEnvironmentFactory.login(email=config.userEmail, remote_name=body.name)
     new_conf = await yw_config()
     await status(request, new_conf)
     return new_conf.get_user_info()
@@ -157,7 +156,7 @@ async def select_remote(
 async def sync_user(
         request: Request,
         body: SyncUserBody,
-        config: YouwolConfiguration = Depends(yw_config)
+        config: YouwolEnvironment = Depends(yw_config)
         ):
 
     context = Context(

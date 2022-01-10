@@ -7,7 +7,7 @@ from starlette.requests import Request
 from starlette.responses import Response, JSONResponse
 from starlette.middleware.base import RequestResponseEndpoint
 import youwol.services.backs.cdn.root_paths as cdn
-from youwol.configuration.models_dispatch import AbstractDispatch
+from youwol.middlewares.models_dispatch import AbstractDispatch
 from youwol.context import Context
 from youwol.services.backs.cdn.configurations import get_configuration
 from youwol.environment.youwol_environment import yw_config

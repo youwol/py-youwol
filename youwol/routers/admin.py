@@ -1,5 +1,4 @@
 from fastapi import APIRouter
-from youwol.configurations import api_configuration
 
 import youwol.routers.projects.router as projects
 import youwol.routers.environment.router as environment
@@ -7,7 +6,7 @@ import youwol.routers.system.router as system
 import youwol.routers.local_cdn.router as local_cdn
 import youwol.routers.commands.router as commands
 import youwol.routers.custom_commands.router as custom_commands
-
+from youwol.environment.youwol_environment import api_configuration
 
 router = APIRouter()
 

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from youwol.environment.youwol_environment import YouwolEnvironment
-from youwol.configuration.clients import RemoteClients
+from youwol.environment.clients import RemoteClients
 from youwol.routers.commands.upload_assets.models import UploadTask
 from youwol.utils_paths import parse_json, write_json
 from youwol_utils import JSON

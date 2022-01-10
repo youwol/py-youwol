@@ -5,7 +5,7 @@ from fastapi import HTTPException
 
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from youwol_utils.clients.treedb.treedb import TreeDbClient
-from youwol.configuration.clients import RemoteClients, LocalClients
+from youwol.environment.clients import RemoteClients, LocalClients
 from youwol.context import Context
 from youwol.services.backs.treedb.models import PathResponse, ItemResponse, ItemsResponse, DriveResponse
 

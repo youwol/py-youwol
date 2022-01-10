@@ -4,7 +4,7 @@ from fastapi import HTTPException
 from pydantic import BaseModel
 
 from youwol.environment.youwol_environment import YouwolEnvironment
-from youwol.configuration.clients import RemoteClients
+from youwol.environment.clients import RemoteClients
 from youwol.context import Context
 from youwol.models import Label
 from youwol.routers.commands.upload_assets.models import UploadTask

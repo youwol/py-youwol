@@ -1,4 +1,4 @@
-from youwol.configuration.clients import RemoteClients, LocalClients
+from youwol.environment.clients import RemoteClients, LocalClients
 from youwol.services.backs.treedb.models import PathResponse, DriveResponse
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from fastapi import HTTPException

@@ -1,30 +1,32 @@
+import shutil
 from datetime import datetime
 import json
 import os
+from getpass import getpass
 
 from pathlib import Path
 from typing import Dict, Any, Union, Optional, Awaitable, List
+
+from fastapi import HTTPException
 from pydantic import BaseModel
 
-from youwol.configuration.clients import LocalClients
-from youwol.configuration.models_dispatch import AbstractDispatch
+from youwol.environment.clients import LocalClients
+from youwol.middlewares.models_dispatch import AbstractDispatch
 
 from youwol.context import Context
-from youwol.configuration.models_config import ConfigurationHandler, configuration_from_json, \
-    configuration_from_python, get_object_from_module, IPipelineFactory, Events
-from youwol.environment.models import RemoteGateway, UserInfo
+from youwol.configuration.models_config_parse import configuration_from_json
+from youwol.configuration.models_config_module import configuration_from_python
+from youwol.configuration.configuration_handler import ConfigurationHandler
+from youwol.environment.models import RemoteGateway, UserInfo, ApiConfiguration, IPipelineFactory, Events
 from youwol.models import Label
 from youwol.routers.custom_commands.models import Command
 from youwol.services.backs.assets_gateway.models import DefaultDriveResponse
-from youwol.utils_low_level import get_public_user_auth_token
+from youwol.utils_low_level import get_public_user_auth_token, get_object_from_module
 from youwol.web_socket import WebSocketsCache
 
 from youwol.errors import HTTPResponseException
-from youwol.main_args import get_main_arguments
-from youwol.utils_paths import parse_json
-
-from youwol.configurations import get_full_local_config
-
+from youwol.main_args import get_main_arguments, MainArguments
+from youwol.utils_paths import parse_json, ensure_config_file_exists_or_create_it, write_json
 
 from youwol.configuration.configuration_validation import (
     ConfigurationLoadingStatus, ConfigurationLoadingException,
@@ -33,7 +35,9 @@ from youwol.configuration.configuration_validation import (
 )
 from youwol.configuration.models_project import ErrorResponse, Project
 from youwol.environment.paths import PathsBook
-from youwol_utils import encode_id
+from youwol_utils import encode_id, retrieve_user_info
+
+PROJECT_PIPELINE_DIRECTORY = '.yw_pipeline'
 
 
 class DeadlinedCache(BaseModel):
@@ -51,7 +55,6 @@ class DeadlinedCache(BaseModel):
 
 
 class YouwolEnvironment(BaseModel):
-
     available_profiles: List[str]
     http_port: int
     openid_host: str
@@ -149,7 +152,8 @@ Configuration loaded from '{self.pathsBook.config}'
 - list of redirections:
 {chr(10).join([f"  * {redirection}" for redirection in self.customDispatches])}
 - list of custom commands:
-{chr(10).join([f"  * http://localhost:{self.http_port}/admin/custom-commands/{command}" for command in self.commands.keys()])}
+{chr(10).join([f"  * http://localhost:{self.http_port}/admin/custom-commands/{command}"
+               for command in self.commands.keys()])}
 """
 
 
@@ -201,7 +205,7 @@ class YouwolEnvironmentFactory:
 
     @staticmethod
     async def init():
-        path = (await get_full_local_config()).starting_yw_config_path
+        path = await get_yw_config_starter(get_main_arguments())
         conf = await safe_load(path=path, profile=get_main_arguments().profile, user_email=None, selected_remote=None)
 
         YouwolEnvironmentFactory.__cached_config = conf
@@ -229,7 +233,6 @@ class YouwolEnvironmentFactory:
 
     @staticmethod
     async def trigger_on_load(config: YouwolEnvironment):
-
         context = Context(config=config, web_socket=WebSocketsCache.environment)
         if not config.events or not config.events.onLoad:
             return
@@ -313,7 +316,7 @@ async def safe_load(
                 check_database_folder_healthy,
                 check_secret_exists,
                 check_secret_healthy
-                ]
+            ]
         )
 
     loaders = {
@@ -387,11 +390,11 @@ async def safe_load(
     targets_dirs = []
     nb_targets_dirs = len(targets_dirs)
     for projects_dir in conf_handler.get_projects_dirs():
-        if (projects_dir / '.yw_pipeline').exists():
+        if (projects_dir / PROJECT_PIPELINE_DIRECTORY).exists():
             targets_dirs.append(projects_dir)
         else:
             for subdir in os.listdir(projects_dir):
-                if (projects_dir / Path(subdir) / '.yw_pipeline').exists():
+                if (projects_dir / Path(subdir) / PROJECT_PIPELINE_DIRECTORY).exists():
                     targets_dirs.append(projects_dir / Path(subdir))
         nb_targets_dirs_found = len(targets_dirs) - nb_targets_dirs
         nb_targets_dirs = len(targets_dirs)
@@ -403,7 +406,7 @@ async def safe_load(
     for path in targets_dirs:
         try:
             pipeline_factory = get_object_from_module(
-                module_absolute_path=path / '.yw_pipeline' / 'yw_pipeline.py',
+                module_absolute_path=path / PROJECT_PIPELINE_DIRECTORY / 'yw_pipeline.py',
                 object_or_class_name='PipelineFactory',
                 object_type=IPipelineFactory
             )
@@ -439,3 +442,66 @@ async def safe_load(
     )
 
     return conf_handler.customize(youwol_configuration)
+
+
+async def get_yw_config_starter(main_args: MainArguments):
+    (conf_path, exists) = ensure_config_file_exists_or_create_it(main_args.config_path)
+
+    if exists:
+        return conf_path
+
+    resp = input("No config path has been provided as argument (using --conf),"
+                 f" and no file found in the default folder.\n"
+                 "Do you want to create a new workspace with default settings (y/N)")
+    # Ask to create fresh workspace with default settings
+    if not (resp == 'y' or resp == 'Y'):
+        print("Exit youwol")
+        exit()
+
+    # create the default identities
+    email = input("Your email address?")
+    pwd = getpass("Your YouWol password?")
+    print(f"Pass : {pwd}")
+    token = None
+    default_openid_host = "gc.auth.youwol.com"
+    try:
+        token = await get_public_user_auth_token(username=email, pwd=pwd, client_id='public-user',
+                                                 openid_host=default_openid_host)
+        print("token", token)
+    except HTTPException as e:
+        print(f"Can not retrieve authentication token:\n\tstatus code: {e.status_code}\n\tdetail:{e.detail}")
+        exit(1)
+
+    user_info = None
+    try:
+        user_info = await retrieve_user_info(auth_token=token, openid_host=default_openid_host)
+        print("user_info", user_info)
+    except HTTPException as e:
+        print(f"Can not retrieve user info:\n\tstatus code: {e.status_code}\n\tdetail:{e.detail}")
+        exit(1)
+
+    shutil.copyfile(main_args.youwol_path.parent / 'youwol_data' / 'remotes-info.json',
+                    conf_path.parent / 'remotes-info.json')
+
+    if not (conf_path.parent / 'secrets.json').exists():
+        write_json({email: {'password': pwd}}, conf_path.parent / 'secrets.json')
+
+    user_info = {
+        "policies": {"default": email},
+        "users": {
+            email: {
+                "id": user_info['sub'],
+                "name": user_info['name'],
+                "memberOf": user_info['memberof'],
+                "email": user_info['email']
+            }
+        }
+    }
+
+    if not (conf_path.parent / 'users-info.json').exists():
+        write_json(user_info, conf_path.parent / 'users-info.json')
+
+    return conf_path.parent
+
+
+api_configuration = ApiConfiguration(open_api_prefix="", base_path="")

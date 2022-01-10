@@ -3,7 +3,7 @@ from typing import Optional, List
 from starlette.requests import Request
 from starlette.responses import Response
 
-from youwol.configuration.models_dispatch import AbstractDispatch
+from youwol.middlewares.models_dispatch import AbstractDispatch
 from youwol.context import Context
 from starlette.middleware.base import RequestResponseEndpoint
 

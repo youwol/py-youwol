@@ -5,7 +5,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp
 
-from youwol.configuration.models_dispatch import AbstractDispatch
+from youwol.middlewares.models_dispatch import AbstractDispatch
 from youwol.context import Context
 from youwol.web_socket import WebSocketsCache
 from youwol.environment.youwol_environment import yw_config

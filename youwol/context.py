@@ -5,7 +5,7 @@ import uuid
 
 from async_generator import async_generator, yield_, asynccontextmanager
 
-from typing import Union, NamedTuple, Callable, Awaitable, Optional, List, Tuple, TypeVar
+from typing import Union, NamedTuple, Callable, Awaitable, Optional, List, Tuple
 
 from pydantic import BaseModel, Json
 from starlette.requests import Request

@@ -2,7 +2,7 @@ import asyncio
 from dataclasses import dataclass
 from aiohttp import FormData
 
-from youwol.configuration.clients import RemoteClients, LocalClients
+from youwol.environment.clients import RemoteClients, LocalClients
 from youwol.routers.commands.upload_assets.models import UploadTask
 
 

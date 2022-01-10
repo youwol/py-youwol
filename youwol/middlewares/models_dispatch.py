@@ -1,10 +1,10 @@
 from typing import Optional
 
 from aiohttp import ClientSession, ClientConnectorError
+from pydantic import BaseModel
 from starlette.requests import Request
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.responses import Response
-from pydantic import BaseModel
 
 from youwol.utils_low_level import redirect_request
 from youwol_utils import encode_id

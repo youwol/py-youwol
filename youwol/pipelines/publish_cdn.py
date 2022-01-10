@@ -7,7 +7,7 @@ from fastapi import HTTPException
 from youwol.configuration.models_project import (
     PipelineStep, Project, Manifest, PipelineStepStatus, FlowId, ExplicitNone,
     )
-from youwol.configuration.clients import LocalClients, RemoteClients
+from youwol.environment.clients import LocalClients, RemoteClients
 from youwol.environment.paths import PathsBook
 from youwol.context import Context
 from youwol.services.backs.assets_gateway.models import DefaultDriveResponse

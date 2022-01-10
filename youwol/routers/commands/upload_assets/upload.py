@@ -10,8 +10,7 @@ from youwol.utils_low_level import to_json
 from youwol.context import Context
 from youwol.utils_paths import parse_json
 from youwol.models import Label
-from youwol.configuration.clients import RemoteClients, LocalClients
-from youwol.configurations import api_configuration
+from youwol.environment.clients import RemoteClients, LocalClients
 from youwol.routers.commons import local_path, ensure_path
 from youwol.routers.commands.upload_assets.data import UploadDataTask
 from youwol.routers.commands.upload_assets.flux_project import UploadFluxProjectTask
@@ -144,7 +143,7 @@ async def synchronize_metadata(asset_id: str, assets_gtw_client: AssetsGatewayCl
             assets_gtw_client.get_asset_metadata(asset_id=asset_id)
             )
         missing_images_urls = [p for p in local_metadata['images'] if p not in remote_metadata['images']]
-        full_urls = [f"http://localhost:{api_configuration.http_port}{url}" for url in missing_images_urls]
+        full_urls = [f"http://localhost:{context.config.http_port}{url}" for url in missing_images_urls]
         filenames = [url.split('/')[-1] for url in full_urls]
 
         await ctx.info(
@@ -259,7 +258,6 @@ async def upload_asset(
                 text="Project not already found => start creation"
                 )
             await factory.create_raw(data=local_data, folder_id=tree_item['folderId'])
-            # local_flux_app['projectId'] = raw_id
 
         await synchronize_permissions_metadata_symlinks(
             asset_id=asset_id,
