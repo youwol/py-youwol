@@ -1,32 +1,42 @@
+from enum import Enum
 from typing import List
 
 from pydantic import BaseModel
 
 
-class PackageVersion(BaseModel):
+class UpdateStatus(Enum):
+    upToDate = 'upToDate'
+    mismatch = 'mismatch'
+    remoteAhead = "remoteAhead"
+    localAhead = "localAhead"
+
+
+class PackageVersionInfo(BaseModel):
     version: str
-    versionNumber: int
+    fingerprint: str
 
 
-class Package(BaseModel):
-    name: str
-    versions: List[PackageVersion]
+class CheckUpdateResponse(BaseModel):
+    packageName: str
+    localVersionInfo: PackageVersionInfo
+    remoteVersionInfo: PackageVersionInfo
+    status: UpdateStatus
 
 
-class PackagesStatus(BaseModel):
-    packages: List[Package]
+class CheckUpdatesResponse(BaseModel):
+    updates: List[CheckUpdateResponse]
 
 
-class VersionDetails(BaseModel):
-    name: str
+class DownloadPackageBody(BaseModel):
+    packageName: str
     version: str
-    versionNumber: int
-    filesCount: int
-    bundleSize: int
-    path: List[str]
-    namespace: str
 
 
-class PackageDetails(BaseModel):
-    name: str
-    versions: List[VersionDetails]
+class DownloadPackagesBody(BaseModel):
+    packages: List[DownloadPackageBody]
+
+
+class DownloadedPackageResponse(BaseModel):
+    packageName: str
+    version: str
+    fingerprint: str
