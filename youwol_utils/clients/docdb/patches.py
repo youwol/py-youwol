@@ -17,7 +17,7 @@ def compare_schemas(left: Dict[str, any], right: Dict[str, any]):
 
 def patch_table_schema(table: JSON):
     """
-    When getting table the schema returned include implementation details as columns (e.g. owner_id, owner_name, etc),
+    When getting table the schema returned include implementation details as columns (e.g. owner_id, owner_name, etc.),
     we want to remove those columns here such that we recover the schema that we initially posted
     """
     to_remove = ["owner_id", "owner_name", "owner_kind"]

@@ -24,7 +24,7 @@ def list_files(folder: Path, rec=True) -> List[Path]:
 
 
 def copy_tree(source: Path, destination: Path, replace: bool = False):
-    # An helper to not having to cast stuffs all the time. See https://youtrack.jetbrains.com/issue/PY-30747
+    # A helper to not having to cast stuffs all the time. See https://youtrack.jetbrains.com/issue/PY-30747
     if replace and os.path.exists(destination):
         shutil.rmtree(destination)
     shutil.copytree(cast(PathLike, source), cast(PathLike, destination))
@@ -34,7 +34,7 @@ def copy_file(source: Path, destination: Path, create_folders: bool = False):
 
     if create_folders and not destination.parent.exists():
         os.makedirs(destination.parent)
-    # An helper to not having to cast stuffs all the time. See https://youtrack.jetbrains.com/issue/PY-30747
+    # A helper to not having to cast stuffs all the time. See https://youtrack.jetbrains.com/issue/PY-30747
     shutil.copyfile(cast(PathLike, source), cast(PathLike, destination))
 
 
