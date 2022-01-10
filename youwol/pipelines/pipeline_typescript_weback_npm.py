@@ -6,7 +6,7 @@ from typing import Union, List, Optional, NamedTuple, Iterable, Mapping
 from youwol.configuration.models_project import Manifest, PipelineStepStatus, Link, ExplicitNone, Flow, \
  SourcesFctImplicit,  Pipeline, parse_json, Skeleton, SkeletonParameter, PipelineStep, FileListing, \
  Artifact, Project, FlowId
-from youwol.configuration.paths import PathsBook
+from youwol.environment.paths import PathsBook
 from youwol.utils_low_level import to_json
 from youwol.context import Context
 from youwol.pipelines.publish_cdn import PublishCdnLocalStep, PublishCdnRemoteStep

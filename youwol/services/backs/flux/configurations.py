@@ -2,7 +2,7 @@ from typing import Callable, Optional
 
 from dataclasses import dataclass
 
-from youwol.configuration.youwol_configuration import yw_config, YouwolConfiguration
+from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
 from youwol_utils import (
     LocalDocDbClient, LocalStorageClient
     )
@@ -15,7 +15,7 @@ from youwol.configurations import api_configuration as py_yw_config
 @dataclass(frozen=True)
 class Configuration:
 
-    yw_config: YouwolConfiguration
+    yw_config: YouwolEnvironment
     open_api_prefix: str
     base_path: str
     storage: LocalStorageClient

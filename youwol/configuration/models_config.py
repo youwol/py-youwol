@@ -6,8 +6,10 @@ import traceback
 import zipfile
 from abc import ABC, abstractmethod
 from enum import Enum
+from importlib.machinery import SourceFileLoader
+from importlib.util import spec_from_loader
 from pathlib import Path
-from typing import List, Union, Optional, Dict, Callable, Any, Awaitable, cast, TypeVar, Type
+from typing import List, Union, Optional, Dict, Awaitable, cast, TypeVar, Type, Callable, Any
 
 from pydantic import BaseModel
 
@@ -16,33 +18,17 @@ from youwol.configuration.models_project import format_unknown_error, ErrorRespo
 from youwol.configuration.configuration_validation import ConfigurationLoadingException, \
     CheckValidConfigurationFunction, ConfigurationLoadingStatus
 from youwol.configuration.defaults import default_path_projects_dir, default_path_data_dir, \
-    default_path_cache_dir, default_http_port, default_openid_host
-from youwol.configuration.python_function_runner import PythonSourceFunction, get_python_function
+    default_path_cache_dir, default_http_port, default_openid_host, default_port_range_start, default_port_range_end
 from youwol.configuration.util_paths import ensure_dir_exists, existing_path_or_default, fail_on_missing_dir, \
     PathException, app_dirs
+from youwol.configurations import YouwolEnvironment
+from youwol.context import Context
 from youwol.main_args import get_main_arguments, MainArguments
+from youwol.routers.custom_commands.models import Command
 
 
-Context = 'youwol.context.Context'
-YouwolConfiguration = 'youwol.configuration.YouwolConfiguration'
-
-
-class UserInfo(BaseModel):
-    id: str
-    name: str
-    email: str
-    memberOf: List[str]
-
-
-class RemoteGateway(BaseModel):
-    name: str
-    host: str
-    metadata: Dict[str, str]
-
-
-class Secret(BaseModel):
-    clientId: str
-    clientSecret: str
+class Events(BaseModel):
+    onLoad: Callable[[YouwolEnvironment, Context], Optional[Union[Any, Awaitable[Any]]]] = None
 
 
 class ConfigPortRange(BaseModel):
@@ -50,26 +36,15 @@ class ConfigPortRange(BaseModel):
     end: int
 
 
-default_port_range: ConfigPortRange = ConfigPortRange(start=3000, end=4000)
-
-
 ConfigPath = Union[str, Path]
 
 
-class ConfigSource(BaseModel):
-    source: Optional[ConfigPath]
-    function: str
+class ConfigModuleLoading(BaseModel):
+    path: Optional[ConfigPath]
+    name: str
 
     def __str__(self):
-        return f"{self.source}#{self.function}"
-
-
-class Events(BaseModel):
-    onLoad: Callable[[YouwolConfiguration, Context], Optional[Union[Any, Awaitable[Any]]]] = None
-
-
-class EventsImplicit(BaseModel):
-    onLoad: Union[ConfigSource, str]
+        return f"{self.path}#{self.name}"
 
 
 class ConfigurationProfile(BaseModel):
@@ -83,10 +58,10 @@ class ConfigurationProfile(BaseModel):
     serversPortsRange: Optional[ConfigPortRange]
     cdnAutoUpdate: Optional[bool]
     dispatches: Optional[List[Union[str, RedirectDispatch, CdnOverrideDispatch, AbstractDispatch]]]
-    source: Optional[ConfigPath]
-    events: Optional[Union[Events, EventsImplicit]]
-    customCommands: Dict[str, Union[str, ConfigSource]] = {}
-    customize: Optional[Union[str, ConfigSource]]
+    defaultModulePath: Optional[ConfigPath]
+    events: Optional[Union[Events, str, ConfigModuleLoading]]
+    customCommands: List[Union[str, Command, ConfigModuleLoading]] = []
+    customize: Optional[Union[str, ConfigModuleLoading]]
 
 
 def replace_with(parent: ConfigurationProfile, replacement: ConfigurationProfile) -> ConfigurationProfile:
@@ -101,7 +76,7 @@ def replace_with(parent: ConfigurationProfile, replacement: ConfigurationProfile
         serversPortsRange=replacement.serversPortsRange if replacement.serversPortsRange else parent.serversPortsRange,
         cdnAutoUpdate=replacement.cdnAutoUpdate if replacement.cdnAutoUpdate else parent.cdnAutoUpdate,
         dispatches=replacement.dispatches if replacement.dispatches else parent.dispatches,
-        source=replacement.source if replacement.source else parent.source,
+        defaultModulePath=replacement.defaultModulePath if replacement.defaultModulePath else parent.defaultModulePath,
         events=replacement.events if replacement.events else parent.events,
         customCommands=replacement.customCommands if replacement.customCommands else parent.customCommands,
         customize=replacement.customize if replacement.customize else parent.customize,
@@ -147,13 +122,22 @@ class IPipelineFactory(ABC):
         return NotImplemented
 
 
+class IConfigurationCustomizer(ABC):
+    def __init__(self, **kwargs):
+        pass
+
+    @abstractmethod
+    def customize(self, _youwol_configuration: YouwolEnvironment) -> YouwolEnvironment:
+        return NotImplemented
+
+
 class ConfigurationHandler:
     path: Path
     config_data: Configuration
     effective_config_data: ConfigurationProfile
     active_profile: Optional[str] = None
 
-    def __init__(self, path: Path, config_data: Configuration,  profile: Optional[str]):
+    def __init__(self, path: Path, config_data: Configuration, profile: Optional[str]):
         self.path = path
         self.config_data = config_data
         if profile:
@@ -217,7 +201,8 @@ class ConfigurationHandler:
             return []
 
         port_range: ConfigPortRange = self.effective_config_data.serversPortsRange \
-            if self.effective_config_data.serversPortsRange else default_port_range
+            if self.effective_config_data.serversPortsRange else ConfigPortRange(start=default_port_range_start,
+                                                                                 end=default_port_range_end)
 
         assigned_ports = [cdnServer.port for cdnServer in self.effective_config_data.dispatches
                           if isinstance(cdnServer, CdnOverrideDispatch)]
@@ -251,10 +236,16 @@ class ConfigurationHandler:
         if isinstance(self.effective_config_data.events, Events):
             return self.effective_config_data.events
 
-        events: EventsImplicit = self.effective_config_data.events
-        python_src = get_python_src(events.onLoad, self.effective_config_data.source)
+        if isinstance(self.effective_config_data.events, str):
+            config_loading = ConfigModuleLoading(name=self.effective_config_data.events)
+        else:
+            config_loading = self.effective_config_data.events
 
-        return Events(onLoad=get_python_function(python_src))
+        config_loading = ensure_loading_source_exists(config_loading, self.effective_config_data.defaultModulePath)
+
+        return get_object_from_module(module_absolute_path=config_loading.path,
+                                      object_or_class_name=config_loading.name,
+                                      object_type=Events)
 
     def get_cdn_auto_update(self) -> bool:
         if not self.effective_config_data.cdnAutoUpdate:
@@ -262,37 +253,58 @@ class ConfigurationHandler:
 
         return self.effective_config_data.cdnAutoUpdate
 
-    def get_commands(self) -> Dict[str, PythonSourceFunction]:
-        return {key: get_python_src(conf, self.effective_config_data.source)
-                for (key, conf) in self.effective_config_data.customCommands}
+    def get_commands(self) -> Dict[str, Command]:
+        def get_command(arg: Union[str, ConfigModuleLoading, Command]) -> (str, Command):
+            conf_loading = arg
+            if isinstance(arg, Command):
+                return conf_loading.name, conf_loading
+            if isinstance(arg, str):
+                conf_loading = ConfigModuleLoading(name=arg)
+
+            conf_loading = ensure_loading_source_exists(conf_loading, self.effective_config_data.defaultModulePath)
+            command = get_object_from_module(conf_loading.path, conf_loading.name, Command)
+            return command.name, command
+
+        return {name: command for (name, command) in [get_command(conf) for conf in
+                                                      self.effective_config_data.customCommands]}
 
     def customize(self, youwol_configuration):
         if not self.effective_config_data.customize:
             return youwol_configuration
 
-        python_src = get_python_src(self.effective_config_data.customize, self.effective_config_data.source)
+        config_source = ensure_loading_source_exists(self.effective_config_data.customize,
+                                                     self.effective_config_data.defaultModulePath)
 
+        customizer = get_object_from_module(module_absolute_path=config_source.path,
+                                            object_or_class_name=config_source.name,
+                                            object_type=IConfigurationCustomizer)
         try:
-            youwol_configuration = get_python_function(python_src)(youwol_configuration)
+            youwol_configuration = customizer.customize(youwol_configuration)
         except Exception as e:
-            raise Exception(f"Error while executing customize function {python_src.path}#{python_src.name}", e)
+            raise Exception(f"Error while executing customizer {config_source}.customize(…) : {e}")
 
         return youwol_configuration
 
 
-def get_python_src(arg: Union[str, ConfigSource], default_source: Path) -> PythonSourceFunction:
+def ensure_loading_source_exists(arg: Union[str, ConfigModuleLoading],
+                                 default_source: ConfigPath) -> ConfigModuleLoading:
     result = arg
     default_root = app_dirs.user_config_dir
-    if not isinstance(result, ConfigSource):
-        result = ConfigSource(function=arg)
+    if not isinstance(result, ConfigModuleLoading):
+        result = ConfigModuleLoading(name=arg)
 
-    if not result.source:
-        result.source = default_source
+    if not result.path:
+        result.path = Path(default_source)
 
-    if not Path(result.source).is_absolute():
-        result.source = str(Path(default_root) / Path(result.source))
+    if not Path(result.path).is_absolute():
+        result.path = Path(default_root) / Path(result.path)
 
-    return PythonSourceFunction(path=result.source, name=result.function)
+    if not result.path.exists():
+        raise PathException(f"{str(result.path)} does not exists")
+
+    if not result.path.is_file():
+        raise PathException(f"'{str(result.path)}' is not a file")
+    return result
 
 
 async def configuration_from_json(path: Path, profile: Optional[str]) -> ConfigurationHandler:
@@ -314,7 +326,6 @@ async def configuration_from_json(path: Path, profile: Optional[str]) -> Configu
 
 
 async def configuration_from_python(path: Path, profile: Optional[str]) -> ConfigurationHandler:
-
     (final_path, exists) = existing_path_or_default(path,
                                                     root_candidates=[Path().cwd(),
                                                                      app_dirs.user_config_dir,
@@ -327,10 +338,6 @@ async def configuration_from_python(path: Path, profile: Optional[str]) -> Confi
     if not final_path.is_file():
         raise PathException(f"'{str(final_path)}' is not a file")
 
-    python_paths = sys.path
-    if str(final_path.parent) not in python_paths:
-        python_paths.append(str(path.parent))
-
     check_valid_conf_fct = CheckValidConfigurationFunction()
 
     def get_status(validated: bool = False):
@@ -342,47 +349,11 @@ async def configuration_from_python(path: Path, profile: Optional[str]) -> Confi
             ]
         )
 
-    def format_syntax_error(syntax_error: Union[SyntaxError, NameError]):
-        check_valid_conf_fct.status = ErrorResponse(
-            reason=f"Syntax error detected in the configuration file ({syntax_error.filename})\n" +
-                   f"Error location: line {e.lineno}, near '{syntax_error.text.strip()}'",
-            hints=[syntax_error.msg])
-
-    main_args = get_main_arguments()
+    factory = get_object_from_module(module_absolute_path=final_path, object_or_class_name="ConfigurationFactory",
+                                     object_type=IConfigurationFactory)
     try:
-        module_config = importlib.import_module(final_path.stem)
-    except SyntaxError as e:
-        format_syntax_error(syntax_error=e)
-        raise ConfigurationLoadingException(get_status(False))
-    except NameError as e:
-        check_valid_conf_fct.status = ErrorResponse(
-            reason=f"Name error detected in the configuration file.\n",
-            hints=[str(e)])
-
-        raise ConfigurationLoadingException(get_status(False))
-
-    if not hasattr(module_config, 'ConfigurationFactory'):
-        check_valid_conf_fct.status = ErrorResponse(
-            reason=f"The python configuration file does not contain the definition"
-                   "'class ConfigurationFactory(IConfigurationFactory)'",
-            hints=[f"Define on in your python's configuration file."])
-        raise ConfigurationLoadingException(get_status(False))
-
-    maybe_factory = module_config.__getattribute__("ConfigurationFactory")
-
-    if not issubclass(maybe_factory, IConfigurationFactory):
-        check_valid_conf_fct.status = ErrorResponse(
-            reason=f"The ConfigurationFactory must implement 'IConfigurationFactory'",
-            hints=[f""])
-        raise ConfigurationLoadingException(get_status(False))
-
-    factory = cast(IConfigurationFactory, maybe_factory())
-    try:
-        result = factory.get(main_args)
+        result = factory.get(get_main_arguments())
         config_data: Configuration = await result if isinstance(result, Awaitable) else result
-    except SyntaxError as e:
-        format_syntax_error(syntax_error=e)
-        raise ConfigurationLoadingException(get_status(False))
     except Exception as err:
         ex_type, ex, tb = sys.exc_info()
         traceback.print_tb(tb)
@@ -399,42 +370,41 @@ async def configuration_from_python(path: Path, profile: Optional[str]) -> Confi
 
     return ConfigurationHandler(path=final_path, config_data=config_data, profile=profile)
 
+
 T = TypeVar('T')
 
 
-def load_class_from_module(
-        python_file_path: Path,
-        expected_class_name: str,
-        expected_base_class: Type[T],
-        **kwargs
-        ) -> T:
+def get_object_from_module(
+        module_absolute_path: Path,
+        object_or_class_name: str,
+        object_type: Type[T],
+        **object_instantiation_kwargs
+) -> T:
+    def get_instance_from_module(imported_module):
+        if not hasattr(imported_module, object_or_class_name):
+            raise Exception(f"{module_absolute_path} : Expected class '{object_or_class_name}' not found")
 
-    # check that filename does not contain invalid character for modules (e.g. '-' ,...)
-    python_paths = sys.path
-    if str(python_file_path.parent) not in python_paths:
-        python_paths.append(str(python_file_path.parent))
+        maybe_class_or_var = imported_module.__getattribute__(object_or_class_name)
 
-    module_name = python_file_path.stem
+        if isinstance(maybe_class_or_var, object_type):
+            return cast(object_type, maybe_class_or_var)
+
+        if issubclass(maybe_class_or_var, object_type):
+            return cast(object_type, maybe_class_or_var(**object_instantiation_kwargs))
+
+        raise Exception(f"{module_absolute_path} : Expected class '{object_or_class_name}'"
+                        f" does not implements expected type '{object_type}")
+
+    module_name = module_absolute_path.stem
     try:
-        module = importlib.import_module(module_name)
-        if str(python_file_path.parent) in python_paths:
-            sys.path = [p for p in python_paths if p != str(python_file_path.parent)]
-    except SyntaxError:
-        raise Exception(f"{python_file_path} : Syntax error")
-    except NameError:
-        raise Exception(f"{python_file_path} :Name error")
+        loader = SourceFileLoader(module_name, str(module_absolute_path))
+        spec = spec_from_loader(module_name, loader)
+        module = importlib.util.module_from_spec(spec)
+        loader.exec_module(module)
+        instance = get_instance_from_module(module)
+    except SyntaxError as e:
+        raise Exception(f"{module_absolute_path} : Syntax error '{e}'")
+    except NameError as e:
+        raise Exception(f"{module_absolute_path} :Name error '{e}")
 
-    if not hasattr(module, expected_class_name):
-        del sys.modules[module_name]
-        raise Exception(f"{python_file_path} : Expected class '{expected_class_name}' not found")
-
-    maybe_factory = module.__getattribute__(expected_class_name)
-
-    if not issubclass(maybe_factory, expected_base_class):
-        del sys.modules[module_name]
-        raise Exception(f"{python_file_path} : Expected class '{expected_class_name}' does not implements expected "
-                        f"interface")
-
-    factory = cast(expected_base_class, maybe_factory(**kwargs))
-    del sys.modules[module_name]
-    return factory
+    return instance

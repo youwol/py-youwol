@@ -16,7 +16,7 @@ from youwol.auto_download.data import DownloadDataTask
 from youwol.auto_download.flux_project import DownloadFluxProjectTask
 from youwol.auto_download.package import DownloadPackageTask
 from youwol.configurations import api_configuration as configuration, print_invite, assert_python
-from youwol.configuration.youwol_configuration import yw_config, YouwolConfigurationFactory
+from youwol.environment.youwol_environment import yw_config, YouwolEnvironmentFactory
 from youwol.configuration.configuration_validation import ConfigurationLoadingException
 from youwol.middlewares.browser_caching_middleware import BrowserCachingMiddleware
 from youwol.middlewares.dynamic_routing_middleware import DynamicRoutingMiddleware
@@ -106,7 +106,7 @@ def load_initial_config():
 
     async def load():
         try:
-            conf = await YouwolConfigurationFactory.get()
+            conf = await YouwolEnvironmentFactory.get()
             print_invite(conf=conf)
         except ConfigurationLoadingException as e:
             print(e)

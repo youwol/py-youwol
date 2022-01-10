@@ -2,7 +2,7 @@ from youwol.configuration.clients import RemoteClients, LocalClients
 from youwol.services.backs.treedb.models import PathResponse, DriveResponse
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from fastapi import HTTPException
-from youwol.configuration.youwol_configuration import Context
+from youwol.environment.youwol_environment import Context
 
 
 async def ensure_path(path_item: PathResponse, assets_gateway_client: AssetsGatewayClient):

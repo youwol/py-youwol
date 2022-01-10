@@ -18,14 +18,14 @@ from youwol_utils.clients.data_api.data import (
 from youwol_utils.clients.flux.flux import FluxClient
 from .raw_stores.flux_project import FluxProjectsStore
 
-from youwol.configuration.youwol_configuration import yw_config, YouwolConfiguration
+from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
 from youwol.configurations import api_configuration as py_yw_config
 
 
 @dataclass(frozen=True)
 class Configuration:
 
-    yw_config: YouwolConfiguration
+    yw_config: YouwolEnvironment
     open_api_prefix: str
     base_path: str
 

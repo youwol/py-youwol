@@ -3,18 +3,20 @@ import json
 import os
 
 from pathlib import Path
-from typing import List, Dict, Any, Union, Optional, Awaitable
+from typing import Dict, Any, Union, Optional, Awaitable, List
 from pydantic import BaseModel
 
-from youwol.context import Context
-from youwol.utils_low_level import get_public_user_auth_token
-from youwol.configuration.models_config import ConfigurationHandler, configuration_from_json, \
-    configuration_from_python, Events, UserInfo, RemoteGateway, load_class_from_module, IPipelineFactory
-from youwol.middlewares.dynamic_routing.custom_dispatch_rules import AbstractDispatch
-from youwol.models import Label
 from youwol.configuration.clients import LocalClients
-from youwol.configuration.python_function_runner import get_python_function
+from youwol.configuration.models_dispatch import AbstractDispatch
+
+from youwol.context import Context
+from youwol.configuration.models_config import ConfigurationHandler, configuration_from_json, \
+    configuration_from_python, get_object_from_module, IPipelineFactory, Events
+from youwol.environment.models import RemoteGateway, UserInfo
+from youwol.models import Label
+from youwol.routers.custom_commands.models import Command
 from youwol.services.backs.assets_gateway.models import DefaultDriveResponse
+from youwol.utils_low_level import get_public_user_auth_token
 from youwol.web_socket import WebSocketsCache
 
 from youwol.errors import HTTPResponseException
@@ -30,7 +32,7 @@ from youwol.configuration.configuration_validation import (
     CheckSecretHealthy
 )
 from youwol.configuration.models_project import ErrorResponse, Project
-from youwol.configuration.paths import PathsBook
+from youwol.environment.paths import PathsBook
 from youwol_utils import encode_id
 
 
@@ -48,7 +50,7 @@ class DeadlinedCache(BaseModel):
         return margin > 0
 
 
-class YouwolConfiguration(BaseModel):
+class YouwolEnvironment(BaseModel):
 
     available_profiles: List[str]
     http_port: int
@@ -57,7 +59,7 @@ class YouwolConfiguration(BaseModel):
     active_profile: Optional[str]
     cdnAutomaticUpdate: bool
     customDispatches: List[AbstractDispatch]
-    commands: Dict[str, Any]
+    commands: Dict[str, Command]
 
     userEmail: Optional[str]
     selectedRemote: Optional[str]
@@ -143,24 +145,26 @@ Configuration loaded from '{self.pathsBook.config}'
 - cdn packages count: {len(parse_json(self.pathsBook.local_cdn_docdb)['documents'])}
 - assets count: {len(parse_json(self.pathsBook.local_docdb / 'assets' / 'entities' / 'data.json')['documents'])}
 - list of projects:
-{chr(10).join([f"  * {p.path} ({p.pipeline.id})" for p in self.projects])}
+{chr(10).join([f"  * {p.name} at {p.path} with pipeline {p.pipeline.id}" for p in self.projects])}
 - list of redirections:
 {chr(10).join([f"  * {redirection}" for redirection in self.customDispatches])}
+- list of custom commands:
+{chr(10).join([f"  * http://localhost:{self.http_port}/admin/custom-commands/{command}" for command in self.commands.keys()])}
 """
 
 
-class YouwolConfigurationFactory:
-    __cached_config: Optional[YouwolConfiguration] = None
+class YouwolEnvironmentFactory:
+    __cached_config: Optional[YouwolEnvironment] = None
 
     @staticmethod
     async def get():
-        cached = YouwolConfigurationFactory.__cached_config
-        config = cached or await YouwolConfigurationFactory.init()
+        cached = YouwolEnvironmentFactory.__cached_config
+        config = cached or await YouwolEnvironmentFactory.init()
         return config
 
     @staticmethod
     async def reload(profile: str = None):
-        cached = YouwolConfigurationFactory.__cached_config
+        cached = YouwolEnvironmentFactory.__cached_config
         conf = await safe_load(
             path=cached.pathsBook.config,
             profile=profile or get_main_arguments().profile,
@@ -168,16 +172,16 @@ class YouwolConfigurationFactory:
             selected_remote=cached.selectedRemote
         )
 
-        await YouwolConfigurationFactory.trigger_on_load(config=conf)
-        YouwolConfigurationFactory.__cached_config = conf
+        await YouwolEnvironmentFactory.trigger_on_load(config=conf)
+        YouwolEnvironmentFactory.__cached_config = conf
 
     @staticmethod
     async def login(email: Union[str, None], remote_name: Union[str, None], context: Context = None):
-        conf = YouwolConfigurationFactory.__cached_config
+        conf = YouwolEnvironmentFactory.__cached_config
         email, remote_name = await login(email, remote_name, conf.pathsBook.usersInfo,
                                          conf.pathsBook.remotesInfo, context)
 
-        new_conf = YouwolConfiguration(
+        new_conf = YouwolEnvironment(
             openid_host=conf.openid_host,
             userEmail=email,
             selectedRemote=remote_name,
@@ -191,8 +195,8 @@ class YouwolConfigurationFactory:
             cdnAutomaticUpdate=conf.cdnAutomaticUpdate,
             events=conf.events
         )
-        YouwolConfigurationFactory.__cached_config = new_conf
-        await YouwolConfigurationFactory.trigger_on_load(config=conf)
+        YouwolEnvironmentFactory.__cached_config = new_conf
+        await YouwolEnvironmentFactory.trigger_on_load(config=conf)
         return new_conf
 
     @staticmethod
@@ -200,14 +204,14 @@ class YouwolConfigurationFactory:
         path = (await get_full_local_config()).starting_yw_config_path
         conf = await safe_load(path=path, profile=get_main_arguments().profile, user_email=None, selected_remote=None)
 
-        YouwolConfigurationFactory.__cached_config = conf
-        await YouwolConfigurationFactory.trigger_on_load(config=conf)
-        return YouwolConfigurationFactory.__cached_config
+        YouwolEnvironmentFactory.__cached_config = conf
+        await YouwolEnvironmentFactory.trigger_on_load(config=conf)
+        return YouwolEnvironmentFactory.__cached_config
 
     @staticmethod
     def clear_cache():
-        conf = YouwolConfigurationFactory.__cached_config
-        new_conf = YouwolConfiguration(
+        conf = YouwolEnvironmentFactory.__cached_config
+        new_conf = YouwolEnvironment(
             openid_host=conf.openid_host,
             userEmail=conf.userEmail,
             selectedRemote=conf.selectedRemote,
@@ -221,10 +225,10 @@ class YouwolConfigurationFactory:
             cdnAutomaticUpdate=conf.cdnAutomaticUpdate,
             events=conf.events
         )
-        YouwolConfigurationFactory.__cached_config = new_conf
+        YouwolEnvironmentFactory.__cached_config = new_conf
 
     @staticmethod
-    async def trigger_on_load(config: YouwolConfiguration):
+    async def trigger_on_load(config: YouwolEnvironment):
 
         context = Context(config=config, web_socket=WebSocketsCache.environment)
         if not config.events or not config.events.onLoad:
@@ -235,8 +239,8 @@ class YouwolConfigurationFactory:
         await context.info(labels=[Label.STATUS], text="Applied onLoad event's callback", data=data)
 
 
-async def yw_config() -> YouwolConfiguration:
-    return await YouwolConfigurationFactory.get()
+async def yw_config() -> YouwolEnvironment:
+    return await YouwolEnvironmentFactory.get()
 
 
 async def login(
@@ -294,7 +298,7 @@ async def safe_load(
         user_email: Optional[str],
         selected_remote: Optional[RemoteGateway],
         context: Optional[Context] = None,
-) -> YouwolConfiguration:
+) -> YouwolEnvironment:
     check_system_folder_writable = CheckSystemFolderWritable()
     check_database_folder_healthy = CheckDatabasesFolderHealthy()
     check_secret_exists = CheckSecretPathExist()
@@ -309,7 +313,7 @@ async def safe_load(
                 check_database_folder_healthy,
                 check_secret_exists,
                 check_secret_healthy
-            ]
+                ]
         )
 
     loaders = {
@@ -398,10 +402,10 @@ async def safe_load(
 
     for path in targets_dirs:
         try:
-            pipeline_factory = load_class_from_module(
-                python_file_path=path / '.yw_pipeline' / 'yw_pipeline.py',
-                expected_class_name='PipelineFactory',
-                expected_base_class=IPipelineFactory
+            pipeline_factory = get_object_from_module(
+                module_absolute_path=path / '.yw_pipeline' / 'yw_pipeline.py',
+                object_or_class_name='PipelineFactory',
+                object_type=IPipelineFactory
             )
             pipeline = await pipeline_factory.get()
             name = pipeline.projectName(path)
@@ -414,10 +418,12 @@ async def safe_load(
             )
             projects.append(project)
 
+        except SyntaxError as e:
+            print(f"Could not load project in dir '{path}' because of syntax error : {e.msg} ")
         except Exception as e:
-            print(f"Could not load project in dir '{path}' : ", str(e))
+            print(f"Could not load project in dir '{path}' : {e} ")
 
-    youwol_configuration = YouwolConfiguration(
+    youwol_configuration = YouwolEnvironment(
         active_profile=conf_handler.get_profile(),
         available_profiles=conf_handler.get_available_profiles(),
         openid_host=conf_handler.get_openid_host(),
@@ -428,8 +434,7 @@ async def safe_load(
         cdnAutomaticUpdate=conf_handler.get_cdn_auto_update(),
         pathsBook=paths_book,
         projects=projects,
-        commands={key: get_python_function(source_function=source) for (key, source) in
-                  conf_handler.get_commands().items()},
+        commands=conf_handler.get_commands(),
         customDispatches=conf_handler.get_dispatches()
     )
 

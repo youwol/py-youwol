@@ -2,7 +2,7 @@ from typing import Callable
 
 from dataclasses import dataclass
 
-from youwol.configuration.youwol_configuration import yw_config, YouwolConfiguration
+from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
 from .models import ASSETS_TABLE, ACCESS_HISTORY, ACCESS_POLICY
 from youwol_utils import Storage, DocDb, LocalStorageClient, LocalDocDbInMemoryClient
 from youwol_utils.clients.docdb.local_docdb import LocalDocDbClient
@@ -15,7 +15,7 @@ logger.info("Setup assets-backend")
 @dataclass(frozen=True)
 class Configuration:
 
-    yw_config: YouwolConfiguration
+    yw_config: YouwolEnvironment
 
     open_api_prefix: str
     base_path: str

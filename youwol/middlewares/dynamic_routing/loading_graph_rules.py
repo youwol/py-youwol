@@ -10,7 +10,7 @@ import youwol.services.backs.cdn.root_paths as cdn
 from youwol.configuration.models_dispatch import AbstractDispatch
 from youwol.context import Context
 from youwol.services.backs.cdn.configurations import get_configuration
-from youwol.configuration.youwol_configuration import yw_config
+from youwol.environment.youwol_environment import yw_config
 from youwol.services.backs.cdn.models import LoadingGraphBody
 from youwol_utils import PackagesNotFound
 

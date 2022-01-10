@@ -4,8 +4,7 @@ from pydantic.main import BaseModel
 
 from youwol.context import Context
 from youwol.routers.commands.commands_factory import commands_factory
-from youwol.configuration.youwol_configuration import YouwolConfiguration
-from youwol.configuration.youwol_configuration import yw_config
+from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
 from youwol.web_socket import WebSocketsCache
 
 router = APIRouter()
@@ -19,7 +18,7 @@ class BodyCommand(BaseModel):
 async def execute_command(
         request: Request,
         command_name: str,
-        config: YouwolConfiguration = Depends(yw_config)
+        config: YouwolEnvironment = Depends(yw_config)
         ):
 
     body = await request.json()

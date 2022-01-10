@@ -16,13 +16,11 @@ from youwol_utils import retrieve_user_info
 
 from colorama import Fore, Style
 
-
-YouwolConfiguration = "youwol.configuration.youwol_configuration"
+YouwolEnvironment = "youwol.environment.youwol_environment.YouwolEnvironment"
 
 
 @dataclass(frozen=False)
 class ApiConfiguration:
-
     starting_yw_config_path: Path
     open_api_prefix: str
     http_port: int
@@ -35,7 +33,6 @@ Just a few post install actions to take care of and you are good to go.""")
 
 
 async def get_yw_config_starter(main_args: MainArguments):
-
     (conf_path, exists) = ensure_config_file_exists_or_create_it(main_args.config_path)
 
     if exists:
@@ -85,18 +82,17 @@ async def get_yw_config_starter(main_args: MainArguments):
                 "name": user_info['name'],
                 "memberOf": user_info['memberof'],
                 "email": user_info['email']
-                }
             }
         }
+    }
 
-    if not (conf_path.parent/'users-info.json').exists():
+    if not (conf_path.parent / 'users-info.json').exists():
         write_json(user_info, conf_path.parent / 'users-info.json')
 
     return conf_path.parent
 
 
 async def get_full_local_config() -> ApiConfiguration:
-
     main_args = get_main_arguments()
     yw_config_path = await get_yw_config_starter(main_args)
 
@@ -105,14 +101,13 @@ async def get_full_local_config() -> ApiConfiguration:
         open_api_prefix='',
         http_port=main_args.port,
         base_path=""
-        )
+    )
 
 
 api_configuration: ApiConfiguration = asyncio.get_event_loop().run_until_complete(get_full_local_config())
 
 
 def assert_python():
-
     print(f"Running with python:\n\t{sys.executable}\n\t{sys.version}")
     version_info = sys.version_info
     if not ((version_info.major == 3 and version_info.minor == 10) or
@@ -125,8 +120,7 @@ def assert_python():
         exit(1)
 
 
-def print_invite(conf: YouwolConfiguration):
-
+def print_invite(conf: YouwolEnvironment):
     print(f"""{Fore.GREEN} Configuration loaded successfully {Style.RESET_ALL}.
 """)
     print(conf)

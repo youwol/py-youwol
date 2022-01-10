@@ -3,7 +3,7 @@ from typing import Callable, Union, Type, Optional
 from dataclasses import dataclass
 
 from .models import STORIES_TABLE, DOCUMENTS_TABLE, DOCUMENTS_TABLE_BY_ID
-from youwol.configuration.youwol_configuration import yw_config, YouwolConfiguration
+from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
 from youwol_utils import (
     LocalDocDbClient, LocalStorageClient, DocDbClient, StorageClient, CacheClient, LocalCacheClient,
     )
@@ -19,7 +19,7 @@ AuthMiddleware = Union[Type[Middleware], Type[AuthLocalMiddleware]]
 @dataclass(frozen=True)
 class Configuration:
 
-    yw_config: YouwolConfiguration
+    yw_config: YouwolEnvironment
 
     open_api_prefix: str
     base_path: str
