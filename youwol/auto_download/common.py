@@ -103,37 +103,67 @@ async def create_asset_local(
         context: Context
         ):
 
-    local_treedb: TreeDbClient = LocalClients.get_treedb_client(context)
-    local_gtw: AssetsGatewayClient = LocalClients.get_assets_gateway_client(context)
-    remote_gtw = await RemoteClients.get_assets_gateway_client(context)
-    remote_treedb = await RemoteClients.get_treedb_client(context)
+    async with context.start(
+            action=f"Fetch asset {asset_id} of kind {kind}",
+            ) as ctx:
+        local_treedb: TreeDbClient = LocalClients.get_treedb_client(context)
+        local_gtw: AssetsGatewayClient = LocalClients.get_assets_gateway_client(context)
+        remote_gtw = await RemoteClients.get_assets_gateway_client(context)
+        remote_treedb = await RemoteClients.get_treedb_client(context)
 
-    raw_data, metadata, tree_items = await asyncio.gather(
-        get_raw_data(),
-        remote_gtw.get_asset_metadata(asset_id=asset_id),
-        remote_treedb.get_items_from_related_id(related_id=asset_id)
-        )
+        raw_data, metadata, tree_items = await asyncio.gather(
+            get_raw_data(),
+            remote_gtw.get_asset_metadata(asset_id=asset_id),
+            remote_treedb.get_items_from_related_id(related_id=asset_id),
+            return_exceptions=True
+            )
 
-    owning_location, borrowed_locations = await get_remote_paths(
-        remote_treedb=remote_treedb,
-        tree_items=ItemsResponse(**tree_items)
-        )
+        if isinstance(raw_data, Exception):
+            await ctx.error(f"Can not fetch raw part of the asset",
+                            data=raw_data.__dict__)
+            raise raw_data
 
-    owning_folder_id = await get_local_owning_folder_id(
-        owning_location=owning_location,
-        local_treedb=local_treedb,
-        default_folder_id=default_owning_folder_id
-        )
-    await local_gtw.put_asset_with_raw(
-        kind=kind,
-        folder_id=owning_folder_id,
-        data=to_post_raw_data(raw_data)
-        )
-    await sync_borrowed_items(
-        asset_id=asset_id,
-        borrowed_locations=borrowed_locations,
-        local_treedb=local_treedb,
-        local_gtw=local_gtw
-        )
-    # the next line is not fetching images
-    await local_gtw.update_asset(asset_id=asset_id, body=metadata)
+        if isinstance(metadata, Exception):
+            await ctx.error(f"Can not fetch asset's metadata",
+                            data=metadata.__dict__)
+            raise raw_data
+
+        await ctx.info(text="Raw & meta data retrieved", data={
+            "metadata": metadata,
+            "tree_items": tree_items,
+        })
+        owning_location, borrowed_locations = await get_remote_paths(
+            remote_treedb=remote_treedb,
+            tree_items=ItemsResponse(**tree_items)
+            )
+        await ctx.info(text="Explorer paths retrieved", data={
+            "owning_location": owning_location.dict(),
+            "borrowed_locations": [p.dict() for p in borrowed_locations]
+        })
+
+        owning_folder_id = await get_local_owning_folder_id(
+            owning_location=owning_location,
+            local_treedb=local_treedb,
+            default_folder_id=default_owning_folder_id
+            )
+        await ctx.info(text="Owning folder retrieved", data={
+            "owning_folder_id": owning_folder_id
+        })
+
+        await local_gtw.put_asset_with_raw(
+            kind=kind,
+            folder_id=owning_folder_id,
+            data=to_post_raw_data(raw_data)
+            )
+        await ctx.info(text="Asset raw's data downloaded successfully")
+
+        await sync_borrowed_items(
+            asset_id=asset_id,
+            borrowed_locations=borrowed_locations,
+            local_treedb=local_treedb,
+            local_gtw=local_gtw
+            )
+        await ctx.info(text="Borrowed items created successfully")
+        # the next line is not fetching images
+        await local_gtw.update_asset(asset_id=asset_id, body=metadata)
+        await ctx.info(text="Asset metadata uploaded successfully")
