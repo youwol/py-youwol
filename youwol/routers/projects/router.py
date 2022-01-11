@@ -47,13 +47,10 @@ async def pipeline_step_status(
         config: YouwolConfiguration = Depends(yw_config)
         ) -> PipelineStepStatusResponse:
     context = Context(request=request, config=config, web_socket=WebSocketsCache.userChannel)
-    response: Optional[PipelineStepStatusResponse] = None
     async with context.start(
             action="Get pipeline status",
-            labels=[Label.INFO],
-            succeeded_data=lambda _ctx: ('PipelineStepStatusResponse', response),
+            with_labels=[Label.PIPELINE_STEP_STATUS_PENDING],
             with_attributes={
-                'event': 'PipelineStatusPending',
                 'projectId': project_id,
                 'flowId': flow_id,
                 'stepId': step_id
@@ -62,6 +59,7 @@ async def pipeline_step_status(
 
         project, step = await get_project_step(project_id=project_id, step_id=step_id, context=ctx)
         response = await get_status(project=project, flow_id=flow_id, step=step, context=ctx)
+        await ctx.send(response)
         return response
 
 
@@ -78,7 +76,6 @@ async def project_status(
     response: Optional[ProjectStatusResponse] = None
     async with context.start(
             action="Get project status",
-            labels=[Label.INFO],
             succeeded_data=lambda _ctx: ('ProjectStatusResponse', response),
             with_attributes={
                 'projectId': project_id
@@ -110,7 +107,6 @@ async def flow_status(
     response: Optional[PipelineStatusResponse] = None
     async with context.start(
             action=f"Get flow '{flow_id}' status",
-            labels=[Label.INFO],
             succeeded_data=lambda _ctx: ('PipelineStatusResponse', response),
             with_attributes={
                 'projectId': project_id,
@@ -141,7 +137,7 @@ async def project_artifacts(
     response: Optional[ArtifactsResponse] = None
     async with context.start(
             action="Get project's artifact",
-            labels=[Label.INFO],
+            with_labels=[Label.INFO],
             succeeded_data=lambda _ctx: ('ArtifactsResponse', response),
             with_attributes={
                 'projectId': project_id,
@@ -190,9 +186,8 @@ async def run_pipeline_step(
 
     async with context.start(
             action="Run pipeline-step",
-            labels=[Label.INFO],
+            with_labels=[Label.PIPELINE_STEP_STATUS_PENDING],
             with_attributes={
-                'event': 'PipelineStatusPending',
                 'projectId': project_id,
                 'flowId': flow_id,
                 'stepId': step_id
@@ -252,7 +247,7 @@ async def cdn_status(
     response: Optional[CdnResponse] = None
     async with context.start(
             action="Get local cdn status",
-            labels=[Label.INFO],
+            with_labels=[Label.INFO],
             succeeded_data=lambda _ctx: ('CdnResponse', response),
             with_attributes={'event': 'CdnResponsePending', 'projectId': project_id}
             ) as _ctx:

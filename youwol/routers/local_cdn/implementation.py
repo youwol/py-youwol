@@ -3,7 +3,7 @@ from itertools import groupby
 from typing import NamedTuple, List
 from fastapi import HTTPException
 
-from youwol.auto_download.common import create_asset_local
+from youwol.routers.environment.download_assets.common import create_asset_local
 from youwol.configuration.clients import RemoteClients
 from youwol.configuration.youwol_configuration import Context
 from youwol.models import Label
@@ -120,7 +120,7 @@ async def download_package(
 
     async with context.start(
             action=f"download package {package_name}#{version}",
-            labels=[Label.PACKAGE_DOWNLOADING],
+            with_labels=[Label.PACKAGE_DOWNLOADING],
             with_attributes={
                 'packageName': package_name,
                 'packageVersion': version,

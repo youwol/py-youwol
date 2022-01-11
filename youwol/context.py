@@ -5,7 +5,7 @@ import uuid
 
 from async_generator import async_generator, yield_, asynccontextmanager
 
-from typing import Union, NamedTuple, Callable, Awaitable, Optional, List, Tuple, TypeVar
+from typing import Union, NamedTuple, Callable, Awaitable, Optional, List
 
 from pydantic import BaseModel, Json
 from starlette.requests import Request
@@ -60,6 +60,7 @@ class Context(NamedTuple):
     parent_uid: Union[str, None] = None
 
     with_attributes: JSON = {}
+    with_labels: List[Label] = []
     download_thread: AssetDownloadThread = None
 
     async def send_response(self, response: BaseModel):
@@ -70,20 +71,16 @@ class Context(NamedTuple):
     @async_generator
     async def start(self,
                     action: str,
-                    labels: List[Label] = None,
+                    with_labels: List[Label] = None,
                     with_attributes: JSON = None,
-                    succeeded_data: Callable[
-                        [Context],
-                        Tuple[str, Union[BaseModel, JSON, float, int, bool, str]]
-                    ] = None,
                     on_enter: CallableBlock = None,
                     on_exit: CallableBlock = None,
                     on_exception: CallableBlockException = None):
         with_attributes = with_attributes or {}
-        labels = labels or []
+        with_labels = with_labels or []
         ctx = Context(web_socket=self.web_socket, config=self.config, uid=str(uuid.uuid4()),
-                      request=self.request, parent_uid=self.uid, with_attributes={**self.with_attributes,
-                                                                                  **with_attributes})
+                      request=self.request, parent_uid=self.uid, with_labels=with_labels,
+                      with_attributes={**self.with_attributes, **with_attributes})
 
         async def execute_block(block: Optional[Union[CallableBlock, CallableBlockException]],
                                 exception: Optional[Exception] = None):
@@ -94,26 +91,25 @@ class Context(NamedTuple):
                 await block
 
         try:
-            await ctx.info(text=action, labels=[Label.STARTED, *labels])
+            await ctx.info(text=action, labels=[Label.STARTED, *with_labels])
             await execute_block(on_enter)
             await yield_(ctx)
         except Exception as e:
             await ctx.abort(
                 text=f"Exception raised",
                 data=e.__dict__,
-                labels=[Label.EXCEPTION, *labels]
+                labels=[Label.EXCEPTION, *with_labels]
             )
             await execute_block(on_exception, e)
             await execute_block(on_exit)
             traceback.print_exc()
             raise e
         else:
-            data_type, data = succeeded_data(ctx) if succeeded_data else (None, None)
-            await ctx.info(text="", labels=[Label.DONE, data_type, *labels], data=data)
+            await ctx.info(text="", labels=[Label.DONE, *with_labels])
             await execute_block(on_exit)
 
     async def send(self, data: BaseModel):
-        await log(level=LogLevel.DATA, text="", labels=[Label.DATA, data.__class__.__name__],
+        await log(level=LogLevel.DATA, text="", labels=[Label.DATA, *self.with_labels, data.__class__.__name__],
                   with_attributes=self.with_attributes, data=data, context_id=self.uid,
                   parent_context_id=self.parent_uid, web_socket=self.web_socket)
 
