@@ -4,11 +4,11 @@ from typing import List
 from starlette.requests import Request
 from fastapi import APIRouter, Depends
 
+from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
 from youwol.routers.local_cdn.implementation import get_latest_local_cdn_version, check_updates_from_queue, \
     download_packages_from_queue
 from youwol.context import Context
 from youwol.routers.local_cdn.models import CheckUpdatesResponse, CheckUpdateResponse, DownloadPackagesBody
-from youwol.configuration.youwol_configuration import YouwolConfiguration, yw_config
 from youwol.web_socket import WebSocketsCache
 
 router = APIRouter()
@@ -20,7 +20,7 @@ router = APIRouter()
             )
 async def collect_updates(
         request: Request,
-        config: YouwolConfiguration = Depends(yw_config)
+        config: YouwolEnvironment = Depends(yw_config)
         ):
 
     context = Context(
@@ -56,7 +56,7 @@ async def collect_updates(
 async def download(
         request: Request,
         body: DownloadPackagesBody,
-        config: YouwolConfiguration = Depends(yw_config)
+        config: YouwolEnvironment = Depends(yw_config)
         ):
 
     context = Context(

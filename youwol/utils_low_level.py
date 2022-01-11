@@ -1,10 +1,12 @@
-# import asyncio
+import importlib
 import shutil
 import tempfile
 from collections import Callable, Iterable
 from enum import Enum
+from importlib.machinery import SourceFileLoader
+from importlib.util import spec_from_loader
 from pathlib import Path, PosixPath
-from typing import Any, Union, Mapping, List
+from typing import Any, Union, Mapping, List, Type, cast, TypeVar
 import re
 from fastapi import HTTPException
 import aiohttp
@@ -155,3 +157,42 @@ async def redirect_request(
         if incoming_request.method == 'DELETE':
             async with await session.delete(url=redirect_url, data=data,  params=params, headers=headers) as resp:
                 return await forward_response(resp)
+
+
+T = TypeVar('T')
+
+
+def get_object_from_module(
+        module_absolute_path: Path,
+        object_or_class_name: str,
+        object_type: Type[T],
+        **object_instantiation_kwargs
+) -> T:
+    def get_instance_from_module(imported_module):
+        if not hasattr(imported_module, object_or_class_name):
+            raise Exception(f"{module_absolute_path} : Expected class '{object_or_class_name}' not found")
+
+        maybe_class_or_var = imported_module.__getattribute__(object_or_class_name)
+
+        if isinstance(maybe_class_or_var, object_type):
+            return cast(object_type, maybe_class_or_var)
+
+        if issubclass(maybe_class_or_var, object_type):
+            return cast(object_type, maybe_class_or_var(**object_instantiation_kwargs))
+
+        raise Exception(f"{module_absolute_path} : Expected class '{object_or_class_name}'"
+                        f" does not implements expected type '{object_type}")
+
+    module_name = module_absolute_path.stem
+    try:
+        loader = SourceFileLoader(module_name, str(module_absolute_path))
+        spec = spec_from_loader(module_name, loader)
+        module = importlib.util.module_from_spec(spec)
+        loader.exec_module(module)
+        instance = get_instance_from_module(module)
+    except SyntaxError as e:
+        raise Exception(f"{module_absolute_path} : Syntax error '{e}'")
+    except NameError as e:
+        raise Exception(f"{module_absolute_path} :Name error '{e}")
+
+    return instance

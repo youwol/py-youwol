@@ -1,12 +1,10 @@
-
-
 import pprint
 import time
 from abc import ABC
 from dataclasses import dataclass
 from itertools import groupby
 
-Context = 'youwol.context.Context'
+from youwol.context import Context
 
 
 class DownloadLogger:

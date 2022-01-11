@@ -5,8 +5,8 @@ from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response, JSONResponse
 
-from youwol.configuration.clients import RemoteClients, LocalClients
-from youwol.configuration.models_dispatch import AbstractDispatch
+from youwol.environment.clients import RemoteClients, LocalClients
+from youwol.middlewares.models_dispatch import AbstractDispatch
 from youwol.context import Context
 from youwol.services.backs.assets_gateway.models import ChildrenResponse, ItemResponse, FolderResponse
 from youwol.utils_low_level import JSON

@@ -17,7 +17,7 @@ from youwol_utils import JSON
 
 
 AssetDownloadThread = "youwol.auto_download.auto_download_thread"
-YouwolConfiguration = "youwol.configuration.youwol_configuration"
+YouwolEnvironment = 'youwol.environment.youwol_environment.YouwolEnvironment'
 
 
 class MessageWebSocket(BaseModel):
@@ -53,7 +53,7 @@ async def log(
 class Context(NamedTuple):
 
     web_socket: WebSocket
-    config: YouwolConfiguration
+    config: YouwolEnvironment
     request: Request = None
 
     uid: Union[str, None] = 'root'

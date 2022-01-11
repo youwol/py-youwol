@@ -3,8 +3,8 @@ from typing import List
 from fastapi import HTTPException
 from pydantic import BaseModel
 
-from youwol.configuration.youwol_configuration import YouwolConfiguration
-from youwol.configuration.clients import RemoteClients
+from youwol.environment.youwol_environment import YouwolEnvironment
+from youwol.environment.clients import RemoteClients
 from youwol.context import Context
 from youwol.models import Label
 from youwol.routers.environment.upload_assets.models import UploadTask
@@ -34,7 +34,7 @@ class Library(BaseModel):
     rawId: str
 
 
-def get_local_package(asset_id: str, config: YouwolConfiguration) -> Library:
+def get_local_package(asset_id: str, config: YouwolEnvironment) -> Library:
     """
     Not populated with tree items
     """

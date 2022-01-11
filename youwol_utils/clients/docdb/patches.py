@@ -1,10 +1,9 @@
-from typing import Dict
+from typing import Dict, Any
 
-from backend_utils.types import JSON
+JSON = Any
 
 
 def compare_schemas(left: Dict[str, any], right: Dict[str, any]):
-
     left_dict = {c["name"]: c["type"] for c in left["columns"]}
     right_dict = {c["name"]: c["type"] for c in right["columns"]}
     left_ok = all([right_dict.get(k, None) == v for k, v in left_dict.items()])
@@ -17,7 +16,7 @@ def compare_schemas(left: Dict[str, any], right: Dict[str, any]):
 
 def patch_table_schema(table: JSON):
     """
-    When getting table the schema returned include implementation details as columns (e.g. owner_id, owner_name, etc),
+    When getting table the schema returned include implementation details as columns (e.g. owner_id, owner_name, etc.),
     we want to remove those columns here such that we recover the schema that we initially posted
     """
     to_remove = ["owner_id", "owner_name", "owner_kind"]
@@ -26,4 +25,4 @@ def patch_table_schema(table: JSON):
         "columns": [c for c in table["columns"] if c["name"] not in to_remove],
         "name": table["name"],
         "partition_key": [k for k in table["partition_key"] if k not in to_remove]
-        }
+    }

@@ -4,8 +4,8 @@ from typing import NamedTuple, List
 from fastapi import HTTPException
 
 from youwol.routers.environment.download_assets.common import create_asset_local
-from youwol.configuration.clients import RemoteClients
-from youwol.configuration.youwol_configuration import Context
+from youwol.context import Context
+from youwol.environment.clients import RemoteClients
 from youwol.models import Label
 from youwol.routers.local_cdn.models import CheckUpdateResponse, UpdateStatus, PackageVersionInfo, \
     DownloadedPackageResponse, DownloadPackageBody

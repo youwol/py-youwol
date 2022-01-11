@@ -8,14 +8,14 @@ from pathlib import Path
 from typing import List, Union, Set, Dict, Any, Callable, Awaitable, Iterable, cast, Optional
 from pydantic import BaseModel
 from aiostream import stream
-from youwol.configuration.paths import PathsBook
+
+from youwol.context import Context, YouwolEnvironment
+from youwol.environment.paths import PathsBook
 from youwol.exceptions import CommandException
 from youwol.models import Label
 from youwol.utils_paths import matching_files, parse_json
 from youwol_utils import JSON, files_check_sum
 
-Context = 'youwol.dashboard.back.context.Context'
-YouwolConfiguration = 'youwol.dashboard.back.configuration.youwol_configuration.YouwolConfiguration'
 FlowId = str
 
 
@@ -215,7 +215,7 @@ class PipelineStep(BaseModel):
         files = await self.get_sources(project=project, flow_id=flow_id, context=context)
         if files is None:
             return None, []
-        await context.info(text='got file listing', data=[str(f) for f in files])
+        await context.info(text='got file listing', data={"files": [str(f) for f in files]})
         checksum = files_check_sum(files)
         return checksum, files
 
@@ -249,14 +249,14 @@ class Flow(BaseModel):
 class Pipeline(BaseModel):
 
     id: str
-    language: str = None
-    compiler: str = None
-    output: str = None
+    language: Optional[str] = None
+    compiler: Optional[str] = None
+    output: Optional[str] = None
     description: str = ""
-    skeleton: Union[Skeleton, Callable[[YouwolConfiguration], Skeleton]] = None
+    skeleton: Union[Skeleton, Callable[[YouwolEnvironment], Skeleton]] = None
     steps: List[PipelineStep]
     flows: List[Flow]
-    extends: str = None
+    extends: Optional[str] = None
     dependencies: Callable[['Project', Context], Set[str]] = None
     projectName: Callable[[Path], str]
     projectVersion: Callable[[Path], str]

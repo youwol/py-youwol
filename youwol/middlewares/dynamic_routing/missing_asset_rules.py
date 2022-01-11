@@ -7,7 +7,7 @@ from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
 
-from ...configuration.models_dispatch import AbstractDispatch
+from youwol.middlewares.models_dispatch import AbstractDispatch
 
 
 class GetRawDispatch(AbstractDispatch):

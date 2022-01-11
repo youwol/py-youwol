@@ -1,0 +1,48 @@
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import List, Dict, Callable, Optional, Union, Any, Awaitable
+
+from pydantic import BaseModel
+
+from youwol.configuration.models_project import Pipeline
+from youwol.context import Context
+
+YouwolEnvironment = "youwol.environment.youwol_environment"
+
+
+class UserInfo(BaseModel):
+    id: str
+    name: str
+    email: str
+    memberOf: List[str]
+
+
+class RemoteGateway(BaseModel):
+    name: str
+    host: str
+    metadata: Dict[str, str]
+
+
+class Secret(BaseModel):
+    clientId: str
+    clientSecret: str
+
+
+@dataclass(frozen=False)
+class ApiConfiguration:
+    open_api_prefix: str
+    base_path: str
+
+
+class IPipelineFactory(ABC):
+
+    def __init__(self, **kwargs):
+        pass
+
+    @abstractmethod
+    async def get(self) -> Pipeline:
+        return NotImplemented
+
+
+class Events(BaseModel):
+    onLoad: Callable[[YouwolEnvironment, Context], Optional[Union[Any, Awaitable[Any]]]] = None

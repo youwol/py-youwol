@@ -2,7 +2,7 @@ import json
 from dataclasses import dataclass
 
 from youwol_utils import JSON
-from youwol.configuration.clients import RemoteClients, LocalClients
+from youwol.environment.clients import RemoteClients, LocalClients
 from youwol.routers.environment.upload_assets.models import UploadTask
 
 

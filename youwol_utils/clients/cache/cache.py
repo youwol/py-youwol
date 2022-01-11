@@ -16,7 +16,7 @@ class CacheClient:
         try:
             import redis
             self.cache = redis.Redis(host=self.host)
-        except:
+        except ModuleNotFoundError:
             pass
 
     async def get(self, name: str, **kwargs) -> Union[JSON, None]:

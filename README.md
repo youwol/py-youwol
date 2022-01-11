@@ -43,7 +43,7 @@ This environment provides:
     also we did not have the time to thoroughly test the platform with other browsers than Chrome for now.
 *   To build a flux-pack ensure a node version > v14.x 
 The YouWol FSE environment can be completed by installing *pipelines*, 
-those may require additional installation (e.g. *node*, *gcc*, etc); we refer the reader to their documentation.
+those may require additional installation (e.g. *node*, *gcc*, etc.); we refer the reader to their documentation.
 
 ## Installation from pypi
 
@@ -77,7 +77,7 @@ pip install youwol
 
 ## Installation from source
 
-Clone the github repository, e.g. for master:
+Clone the gitHub repository, e.g. for master:
 ```bash
 git clone https://github.com/youwol/py-youwol.git
 ```
@@ -154,7 +154,7 @@ They can be installed and published from/to pypi.
 Let's have a try with the creation of a new **Flux-pack**:
 -    from the [dashboard](http://localhost:2000/ui/dashboard-developer/) create a new package:
      **My Computer** > **Packages** > **new package**
--    select the pipeline **flux-pack** in the drop down menu at the top of the modal, 
+-    select the pipeline **flux-pack** in the dropdown menu at the top of the modal, 
      give it a name & description, and validate (name can include namespace, e.g. '@myspace/xxx' )
 -    you should see an **Install** invite in the dashboard, proceed with it
 -    once done, *build, test, publish* using the icon &#8594; (in the column **Actions**); 
@@ -169,13 +169,13 @@ From the [workspace-explorer](http://localhost:2000/ui/workspace-explorer/), cre
 -    navigate into **private** from the explorer on the left
 -    if needed, create a drive and a folder using right click menus
      > The workspace-explorer is based on a folders/files explorer just like a personal computer.
-     > It can be ambigueous to distinguish drive from folder, they serve about the same purpose: grouping
+     > It can be ambiguous to distinguish drive from folder, they serve about the same purpose: grouping
      > entities together. For now, you can consider a drive just as a top-level folder.
--    right click on the folder and select **new app**, then click **construct**, **flux-builder** application 
+-    right-click on the folder and select **new app**, then click **construct**, **flux-builder** application 
      should start
      
 Import the module exposed in the previously built **flux-pack**
--    right click on the top *builder-panel* and select *import module(s)*
+-    right-click on the top *builder-panel* and select *import module(s)*
 -    expand the explorer and navigate in **private/default-drive**, expand your package
 -    select 'a simple module' and click 'OK'
 

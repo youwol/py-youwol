@@ -2,7 +2,7 @@ import os
 import shutil
 from typing import Tuple, List
 from youwol.configuration.models_project import Project, PipelineStep, Artifact, Flow, Link, Manifest
-from youwol.configuration.paths import PathsBook
+from youwol.environment.paths import PathsBook
 from youwol.context import Context
 from youwol.exceptions import CommandException
 from youwol.routers.projects.models import (

@@ -5,7 +5,7 @@ from threading import Thread
 from typing import Dict, Any
 
 from youwol.routers.environment.download_assets.models import DownloadLogger
-from youwol.configuration.clients import RemoteClients
+from youwol.environment.clients import RemoteClients
 from youwol_utils import YouWolException
 
 

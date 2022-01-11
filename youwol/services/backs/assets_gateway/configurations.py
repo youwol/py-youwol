@@ -18,14 +18,13 @@ from youwol_utils.clients.data_api.data import (
 from youwol_utils.clients.flux.flux import FluxClient
 from .raw_stores.flux_project import FluxProjectsStore
 
-from youwol.configuration.youwol_configuration import yw_config, YouwolConfiguration
-from youwol.configurations import api_configuration as py_yw_config
+from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
 
 
 @dataclass(frozen=True)
 class Configuration:
 
-    yw_config: YouwolConfiguration
+    yw_config: YouwolEnvironment
     open_api_prefix: str
     base_path: str
 
@@ -72,12 +71,12 @@ async def get_configuration(config_yw=None):
                              )
 
     data_client = DataClient(storage=cast(Any, storage), docdb=cast(Any, docdb))
-    flux_client = FluxClient(url_base=f"http://localhost:{py_yw_config.http_port}/api/flux-backend")
-    cdn_client = CdnClient(url_base=f"http://localhost:{py_yw_config.http_port}/api/cdn-backend")
-    stories_client = StoriesClient(url_base=f"http://localhost:{py_yw_config.http_port}/api/stories-backend")
-    treedb_client = TreeDbClient(url_base=f"http://localhost:{py_yw_config.http_port}/api/treedb-backend")
-    assets_client = AssetsClient(url_base=f"http://localhost:{py_yw_config.http_port}/api/assets-backend")
-    assets_gtw_client = AssetsGatewayClient(url_base=f"http://localhost:{py_yw_config.http_port}/api/assets-gateway")
+    flux_client = FluxClient(url_base=f"http://localhost:{config_yw.http_port}/api/flux-backend")
+    cdn_client = CdnClient(url_base=f"http://localhost:{config_yw.http_port}/api/cdn-backend")
+    stories_client = StoriesClient(url_base=f"http://localhost:{config_yw.http_port}/api/stories-backend")
+    treedb_client = TreeDbClient(url_base=f"http://localhost:{config_yw.http_port}/api/treedb-backend")
+    assets_client = AssetsClient(url_base=f"http://localhost:{config_yw.http_port}/api/assets-backend")
+    assets_gtw_client = AssetsGatewayClient(url_base=f"http://localhost:{config_yw.http_port}/api/assets-gateway")
 
     def docdb_factory(keyspace: str, table: str, primary: str):
         return LocalDocDbClient(root_path=config_yw.pathsBook.local_docdb, keyspace_name=keyspace,

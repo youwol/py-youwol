@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends
 from starlette.requests import Request
 
 from youwol.configuration.models_project import Project, Manifest
-from youwol.configuration.paths import PathsBook
+from youwol.environment.paths import PathsBook
 from youwol.context import Context
 from youwol.exceptions import CommandException
 from youwol.models import Label
@@ -27,8 +27,7 @@ from youwol.routers.projects.models import (
     PipelineStepStatusResponse, PipelineStatusResponse, ArtifactsResponse, ProjectStatusResponse, CdnResponse,
     CdnVersionResponse,
     )
-from youwol.configuration.youwol_configuration import YouwolConfiguration
-from youwol.configuration.youwol_configuration import yw_config
+from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
 from youwol_utils import decode_id
 from youwol_utils.utils_paths import parse_json
 
@@ -44,7 +43,7 @@ async def pipeline_step_status(
         project_id: str,
         flow_id: str,
         step_id: str,
-        config: YouwolConfiguration = Depends(yw_config)
+        config: YouwolEnvironment = Depends(yw_config)
         ) -> PipelineStepStatusResponse:
     context = Context(request=request, config=config, web_socket=WebSocketsCache.userChannel)
     async with context.start(
@@ -69,7 +68,7 @@ async def pipeline_step_status(
 async def project_status(
         request: Request,
         project_id: str,
-        config: YouwolConfiguration = Depends(yw_config)
+        config: YouwolEnvironment = Depends(yw_config)
         ):
     context = Context(request=request, config=config, web_socket=WebSocketsCache.userChannel)
 
@@ -101,7 +100,7 @@ async def flow_status(
         request: Request,
         project_id: str,
         flow_id: str,
-        config: YouwolConfiguration = Depends(yw_config)
+        config: YouwolEnvironment = Depends(yw_config)
         ):
     context = Context(request=request, config=config, web_socket=WebSocketsCache.userChannel)
     response: Optional[PipelineStatusResponse] = None
@@ -131,7 +130,7 @@ async def project_artifacts(
         request: Request,
         project_id: str,
         flow_id: str,
-        config: YouwolConfiguration = Depends(yw_config)
+        config: YouwolEnvironment = Depends(yw_config)
         ):
     context = Context(request=request, config=config, web_socket=WebSocketsCache.userChannel)
     response: Optional[ArtifactsResponse] = None
@@ -167,7 +166,7 @@ async def run_pipeline_step(
         project_id: str,
         flow_id: str,
         step_id: str,
-        config: YouwolConfiguration = Depends(yw_config)
+        config: YouwolEnvironment = Depends(yw_config)
         ):
     context = Context(request=request, config=config, web_socket=WebSocketsCache.userChannel)
 
@@ -240,7 +239,7 @@ async def run_pipeline_step(
 async def cdn_status(
         request: Request,
         project_id: str,
-        config: YouwolConfiguration = Depends(yw_config)
+        config: YouwolEnvironment = Depends(yw_config)
         ):
 
     context = Context(request=request, config=config, web_socket=WebSocketsCache.userChannel)

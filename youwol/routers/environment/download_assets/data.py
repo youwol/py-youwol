@@ -7,7 +7,7 @@ from youwol.routers.environment.download_assets.common import (
     create_asset_local,
     )
 from youwol.routers.environment.download_assets.models import DownloadLogger, DownloadTask
-from youwol.configuration.clients import RemoteClients, LocalClients
+from youwol.environment.clients import RemoteClients, LocalClients
 from youwol.context import Context
 from youwol.services.backs.treedb.models import ItemsResponse
 from youwol_utils.clients.assets.assets import AssetsClient

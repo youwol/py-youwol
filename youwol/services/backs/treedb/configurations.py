@@ -2,7 +2,7 @@ from typing import Any, Callable, Optional
 
 from dataclasses import dataclass
 
-from youwol.configuration.youwol_configuration import yw_config, YouwolConfiguration
+from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
 from youwol_utils import get_valid_bucket_name
 from .models import create_doc_dbs, DocDbs, namespace
 from youwol_utils.clients.docdb.local_docdb import LocalDocDbClient
@@ -15,7 +15,7 @@ logger.info("Setup treedb-backend")
 @dataclass(frozen=True)
 class Configuration:
 
-    yw_config: YouwolConfiguration
+    yw_config: YouwolEnvironment
 
     open_api_prefix: str
     base_path: str
