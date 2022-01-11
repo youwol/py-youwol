@@ -42,7 +42,6 @@ async def synchronize_permissions(assets_gtw_client: AssetsGatewayClient, asset_
 
     async with context.start(
             action="synchronize_permissions",
-            labels=[Label.INFO],
             with_attributes={
                 'assetId': asset_id
                 }
@@ -69,7 +68,6 @@ async def create_borrowed_items(asset_id: str, tree_id: str, assets_gtw_client: 
 
     async with context.start(
             action="create_borrowed_items",
-            labels=[Label.INFO],
             with_attributes={
                 'assetId': asset_id,
                 'treeId': tree_id
@@ -91,7 +89,6 @@ async def create_borrowed_item(borrowed_tree_id: str, item: Mapping[str, any], a
                                context: Context):
     async with context.start(
             action="create_borrowed_items",
-            labels=[Label.INFO],
             with_attributes={
                 'borrowed_tree_id': borrowed_tree_id,
                 'tree_id': item["item_id"]
@@ -130,7 +127,6 @@ async def synchronize_metadata(asset_id: str, assets_gtw_client: AssetsGatewayCl
 
     async with context.start(
             action="synchronize_metadata",
-            labels=[Label.INFO],
             with_attributes={
                 'asset_id': asset_id
                 }
@@ -194,7 +190,6 @@ async def upload_asset(
 
     async with context.start(
             action="upload_asset",
-            labels=[Label.INFO],
             with_attributes={
                 'asset_id': asset_id
                 }
