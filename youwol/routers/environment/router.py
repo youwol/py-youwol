@@ -111,13 +111,10 @@ async def status(
         request: Request,
         config: YouwolEnvironment = Depends(yw_config)
         ):
-
     context = Context(config=config, request=request, web_socket=WebSocketsCache.userChannel)
-    response: Optional[StatusResponse] = None
     async with context.start(
-            action="Get environment status",
-            succeeded_data=lambda _ctx: ('EnvironmentStatusResponse', response)
-            ) as _ctx:
+            action="Get environment status"
+            ) as ctx:
         connected = await connect_to_remote(config=config, context=context)
         remote_gateway_info = config.get_remote_info()
         if remote_gateway_info:
@@ -132,6 +129,7 @@ async def status(
             remoteGatewayInfo=remote_gateway_info,
             remotesInfo=list(remotes_info)
             )
+        await ctx.send(response)
         return response
 
 
