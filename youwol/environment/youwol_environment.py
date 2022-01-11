@@ -10,12 +10,12 @@ from typing import Dict, Any, Union, Optional, Awaitable, List
 from fastapi import HTTPException
 from pydantic import BaseModel
 
+from youwol.configuration.models_config_module import configuration_from_python
 from youwol.environment.clients import LocalClients
 from youwol.middlewares.models_dispatch import AbstractDispatch
 
 from youwol.context import Context
 from youwol.configuration.config_from_static_file import configuration_from_json
-from youwol.configuration.config_from_module import configuration_from_python
 from youwol.configuration.configuration_handler import ConfigurationHandler
 from youwol.environment.models import RemoteGateway, UserInfo, ApiConfiguration, IPipelineFactory, Events
 from youwol.models import Label
