@@ -12,7 +12,8 @@ from starlette.requests import Request
 from youwol.environment.youwol_environment import YouwolEnvironmentFactory, yw_config, api_configuration
 from youwol_utils import YouWolException, youwol_exception_handler
 
-from youwol.context import Context, YouwolEnvironment
+from youwol.context import Context
+from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol.utils_low_level import start_web_socket
 from youwol.web_socket import WebSocketsCache
 from youwol.routers import native_backends, admin, authorization
@@ -138,7 +139,8 @@ def main():
     except ConfigurationLoadingException as e:
         print(e)
         exit()
-    Context.download_thread.join()
+    finally:
+        Context.download_thread.join()
 
 
 if __name__ == "__main__":

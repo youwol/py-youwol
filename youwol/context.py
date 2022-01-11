@@ -11,13 +11,10 @@ from pydantic import BaseModel, Json
 from starlette.requests import Request
 from starlette.websockets import WebSocket
 
+from youwol.environment.forward_declaration import YouwolEnvironment, AssetDownloadThread
 from youwol.utils_low_level import to_json
 from youwol.models import LogLevel, Label
 from youwol_utils import JSON
-
-
-AssetDownloadThread = "youwol.auto_download.auto_download_thread"
-YouwolEnvironment = 'youwol.environment.youwol_environment.YouwolEnvironment'
 
 
 class MessageWebSocket(BaseModel):

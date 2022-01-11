@@ -1,7 +1,7 @@
 
 from collections import defaultdict
 from typing import List, Dict
-from youwol.configuration.models_project import Project
+from youwol.environment.models_project import Project
 from youwol.context import Context
 from pydantic import BaseModel
 from youwol.routers.projects.models import (

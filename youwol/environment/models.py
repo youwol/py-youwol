@@ -4,10 +4,9 @@ from typing import List, Dict, Callable, Optional, Union, Any, Awaitable
 
 from pydantic import BaseModel
 
-from youwol.configuration.models_project import Pipeline
+from youwol.environment.models_project import Pipeline
 from youwol.context import Context
-
-YouwolEnvironment = "youwol.environment.youwol_environment"
+from youwol.environment.forward_declaration import YouwolEnvironment
 
 
 class UserInfo(BaseModel):
@@ -46,3 +45,12 @@ class IPipelineFactory(ABC):
 
 class Events(BaseModel):
     onLoad: Callable[[YouwolEnvironment, Context], Optional[Union[Any, Awaitable[Any]]]] = None
+
+
+class IConfigurationCustomizer(ABC):
+    def __init__(self, **kwargs):
+        pass
+
+    @abstractmethod
+    def customize(self, _youwol_configuration: YouwolEnvironment) -> YouwolEnvironment:
+        return NotImplemented

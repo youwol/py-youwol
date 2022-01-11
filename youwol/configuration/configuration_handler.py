@@ -7,9 +7,8 @@ from typing import Optional, List, Union, Dict
 from youwol.configuration.defaults import default_openid_host, default_http_port, default_path_data_dir, \
     default_path_cache_dir, default_path_projects_dir, default_port_range_start, default_port_range_end
 from youwol.configuration.models_config import Profiles, ConfigurationData, PortRange, ModuleLoading, \
-    IConfigurationCustomizer, \
     CascadeBaseProfile, CascadeAppend, CascadeReplace, ConfigPath, CdnOverride, Redirection
-from youwol.environment.models import Events
+from youwol.environment.models import Events, IConfigurationCustomizer
 from youwol.utils_low_level import get_object_from_module
 from youwol.middlewares.models_dispatch import CdnOverrideDispatch, RedirectDispatch, AbstractDispatch
 from youwol.utils_paths import app_dirs, PathException, fail_on_missing_dir, ensure_dir_exists
