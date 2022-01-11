@@ -10,7 +10,7 @@ from typing import Dict, Any, Union, Optional, Awaitable, List
 from fastapi import HTTPException
 from pydantic import BaseModel
 
-from youwol.configuration.models_config_module import configuration_from_python
+from youwol.configuration.config_from_module import configuration_from_python
 from youwol.environment.clients import LocalClients
 from youwol.middlewares.models_dispatch import AbstractDispatch
 
