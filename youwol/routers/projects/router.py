@@ -4,7 +4,6 @@ import itertools
 import os
 import shutil
 from datetime import datetime
-from typing import Optional
 
 from fastapi import APIRouter, Depends
 
@@ -72,10 +71,8 @@ async def project_status(
         ):
     context = Context(request=request, config=config, web_socket=WebSocketsCache.userChannel)
 
-    response: Optional[ProjectStatusResponse] = None
     async with context.start(
             action="Get project status",
-            succeeded_data=lambda _ctx: ('ProjectStatusResponse', response),
             with_attributes={
                 'projectId': project_id
                 }
@@ -90,6 +87,7 @@ async def project_status(
             workspaceDependencies=workspace_dependencies
             )
         await cdn_status(request=request, project_id=project_id, config=config)
+        await ctx.send(response)
         return response
 
 
@@ -103,10 +101,9 @@ async def flow_status(
         config: YouwolEnvironment = Depends(yw_config)
         ):
     context = Context(request=request, config=config, web_socket=WebSocketsCache.userChannel)
-    response: Optional[PipelineStatusResponse] = None
+
     async with context.start(
             action=f"Get flow '{flow_id}' status",
-            succeeded_data=lambda _ctx: ('PipelineStatusResponse', response),
             with_attributes={
                 'projectId': project_id,
                 'flowId': flow_id
@@ -120,6 +117,7 @@ async def flow_status(
             for step in steps
             ])
         response = PipelineStatusResponse(projectId=project_id, steps=[s for s in steps_status])
+        await ctx.send(response)
         return response
 
 
@@ -133,11 +131,10 @@ async def project_artifacts(
         config: YouwolEnvironment = Depends(yw_config)
         ):
     context = Context(request=request, config=config, web_socket=WebSocketsCache.userChannel)
-    response: Optional[ArtifactsResponse] = None
+
     async with context.start(
             action="Get project's artifact",
             with_labels=[Label.INFO],
-            succeeded_data=lambda _ctx: ('ArtifactsResponse', response),
             with_attributes={
                 'projectId': project_id,
                 'flowId': flow_id
@@ -156,6 +153,7 @@ async def project_artifacts(
                             for a, s, path in eventual_artifacts if path.exists() and path.is_dir()]
 
         response = ArtifactsResponse(artifacts=actual_artifacts)
+        await ctx.send(response)
         return response
 
 
@@ -243,13 +241,12 @@ async def cdn_status(
         ):
 
     context = Context(request=request, config=config, web_socket=WebSocketsCache.userChannel)
-    response: Optional[CdnResponse] = None
+
     async with context.start(
             action="Get local cdn status",
             with_labels=[Label.INFO],
-            succeeded_data=lambda _ctx: ('CdnResponse', response),
             with_attributes={'event': 'CdnResponsePending', 'projectId': project_id}
-            ) as _ctx:
+            ) as ctx:
 
         data = parse_json(config.pathsBook.local_cdn_docdb)['documents']
         data = [d for d in data if d["library_name"] == decode_id(project_id)]
@@ -274,4 +271,5 @@ async def cdn_status(
             name=decode_id(project_id),
             versions=[format_version(d) for d in data]
             )
+        await ctx.send(response)
         return response

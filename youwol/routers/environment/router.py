@@ -39,7 +39,7 @@ router = APIRouter()
 flatten = itertools.chain.from_iterable
 
 
-class StatusResponse(BaseModel):
+class EnvironmentStatusResponse(BaseModel):
     configuration: YouwolEnvironment
     users: List[str]
     userInfo: UserInfo
@@ -105,7 +105,7 @@ async def file_content(
 
 
 @router.get("/status",
-            response_model=StatusResponse,
+            response_model=EnvironmentStatusResponse,
             summary="status")
 async def status(
         request: Request,
@@ -122,7 +122,7 @@ async def status(
                                                     host=remote_gateway_info.host,
                                                     connected=connected)
         remotes_info = parse_json(config.pathsBook.remotesInfo)['remotes'].values()
-        response = StatusResponse(
+        response = EnvironmentStatusResponse(
             users=config.get_users_list(),
             userInfo=config.get_user_info(),
             configuration=config,
