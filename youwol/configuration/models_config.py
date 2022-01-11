@@ -69,12 +69,12 @@ class CascadeAppend(BaseModel):
 Cascade = Union[CascadeAppend, CascadeReplace, CascadeBaseProfile]
 
 
-class ConfigurationProfileCascading(BaseModel):
+class ExtendingProfile(BaseModel):
     config_data: ConfigurationData
     cascade: Cascade = CascadeBaseProfile.REPLACE
 
 
 class Profiles(BaseModel):
     default: ConfigurationData
-    others: Dict[str, ConfigurationProfileCascading] = {}
+    extending_profiles: Dict[str, ExtendingProfile] = {}
     selected: Optional[str]

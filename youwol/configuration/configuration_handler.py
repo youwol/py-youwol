@@ -59,17 +59,17 @@ class ConfigurationHandler:
         return self.effective_config_data.openIdHost if self.effective_config_data.openIdHost else default_openid_host
 
     def set_profile(self, profile: str):
-        if profile in self.config_data.others.keys():
-            config_cascading = self.config_data.others.get(profile)
+        if profile in self.config_data.extending_profiles.keys():
+            config_cascading = self.config_data.extending_profiles.get(profile)
             if config_cascading.cascade == CascadeBaseProfile.REPLACE:
                 self.effective_config_data = replace_with(self.config_data.default, config_cascading.config_data)
             elif config_cascading.cascade == CascadeBaseProfile.APPEND:
                 self.effective_config_data = append_with(self.config_data.default, config_cascading.config_data)
             elif isinstance(config_cascading.cascade, CascadeReplace):
-                parent = self.config_data.others.get(config_cascading.cascade.replaced_profile).config_data
+                parent = self.config_data.extending_profiles.get(config_cascading.cascade.replaced_profile).config_data
                 self.effective_config_data = replace_with(parent, config_cascading.config_data)
             elif isinstance(config_cascading.cascade, CascadeAppend):
-                parent = self.config_data.others.get(config_cascading.cascade.append_to_profile).config_data
+                parent = self.config_data.extending_profiles.get(config_cascading.cascade.append_to_profile).config_data
                 self.effective_config_data = append_with(parent, config_cascading.config_data)
             self.active_profile = profile
         else:
@@ -79,7 +79,7 @@ class ConfigurationHandler:
         return self.active_profile if self.active_profile else "default"
 
     def get_available_profiles(self) -> List[str]:
-        return ["default", *list(self.config_data.others.keys())]
+        return ["default", *list(self.config_data.extending_profiles.keys())]
 
     def get_http_port(self) -> int:
         return self.effective_config_data.httpPort if self.effective_config_data.httpPort else default_http_port
@@ -217,7 +217,7 @@ class ConfigurationHandler:
         return youwol_configuration
 
     def get_additional_python_src_paths(self) -> List[Path]:
-        path_user_lib = self.get_data_dir() / "lib"
+        path_user_lib = Path(app_dirs.user_data_dir) / "lib"
         conf_paths = self.effective_config_data.additionalPythonSrcPath
         if not conf_paths:
             return [path_user_lib]

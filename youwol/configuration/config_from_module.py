@@ -10,7 +10,7 @@ from youwol.configuration.configuration_handler import ConfigurationHandler
 from youwol.configuration.configuration_validation import CheckValidConfigurationFunction, ConfigurationLoadingStatus, \
     ConfigurationLoadingException
 from youwol.configuration.models_config import Profiles, ConfigurationData, \
-    CascadeAppend, CascadeReplace, CascadeBaseProfile, ConfigurationProfileCascading
+    CascadeAppend, CascadeReplace, CascadeBaseProfile, ExtendingProfile
 from youwol.environment.models_project import format_unknown_error, ErrorResponse
 from youwol.utils_low_level import get_object_from_module
 from youwol.utils_paths import app_dirs, PathException, existing_path_or_default
@@ -73,41 +73,46 @@ async def configuration_from_python(path: Path, profile: Optional[str]) -> Confi
 
     return ConfigurationHandler(path=final_path,
                                 config_data=Profiles(default=config_data,
-                                                     others=config_data.get_others(),
-                                                     selected=config_data.get_profile()),
+                                                     extending_profiles=config_data.get_extending_profiles(),
+                                                     selected=config_data.get_selected()),
                                 profile=profile)
 
 
 class Configuration(ConfigurationData):
-    _profiles: Dict[str, Configuration] = {}
+    _extending_profiles: Dict[str, Configuration] = {}
     _selected: str = 'default'
     _cascading: Optional[Union[CascadeAppend, CascadeReplace, CascadeBaseProfile]] = None
 
-    def other(self,
-              name: str,
-              conf: Configuration,
-              cascading: Union[CascadeAppend, CascadeReplace, CascadeBaseProfile]
-              = CascadeBaseProfile.REPLACE) -> Configuration:
+    def extending_profile(self,
+                          name: str,
+                          conf: Configuration,
+                          cascading: Union[CascadeAppend, CascadeReplace, CascadeBaseProfile]
+                          = CascadeBaseProfile.REPLACE) -> Configuration:
         if self._cascading is not None:
-            raise Exception("Configuration#other(…) on anything but base profile is forbidden")
-        if name in self._profiles:
+            raise Exception("Calling Configuration#extending_profile(…) on anything but base profile is forbidden")
+        if name == 'default':
+            raise Exception("Profile name 'default' is reserved")
+        if name in self._extending_profiles:
             raise Exception(f"There is already a profile named '{name}'")
         conf._cascading = cascading
-        self._profiles[name] = conf
+        self._extending_profiles[name] = conf
         return self
 
     def get_cascading(self):
         return self._cascading
 
-    def get_others(self) -> Dict[str, ConfigurationProfileCascading]:
-        return {key: (ConfigurationProfileCascading(config_data=conf, cascade=conf.get_cascading()))
-                for (key, conf) in self._profiles.items()}
+    def get_extending_profiles(self) -> Dict[str, ExtendingProfile]:
+        return {key: (ExtendingProfile(config_data=conf, cascade=conf.get_cascading()))
+                for (key, conf) in self._extending_profiles.items()}
 
-    def profile(self, name: str) -> Configuration:
+    def selected(self, name: str) -> Configuration:
+        if self._cascading is not None:
+            raise Exception("Calling Configuration#selected(…) on anything but base profile is forbidden")
+
         self._selected = name
         return self
 
-    def get_profile(self):
+    def get_selected(self):
         return self._selected
 
     class Config:

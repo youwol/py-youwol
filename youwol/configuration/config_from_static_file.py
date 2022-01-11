@@ -2,18 +2,18 @@ from pathlib import Path
 from typing import Optional, Dict
 
 from youwol.configuration.configuration_handler import ConfigurationHandler
-from youwol.configuration.models_config import Profiles, ConfigurationData, Cascade, ConfigurationProfileCascading, \
-    CascadeBaseProfile
+from youwol.configuration.models_config import Profiles, ConfigurationData, Cascade, CascadeBaseProfile, \
+    ExtendingProfile
 from youwol.utils_paths import app_dirs, PathException, existing_path_or_default
 
 
-class ConfigurationOtherProfile(ConfigurationData):
+class ConfigurationDataWithCascade(ConfigurationData):
     cascade: Cascade = CascadeBaseProfile.REPLACE
 
 
 class ConfigurationStaticFile(ConfigurationData):
-    others: Dict[str, ConfigurationOtherProfile]
-    profile: str = "default"
+    extending_profiles: Dict[str, ConfigurationDataWithCascade] = {}
+    selected_profile: str = "default"
 
 
 async def configuration_from_json(path: Path, profile: Optional[str]) -> ConfigurationHandler:
@@ -32,8 +32,9 @@ async def configuration_from_json(path: Path, profile: Optional[str]) -> Configu
     config_data = ConfigurationStaticFile.parse_file(final_path)
 
     config_data = Profiles(default=config_data,
-                           others={key: ConfigurationProfileCascading(config_data=other, cascade=other.cascade)
-                                   for (key, other) in config_data.others.items()},
-                           selected=config_data.profile)
+                           extending_profiles={key: ExtendingProfile(config_data=profile,
+                                                                     cascade=profile.cascade)
+                                               for (key, profile) in config_data.extending_profiles.items()},
+                           selected=config_data.selected_profile)
 
     return ConfigurationHandler(path=final_path, config_data=config_data, profile=profile)
