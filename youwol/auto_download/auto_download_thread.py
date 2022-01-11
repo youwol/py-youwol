@@ -4,7 +4,7 @@ import uuid
 from threading import Thread
 from typing import Dict, Any
 
-from youwol.auto_download.models import DownloadLogger
+from youwol.routers.environment.download_assets.models import DownloadLogger
 from youwol.configuration.clients import RemoteClients
 from youwol_utils import YouWolException
 

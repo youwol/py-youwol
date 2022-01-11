@@ -2,8 +2,8 @@ from dataclasses import dataclass
 from fastapi import HTTPException
 
 from youwol.auto_download.auto_download_thread import decode_id
-from youwol.auto_download.common import create_asset_local
-from youwol.auto_download.models import DownloadTask
+from youwol.routers.environment.download_assets.common import create_asset_local
+from youwol.routers.environment.download_assets.models import DownloadTask
 from youwol.configuration.clients import LocalClients, RemoteClients
 from youwol_utils import CdnClient
 

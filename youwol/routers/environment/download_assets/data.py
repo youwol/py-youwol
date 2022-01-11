@@ -2,11 +2,11 @@ import asyncio
 from dataclasses import dataclass
 from typing import Set
 from fastapi import HTTPException
-from youwol.auto_download.common import (
+from youwol.routers.environment.download_assets.common import (
     get_remote_paths, get_local_owning_folder_id, sync_borrowed_items,
     create_asset_local,
     )
-from youwol.auto_download.models import DownloadLogger, DownloadTask
+from youwol.routers.environment.download_assets.models import DownloadLogger, DownloadTask
 from youwol.configuration.clients import RemoteClients, LocalClients
 from youwol.context import Context
 from youwol.services.backs.treedb.models import ItemsResponse
