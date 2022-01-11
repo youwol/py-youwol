@@ -134,7 +134,6 @@ async def project_artifacts(
 
     async with context.start(
             action="Get project's artifact",
-            with_labels=[Label.INFO],
             with_attributes={
                 'projectId': project_id,
                 'flowId': flow_id
@@ -183,7 +182,7 @@ async def run_pipeline_step(
 
     async with context.start(
             action="Run pipeline-step",
-            with_labels=[Label.PIPELINE_STEP_STATUS_PENDING],
+            with_labels=[Label.RUN_PIPELINE_STEP],
             with_attributes={
                 'projectId': project_id,
                 'flowId': flow_id,

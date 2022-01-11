@@ -5,6 +5,7 @@ from youwol.environment.models_project import Project, PipelineStep, Artifact, F
 from youwol.environment.paths import PathsBook
 from youwol.context import Context
 from youwol.exceptions import CommandException
+from youwol.models import Label
 from youwol.routers.projects.models import (
     PipelineStepStatusResponse, ArtifactResponse
     )
@@ -94,10 +95,10 @@ async def run(project: Project, flow_id: str, step: PipelineStep, context: Conte
 
     async with context.start(
             action="run function",
+            with_labels=[Label.PIPELINE_STEP_RUNNING],
             with_attributes={
                 'projectId': project.id,
-                'stepId': step.id,
-                'event': 'PipelineStatusPending:run'
+                'stepId': step.id
                 }
             ) as ctx:
 
