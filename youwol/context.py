@@ -110,29 +110,36 @@ class Context(NamedTuple):
                   with_attributes=self.with_attributes, data=data, context_id=self.uid,
                   parent_context_id=self.parent_uid, web_socket=self.web_socket)
 
-    async def debug(self, text: str, labels: List[Label] = None, data: Union[JSON, BaseModel] = None):
+    async def log(self, level: LogLevel, text: str, labels: List[Label] = None, data: Union[JSON, BaseModel] = None):
+        label_level = {
+            LogLevel.DATA: Label.DATA,
+            LogLevel.DEBUG: Label.LOG_DEBUG,
+            LogLevel.INFO: Label.LOG_INFO,
+            LogLevel.ERROR: Label.LOG_ERROR
+        }[level]
         labels = labels or []
-        await log(level=LogLevel.DEBUG, text=text, labels=[Label.LOG_DEBUG] + labels,
-                  with_attributes=self.with_attributes, data=data, context_id=self.uid,
-                  parent_context_id=self.parent_uid, web_socket=self.web_socket)
+        await log(level=level,
+                  text=text,
+                  data=data,
+                  labels=[*self.with_labels, label_level, *labels],
+                  with_attributes=self.with_attributes,
+                  context_id=self.uid,
+                  parent_context_id=self.parent_uid,
+                  web_socket=self.web_socket)
+
+    async def debug(self, text: str, labels: List[Label] = None, data: Union[JSON, BaseModel] = None):
+        await self.log(level=LogLevel.DEBUG, text=text, labels=labels, data=data)
 
     async def info(self, text: str, labels: List[Label] = None, data: Union[JSON, BaseModel] = None):
-        labels = labels or []
-        await log(level=LogLevel.INFO, text=text, labels=[Label.LOG_INFO] + labels,
-                  with_attributes=self.with_attributes, data=data, context_id=self.uid,
-                  parent_context_id=self.parent_uid, web_socket=self.web_socket)
+        await self.log(level=LogLevel.INFO, text=text, labels=labels, data=data)
 
     async def error(self, text: str, labels: List[Label] = None, data: Union[JSON, BaseModel] = None):
-        labels = labels or []
-        await log(level=LogLevel.ERROR,  text=text, labels=[Label.LOG_ERROR] + labels,
-                  with_attributes=self.with_attributes, data=data, context_id=self.uid,
-                  parent_context_id=self.parent_uid, web_socket=self.web_socket)
-
     async def abort(self, text: str, labels: List[Label] = None, data: Union[JSON, BaseModel] = None):
         labels = labels or []
         await log(level=LogLevel.ERROR,  text=text, labels=[Label.LOG_ABORT] + labels,
                   with_attributes=self.with_attributes, data=data, context_id=self.uid,
                   parent_context_id=self.parent_uid, web_socket=self.web_socket)
+        await self.log(level=LogLevel.ERROR, text=text, labels=labels, data=data)
 
 
 CallableBlock = Callable[[Context], Union[Awaitable, None]]
