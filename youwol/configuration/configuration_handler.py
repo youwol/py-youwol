@@ -7,7 +7,7 @@ from typing import Optional, List, Union, Dict
 from youwol.configuration.defaults import default_openid_host, default_http_port, default_path_data_dir, \
     default_path_cache_dir, default_path_projects_dir, default_port_range_start, default_port_range_end
 from youwol.configuration.models_config import Profiles, ConfigurationData, PortRange, ModuleLoading, \
-    CascadeBaseProfile, CascadeAppend, CascadeReplace, ConfigPath, CdnOverride, Redirection
+    CascadeBaseProfile, CascadeAppend, CascadeReplace, CdnOverride, Redirection
 from youwol.environment.models import Events, IConfigurationCustomizer
 from youwol.utils_low_level import get_object_from_module
 from youwol.middlewares.models_dispatch import CdnOverrideDispatch, RedirectDispatch, AbstractDispatch
@@ -158,16 +158,20 @@ class ConfigurationHandler:
         if isinstance(self.effective_config_data.events, Events):
             return self.effective_config_data.events
 
-        if isinstance(self.effective_config_data.events, str):
-            config_loading = ModuleLoading(name=self.effective_config_data.events)
-        else:
-            config_loading = self.effective_config_data.events
-
-        config_loading = ensure_loading_source_exists(config_loading, self.effective_config_data.defaultModulePath)
+        config_loading = ensure_loading_source_exists(self.effective_config_data.events,
+                                                      self.get_default_module_path(),
+                                                      self.get_data_dir())
 
         return get_object_from_module(module_absolute_path=config_loading.path,
                                       object_or_class_name=config_loading.name,
-                                      object_type=Events)
+                                      object_type=Events,
+                                      additional_src_absolute_paths=self.get_additional_python_src_paths())
+
+    def get_default_module_path(self) -> Path:
+        if self.effective_config_data.defaultModulePath is None:
+            return Path("py-youwol.py")
+
+        return Path(self.effective_config_data.defaultModulePath)
 
     def get_cdn_auto_update(self) -> bool:
         if not self.effective_config_data.cdnAutoUpdate:
@@ -180,11 +184,14 @@ class ConfigurationHandler:
             conf_loading = arg
             if isinstance(arg, Command):
                 return conf_loading.name, conf_loading
-            if isinstance(arg, str):
-                conf_loading = ModuleLoading(name=arg)
 
-            conf_loading = ensure_loading_source_exists(conf_loading, self.effective_config_data.defaultModulePath)
-            command = get_object_from_module(conf_loading.path, conf_loading.name, Command)
+            conf_loading = ensure_loading_source_exists(conf_loading,
+                                                        self.get_default_module_path(),
+                                                        self.get_data_dir())
+            command = get_object_from_module(module_absolute_path=conf_loading.path,
+                                             object_or_class_name=conf_loading.name,
+                                             object_type=Command,
+                                             additional_src_absolute_paths=self.get_additional_python_src_paths())
             return command.name, command
 
         return {name: command for (name, command) in [get_command(conf) for conf in
@@ -195,11 +202,13 @@ class ConfigurationHandler:
             return youwol_configuration
 
         config_source = ensure_loading_source_exists(self.effective_config_data.customize,
-                                                     self.effective_config_data.defaultModulePath)
+                                                     self.get_default_module_path(),
+                                                     self.get_data_dir())
 
         customizer = get_object_from_module(module_absolute_path=config_source.path,
                                             object_or_class_name=config_source.name,
-                                            object_type=IConfigurationCustomizer)
+                                            object_type=IConfigurationCustomizer,
+                                            additional_src_absolute_paths=self.get_additional_python_src_paths())
         try:
             youwol_configuration = customizer.customize(youwol_configuration)
         except Exception as e:
@@ -207,23 +216,37 @@ class ConfigurationHandler:
 
         return youwol_configuration
 
+    def get_additional_python_src_paths(self) -> List[Path]:
+        path_user_lib = self.get_data_dir() / "lib"
+        conf_paths = self.effective_config_data.additionalPythonSrcPath
+        if not conf_paths:
+            return [path_user_lib]
+
+        paths = conf_paths if isinstance(conf_paths, List) else [conf_paths]
+
+        return [ensure_dir_exists(path=path, root_candidates=path_user_lib)
+                for path in paths]
+
 
 def ensure_loading_source_exists(arg: Union[str, ModuleLoading],
-                                 default_source: ConfigPath) -> ModuleLoading:
+                                 default_source: Path,
+                                 default_root: Path) -> ModuleLoading:
     result = arg
-    default_root = app_dirs.user_config_dir
     if not isinstance(result, ModuleLoading):
         result = ModuleLoading(name=arg)
 
     if not result.path:
-        result.path = Path(default_source)
+        result.path = default_source
+    else:
+        result.path = Path(result.path)
 
-    if not Path(result.path).is_absolute():
-        result.path = Path(default_root) / Path(result.path)
+    if not result.path.is_absolute():
+        result.path = default_root / result.path
 
     if not result.path.exists():
         raise PathException(f"{str(result.path)} does not exists")
 
     if not result.path.is_file():
         raise PathException(f"'{str(result.path)}' is not a file")
+
     return result

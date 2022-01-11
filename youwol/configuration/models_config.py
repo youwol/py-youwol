@@ -47,6 +47,7 @@ class ConfigurationData(BaseModel):
     cdnAutoUpdate: Optional[bool]
     dispatches: Optional[List[Union[str, Redirection, CdnOverride, AbstractDispatch]]]
     defaultModulePath: Optional[ConfigPath]
+    additionalPythonSrcPath: Optional[Union[ConfigPath, List[ConfigPath]]]
     events: Optional[Union[Events, str, ModuleLoading]]
     customCommands: List[Union[str, Command, ModuleLoading]] = []
     customize: Optional[Union[str, ModuleLoading]]

@@ -48,8 +48,12 @@ async def configuration_from_python(path: Path, profile: Optional[str]) -> Confi
             ]
         )
 
-    factory = get_object_from_module(module_absolute_path=final_path, object_or_class_name="ConfigurationFactory",
-                                     object_type=IConfigurationFactory)
+    factory = get_object_from_module(module_absolute_path=final_path,
+                                     object_or_class_name="ConfigurationFactory",
+                                     object_type=IConfigurationFactory,
+                                     additional_src_absolute_paths=[final_path.parent,
+                                                                    Path(app_dirs.user_data_dir) / "lib"]
+                                     )
     try:
         result = factory.get(get_main_arguments())
         config_data = await result if isinstance(result, Awaitable) else result

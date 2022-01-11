@@ -1,21 +1,22 @@
 import importlib
+import re
 import shutil
+import sys
 import tempfile
 from collections import Callable, Iterable
 from enum import Enum
 from importlib.machinery import SourceFileLoader
 from importlib.util import spec_from_loader
 from pathlib import Path, PosixPath
-from typing import Any, Union, Mapping, List, Type, cast, TypeVar
-import re
-from fastapi import HTTPException
+from typing import Any, Union, Mapping, List, Type, cast, TypeVar, Optional
+
 import aiohttp
 from aiohttp import ClientSession, TCPConnector
+from fastapi import HTTPException
+from pydantic import BaseModel
 from starlette.requests import Request
 from starlette.responses import Response
-
 from starlette.websockets import WebSocket, WebSocketDisconnect
-from pydantic import BaseModel
 
 from youwol_utils import log_info
 
@@ -166,8 +167,20 @@ def get_object_from_module(
         module_absolute_path: Path,
         object_or_class_name: str,
         object_type: Type[T],
+        additional_src_absolute_paths: Optional[Union[Path, List[Path]]] = None,
         **object_instantiation_kwargs
 ) -> T:
+
+    if additional_src_absolute_paths is None:
+        additional_src_absolute_paths = []
+
+    if isinstance(additional_src_absolute_paths, Path):
+        additional_src_absolute_paths = [additional_src_absolute_paths]
+
+    for path in additional_src_absolute_paths:
+        if path not in sys.path:
+            sys.path.append(str(path))
+
     def get_instance_from_module(imported_module):
         if not hasattr(imported_module, object_or_class_name):
             raise Exception(f"{module_absolute_path} : Expected class '{object_or_class_name}' not found")

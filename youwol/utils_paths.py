@@ -148,6 +148,11 @@ def fail_on_missing_dir(path: Path):
     raise PathException(f"Not creating missing dir '{str(path)}'")
 
 
+def do_nothing_on_missing_dir(_path: Path):
+    # Do nothing, but do it well
+    pass
+
+
 def ensure_dir_exists(path: Optional[Union[str, Path]],
                       root_candidates: Union[Union[str, Path], List[Union[str, Path]]],
                       default_root: Optional[Union[str, Path]] = None,

@@ -408,7 +408,8 @@ async def safe_load(
             pipeline_factory = get_object_from_module(
                 module_absolute_path=path / PROJECT_PIPELINE_DIRECTORY / 'yw_pipeline.py',
                 object_or_class_name='PipelineFactory',
-                object_type=IPipelineFactory
+                object_type=IPipelineFactory,
+                additional_src_absolute_paths=conf_handler.get_additional_python_src_paths()
             )
             pipeline = await pipeline_factory.get()
             name = pipeline.projectName(path)
