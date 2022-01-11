@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends
 
 from starlette.requests import Request
 
-from youwol.configuration.models_project import Project, Manifest
+from youwol.environment.models_project import Project, Manifest
 from youwol.environment.paths import PathsBook
 from youwol.context import Context
 from youwol.exceptions import CommandException

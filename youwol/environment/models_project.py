@@ -9,7 +9,8 @@ from typing import List, Union, Set, Dict, Any, Callable, Awaitable, Iterable, c
 from pydantic import BaseModel
 from aiostream import stream
 
-from youwol.context import Context, YouwolEnvironment
+from youwol.context import Context
+from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol.environment.paths import PathsBook
 from youwol.exceptions import CommandException
 from youwol.models import Label

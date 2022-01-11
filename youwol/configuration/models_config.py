@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 from enum import Enum
 from pathlib import Path
 from typing import List, Union, Optional, Dict
@@ -8,8 +7,6 @@ from pydantic import BaseModel
 from youwol.environment.models import Events
 from youwol.middlewares.models_dispatch import AbstractDispatch
 from youwol.routers.custom_commands.models import Command
-
-YouwolEnvironment = "youwol.environment.youwol_environment"
 
 
 class PortRange(BaseModel):
@@ -80,12 +77,3 @@ class Profiles(BaseModel):
     default: ConfigurationData
     others: Dict[str, ConfigurationProfileCascading] = {}
     selected: Optional[str]
-
-
-class IConfigurationCustomizer(ABC):
-    def __init__(self, **kwargs):
-        pass
-
-    @abstractmethod
-    def customize(self, _youwol_configuration: YouwolEnvironment) -> YouwolEnvironment:
-        return NotImplemented
