@@ -76,7 +76,8 @@ class Context(NamedTuple):
         with_attributes = with_attributes or {}
         with_labels = with_labels or []
         ctx = Context(web_socket=self.web_socket, config=self.config, uid=str(uuid.uuid4()),
-                      request=self.request, parent_uid=self.uid, with_labels=with_labels,
+                      request=self.request, parent_uid=self.uid,
+                      with_labels=[*self.with_labels, *with_labels],
                       with_attributes={**self.with_attributes, **with_attributes})
 
         async def execute_block(block: Optional[Union[CallableBlock, CallableBlockException]],
