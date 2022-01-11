@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 from youwol_utils import JSON
 from youwol.configuration.clients import RemoteClients, LocalClients
-from youwol.routers.commands.upload_assets.models import UploadTask
+from youwol.routers.environment.upload_assets.models import UploadTask
 
 
 @dataclass

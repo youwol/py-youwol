@@ -13,11 +13,11 @@ from youwol.models import Label
 from youwol.configuration.clients import RemoteClients, LocalClients
 from youwol.configurations import api_configuration
 from youwol.routers.commons import local_path, ensure_path
-from youwol.routers.commands.upload_assets.data import UploadDataTask
-from youwol.routers.commands.upload_assets.flux_project import UploadFluxProjectTask
-from youwol.routers.commands.upload_assets.models import UploadTask
-from youwol.routers.commands.upload_assets.package import UploadPackageTask
-from youwol.routers.commands.upload_assets.story import UploadStoryTask
+from youwol.routers.environment.upload_assets.data import UploadDataTask
+from youwol.routers.environment.upload_assets.flux_project import UploadFluxProjectTask
+from youwol.routers.environment.upload_assets.models import UploadTask
+from youwol.routers.environment.upload_assets.package import UploadPackageTask
+from youwol.routers.environment.upload_assets.story import UploadStoryTask
 from youwol.services.backs.treedb.models import PathResponse
 from youwol_utils.clients.assets.assets import AssetsClient
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient

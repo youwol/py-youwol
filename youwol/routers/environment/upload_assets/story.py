@@ -6,7 +6,7 @@ from pathlib import Path
 
 from youwol.configuration.youwol_configuration import YouwolConfiguration
 from youwol.configuration.clients import RemoteClients
-from youwol.routers.commands.upload_assets.models import UploadTask
+from youwol.routers.environment.upload_assets.models import UploadTask
 from youwol.utils_paths import parse_json, write_json
 from youwol_utils import JSON
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
