@@ -70,10 +70,6 @@ def get_update_description(previous_table: Dict[str, any], current_version: str)
     new_major = int(current_version.split('.')[0])
     new_minor = int(current_version.split('.')[1])
 
-    #if 'comment' not in previous_table['table_options']:
-    #    return Update(type=UpdateType.RECREATION, current_major=None, current_minor=None,
-    #                  new_major=new_major, new_minor=new_minor)
-
     current_version = previous_table['table_options']['comment'].split('#')[1]
     current_major = int(current_version.split('.')[0])
     current_minor = int(current_version.split('.')[1])

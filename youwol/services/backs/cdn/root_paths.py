@@ -4,7 +4,7 @@ import itertools
 import shutil
 from pathlib import Path
 
-from fastapi import UploadFile, File, HTTPException, Form, APIRouter, Depends, Query as QueryParam
+from fastapi import UploadFile, File, HTTPException, Form, APIRouter, Depends
 
 from starlette.requests import Request
 from starlette.responses import Response
@@ -84,6 +84,7 @@ async def list_libraries(
                        "versions": [lib["version"] for lib in libs],
                        "releases": [
                            Release(version=lib['version'],
+                                   version_number=int(lib['version_number']),
                                    fingerprint=lib['fingerprint'] if 'fingerprint' in lib else "")
                            for lib in libs]
                        })
@@ -141,10 +142,12 @@ async def list_versions(
     namespace = {d['namespace'] for d in response['documents']}.pop()
     ordered = sorted(response['documents'], key=lambda doc: doc['version_number'])
     ordered.reverse()
-    return ListVersionsResponse(name=name, namespace=namespace, id=to_package_id(name),
-                                versions=[d['version'] for d in ordered],
-                                releases=[Release(version=d['version'], fingerprint=d['fingerprint'])
-                                          for d in ordered])
+    return ListVersionsResponse(
+        name=name, namespace=namespace, id=to_package_id(name),
+        versions=[d['version'] for d in ordered],
+        releases=[Release(version=d['version'], version_number=int(d['version_number']), fingerprint=d['fingerprint'])
+                  for d in ordered]
+    )
 
 
 @router.get("/libraries/{library_id}", summary="list versions of a library",

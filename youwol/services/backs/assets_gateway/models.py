@@ -81,6 +81,8 @@ class DefaultDriveResponse(BaseModel):
     downloadFolderName: str
     homeFolderId: str
     homeFolderName: str
+    desktopFolderId: str
+    desktopFolderName: str
     systemFolderId: str
     systemFolderName: str
     systemPackagesFolderId: str

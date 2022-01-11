@@ -58,10 +58,10 @@ async def healthz():
 @router.get("/{rest_of_path:path}")
 async def catch_all_no_namespace(
         request: Request,
-        rest_of_path
+        rest_of_path: str
         ):
     headers = generate_headers_downstream(request.headers)
-    segments = rest_of_path.split('/')
+    segments = rest_of_path.strip('/').split('/')
     namespace, name, version, resource = get_info(segments) \
         if segments[0].startswith('@') \
         else get_info([""] + segments)

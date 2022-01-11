@@ -1,26 +1,15 @@
 from enum import Enum
-from typing import List, Dict, Any, Optional, Union
+from typing import List, Optional
 
 from pydantic import BaseModel
 
-from youwol.configuration.models_base import ErrorResponse, ConfigParameters
-from youwol.configuration.user_configuration import UserInfo, UserConfiguration, RemoteGateway
+from youwol.environment.models_project import ErrorResponse
 
 
 class RemoteGatewayInfo(BaseModel):
     name: str
     host: str
     connected: Optional[bool]
-
-
-class StatusResponse(BaseModel):
-    configurationPath: List[str]
-    configurationParameters: Optional[ConfigParameters]
-    configuration: UserConfiguration
-    users: List[str]
-    userInfo: UserInfo
-    remoteGatewayInfo: Optional[RemoteGatewayInfo]
-    remotesInfo: List[RemoteGatewayInfo]
 
 
 class SwitchConfigurationBody(BaseModel):
@@ -40,7 +29,7 @@ class SelectRemoteBody(BaseModel):
 
 
 class PostParametersBody(BaseModel):
-    values: Dict[str, Any]
+    profile: str
 
 
 class SyncUserBody(BaseModel):

@@ -40,7 +40,6 @@ def to_group_owner(group_id: str) -> Union[str, None]:
 
 
 def is_child_group(child_group_id, parent_group_id):
-
     if child_group_id == parent_group_id:
         return True
 
@@ -56,13 +55,12 @@ def is_child_group(child_group_id, parent_group_id):
 
 
 def ancestors_group_id(group_id):
-
     scope = to_group_scope(group_id)
     if scope == "private":
         return []
 
     items = [scope for scope in scope.split('/') if scope != ""]
-    paths = ['/'.join([""]+items[0:i+1]) for i, _ in enumerate(items)]
+    paths = ['/'.join([""] + items[0:i + 1]) for i, _ in enumerate(items)]
     ids = [to_group_id(p) for p in paths[0:-1]]
     ids.reverse()
     return ids
@@ -83,7 +81,6 @@ class PackagesNotFound(YouWolException):
 
 
 async def youwol_exception_handler(request: Request, exc: YouWolException):
-
     log_error(f"{exc.detail}", exc.parameters)
     return JSONResponse(
         status_code=exc.status_code,
@@ -92,20 +89,18 @@ async def youwol_exception_handler(request: Request, exc: YouWolException):
             "detail": f"{exc.detail}",
             "parameters": exc.parameters,
             "url": request.url.path
-            }
-        )
+        }
+    )
 
 
 def aiohttp_resp_parameters(resp: ClientResponse):
-
     return {
         "real_url": str(resp.request_info.real_url),
         "method": resp.request_info.method
-        }
+    }
 
 
 async def raise_exception_from_response(raw_resp: ClientResponse, **kwargs):
-
     detail = None
 
     print(f"HTTPException with status code {raw_resp.status}")
@@ -126,7 +121,7 @@ async def raise_exception_from_response(raw_resp: ClientResponse, **kwargs):
         print(f"detail:", detail)
 
     print(raw_resp)
-    raise YouWolException(status_code=raw_resp.status, detail=detail, **{**kwargs, ** parameters} )
+    raise YouWolException(status_code=raw_resp.status, detail=detail, **{**kwargs, **parameters})
 
 
 def get_default_owner(headers: Mapping[str, str]):

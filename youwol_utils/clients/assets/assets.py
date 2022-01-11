@@ -8,7 +8,6 @@ from youwol_utils.clients.utils import raise_exception_from_response
 
 @dataclass(frozen=True)
 class AssetsClient:
-
     url_base: str
 
     headers: Dict[str, str] = field(default_factory=lambda: {})
@@ -153,7 +152,7 @@ class AssetsClient:
     async def query_latest_access(self, asset_id: str, max_count=100, **kwargs):
 
         url = f"{self.url_base}/raw/access/{asset_id}/query-latest"
-        params = {"max-count":max_count}
+        params = {"max-count": max_count}
         async with aiohttp.ClientSession(headers=self.headers) as session:
             async with await session.get(url=url, params=params, **kwargs) as resp:
                 if resp.status == 200:

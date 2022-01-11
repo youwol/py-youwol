@@ -20,8 +20,8 @@ from youwol_utils import (
     User, user_info, get_all_individual_groups, Group, private_group_id, to_group_id,
     generate_headers_downstream, AccessPolicyBody, AccessPolicyResp, is_child_group, ReadPolicyEnum, SharePolicyEnum,
     ancestors_group_id, QueryBody, Query, WhereClause, PermissionsResp, get_leaf_group_ids, FileData, RecordsResponse,
-    GetRecordsBody, List, RecordsTable, RecordsKeyspace, RecordsBucket, RecordsDocDb, RecordsStorage,
-    )
+    GetRecordsBody, List, RecordsTable, RecordsKeyspace, RecordsBucket, RecordsDocDb, RecordsStorage
+)
 
 router = APIRouter()
 flatten = itertools.chain.from_iterable
@@ -226,8 +226,8 @@ async def get_access_policy(
                                 share=SharePolicyEnum.forbidden, timestamp=None)
 
     doc = documents[0]
-    return AccessPolicyResp(read=doc["read"], parameters=json.loads(doc["parameters"]),
-                            share=doc["share"], timestamp=doc["timestamp"])
+    return AccessPolicyResp(read=ReadPolicyEnum[doc["read"]], parameters=json.loads(doc["parameters"]),
+                            share=SharePolicyEnum[doc["share"]], timestamp=doc["timestamp"])
 
 
 def get_permission(write, policies):

@@ -7,21 +7,19 @@ from fastapi import APIRouter, WebSocket
 from youwol.utils_low_level import start_web_socket
 from youwol.web_socket import WebSocketsCache
 
-from starlette.requests import Request
 from pydantic import BaseModel
-
+from fastapi.responses import FileResponse
 
 router = APIRouter()
 
 
 class FolderContentResp(BaseModel):
-    configurations: List[str]
     files: List[str]
     folders: List[str]
 
 
 class FolderContentBody(BaseModel):
-    path: List[str]
+    path: str
 
 
 @router.websocket("/ws")
@@ -33,24 +31,28 @@ async def ws_endpoint(ws: WebSocket):
     await start_web_socket(ws)
 
 
+@router.get("/file/{rest_of_path:path}",
+            summary="return file content")
+async def get_file(rest_of_path: str):
+
+    return FileResponse(rest_of_path)
+
+
 @router.post("/folder-content",
              response_model=FolderContentResp,
              summary="return the items in target folder")
 async def folder_content(
-        request: Request,
         body: FolderContentBody
         ):
-    def is_conf_file(filename: str):
-        if '.py' not in filename:
-            return False
-        content = (path / filename).read_text()
-        if "async def configuration" in content and "UserConfiguration" in content:
-            return True
-        return False
-    path = Path('/'.join(body.path))
+
+    path = Path(body.path)
+    if not path.is_dir():
+        return FolderContentResp(
+            files=[],
+            folders=[]
+            )
     items = os.listdir(path)
-    configurations = [item for item in items if os.path.isfile(path / item) and is_conf_file(item)]
     return FolderContentResp(
-        configurations=configurations,
-        files=[item for item in items if os.path.isfile(path / item) and item not in configurations],
-        folders=[item for item in items if os.path.isdir(path / item)])
+        files=[item for item in items if os.path.isfile(path / item)],
+        folders=[item for item in items if os.path.isdir(path / item)]
+        )

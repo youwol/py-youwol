@@ -2,14 +2,14 @@ from typing import Union, Any, Coroutine, Dict, Optional
 
 from dataclasses import dataclass
 
-from youwol.configuration.youwol_configuration import yw_config, YouwolConfiguration
+from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 
 
 @dataclass(frozen=True)
 class Configuration:
 
-    yw_config: YouwolConfiguration
+    yw_config: YouwolEnvironment
     open_api_prefix: str
     base_path: str
 

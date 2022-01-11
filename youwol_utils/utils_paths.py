@@ -1,3 +1,4 @@
+import glob
 import hashlib
 import itertools
 import json
@@ -18,8 +19,12 @@ class FileListing(BaseModel):
 flatten = itertools.chain.from_iterable
 
 
+def list_files(folder: Path, rec=True) -> List[Path]:
+    return [Path(p) for p in glob.glob(str(folder)+'/**/*', recursive=rec) if Path(p).is_file()]
+
+
 def copy_tree(source: Path, destination: Path, replace: bool = False):
-    # An helper to not having to cast stuffs all the time. See https://youtrack.jetbrains.com/issue/PY-30747
+    # A helper to not having to cast stuffs all the time. See https://youtrack.jetbrains.com/issue/PY-30747
     if replace and os.path.exists(destination):
         shutil.rmtree(destination)
     shutil.copytree(cast(PathLike, source), cast(PathLike, destination))
@@ -29,7 +34,7 @@ def copy_file(source: Path, destination: Path, create_folders: bool = False):
 
     if create_folders and not destination.parent.exists():
         os.makedirs(destination.parent)
-    # An helper to not having to cast stuffs all the time. See https://youtrack.jetbrains.com/issue/PY-30747
+    # A helper to not having to cast stuffs all the time. See https://youtrack.jetbrains.com/issue/PY-30747
     shutil.copyfile(cast(PathLike, source), cast(PathLike, destination))
 
 
@@ -61,16 +66,16 @@ def matching_files(
     patterns_folder_ignore = [p for p in patterns.ignore if '*' in p]
 
     def is_selected(filepath: Path):
-        if any(fnmatch(filepath, pattern) for pattern in patterns.ignore):
+        if any(fnmatch(str(filepath), pattern) for pattern in patterns.ignore):
             return False
-        return any(fnmatch(filepath, pattern) for pattern in patterns.include)
+        return any(fnmatch(str(filepath), pattern) for pattern in patterns.include)
 
     def to_skip_branch(path: Path):
         if str(path) == ".":
             return False
-        if any(fnmatch(path, pattern) for pattern in patterns_folder_ignore):
+        if any(fnmatch(str(path), pattern) for pattern in patterns_folder_ignore):
             return True
-        if any(fnmatch(path, pattern)for pattern in patterns_folder_include):
+        if any(fnmatch(str(path), pattern)for pattern in patterns_folder_include):
             return False
         if any(pattern.startswith(str(path)) for pattern in patterns_folder_include):
             return False

@@ -1,17 +1,20 @@
+from typing import List
+
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp
 
-from context import Context
-from web_socket import WebSocketsCache
-from youwol.configuration.youwol_configuration import yw_config
+from youwol.middlewares.models_dispatch import AbstractDispatch
+from youwol.context import Context
+from youwol.web_socket import WebSocketsCache
+from youwol.environment.youwol_environment import yw_config
 
 
 class DynamicRoutingMiddleware(BaseHTTPMiddleware):
 
     def __init__(self, app: ASGIApp,
-                 dynamic_dispatch_rules
+                 dynamic_dispatch_rules: List[AbstractDispatch]
                  ) -> None:
         super().__init__(app)
         self.dynamic_dispatch_rules = dynamic_dispatch_rules
@@ -27,8 +30,8 @@ class DynamicRoutingMiddleware(BaseHTTPMiddleware):
             request=request
             )
         for dispatch in self.dynamic_dispatch_rules:
-            match = await dispatch.is_matching(request, context)
+            match = await dispatch.apply(request, call_next, context)
             if match:
-                return await dispatch.apply(request=request, call_next=call_next, context=context)
+                return match
 
         return await call_next(request)

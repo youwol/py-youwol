@@ -5,21 +5,8 @@ from dataclasses import dataclass
 from fastapi import HTTPException
 from starlette.requests import Request
 
-from youwol_utils import (to_group_scope, RecordsResponse)
+from youwol_utils import (to_group_scope)
 from .interface import (RawStore, RawId, AssetMeta)
-
-"""
-@dataclass(frozen=True)
-class UpdateDependencies(Action):
-
-    name: str = "update-dependencies"
-
-    async def execute(self, request: Request, client: FluxClient, raw_id: str,  rest_of_path: Union[str, None],
-                      headers):
-
-        body = json.loads((await request.body()).decode('utf8'))
-        return await client.update_metadata(project_id=raw_id, body=body)
-"""
 
 
 @dataclass(frozen=True)
@@ -27,7 +14,8 @@ class FluxProjectsStore(RawStore):
 
     path_name = 'flux-project'
 
-    async def create_asset(self, request: Request, metadata: AssetMeta, rest_of_path: str, headers) -> (RawId, AssetMeta):
+    async def create_asset(self, request: Request, metadata: AssetMeta, rest_of_path: str, headers) \
+            -> (RawId, AssetMeta):
 
         body = await request.body()
         body = json.loads((await request.body()).decode('utf8')) if body else None
@@ -56,6 +44,9 @@ class FluxProjectsStore(RawStore):
                 }
 
         return await self.client.update_metadata(project_id=raw_id, body=body, headers=headers)
+
+    async def get_asset_metadata(self, request: Request, raw_id: str, rest_of_path: Union[str, None], headers):
+        await self.client.get_metadata(project_id=raw_id, headers=headers)
 
     async def update_asset(self, request: Request, raw_id: str,  metadata: AssetMeta, rest_of_path: str, headers):
 
@@ -87,9 +78,3 @@ class FluxProjectsStore(RawStore):
 
     async def delete_asset(self, request: Request, raw_id, headers):
         return await self.client.delete_project(raw_id, headers=headers)
-
-    async def get_records(self, request: Request, raw_ids: str, group_id: str, headers):
-
-        body = {"ids": raw_ids, "groupId": group_id}
-        resp = await self.client.get_records(body=body, headers=headers)
-        return RecordsResponse(**resp)

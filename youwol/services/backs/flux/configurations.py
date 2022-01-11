@@ -2,20 +2,18 @@ from typing import Callable, Optional
 
 from dataclasses import dataclass
 
-from youwol.configuration.youwol_configuration import yw_config, YouwolConfiguration
+from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
 from youwol_utils import (
     LocalDocDbClient, LocalStorageClient
     )
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from .models import PROJECTS_TABLE, COMPONENTS_TABLE
 
-from youwol.configurations import configuration as py_yw_config
-
 
 @dataclass(frozen=True)
 class Configuration:
 
-    yw_config: YouwolConfiguration
+    yw_config: YouwolEnvironment
     open_api_prefix: str
     base_path: str
     storage: LocalStorageClient
@@ -34,10 +32,10 @@ class Configuration:
     cache_prefix: str = "flux-backend_"
 
     unprotected_paths: Callable[[str], bool] = lambda url: \
-        url.path.split("/")[1] == "healthz" or url.path.split("/")[1] == "openapidocs"
+        url.path.split("/")[1] == "healthz" or url.path.split("/")[1] == "openapi-docs"
 
     replication_factor: int = 2
-
+    admin_headers = None
     default_owner = "/youwol-users"
     currentSchemaVersion = "1"
 
@@ -67,7 +65,7 @@ async def get_configuration(config_yw=None):
         table_body=COMPONENTS_TABLE
         )
 
-    assets_gtw_client = AssetsGatewayClient(url_base=f"http://localhost:{py_yw_config.http_port}/api/assets-gateway")
+    assets_gtw_client = AssetsGatewayClient(url_base=f"http://localhost:{config_yw.http_port}/api/assets-gateway")
 
     config_yw_flux = Configuration(
         yw_config=config_yw,
