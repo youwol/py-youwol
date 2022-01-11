@@ -92,7 +92,7 @@ class Context(NamedTuple):
             await execute_block(on_enter)
             await yield_(ctx)
         except Exception as e:
-            await ctx.abort(
+            await ctx.error(
                 text=f"Exception raised",
                 data=e.__dict__,
                 labels=[Label.EXCEPTION, *with_labels]
@@ -134,11 +134,6 @@ class Context(NamedTuple):
         await self.log(level=LogLevel.INFO, text=text, labels=labels, data=data)
 
     async def error(self, text: str, labels: List[Label] = None, data: Union[JSON, BaseModel] = None):
-    async def abort(self, text: str, labels: List[Label] = None, data: Union[JSON, BaseModel] = None):
-        labels = labels or []
-        await log(level=LogLevel.ERROR,  text=text, labels=[Label.LOG_ABORT] + labels,
-                  with_attributes=self.with_attributes, data=data, context_id=self.uid,
-                  parent_context_id=self.parent_uid, web_socket=self.web_socket)
         await self.log(level=LogLevel.ERROR, text=text, labels=labels, data=data)
 
 
