@@ -12,9 +12,9 @@ from youwol.utils_low_level import start_web_socket
 from youwol.web_socket import WebSocketsCache
 from youwol.routers import native_backends, admin, authorization
 from youwol.auto_download.auto_download_thread import AssetDownloadThread
-from youwol.auto_download.data import DownloadDataTask
-from youwol.auto_download.flux_project import DownloadFluxProjectTask
-from youwol.auto_download.package import DownloadPackageTask
+from youwol.routers.environment.download_assets.data import DownloadDataTask
+from youwol.routers.environment.download_assets.flux_project import DownloadFluxProjectTask
+from youwol.routers.environment.download_assets.package import DownloadPackageTask
 from youwol.configurations import api_configuration as configuration, print_invite, assert_python
 from youwol.configuration.youwol_configuration import yw_config, YouwolConfigurationFactory
 from youwol.configuration.configuration_validation import ConfigurationLoadingException
