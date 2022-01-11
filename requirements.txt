@@ -6,7 +6,7 @@ async-generator==1.10
 Brotli==1.0.9
 colorama==0.4.4
 cowpy==1.1.4
-fastapi==0.70.1
+fastapi==0.71.0
 Pillow==9.0.0
 python-multipart==0.0.5
 uvicorn==0.16.0
@@ -15,11 +15,11 @@ websockets==10.1
 
 # Frozen indirect dependencies
 aiosignal==1.2.0
-anyio==3.4.0
+anyio==3.5.0
 asgiref==3.4.1
 async-timeout==4.0.2
 attrs==21.4.0
-charset-normalizer==2.0.9
+charset-normalizer==2.0.10
 click==8.0.3
 frozenlist==1.2.0
 h11==0.12.0
@@ -28,6 +28,6 @@ multidict==5.2.0
 pydantic==1.9.0
 six==1.16.0
 sniffio==1.2.0
-starlette==0.16.0
+starlette==0.17.1
 typing_extensions==4.0.1
 yarl==1.7.2
