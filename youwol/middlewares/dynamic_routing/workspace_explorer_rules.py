@@ -9,7 +9,7 @@ from youwol.environment.clients import RemoteClients, LocalClients
 from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.middlewares.models_dispatch import AbstractDispatch
 from youwol_utils.context import Context
-from youwol.services.backs.assets_gateway.models import ChildrenResponse, ItemResponse, FolderResponse
+from youwol.backends.assets_gateway.models import ChildrenResponse, ItemResponse, FolderResponse
 from youwol.utils_low_level import JSON
 
 PydanticType = TypeVar("PydanticType")

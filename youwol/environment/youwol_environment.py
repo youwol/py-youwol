@@ -19,7 +19,7 @@ from youwol.configuration.config_from_static_file import configuration_from_json
 from youwol.configuration.configuration_handler import ConfigurationHandler
 from youwol.environment.models import RemoteGateway, UserInfo, ApiConfiguration, IPipelineFactory, Events
 from youwol.routers.custom_commands.models import Command
-from youwol.services.backs.assets_gateway.models import DefaultDriveResponse
+from youwol.backends.assets_gateway.models import DefaultDriveResponse
 from youwol.utils_low_level import get_public_user_auth_token, get_object_from_module
 from youwol.web_socket import WebSocketsStore
 

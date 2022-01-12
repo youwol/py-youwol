@@ -1,7 +1,7 @@
 from enum import Enum
 
 from youwol.environment.clients import RemoteClients, LocalClients
-from youwol.services.backs.treedb.models import PathResponse, DriveResponse
+from youwol.backends.treedb.models import PathResponse, DriveResponse
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from fastapi import HTTPException
 from youwol.environment.youwol_environment import Context

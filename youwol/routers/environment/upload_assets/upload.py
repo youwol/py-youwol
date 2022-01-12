@@ -18,7 +18,7 @@ from youwol.routers.environment.upload_assets.flux_project import UploadFluxProj
 from youwol.routers.environment.upload_assets.models import UploadTask
 from youwol.routers.environment.upload_assets.package import UploadPackageTask
 from youwol.routers.environment.upload_assets.story import UploadStoryTask
-from youwol.services.backs.treedb.models import PathResponse
+from youwol.backends.treedb.models import PathResponse
 from youwol_utils.clients.assets.assets import AssetsClient
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from youwol_utils.clients.treedb.treedb import TreeDbClient

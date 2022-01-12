@@ -8,7 +8,7 @@ from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClie
 from youwol_utils.clients.treedb.treedb import TreeDbClient
 from youwol.environment.clients import RemoteClients, LocalClients
 from youwol_utils.context import Context
-from youwol.services.backs.treedb.models import PathResponse, ItemResponse, ItemsResponse, DriveResponse
+from youwol.backends.treedb.models import PathResponse, ItemResponse, ItemsResponse, DriveResponse
 
 
 async def get_remote_paths(

@@ -11,7 +11,7 @@ from youwol.environment.models_project import (
 from youwol.environment.clients import LocalClients, RemoteClients
 from youwol.environment.paths import PathsBook
 from youwol_utils.context import Context
-from youwol.services.backs.assets_gateway.models import DefaultDriveResponse
+from youwol.backends.assets_gateway.models import DefaultDriveResponse
 from youwol.routers.environment.upload_assets.upload import upload_asset
 from youwol_utils.utils_paths import create_zip_file
 from youwol_utils import encode_id, files_check_sum

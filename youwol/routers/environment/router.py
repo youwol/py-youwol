@@ -20,7 +20,7 @@ from youwol.routers.environment.upload_assets.data import UploadDataTask
 from youwol.routers.environment.upload_assets.flux_project import UploadFluxProjectTask
 from youwol.routers.environment.upload_assets.package import UploadPackageTask
 from youwol.routers.environment.upload_assets.story import UploadStoryTask
-from youwol.services.backs.treedb.models import PathResponse
+from youwol.backends.treedb.models import PathResponse
 
 from youwol.utils_low_level import get_public_user_auth_token
 
