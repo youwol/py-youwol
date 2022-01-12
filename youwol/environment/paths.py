@@ -1,7 +1,9 @@
 from pathlib import Path
-from typing import Union
+from typing import Union, Optional
 from pydantic import BaseModel
+from appdirs import AppDirs
 import youwol
+from youwol_utils.utils_paths import existing_path_or_default
 
 
 class PathsBook(BaseModel):
@@ -102,3 +104,20 @@ class PathsBook(BaseModel):
  * config file: {self.config}
  * databases directory: {self.databases}
  * system directory: {self.system}"""
+
+
+app_dirs = AppDirs(appname="py-youwol", appauthor="Youwol")
+
+
+def ensure_config_file_exists_or_create_it(path: Optional[Path]) -> (Path, bool):
+    path = path if path else Path("config.json")
+    (final_path, exists) = existing_path_or_default(path,
+                                                    root_candidates=[Path().cwd(),
+                                                                     app_dirs.user_config_dir,
+                                                                     Path().home()],
+                                                    default_root=app_dirs.user_config_dir)
+    if not exists:
+        final_path.parent.mkdir(parents=True, exist_ok=True)
+        final_path.write_text("{}")
+
+    return final_path, exists

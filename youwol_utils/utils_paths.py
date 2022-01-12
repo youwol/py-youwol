@@ -10,7 +10,6 @@ from os import PathLike
 from pathlib import Path
 from typing import cast, Union, List, Set, Iterable, Tuple, Optional, Callable
 from pydantic import BaseModel
-from appdirs import AppDirs
 
 
 class FileListing(BaseModel):
@@ -130,9 +129,6 @@ def create_zip_file(path: Path, files_to_zip: List[Tuple[Path, str]]):
     zipper.close()
 
 
-app_dirs = AppDirs(appname="py-youwol", appauthor="Youwol")
-
-
 class PathException(RuntimeError):
     path: str
 
@@ -211,17 +207,3 @@ def existing_path_or_default(path: Union[str, Path],
 
     final_root = Path(default_root) if default_root else Path(root_candidates[0])
     return final_root / typed_path, False
-
-
-def ensure_config_file_exists_or_create_it(path: Optional[Path]) -> (Path, bool):
-    path = path if path else Path("config.json")
-    (final_path, exists) = existing_path_or_default(path,
-                                                    root_candidates=[Path().cwd(),
-                                                                     app_dirs.user_config_dir,
-                                                                     Path().home()],
-                                                    default_root=app_dirs.user_config_dir)
-    if not exists:
-        final_path.parent.mkdir(parents=True, exist_ok=True)
-        final_path.write_text("{}")
-
-    return final_path, exists

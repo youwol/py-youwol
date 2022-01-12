@@ -24,7 +24,7 @@ from youwol.utils_low_level import get_public_user_auth_token, get_object_from_m
 from youwol.web_socket import WebSocketsStore
 
 from youwol.main_args import get_main_arguments, MainArguments
-from youwol_utils.utils_paths import parse_json, ensure_config_file_exists_or_create_it, write_json
+from youwol_utils.utils_paths import parse_json, write_json
 
 from youwol.configuration.configuration_validation import (
     ConfigurationLoadingStatus, ConfigurationLoadingException,
@@ -32,7 +32,7 @@ from youwol.configuration.configuration_validation import (
     CheckSecretHealthy
 )
 from youwol.environment.models_project import ErrorResponse, Project
-from youwol.environment.paths import PathsBook
+from youwol.environment.paths import PathsBook, ensure_config_file_exists_or_create_it
 from youwol_utils import encode_id, retrieve_user_info
 
 PROJECT_PIPELINE_DIRECTORY = '.yw_pipeline'

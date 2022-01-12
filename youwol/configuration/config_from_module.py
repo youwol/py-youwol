@@ -12,8 +12,9 @@ from youwol.configuration.configuration_validation import CheckValidConfiguratio
 from youwol.configuration.models_config import Profiles, ConfigurationData, \
     CascadeAppend, CascadeReplace, CascadeBaseProfile, ExtendingProfile
 from youwol.environment.models_project import format_unknown_error, ErrorResponse
+from youwol.environment.paths import app_dirs
 from youwol.utils_low_level import get_object_from_module
-from youwol_utils.utils_paths import app_dirs, PathException, existing_path_or_default
+from youwol_utils.utils_paths import PathException, existing_path_or_default
 from youwol.main_args import MainArguments, get_main_arguments
 
 

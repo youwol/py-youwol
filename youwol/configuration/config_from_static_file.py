@@ -4,7 +4,8 @@ from typing import Optional, Dict
 from youwol.configuration.configuration_handler import ConfigurationHandler
 from youwol.configuration.models_config import Profiles, ConfigurationData, Cascade, CascadeBaseProfile, \
     ExtendingProfile
-from youwol_utils.utils_paths import app_dirs, PathException, existing_path_or_default
+from youwol.environment.paths import app_dirs
+from youwol_utils.utils_paths import PathException, existing_path_or_default
 
 
 class ConfigurationDataWithCascade(ConfigurationData):
