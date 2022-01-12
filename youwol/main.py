@@ -35,13 +35,6 @@ app = FastAPI(
     openapi_prefix=api_configuration.open_api_prefix,
     dependencies=[Depends(yw_config)])
 
-web_socket = None
-
-
-def on_update_available(name: str, version: str):
-    print("Update available", name, version)
-
-
 download_thread = AssetDownloadThread(
     factories={
         "package": DownloadPackageTask,
@@ -75,10 +68,6 @@ router = APIRouter()
 app.include_router(native_backends.router, tags=["native backends"])
 app.include_router(admin.router, prefix=api_configuration.base_path + "/admin", tags=["admin"])
 app.include_router(authorization.router, prefix=api_configuration.base_path + "/authorization", tags=["authorization"])
-
-
-def get_web_socket():
-    return web_socket
 
 
 @app.exception_handler(YouWolException)

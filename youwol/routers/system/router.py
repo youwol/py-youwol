@@ -22,15 +22,6 @@ class FolderContentBody(BaseModel):
     path: str
 
 
-@router.websocket("/ws")
-async def ws_endpoint(ws: WebSocket):
-
-    await ws.accept()
-    WebSocketsCache.system = ws
-    await ws.send_json({})
-    await start_web_socket(ws)
-
-
 @router.get("/file/{rest_of_path:path}",
             summary="return file content")
 async def get_file(rest_of_path: str):
