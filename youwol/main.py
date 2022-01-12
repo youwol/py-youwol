@@ -43,7 +43,6 @@ download_thread = AssetDownloadThread(
     },
     worker_count=4
 )
-download_thread.start()
 Context.download_thread = download_thread
 
 app.add_middleware(
@@ -107,6 +106,7 @@ http://localhost:{conf.http_port}/applications/@youwol/platform/latest
 def main():
     assert_python()
     try:
+        download_thread.start()
         conf = asyncio.run(YouwolEnvironmentFactory.get())
         print_invite(conf=conf)
         # app: incorrect type. More here: https://github.com/tiangolo/fastapi/issues/3927
@@ -116,7 +116,7 @@ def main():
         print(e)
         exit()
     finally:
-        Context.download_thread.join()
+        download_thread.join()
 
 
 if __name__ == "__main__":
