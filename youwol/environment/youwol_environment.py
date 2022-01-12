@@ -4,6 +4,8 @@ import json
 import os
 from getpass import getpass
 
+from colorama import Fore, Style
+from cowpy import cow
 from pathlib import Path
 from typing import Dict, Any, Union, Optional, Awaitable, List
 
@@ -498,6 +500,17 @@ async def get_yw_config_starter(main_args: MainArguments):
         write_json(user_info, conf_path.parent / 'users-info.json')
 
     return conf_path.parent
+
+
+def print_invite(conf: YouwolEnvironment):
+    print(f"""{Fore.GREEN} Configuration loaded successfully {Style.RESET_ALL}.
+""")
+    print(conf)
+    msg = cow.milk_random_cow(f"""
+All good, you can now browse to
+http://localhost:{conf.http_port}/applications/@youwol/platform/latest
+""")
+    print(msg)
 
 
 api_configuration = ApiConfiguration(open_api_prefix="", base_path="")

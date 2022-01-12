@@ -1,18 +1,13 @@
 import asyncio
-import sys
-
-from colorama import Fore, Style
-from cowpy import cow
 
 from fastapi import FastAPI, APIRouter, Depends, WebSocket
 import uvicorn
 from starlette.responses import RedirectResponse
 from starlette.requests import Request
 
-from youwol.environment.youwol_environment import YouwolEnvironmentFactory, yw_config, api_configuration
+from youwol.environment.youwol_environment import YouwolEnvironmentFactory, yw_config, api_configuration, print_invite
 from youwol_utils import YouWolException, youwol_exception_handler
 
-from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol_utils.context import ContextFactory
 from youwol.utils_low_level import start_web_socket, assert_python
 from youwol.web_socket import WebSocketsStore
@@ -62,7 +57,6 @@ app.add_middleware(
         missing_asset.PostMetadataDispatch(),
     ]
 )
-
 app.add_middleware(AuthMiddleware)
 app.add_middleware(BrowserCachingMiddleware)
 
@@ -94,17 +88,6 @@ async def ws_endpoint(ws: WebSocket):
     WebSocketsStore.userChannel = ws
     await ws.send_json({})
     await start_web_socket(ws)
-
-
-def print_invite(conf: YouwolEnvironment):
-    print(f"""{Fore.GREEN} Configuration loaded successfully {Style.RESET_ALL}.
-""")
-    print(conf)
-    msg = cow.milk_random_cow(f"""
-All good, you can now browse to
-http://localhost:{conf.http_port}/applications/@youwol/platform/latest
-""")
-    print(msg)
 
 
 def main():

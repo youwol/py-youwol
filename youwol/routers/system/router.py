@@ -1,12 +1,7 @@
 import os
 from pathlib import Path
 from typing import List
-
-from fastapi import APIRouter, WebSocket
-
-from youwol.utils_low_level import start_web_socket
-from youwol.web_socket import WebSocketsStore
-
+from fastapi import APIRouter
 from pydantic import BaseModel
 from fastapi.responses import FileResponse
 
