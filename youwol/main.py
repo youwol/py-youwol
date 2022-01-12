@@ -17,7 +17,7 @@ from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol.web_socket import WebSocketsCache
 from youwol.utils_low_level import start_web_socket, assert_python
 from youwol.routers import native_backends, admin, authorization
-from youwol.auto_download.auto_download_thread import AssetDownloadThread
+from youwol.environment.auto_download_thread import AssetDownloadThread
 from youwol.routers.environment.download_assets.data import DownloadDataTask
 from youwol.routers.environment.download_assets.flux_project import DownloadFluxProjectTask
 from youwol.routers.environment.download_assets.package import DownloadPackageTask
