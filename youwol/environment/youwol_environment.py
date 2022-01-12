@@ -26,7 +26,7 @@ from youwol.web_socket import WebSocketsCache
 
 from youwol.errors import HTTPResponseException
 from youwol.main_args import get_main_arguments, MainArguments
-from youwol.utils_paths import parse_json, ensure_config_file_exists_or_create_it, write_json
+from youwol_utils.utils_paths import parse_json, ensure_config_file_exists_or_create_it, write_json
 
 from youwol.configuration.configuration_validation import (
     ConfigurationLoadingStatus, ConfigurationLoadingException,

@@ -8,7 +8,7 @@ from youwol.environment.clients import RemoteClients
 from youwol.context import Context
 from youwol.models import Label
 from youwol.routers.environment.upload_assets.models import UploadTask
-from youwol.utils_paths import parse_json
+from youwol_utils.utils_paths import parse_json
 from youwol_utils import decode_id
 
 

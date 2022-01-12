@@ -14,7 +14,7 @@ from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol.environment.paths import PathsBook
 from youwol.exceptions import CommandException
 from youwol.models import Label
-from youwol.utils_paths import matching_files, parse_json
+from youwol_utils.utils_paths import matching_files, parse_json
 from youwol_utils import JSON, files_check_sum
 
 FlowId = str

@@ -9,7 +9,7 @@ from youwol.environment.clients import RemoteClients
 from youwol.models import Label
 from youwol.routers.local_cdn.models import CheckUpdateResponse, UpdateStatus, PackageVersionInfo, \
     DownloadedPackageResponse, DownloadPackageBody
-from youwol.utils_paths import parse_json
+from youwol_utils.utils_paths import parse_json
 from youwol_utils import encode_id
 
 

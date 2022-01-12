@@ -12,7 +12,7 @@ from youwol.environment.paths import PathsBook
 from youwol.context import Context
 from youwol.services.backs.assets_gateway.models import DefaultDriveResponse
 from youwol.routers.environment.upload_assets.upload import upload_asset
-from youwol.utils_paths import create_zip_file
+from youwol_utils.utils_paths import create_zip_file
 from youwol_utils import encode_id, files_check_sum
 
 

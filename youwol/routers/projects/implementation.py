@@ -10,7 +10,7 @@ from youwol.routers.projects.models import (
     PipelineStepStatusResponse, ArtifactResponse
     )
 from youwol.utils_low_level import to_json
-from youwol.utils_paths import matching_files, parse_json
+from youwol_utils.utils_paths import matching_files, parse_json
 
 
 async def get_project_step(

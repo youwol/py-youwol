@@ -8,8 +8,8 @@ from fastapi import HTTPException
 from youwol_utils import decode_id, JSON
 from youwol.utils_low_level import to_json
 from youwol.context import Context
-from youwol.utils_paths import parse_json
 from youwol.models import Label
+from youwol_utils.utils_paths import parse_json
 from youwol.environment.clients import RemoteClients, LocalClients
 from youwol.routers.commons import local_path, ensure_path
 from youwol.routers.environment.upload_assets.data import UploadDataTask
