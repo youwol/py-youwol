@@ -14,8 +14,8 @@ from youwol_utils import YouWolException, youwol_exception_handler
 
 from youwol.context import Context
 from youwol.environment.forward_declaration import YouwolEnvironment
-from youwol.utils_low_level import start_web_socket
 from youwol.web_socket import WebSocketsCache
+from youwol.utils_low_level import start_web_socket, assert_python
 from youwol.routers import native_backends, admin, authorization
 from youwol.auto_download.auto_download_thread import AssetDownloadThread
 from youwol.routers.environment.download_assets.data import DownloadDataTask
@@ -102,19 +102,6 @@ async def ws_endpoint(ws: WebSocket):
     WebSocketsCache.userChannel = ws
     await ws.send_json({})
     await start_web_socket(ws)
-
-
-def assert_python():
-    print(f"Running with python:\n\t{sys.executable}\n\t{sys.version}")
-    version_info = sys.version_info
-    if not ((version_info.major == 3 and version_info.minor == 10) or
-            (version_info.major == 3 and version_info.minor == 9) or
-            (version_info.major == 3 and version_info.minor == 8) or
-            (version_info.major == 3 and version_info.minor == 7) or
-            (version_info.major == 3 and version_info.minor == 6)):
-        print(f"""Your version of python is not compatible with py-youwol:
-        Required: 3.9.x""")
-        exit(1)
 
 
 def print_invite(conf: YouwolEnvironment):
