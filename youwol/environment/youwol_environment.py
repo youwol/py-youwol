@@ -24,7 +24,6 @@ from youwol.services.backs.assets_gateway.models import DefaultDriveResponse
 from youwol.utils_low_level import get_public_user_auth_token, get_object_from_module
 from youwol.web_socket import WebSocketsCache
 
-from youwol.errors import HTTPResponseException
 from youwol.main_args import get_main_arguments, MainArguments
 from youwol_utils.utils_paths import parse_json, ensure_config_file_exists_or_create_it, write_json
 
@@ -258,14 +257,9 @@ async def login(
             user_email = users_info['policies']["default"]
 
     if user_email is None:
-        raise HTTPResponseException(
+        raise HTTPException(
             status_code=401,
-            title="User has not been identified",
-            descriptions=[f"make sure your users info file ({users_info_path}) contains"],
-            hints=[
-                "a 'default' field is pointing to the desired default email address",
-                "the desired default email address is associated to an identity"
-            ]
+            detail=f"User has not been identified, make sure it is defined in users info file ({users_info_path})"
         )
     if user_email not in parse_json(users_info_path)['users']:
         context and await context.info(
