@@ -12,8 +12,8 @@ from starlette.requests import Request
 from youwol.environment.youwol_environment import YouwolEnvironmentFactory, yw_config, api_configuration
 from youwol_utils import YouWolException, youwol_exception_handler
 
-from youwol.context import Context
 from youwol.environment.forward_declaration import YouwolEnvironment
+from youwol_utils.context import ContextFactory
 from youwol.utils_low_level import start_web_socket, assert_python
 from youwol.web_socket import WebSocketsStore
 from youwol.routers import native_backends, admin, authorization
@@ -43,7 +43,11 @@ download_thread = AssetDownloadThread(
     },
     worker_count=4
 )
-Context.download_thread = download_thread
+
+ContextFactory.with_static_data = {
+    "env": lambda: yw_config(),
+    "download_thread": download_thread
+}
 
 app.add_middleware(
     DynamicRoutingMiddleware,
