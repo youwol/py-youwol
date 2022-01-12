@@ -13,7 +13,6 @@ from youwol_utils.context import Context
 from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol.environment.paths import PathsBook
 from youwol.exceptions import CommandException
-from youwol.models import Label
 from youwol_utils.utils_paths import matching_files, parse_json
 from youwol_utils import JSON, files_check_sum
 
@@ -232,7 +231,7 @@ class PipelineStep(BaseModel):
         async with stream.merge(p.stdout, p.stderr).stream() as messages_stream:
             async for message in messages_stream:
                 outputs.append(message.decode('utf-8'))
-                await context.info(text=outputs[-1], labels=[Label.BASH])
+                await context.info(text=outputs[-1], labels=["BASH"])
         await p.communicate()
 
         return_code = p.returncode

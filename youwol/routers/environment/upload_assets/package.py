@@ -5,7 +5,6 @@ from pydantic import BaseModel
 
 from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.environment.clients import RemoteClients
-from youwol.models import Label
 from youwol.routers.environment.upload_assets.models import UploadTask
 from youwol_utils.utils_paths import parse_json
 from youwol_utils import decode_id
@@ -108,7 +107,6 @@ class UploadPackageTask(UploadTask):
                                                     timeout=600)
             finally:
                 await ctx.info(
-                    labels=[Label.DONE],
                     text=f"{library_name}#{version}: synchronization done"
                     )
                 # await check_package_status(package=local_package, context=context, target_versions=[version])

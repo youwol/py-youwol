@@ -7,7 +7,7 @@ from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.environment.download_assets.common import create_asset_local
 from youwol_utils.context import Context
 from youwol.environment.clients import RemoteClients
-from youwol.models import Label
+from youwol.routers.commons import Label
 from youwol.routers.local_cdn.models import CheckUpdateResponse, UpdateStatus, PackageVersionInfo, \
     DownloadedPackageResponse, DownloadPackageBody
 from youwol_utils.utils_paths import parse_json
@@ -121,7 +121,7 @@ async def download_package(
 
     async with context.start(
             action=f"download package {package_name}#{version}",
-            with_labels=[Label.PACKAGE_DOWNLOADING],
+            with_labels=[str(Label.PACKAGE_DOWNLOADING)],
             with_attributes={
                 'packageName': package_name,
                 'packageVersion': version,

@@ -11,7 +11,7 @@ from starlette.requests import Request
 from youwol.environment.clients import RemoteClients, LocalClients
 from youwol.environment.models import UserInfo
 from youwol.environment.youwol_environment import yw_config, YouwolEnvironment, YouwolEnvironmentFactory
-from youwol.models import Label
+from youwol.routers.commons import Label
 from youwol_utils.context import Context, ContextFactory
 from youwol.routers.environment.upload_assets.models import UploadTask
 from youwol.routers.environment.upload_assets.upload import synchronize_permissions_metadata_symlinks
@@ -60,25 +60,21 @@ async def connect_to_remote(config: YouwolEnvironment, context: Context) -> bool
         return True
     except HTTPException as e:
         await context.info(
-            labels=[Label.STATUS],
             text="Authorization: HTTP Error",
             data={'host': remote_gateway_info.host, 'error': str(e)})
         return False
     except ClientConnectorError as e:
         await context.info(
-            labels=[Label.STATUS],
             text="Authorization: Connection error (internet on?)",
             data={'host': remote_gateway_info.host, 'error': str(e)})
         return False
     except RuntimeError as e:
         await context.info(
-            labels=[Label.STATUS],
             text="Authorization error",
             data={'host': remote_gateway_info.host, 'error': str(e)})
         return False
     except ContentTypeError as e:
         await context.info(
-            labels=[Label.STATUS],
             text="Failed to call healthz on assets-gateway",
             data={'host': remote_gateway_info.host, 'error': str(e)})
         return False
@@ -228,7 +224,6 @@ async def select_remote(
 
     async with context.start(
             action="upload_asset",
-            labels=[Label.INFO],
             with_attributes={
                 'asset_id': asset_id
             }
@@ -270,7 +265,6 @@ async def select_remote(
             raise e
 
         await ctx.info(
-            labels=[Label.STATUS],
             text="Data retrieved",
             data={"path_item": path_item, "raw data": local_data}
         )
@@ -282,7 +276,6 @@ async def select_remote(
             _asset = await assets_gtw_client.get_asset_metadata(asset_id=asset_id)
             _tree_item = await assets_gtw_client.get_tree_item(tree_item['itemId'])
             await ctx.info(
-                labels=[Label.STATUS],
                 text="Asset already found in deployed environment"
             )
             await factory.update_raw(data=local_data, folder_id=tree_item['folderId'])

@@ -13,7 +13,7 @@ from youwol.environment.models_project import Project, Manifest
 from youwol.environment.paths import PathsBook
 from youwol_utils.context import ContextFactory
 from youwol.exceptions import CommandException
-from youwol.models import Label
+from youwol.routers.commons import Label
 from youwol.routers.projects.dependencies import resolve_project_dependencies
 from youwol.routers.projects.implementation import (
     run, create_artifacts, get_status, get_project_step, get_project_flow_steps, format_artifact_response
@@ -51,7 +51,7 @@ async def pipeline_step_status(
 
     async with context.start(
             action="Get pipeline status",
-            with_labels=[Label.PIPELINE_STEP_STATUS_PENDING],
+            with_labels=[str(Label.PIPELINE_STEP_STATUS_PENDING)],
             with_attributes={
                 'projectId': project_id,
                 'flowId': flow_id,
@@ -197,7 +197,7 @@ async def run_pipeline_step(
 
     async with context.start(
             action="Run pipeline-step",
-            with_labels=[Label.RUN_PIPELINE_STEP],
+            with_labels=[str(Label.RUN_PIPELINE_STEP)],
             with_attributes={
                 'projectId': project_id,
                 'flowId': flow_id,
@@ -259,7 +259,6 @@ async def cdn_status(
 
     async with context.start(
             action="Get local cdn status",
-            with_labels=[Label.INFO],
             with_attributes={'event': 'CdnResponsePending', 'projectId': project_id}
             ) as ctx:
 

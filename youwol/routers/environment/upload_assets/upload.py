@@ -8,9 +8,9 @@ from fastapi import HTTPException
 from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol_utils import decode_id, JSON
 from youwol.utils_low_level import to_json
-from youwol.models import Label
 from youwol_utils.context import Context
 from youwol_utils.utils_paths import parse_json
+from youwol.routers.commons import Label
 from youwol.environment.clients import RemoteClients, LocalClients
 from youwol.routers.commons import local_path, ensure_path
 from youwol.routers.environment.upload_assets.data import UploadDataTask
@@ -51,7 +51,7 @@ async def synchronize_permissions(assets_gtw_client: AssetsGatewayClient, asset_
         local_assets_gtw = LocalClients.get_assets_gateway_client(env=env)
         access_info = await local_assets_gtw.get_asset_access(asset_id=asset_id)
         await ctx.info(
-            labels=[Label.RUNNING],
+            labels=[str(Label.RUNNING)],
             text="Permissions retrieved",
             data={"access_info": access_info}
             )
@@ -123,7 +123,7 @@ async def create_borrowed_item(borrowed_tree_id: str, item: Mapping[str, any], a
                                                      "destinationFolderId": parent_id
                                                     }
                                                  )
-        await ctx.info(labels=[Label.DONE], text="Borrowed item created")
+        await ctx.info(text="Borrowed item created")
 
 
 async def synchronize_metadata(asset_id: str, assets_gtw_client: AssetsGatewayClient, context: Context):
@@ -146,7 +146,7 @@ async def synchronize_metadata(asset_id: str, assets_gtw_client: AssetsGatewayCl
         filenames = [url.split('/')[-1] for url in full_urls]
 
         await ctx.info(
-            labels=[Label.RUNNING],
+            labels=[str(Label.RUNNING)],
             text="Synchronise metadata",
             data={
                 'local_metadata': local_metadata,
@@ -234,7 +234,6 @@ async def upload_asset(
             raise e
 
         await ctx.info(
-            labels=[Label.STATUS],
             text="Data retrieved",
             data={"path_item": path_item, "raw data": local_data}
             )
@@ -245,7 +244,6 @@ async def upload_asset(
         try:
             await assets_gtw_client.get_asset_metadata(asset_id=asset_id)
             await ctx.info(
-                labels=[Label.STATUS],
                 text="Asset already found in deployed environment"
                 )
             await factory.update_raw(data=local_data, folder_id=tree_item['folderId'])

@@ -18,7 +18,6 @@ from youwol_utils.context import Context, ContextFactory
 from youwol.configuration.config_from_static_file import configuration_from_json
 from youwol.configuration.configuration_handler import ConfigurationHandler
 from youwol.environment.models import RemoteGateway, UserInfo, ApiConfiguration, IPipelineFactory, Events
-from youwol.models import Label
 from youwol.routers.custom_commands.models import Command
 from youwol.services.backs.assets_gateway.models import DefaultDriveResponse
 from youwol.utils_low_level import get_public_user_auth_token, get_object_from_module
@@ -126,7 +125,7 @@ class YouwolEnvironment(BaseModel):
         deadline = datetime.timestamp(datetime.now()) + 1 * 60 * 60 * 1000
         self.tokensCache.append(DeadlinedCache(value=access_token, deadline=deadline, dependencies=dependencies))
 
-        await context.info(labels=[Label.STATUS], text="Access token renewed",
+        await context.info(text="Access token renewed",
                            data={"host": remote.host, "access_token": access_token})
         return access_token
 
@@ -241,7 +240,7 @@ class YouwolEnvironmentFactory:
         on_load_cb = config.events.onLoad(config, context)
         data = await on_load_cb if isinstance(on_load_cb, Awaitable) else on_load_cb
 
-        await context.info(labels=[Label.STATUS], text="Applied onLoad event's callback", data=data)
+        await context.info(text="Applied onLoad event's callback", data=data)
 
 
 async def yw_config() -> YouwolEnvironment:
@@ -266,7 +265,6 @@ async def login(
         )
     if user_email not in parse_json(users_info_path)['users']:
         context and await context.info(
-            labels=[Label.STATUS],
             text=f"User {user_email} not registered in {users_info_path}: switch user",
             data={"user_email": user_email, 'usersInfo': parse_json(users_info_path)
                   }
