@@ -299,6 +299,11 @@ async def safe_load(
         selected_remote: Optional[RemoteGateway],
         context: Optional[Context] = None,
 ) -> YouwolEnvironment:
+    """
+    Possible errors:
+    - the user id saved in users-info.json is actually not the actual one (from remote env).
+    => everything seems to work fine but the assets in remotes are not visible from local explorer
+    """
     check_system_folder_writable = CheckSystemFolderWritable()
     check_database_folder_healthy = CheckDatabasesFolderHealthy()
     check_secret_exists = CheckSecretPathExist()
