@@ -6,8 +6,9 @@ from starlette.requests import Request
 from starlette.responses import Response, JSONResponse
 
 from youwol.environment.clients import RemoteClients, LocalClients
+from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.middlewares.models_dispatch import AbstractDispatch
-from youwol.context import Context
+from youwol_utils.context import Context
 from youwol.services.backs.assets_gateway.models import ChildrenResponse, ItemResponse, FolderResponse
 from youwol.utils_low_level import JSON
 
@@ -38,7 +39,8 @@ class GetChildrenDispatch(AbstractDispatch):
         if not await GetChildrenDispatch.is_matching(request=request):
             return None
 
-        local_gtw = LocalClients.get_assets_gateway_client(context=context)
+        env = await context.get('env', YouwolEnvironment)
+        local_gtw = LocalClients.get_assets_gateway_client(env=env)
         remote_gtw = await RemoteClients.get_assets_gateway_client(context=context)
         folder_id = request.url.path.split('/api/assets-gateway/tree/folders/')[1].split('/')[0]
 
@@ -99,7 +101,8 @@ class GetPermissionsDispatch(AbstractDispatch):
         if not await GetPermissionsDispatch.is_matching(request=request):
             return None
 
-        local_gtw = LocalClients.get_assets_gateway_client(context=context)
+        env = await context.get('env', YouwolEnvironment)
+        local_gtw = LocalClients.get_assets_gateway_client(env=env)
         remote_gtw = await RemoteClients.get_assets_gateway_client(context=context)
         item_id = request.url.path.split('/api/assets-gateway/tree/')[1].split('/')[0]
 
@@ -131,7 +134,8 @@ class GetItemDispatch(AbstractDispatch):
         if not await GetItemDispatch.is_matching(request=request):
             return None
 
-        local_gtw = LocalClients.get_assets_gateway_client(context=context)
+        env = await context.get('env', YouwolEnvironment)
+        local_gtw = LocalClients.get_assets_gateway_client(env=env)
         remote_gtw = await RemoteClients.get_assets_gateway_client(context=context)
         item_id = request.url.path.split('/api/assets-gateway/tree/items/')[1]
 

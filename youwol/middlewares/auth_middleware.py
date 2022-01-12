@@ -5,7 +5,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp
 
-from youwol.context import Context
+from youwol_utils.context import ContextFactory
 from youwol.web_socket import WebSocketsStore
 from youwol.environment.youwol_environment import yw_config
 from youwol.routers.authorization import get_user_info
@@ -25,9 +25,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
             ) -> Response:
 
         config = await yw_config()
-        context = Context(
-            web_socket=WebSocketsCache.api_gateway,
-            config=config,
+        context = ContextFactory.get_instance(
+            web_socket=WebSocketsStore.userChannel,
             request=request
             )
 

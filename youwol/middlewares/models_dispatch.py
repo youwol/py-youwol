@@ -8,7 +8,7 @@ from starlette.responses import Response
 
 from youwol.utils_low_level import redirect_request
 from youwol_utils import encode_id
-from youwol.context import Context
+from youwol_utils.context import Context
 
 
 class AbstractDispatch(BaseModel):

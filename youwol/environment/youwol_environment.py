@@ -14,7 +14,7 @@ from youwol.configuration.config_from_module import configuration_from_python
 from youwol.environment.clients import LocalClients
 from youwol.middlewares.models_dispatch import AbstractDispatch
 
-from youwol.context import Context
+from youwol_utils.context import Context, ContextFactory
 from youwol.configuration.config_from_static_file import configuration_from_json
 from youwol.configuration.configuration_handler import ConfigurationHandler
 from youwol.environment.models import RemoteGateway, UserInfo, ApiConfiguration, IPipelineFactory, Events
@@ -134,7 +134,8 @@ class YouwolEnvironment(BaseModel):
 
         if self.private_cache.get("default-drive"):
             return self.private_cache.get("default-drive")
-        default_drive = await LocalClients.get_assets_gateway_client(context).get_default_user_drive()
+        env = await context.get('env', YouwolEnvironment)
+        default_drive = await LocalClients.get_assets_gateway_client(env).get_default_user_drive()
         self.private_cache["default-drive"] = DefaultDriveResponse(**default_drive)
         return DefaultDriveResponse(**default_drive)
 
@@ -232,7 +233,9 @@ class YouwolEnvironmentFactory:
 
     @staticmethod
     async def trigger_on_load(config: YouwolEnvironment):
-        context = Context(config=config, web_socket=WebSocketsCache.environment)
+        context = ContextFactory.get_instance(
+            web_socket=WebSocketsStore.userChannel
+        )
         if not config.events or not config.events.onLoad:
             return
         on_load_cb = config.events.onLoad(config, context)

@@ -12,7 +12,7 @@ from youwol.environment.clients import RemoteClients, LocalClients
 from youwol.environment.models import UserInfo
 from youwol.environment.youwol_environment import yw_config, YouwolEnvironment, YouwolEnvironmentFactory
 from youwol.models import Label
-from youwol.context import Context
+from youwol_utils.context import Context, ContextFactory
 from youwol.routers.environment.upload_assets.models import UploadTask
 from youwol.routers.environment.upload_assets.upload import synchronize_permissions_metadata_symlinks
 from youwol.routers.commons import ensure_path
@@ -111,7 +111,10 @@ async def status(
         request: Request,
         config: YouwolEnvironment = Depends(yw_config)
         ):
-    context = Context(config=config, request=request, web_socket=WebSocketsCache.userChannel)
+    context = ContextFactory.get_instance(
+        request=request,
+        web_socket=WebSocketsStore.userChannel
+    )
     async with context.start(
             action="Get environment status"
             ) as ctx:
@@ -166,12 +169,10 @@ async def sync_user(
         body: SyncUserBody,
         config: YouwolEnvironment = Depends(yw_config)
         ):
-
-    context = Context(
+    context = ContextFactory.get_instance(
         request=request,
-        config=config,
-        web_socket=WebSocketsCache.environment
-        )
+        web_socket=WebSocketsStore.userChannel
+    )
     async with context.start(f"Sync. user {body.email}") as ctx:
 
         try:
@@ -211,14 +212,12 @@ async def sync_user(
              summary="upload an asset")
 async def select_remote(
         request: Request,
-        asset_id: str,
-        config: YouwolEnvironment = Depends(yw_config)
+        asset_id: str
         ):
-    context = Context(
+    context = ContextFactory.get_instance(
         request=request,
-        config=config,
-        web_socket=WebSocketsCache.environment
-        )
+        web_socket=WebSocketsStore.userChannel
+    )
 
     upload_factories: Dict[str, any] = {
         "data": UploadDataTask,
@@ -235,8 +234,9 @@ async def select_remote(
             }
     ) as ctx:
 
-        local_treedb: TreeDbClient = LocalClients.get_treedb_client(context=ctx)
-        local_assets: AssetsClient = LocalClients.get_assets_client(context=ctx)
+        env = await context.get('env', YouwolEnvironment)
+        local_treedb: TreeDbClient = LocalClients.get_treedb_client(env=env)
+        local_assets: AssetsClient = LocalClients.get_assets_client(env=env)
         raw_id = decode_id(asset_id)
         asset, tree_item = await asyncio.gather(
             local_assets.get(asset_id=asset_id),

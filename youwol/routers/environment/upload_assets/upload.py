@@ -5,10 +5,11 @@ from typing import Mapping, Dict, cast
 from aiohttp import FormData, ClientSession
 from fastapi import HTTPException
 
+from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol_utils import decode_id, JSON
 from youwol.utils_low_level import to_json
-from youwol.context import Context
 from youwol.models import Label
+from youwol_utils.context import Context
 from youwol_utils.utils_paths import parse_json
 from youwol.environment.clients import RemoteClients, LocalClients
 from youwol.routers.commons import local_path, ensure_path
@@ -46,7 +47,8 @@ async def synchronize_permissions(assets_gtw_client: AssetsGatewayClient, asset_
                 'assetId': asset_id
                 }
             ) as ctx:
-        local_assets_gtw = LocalClients.get_assets_gateway_client(context=ctx)
+        env = await context.get('env', YouwolEnvironment)
+        local_assets_gtw = LocalClients.get_assets_gateway_client(env=env)
         access_info = await local_assets_gtw.get_asset_access(asset_id=asset_id)
         await ctx.info(
             labels=[Label.RUNNING],
@@ -66,6 +68,7 @@ async def synchronize_permissions(assets_gtw_client: AssetsGatewayClient, asset_
 
 async def create_borrowed_items(asset_id: str, tree_id: str, assets_gtw_client: AssetsGatewayClient, context: Context):
 
+    env = await context.get('env', YouwolEnvironment)
     async with context.start(
             action="create_borrowed_items",
             with_attributes={
@@ -74,7 +77,7 @@ async def create_borrowed_items(asset_id: str, tree_id: str, assets_gtw_client: 
                 }
             ) as ctx:
 
-        items_treedb = parse_json(ctx.config.pathsBook.local_treedb_docdb)
+        items_treedb = parse_json(env.pathsBook.local_treedb_docdb)
         tree_items = [item for item in items_treedb['documents'] if item['related_id'] == asset_id]
         borrowed_items = [item for item in tree_items if json.loads(item['metadata'])['borrowed']]
 
@@ -124,7 +127,7 @@ async def create_borrowed_item(borrowed_tree_id: str, item: Mapping[str, any], a
 
 
 async def synchronize_metadata(asset_id: str, assets_gtw_client: AssetsGatewayClient, context: Context):
-
+    env = await context.get('env', YouwolEnvironment)
     async with context.start(
             action="synchronize_metadata",
             with_attributes={
@@ -132,14 +135,14 @@ async def synchronize_metadata(asset_id: str, assets_gtw_client: AssetsGatewayCl
                 }
             ) as ctx:
 
-        local_assets_gtw: AssetsGatewayClient = LocalClients.get_assets_gateway_client(context=ctx)
+        local_assets_gtw: AssetsGatewayClient = LocalClients.get_assets_gateway_client(env=env)
 
         local_metadata, remote_metadata = await asyncio.gather(
             local_assets_gtw.get_asset_metadata(asset_id=asset_id),
             assets_gtw_client.get_asset_metadata(asset_id=asset_id)
             )
         missing_images_urls = [p for p in local_metadata['images'] if p not in remote_metadata['images']]
-        full_urls = [f"http://localhost:{context.config.http_port}{url}" for url in missing_images_urls]
+        full_urls = [f"http://localhost:{env.http_port}{url}" for url in missing_images_urls]
         filenames = [url.split('/')[-1] for url in full_urls]
 
         await ctx.info(
@@ -195,8 +198,9 @@ async def upload_asset(
                 }
             ) as ctx:
 
-        local_treedb: TreeDbClient = LocalClients.get_treedb_client(context=ctx)
-        local_assets: AssetsClient = LocalClients.get_assets_client(context=ctx)
+        env = await context.get('env', YouwolEnvironment)
+        local_treedb: TreeDbClient = LocalClients.get_treedb_client(env=env)
+        local_assets: AssetsClient = LocalClients.get_assets_client(env=env)
         raw_id = decode_id(asset_id)
         asset, tree_item = await asyncio.gather(
             local_assets.get(asset_id=asset_id),

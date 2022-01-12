@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from aiohttp import FormData
 
 from youwol.environment.clients import RemoteClients, LocalClients
+from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.environment.upload_assets.models import UploadTask
 
 
@@ -11,7 +12,8 @@ class UploadDataTask(UploadTask):
 
     async def get_raw(self) -> FormData:
         # a dedicated asset service for data should be available and used here instead of assets_gateway_client
-        asset_gtw = LocalClients.get_assets_gateway_client(context=self.context)
+        env = await self.context.get('env', YouwolEnvironment)
+        asset_gtw = LocalClients.get_assets_gateway_client(env=env)
         data, metadata, raw_metadata = await asyncio.gather(
             asset_gtw.get_raw(kind='data', raw_id=self.raw_id),
             asset_gtw.get_asset_metadata(asset_id=self.asset_id),

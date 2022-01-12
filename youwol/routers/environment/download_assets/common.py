@@ -3,10 +3,11 @@ import json
 from typing import List, Callable, Awaitable, TypeVar
 from fastapi import HTTPException
 
+from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from youwol_utils.clients.treedb.treedb import TreeDbClient
 from youwol.environment.clients import RemoteClients, LocalClients
-from youwol.context import Context
+from youwol_utils.context import Context
 from youwol.services.backs.treedb.models import PathResponse, ItemResponse, ItemsResponse, DriveResponse
 
 
@@ -102,12 +103,12 @@ async def create_asset_local(
         to_post_raw_data: Callable[[T], any],
         context: Context
         ):
-
+    env = await context.get("env", YouwolEnvironment)
     async with context.start(
             action=f"Fetch asset {asset_id} of kind {kind}",
             ) as ctx:
-        local_treedb: TreeDbClient = LocalClients.get_treedb_client(context)
-        local_gtw: AssetsGatewayClient = LocalClients.get_assets_gateway_client(context)
+        local_treedb: TreeDbClient = LocalClients.get_treedb_client(env)
+        local_gtw: AssetsGatewayClient = LocalClients.get_assets_gateway_client(env)
         remote_gtw = await RemoteClients.get_assets_gateway_client(context)
         remote_treedb = await RemoteClients.get_treedb_client(context)
 

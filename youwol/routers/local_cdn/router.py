@@ -2,12 +2,12 @@ import asyncio
 from typing import List
 
 from starlette.requests import Request
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 
-from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
+from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.local_cdn.implementation import get_latest_local_cdn_version, check_updates_from_queue, \
     download_packages_from_queue
-from youwol.context import Context
+from youwol_utils.context import ContextFactory
 from youwol.routers.local_cdn.models import CheckUpdatesResponse, CheckUpdateResponse, DownloadPackagesBody
 from youwol.web_socket import WebSocketsStore
 
@@ -19,21 +19,19 @@ router = APIRouter()
             response_model=CheckUpdatesResponse
             )
 async def collect_updates(
-        request: Request,
-        config: YouwolEnvironment = Depends(yw_config)
+        request: Request
         ):
-
-    context = Context(
+    context = ContextFactory.get_instance(
         request=request,
-        config=config,
-        web_socket=WebSocketsCache.userChannel
+        web_socket=WebSocketsStore.userChannel
     )
     queue = asyncio.Queue()
+    env = await context.get('env', YouwolEnvironment)
     async with context.start(
             action="collect available updates",
             with_attributes={'topic': 'updatesCdn'}) as ctx:
 
-        local_packages_latest = get_latest_local_cdn_version(ctx)
+        local_packages_latest = get_latest_local_cdn_version(env)
         await ctx.info(text="local latest version of cdn packages retrieved",
                        data={'packages': {f"{p.library_name}#{p.version}": p for p in local_packages_latest}})
         for package in local_packages_latest:
@@ -55,14 +53,12 @@ async def collect_updates(
              )
 async def download(
         request: Request,
-        body: DownloadPackagesBody,
-        config: YouwolEnvironment = Depends(yw_config)
+        body: DownloadPackagesBody
         ):
 
-    context = Context(
+    context = ContextFactory.get_instance(
         request=request,
-        config=config,
-        web_socket=WebSocketsCache.userChannel
+        web_socket=WebSocketsStore.userChannel
     )
     queue = asyncio.Queue()
 

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from starlette.requests import Request
 
 from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
-from youwol.context import Context
+from youwol_utils.context import ContextFactory
 from youwol.web_socket import WebSocketsStore
 
 router = APIRouter()
@@ -16,8 +16,10 @@ async def execute_command(
         command_name: str,
         config: YouwolEnvironment = Depends(yw_config)
         ):
-
-    context = Context(config=config, request=request, web_socket=WebSocketsCache.environment)
+    context = ContextFactory.get_instance(
+        request=request,
+        web_socket=WebSocketsStore.userChannel
+    )
     command = config.commands.get(command_name)
     if command is None:
         raise HTTPException(status_code=404, detail=f"Command '{command_name}' not found")
@@ -35,8 +37,10 @@ async def execute_command(
         command_name: str,
         config: YouwolEnvironment = Depends(yw_config)
 ):
-
-    context = Context(config=config, request=request, web_socket=WebSocketsCache.environment)
+    context = ContextFactory.get_instance(
+        request=request,
+        web_socket=WebSocketsStore.userChannel
+    )
     body = await request.json()
     command = config.commands.get(command_name)
     if command is None:
@@ -55,8 +59,10 @@ async def execute_command(
         command_name: str,
         config: YouwolEnvironment = Depends(yw_config)
 ):
-
-    context = Context(config=config, request=request, web_socket=WebSocketsCache.environment)
+    context = ContextFactory.get_instance(
+        request=request,
+        web_socket=WebSocketsStore.userChannel
+    )
     body = await request.json()
     command = config.commands.get(command_name)
     if command is None:
@@ -75,8 +81,10 @@ async def execute_command(
         command_name: str,
         config: YouwolEnvironment = Depends(yw_config)
 ):
-
-    context = Context(config=config, request=request, web_socket=WebSocketsCache.environment)
+    context = ContextFactory.get_instance(
+        request=request,
+        web_socket=WebSocketsStore.userChannel
+    )
     command = config.commands.get(command_name)
     if command is None:
         raise HTTPException(status_code=404, detail=f"Command '{command_name}' not found")

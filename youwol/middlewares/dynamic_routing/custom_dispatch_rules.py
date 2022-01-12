@@ -3,8 +3,9 @@ from typing import Optional, List
 from starlette.requests import Request
 from starlette.responses import Response
 
+from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.middlewares.models_dispatch import AbstractDispatch
-from youwol.context import Context
+from youwol_utils.context import Context
 from starlette.middleware.base import RequestResponseEndpoint
 
 
@@ -16,7 +17,8 @@ class CustomDispatchesRule(AbstractDispatch):
                     context: Context
                     ) -> Optional[Response]:
 
-        dispatches: List[AbstractDispatch] = context.config.customDispatches
+        env = await context.get('env', YouwolEnvironment)
+        dispatches: List[AbstractDispatch] = env.customDispatches
         responses = await asyncio.gather(*[
             d.apply(incoming_request=request, call_next=call_next, context=context) for d in dispatches
         ])
