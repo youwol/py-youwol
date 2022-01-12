@@ -9,7 +9,7 @@ from youwol.routers.local_cdn.implementation import get_latest_local_cdn_version
     download_packages_from_queue
 from youwol.context import Context
 from youwol.routers.local_cdn.models import CheckUpdatesResponse, CheckUpdateResponse, DownloadPackagesBody
-from youwol.web_socket import WebSocketsCache
+from youwol.web_socket import WebSocketsStore
 
 router = APIRouter()
 

@@ -5,11 +5,11 @@ from starlette.websockets import WebSocket
 
 
 @dataclass(frozen=False)
-class WebSocketsCache:
+class WebSocketsStore:
 
     userChannel: Union[WebSocket, None] = None
 
 
 def web_socket_cache():
 
-    return WebSocketsCache
+    return WebSocketsStore

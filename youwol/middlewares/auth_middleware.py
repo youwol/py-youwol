@@ -6,7 +6,7 @@ from starlette.responses import Response
 from starlette.types import ASGIApp
 
 from youwol.context import Context
-from youwol.web_socket import WebSocketsCache
+from youwol.web_socket import WebSocketsStore
 from youwol.environment.youwol_environment import yw_config
 from youwol.routers.authorization import get_user_info
 

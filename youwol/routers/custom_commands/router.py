@@ -5,7 +5,7 @@ from starlette.requests import Request
 
 from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
 from youwol.context import Context
-from youwol.web_socket import WebSocketsCache
+from youwol.web_socket import WebSocketsStore
 
 router = APIRouter()
 

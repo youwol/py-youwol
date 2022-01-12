@@ -19,8 +19,8 @@ from youwol.routers.projects.implementation import (
     run, create_artifacts, get_status, get_project_step, get_project_flow_steps, format_artifact_response
     )
 
-from youwol.web_socket import WebSocketsCache
 from youwol_utils.utils_paths import write_json
+from youwol.web_socket import WebSocketsStore
 
 from youwol.routers.projects.models import (
     PipelineStepStatusResponse, PipelineStatusResponse, ArtifactsResponse, ProjectStatusResponse, CdnResponse,

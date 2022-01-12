@@ -29,8 +29,8 @@ from youwol.routers.environment.models import (
     SyncUserBody, LoginBody, RemoteGatewayInfo, SelectRemoteBody
 )
 
-from youwol.web_socket import WebSocketsCache
 from youwol_utils.utils_paths import parse_json, write_json
+from youwol.web_socket import WebSocketsStore
 from youwol_utils import retrieve_user_info, decode_id
 from youwol_utils.clients.assets.assets import AssetsClient
 from youwol_utils.clients.treedb.treedb import TreeDbClient

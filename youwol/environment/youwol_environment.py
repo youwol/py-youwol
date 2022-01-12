@@ -22,7 +22,7 @@ from youwol.models import Label
 from youwol.routers.custom_commands.models import Command
 from youwol.services.backs.assets_gateway.models import DefaultDriveResponse
 from youwol.utils_low_level import get_public_user_auth_token, get_object_from_module
-from youwol.web_socket import WebSocketsCache
+from youwol.web_socket import WebSocketsStore
 
 from youwol.main_args import get_main_arguments, MainArguments
 from youwol_utils.utils_paths import parse_json, ensure_config_file_exists_or_create_it, write_json

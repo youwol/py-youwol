@@ -7,7 +7,7 @@ from youwol.routers.environment.router import login as login_env
 from youwol.routers.environment.models import LoginBody
 from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
 from youwol.context import Context
-from youwol.web_socket import WebSocketsCache
+from youwol.web_socket import WebSocketsStore
 
 router = APIRouter()
 

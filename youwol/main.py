@@ -14,8 +14,8 @@ from youwol_utils import YouWolException, youwol_exception_handler
 
 from youwol.context import Context
 from youwol.environment.forward_declaration import YouwolEnvironment
-from youwol.web_socket import WebSocketsCache
 from youwol.utils_low_level import start_web_socket, assert_python
+from youwol.web_socket import WebSocketsStore
 from youwol.routers import native_backends, admin, authorization
 from youwol.environment.auto_download_thread import AssetDownloadThread
 from youwol.routers.environment.download_assets.data import DownloadDataTask
@@ -88,7 +88,7 @@ async def home():
 @app.websocket(api_configuration.base_path + "/ws")
 async def ws_endpoint(ws: WebSocket):
     await ws.accept()
-    WebSocketsCache.userChannel = ws
+    WebSocketsStore.userChannel = ws
     await ws.send_json({})
     await start_web_socket(ws)
 
