@@ -209,3 +209,15 @@ def get_object_from_module(
         raise Exception(f"{module_absolute_path} :Name error '{e}")
 
     return instance
+
+
+def assert_python():
+    print(f"Running with python:\n\t{sys.executable}\n\t{sys.version}")
+    version_info = sys.version_info
+    if not ((version_info.major == 3 and version_info.minor == 10) or
+            (version_info.major == 3 and version_info.minor == 9) or
+            (version_info.major == 3 and version_info.minor == 8) or
+            (version_info.major == 3 and version_info.minor == 7)):
+        print(f"""Your version of python is not compatible with py-youwol:
+        Recommended: 3.9.x""")
+        exit(1)

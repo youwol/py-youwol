@@ -11,16 +11,16 @@ from starlette.requests import Request
 
 from youwol.environment.models_project import Project, Manifest
 from youwol.environment.paths import PathsBook
-from youwol.context import Context
+from youwol_utils.context import ContextFactory
 from youwol.exceptions import CommandException
-from youwol.models import Label
+from youwol.routers.commons import Label
 from youwol.routers.projects.dependencies import resolve_project_dependencies
 from youwol.routers.projects.implementation import (
     run, create_artifacts, get_status, get_project_step, get_project_flow_steps, format_artifact_response
     )
 
-from youwol.utils_paths import write_json
-from youwol.web_socket import WebSocketsCache
+from youwol_utils.utils_paths import write_json
+from youwol.web_socket import WebSocketsStore
 
 from youwol.routers.projects.models import (
     PipelineStepStatusResponse, PipelineStatusResponse, ArtifactsResponse, ProjectStatusResponse, CdnResponse,
@@ -41,13 +41,17 @@ async def pipeline_step_status(
         request: Request,
         project_id: str,
         flow_id: str,
-        step_id: str,
-        config: YouwolEnvironment = Depends(yw_config)
+        step_id: str
         ) -> PipelineStepStatusResponse:
-    context = Context(request=request, config=config, web_socket=WebSocketsCache.userChannel)
+
+    context = ContextFactory.get_instance(
+        request=request,
+        web_socket=WebSocketsStore.userChannel
+    )
+
     async with context.start(
             action="Get pipeline status",
-            with_labels=[Label.PIPELINE_STEP_STATUS_PENDING],
+            with_labels=[str(Label.PIPELINE_STEP_STATUS_PENDING)],
             with_attributes={
                 'projectId': project_id,
                 'flowId': flow_id,
@@ -69,7 +73,10 @@ async def project_status(
         project_id: str,
         config: YouwolEnvironment = Depends(yw_config)
         ):
-    context = Context(request=request, config=config, web_socket=WebSocketsCache.userChannel)
+    context = ContextFactory.get_instance(
+        request=request,
+        web_socket=WebSocketsStore.userChannel
+    )
 
     async with context.start(
             action="Get project status",
@@ -77,7 +84,8 @@ async def project_status(
                 'projectId': project_id
                 }
             ) as ctx:
-        project: Project = next(p for p in context.config.projects if p.id == project_id)
+        env = await context.get('env', YouwolEnvironment)
+        project: Project = next(p for p in env.projects if p.id == project_id)
 
         workspace_dependencies = await resolve_project_dependencies(project=project, context=context)
         await ctx.info("Project dependencies retrieved", data=workspace_dependencies)
@@ -97,11 +105,12 @@ async def project_status(
 async def flow_status(
         request: Request,
         project_id: str,
-        flow_id: str,
-        config: YouwolEnvironment = Depends(yw_config)
+        flow_id: str
         ):
-    context = Context(request=request, config=config, web_socket=WebSocketsCache.userChannel)
-
+    context = ContextFactory.get_instance(
+        request=request,
+        web_socket=WebSocketsStore.userChannel
+    )
     async with context.start(
             action=f"Get flow '{flow_id}' status",
             with_attributes={
@@ -112,8 +121,7 @@ async def flow_status(
 
         project, flow, steps = await get_project_flow_steps(project_id=project_id, flow_id=flow_id, context=ctx)
         steps_status = await asyncio.gather(*[
-            pipeline_step_status(request=request, project_id=project_id, flow_id=flow_id,
-                                 step_id=step.id, config=config)
+            pipeline_step_status(request=request, project_id=project_id, flow_id=flow_id, step_id=step.id)
             for step in steps
             ])
         response = PipelineStatusResponse(projectId=project_id, steps=[s for s in steps_status])
@@ -127,11 +135,14 @@ async def flow_status(
 async def project_artifacts(
         request: Request,
         project_id: str,
-        flow_id: str,
-        config: YouwolEnvironment = Depends(yw_config)
+        flow_id: str
         ):
-    context = Context(request=request, config=config, web_socket=WebSocketsCache.userChannel)
+    context = ContextFactory.get_instance(
+        request=request,
+        web_socket=WebSocketsStore.userChannel
+    )
 
+    env = await context.get('env', YouwolEnvironment)
     async with context.start(
             action="Get project's artifact",
             with_attributes={
@@ -140,7 +151,7 @@ async def project_artifacts(
                 }
             ) as ctx:
 
-        paths: PathsBook = ctx.config.pathsBook
+        paths: PathsBook = env.pathsBook
 
         project, flow, steps = await get_project_flow_steps(project_id=project_id, flow_id=flow_id, context=ctx)
         eventual_artifacts = [(a, s, paths.artifact(project_name=project.name, flow_id=flow_id, step_id=s.id,
@@ -148,7 +159,7 @@ async def project_artifacts(
                               for s in steps for a in s.artifacts]
 
         actual_artifacts = [format_artifact_response(project=project, flow_id=flow_id, step=s, artifact=a,
-                                                     context=ctx)
+                                                     env=env)
                             for a, s, path in eventual_artifacts if path.exists() and path.is_dir()]
 
         response = ArtifactsResponse(artifacts=actual_artifacts)
@@ -162,27 +173,31 @@ async def run_pipeline_step(
         request: Request,
         project_id: str,
         flow_id: str,
-        step_id: str,
-        config: YouwolEnvironment = Depends(yw_config)
+        step_id: str
         ):
-    context = Context(request=request, config=config, web_socket=WebSocketsCache.userChannel)
+    context = ContextFactory.get_instance(
+        request=request,
+        web_socket=WebSocketsStore.userChannel
+    )
+
+    env = await context.get('env', YouwolEnvironment)
+    paths: PathsBook = env.pathsBook
 
     def refresh_status_downstream_steps():
         """
         Downstream steps may depend on this guy => request status on them.
         Shortcut => request status on all the steps of the flow (not only subsequent)
         """
-        _project: Project = next(p for p in context.config.projects if p.id == project_id)
+        _project: Project = next(p for p in env.projects if p.id == project_id)
         steps = _project.get_flow_steps(flow_id=flow_id)
         return asyncio.gather(*[
-            pipeline_step_status(request=request, project_id=project_id, flow_id=flow_id, step_id=_step.id,
-                                 config=config)
+            pipeline_step_status(request=request, project_id=project_id, flow_id=flow_id, step_id=_step.id)
             for _step in steps
             ])
 
     async with context.start(
             action="Run pipeline-step",
-            with_labels=[Label.RUN_PIPELINE_STEP],
+            with_labels=[str(Label.RUN_PIPELINE_STEP)],
             with_attributes={
                 'projectId': project_id,
                 'flowId': flow_id,
@@ -200,7 +215,6 @@ async def run_pipeline_step(
             error_run = e
             succeeded = False
 
-        paths: PathsBook = ctx.config.pathsBook
         if isinstance(outputs, collections.abc.Mapping) and 'fingerprint' in outputs:
             await ctx.info(text="'sources' attribute not provided => expect fingerprint from run's output",
                            data={'run-output': outputs})
@@ -238,12 +252,13 @@ async def cdn_status(
         project_id: str,
         config: YouwolEnvironment = Depends(yw_config)
         ):
-
-    context = Context(request=request, config=config, web_socket=WebSocketsCache.userChannel)
+    context = ContextFactory.get_instance(
+        request=request,
+        web_socket=WebSocketsStore.userChannel
+    )
 
     async with context.start(
             action="Get local cdn status",
-            with_labels=[Label.INFO],
             with_attributes={'event': 'CdnResponsePending', 'projectId': project_id}
             ) as ctx:
 

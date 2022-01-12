@@ -6,9 +6,8 @@ from starlette.responses import Response
 from starlette.types import ASGIApp
 
 from youwol.middlewares.models_dispatch import AbstractDispatch
-from youwol.context import Context
-from youwol.web_socket import WebSocketsCache
-from youwol.environment.youwol_environment import yw_config
+from youwol_utils.context import ContextFactory
+from youwol.web_socket import WebSocketsStore
 
 
 class DynamicRoutingMiddleware(BaseHTTPMiddleware):
@@ -23,12 +22,10 @@ class DynamicRoutingMiddleware(BaseHTTPMiddleware):
             self, request: Request, call_next: RequestResponseEndpoint
             ) -> Response:
 
-        config = await yw_config()
-        context = Context(
-            web_socket=WebSocketsCache.system,
-            config=config,
-            request=request
-            )
+        context = ContextFactory.get_instance(
+            request=request,
+            web_socket=WebSocketsStore.userChannel
+        )
         for dispatch in self.dynamic_dispatch_rules:
             match = await dispatch.apply(request, call_next, context)
             if match:

@@ -7,8 +7,9 @@ from youwol.environment.models_project import Manifest, PipelineStepStatus, Link
  SourcesFctImplicit,  Pipeline, parse_json, Skeleton, SkeletonParameter, PipelineStep, FileListing, \
  Artifact, Project, FlowId
 from youwol.environment.paths import PathsBook
+from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.utils_low_level import to_json
-from youwol.context import Context
+from youwol_utils.context import Context
 from youwol.pipelines.publish_cdn import PublishCdnLocalStep, PublishCdnRemoteStep
 from youwol_utils import files_check_sum
 from youwol_utils.utils_paths import copy_tree, copy_file, list_files
@@ -62,14 +63,16 @@ class SyncFromDownstreamStep(PipelineStep):
 
     @staticmethod
     async def get_input_data(project: Project, flow_id: str, context: Context) -> Mapping[str, InputDataDependency]:
-        paths_book: PathsBook = context.config.pathsBook
+
+        env = await context.get('env', YouwolEnvironment)
+        paths_book: PathsBook = env.pathsBook
 
         project_step = [(d, next((s for s in d.get_flow_steps(flow_id=flow_id) if isinstance(s, BuildStep)), None))
-                        for d in project.get_dependencies(recursive=True, context=context)
+                        for d in await project.get_dependencies(recursive=True, context=context)
                         ]
 
         def is_succeeded(p: Project, s: BuildStep):
-            manifest = p.get_manifest(flow_id=flow_id, step=s, context=context)
+            manifest = p.get_manifest(flow_id=flow_id, step=s, env=env)
             return manifest.succeeded if manifest else False
 
         dependencies = [(project, step) for project, step in project_step

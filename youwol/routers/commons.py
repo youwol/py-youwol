@@ -1,8 +1,20 @@
+from enum import Enum
+
 from youwol.environment.clients import RemoteClients, LocalClients
-from youwol.services.backs.treedb.models import PathResponse, DriveResponse
+from youwol.backends.treedb.models import PathResponse, DriveResponse
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from fastapi import HTTPException
 from youwol.environment.youwol_environment import Context
+
+
+class Label(Enum):
+    BASH = "BASH"
+    DELETE = "DELETE"
+    RUNNING = "RUNNING"
+    PACKAGE_DOWNLOADING = "PACKAGE_DOWNLOADING"
+    RUN_PIPELINE_STEP = "RUN_PIPELINE_STEP"
+    PIPELINE_STEP_STATUS_PENDING = "PIPELINE_STEP_STATUS_PENDING"
+    PIPELINE_STEP_RUNNING = "PIPELINE_STEP_RUNNING"
 
 
 async def ensure_path(path_item: PathResponse, assets_gateway_client: AssetsGatewayClient):

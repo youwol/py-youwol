@@ -1,12 +1,7 @@
 import os
 from pathlib import Path
 from typing import List
-
-from fastapi import APIRouter, WebSocket
-
-from youwol.utils_low_level import start_web_socket
-from youwol.web_socket import WebSocketsCache
-
+from fastapi import APIRouter
 from pydantic import BaseModel
 from fastapi.responses import FileResponse
 
@@ -20,15 +15,6 @@ class FolderContentResp(BaseModel):
 
 class FolderContentBody(BaseModel):
     path: str
-
-
-@router.websocket("/ws")
-async def ws_endpoint(ws: WebSocket):
-
-    await ws.accept()
-    WebSocketsCache.system = ws
-    await ws.send_json({})
-    await start_web_socket(ws)
 
 
 @router.get("/file/{rest_of_path:path}",

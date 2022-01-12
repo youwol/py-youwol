@@ -2,7 +2,7 @@ from typing import Callable, Union, Awaitable, Any, Optional
 
 from pydantic import BaseModel
 
-from youwol.context import Context
+from youwol_utils.context import Context
 
 JSON = Any
 

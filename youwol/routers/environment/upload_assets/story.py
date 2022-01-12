@@ -7,7 +7,7 @@ from pathlib import Path
 from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.environment.clients import RemoteClients
 from youwol.routers.environment.upload_assets.models import UploadTask
-from youwol.utils_paths import parse_json, write_json
+from youwol_utils.utils_paths import parse_json, write_json
 from youwol_utils import JSON
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 
@@ -38,7 +38,9 @@ def zip_local_story(raw_id: str, config: YouwolEnvironment) -> bytes:
 class UploadStoryTask(UploadTask):
 
     async def get_raw(self) -> bytes:
-        zip_content = zip_local_story(raw_id=self.raw_id, config=self.context.config)
+
+        env = await self.context.get('env', YouwolEnvironment)
+        zip_content = zip_local_story(raw_id=self.raw_id, config=env)
         return zip_content
 
     async def create_raw(self, data: bytes, folder_id: str):

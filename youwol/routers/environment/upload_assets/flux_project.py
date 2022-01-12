@@ -1,6 +1,7 @@
 import json
 from dataclasses import dataclass
 
+from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol_utils import JSON
 from youwol.environment.clients import RemoteClients, LocalClients
 from youwol.routers.environment.upload_assets.models import UploadTask
@@ -10,7 +11,8 @@ from youwol.routers.environment.upload_assets.models import UploadTask
 class UploadFluxProjectTask(UploadTask):
 
     async def get_raw(self) -> JSON:
-        asset_gtw = LocalClients.get_assets_gateway_client(context=self.context)
+        env = await self.context.get('env', YouwolEnvironment)
+        asset_gtw = LocalClients.get_assets_gateway_client(env=env)
         data = await asset_gtw.get_raw(kind='flux-project', raw_id=self.raw_id, content_type='application/json')
         return data
 

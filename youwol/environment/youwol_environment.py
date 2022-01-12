@@ -4,6 +4,8 @@ import json
 import os
 from getpass import getpass
 
+from colorama import Fore, Style
+from cowpy import cow
 from pathlib import Path
 from typing import Dict, Any, Union, Optional, Awaitable, List
 
@@ -14,19 +16,17 @@ from youwol.configuration.config_from_module import configuration_from_python
 from youwol.environment.clients import LocalClients
 from youwol.middlewares.models_dispatch import AbstractDispatch
 
-from youwol.context import Context
+from youwol_utils.context import Context, ContextFactory
 from youwol.configuration.config_from_static_file import configuration_from_json
 from youwol.configuration.configuration_handler import ConfigurationHandler
 from youwol.environment.models import RemoteGateway, UserInfo, ApiConfiguration, IPipelineFactory, Events
-from youwol.models import Label
 from youwol.routers.custom_commands.models import Command
-from youwol.services.backs.assets_gateway.models import DefaultDriveResponse
+from youwol.backends.assets_gateway.models import DefaultDriveResponse
 from youwol.utils_low_level import get_public_user_auth_token, get_object_from_module
-from youwol.web_socket import WebSocketsCache
+from youwol.web_socket import WebSocketsStore
 
-from youwol.errors import HTTPResponseException
 from youwol.main_args import get_main_arguments, MainArguments
-from youwol.utils_paths import parse_json, ensure_config_file_exists_or_create_it, write_json
+from youwol_utils.utils_paths import parse_json, write_json
 
 from youwol.configuration.configuration_validation import (
     ConfigurationLoadingStatus, ConfigurationLoadingException,
@@ -34,7 +34,7 @@ from youwol.configuration.configuration_validation import (
     CheckSecretHealthy
 )
 from youwol.environment.models_project import ErrorResponse, Project
-from youwol.environment.paths import PathsBook
+from youwol.environment.paths import PathsBook, ensure_config_file_exists_or_create_it
 from youwol_utils import encode_id, retrieve_user_info
 
 PROJECT_PIPELINE_DIRECTORY = '.yw_pipeline'
@@ -127,7 +127,7 @@ class YouwolEnvironment(BaseModel):
         deadline = datetime.timestamp(datetime.now()) + 1 * 60 * 60 * 1000
         self.tokensCache.append(DeadlinedCache(value=access_token, deadline=deadline, dependencies=dependencies))
 
-        await context.info(labels=[Label.STATUS], text="Access token renewed",
+        await context.info(text="Access token renewed",
                            data={"host": remote.host, "access_token": access_token})
         return access_token
 
@@ -135,7 +135,8 @@ class YouwolEnvironment(BaseModel):
 
         if self.private_cache.get("default-drive"):
             return self.private_cache.get("default-drive")
-        default_drive = await LocalClients.get_assets_gateway_client(context).get_default_user_drive()
+        env = await context.get('env', YouwolEnvironment)
+        default_drive = await LocalClients.get_assets_gateway_client(env).get_default_user_drive()
         self.private_cache["default-drive"] = DefaultDriveResponse(**default_drive)
         return DefaultDriveResponse(**default_drive)
 
@@ -233,13 +234,15 @@ class YouwolEnvironmentFactory:
 
     @staticmethod
     async def trigger_on_load(config: YouwolEnvironment):
-        context = Context(config=config, web_socket=WebSocketsCache.environment)
+        context = ContextFactory.get_instance(
+            web_socket=WebSocketsStore.userChannel
+        )
         if not config.events or not config.events.onLoad:
             return
         on_load_cb = config.events.onLoad(config, context)
         data = await on_load_cb if isinstance(on_load_cb, Awaitable) else on_load_cb
 
-        await context.info(labels=[Label.STATUS], text="Applied onLoad event's callback", data=data)
+        await context.info(text="Applied onLoad event's callback", data=data)
 
 
 async def yw_config() -> YouwolEnvironment:
@@ -258,18 +261,12 @@ async def login(
             user_email = users_info['policies']["default"]
 
     if user_email is None:
-        raise HTTPResponseException(
+        raise HTTPException(
             status_code=401,
-            title="User has not been identified",
-            descriptions=[f"make sure your users info file ({users_info_path}) contains"],
-            hints=[
-                "a 'default' field is pointing to the desired default email address",
-                "the desired default email address is associated to an identity"
-            ]
+            detail=f"User has not been identified, make sure it is defined in users info file ({users_info_path})"
         )
     if user_email not in parse_json(users_info_path)['users']:
         context and await context.info(
-            labels=[Label.STATUS],
             text=f"User {user_email} not registered in {users_info_path}: switch user",
             data={"user_email": user_email, 'usersInfo': parse_json(users_info_path)
                   }
@@ -503,6 +500,17 @@ async def get_yw_config_starter(main_args: MainArguments):
         write_json(user_info, conf_path.parent / 'users-info.json')
 
     return conf_path.parent
+
+
+def print_invite(conf: YouwolEnvironment):
+    print(f"""{Fore.GREEN} Configuration loaded successfully {Style.RESET_ALL}.
+""")
+    print(conf)
+    msg = cow.milk_random_cow(f"""
+All good, you can now browse to
+http://localhost:{conf.http_port}/applications/@youwol/platform/latest
+""")
+    print(msg)
 
 
 api_configuration = ApiConfiguration(open_api_prefix="", base_path="")

@@ -1,16 +1,18 @@
 import os
 import shutil
 from typing import Tuple, List
+
+from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.environment.models_project import Project, PipelineStep, Artifact, Flow, Link, Manifest
 from youwol.environment.paths import PathsBook
-from youwol.context import Context
+from youwol_utils.context import Context
 from youwol.exceptions import CommandException
-from youwol.models import Label
+from youwol.routers.commons import Label
 from youwol.routers.projects.models import (
     PipelineStepStatusResponse, ArtifactResponse
     )
 from youwol.utils_low_level import to_json
-from youwol.utils_paths import matching_files, parse_json
+from youwol_utils.utils_paths import matching_files, parse_json
 
 
 async def get_project_step(
@@ -18,7 +20,8 @@ async def get_project_step(
         step_id: str,
         context: Context
         ) -> Tuple[Project, PipelineStep]:
-    project = next(p for p in context.config.projects if p.id == project_id)
+    env = await context.get('env', YouwolEnvironment)
+    project = next(p for p in env.projects if p.id == project_id)
     step = next(s for s in project.pipeline.steps if s.id == step_id)
 
     await context.info(text="project & step retrieved",
@@ -32,7 +35,8 @@ async def get_project_flow_steps(
         context: Context
         ) -> Tuple[Project, Flow, List[PipelineStep]]:
 
-    project = next(p for p in context.config.projects if p.id == project_id)
+    env = await context.get('env', YouwolEnvironment)
+    project = next(p for p in env.projects if p.id == project_id)
     flow = next(f for f in project.pipeline.flows if f.name == flow_id)
     steps = project.get_flow_steps(flow_id=flow_id)
 
@@ -47,9 +51,10 @@ def format_artifact_response(
         flow_id: str,
         step: PipelineStep,
         artifact: Artifact,
-        context: Context
+        env: YouwolEnvironment
         ) -> ArtifactResponse:
-    paths: PathsBook = context.config.pathsBook
+
+    paths: PathsBook = env.pathsBook
 
     path = paths.artifact(project_name=project.name, flow_id=flow_id, step_id=step.id, artifact_id=artifact.id)
     return ArtifactResponse(
@@ -66,18 +71,19 @@ async def get_status(
         context: Context
         ) -> PipelineStepStatusResponse:
 
+    env = await context.get('env', YouwolEnvironment)
+    paths: PathsBook = env.pathsBook
     async with context.start(
             action="get status",
             with_attributes={'projectId': project.id, 'flowId': flow_id, 'stepId': step.id}
-            ) as ctx:
-        paths: PathsBook = ctx.config.pathsBook
+            ) as _ctx:
         path = paths.artifacts_step(project_name=project.name, flow_id=flow_id, step_id=step.id)
         manifest = Manifest(**parse_json(path / 'manifest.json')) if (path / 'manifest.json').exists() else None
 
         status = await step.get_status(project=project, flow_id=flow_id, last_manifest=manifest, context=context)
 
         artifacts = [format_artifact_response(project=project, flow_id=flow_id, step=step, artifact=artifact,
-                                              context=ctx)
+                                              env=env)
                      for artifact in step.artifacts]
 
         return PipelineStepStatusResponse(
@@ -95,7 +101,7 @@ async def run(project: Project, flow_id: str, step: PipelineStep, context: Conte
 
     async with context.start(
             action="run function",
-            with_labels=[Label.PIPELINE_STEP_RUNNING],
+            with_labels=[str(Label.PIPELINE_STEP_RUNNING)],
             with_attributes={
                 'projectId': project.id,
                 'stepId': step.id
@@ -141,6 +147,7 @@ async def create_artifact(
         context: Context
         ):
 
+    env = await context.get('env', YouwolEnvironment)
     async with context.start(
             action=f"create artifact '{artifact.id}'",
             with_attributes={'projectId': project.id, 'flowId': flow_id, 'stepId': step.id, 'artifactId': artifact.id,
@@ -152,7 +159,7 @@ async def create_artifact(
             patterns=artifact.files
             )
 
-        paths: PathsBook = ctx.config.pathsBook
+        paths: PathsBook = env.pathsBook
         await ctx.info(text='got files listing', data=[str(f) for f in files])
         destination_folder = paths.artifact(project_name=project.name, flow_id=flow_id, step_id=step.id,
                                             artifact_id=artifact.id)

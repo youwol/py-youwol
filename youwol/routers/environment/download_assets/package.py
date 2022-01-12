@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 from fastapi import HTTPException
 
-from youwol.auto_download.auto_download_thread import decode_id
+from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.environment.download_assets.common import create_asset_local
 from youwol.routers.environment.download_assets.models import DownloadTask
 from youwol.environment.clients import LocalClients, RemoteClients
-from youwol_utils import CdnClient
+from youwol_utils import CdnClient, decode_id
 
 
 @dataclass
@@ -20,7 +20,8 @@ class DownloadPackageTask(DownloadTask):
         return self.package_name+"/"+self.version
 
     async def is_local_up_to_date(self):
-        local_cdn: CdnClient = LocalClients.get_cdn_client(context=self.context)
+        env = await self.context.get('env', YouwolEnvironment)
+        local_cdn: CdnClient = LocalClients.get_cdn_client(env=env)
         try:
             await local_cdn.get_package(
                 library_name=self.package_name,
@@ -34,8 +35,10 @@ class DownloadPackageTask(DownloadTask):
             raise e
 
     async def create_local_asset(self):
+
+        env = await self.context.get('env', YouwolEnvironment)
         remote_gtw = await RemoteClients.get_assets_gateway_client(context=self.context)
-        default_drive = await self.context.config.get_default_drive(context=self.context)
+        default_drive = await env.get_default_drive(context=self.context)
         await create_asset_local(
             asset_id=self.asset_id,
             kind='package',

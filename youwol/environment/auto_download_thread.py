@@ -1,22 +1,39 @@
 import asyncio
-import base64
+import pprint
+import time
 import uuid
+from itertools import groupby
 from threading import Thread
 from typing import Dict, Any
 
-from youwol.routers.environment.download_assets.models import DownloadLogger
 from youwol.environment.clients import RemoteClients
-from youwol_utils import YouWolException
+from youwol_utils import YouWolException, encode_id, decode_id
 
 
-def decode_id(asset_id) -> str:
-    b = str.encode(asset_id)
-    return base64.urlsafe_b64decode(b).decode()
+class DownloadLogger:
 
+    messages = []
 
-def encode_id(raw_id) -> str:
-    b = str.encode(raw_id)
-    return base64.urlsafe_b64encode(b).decode()
+    async def info(self, process_id: str, title: str, **kwargs):
+        self.messages.append({**{'title': title, 'time': time.time(), 'process_id': process_id, 'level': 'info'},
+                              **kwargs})
+
+    async def error(self, process_id: str, title: str, **kwargs):
+        self.messages.append({**{'title': title, 'time': time.time(), 'process_id': process_id, 'level': 'error'},
+                              **kwargs})
+
+    def dumps(self):
+        print("##### Dump logger")
+        messages = sorted(self.messages, key=lambda _: _['time'])
+        messages = sorted(messages, key=lambda _: _['process_id'])
+
+        for k, g in groupby(messages, lambda _: _['process_id']):
+            print("=> Process", k)
+            for m in g:
+                pprint.pprint(m)
+
+        print("##### Done dump logger")
+        self.messages = []
 
 
 async def process_download_asset(
@@ -40,7 +57,7 @@ async def process_download_asset(
                               url=url, raw_id=raw_id)
 
             task = factories[asset['kind']](
-                process_id=process_id, raw_id=raw_id, asset_id=asset_id, url=url, logger=logger, context=context
+                process_id=process_id, raw_id=raw_id, asset_id=asset_id, url=url, context=context
                 )
             download_id = task.download_id()
             if download_id not in downloaded_ids and not await task.is_local_up_to_date():

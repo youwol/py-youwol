@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from youwol.context import Context
+from youwol_utils.context import Context
 
 
 @dataclass

@@ -11,8 +11,8 @@ from starlette.requests import Request
 from youwol.environment.clients import RemoteClients, LocalClients
 from youwol.environment.models import UserInfo
 from youwol.environment.youwol_environment import yw_config, YouwolEnvironment, YouwolEnvironmentFactory
-from youwol.models import Label
-from youwol.context import Context
+from youwol.routers.commons import Label
+from youwol_utils.context import Context, ContextFactory
 from youwol.routers.environment.upload_assets.models import UploadTask
 from youwol.routers.environment.upload_assets.upload import synchronize_permissions_metadata_symlinks
 from youwol.routers.commons import ensure_path
@@ -20,7 +20,7 @@ from youwol.routers.environment.upload_assets.data import UploadDataTask
 from youwol.routers.environment.upload_assets.flux_project import UploadFluxProjectTask
 from youwol.routers.environment.upload_assets.package import UploadPackageTask
 from youwol.routers.environment.upload_assets.story import UploadStoryTask
-from youwol.services.backs.treedb.models import PathResponse
+from youwol.backends.treedb.models import PathResponse
 
 from youwol.utils_low_level import get_public_user_auth_token
 
@@ -29,8 +29,8 @@ from youwol.routers.environment.models import (
     SyncUserBody, LoginBody, RemoteGatewayInfo, SelectRemoteBody
 )
 
-from youwol.utils_paths import parse_json, write_json
-from youwol.web_socket import WebSocketsCache
+from youwol_utils.utils_paths import parse_json, write_json
+from youwol.web_socket import WebSocketsStore
 from youwol_utils import retrieve_user_info, decode_id
 from youwol_utils.clients.assets.assets import AssetsClient
 from youwol_utils.clients.treedb.treedb import TreeDbClient
@@ -60,25 +60,21 @@ async def connect_to_remote(config: YouwolEnvironment, context: Context) -> bool
         return True
     except HTTPException as e:
         await context.info(
-            labels=[Label.STATUS],
             text="Authorization: HTTP Error",
             data={'host': remote_gateway_info.host, 'error': str(e)})
         return False
     except ClientConnectorError as e:
         await context.info(
-            labels=[Label.STATUS],
             text="Authorization: Connection error (internet on?)",
             data={'host': remote_gateway_info.host, 'error': str(e)})
         return False
     except RuntimeError as e:
         await context.info(
-            labels=[Label.STATUS],
             text="Authorization error",
             data={'host': remote_gateway_info.host, 'error': str(e)})
         return False
     except ContentTypeError as e:
         await context.info(
-            labels=[Label.STATUS],
             text="Failed to call healthz on assets-gateway",
             data={'host': remote_gateway_info.host, 'error': str(e)})
         return False
@@ -111,7 +107,10 @@ async def status(
         request: Request,
         config: YouwolEnvironment = Depends(yw_config)
         ):
-    context = Context(config=config, request=request, web_socket=WebSocketsCache.userChannel)
+    context = ContextFactory.get_instance(
+        request=request,
+        web_socket=WebSocketsStore.userChannel
+    )
     async with context.start(
             action="Get environment status"
             ) as ctx:
@@ -166,12 +165,10 @@ async def sync_user(
         body: SyncUserBody,
         config: YouwolEnvironment = Depends(yw_config)
         ):
-
-    context = Context(
+    context = ContextFactory.get_instance(
         request=request,
-        config=config,
-        web_socket=WebSocketsCache.environment
-        )
+        web_socket=WebSocketsStore.userChannel
+    )
     async with context.start(f"Sync. user {body.email}") as ctx:
 
         try:
@@ -211,14 +208,12 @@ async def sync_user(
              summary="upload an asset")
 async def select_remote(
         request: Request,
-        asset_id: str,
-        config: YouwolEnvironment = Depends(yw_config)
+        asset_id: str
         ):
-    context = Context(
+    context = ContextFactory.get_instance(
         request=request,
-        config=config,
-        web_socket=WebSocketsCache.environment
-        )
+        web_socket=WebSocketsStore.userChannel
+    )
 
     upload_factories: Dict[str, any] = {
         "data": UploadDataTask,
@@ -229,14 +224,14 @@ async def select_remote(
 
     async with context.start(
             action="upload_asset",
-            labels=[Label.INFO],
             with_attributes={
                 'asset_id': asset_id
             }
     ) as ctx:
 
-        local_treedb: TreeDbClient = LocalClients.get_treedb_client(context=ctx)
-        local_assets: AssetsClient = LocalClients.get_assets_client(context=ctx)
+        env = await context.get('env', YouwolEnvironment)
+        local_treedb: TreeDbClient = LocalClients.get_treedb_client(env=env)
+        local_assets: AssetsClient = LocalClients.get_assets_client(env=env)
         raw_id = decode_id(asset_id)
         asset, tree_item = await asyncio.gather(
             local_assets.get(asset_id=asset_id),
@@ -270,7 +265,6 @@ async def select_remote(
             raise e
 
         await ctx.info(
-            labels=[Label.STATUS],
             text="Data retrieved",
             data={"path_item": path_item, "raw data": local_data}
         )
@@ -282,7 +276,6 @@ async def select_remote(
             _asset = await assets_gtw_client.get_asset_metadata(asset_id=asset_id)
             _tree_item = await assets_gtw_client.get_tree_item(tree_item['itemId'])
             await ctx.info(
-                labels=[Label.STATUS],
                 text="Asset already found in deployed environment"
             )
             await factory.update_raw(data=local_data, folder_id=tree_item['folderId'])

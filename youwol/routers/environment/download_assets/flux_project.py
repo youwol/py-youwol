@@ -1,6 +1,8 @@
 import json
 from dataclasses import dataclass
 from fastapi import HTTPException
+
+from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.environment.download_assets.common import (
     create_asset_local
     )
@@ -18,7 +20,8 @@ class DownloadFluxProjectTask(DownloadTask):
 
     async def is_local_up_to_date(self):
 
-        local_flux: FluxClient = LocalClients.get_flux_client(context=self.context)
+        env = await self.context.get('env', YouwolEnvironment)
+        local_flux: FluxClient = LocalClients.get_flux_client(env=env)
         try:
             await local_flux.get_project(project_id=self.raw_id)
             return True
@@ -34,8 +37,10 @@ class DownloadFluxProjectTask(DownloadTask):
             retrieved['projectId'] = self.raw_id
             return json.dumps(retrieved).encode()
 
+        env = await self.context.get('env', YouwolEnvironment)
+
         remote_gtw = await RemoteClients.get_assets_gateway_client(context=self.context)
-        default_drive = await self.context.config.get_default_drive(context=self.context)
+        default_drive = await env.get_default_drive(context=self.context)
         await create_asset_local(
             asset_id=self.asset_id,
             kind='flux-project',

@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from fastapi import HTTPException
 from youwol.environment.clients import RemoteClients, LocalClients
+from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.environment.download_assets.common import create_asset_local
 from youwol.routers.environment.download_assets.models import DownloadTask
 from youwol_utils.clients.assets.assets import AssetsClient
@@ -13,8 +14,8 @@ class DownloadDataTask(DownloadTask):
         return self.raw_id
 
     async def is_local_up_to_date(self):
-
-        local_assets: AssetsClient = LocalClients.get_assets_client(context=self.context)
+        env = await self.context.get('env', YouwolEnvironment)
+        local_assets: AssetsClient = LocalClients.get_assets_client(env=env)
         try:
             await local_assets.get(asset_id=self.asset_id)
             return True
@@ -26,8 +27,9 @@ class DownloadDataTask(DownloadTask):
 
     async def create_local_asset(self):
 
+        env = await self.context.get('env', YouwolEnvironment)
         remote_gtw = await RemoteClients.get_assets_gateway_client(context=self.context)
-        default_drive = await self.context.config.get_default_drive(context=self.context)
+        default_drive = await env.get_default_drive(context=self.context)
 
         await create_asset_local(
             asset_id=self.asset_id,

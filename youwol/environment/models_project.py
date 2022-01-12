@@ -9,12 +9,11 @@ from typing import List, Union, Set, Dict, Any, Callable, Awaitable, Iterable, c
 from pydantic import BaseModel
 from aiostream import stream
 
-from youwol.context import Context
+from youwol_utils.context import Context
 from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol.environment.paths import PathsBook
 from youwol.exceptions import CommandException
-from youwol.models import Label
-from youwol.utils_paths import matching_files, parse_json
+from youwol_utils.utils_paths import matching_files, parse_json
 from youwol_utils import JSON, files_check_sum
 
 FlowId = str
@@ -232,7 +231,7 @@ class PipelineStep(BaseModel):
         async with stream.merge(p.stdout, p.stderr).stream() as messages_stream:
             async for message in messages_stream:
                 outputs.append(message.decode('utf-8'))
-                await context.info(text=outputs[-1], labels=[Label.BASH])
+                await context.info(text=outputs[-1], labels=["BASH"])
         await p.communicate()
 
         return_code = p.returncode
@@ -270,30 +269,32 @@ class Project(BaseModel):
     id: str  # base64 encoded Project.name
     version: str
 
-    def get_dependencies(self, recursive: bool, context: Context, ignore: List[str] = None) -> List['Project']:
+    async def get_dependencies(self, recursive: bool, context: Context, ignore: List[str] = None) -> List['Project']:
         ignore = ignore or []
+        env = await context.get('env', YouwolEnvironment)
         all_dependencies = self.pipeline.dependencies(self, context)
-        dependencies = [p for p in context.config.projects if p.name in all_dependencies and p.name not in ignore]
+        dependencies = [p for p in env.projects if p.name in all_dependencies and p.name not in ignore]
         ignore = ignore + [p.name for p in dependencies]
         if not recursive:
             return dependencies
         dependencies_rec = functools.reduce(lambda acc, e: acc+e, [
             dependencies,
-            *[p.get_dependencies(recursive=recursive, context=context, ignore=ignore) for p in dependencies]
+            *[await p.get_dependencies(recursive=recursive, context=context, ignore=ignore) for p in dependencies]
             ])
 
         return dependencies_rec
 
     async def get_artifact_files(self, flow_id: str, artifact_id: str, context: Context) -> List[Path]:
 
+        env = await context.get('env', YouwolEnvironment)
         steps = self.get_flow_steps(flow_id=flow_id)
         step = next((s for s in steps if artifact_id in [a.id for a in s.artifacts]), None)
         if not step:
             artifacts_id = [a.id for s in steps for a in s.artifacts]
             await context.error(text=f"Can not find artifact '{artifact_id}' in given flow '{flow_id}'",
                                 data={"artifacts_id": artifacts_id})
-        folder = context.config.pathsBook.artifact(project_name=self.name, flow_id=flow_id, step_id=step.id,
-                                                   artifact_id=artifact_id)
+        folder = env.pathsBook.artifact(project_name=self.name, flow_id=flow_id, step_id=step.id,
+                                        artifact_id=artifact_id)
 
         if not folder.exists() or not folder.is_dir():
             return []
@@ -310,8 +311,9 @@ class Project(BaseModel):
 
         return steps
 
-    def get_manifest(self, flow_id: FlowId, step: PipelineStep, context: Context):
-        paths_book: PathsBook = context.config.pathsBook
+    def get_manifest(self, flow_id: FlowId, step: PipelineStep, env: YouwolEnvironment):
+
+        paths_book: PathsBook = env.pathsBook
         manifest_path = paths_book.artifacts_manifest(project_name=self.name, flow_id=flow_id, step_id=step.id)
         if not manifest_path.exists():
             return None

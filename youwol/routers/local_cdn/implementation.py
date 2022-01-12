@@ -3,13 +3,14 @@ from itertools import groupby
 from typing import NamedTuple, List
 from fastapi import HTTPException
 
+from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.environment.download_assets.common import create_asset_local
-from youwol.context import Context
+from youwol_utils.context import Context
 from youwol.environment.clients import RemoteClients
-from youwol.models import Label
+from youwol.routers.commons import Label
 from youwol.routers.local_cdn.models import CheckUpdateResponse, UpdateStatus, PackageVersionInfo, \
     DownloadedPackageResponse, DownloadPackageBody
-from youwol.utils_paths import parse_json
+from youwol_utils.utils_paths import parse_json
 from youwol_utils import encode_id
 
 
@@ -26,9 +27,9 @@ class TargetPackage(NamedTuple):
                              version_number=int(d['version_number']), fingerprint=d['fingerprint'])
 
 
-def get_latest_local_cdn_version(context: Context) -> List[TargetPackage]:
+def get_latest_local_cdn_version(env: YouwolEnvironment) -> List[TargetPackage]:
 
-    db_path = parse_json(context.config.pathsBook.local_cdn_docdb)
+    db_path = parse_json(env.pathsBook.local_cdn_docdb)
     data = sorted(db_path['documents'], key=lambda d: d['library_name'])
     groups = [list(g) for _, g in groupby(data, key=lambda d: d['library_name'])]
     targets = [max(g, key=lambda d: int(d['version_number'])) for g in groups]
@@ -120,14 +121,15 @@ async def download_package(
 
     async with context.start(
             action=f"download package {package_name}#{version}",
-            with_labels=[Label.PACKAGE_DOWNLOADING],
+            with_labels=[str(Label.PACKAGE_DOWNLOADING)],
             with_attributes={
                 'packageName': package_name,
                 'packageVersion': version,
             }
     ) as ctx:
+        env = await context.get('env', YouwolEnvironment)
         remote_gtw = await RemoteClients.get_assets_gateway_client(context=ctx)
-        default_drive = await context.config.get_default_drive(context=ctx)
+        default_drive = await env.get_default_drive(context=ctx)
         asset_id = encode_id(encode_id(package_name))
 
         await ctx.info(text=f"asset_id: {asset_id} queued for download")
@@ -141,7 +143,7 @@ async def download_package(
             to_post_raw_data=lambda pack: {'file': pack},
             context=ctx
         )
-        db = parse_json(context.config.pathsBook.local_cdn_docdb)
+        db = parse_json(env.pathsBook.local_cdn_docdb)
         record = [d for d in db['documents'] if d['library_id'] == f"{package_name}#{version}"]
         response = DownloadedPackageResponse(
             packageName=package_name,

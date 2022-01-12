@@ -9,9 +9,10 @@ from youwol.configuration.defaults import default_openid_host, default_http_port
 from youwol.configuration.models_config import Profiles, ConfigurationData, PortRange, ModuleLoading, \
     CascadeBaseProfile, CascadeAppend, CascadeReplace, CdnOverride, Redirection
 from youwol.environment.models import Events, IConfigurationCustomizer
+from youwol.environment.paths import app_dirs
 from youwol.utils_low_level import get_object_from_module
 from youwol.middlewares.models_dispatch import CdnOverrideDispatch, RedirectDispatch, AbstractDispatch
-from youwol.utils_paths import app_dirs, PathException, fail_on_missing_dir, ensure_dir_exists
+from youwol_utils.utils_paths import PathException, fail_on_missing_dir, ensure_dir_exists
 from youwol.main_args import get_main_arguments
 from youwol.routers.custom_commands.models import Command
 

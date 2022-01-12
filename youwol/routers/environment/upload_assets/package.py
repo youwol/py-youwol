@@ -5,10 +5,8 @@ from pydantic import BaseModel
 
 from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.environment.clients import RemoteClients
-from youwol.context import Context
-from youwol.models import Label
 from youwol.routers.environment.upload_assets.models import UploadTask
-from youwol.utils_paths import parse_json
+from youwol_utils.utils_paths import parse_json
 from youwol_utils import decode_id
 
 
@@ -56,9 +54,9 @@ def get_local_package(asset_id: str, config: YouwolEnvironment) -> Library:
         )
 
 
-def get_zip_path(asset_id: str, version, context: Context):
+def get_zip_path(asset_id: str, version, env: YouwolEnvironment):
     library_name = decode_id(decode_id(asset_id))
-    base_path = context.config.pathsBook.local_storage / "cdn" / "youwol-users" / "libraries"
+    base_path = env.pathsBook.local_storage / "cdn" / "youwol-users" / "libraries"
     namespace = None if '/' not in library_name else library_name.split('/')[0][1:]
     library_name = library_name if '/' not in library_name else library_name.split('/')[1]
     library_path = base_path / library_name / version \
@@ -72,7 +70,8 @@ def get_zip_path(asset_id: str, version, context: Context):
 class UploadPackageTask(UploadTask):
 
     async def get_raw(self):
-        local_package = get_local_package(asset_id=self.asset_id, config=self.context.config)
+        env = await self.context.get('env', YouwolEnvironment)
+        local_package = get_local_package(asset_id=self.asset_id, config=env)
         assets_gateway_client = await RemoteClients.get_assets_gateway_client(context=self.context)
 
         to_sync_releases = [v.version for v in local_package.releases]
@@ -98,8 +97,9 @@ class UploadPackageTask(UploadTask):
     async def publish_version(self, folder_id: str, version: str):
 
         remote_gtw = await RemoteClients.get_assets_gateway_client(self.context)
+        env = await self.context.get('env', YouwolEnvironment)
         async with self.context.start(action="Sync") as ctx:
-            library_name, zip_path = get_zip_path(asset_id=self.asset_id, version=version, context=self.context)
+            library_name, zip_path = get_zip_path(asset_id=self.asset_id, version=version, env=env)
 
             try:
                 data = {'file': zip_path.read_bytes(), 'content_encoding': 'identity'}
@@ -107,7 +107,6 @@ class UploadPackageTask(UploadTask):
                                                     timeout=600)
             finally:
                 await ctx.info(
-                    labels=[Label.DONE],
                     text=f"{library_name}#{version}: synchronization done"
                     )
                 # await check_package_status(package=local_package, context=context, target_versions=[version])

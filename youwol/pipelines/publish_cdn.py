@@ -4,15 +4,16 @@ from pathlib import Path
 from typing import Optional, cast, Mapping, List, Iterable
 from fastapi import HTTPException
 
+from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.environment.models_project import (
     PipelineStep, Project, Manifest, PipelineStepStatus, FlowId, ExplicitNone,
     )
 from youwol.environment.clients import LocalClients, RemoteClients
 from youwol.environment.paths import PathsBook
-from youwol.context import Context
-from youwol.services.backs.assets_gateway.models import DefaultDriveResponse
+from youwol_utils.context import Context
+from youwol.backends.assets_gateway.models import DefaultDriveResponse
 from youwol.routers.environment.upload_assets.upload import upload_asset
-from youwol.utils_paths import create_zip_file
+from youwol_utils.utils_paths import create_zip_file
 from youwol_utils import encode_id, files_check_sum
 
 
@@ -23,7 +24,8 @@ async def create_cdn_zip(
         files: Iterable[Path],
         context: Context
         ):
-    paths: PathsBook = context.config.pathsBook
+    env = await context.get('env', YouwolEnvironment)
+    paths: PathsBook = env.pathsBook
     artifacts_flow_path = paths.artifacts_flow(project_name=project.name, flow_id=flow_id)
     zip_files = [(f, '/'.join(f.relative_to(artifacts_flow_path).parts[2:])) for f in files]
     await context.info(text="create CDN zip: files recovered",
@@ -54,7 +56,8 @@ class PublishCdnLocalStep(PipelineStep):
     async def get_status(self,  project: Project, flow_id: str, last_manifest: Optional[Manifest], context: Context) \
             -> PipelineStepStatus:
 
-        local_cdn = LocalClients.get_cdn_client(context=context)
+        env = await context.get('env', YouwolEnvironment)
+        local_cdn = LocalClients.get_cdn_client(env=env)
         if not last_manifest:
             return PipelineStepStatus.none
 
@@ -73,13 +76,16 @@ class PublishCdnLocalStep(PipelineStep):
         return PipelineStepStatus.outdated
 
     async def execute_run(self, project: Project, flow_id: str, context: Context):
+
+        env = await context.get('env', YouwolEnvironment)
+
         await context.info(text="create 'cdn.zip' in project")
         files = await self.packaged_files(project, flow_id, context)
         zip_path = project.path / 'cdn.zip'
         await create_cdn_zip(zip_path=zip_path, project=project, flow_id=flow_id, files=files, context=context)
 
-        local_gtw = LocalClients.get_assets_gateway_client(context=context)
-        local_treedb = LocalClients.get_treedb_client(context=context)
+        local_gtw = LocalClients.get_assets_gateway_client(env=env)
+        local_treedb = LocalClients.get_treedb_client(env=env)
         asset_id = encode_id(project.id)
         try:
             item = await local_treedb.get_item(item_id=asset_id)
@@ -87,7 +93,7 @@ class PublishCdnLocalStep(PipelineStep):
         except HTTPException as e:
             if e.status_code == 404:
                 await context.info("The package has not been published yet, start creation")
-                drive: DefaultDriveResponse = await context.config.get_default_drive(context=context)
+                drive: DefaultDriveResponse = await env.get_default_drive(context=context)
                 folder_id = drive.downloadFolderId
             else:
                 raise e
@@ -95,11 +101,11 @@ class PublishCdnLocalStep(PipelineStep):
         data = {'file': zip_path.read_bytes(), 'content_encoding': 'identity'}
         resp = await local_gtw.put_asset_with_raw(kind='package', folder_id=folder_id, data=data, timeout=600)
         await context.info(text="Asset posted in assets_gtw", data=resp)
-        local_cdn = LocalClients.get_cdn_client(context=context)
+        local_cdn = LocalClients.get_cdn_client(env=env)
         resp = await local_cdn.get_package(library_name=project.name, version=project.version, metadata=True)
         await context.info(text="Package retrieved from local cdn", data=resp)
         resp['src_files_fingerprint'] = files_check_sum(files)
-        base_path = context.config.pathsBook.artifacts_flow(project_name=project.name, flow_id=flow_id)
+        base_path = env.pathsBook.artifacts_flow(project_name=project.name, flow_id=flow_id)
         resp['src_base_path'] = str(base_path)
         resp['src_files'] = [str(f.relative_to(base_path)) for f in files]
         return resp
@@ -116,7 +122,9 @@ class PublishCdnRemoteStep(PipelineStep):
 
         if last_manifest and not last_manifest.succeeded:
             return PipelineStepStatus.KO
-        local_cdn = LocalClients.get_cdn_client(context=context)
+
+        env = await context.get('env', YouwolEnvironment)
+        local_cdn = LocalClients.get_cdn_client(env=env)
         remote_gtw = await RemoteClients.get_assets_gateway_client(context=context)
 
         local_info, remote_info = await asyncio.gather(
@@ -143,10 +151,11 @@ class PublishCdnRemoteStep(PipelineStep):
 
     async def execute_run(self, project: Project, flow_id: str, context: Context):
 
+        env = await context.get('env', YouwolEnvironment)
         await upload_asset(body={'assetId': encode_id(project.id)}, context=context)
         # # No ideal solution to get back the fingerprint here:
         # # (i) this one is brittle if the source code of the CDN is not the same between local vs remote
-        local_cdn = LocalClients.get_cdn_client(context=context)
+        local_cdn = LocalClients.get_cdn_client(env=env)
         resp = await local_cdn.get_package(library_name=project.name, version=project.version, metadata=True)
         # # (ii) this one is brittle in terms of eventual consistency
         # # resp = await remote_gtw.cdn_get_package(library_name=project.name, version=project.version, metadata=True)

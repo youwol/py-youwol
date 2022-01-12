@@ -1,6 +1,7 @@
 from typing import Optional
 
-from youwol.context import Context
+from youwol_utils.context import Context
+from youwol.environment.auto_download_thread import AssetDownloadThread
 from youwol.utils_low_level import redirect_api_remote
 
 from starlette.middleware.base import RequestResponseEndpoint
@@ -23,7 +24,8 @@ class GetRawDispatch(AbstractDispatch):
         if resp.status_code == 404:
             headers = {"Authorization": request.headers.get("authorization")}
             resp = await redirect_api_remote(request)
-            context.download_thread.enqueue_asset(url=request.url.path, context=context, headers=headers)
+            thread = await context.get('download_thread', AssetDownloadThread)
+            thread.enqueue_asset(url=request.url.path, context=context, headers=headers)
             return resp
         return resp
 
