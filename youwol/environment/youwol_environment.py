@@ -144,6 +144,7 @@ class YouwolEnvironment(BaseModel):
 
         return f"""
 Configuration loaded from '{self.pathsBook.config}'
+- user email: {self.userEmail}
 - active profile: {self.active_profile if self.active_profile else "Default profile"}
 - paths: {self.pathsBook}
 - cdn packages count: {len(parse_json(self.pathsBook.local_cdn_docdb)['documents'])}
