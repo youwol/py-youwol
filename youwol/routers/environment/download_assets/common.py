@@ -138,7 +138,7 @@ async def create_asset_local(
             tree_items=ItemsResponse(**tree_items)
             )
         await ctx.info(text="Explorer paths retrieved", data={
-            "owning_location": owning_location.dict(),
+            "owning_location": owning_location.dict() if owning_location else "No owning location in available groups",
             "borrowed_locations": [p.dict() for p in borrowed_locations]
         })
 
