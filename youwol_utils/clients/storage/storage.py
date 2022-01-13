@@ -2,24 +2,15 @@ import base64
 import json as _json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import NamedTuple, Dict, Union
+from typing import Dict, Union
 
 import aiohttp
 from aiohttp import FormData
 
+from youwol_utils.clients.storage.models import FileData
 from youwol_utils.clients.storage.patches import patch_files_name
 from youwol_utils.clients.utils import raise_exception_from_response
 from youwol_utils.types import JSON
-
-
-class FileData(NamedTuple):
-
-    objectName: Union[str, Path]
-    objectData: bytes
-    objectSize: int
-    content_type: str
-    content_encoding: str
-    owner: Union[str, None]
 
 
 def post_drive_body(name: str):

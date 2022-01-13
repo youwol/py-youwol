@@ -9,7 +9,7 @@ from typing import Union, cast, Mapping
 
 from fastapi import HTTPException
 
-from youwol_utils.clients.storage import FileData
+from youwol_utils.clients.storage.models import FileData
 from youwol_utils.clients.utils import get_default_owner
 from youwol_utils.types import JSON
 
