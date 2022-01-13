@@ -1,8 +1,10 @@
+import asyncio
 import importlib
 import re
 import shutil
 import sys
 import tempfile
+from aiostream import stream
 from collections import Callable, Iterable
 from enum import Enum
 from importlib.machinery import SourceFileLoader
@@ -19,6 +21,7 @@ from starlette.responses import Response
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from youwol_utils import log_info
+from youwol_utils.context import Context
 
 JSON = Union[str, int, float, bool, None, Mapping[str, 'JSON'], List['JSON']]
 
@@ -221,3 +224,20 @@ def assert_python():
         print(f"""Your version of python is not compatible with py-youwol:
         Recommended: 3.9.x""")
         exit(1)
+
+
+async def execute_shell_cmd(cmd: str, context: Context):
+    p = await asyncio.create_subprocess_shell(
+        cmd=cmd,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        shell=True
+    )
+    outputs = []
+    async with stream.merge(p.stdout, p.stderr).stream() as messages_stream:
+        async for message in messages_stream:
+            outputs.append(message.decode('utf-8'))
+            await context.info(text=outputs[-1], labels=["BASH"])
+    await p.communicate()
+
+    return p.returncode, outputs

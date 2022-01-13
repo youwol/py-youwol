@@ -1,4 +1,3 @@
-import asyncio
 import functools
 import glob
 import sys
@@ -7,14 +6,14 @@ from enum import Enum
 from pathlib import Path
 from typing import List, Union, Set, Dict, Any, Callable, Awaitable, Iterable, cast, Optional
 from pydantic import BaseModel
-from aiostream import stream
 
+from youwol.utils_low_level import execute_shell_cmd
 from youwol_utils.context import Context
 from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol.environment.paths import PathsBook
 from youwol.exceptions import CommandException
 from youwol_utils.utils_paths import matching_files, parse_json
-from youwol_utils import JSON, files_check_sum
+from youwol_utils import files_check_sum
 
 FlowId = str
 
@@ -221,21 +220,10 @@ class PipelineStep(BaseModel):
 
     async def __execute_run_cmd(self, project: 'Project', run_cmd: str, context: Context):
 
-        p = await asyncio.create_subprocess_shell(
+        return_code, outputs = await execute_shell_cmd(
             cmd=f"(cd  {str(project.path)} && {run_cmd})",
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-            shell=True
-            )
-        outputs = []
-        async with stream.merge(p.stdout, p.stderr).stream() as messages_stream:
-            async for message in messages_stream:
-                outputs.append(message.decode('utf-8'))
-                await context.info(text=outputs[-1], labels=["BASH"])
-        await p.communicate()
-
-        return_code = p.returncode
-
+            context=context
+        )
         if return_code > 0:
             raise CommandException(command=f"{project.name}#{self.id} ({self.run})", outputs=outputs)
         return outputs
