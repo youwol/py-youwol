@@ -10,11 +10,11 @@ from youwol.configuration.models_config import Profiles, ConfigurationData, Port
     CascadeBaseProfile, CascadeAppend, CascadeReplace, CdnOverride, Redirection
 from youwol.environment.models import Events, IConfigurationCustomizer
 from youwol.environment.paths import app_dirs
-from youwol.utils_low_level import get_object_from_module
-from youwol.middlewares.models_dispatch import CdnOverrideDispatch, RedirectDispatch, AbstractDispatch
-from youwol_utils.utils_paths import PathException, fail_on_missing_dir, ensure_dir_exists
 from youwol.main_args import get_main_arguments
+from youwol.middlewares.models_dispatch import CdnOverrideDispatch, RedirectDispatch, AbstractDispatch
 from youwol.routers.custom_commands.models import Command
+from youwol.utils_low_level import get_object_from_module
+from youwol_utils.utils_paths import PathException, fail_on_missing_dir, ensure_dir_exists
 
 SKELETON_DATABASES_ARCHIVE = 'databases.zip'
 
@@ -91,7 +91,7 @@ class ConfigurationHandler:
 
     def get_data_dir(self) -> Path:
         def create_data_dir(final_path: Path):
-            final_path.parent.mkdir(parents=True)
+            final_path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(get_main_arguments().youwol_path.parent / 'youwol_data' / SKELETON_DATABASES_ARCHIVE,
                             final_path.parent / SKELETON_DATABASES_ARCHIVE)
 
