@@ -2,8 +2,8 @@ from typing import Optional
 
 from aiohttp import ClientSession, ClientConnectorError
 from pydantic import BaseModel
-from starlette.requests import Request
 from starlette.middleware.base import RequestResponseEndpoint
+from starlette.requests import Request
 from starlette.responses import Response
 
 from youwol.utils_low_level import redirect_request

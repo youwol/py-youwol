@@ -2,19 +2,20 @@ import asyncio
 import itertools
 from pathlib import Path
 from typing import Optional, cast, Mapping, List, Iterable
+
 from fastapi import HTTPException
 
-from youwol.environment.youwol_environment import YouwolEnvironment
+from youwol.backends.assets_gateway.models import DefaultDriveResponse
+from youwol.environment.clients import LocalClients, RemoteClients
 from youwol.environment.models_project import (
     PipelineStep, Project, Manifest, PipelineStepStatus, FlowId, ExplicitNone,
-    )
-from youwol.environment.clients import LocalClients, RemoteClients
+)
 from youwol.environment.paths import PathsBook
-from youwol_utils.context import Context
-from youwol.backends.assets_gateway.models import DefaultDriveResponse
+from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.environment.upload_assets.upload import upload_asset
-from youwol_utils.utils_paths import create_zip_file
 from youwol_utils import encode_id, files_check_sum
+from youwol_utils.context import Context
+from youwol_utils.utils_paths import create_zip_file
 
 
 async def create_cdn_zip(

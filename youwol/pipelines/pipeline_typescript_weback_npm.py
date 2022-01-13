@@ -4,14 +4,14 @@ from pathlib import Path
 from typing import Union, List, Optional, NamedTuple, Iterable, Mapping
 
 from youwol.environment.models_project import Manifest, PipelineStepStatus, Link, ExplicitNone, Flow, \
- SourcesFctImplicit,  Pipeline, parse_json, Skeleton, SkeletonParameter, PipelineStep, FileListing, \
- Artifact, Project, FlowId
+    SourcesFctImplicit, Pipeline, parse_json, Skeleton, SkeletonParameter, PipelineStep, FileListing, \
+    Artifact, Project, FlowId
 from youwol.environment.paths import PathsBook
 from youwol.environment.youwol_environment import YouwolEnvironment
-from youwol.utils_low_level import to_json
-from youwol_utils.context import Context
 from youwol.pipelines.publish_cdn import PublishCdnLocalStep, PublishCdnRemoteStep
+from youwol.utils_low_level import to_json
 from youwol_utils import files_check_sum
+from youwol_utils.context import Context
 from youwol_utils.utils_paths import copy_tree, copy_file, list_files
 
 

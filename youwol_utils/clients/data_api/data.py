@@ -1,5 +1,5 @@
-from pathlib import Path
 from dataclasses import dataclass
+from pathlib import Path
 
 from youwol_utils import StorageClient, DocDbClient, LocalStorageClient, LocalDocDbClient, TableBody
 from youwol_utils.clients.docdb.models import Column

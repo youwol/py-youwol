@@ -1,6 +1,6 @@
+from dataclasses import dataclass
 from typing import Union
 
-from dataclasses import dataclass
 from starlette.websockets import WebSocket
 
 

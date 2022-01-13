@@ -2,15 +2,15 @@ import itertools
 import json as _json
 import os
 import shutil
+from dataclasses import dataclass
 from os import PathLike
 from pathlib import Path
 from typing import Union, cast, Mapping
 
-from dataclasses import dataclass
 from fastapi import HTTPException
 
+from youwol_utils.clients.storage.models import FileData
 from youwol_utils.clients.utils import get_default_owner
-from youwol_utils.clients.storage import FileData
 from youwol_utils.types import JSON
 
 flatten = itertools.chain.from_iterable

@@ -1,8 +1,8 @@
 import json
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Mapping, Union, Any, Dict, List
 
-from dataclasses import dataclass, field
 from fastapi import HTTPException
 
 from youwol_utils.clients.docdb.models import TableBody, QueryBody, Query, WhereClause, SecondaryIndex

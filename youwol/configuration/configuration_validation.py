@@ -1,9 +1,9 @@
 from typing import List
 
+from colorama import Fore, Style
 from pydantic import BaseModel
 
 from youwol.environment.models_project import Check, ErrorResponse
-from colorama import Fore, Style
 
 
 class CheckConfPath(Check):

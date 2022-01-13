@@ -1,12 +1,13 @@
 import asyncio
 from typing import Optional, List
+
+from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
 
 from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.middlewares.models_dispatch import AbstractDispatch
 from youwol_utils.context import Context
-from starlette.middleware.base import RequestResponseEndpoint
 
 
 class CustomDispatchesRule(AbstractDispatch):

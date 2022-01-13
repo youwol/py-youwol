@@ -3,10 +3,10 @@ from typing import Union, List, Mapping, Any
 
 from pydantic import BaseModel
 
+from youwol_utils.clients.cache import CacheClient, LocalCacheClient
 from youwol_utils.clients.docdb import DocDbClient, LocalDocDbClient
 from youwol_utils.clients.docdb.local_docdb_in_memory import LocalDocDbInMemoryClient
 from youwol_utils.clients.storage import StorageClient, LocalStorageClient
-from youwol_utils.clients.cache import CacheClient, LocalCacheClient
 
 DocDb = Union[DocDbClient, LocalDocDbClient, LocalDocDbInMemoryClient]
 Storage = Union[StorageClient, LocalStorageClient]

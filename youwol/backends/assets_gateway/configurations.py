@@ -1,24 +1,22 @@
+from dataclasses import dataclass
 from typing import Callable, cast, Any, Optional
 
-from dataclasses import dataclass
-
-from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
-from .raw_stores.story import StoriesStore
-from .raw_stores.data import DataStore
-from .raw_stores.package import PackagesStore
-from youwol_utils.clients.stories.stories import StoriesClient
+from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
 from youwol_utils import (
     CdnClient, DocDb, Storage, LocalDocDbClient, LocalStorageClient, TableBody
-    )
+)
 from youwol_utils.clients.assets.assets import AssetsClient
-from youwol_utils.clients.treedb.treedb import TreeDbClient
+from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from youwol_utils.clients.data_api.data import (
     DataClient, FILES_TABLE
-    )
+)
 from youwol_utils.clients.flux.flux import FluxClient
+from youwol_utils.clients.stories.stories import StoriesClient
+from youwol_utils.clients.treedb.treedb import TreeDbClient
+from .raw_stores.data import DataStore
 from .raw_stores.flux_project import FluxProjectsStore
-
-from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
+from .raw_stores.package import PackagesStore
+from .raw_stores.story import StoriesStore
 
 
 @dataclass(frozen=True)
