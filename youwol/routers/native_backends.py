@@ -1,13 +1,12 @@
 from fastapi import APIRouter
 
-import youwol.backends.cdn.root_paths as cdn
-import youwol.backends.treedb.root_paths as treedb
 import youwol.backends.assets.root_paths as assets
+import youwol.backends.assets_gateway.root_paths as assets_gateway
+import youwol.backends.cdn.root_paths as cdn
+import youwol.backends.cdn_apps_server.root_paths as cdn_apps_server
 import youwol.backends.flux.root_paths as flux
 import youwol.backends.stories.root_paths as stories
-import youwol.backends.assets_gateway.root_paths as assets_gateway
-
-import youwol.backends.cdn_apps_server.root_paths as cdn_apps_server
+import youwol.backends.treedb.root_paths as treedb
 
 router = APIRouter()
 cached_headers = None

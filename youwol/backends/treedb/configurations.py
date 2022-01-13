@@ -1,13 +1,12 @@
+from dataclasses import dataclass
 from typing import Any, Callable, Optional
 
-from dataclasses import dataclass
+from fastapi.logger import logger
 
 from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
 from youwol_utils import get_valid_bucket_name
-from .models import create_doc_dbs, DocDbs, namespace
 from youwol_utils.clients.docdb.local_docdb import LocalDocDbClient
-from fastapi.logger import logger
-
+from .models import create_doc_dbs, DocDbs, namespace
 
 logger.info("Setup treedb-backend")
 

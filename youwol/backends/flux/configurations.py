@@ -1,11 +1,10 @@
-from typing import Callable, Optional
-
 from dataclasses import dataclass
+from typing import Callable, Optional
 
 from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
 from youwol_utils import (
     LocalDocDbClient, LocalStorageClient
-    )
+)
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from .models import PROJECTS_TABLE, COMPONENTS_TABLE
 

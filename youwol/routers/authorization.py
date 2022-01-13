@@ -3,11 +3,11 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Form
 from starlette.requests import Request
 
-from youwol.routers.environment.router import login as login_env
-from youwol.routers.environment.models import LoginBody
 from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
-from youwol_utils.context import ContextFactory
+from youwol.routers.environment.models import LoginBody
+from youwol.routers.environment.router import login as login_env
 from youwol.web_socket import WebSocketsStore
+from youwol_utils.context import ContextFactory
 
 router = APIRouter()
 

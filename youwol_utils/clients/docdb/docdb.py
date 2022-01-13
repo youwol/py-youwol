@@ -1,8 +1,9 @@
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, Union, List, NamedTuple
+
 import aiohttp
 from aiohttp import ClientResponse
-from dataclasses import dataclass, field
 
 from youwol_utils.clients.docdb.models import TableBody, QueryBody, SecondaryIndex, Query, WhereClause
 from youwol_utils.clients.utils import raise_exception_from_response, aiohttp_resp_parameters

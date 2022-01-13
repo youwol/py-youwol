@@ -1,6 +1,5 @@
-from typing import Union, Any, Coroutine, Dict, Optional
-
 from dataclasses import dataclass
+from typing import Union, Any, Coroutine, Dict, Optional
 
 from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient

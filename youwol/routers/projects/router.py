@@ -6,29 +6,26 @@ import shutil
 from datetime import datetime
 
 from fastapi import APIRouter, Depends
-
 from starlette.requests import Request
 
 from youwol.environment.models_project import Project, Manifest
 from youwol.environment.paths import PathsBook
-from youwol_utils.context import ContextFactory
+from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
 from youwol.exceptions import CommandException
 from youwol.routers.commons import Label
 from youwol.routers.projects.dependencies import resolve_project_dependencies
 from youwol.routers.projects.implementation import (
     run, create_artifacts, get_status, get_project_step, get_project_flow_steps, format_artifact_response
-    )
-
-from youwol_utils.utils_paths import write_json
-from youwol.web_socket import WebSocketsStore
-
+)
 from youwol.routers.projects.models import (
     PipelineStepStatusResponse, PipelineStatusResponse, ArtifactsResponse, ProjectStatusResponse, CdnResponse,
     CdnVersionResponse,
-    )
-from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
+)
+from youwol.web_socket import WebSocketsStore
 from youwol_utils import decode_id
+from youwol_utils.context import ContextFactory
 from youwol_utils.utils_paths import parse_json
+from youwol_utils.utils_paths import write_json
 
 router = APIRouter()
 flatten = itertools.chain.from_iterable

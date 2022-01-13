@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from starlette.requests import Request
 
 from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
-from youwol_utils.context import ContextFactory
 from youwol.web_socket import WebSocketsStore
+from youwol_utils.context import ContextFactory
 
 router = APIRouter()
 

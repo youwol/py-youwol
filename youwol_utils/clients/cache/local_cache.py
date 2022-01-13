@@ -1,6 +1,5 @@
-from typing import Union
-
 from dataclasses import dataclass
+from typing import Union
 
 from youwol_utils.types import JSON
 

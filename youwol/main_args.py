@@ -2,6 +2,7 @@ import argparse
 import os
 from pathlib import Path
 from typing import NamedTuple, Optional
+
 import youwol
 
 parser = argparse.ArgumentParser()

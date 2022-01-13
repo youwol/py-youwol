@@ -1,13 +1,12 @@
+from dataclasses import dataclass
 from typing import Callable
 
-from dataclasses import dataclass
-
-from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
-from .models import ASSETS_TABLE, ACCESS_HISTORY, ACCESS_POLICY
-from youwol_utils import Storage, DocDb, LocalStorageClient, LocalDocDbInMemoryClient
-from youwol_utils.clients.docdb.local_docdb import LocalDocDbClient
 from fastapi.logger import logger
 
+from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
+from youwol_utils import Storage, DocDb, LocalStorageClient, LocalDocDbInMemoryClient
+from youwol_utils.clients.docdb.local_docdb import LocalDocDbClient
+from .models import ASSETS_TABLE, ACCESS_HISTORY, ACCESS_POLICY
 
 logger.info("Setup assets-backend")
 

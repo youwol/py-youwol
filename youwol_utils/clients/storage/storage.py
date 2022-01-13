@@ -1,10 +1,11 @@
 import base64
+import json as _json
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import NamedTuple, Dict, Union
+
 import aiohttp
-import json as _json
 from aiohttp import FormData
-from dataclasses import dataclass, field
 
 from youwol_utils.clients.storage.patches import patch_files_name
 from youwol_utils.clients.utils import raise_exception_from_response

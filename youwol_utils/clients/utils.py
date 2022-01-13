@@ -1,11 +1,11 @@
+import base64
 import functools
 from typing import Mapping, Union, NamedTuple, List
+
+from aiohttp import ClientResponse
+from fastapi import HTTPException
 from starlette.requests import Request
 from starlette.responses import JSONResponse
-from aiohttp import ClientResponse
-import base64
-
-from fastapi import HTTPException
 
 
 class GroupInfo(NamedTuple):

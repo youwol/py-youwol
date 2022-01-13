@@ -2,13 +2,14 @@
 from collections import defaultdict
 from typing import List, Dict
 
-from youwol.environment.youwol_environment import YouwolEnvironment
-from youwol.environment.models_project import Project
-from youwol_utils.context import Context
 from pydantic import BaseModel
+
+from youwol.environment.models_project import Project
+from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.projects.models import (
     ChildToParentConnections, DependenciesResponse,
-    )
+)
+from youwol_utils.context import Context
 
 
 async def check_cyclic_dependency(

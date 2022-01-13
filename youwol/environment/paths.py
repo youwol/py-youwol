@@ -1,7 +1,9 @@
 from pathlib import Path
 from typing import Union, Optional
-from pydantic import BaseModel
+
 from appdirs import AppDirs
+from pydantic import BaseModel
+
 import youwol
 from youwol_utils.utils_paths import existing_path_or_default
 
