@@ -5,6 +5,7 @@ import youwol.routers.environment.router as environment
 import youwol.routers.system.router as system
 import youwol.routers.local_cdn.router as local_cdn
 import youwol.routers.custom_commands.router as custom_commands
+import youwol.routers.authorization as authorization
 from youwol.environment.youwol_environment import api_configuration
 
 router = APIRouter()
@@ -20,3 +21,5 @@ router.include_router(local_cdn.router, prefix=api_configuration.base_path+"/loc
                       tags=["local-cdn"])
 router.include_router(custom_commands.router, prefix=api_configuration.base_path+"/custom-commands",
                       tags=["custom commands"])
+router.include_router(authorization.router, prefix=api_configuration.base_path+"/authorization",
+                      tags=["authorization"])
