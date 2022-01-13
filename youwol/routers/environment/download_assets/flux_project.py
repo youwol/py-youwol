@@ -1,14 +1,14 @@
 import json
 from dataclasses import dataclass
+
 from fastapi import HTTPException
 
+from youwol.environment.clients import LocalClients, RemoteClients
 from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.environment.download_assets.common import (
     create_asset_local
-    )
+)
 from youwol.routers.environment.download_assets.models import DownloadTask
-from youwol.environment.clients import LocalClients, RemoteClients
-
 from youwol_utils.clients.flux.flux import FluxClient
 
 

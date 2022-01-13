@@ -1,9 +1,9 @@
-import shutil
-from pathlib import Path
 import json
+import shutil
+from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Mapping, Union, Dict, List
 
-from dataclasses import dataclass, field
 from fastapi import HTTPException
 
 from youwol_utils.clients.docdb.models import TableBody, QueryBody, WhereClause, Query, SecondaryIndex

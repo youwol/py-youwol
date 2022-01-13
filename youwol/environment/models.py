@@ -4,9 +4,9 @@ from typing import List, Dict, Callable, Optional, Union, Any, Awaitable
 
 from pydantic import BaseModel
 
+from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol.environment.models_project import Pipeline
 from youwol_utils.context import Context
-from youwol.environment.forward_declaration import YouwolEnvironment
 
 
 class UserInfo(BaseModel):

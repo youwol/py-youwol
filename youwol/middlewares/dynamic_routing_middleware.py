@@ -6,8 +6,8 @@ from starlette.responses import Response
 from starlette.types import ASGIApp
 
 from youwol.middlewares.models_dispatch import AbstractDispatch
-from youwol_utils.context import ContextFactory
 from youwol.web_socket import WebSocketsStore
+from youwol_utils.context import ContextFactory
 
 
 class DynamicRoutingMiddleware(BaseHTTPMiddleware):

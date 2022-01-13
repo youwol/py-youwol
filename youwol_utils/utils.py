@@ -14,8 +14,8 @@ from fastapi import HTTPException
 from starlette.requests import Request
 
 from youwol_utils import JSON
-from youwol_utils.clients.utils import raise_exception_from_response, to_group_id, to_group_scope
 from youwol_utils.clients.types import DocDb
+from youwol_utils.clients.utils import raise_exception_from_response, to_group_id, to_group_scope
 
 flatten = itertools.chain.from_iterable
 

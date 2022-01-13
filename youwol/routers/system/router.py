@@ -1,9 +1,10 @@
 import os
 from pathlib import Path
 from typing import List
+
 from fastapi import APIRouter
-from pydantic import BaseModel
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
 
 router = APIRouter()
 

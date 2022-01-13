@@ -1,7 +1,8 @@
 
-from typing import Dict
-import aiohttp
 from dataclasses import dataclass, field
+from typing import Dict
+
+import aiohttp
 
 from youwol_utils.clients.utils import raise_exception_from_response
 from youwol_utils.types import JSON

@@ -1,15 +1,15 @@
 import asyncio
 from typing import List
 
-from starlette.requests import Request
 from fastapi import APIRouter
+from starlette.requests import Request
 
 from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.local_cdn.implementation import get_latest_local_cdn_version, check_updates_from_queue, \
     download_packages_from_queue
-from youwol_utils.context import ContextFactory
 from youwol.routers.local_cdn.models import CheckUpdatesResponse, CheckUpdateResponse, DownloadPackagesBody
 from youwol.web_socket import WebSocketsStore
+from youwol_utils.context import ContextFactory
 
 router = APIRouter()
 

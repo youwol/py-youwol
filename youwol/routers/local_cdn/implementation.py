@@ -1,17 +1,18 @@
 import asyncio
 from itertools import groupby
 from typing import NamedTuple, List
+
 from fastapi import HTTPException
 
-from youwol.environment.youwol_environment import YouwolEnvironment
-from youwol.routers.environment.download_assets.common import create_asset_local
-from youwol_utils.context import Context
 from youwol.environment.clients import RemoteClients
+from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.commons import Label
+from youwol.routers.environment.download_assets.common import create_asset_local
 from youwol.routers.local_cdn.models import CheckUpdateResponse, UpdateStatus, PackageVersionInfo, \
     DownloadedPackageResponse, DownloadPackageBody
-from youwol_utils.utils_paths import parse_json
 from youwol_utils import encode_id
+from youwol_utils.context import Context
+from youwol_utils.utils_paths import parse_json
 
 
 class TargetPackage(NamedTuple):

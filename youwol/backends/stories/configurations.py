@@ -1,14 +1,13 @@
+from dataclasses import dataclass
 from typing import Callable, Union, Type, Optional
 
-from dataclasses import dataclass
-
-from .models import STORIES_TABLE, DOCUMENTS_TABLE, DOCUMENTS_TABLE_BY_ID
 from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
 from youwol_utils import (
     LocalDocDbClient, LocalStorageClient, DocDbClient, StorageClient, CacheClient, LocalCacheClient,
-    )
+)
 from youwol_utils.middlewares import Middleware
 from youwol_utils.middlewares.authentication_local import AuthLocalMiddleware
+from .models import STORIES_TABLE, DOCUMENTS_TABLE, DOCUMENTS_TABLE_BY_ID
 
 DocDb = Union[DocDbClient, LocalDocDbClient]
 Storage = Union[StorageClient, LocalStorageClient]
