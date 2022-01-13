@@ -120,9 +120,14 @@ class Context(NamedTuple):
             await execute_block(on_enter)
             await yield_(ctx)
         except Exception as e:
+            tb = traceback.format_exc()
             await ctx.error(
                 text=f"Exception raised",
-                data=e.__dict__,
+                data={
+                    'dict': e.__dict__,
+                    'traceback': tb.split('\n'),
+                    'args': e.args
+                },
                 labels=[str(Label.EXCEPTION), *with_labels]
             )
             await execute_block(on_exception, e)
