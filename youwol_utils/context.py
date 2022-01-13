@@ -12,8 +12,7 @@ from pydantic import BaseModel, Json
 from starlette.requests import Request
 from starlette.websockets import WebSocket
 
-from youwol.utils_low_level import to_json
-from youwol_utils import JSON
+from youwol_utils import JSON, to_json
 
 
 class LogLevel(Enum):

@@ -3,13 +3,17 @@ import base64
 import itertools
 import json
 import os
-from pathlib import Path
-from typing import Union, List, cast, Mapping
+from enum import Enum
+
+from pydantic import BaseModel
+from pathlib import Path, PosixPath
+from typing import Union, List, cast, Mapping, Callable, Iterable, Any
 
 import aiohttp
 from fastapi import HTTPException
 from starlette.requests import Request
 
+from youwol_utils import JSON
 from youwol_utils.clients.utils import raise_exception_from_response, to_group_id, to_group_scope
 from youwol_utils.clients.types import DocDb
 
@@ -264,3 +268,39 @@ def decode_id(asset_id) -> str:
 def encode_id(raw_id) -> str:
     b = str.encode(raw_id)
     return base64.urlsafe_b64encode(b).decode()
+
+
+def to_json(obj: BaseModel) -> JSON:
+
+    def to_serializable(v):
+        if isinstance(v, Path):
+            return str(v)
+        if isinstance(v, PosixPath):
+            return str(v)
+        if isinstance(v, Callable):
+            return "function"
+        if isinstance(v, Enum):
+            return v.name
+        if isinstance(v, Iterable) and not isinstance(v, list) and not isinstance(v, str):
+            v = list(v)
+        return v
+
+    base = obj.dict()
+
+    def to_json_rec(_obj: Any):
+
+        if isinstance(_obj, dict):
+            for k, v in _obj.items():
+                if not isinstance(v, dict) and not isinstance(v, list):
+                    _obj[k] = to_serializable(v)
+                if isinstance(v, dict):
+                    to_json_rec(v)
+                if isinstance(v, list):
+                    for i, e in enumerate(v):
+                        if not isinstance(e, dict) and not isinstance(e, list):
+                            _obj[k][i] = to_serializable(e)
+                        else:
+                            to_json_rec(e)
+
+    to_json_rec(base)
+    return base

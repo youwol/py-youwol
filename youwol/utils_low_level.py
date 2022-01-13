@@ -5,17 +5,14 @@ import shutil
 import sys
 import tempfile
 from aiostream import stream
-from collections import Callable, Iterable
-from enum import Enum
 from importlib.machinery import SourceFileLoader
 from importlib.util import spec_from_loader
-from pathlib import Path, PosixPath
-from typing import Any, Union, Mapping, List, Type, cast, TypeVar, Optional
+from pathlib import Path
+from typing import Union, Mapping, List, Type, cast, TypeVar, Optional
 
 import aiohttp
 from aiohttp import ClientSession, TCPConnector
 from fastapi import HTTPException
-from pydantic import BaseModel
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.websockets import WebSocket, WebSocketDisconnect
@@ -24,42 +21,6 @@ from youwol_utils import log_info
 from youwol_utils.context import Context
 
 JSON = Union[str, int, float, bool, None, Mapping[str, 'JSON'], List['JSON']]
-
-
-def to_json(obj: BaseModel) -> JSON:
-
-    def to_serializable(v):
-        if isinstance(v, Path):
-            return str(v)
-        if isinstance(v, PosixPath):
-            return str(v)
-        if isinstance(v, Callable):
-            return "function"
-        if isinstance(v, Enum):
-            return v.name
-        if isinstance(v, Iterable) and not isinstance(v, list) and not isinstance(v, str):
-            v = list(v)
-        return v
-
-    base = obj.dict()
-
-    def to_json_rec(_obj: Any):
-
-        if isinstance(_obj, dict):
-            for k, v in _obj.items():
-                if not isinstance(v, dict) and not isinstance(v, list):
-                    _obj[k] = to_serializable(v)
-                if isinstance(v, dict):
-                    to_json_rec(v)
-                if isinstance(v, list):
-                    for i, e in enumerate(v):
-                        if not isinstance(e, dict) and not isinstance(e, list):
-                            _obj[k][i] = to_serializable(e)
-                        else:
-                            to_json_rec(e)
-
-    to_json_rec(base)
-    return base
 
 
 def sed_inplace(filename, pattern, repl):

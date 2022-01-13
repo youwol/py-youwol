@@ -6,8 +6,7 @@ from aiohttp import FormData, ClientSession
 from fastapi import HTTPException
 
 from youwol.environment.youwol_environment import YouwolEnvironment
-from youwol_utils import decode_id, JSON
-from youwol.utils_low_level import to_json
+from youwol_utils import decode_id, JSON, to_json
 from youwol_utils.context import Context
 from youwol_utils.utils_paths import parse_json
 from youwol.routers.commons import Label
