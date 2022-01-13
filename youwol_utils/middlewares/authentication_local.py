@@ -8,7 +8,7 @@ from starlette.types import ASGIApp
 class AuthLocalMiddleware(BaseHTTPMiddleware):
 
     cache = {}
-    url_base_auth = "http://localhost:2000/api/authorization"
+    url_base_auth = "http://localhost:2000/admin/authorization"
 
     def __init__(self, app: ASGIApp,
                  dispatch: DispatchFunction = None,
