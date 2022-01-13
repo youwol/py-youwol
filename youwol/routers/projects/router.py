@@ -214,6 +214,10 @@ async def run_pipeline_step(
             outputs = e.outputs
             error_run = e
             succeeded = False
+        except Exception as e:
+            error_run = e
+            outputs = [str(e)]
+            succeeded = False
 
         if isinstance(outputs, collections.abc.Mapping) and 'fingerprint' in outputs:
             await ctx.info(text="'sources' attribute not provided => expect fingerprint from run's output",

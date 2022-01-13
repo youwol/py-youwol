@@ -108,10 +108,7 @@ async def run(project: Project, flow_id: str, step: PipelineStep, context: Conte
                 }
             ) as ctx:
 
-        try:
-            return await step.execute_run(project, flow_id, ctx)
-        except Exception as e:
-            raise CommandException(command=f"custom run function", outputs=[str(e)])
+        return await step.execute_run(project, flow_id, ctx)
 
 
 async def create_artifacts(
