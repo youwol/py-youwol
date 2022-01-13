@@ -8,10 +8,9 @@ from youwol.environment.models_project import Manifest, PipelineStepStatus, Link
  Artifact, Project, FlowId
 from youwol.environment.paths import PathsBook
 from youwol.environment.youwol_environment import YouwolEnvironment
-from youwol.utils_low_level import to_json
 from youwol_utils.context import Context
 from youwol.pipelines.publish_cdn import PublishCdnLocalStep, PublishCdnRemoteStep
-from youwol_utils import files_check_sum
+from youwol_utils import files_check_sum, to_json
 from youwol_utils.utils_paths import copy_tree, copy_file, list_files
 
 
@@ -173,7 +172,7 @@ class InitStep(PipelineStep):
     async def get_status(self, project: Project, flow_id: str,
                          last_manifest: Optional[Manifest], context: Context) -> PipelineStepStatus:
 
-        if project.path / 'node_modules':
+        if (project.path / 'node_modules').exists():
             return PipelineStepStatus.OK
         return PipelineStepStatus.none
 
