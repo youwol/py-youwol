@@ -132,19 +132,19 @@ StatusFct = Callable[
     Union[PipelineStepStatus, Awaitable[PipelineStepStatus]]
 ]
 RunImplicit = Callable[
-    ['Project', FlowId, Context],
-    Union[JSON, Awaitable[JSON]]
+    ['PipelineStep', 'Project', FlowId, Context],
+    Union[str, Awaitable[str]]
     ]
 SourcesFct = Callable[
-    ['Project', FlowId, Context],
+    ['PipelineStep', 'Project', FlowId, Context],
     Union[Any, Awaitable[Any]]
     ]
 SourcesFctImplicit = Callable[
-    ['Project', FlowId, Context],
+    ['PipelineStep', 'Project', FlowId, Context],
     Union[FileListing, Awaitable[FileListing]]
     ]
 SourcesFctExplicit = Callable[
-    ['Project', FlowId, Context],
+    ['PipelineStep', 'Project', FlowId, Context],
     Union[Iterable[Path], Awaitable[Iterable[Path]]]
     ]
 
@@ -165,7 +165,8 @@ class PipelineStep(BaseModel):
         if isinstance(self.sources, FileListing):
             return matching_files(folder=project.path, patterns=self.sources)
         sources_fct = cast(SourcesFct, self.sources)
-        r = await sources_fct(project, flow_id, context)
+        r = sources_fct(self, project, flow_id, context)
+        r = await r if isinstance(r, Awaitable) else r
         return matching_files(folder=project.path, patterns=r) if isinstance(r, FileListing) else r
 
     status: StatusFct = None
@@ -200,14 +201,11 @@ class PipelineStep(BaseModel):
             await context.info(f'Run cmd {self.run}')
             return await self.__execute_run_cmd(project=project, run_cmd=self.run, context=context)
 
-        try:
-            run = cast(self.run, Callable[['Project', str, Context], Awaitable[JSON]])
-            await context.info(f'Run custom function')
-            outputs = await run(project, flow_id, context)
-        except Exception as e:
-            raise CommandException(command=f"custom run function", outputs=[str(e)])
-
-        return outputs
+        run = cast(Callable[['PipelineStep', 'Project', str, Context], Awaitable[str]], self.run)
+        await context.info(f'Run custom function')
+        run_cmd = run(self, project, flow_id, context)
+        run_cmd = await run_cmd if isinstance(run_cmd, Awaitable) else run_cmd
+        return await self.__execute_run_cmd(project=project, run_cmd=run_cmd, context=context)
 
     async def get_fingerprint(self, project: 'Project', flow_id: FlowId, context: Context):
 

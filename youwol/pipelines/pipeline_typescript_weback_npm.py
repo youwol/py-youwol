@@ -256,7 +256,7 @@ class TestStep(PipelineStep):
             include=build_step.sources.include + ["src/tests"]
             )
 
-    sources: SourcesFctImplicit = lambda p, f, ctx: TestStep._sources(p, f, ctx)
+    sources: SourcesFctImplicit = lambda self, p, f, ctx: TestStep._sources(p, f, ctx)
 
 
 def pipeline():
