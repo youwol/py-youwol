@@ -28,6 +28,10 @@ def user_info(request: Request):
     return request.state.user_info
 
 
+def get_user_id(request: Request):
+    return user_info(request)['sub']
+
+
 def private_group_id(user):
     return f"private_{user['sub']}"
 
