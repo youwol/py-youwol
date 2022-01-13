@@ -73,6 +73,23 @@ class PublishCdnLocalStep(PipelineStep):
                 last_manifest.cmdOutputs['src_files_fingerprint'] == src_files_fingerprint:
             return PipelineStepStatus.OK
 
+        if last_manifest.fingerprint != local_info['fingerprint']:
+            await context.info(
+                text="Mismatch between cdn-backend fingerprint and saved manifest's fingerprint",
+                data={
+                    'cdn-backend fingerprint': local_info['fingerprint'],
+                    "saved manifest's fingerprint": last_manifest.fingerprint
+                }
+            )
+        if last_manifest.cmdOutputs['src_files_fingerprint'] != src_files_fingerprint:
+            await context.info(
+                text="Mismatch between actual src files fingerprint and saved manifest's src_files_fingerprint",
+                data={
+                    'actual src files fingerprint': src_files_fingerprint,
+                    "saved manifest's src_files_fingerprint": last_manifest.cmdOutputs['src_files_fingerprint']
+                }
+            )
+
         return PipelineStepStatus.outdated
 
     async def execute_run(self, project: Project, flow_id: str, context: Context):
