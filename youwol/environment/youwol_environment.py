@@ -1,41 +1,37 @@
-import shutil
-from datetime import datetime
 import json
 import os
+import shutil
+from datetime import datetime
 from getpass import getpass
-
-from colorama import Fore, Style
-from cowpy import cow
 from pathlib import Path
 from typing import Dict, Any, Union, Optional, Awaitable, List
 
+from colorama import Fore, Style
+from cowpy import cow
 from fastapi import HTTPException
 from pydantic import BaseModel
 
+from youwol.backends.assets_gateway.models import DefaultDriveResponse
 from youwol.configuration.config_from_module import configuration_from_python
-from youwol.environment.clients import LocalClients
-from youwol.middlewares.models_dispatch import AbstractDispatch
-
-from youwol_utils.context import Context, ContextFactory
 from youwol.configuration.config_from_static_file import configuration_from_json
 from youwol.configuration.configuration_handler import ConfigurationHandler
-from youwol.environment.models import RemoteGateway, UserInfo, ApiConfiguration, IPipelineFactory, Events
-from youwol.routers.custom_commands.models import Command
-from youwol.backends.assets_gateway.models import DefaultDriveResponse
-from youwol.utils_low_level import get_public_user_auth_token, get_object_from_module
-from youwol.web_socket import WebSocketsStore
-
-from youwol.main_args import get_main_arguments, MainArguments
-from youwol_utils.utils_paths import parse_json, write_json
-
 from youwol.configuration.configuration_validation import (
     ConfigurationLoadingStatus, ConfigurationLoadingException,
     CheckSystemFolderWritable, CheckDatabasesFolderHealthy, CheckSecretPathExist,
     CheckSecretHealthy
 )
+from youwol.environment.clients import LocalClients
+from youwol.environment.models import RemoteGateway, UserInfo, ApiConfiguration, IPipelineFactory, Events
 from youwol.environment.models_project import ErrorResponse, Project
 from youwol.environment.paths import PathsBook, ensure_config_file_exists_or_create_it
+from youwol.main_args import get_main_arguments, MainArguments
+from youwol.middlewares.models_dispatch import AbstractDispatch
+from youwol.routers.custom_commands.models import Command
+from youwol.utils_low_level import get_public_user_auth_token, get_object_from_module
+from youwol.web_socket import WebSocketsStore
 from youwol_utils import encode_id, retrieve_user_info
+from youwol_utils.context import Context, ContextFactory
+from youwol_utils.utils_paths import parse_json, write_json
 
 PROJECT_PIPELINE_DIRECTORY = '.yw_pipeline'
 
@@ -451,9 +447,13 @@ async def safe_load(
 async def get_yw_config_starter(main_args: MainArguments):
     (conf_path, exists) = ensure_config_file_exists_or_create_it(main_args.config_path)
 
-    if exists:
-        return conf_path
+    if not exists:
+        await first_run(conf_path, main_args)
 
+    return conf_path
+
+
+async def first_run(conf_path, main_args):
     resp = input("No config path has been provided as argument (using --conf),"
                  f" and no file found in the default folder.\n"
                  "Do you want to create a new workspace with default settings (y/N)")
@@ -461,7 +461,6 @@ async def get_yw_config_starter(main_args: MainArguments):
     if not (resp == 'y' or resp == 'Y'):
         print("Exit youwol")
         exit()
-
     # create the default identities
     email = input("Your email address?")
     pwd = getpass("Your YouWol password?")
@@ -475,7 +474,6 @@ async def get_yw_config_starter(main_args: MainArguments):
     except HTTPException as e:
         print(f"Can not retrieve authentication token:\n\tstatus code: {e.status_code}\n\tdetail:{e.detail}")
         exit(1)
-
     user_info = None
     try:
         user_info = await retrieve_user_info(auth_token=token, openid_host=default_openid_host)
@@ -483,13 +481,10 @@ async def get_yw_config_starter(main_args: MainArguments):
     except HTTPException as e:
         print(f"Can not retrieve user info:\n\tstatus code: {e.status_code}\n\tdetail:{e.detail}")
         exit(1)
-
     shutil.copyfile(main_args.youwol_path.parent / 'youwol_data' / 'remotes-info.json',
                     conf_path.parent / 'remotes-info.json')
-
     if not (conf_path.parent / 'secrets.json').exists():
         write_json({email: {'password': pwd}}, conf_path.parent / 'secrets.json')
-
     user_info = {
         "policies": {"default": email},
         "users": {
@@ -501,11 +496,8 @@ async def get_yw_config_starter(main_args: MainArguments):
             }
         }
     }
-
     if not (conf_path.parent / 'users-info.json').exists():
         write_json(user_info, conf_path.parent / 'users-info.json')
-
-    return conf_path.parent
 
 
 def print_invite(conf: YouwolEnvironment):
