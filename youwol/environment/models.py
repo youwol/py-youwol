@@ -39,7 +39,7 @@ class IPipelineFactory(ABC):
         pass
 
     @abstractmethod
-    async def get(self) -> Pipeline:
+    async def get(self, env: YouwolEnvironment, context: Context) -> Pipeline:
         return NotImplemented
 
 
