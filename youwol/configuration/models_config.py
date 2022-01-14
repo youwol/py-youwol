@@ -4,6 +4,7 @@ from typing import List, Union, Optional, Dict
 
 from pydantic import BaseModel
 
+from youwol.configuration.models_k8s import K8sCluster
 from youwol.environment.models import Events
 from youwol.middlewares.models_dispatch import AbstractDispatch
 from youwol.routers.custom_commands.models import Command
@@ -51,6 +52,7 @@ class ConfigurationData(BaseModel):
     events: Optional[Union[Events, str, ModuleLoading]]
     customCommands: List[Union[str, Command, ModuleLoading]] = []
     customize: Optional[Union[str, ModuleLoading]]
+    k8sCluster: Optional[K8sCluster]
 
 
 class CascadeBaseProfile(Enum):

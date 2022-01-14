@@ -20,12 +20,14 @@ from youwol.configuration.configuration_validation import (
     CheckSystemFolderWritable, CheckDatabasesFolderHealthy, CheckSecretPathExist,
     CheckSecretHealthy
 )
+
 from youwol.environment.clients import LocalClients
-from youwol.environment.models import RemoteGateway, UserInfo, ApiConfiguration, IPipelineFactory, Events
+from youwol.environment.models import RemoteGateway, UserInfo, ApiConfiguration, IPipelineFactory, Events, K8sInstance
 from youwol.environment.models_project import ErrorResponse, Project
 from youwol.environment.paths import PathsBook, ensure_config_file_exists_or_create_it
 from youwol.main_args import get_main_arguments, MainArguments
 from youwol.middlewares.models_dispatch import AbstractDispatch
+from youwol.pipelines.k8s_utils import ensure_k8s_proxy_running
 from youwol.routers.custom_commands.models import Command
 from youwol.utils_low_level import get_public_user_auth_token, get_object_from_module
 from youwol.web_socket import WebSocketsStore
@@ -71,6 +73,8 @@ class YouwolEnvironment(BaseModel):
     private_cache: Dict[str, Any] = {}
 
     tokensCache: List[DeadlinedCache] = []
+
+    k8sInstance: Optional[K8sInstance]
 
     def get_user_info(self) -> UserInfo:
 
@@ -152,6 +156,8 @@ Configuration loaded from '{self.pathsBook.config}'
 - list of custom commands:
 {chr(10).join([f"  * http://localhost:{self.http_port}/admin/custom-commands/{command}"
                for command in self.commands.keys()])}
+               
+{self.k8sInstance.__str__() if self.k8sInstance else "Not connected to a k8s cluster"}
 """
 
 
@@ -426,6 +432,10 @@ async def safe_load(
         except Exception as e:
             print(f"Could not load project in dir '{path}' : {e} ")
 
+    k8s_cluster = conf_handler.get_k8s_cluster()
+    k8s_instance = K8sInstance(**k8s_cluster.dict(), instance_info=await ensure_k8s_proxy_running(k8s_cluster)) \
+        if k8s_cluster else None
+
     youwol_configuration = YouwolEnvironment(
         active_profile=conf_handler.get_profile(),
         available_profiles=conf_handler.get_available_profiles(),
@@ -438,9 +448,9 @@ async def safe_load(
         pathsBook=paths_book,
         projects=projects,
         commands=conf_handler.get_commands(),
-        customDispatches=conf_handler.get_dispatches()
+        customDispatches=conf_handler.get_dispatches(),
+        k8sInstance=k8s_instance
     )
-
     return conf_handler.customize(youwol_configuration)
 
 

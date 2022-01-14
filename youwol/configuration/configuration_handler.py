@@ -7,7 +7,7 @@ from typing import Optional, List, Union, Dict
 from youwol.configuration.defaults import default_openid_host, default_http_port, default_path_data_dir, \
     default_path_cache_dir, default_path_projects_dir, default_port_range_start, default_port_range_end
 from youwol.configuration.models_config import Profiles, ConfigurationData, PortRange, ModuleLoading, \
-    CascadeBaseProfile, CascadeAppend, CascadeReplace, CdnOverride, Redirection
+    CascadeBaseProfile, CascadeAppend, CascadeReplace, CdnOverride, Redirection, K8sCluster
 from youwol.environment.models import Events, IConfigurationCustomizer
 from youwol.environment.paths import app_dirs
 from youwol.main_args import get_main_arguments
@@ -227,6 +227,9 @@ class ConfigurationHandler:
 
         return [ensure_dir_exists(path=path, root_candidates=path_user_lib)
                 for path in paths]
+
+    def get_k8s_cluster(self) -> K8sCluster:
+        return self.effective_config_data.k8sCluster
 
 
 def ensure_loading_source_exists(arg: Union[str, ModuleLoading],

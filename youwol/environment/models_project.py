@@ -200,13 +200,13 @@ class PipelineStep(BaseModel):
 
         if isinstance(self.run, str):
             await context.info(f'Run cmd {self.run}')
-            return await self.__execute_run_cmd(project=project, run_cmd=self.run, context=context)
+            return await PipelineStep.__execute_run_cmd(project=project, run_cmd=self.run, context=context)
 
         run = cast(Callable[['PipelineStep', 'Project', str, Context], Awaitable[str]], self.run)
         await context.info(f'Run custom function')
         run_cmd = run(self, project, flow_id, context)
         run_cmd = await run_cmd if isinstance(run_cmd, Awaitable) else run_cmd
-        return await self.__execute_run_cmd(project=project, run_cmd=run_cmd, context=context)
+        return await PipelineStep.__execute_run_cmd(project=project, run_cmd=run_cmd, context=context)
 
     async def get_fingerprint(self, project: 'Project', flow_id: FlowId, context: Context):
 
@@ -217,14 +217,15 @@ class PipelineStep(BaseModel):
         checksum = files_check_sum(files)
         return checksum, files
 
-    async def __execute_run_cmd(self, project: 'Project', run_cmd: str, context: Context):
+    @staticmethod
+    async def __execute_run_cmd(project: 'Project', run_cmd: str, context: Context):
 
         return_code, outputs = await execute_shell_cmd(
             cmd=f"(cd  {str(project.path)} && {run_cmd})",
             context=context
         )
         if return_code > 0:
-            raise CommandException(command=f"{project.name}#{self.id} ({self.run})", outputs=outputs)
+            raise CommandException(command=run_cmd, outputs=outputs)
         return outputs
 
 
