@@ -121,9 +121,9 @@ class Context(NamedTuple):
             await ctx.error(
                 text=f"Exception raised",
                 data={
-                    'dict': e.__dict__,
+                    'error': e.__str__(),
                     'traceback': tb.split('\n'),
-                    'args': e.args
+                    'args': [arg.__str__() for arg in e.args]
                 },
                 labels=[str(Label.EXCEPTION), *with_labels]
             )
