@@ -23,9 +23,7 @@ async def k8s_access_token():
     await k8s_async_config.load_kube_config()
     async with ApiClient() as api:
         api_key = api.configuration.api_key
-    #api_key = k8s_async_client.CoreV1Api().api_client.configuration.api_key
     return api_key['authorization'].strip('Bearer').strip()
-    # api_key = client.CoreV1Api().api_client.configuration.api_key['authorization'].strip('Bearer').strip()
 
 
 async def k8s_namespaces() -> List[str]:
@@ -167,14 +165,10 @@ async def start_k8s_proxy(
 ):
     k8s.config.load_kube_config(
         config_file=str(config_file),
-        # when creating the cluster using the command line 'gcloud container cluster create' an
-        # entry is added in the file k8s_config, the context name is provided in here
         context=context_name
     )
     cmd = f"kubectl config use-context {context_name} && kubectl proxy --port={proxy_port}"
-    print(cmd)
     subprocess.Popen(cmd, shell=True)
-    # cluster_info = await get_cluster_info(k8s_config)
 
 
 async def get_api_gateway_ip() -> Optional[str]:
@@ -189,5 +183,5 @@ async def get_cluster_info():
     try:
         nodes = k8s.client.CoreV1Api().list_node(_request_timeout=2)
         return [n.status.to_dict() for n in nodes.items]
-    except (NewConnectionError, ConnectTimeoutError, MaxRetryError) as e:
+    except (NewConnectionError, ConnectTimeoutError, MaxRetryError):
         return None
