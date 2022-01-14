@@ -187,18 +187,20 @@ def assert_python():
         exit(1)
 
 
-async def execute_shell_cmd(cmd: str, context: Context):
-    p = await asyncio.create_subprocess_shell(
-        cmd=cmd,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-        shell=True
-    )
-    outputs = []
-    async with stream.merge(p.stdout, p.stderr).stream() as messages_stream:
-        async for message in messages_stream:
-            outputs.append(message.decode('utf-8'))
-            await context.info(text=outputs[-1], labels=["BASH"])
-    await p.communicate()
+async def execute_shell_cmd(cmd: str, context: Context, log_outputs=True):
 
-    return p.returncode, outputs
+    async with context.start(action="execute shell command", with_labels=["BASH"]) as ctx:
+        await ctx.info(text=cmd)
+        p = await asyncio.create_subprocess_shell(
+            cmd=cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            shell=True
+        )
+        outputs = []
+        async with stream.merge(p.stdout, p.stderr).stream() as messages_stream:
+            async for message in messages_stream:
+                outputs.append(message.decode('utf-8'))
+                log_outputs and await context.info(text=outputs[-1])
+        await p.communicate()
+        return p.returncode, outputs
