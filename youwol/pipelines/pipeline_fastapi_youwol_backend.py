@@ -11,8 +11,8 @@ from youwol.environment.models_project import Manifest, PipelineStepStatus, Link
     Artifact, Project, RunImplicit, FlowId, ExplicitNone
 from youwol.exceptions import CommandException
 from youwol.pipelines.deploy_service import HelmPackage
-from youwol.pipelines.k8s_utils import get_cluster_info
 from youwol.pipelines.publish_cdn import PublishCdnRemoteStep, PublishCdnLocalStep
+from youwol.utils.k8s_utils import get_cluster_info
 from youwol_utils.context import Context
 from youwol_utils.utils_paths import parse_yaml
 

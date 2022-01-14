@@ -20,16 +20,15 @@ from youwol.configuration.configuration_validation import (
     CheckSystemFolderWritable, CheckDatabasesFolderHealthy, CheckSecretPathExist,
     CheckSecretHealthy
 )
-
 from youwol.environment.clients import LocalClients
 from youwol.environment.models import RemoteGateway, UserInfo, ApiConfiguration, IPipelineFactory, Events, K8sInstance
 from youwol.environment.models_project import ErrorResponse, Project
 from youwol.environment.paths import PathsBook, ensure_config_file_exists_or_create_it
 from youwol.main_args import get_main_arguments, MainArguments
 from youwol.middlewares.models_dispatch import AbstractDispatch
-from youwol.pipelines.k8s_utils import ensure_k8s_proxy_running
 from youwol.routers.custom_commands.models import Command
-from youwol.utils_low_level import get_public_user_auth_token, get_object_from_module
+from youwol.utils.k8s_utils import ensure_k8s_proxy_running
+from youwol.utils.utils_low_level import get_public_user_auth_token, get_object_from_module
 from youwol.web_socket import WebSocketsStore
 from youwol_utils import encode_id, retrieve_user_info
 from youwol_utils.context import Context, ContextFactory

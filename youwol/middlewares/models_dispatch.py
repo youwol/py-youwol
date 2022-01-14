@@ -6,7 +6,7 @@ from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
 
-from youwol.utils_low_level import redirect_request
+from youwol.utils.utils_low_level import redirect_request
 from youwol_utils import encode_id
 from youwol_utils.context import Context
 

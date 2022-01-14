@@ -4,14 +4,13 @@ from pathlib import Path
 
 from pydantic.main import BaseModel
 
-from youwol.pipelines.helm_utils import helm_install, helm_upgrade, helm_list, helm_uninstall
-from youwol.pipelines.k8s_utils import k8s_create_secrets_if_needed
+from youwol.utils.helm_utils import helm_install, helm_upgrade, helm_list, helm_uninstall
+from youwol.utils.k8s_utils import k8s_create_secrets_if_needed
 from youwol_utils import to_json
 from youwol_utils.context import Context
 
 
 class K8sPackage(BaseModel):
-
     name: str
     namespace: str
 

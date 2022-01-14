@@ -19,7 +19,7 @@ from youwol.routers import native_backends, admin, authorization
 from youwol.routers.environment.download_assets.data import DownloadDataTask
 from youwol.routers.environment.download_assets.flux_project import DownloadFluxProjectTask
 from youwol.routers.environment.download_assets.package import DownloadPackageTask
-from youwol.utils_low_level import start_web_socket, assert_python
+from youwol.utils.utils_low_level import start_web_socket, assert_python
 from youwol.web_socket import WebSocketsStore
 from youwol_utils import YouWolException, youwol_exception_handler
 from youwol_utils.context import ContextFactory

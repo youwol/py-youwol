@@ -22,7 +22,7 @@ from youwol.routers.environment.upload_assets.models import UploadTask
 from youwol.routers.environment.upload_assets.package import UploadPackageTask
 from youwol.routers.environment.upload_assets.story import UploadStoryTask
 from youwol.routers.environment.upload_assets.upload import synchronize_permissions_metadata_symlinks
-from youwol.utils_low_level import get_public_user_auth_token
+from youwol.utils.utils_low_level import get_public_user_auth_token
 from youwol.web_socket import WebSocketsStore
 from youwol_utils import retrieve_user_info, decode_id
 from youwol_utils.clients.assets.assets import AssetsClient

@@ -13,7 +13,7 @@ from youwol.environment.paths import app_dirs
 from youwol.main_args import get_main_arguments
 from youwol.middlewares.models_dispatch import CdnOverrideDispatch, RedirectDispatch, AbstractDispatch
 from youwol.routers.custom_commands.models import Command
-from youwol.utils_low_level import get_object_from_module
+from youwol.utils.utils_low_level import get_object_from_module
 from youwol_utils.utils_paths import PathException, fail_on_missing_dir, ensure_dir_exists
 
 SKELETON_DATABASES_ARCHIVE = 'databases.zip'

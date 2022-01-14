@@ -8,7 +8,7 @@ from typing import List, Union, Set, Dict, Any, Callable, Awaitable, Iterable, c
 
 from pydantic import BaseModel
 
-from youwol.utils_low_level import execute_shell_cmd
+from youwol.utils.utils_low_level import execute_shell_cmd
 from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol.environment.paths import PathsBook
 from youwol.exceptions import CommandException

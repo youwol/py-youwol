@@ -12,11 +12,11 @@ from kubernetes_asyncio.client.api_client import ApiClient
 from psutil import process_iter
 from urllib3.exceptions import NewConnectionError, ConnectTimeoutError, MaxRetryError
 
+from youwol.configuration.models_config import K8sCluster
+from youwol.environment.models import K8sNodeInfo, K8sInstanceInfo
+from youwol.exceptions import CommandException
+from youwol.utils.utils_low_level import execute_shell_cmd
 from youwol_utils.context import Context
-from ..configuration.models_config import K8sCluster
-from ..environment.models import K8sNodeInfo, K8sInstanceInfo
-from ..exceptions import CommandException
-from ..utils_low_level import execute_shell_cmd
 
 
 async def k8s_access_token():
