@@ -121,14 +121,16 @@ async def create_asset_local(
             )
 
         if isinstance(raw_data, Exception):
-            await ctx.error(f"Can not fetch raw part of the asset",
-                            data=raw_data.__dict__)
+            await ctx.error(f"Can not fetch raw part of the asset")
             raise raw_data
 
         if isinstance(metadata, Exception):
-            await ctx.error(f"Can not fetch asset's metadata",
-                            data=metadata.__dict__)
+            await ctx.error(f"Can not fetch asset's metadata")
             raise raw_data
+
+        if isinstance(tree_items, Exception):
+            await ctx.error(f"Can not fetch tree-db items")
+            raise tree_items
 
         await ctx.info(text="Raw & meta data retrieved", data={
             "metadata": metadata,
