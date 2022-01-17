@@ -1,10 +1,10 @@
-
 from collections import defaultdict
 from typing import List, Dict
 
 from pydantic import BaseModel
 
 from youwol.environment.models_project import Project
+from youwol.environment.projects_loader import ProjectLoader
 from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.projects.models import (
     ChildToParentConnections, DependenciesResponse,
@@ -17,14 +17,17 @@ async def check_cyclic_dependency(
         all_projects: List[Project],
         forbidden: List[str],
         context: Context) -> bool:
-
+    env = await context.get("env", YouwolEnvironment)
     forbidden = forbidden + [project_name]
     package = next((p for p in all_projects if p.name == project_name), None)
     if package is None:
         await context.error(text=f"Project {project_name} not found",
                             data={"allProjects": [p.name for p in all_projects]})
         raise RuntimeError(f"Project {project_name} not found")
-    dependencies = await package.get_dependencies(recursive=False, context=context)
+    dependencies = await package.get_dependencies(recursive=False,
+                                                  projects=await ProjectLoader.get_projects(env=env, context=context),
+                                                  context=context
+                                                  )
     errors = [p for p in dependencies if p.name in forbidden]
     if errors:
         raise RuntimeError(f"Cyclic dependencies detected:\n " +
@@ -42,16 +45,21 @@ async def check_cyclic_dependency(
 async def sort_projects(
         projects: List[Project],
         sorted_projects: List[Project],
-        context: Context
-        ) -> List[Project]:
-
+        context: Context = Context
+) -> List[Project]:
+    env = await context.get("env", YouwolEnvironment)
     sorted_projects = sorted_projects or []
     if not projects:
         return sorted_projects
 
     sorted_names = [k.name for k in sorted_projects]
 
-    flags = [all(dep.name in sorted_names for dep in await p.get_dependencies(recursive=False, context=context))
+    flags = [all(dep.name in sorted_names
+                 for dep in await p.get_dependencies(recursive=False,
+                                                     projects=await ProjectLoader.get_projects(env, context),
+                                                     context=context
+                                                     )
+                 )
              for p in projects]
     remaining = [p for p, f in zip(projects, flags) if not f]
 
@@ -75,21 +83,33 @@ class ResolvedDependencies(BaseModel):
 async def resolve_workspace_dependencies(context: Context) -> ResolvedDependencies:
 
     env = await context.get('env', YouwolEnvironment)
+    projects = await ProjectLoader.get_projects(env, context)
     cache = env.cache
     if 'resolved_dependencies' in cache:
         return cache['resolved_dependencies']
 
-    all_projects: List[Project] = env.projects
     parent_ids = defaultdict(lambda: [])
     [parent_ids[d.name].append(project.name)
-     for project in all_projects for d in await project.get_dependencies(recursive=False, context=context)]
-    for p in all_projects:
+     for project in projects
+     for d in await project.get_dependencies(recursive=False,
+                                             projects=await ProjectLoader.get_projects(env, context),
+                                             context=context
+                                             )
+     ]
+    for p in projects:
         if p.name not in parent_ids:
             parent_ids[p.name] = []
 
-    sorted_projects = await sort_projects(projects=all_projects, sorted_projects=[], context=context)
-    deps_rec = {p.name: [d.name for d in await p.get_dependencies(recursive=True, context=context)]
-                for p in sorted_projects}
+    sorted_projects = await sort_projects(projects=projects, sorted_projects=[], context=context)
+    deps_rec = {p.name:
+                    [d.name
+                     for d in await p.get_dependencies(recursive=True,
+                                                       projects=await ProjectLoader.get_projects(env, context),
+                                                       context=context
+                                                       )
+                     ]
+                for p in sorted_projects
+                }
     cache['resolved_dependencies'] = ResolvedDependencies(
         global_dag=[ChildToParentConnections(id=k, parentIds=v) for k, v in parent_ids.items()],
         sorted_projects=sorted_projects,

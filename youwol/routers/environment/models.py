@@ -4,6 +4,16 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 from youwol.environment.models_project import ErrorResponse
+from youwol.environment.projects_loader import Result
+
+
+class AvailableProfiles(BaseModel):
+    profiles: Optional[List[str]]
+    active: str
+
+
+class ProjectsLoadingResults(BaseModel):
+    results: List[Result]
 
 
 class RemoteGatewayInfo(BaseModel):

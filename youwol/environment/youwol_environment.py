@@ -21,20 +21,19 @@ from youwol.configuration.configuration_validation import (
     CheckSecretHealthy
 )
 from youwol.environment.clients import LocalClients
-from youwol.environment.models import RemoteGateway, UserInfo, ApiConfiguration, IPipelineFactory, Events, K8sInstance
-from youwol.environment.models_project import ErrorResponse, Project
+from youwol.environment.models import RemoteGateway, UserInfo, ApiConfiguration, Events, K8sInstance
+from youwol.environment.models_project import ErrorResponse
 from youwol.environment.paths import PathsBook, ensure_config_file_exists_or_create_it
+from youwol.environment.projects_loader import ProjectLoader
 from youwol.main_args import get_main_arguments, MainArguments
 from youwol.middlewares.models_dispatch import AbstractDispatch
 from youwol.routers.custom_commands.models import Command
 from youwol.utils.k8s_utils import ensure_k8s_proxy_running
-from youwol.utils.utils_low_level import get_public_user_auth_token, get_object_from_module
+from youwol.utils.utils_low_level import get_public_user_auth_token
 from youwol.web_socket import WebSocketsStore
-from youwol_utils import encode_id, retrieve_user_info
+from youwol_utils import retrieve_user_info
 from youwol_utils.context import Context, ContextFactory
 from youwol_utils.utils_paths import parse_json, write_json
-
-PROJECT_PIPELINE_DIRECTORY = '.yw_pipeline'
 
 
 class DeadlinedCache(BaseModel):
@@ -65,8 +64,6 @@ class YouwolEnvironment(BaseModel):
     selectedRemote: Optional[str]
 
     pathsBook: PathsBook
-
-    projects: List[Project]
 
     cache: Dict[str, Any] = {}
     private_cache: Dict[str, Any] = {}
@@ -148,9 +145,7 @@ Configuration loaded from '{self.pathsBook.config}'
 - paths: {self.pathsBook}
 - cdn packages count: {len(parse_json(self.pathsBook.local_cdn_docdb)['documents'])}
 - assets count: {len(parse_json(self.pathsBook.local_docdb / 'assets' / 'entities' / 'data.json')['documents'])}
-- list of projects:
-{chr(10).join([f"  * {p.name} at {p.path} with pipeline {p.pipeline.id}" for p in self.projects])}
-- list of redirections:
+ list of redirections:
 {chr(10).join([f"  * {redirection}" for redirection in self.customDispatches])}
 - list of custom commands:
 {chr(10).join([f"  * http://localhost:{self.http_port}/admin/custom-commands/{command}"
@@ -174,13 +169,14 @@ class YouwolEnvironmentFactory:
         cached = YouwolEnvironmentFactory.__cached_config
         conf = await safe_load(
             path=cached.pathsBook.config,
-            profile=profile or get_main_arguments().profile,
+            profile=profile if profile is not None else cached.active_profile,
             user_email=cached.userEmail,
             selected_remote=cached.selectedRemote
         )
 
         await YouwolEnvironmentFactory.trigger_on_load(config=conf)
         YouwolEnvironmentFactory.__cached_config = conf
+        return conf
 
     @staticmethod
     async def login(email: Union[str, None], remote_name: Union[str, None], context: Context = None):
@@ -193,7 +189,6 @@ class YouwolEnvironmentFactory:
             userEmail=email,
             selectedRemote=remote_name,
             pathsBook=conf.pathsBook,
-            projects=conf.projects,
             http_port=conf.http_port,
             cache={},
             available_profiles=conf.available_profiles,
@@ -223,7 +218,6 @@ class YouwolEnvironmentFactory:
             userEmail=conf.userEmail,
             selectedRemote=conf.selectedRemote,
             pathsBook=conf.pathsBook,
-            projects=conf.projects,
             http_port=conf.http_port,
             cache={},
             available_profiles=conf.available_profiles,
@@ -340,7 +334,9 @@ async def safe_load(
         system=Path(conf_handler.get_cache_dir()),
         secrets=Path(conf_handler.get_config_dir() / Path("secrets.json")),
         usersInfo=Path(conf_handler.get_config_dir() / Path("users-info.json")),
-        remotesInfo=Path(conf_handler.get_config_dir() / Path("remotes-info.json"))
+        remotesInfo=Path(conf_handler.get_config_dir() / Path("remotes-info.json")),
+        projects=conf_handler.get_projects_dirs(),
+        additionalPythonScrPaths=conf_handler.get_additional_python_src_paths()
     )
 
     if not os.access(paths_book.system.parent, os.W_OK):
@@ -383,53 +379,14 @@ async def safe_load(
     if not paths_book.packages_cache_path.exists():
         open(paths_book.secrets, "w").write(json.dumps({}))
 
+    ProjectLoader.invalid_cache()
+
     user_email, selected_remote = await login(
         user_email=user_email,
         selected_remote=selected_remote,
         users_info_path=paths_book.usersInfo,
         remotes_info=paths_book.remotesInfo,
         context=context)
-
-    projects = []
-    targets_dirs = []
-    nb_targets_dirs = len(targets_dirs)
-    for projects_dir in conf_handler.get_projects_dirs():
-        if (projects_dir / PROJECT_PIPELINE_DIRECTORY).exists():
-            targets_dirs.append(projects_dir)
-        else:
-            for subdir in os.listdir(projects_dir):
-                if (projects_dir / Path(subdir) / PROJECT_PIPELINE_DIRECTORY).exists():
-                    targets_dirs.append(projects_dir / Path(subdir))
-        nb_targets_dirs_found = len(targets_dirs) - nb_targets_dirs
-        nb_targets_dirs = len(targets_dirs)
-        if nb_targets_dirs_found == 0:
-            print(f"No project found in '{projects_dir}'")
-        else:
-            print(f"found {nb_targets_dirs_found} projects in '{projects_dir}'")
-
-    for path in targets_dirs:
-        try:
-            pipeline_factory = get_object_from_module(
-                module_absolute_path=path / PROJECT_PIPELINE_DIRECTORY / 'yw_pipeline.py',
-                object_or_class_name='PipelineFactory',
-                object_type=IPipelineFactory,
-                additional_src_absolute_paths=conf_handler.get_additional_python_src_paths()
-            )
-            pipeline = await pipeline_factory.get()
-            name = pipeline.projectName(path)
-            project = Project(
-                name=name,
-                id=encode_id(name),
-                version=pipeline.projectVersion(path),
-                pipeline=pipeline,
-                path=path
-            )
-            projects.append(project)
-
-        except SyntaxError as e:
-            print(f"Could not load project in dir '{path}' because of syntax error : {e.msg} ")
-        except Exception as e:
-            print(f"Could not load project in dir '{path}' : {e} ")
 
     k8s_cluster = conf_handler.get_k8s_cluster()
     k8s_instance = K8sInstance(**k8s_cluster.dict(), instance_info=await ensure_k8s_proxy_running(k8s_cluster)) \
@@ -445,12 +402,11 @@ async def safe_load(
         events=conf_handler.get_events(),
         cdnAutomaticUpdate=conf_handler.get_cdn_auto_update(),
         pathsBook=paths_book,
-        projects=projects,
         commands=conf_handler.get_commands(),
         customDispatches=conf_handler.get_dispatches(),
         k8sInstance=k8s_instance
     )
-    return conf_handler.customize(youwol_configuration)
+    return await conf_handler.customize(youwol_configuration)
 
 
 async def get_yw_config_starter(main_args: MainArguments):

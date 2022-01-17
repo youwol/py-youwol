@@ -10,6 +10,7 @@ from starlette.requests import Request
 
 from youwol.environment.models_project import Project, Manifest
 from youwol.environment.paths import PathsBook
+from youwol.environment.projects_loader import ProjectLoader
 from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
 from youwol.exceptions import CommandException
 from youwol.routers.commons import Label
@@ -19,8 +20,7 @@ from youwol.routers.projects.implementation import (
 )
 from youwol.routers.projects.models import (
     PipelineStepStatusResponse, PipelineStatusResponse, ArtifactsResponse, ProjectStatusResponse, CdnResponse,
-    CdnVersionResponse,
-)
+    CdnVersionResponse, )
 from youwol.web_socket import WebSocketsStore
 from youwol_utils import decode_id
 from youwol_utils.context import ContextFactory
@@ -81,8 +81,8 @@ async def project_status(
                 'projectId': project_id
                 }
             ) as ctx:
-        env = await context.get('env', YouwolEnvironment)
-        project: Project = next(p for p in env.projects if p.id == project_id)
+        projects = await ProjectLoader.get_projects(await context.get("env", YouwolEnvironment), context)
+        project: Project = next(p for p in projects if p.id == project_id)
 
         workspace_dependencies = await resolve_project_dependencies(project=project, context=context)
         await ctx.info("Project dependencies retrieved", data=workspace_dependencies)
@@ -178,6 +178,7 @@ async def run_pipeline_step(
     )
 
     env = await context.get('env', YouwolEnvironment)
+    projects = await ProjectLoader.get_projects(env, context)
     paths: PathsBook = env.pathsBook
 
     def refresh_status_downstream_steps():
@@ -185,7 +186,7 @@ async def run_pipeline_step(
         Downstream steps may depend on this guy => request status on them.
         Shortcut => request status on all the steps of the flow (not only subsequent)
         """
-        _project: Project = next(p for p in env.projects if p.id == project_id)
+        _project: Project = next(p for p in projects if p.id == project_id)
         steps = _project.get_flow_steps(flow_id=flow_id)
         return asyncio.gather(*[
             pipeline_step_status(request=request, project_id=project_id, flow_id=flow_id, step_id=_step.id)

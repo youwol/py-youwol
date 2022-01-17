@@ -10,11 +10,12 @@ from starlette.requests import Request
 from youwol.backends.treedb.models import PathResponse
 from youwol.environment.clients import RemoteClients, LocalClients
 from youwol.environment.models import UserInfo
+from youwol.environment.projects_loader import ProjectLoader
 from youwol.environment.youwol_environment import yw_config, YouwolEnvironment, YouwolEnvironmentFactory
 from youwol.routers.commons import Label
 from youwol.routers.commons import ensure_path
 from youwol.routers.environment.models import (
-    SyncUserBody, LoginBody, RemoteGatewayInfo, SelectRemoteBody
+    SyncUserBody, LoginBody, RemoteGatewayInfo, SelectRemoteBody, AvailableProfiles, ProjectsLoadingResults
 )
 from youwol.routers.environment.upload_assets.data import UploadDataTask
 from youwol.routers.environment.upload_assets.flux_project import UploadFluxProjectTask
@@ -43,7 +44,6 @@ class EnvironmentStatusResponse(BaseModel):
 
 
 async def connect_to_remote(config: YouwolEnvironment, context: Context) -> bool:
-
     remote_gateway_info = config.get_remote_info()
     if not remote_gateway_info:
         return False
@@ -80,19 +80,56 @@ async def connect_to_remote(config: YouwolEnvironment, context: Context) -> bool
             summary="configuration")
 async def configuration(
         config: YouwolEnvironment = Depends(yw_config)
-        ):
+):
     return config
+
+
+@router.post("/configuration",
+             response_model=EnvironmentStatusResponse,
+             summary="reload configuration")
+async def reload_configuration(
+        request: Request,
+):
+    env = await YouwolEnvironmentFactory.reload()
+    return await status(request, env)
+
+
+@router.get("/configuration/profiles/",
+            response_model=AvailableProfiles,
+            summary="list available configuration profiles")
+async def change_configuration_profile(
+        config: YouwolEnvironment = Depends(yw_config)
+):
+    return AvailableProfiles(profiles=config.available_profiles,
+                             active=config.active_profile)
+
+
+@router.put("/configuration/profiles/active",
+            response_model=EnvironmentStatusResponse,
+            summary="change configuration profile")
+async def change_configuration_profile(
+        request: Request,
+        body: AvailableProfiles,
+        config: YouwolEnvironment = Depends(yw_config)
+):
+    profile = body.active
+    if profile == config.active_profile:
+        raise HTTPException(status_code=409, detail=f"current configuration profile is already '{profile}'")
+    if profile not in config.available_profiles:
+        raise HTTPException(status_code=404, detail=f"no configuration profile '{profile}'")
+
+    env = await YouwolEnvironmentFactory.reload(profile)
+    return await status(request, env)
 
 
 @router.get("/file-content",
             summary="text content of the configuration file")
 async def file_content(
         config: YouwolEnvironment = Depends(yw_config)
-        ):
-
+):
     return {
         "content": config.pathsBook.config.read_text()
-        }
+    }
 
 
 @router.get("/status",
@@ -101,14 +138,14 @@ async def file_content(
 async def status(
         request: Request,
         config: YouwolEnvironment = Depends(yw_config)
-        ):
+):
     context = ContextFactory.get_instance(
         request=request,
         web_socket=WebSocketsStore.userChannel
     )
     async with context.start(
             action="Get environment status"
-            ) as ctx:
+    ) as ctx:
         connected = await connect_to_remote(config=config, context=context)
         remote_gateway_info = config.get_remote_info()
         if remote_gateway_info:
@@ -122,8 +159,9 @@ async def status(
             configuration=config,
             remoteGatewayInfo=remote_gateway_info,
             remotesInfo=list(remotes_info)
-            )
+        )
         await ctx.send(response)
+        await ctx.send(ProjectsLoadingResults(results=await ProjectLoader.get_results(config, context)))
         return response
 
 
@@ -133,7 +171,7 @@ async def login(
         request: Request,
         body: LoginBody,
         config: YouwolEnvironment = Depends(yw_config)
-        ):
+):
     await YouwolEnvironmentFactory.login(email=body.email, remote_name=config.selectedRemote)
     new_conf = await yw_config()
     await status(request, new_conf)
@@ -146,7 +184,7 @@ async def select_remote(
         request: Request,
         body: SelectRemoteBody,
         config: YouwolEnvironment = Depends(yw_config)
-        ):
+):
     await YouwolEnvironmentFactory.login(email=config.userEmail, remote_name=body.name)
     new_conf = await yw_config()
     await status(request, new_conf)
@@ -159,7 +197,7 @@ async def sync_user(
         request: Request,
         body: SyncUserBody,
         config: YouwolEnvironment = Depends(yw_config)
-        ):
+):
     context = ContextFactory.get_instance(
         request=request,
         web_socket=WebSocketsStore.userChannel
@@ -172,7 +210,7 @@ async def sync_user(
                 pwd=body.password,
                 client_id=config.get_remote_info().metadata['keycloakClientId'],
                 openid_host=config.openid_host
-                )
+            )
         except Exception:
             raise RuntimeError(f"Can not authorize from email/pwd @ {config.get_remote_info().host}")
 
@@ -193,7 +231,7 @@ async def sync_user(
             "name": user_info['preferred_username'],
             "memberOf": user_info['memberof'],
             "email": user_info["email"]
-            }
+        }
         write_json(users_info, config.pathsBook.usersInfo)
         await login(request=request, body=LoginBody(email=body.email), config=config)
         return users_info['users'][body.email]
@@ -204,7 +242,7 @@ async def sync_user(
 async def select_remote(
         request: Request,
         asset_id: str
-        ):
+):
     context = ContextFactory.get_instance(
         request=request,
         web_socket=WebSocketsStore.userChannel

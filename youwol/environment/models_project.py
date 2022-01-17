@@ -8,13 +8,13 @@ from typing import List, Union, Set, Dict, Any, Callable, Awaitable, Iterable, c
 
 from pydantic import BaseModel
 
-from youwol.utils.utils_low_level import execute_shell_cmd
 from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol.environment.paths import PathsBook
 from youwol.exceptions import CommandException
+from youwol.utils.utils_low_level import execute_shell_cmd
+from youwol_utils import files_check_sum
 from youwol_utils.context import Context
 from youwol_utils.utils_paths import matching_files, parse_json
-from youwol_utils import files_check_sum
 
 FlowId = str
 
@@ -257,18 +257,26 @@ class Project(BaseModel):
     id: str  # base64 encoded Project.name
     version: str
 
-    async def get_dependencies(self, recursive: bool, context: Context, ignore: List[str] = None) -> List['Project']:
+    async def get_dependencies(self,
+                               projects: List['Project'],
+                               recursive: bool,
+                               context: Context,
+                               ignore: List[str] = None
+                               ) -> List['Project']:
         ignore = ignore or []
-        env = await context.get('env', YouwolEnvironment)
         all_dependencies = self.pipeline.dependencies(self, context)
-        dependencies = [p for p in env.projects if p.name in all_dependencies and p.name not in ignore]
+        dependencies = [p for p in projects if p.name in all_dependencies and p.name not in
+                        ignore]
         ignore = ignore + [p.name for p in dependencies]
         if not recursive:
             return dependencies
         dependencies_rec = functools.reduce(lambda acc, e: acc+e, [
             dependencies,
-            *[await p.get_dependencies(recursive=recursive, context=context, ignore=ignore) for p in dependencies]
-            ])
+            *[await p.get_dependencies(recursive=recursive,
+                                       projects=projects,
+                                       context=context,
+                                       ignore=ignore) for p in dependencies]
+        ])
 
         return dependencies_rec
 

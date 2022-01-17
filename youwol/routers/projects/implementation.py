@@ -4,12 +4,13 @@ from typing import Tuple, List
 
 from youwol.environment.models_project import Project, PipelineStep, Artifact, Flow, Link, Manifest
 from youwol.environment.paths import PathsBook
-from youwol_utils import to_json
-from youwol_utils.context import Context
+from youwol.environment.projects_loader import ProjectLoader
 from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.projects.models import (
     PipelineStepStatusResponse, ArtifactResponse
-    )
+)
+from youwol_utils import to_json
+from youwol_utils.context import Context
 from youwol_utils.utils_paths import matching_files, parse_json
 
 
@@ -18,8 +19,8 @@ async def get_project_step(
         step_id: str,
         context: Context
         ) -> Tuple[Project, PipelineStep]:
-    env = await context.get('env', YouwolEnvironment)
-    project = next(p for p in env.projects if p.id == project_id)
+    projects = await ProjectLoader.get_projects(await context.get("env", YouwolEnvironment), context)
+    project = next(p for p in projects if p.id == project_id)
     step = next(s for s in project.pipeline.steps if s.id == step_id)
 
     await context.info(text="project & step retrieved",
@@ -34,7 +35,8 @@ async def get_project_flow_steps(
         ) -> Tuple[Project, Flow, List[PipelineStep]]:
 
     env = await context.get('env', YouwolEnvironment)
-    project = next(p for p in env.projects if p.id == project_id)
+    projects = await ProjectLoader.get_projects(env, context)
+    project = next(p for p in projects if p.id == project_id)
     flow = next(f for f in project.pipeline.flows if f.name == flow_id)
     steps = project.get_flow_steps(flow_id=flow_id)
 
