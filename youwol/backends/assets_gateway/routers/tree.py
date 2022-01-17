@@ -15,8 +15,8 @@ from youwol_utils import (
 from ..models import (
     DrivesResponse, ChildrenResponse, DriveBody, DriveResponse,
     FolderResponse, FolderBody, DeletedResponse, MoveBody, ItemResponse, BorrowBody, PermissionsResponse, PutFolderBody,
-    PutDriveBody, DefaultDriveResponse
-    )
+    PutDriveBody, DefaultDriveResponse, ItemsResponse
+)
 
 from ..routers.assets import get_asset_by_tree_id
 from ..utils import to_item_resp, regroup_asset, to_folder_resp
@@ -225,6 +225,22 @@ async def get_item(
     resp = await treedb.get_item(item_id=item_id, headers=headers)
 
     return to_item_resp(resp)
+
+
+@router.get("/items/from-related/{related_id}",
+            summary="get an item",
+            response_model=ItemsResponse)
+async def get_items_by_related_id(
+        request: Request,
+        related_id: str,
+        configuration: Configuration = Depends(get_configuration)
+        ):
+
+    headers = generate_headers_downstream(request.headers)
+    treedb = configuration.treedb_client
+    resp = await treedb.get_items_from_related_id(related_id=related_id, headers=headers)
+
+    return ItemsResponse(items=[to_item_resp(item) for item in resp['items']])
 
 
 @router.get("/folders/{folder_id}", response_model=FolderResponse,
