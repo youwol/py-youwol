@@ -1,6 +1,6 @@
 import asyncio
 import json
-from typing import List, Callable, Awaitable, TypeVar
+from typing import List, Callable, Awaitable, TypeVar, cast, Dict
 
 from fastapi import HTTPException
 
@@ -131,6 +131,10 @@ async def create_asset_local(
         if isinstance(tree_items, Exception):
             await ctx.error(f"Can not fetch tree-db items")
             raise tree_items
+
+        raw_data = cast(Dict, raw_data)
+        metadata = cast(Dict, metadata)
+        tree_items = cast(Dict, tree_items)
 
         await ctx.info(text="Raw & meta data retrieved", data={
             "metadata": metadata,
