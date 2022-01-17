@@ -39,7 +39,7 @@ class IPipelineFactory(ABC):
         pass
 
     @abstractmethod
-    async def get(self) -> Pipeline:
+    async def get(self, env: YouwolEnvironment, context: Context) -> Pipeline:
         return NotImplemented
 
 
@@ -52,5 +52,5 @@ class IConfigurationCustomizer(ABC):
         pass
 
     @abstractmethod
-    def customize(self, _youwol_configuration: YouwolEnvironment) -> YouwolEnvironment:
+    async def customize(self, _youwol_configuration: YouwolEnvironment) -> YouwolEnvironment:
         return NotImplemented

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Union, Optional
+from typing import Union, Optional, List
 
 from appdirs import AppDirs
 from pydantic import BaseModel
@@ -13,6 +13,8 @@ class PathsBook(BaseModel):
     config: Path
     system: Path
     databases: Path
+    projects: List[Path]
+    additionalPythonScrPaths: List[Path]
     usersInfo: Path
     remotesInfo: Path
     secrets: Union[Path, None]
@@ -105,7 +107,11 @@ class PathsBook(BaseModel):
         return f"""
  * config file: {self.config}
  * databases directory: {self.databases}
- * system directory: {self.system}"""
+ * system directory: {self.system}
+ * projects directories:
+{chr(10).join([f"  * {path}" for path in self.projects])} 
+ * additional Python source directories:
+{chr(10).join([f"  * {path}" for path in self.additionalPythonScrPaths])}"""
 
 
 app_dirs = AppDirs(appname="py-youwol", appauthor="Youwol")

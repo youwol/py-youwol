@@ -3,10 +3,14 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from youwol.environment.models_project import PipelineStepStatus, Manifest, Link
+from youwol.environment.models_project import PipelineStepStatus, Manifest, Link, Project
 
 ArtifactId = str
 PipelineStepId = str
+
+
+class ListProjectsResponse(BaseModel):
+    projects: List[Project]
 
 
 class ArtifactResponse(BaseModel):

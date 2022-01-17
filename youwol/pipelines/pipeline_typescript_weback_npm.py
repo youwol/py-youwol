@@ -7,10 +7,11 @@ from youwol.environment.models_project import Manifest, PipelineStepStatus, Link
     SourcesFctImplicit, Pipeline, parse_json, Skeleton, SkeletonParameter, PipelineStep, FileListing, \
     Artifact, Project, FlowId
 from youwol.environment.paths import PathsBook
+from youwol.environment.projects_loader import ProjectLoader
 from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.pipelines.publish_cdn import PublishCdnLocalStep, PublishCdnRemoteStep
-from youwol_utils import to_json
 from youwol_utils import files_check_sum
+from youwol_utils import to_json
 from youwol_utils.context import Context
 from youwol_utils.utils_paths import copy_tree, copy_file, list_files
 
@@ -68,7 +69,10 @@ class SyncFromDownstreamStep(PipelineStep):
         paths_book: PathsBook = env.pathsBook
 
         project_step = [(d, next((s for s in d.get_flow_steps(flow_id=flow_id) if isinstance(s, BuildStep)), None))
-                        for d in await project.get_dependencies(recursive=True, context=context)
+                        for d in await project.get_dependencies(recursive=True,
+                                                                projects=await ProjectLoader.get_projects(env, context),
+                                                                context=context
+                                                                )
                         ]
 
         def is_succeeded(p: Project, s: BuildStep):
