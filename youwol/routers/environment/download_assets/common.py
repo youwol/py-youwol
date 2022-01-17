@@ -126,7 +126,7 @@ async def create_asset_local(
 
         if isinstance(metadata, Exception):
             await ctx.error(f"Can not fetch asset's metadata")
-            raise raw_data
+            raise metadata
 
         if isinstance(tree_items, Exception):
             await ctx.error(f"Can not fetch tree-db items")
