@@ -4,7 +4,8 @@ from typing import List, Callable, Awaitable, TypeVar, cast, Dict
 
 from fastapi import HTTPException
 
-from youwol.backends.treedb.models import PathResponse, ItemResponse, ItemsResponse, DriveResponse
+from youwol.backends.assets_gateway.models import ItemsResponse
+from youwol.backends.treedb.models import PathResponse, ItemResponse, DriveResponse
 from youwol.environment.clients import RemoteClients, LocalClients
 from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
@@ -17,7 +18,7 @@ async def get_remote_paths(
         tree_items: ItemsResponse
         ):
     items_path_ = await asyncio.gather(*[
-        remote_treedb.get_path(item.itemId)
+        remote_treedb.get_path(item.treeId)
         for item in tree_items.items
         ])
     items_path = [PathResponse(**p) for p in items_path_]
@@ -116,7 +117,7 @@ async def create_asset_local(
         raw_data, metadata, tree_items = await asyncio.gather(
             get_raw_data(),
             remote_gtw.get_asset_metadata(asset_id=asset_id),
-            remote_treedb.get_items_from_related_id(related_id=asset_id),
+            remote_gtw.get_tree_items_by_related_id(related_id=asset_id),
             return_exceptions=True
             )
 
