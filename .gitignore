@@ -17,4 +17,5 @@ tooling/test_install/**/*
 .venv_*
 .publish_venv
 __pycache__
-.idea
+/.idea/
+/*.iml
