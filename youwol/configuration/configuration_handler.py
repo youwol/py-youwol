@@ -198,7 +198,7 @@ class ConfigurationHandler:
         return {name: command for (name, command) in [get_command(conf) for conf in
                                                       self.effective_config_data.customCommands]}
 
-    def customize(self, youwol_configuration):
+    async def customize(self, youwol_configuration):
         if not self.effective_config_data.customize:
             return youwol_configuration
 
@@ -211,7 +211,7 @@ class ConfigurationHandler:
                                             object_type=IConfigurationCustomizer,
                                             additional_src_absolute_paths=self.get_additional_python_src_paths())
         try:
-            youwol_configuration = customizer.customize(youwol_configuration)
+            youwol_configuration = await customizer.customize(youwol_configuration)
         except Exception as e:
             raise Exception(f"Error while executing customizer {config_source}.customize(…) : {e}")
 

@@ -52,5 +52,5 @@ class IConfigurationCustomizer(ABC):
         pass
 
     @abstractmethod
-    def customize(self, _youwol_configuration: YouwolEnvironment) -> YouwolEnvironment:
+    async def customize(self, _youwol_configuration: YouwolEnvironment) -> YouwolEnvironment:
         return NotImplemented

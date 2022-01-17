@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Union
+
+from pydantic import BaseModel
 
 from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol.environment.models import IPipelineFactory
@@ -14,68 +16,118 @@ from youwol_utils.context import Context
 PROJECT_PIPELINE_DIRECTORY = '.yw_pipeline'
 
 
+class Failure(BaseModel):
+    path: str
+    failure: str = 'generic'
+    message: str
+
+
+class FailureNoPipeline(Failure):
+    failure: str = 'no_pipeline'
+    message: str = "No pipeline in directory"
+
+
+class FailureEmptyDir(Failure):
+    failure: str = 'empty_dir'
+    message: str = "Directory is empty"
+
+
+class FailureSyntax(Failure):
+    failure: str = 'syntax'
+
+
+Result = Union[Project, Failure]
+
+
 class ProjectLoader:
-    _projects: Optional[List[Project]] = None
+    _cached_results: Optional[List[Result]] = None
 
     @staticmethod
-    def clear_cache():
-        ProjectLoader._projects = None
+    def invalid_cache():
+        ProjectLoader._cached_results = None
 
     @staticmethod
     async def get_projects(env: YouwolEnvironment, context: Context) -> List[Project]:
-        if ProjectLoader._projects is None:
-            ProjectLoader._projects = \
-                await get_projects(projects_dirs=env.pathsBook.projects,
-                                   additional_python_scr_paths=env.pathsBook.additionalPythonScrPaths,
-                                   env=env,
-                                   context=context)
+        return [result
+                for result in await ProjectLoader.get_results(env, context)
+                if isinstance(result, Project)]
 
-        return ProjectLoader._projects
+    @staticmethod
+    async def get_results(env: YouwolEnvironment, context: Context) -> List[Result]:
+        if ProjectLoader._cached_results is None:
+            ProjectLoader._cached_results = \
+                await load_projects(projects_dirs=env.pathsBook.projects,
+                                    additional_python_scr_paths=env.pathsBook.additionalPythonScrPaths,
+                                    env=env,
+                                    context=context)
+
+        return ProjectLoader._cached_results
 
 
-async def get_projects(projects_dirs: List[Path],
-                       additional_python_scr_paths: List[Path],
-                       env: YouwolEnvironment,
-                       context: Context
-                       ) -> List[Project]:
-    result = []
-    candidates_dirs = get_projects_dirs_candidates(projects_dirs)
+async def load_projects(projects_dirs: List[Path],
+                        additional_python_scr_paths: List[Path],
+                        env: YouwolEnvironment,
+                        context: Context
+                        ) -> List[Result]:
+    results_dirs = get_projects_dirs_candidates(projects_dirs)
+    candidates_dirs = [
+        candidate_dirs
+        for candidate_dirs in results_dirs
+        if isinstance(candidate_dirs, Path)
+    ]
 
+    results: List[Result] = [
+        candidate_dirs
+        for candidate_dirs in results_dirs
+        if not isinstance(candidate_dirs, Path)
+    ]
     for dir_candidate in candidates_dirs:
         try:
-            result.append(await get_project(dir_candidate, additional_python_scr_paths, env, context))
+            results.append(await get_project(dir_candidate, additional_python_scr_paths, env, context))
         except SyntaxError as e:
-            print(f"Could not load project in dir '{dir_candidate}' because of syntax error : {e.msg} ")
+            msg = f"Could not load project in dir '{dir_candidate}' because of syntax error : {e.msg} "
+            print(msg)
+            results.append(FailureSyntax(path=str(dir_candidate), message=e.msg))
         except Exception as e:
-            print(f"Could not load project in dir '{dir_candidate}' : {e} ")
+            msg = f"Could not load project in dir '{dir_candidate}' : {e} "
+            print(msg)
+            results.append(Failure(path=str(dir_candidate), message=str(e)))
 
-    print(f"""- list of projects:
-{chr(10).join([f"  * {p.name} at {p.path} with pipeline {p.pipeline.id}" for p in result])}
+    print(f"""- list of projects successfully loaded:
+{chr(10).join([f"  * {p.name} at {p.path} with pipeline {p.pipeline.id}" for p in results if isinstance(p, Project)])}
+- list of projects that failed to load:
+{chr(10).join([f"  * {p.path} : {p.message}" for p in results if not isinstance(p, Project)])}
     """)
+    return results
+
+
+def get_projects_dirs_candidates(projects_dirs: List[Path]) -> List[Union[Path, Failure]]:
+    result = []
+    for projects_dir in projects_dirs:
+        result.extend(get_projects_dir_candidate(projects_dir))
+
     return result
 
 
-def get_projects_dirs_candidates(projects_dirs: List[Path]) -> List[Path]:
+def get_projects_dir_candidate(projects_dir) -> List[Union[Path, Failure]]:
     result = []
-    # For some feedback information
-    nb_candidates_overall = 0
-    for projects_dir in projects_dirs:
-        if (projects_dir / PROJECT_PIPELINE_DIRECTORY).exists():
-            # This dir is a project
-            result.append(projects_dir)
-        else:
-            # This dir may contain projects
-            for subdir in os.listdir(projects_dir):
-                if (projects_dir / Path(subdir) / PROJECT_PIPELINE_DIRECTORY).exists():
-                    result.append(projects_dir / Path(subdir))
-
-        # For some feedback information
-        nb_candidates_for_dir = len(result) - nb_candidates_overall
-        nb_candidates_overall = len(result)
-        if nb_candidates_for_dir == 0:
-            print(f"No project found in '{projects_dir}'")
-        else:
-            print(f"found {nb_candidates_for_dir} candidates projects in '{projects_dir}'")
+    if len(os.listdir(projects_dir)) == 0:
+        result.append(FailureEmptyDir(path=str(projects_dir)))
+    elif (projects_dir / PROJECT_PIPELINE_DIRECTORY).exists():
+        # This dir is a project
+        result.append(projects_dir)
+    else:
+        # This dir may contain projects
+        for sub_dir in os.listdir(projects_dir):
+            sub_dir_path = projects_dir / Path(sub_dir)
+            if not sub_dir_path.is_dir():
+                continue
+            if sub_dir[0] == ".":
+                continue
+            if (sub_dir_path / PROJECT_PIPELINE_DIRECTORY).exists():
+                result.append(sub_dir_path)
+            else:
+                result.append(FailureNoPipeline(path=str(sub_dir_path)))
 
     return result
 

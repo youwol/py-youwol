@@ -7,7 +7,6 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends
 from starlette.requests import Request
-from starlette.responses import Response
 
 from youwol.environment.models_project import Project, Manifest
 from youwol.environment.paths import PathsBook
@@ -21,8 +20,7 @@ from youwol.routers.projects.implementation import (
 )
 from youwol.routers.projects.models import (
     PipelineStepStatusResponse, PipelineStatusResponse, ArtifactsResponse, ProjectStatusResponse, CdnResponse,
-    CdnVersionResponse, ListProjectsResponse,
-)
+    CdnVersionResponse, )
 from youwol.web_socket import WebSocketsStore
 from youwol_utils import decode_id
 from youwol_utils.context import ContextFactory
@@ -31,21 +29,6 @@ from youwol_utils.utils_paths import write_json
 
 router = APIRouter()
 flatten = itertools.chain.from_iterable
-
-
-@router.get("/", response_model=ListProjectsResponse, summary="get the (maybe cached) list of projects")
-async def list_projects(
-        request: Request,
-        env: YouwolEnvironment = Depends(yw_config)
-):
-    context = ContextFactory.get_instance(request=request, web_socket=WebSocketsStore.userChannel)
-    return ListProjectsResponse(projects=await ProjectLoader.get_projects(env, context))
-
-
-@router.delete("/cache", status_code=204, summary="clear cache of projects")
-async def clear_projects_cache():
-    ProjectLoader.clear_cache()
-    return Response(status_code=204)
 
 
 @router.get("/{project_id}/flows/{flow_id}/steps/{step_id}",

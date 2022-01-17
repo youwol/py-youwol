@@ -164,13 +164,14 @@ class YouwolEnvironmentFactory:
         cached = YouwolEnvironmentFactory.__cached_config
         conf = await safe_load(
             path=cached.pathsBook.config,
-            profile=profile or get_main_arguments().profile,
+            profile=profile if profile is not None else cached.active_profile,
             user_email=cached.userEmail,
             selected_remote=cached.selectedRemote
         )
 
         await YouwolEnvironmentFactory.trigger_on_load(config=conf)
         YouwolEnvironmentFactory.__cached_config = conf
+        return conf
 
     @staticmethod
     async def login(email: Union[str, None], remote_name: Union[str, None], context: Context = None):
@@ -373,7 +374,7 @@ async def safe_load(
     if not paths_book.packages_cache_path.exists():
         open(paths_book.secrets, "w").write(json.dumps({}))
 
-    ProjectLoader.clear_cache()
+    ProjectLoader.invalid_cache()
 
     user_email, selected_remote = await login(
         user_email=user_email,
@@ -396,7 +397,7 @@ async def safe_load(
         customDispatches=conf_handler.get_dispatches()
     )
 
-    return conf_handler.customize(youwol_configuration)
+    return await conf_handler.customize(youwol_configuration)
 
 
 async def get_yw_config_starter(main_args: MainArguments):
