@@ -10,6 +10,7 @@ from os import PathLike
 from pathlib import Path
 from typing import cast, Union, List, Set, Iterable, Tuple, Optional, Callable
 
+import yaml
 from pydantic import BaseModel
 
 
@@ -27,6 +28,11 @@ def list_files(folder: Path, rec=True) -> List[Path]:
 
 def parse_json(path: Union[str, Path]):
     return json.loads(open(str(path)).read())
+
+
+def parse_yaml(path: Union[str, Path]):
+    with open(path, "r") as stream:
+        return yaml.safe_load(stream)
 
 
 def write_json(data: json, path: Path):

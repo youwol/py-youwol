@@ -6,7 +6,6 @@ from youwol.environment.models_project import Project, PipelineStep, Artifact, F
 from youwol.environment.paths import PathsBook
 from youwol.environment.projects_loader import ProjectLoader
 from youwol.environment.youwol_environment import YouwolEnvironment
-from youwol.routers.commons import Label
 from youwol.routers.projects.models import (
     PipelineStepStatusResponse, ArtifactResponse
 )
@@ -96,20 +95,6 @@ async def get_status(
             artifacts=artifacts,
             status=status
             )
-
-
-async def run(project: Project, flow_id: str, step: PipelineStep, context: Context):
-
-    async with context.start(
-            action="run function",
-            with_labels=[str(Label.PIPELINE_STEP_RUNNING)],
-            with_attributes={
-                'projectId': project.id,
-                'stepId': step.id
-                }
-            ) as ctx:
-
-        return await step.execute_run(project, flow_id, ctx)
 
 
 async def create_artifacts(

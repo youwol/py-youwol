@@ -7,13 +7,13 @@ from typing import Optional, List, Union, Dict
 from youwol.configuration.defaults import default_openid_host, default_http_port, default_path_data_dir, \
     default_path_cache_dir, default_path_projects_dir, default_port_range_start, default_port_range_end
 from youwol.configuration.models_config import Profiles, ConfigurationData, PortRange, ModuleLoading, \
-    CascadeBaseProfile, CascadeAppend, CascadeReplace, CdnOverride, Redirection
+    CascadeBaseProfile, CascadeAppend, CascadeReplace, CdnOverride, Redirection, K8sCluster
 from youwol.environment.models import Events, IConfigurationCustomizer
 from youwol.environment.paths import app_dirs
 from youwol.main_args import get_main_arguments
 from youwol.middlewares.models_dispatch import CdnOverrideDispatch, RedirectDispatch, AbstractDispatch
 from youwol.routers.custom_commands.models import Command
-from youwol.utils_low_level import get_object_from_module
+from youwol.utils.utils_low_level import get_object_from_module
 from youwol_utils.utils_paths import PathException, fail_on_missing_dir, ensure_dir_exists
 
 SKELETON_DATABASES_ARCHIVE = 'databases.zip'
@@ -227,6 +227,9 @@ class ConfigurationHandler:
 
         return [ensure_dir_exists(path=path, root_candidates=path_user_lib)
                 for path in paths]
+
+    def get_k8s_cluster(self) -> K8sCluster:
+        return self.effective_config_data.k8sCluster
 
 
 def ensure_loading_source_exists(arg: Union[str, ModuleLoading],

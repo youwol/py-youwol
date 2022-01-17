@@ -16,7 +16,7 @@ from youwol.exceptions import CommandException
 from youwol.routers.commons import Label
 from youwol.routers.projects.dependencies import resolve_project_dependencies
 from youwol.routers.projects.implementation import (
-    run, create_artifacts, get_status, get_project_step, get_project_flow_steps, format_artifact_response
+    create_artifacts, get_status, get_project_step, get_project_flow_steps, format_artifact_response
 )
 from youwol.routers.projects.models import (
     PipelineStepStatusResponse, PipelineStatusResponse, ArtifactsResponse, ProjectStatusResponse, CdnResponse,
@@ -195,7 +195,7 @@ async def run_pipeline_step(
 
     async with context.start(
             action="Run pipeline-step",
-            with_labels=[str(Label.RUN_PIPELINE_STEP)],
+            with_labels=[str(Label.RUN_PIPELINE_STEP), str(Label.PIPELINE_STEP_RUNNING)],
             with_attributes={
                 'projectId': project_id,
                 'flowId': flow_id,
@@ -206,7 +206,8 @@ async def run_pipeline_step(
         project, step = await get_project_step(project_id, step_id, ctx)
         error_run = None
         try:
-            outputs = await run(project=project, flow_id=flow_id, step=step, context=ctx)
+            outputs = await step.execute_run(project, flow_id, ctx)
+            outputs = outputs or []
             succeeded = True
         except CommandException as e:
             outputs = e.outputs

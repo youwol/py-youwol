@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol.environment.models import IPipelineFactory
 from youwol.environment.models_project import Project
-from youwol.utils_low_level import get_object_from_module
+from youwol.utils.utils_low_level import get_object_from_module
 from youwol_utils import encode_id
 from youwol_utils.context import Context
 

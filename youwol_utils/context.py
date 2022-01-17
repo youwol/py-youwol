@@ -121,9 +121,9 @@ class Context(NamedTuple):
             await ctx.error(
                 text=f"Exception raised",
                 data={
-                    'dict': e.__dict__,
+                    'error': e.__str__(),
                     'traceback': tb.split('\n'),
-                    'args': e.args
+                    'args': [arg.__str__() for arg in e.args]
                 },
                 labels=[str(Label.EXCEPTION), *with_labels]
             )
@@ -135,8 +135,10 @@ class Context(NamedTuple):
             await ctx.info(text="", labels=[str(Label.DONE), *with_labels])
             await execute_block(on_exit)
 
-    async def send(self, data: BaseModel):
-        await log(level=LogLevel.DATA, text="", labels=[str(Label.DATA), *self.with_labels, data.__class__.__name__],
+    async def send(self, data: BaseModel, labels: List[str] = None):
+        labels = labels or []
+        await log(level=LogLevel.DATA, text="",
+                  labels=[str(Label.DATA), *self.with_labels, data.__class__.__name__, *labels],
                   with_attributes=self.with_attributes, data=data, context_id=self.uid,
                   parent_context_id=self.parent_uid, web_socket=self.web_socket)
 

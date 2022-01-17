@@ -139,6 +139,17 @@ async def get_access_token(client_id: str, client_secret: str, client_scope: str
             await raise_exception_from_response(resp)
 
 
+async def get_youwol_environment(port: int = 2000):
+
+    url = f"http://localhost:{port}/admin/environment/configuration"
+    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
+        async with await session.post(url=url) as resp:
+            if resp.status != 200:
+                raise HTTPException(status_code=resp.status, detail=await resp.read())
+            resp = await resp.json()
+            return resp
+
+
 async def get_headers_auth_admin_from_env():
     client_id = os.getenv("AUTH_CLIENT_ID")
     client_secret = os.getenv("AUTH_CLIENT_SECRET")

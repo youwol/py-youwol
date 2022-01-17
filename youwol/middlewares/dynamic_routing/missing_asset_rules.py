@@ -9,7 +9,7 @@ from youwol.environment.auto_download_thread import AssetDownloadThread
 from youwol.environment.clients import LocalClients
 from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol.middlewares.models_dispatch import AbstractDispatch
-from youwol.utils_low_level import redirect_api_remote
+from youwol.utils.utils_low_level import redirect_api_remote
 from youwol_utils.context import Context
 
 
