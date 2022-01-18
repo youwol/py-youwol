@@ -47,18 +47,23 @@ def included_services(platform_path, open_source_path):
             dst=dst_services / 'assets_gateway',
             include=["/__init__.py", "/models.py", "/root_paths.py", "/package_drive.py", "/utils.py",
                      "/all_icons_emojipedia.py", "/raw_stores/*", "/routers/*"]
-            ),
+        ),
         ServiceInjection(
             src=src_backend_services / 'stories-backend' / 'src' / 'youwol_stories',
             dst=dst_services / 'stories',
             include=["/__init__.py", "/models.py", "/root_paths.py", "/utils.py", "/all_icons_emojipedia.py"]
-            ),
+        ),
         ServiceInjection(
             src=src_backend_services / 'cdn-apps-server' / 'src' / 'youwol_cdn_apps_server',
             dst=dst_services / 'cdn_apps_server',
             include=["/__init__.py", "/root_paths.py"]
-            )
-        ]
+        ),
+        ServiceInjection(
+            src=src_backend_services / 'cdn-sessions-storage' / 'src' / 'cdn_sessions_storage',
+            dst=dst_services / 'cdn_sessions_storage',
+            include=["/__init__.py", "/root_paths.py", "/utils.py"]
+        )
+    ]
 
 
 def sync_services(platform_path: Path, open_source_path: Path):
@@ -67,7 +72,7 @@ def sync_services(platform_path: Path, open_source_path: Path):
 
     for service in services:
 
-        files = flatten([glob.glob(str(platform_path / service.src) + pattern, recursive=True)
+        files = flatten([glob.glob(str(service.src) + pattern, recursive=True)
                          for pattern in service.include])
         files = list(files)
 
