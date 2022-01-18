@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Union, List, Optional, NamedTuple, Iterable, Mapping
 
 from youwol.environment.models_project import Manifest, PipelineStepStatus, Link, ExplicitNone, Flow, \
-    SourcesFctImplicit, Pipeline, parse_json, Skeleton, SkeletonParameter, PipelineStep, FileListing, \
+    Pipeline, parse_json, Skeleton, SkeletonParameter, PipelineStep, FileListing, \
     Artifact, Project, FlowId
 from youwol.environment.paths import PathsBook
 from youwol.environment.projects_loader import ProjectLoader
@@ -186,9 +186,9 @@ class BuildStep(PipelineStep):
     id: str
     run: str
     sources: FileListing = FileListing(
-        include=["package.json", "webpack.config.js", "src/lib", "src/app", "src/index.ts"],
-        ignore=["**/auto_generated.ts"]
-        )
+        include=["package.json", "webpack.config.js", "src/lib", "src/app", "src/index.ts", "src/tests"],
+        ignore=["**/auto_generated.ts", "**/.*/*"]
+    )
 
     artifacts: List[Artifact] = [
         Artifact(
@@ -251,16 +251,10 @@ class TestStep(PipelineStep):
     run: str
     artifacts: List[Artifact]
 
-    @staticmethod
-    async def _sources(project: Project, flow_id: str, _context: Context):
-        steps_in_flow = project.get_flow_steps(flow_id=flow_id)
-        build_step = next(s for s in steps_in_flow if isinstance(s, BuildStep))
-
-        return FileListing(
-            include=build_step.sources.include + ["src/tests"]
-            )
-
-    sources: SourcesFctImplicit = lambda self, p, f, ctx: TestStep._sources(p, f, ctx)
+    sources: FileListing = FileListing(
+        include=["package.json", "src/tests"],
+        ignore=["**/auto_generated.ts", "**/.*/*"]
+    )
 
 
 def pipeline():
