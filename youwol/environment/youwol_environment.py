@@ -11,6 +11,7 @@ from cowpy import cow
 from fastapi import HTTPException
 from pydantic import BaseModel
 
+import youwol
 from youwol.backends.assets_gateway.models import DefaultDriveResponse
 from youwol.configuration.config_from_module import configuration_from_python
 from youwol.configuration.config_from_static_file import configuration_from_json
@@ -28,7 +29,6 @@ from youwol.environment.projects_loader import ProjectLoader
 from youwol.main_args import get_main_arguments, MainArguments
 from youwol.middlewares.models_dispatch import AbstractDispatch
 from youwol.routers.custom_commands.models import Command
-from youwol.utils.k8s_utils import ensure_k8s_proxy_running
 from youwol.utils.utils_low_level import get_public_user_auth_token
 from youwol.web_socket import WebSocketsStore
 from youwol_utils import retrieve_user_info
@@ -139,6 +139,9 @@ class YouwolEnvironment(BaseModel):
     def __str__(self):
 
         return f"""
+Running with youwol:
+- {youwol}
+
 Configuration loaded from '{self.pathsBook.config}'
 - user email: {self.userEmail}
 - active profile: {self.active_profile if self.active_profile else "Default profile"}
@@ -389,8 +392,12 @@ async def safe_load(
         context=context)
 
     k8s_cluster = conf_handler.get_k8s_cluster()
-    k8s_instance = K8sInstance(**k8s_cluster.dict(), instance_info=await ensure_k8s_proxy_running(k8s_cluster)) \
-        if k8s_cluster else None
+    if k8s_cluster:
+        # This dynamic import prevent 'paying the price' of k8s load-time/imports error/... if actually not needed
+        from youwol.utils.k8s_utils import ensure_k8s_proxy_running
+        k8s_instance = K8sInstance(**k8s_cluster.dict(), instance_info=await ensure_k8s_proxy_running(k8s_cluster))
+    else:
+        k8s_instance = None
 
     youwol_configuration = YouwolEnvironment(
         active_profile=conf_handler.get_profile(),
