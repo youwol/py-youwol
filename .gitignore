@@ -13,7 +13,7 @@ dist_history/
 tooling/test_install/**/*
 !test_install/README.md
 
-.virtualenv
+.virtual_envs
 .venv_*
 .publish_venv
 __pycache__
