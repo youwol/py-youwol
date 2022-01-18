@@ -66,7 +66,6 @@ class InitStep(PipelineStep):
 
     async def get_status(self, project: Project, flow_id: str,
                          last_manifest: Optional[Manifest], context: Context) -> PipelineStepStatus:
-
         if (project.path / 'src' / '.virtualenv').exists():
             return PipelineStepStatus.OK
         return PipelineStepStatus.none
@@ -76,18 +75,29 @@ def to_module_name(dir_name: str):
     return dir_name.replace('-', '_')
 
 
+class DocStepConfiguration(BaseModel):
+    venvPath: Path = Path('.') / 'src' / '.virtualenv'
+    srcPath: Path = Path('.') / 'src'
+    outputDir: Path = Path('.') / 'dist' / 'docs'
+
+    def cmd(self, project: Project) -> str:
+        return f"""
+. {self.venvPath}/bin/activate && 
+{self.venvPath}/bin/pdoc {self.srcPath} --html --force --output-dir {self.outputDir} &&
+mv {self.outputDir}/{to_module_name(project.name)}/* {self.outputDir}
+"""
+
+
 class DocStep(PipelineStep):
+    conf: DocStepConfiguration
     id = 'doc'
 
     run: RunImplicit = \
-        lambda self, project, flow_id, ctx: \
-        f". ./src/.virtualenv/bin/activate && " \
-        f"pdoc ./src/{to_module_name(project.name)} --html --force --output-dir dist/docs " \
-        f"&& mv dist/docs/{to_module_name(project.name)}/* dist/docs"
+        lambda self, project, flow_id, ctx: self.conf.cmd(project)
 
     sources: SourcesFctImplicit = \
         lambda self, project, flow_id, step_id: \
-        FileListing(include=[f"src/{project.name.replace('-','_')}"])
+            FileListing(include=[f"src/{project.name.replace('-', '_')}"])
 
     artifacts: List[Artifact] = [
         Artifact(
@@ -106,7 +116,9 @@ class DocStep(PipelineStep):
 
 
 class UnitTestStep(PipelineStep):
+
     id: str = "unit-test"
+
     run: RunImplicit = \
         lambda self, project, flow_id, ctx: \
         f". ./src/.virtualenv/bin/activate && " \
@@ -213,6 +225,7 @@ class DeployGcStep(PipelineStep):
                 secrets=self.secrets,
                 chart_explorer=get_chart_explorer(chart_path)
             )
+
             await ctx.send(data=helm_package)
             installed = await helm_package.is_installed(context=ctx)
 
@@ -257,7 +270,8 @@ def get_ingress(host: str):
 
 def pipeline(
         docker_repo_name: str,
-        k8s_cluster: K8sCluster
+        k8s_cluster: K8sCluster,
+        doc_conf: DocStepConfiguration = DocStepConfiguration()
 ):
     docker_repo = next((repo for repo in k8s_cluster.docker.repositories if repo.name == docker_repo_name), None)
     docker_secret_name = parse_yaml(docker_repo.pullSecret)['metadata']['name']
@@ -272,7 +286,7 @@ def pipeline(
         steps=[
             PreconditionChecksStep(),
             InitStep(),
-            DocStep(),
+            DocStep(conf=doc_conf),
             UnitTestStep(),
             ApiTestStep(),
             IntegrationTestStep(),
