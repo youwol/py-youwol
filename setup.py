@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 from setuptools import setup, find_packages
@@ -9,19 +8,13 @@ here = Path(__file__).parent
 # The text of the README file
 README = (Path(__file__).parent / "README.md").read_text()
 
-data_files = []
-for pipeline in ['fastapi', 'flux_pack', 'library_webpack_ts', 'scribble_html']:
-    for root, dirs, files in os.walk(f"youwol/pipelines/{pipeline}/files_template", topdown=False):
-        data_files.append((root, [f'{root}/{f}' for f in files]))
-
-
 setup(
     name='youwol',
     python_requires='~=3.6',
-    version='0.0.3',
+    version='0.0.3-next',
     description="Local YouWol environment",
-    author="Guillaume Reinisch",
-    author_email="reinisch.gui@youwol.com",
+    author="G. Reinisch, J. Decharne",
+    author_email="greinich@youwol.com, jdecharne@youwol.com",
     long_description=README,
     long_description_content_type="text/markdown",
     license="MIT",
@@ -29,7 +22,7 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.6",
-        ],
+    ],
     packages=find_packages(include=[
         'youwol',
         'youwol_utils',
@@ -37,30 +30,47 @@ setup(
         'youwol_data',
         'youwol.**'
         ]),
-    data_files=data_files,
     package_data={
-        'youwol_data': ['databases.zip', 'remotes-info.json'],
-        'youwol.services.fronts.dashboard_developer': ['*.html', '*.js', '*.css', '*.map'],
-        'youwol.services.fronts.workspace_explorer': ['*.html', '*.js', '*.css', '*.map'],
-        'youwol.services.fronts.flux_builder': ['*.html', '*.js', '*.css', '*.map'],
-        'youwol.services.fronts.flux_runner': ['*.html', '*.js', '*.css', '*.map']
+        'youwol_data': ['databases.zip', 'remotes-info.json']
         },
     include_package_data=True,
     install_requires=[
-        "aiohttp==3.7.4.post0",
-        "fastapi==0.65.1",
-        "uvicorn==0.13.4",
+        "aiohttp==3.8.1",
+        "aiostream==0.4.4",
+        "appdirs==1.4.4",
+        "async-generator==1.10",
+        "Brotli==1.0.9",
+        "colorama==0.4.4",
+        "cowpy==1.1.4",
+        "fastapi==0.71.0",
+        "Pillow==9.0.0",
         "python-multipart==0.0.5",
-        "aiohttp==3.7.4.post0",
-        "async==0.6.2",
-        "websockets==9.0.2",
+        "uvicorn==0.16.0",
         "watchgod==0.7",
-        "aiofiles==0.7.0",
-        "async_generator==1.10",
-        "brotlipy==0.7.0",
-        "pillow==8.2.0",
-        "cowpy==1.1.0"
-        ],
+        "websockets==10.1",
+        "pyyaml==6.0",
+        "kubernetes==21.7.0",
+        "kubernetes_asyncio==19.15.0",
+        "psutil==5.9.0",
+        # Frozen indirect dependencies
+        "aiosignal==1.2.0",
+        "anyio==3.5.0",
+        "asgiref==3.4.1",
+        "async-timeout==4.0.2",
+        "attrs==21.4.0",
+        "charset-normalizer==2.0.10",
+        "click==8.0.3",
+        "frozenlist==1.2.0",
+        "h11==0.12.0",
+        "idna==3.3",
+        "multidict==5.2.0",
+        "pydantic==1.9.0",
+        "six==1.16.0",
+        "sniffio==1.2.0",
+        "starlette==0.17.1",
+        "typing_extensions==4.0.1",
+        "yarl==1.7.2",
+    ],
     entry_points={
         'console_scripts': ['youwol=youwol.main:main']
         }
