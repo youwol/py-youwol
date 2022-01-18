@@ -27,7 +27,7 @@ class K8sCluster(BaseModel):
     contextName: str
     proxyPort: int
     host: str
-    openIdConnect: OpenIdConnect  # gc.auth.youwol.com
+    openIdConnect: OpenIdConnect
     docker: Docker
 
     def __str__(self):
