@@ -6,29 +6,34 @@ from starlette.responses import Response
 from starlette.types import ASGIApp
 
 from youwol.middlewares.models_dispatch import AbstractDispatch
-from youwol.web_socket import WebSocketsStore
-from youwol_utils.context import ContextFactory
 
 
 class DynamicRoutingMiddleware(BaseHTTPMiddleware):
 
     def __init__(self, app: ASGIApp,
-                 dynamic_dispatch_rules: List[AbstractDispatch]
+                 dynamic_dispatch_rules: List[AbstractDispatch],
+                 disabling_header: str
                  ) -> None:
         super().__init__(app)
         self.dynamic_dispatch_rules = dynamic_dispatch_rules
+        self.disabling_header = disabling_header
 
     async def dispatch(
             self, request: Request, call_next: RequestResponseEndpoint
             ) -> Response:
 
-        context = ContextFactory.get_instance(
-            request=request,
-            web_socket=WebSocketsStore.userChannel
-        )
-        for dispatch in self.dynamic_dispatch_rules:
-            match = await dispatch.apply(request, call_next, context)
-            if match:
-                return match
+        async with request.state.context.start(action="attempt dynamic dispatches") as ctx:
+            if request.headers.get(self.disabling_header, False):
+                ctx.info(text="Dynamic dispatch disabled")
+                request.state.context = ctx
+                return await call_next(request)
 
-        return await call_next(request)
+            for dispatch in self.dynamic_dispatch_rules:
+                match = await dispatch.apply(request, call_next, ctx)
+                if match:
+                    return match
+            ctx.info(text="No dynamic dispatch match")
+
+            ctx.info(text="Request proceed to normal destination", data={"url": request.url.path})
+            request.state.context = ctx
+            return await call_next(request)

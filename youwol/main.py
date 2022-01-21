@@ -15,13 +15,14 @@ from youwol.environment.youwol_environment import YouwolEnvironmentFactory, yw_c
 from youwol.middlewares.auth_middleware import AuthMiddleware
 from youwol.middlewares.browser_caching_middleware import BrowserCachingMiddleware
 from youwol.middlewares.dynamic_routing_middleware import DynamicRoutingMiddleware
+from youwol.middlewares.root_middleware import RootMiddleware
 from youwol.routers import native_backends, admin, authorization
 from youwol.routers.environment.download_assets.data import DownloadDataTask
 from youwol.routers.environment.download_assets.flux_project import DownloadFluxProjectTask
 from youwol.routers.environment.download_assets.package import DownloadPackageTask
 from youwol.utils.utils_low_level import start_web_socket, assert_python
 from youwol.web_socket import WebSocketsStore
-from youwol_utils import YouWolException, youwol_exception_handler
+from youwol_utils import YouWolException, youwol_exception_handler, RequestHeadersConstants
 from youwol_utils.context import ContextFactory
 
 app = FastAPI(
@@ -52,8 +53,9 @@ app.add_middleware(
         loading_graph.GetLoadingGraphDispatch(),
         missing_asset.GetRawDispatch(),
         missing_asset.GetMetadataDispatch(),
-        missing_asset.PostMetadataDispatch(),
-    ]
+        missing_asset.PostMetadataDispatch()
+    ],
+    disabling_header=RequestHeadersConstants.py_youwol_local_only
 )
 
 app.add_middleware(custom_dispatch.CustomDispatchesMiddleware)

@@ -7,7 +7,7 @@ from enum import Enum
 
 from pydantic import BaseModel
 from pathlib import Path, PosixPath
-from typing import Union, List, cast, Mapping, Callable, Iterable, Any
+from typing import Union, List, cast, Mapping, Callable, Iterable, Any, NamedTuple
 
 import aiohttp
 from fastapi import HTTPException
@@ -18,6 +18,10 @@ from youwol_utils.clients.types import DocDb
 from youwol_utils.clients.utils import raise_exception_from_response, to_group_id, to_group_scope
 
 flatten = itertools.chain.from_iterable
+
+
+class RequestHeadersConstants(NamedTuple):
+    py_youwol_local_only = 'py-youwol-local-only'
 
 
 def find_platform_path():
@@ -175,6 +179,9 @@ def generate_headers_downstream(incoming_headers):
         headers["Authorization"] = incoming_headers.get("Authorization")
     if "user-name" in incoming_headers:
         headers["user-name"] = incoming_headers.get("user-name")
+    if RequestHeadersConstants.py_youwol_local_only in incoming_headers:
+        headers[RequestHeadersConstants.py_youwol_local_only] = \
+            incoming_headers.get(RequestHeadersConstants.py_youwol_local_only)
 
     return headers
 
