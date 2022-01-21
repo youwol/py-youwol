@@ -57,7 +57,7 @@ app.add_middleware(
     ]
 )
 app.add_middleware(AuthMiddleware)
-app.add_middleware(BrowserCachingMiddleware)
+app.add_middleware(RootMiddleware)
 
 router = APIRouter()
 

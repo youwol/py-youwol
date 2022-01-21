@@ -8,6 +8,7 @@ from starlette.websockets import WebSocket
 class WebSocketsStore:
 
     userChannel: Union[WebSocket, None] = None
+    adminChannel: Union[WebSocket, None] = None
 
 
 def web_socket_cache():
