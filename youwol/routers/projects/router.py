@@ -58,7 +58,7 @@ async def pipeline_step_status(
 
         project, step = await get_project_step(project_id=project_id, step_id=step_id, context=ctx)
         response = await get_status(project=project, flow_id=flow_id, step=step, context=ctx)
-        await ctx.send(response)
+        ctx.send(response)
         return response
 
 
@@ -85,14 +85,14 @@ async def project_status(
         project: Project = next(p for p in projects if p.id == project_id)
 
         workspace_dependencies = await resolve_project_dependencies(project=project, context=context)
-        await ctx.info("Project dependencies retrieved", data=workspace_dependencies)
+        ctx.info("Project dependencies retrieved", data=workspace_dependencies)
         response = ProjectStatusResponse(
             projectId=project_id,
             projectName=project.name,
             workspaceDependencies=workspace_dependencies
             )
         await cdn_status(request=request, project_id=project_id, config=config)
-        await ctx.send(response)
+        ctx.send(response)
         return response
 
 
@@ -122,7 +122,7 @@ async def flow_status(
             for step in steps
             ])
         response = PipelineStatusResponse(projectId=project_id, steps=[s for s in steps_status])
-        await ctx.send(response)
+        ctx.send(response)
         return response
 
 
@@ -160,7 +160,7 @@ async def project_artifacts(
                             for a, s, path in eventual_artifacts if path.exists() and path.is_dir()]
 
         response = ArtifactsResponse(artifacts=actual_artifacts)
-        await ctx.send(response)
+        ctx.send(response)
         return response
 
 
@@ -219,12 +219,12 @@ async def run_pipeline_step(
             succeeded = False
 
         if isinstance(outputs, collections.abc.Mapping) and 'fingerprint' in outputs:
-            await ctx.info(text="'sources' attribute not provided => expect fingerprint from run's output",
-                           data={'run-output': outputs})
+            ctx.info(text="'sources' attribute not provided => expect fingerprint from run's output",
+                     data={'run-output': outputs})
             fingerprint = outputs['fingerprint']
             files = []
         else:
-            await ctx.info(text="'sources' attribute provided => fingerprint computed from it")
+            ctx.info(text="'sources' attribute provided => fingerprint computed from it")
             fingerprint, files = await step.get_fingerprint(project=project, flow_id=flow_id, context=ctx)
 
         path = paths.artifacts_step(project_name=project.name, flow_id=flow_id, step_id=step.id)
@@ -239,7 +239,7 @@ async def run_pipeline_step(
                             files=[str(f) for f in files])
 
         write_json(manifest.dict(), path / "manifest.json")
-        await ctx.info(text="Manifest updated", data=manifest)
+        ctx.info(text="Manifest updated", data=manifest)
 
         if not succeeded:
             raise error_run
@@ -288,5 +288,5 @@ async def cdn_status(
             name=decode_id(project_id),
             versions=[format_version(d) for d in data]
             )
-        await ctx.send(response)
+        ctx.send(response)
         return response

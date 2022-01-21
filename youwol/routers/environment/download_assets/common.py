@@ -122,22 +122,22 @@ async def create_asset_local(
             )
 
         if isinstance(raw_data, Exception):
-            await ctx.error(f"Can not fetch raw part of the asset")
+            ctx.error(f"Can not fetch raw part of the asset")
             raise raw_data
 
         if isinstance(metadata, Exception):
-            await ctx.error(f"Can not fetch asset's metadata")
+            ctx.error(f"Can not fetch asset's metadata")
             raise metadata
 
         if isinstance(tree_items, Exception):
-            await ctx.error(f"Can not fetch tree-db items")
+            ctx.error(f"Can not fetch tree-db items")
             raise tree_items
 
         raw_data = cast(Dict, raw_data)
         metadata = cast(Dict, metadata)
         tree_items = cast(Dict, tree_items)
 
-        await ctx.info(text="Raw & meta data retrieved", data={
+        ctx.info(text="Raw & meta data retrieved", data={
             "metadata": metadata,
             "tree_items": tree_items,
         })
@@ -145,7 +145,7 @@ async def create_asset_local(
             remote_treedb=remote_treedb,
             tree_items=ItemsResponse(**tree_items)
             )
-        await ctx.info(text="Explorer paths retrieved", data={
+        ctx.info(text="Explorer paths retrieved", data={
             "owning_location": owning_location.dict() if owning_location else "No owning location in available groups",
             "borrowed_locations": [p.dict() for p in borrowed_locations]
         })
@@ -155,7 +155,7 @@ async def create_asset_local(
             local_treedb=local_treedb,
             default_folder_id=default_owning_folder_id
             )
-        await ctx.info(text="Owning folder retrieved", data={
+        ctx.info(text="Owning folder retrieved", data={
             "owning_folder_id": owning_folder_id
         })
 
@@ -163,16 +163,16 @@ async def create_asset_local(
             kind=kind,
             folder_id=owning_folder_id,
             data=to_post_raw_data(raw_data)
-            )
-        await ctx.info(text="Asset raw's data downloaded successfully")
+        )
+        ctx.info(text="Asset raw's data downloaded successfully")
 
         await sync_borrowed_items(
             asset_id=asset_id,
             borrowed_locations=borrowed_locations,
             local_treedb=local_treedb,
             local_gtw=local_gtw
-            )
-        await ctx.info(text="Borrowed items created successfully")
+        )
+        ctx.info(text="Borrowed items created successfully")
         # the next line is not fetching images
         await local_gtw.update_asset(asset_id=asset_id, body=metadata)
-        await ctx.info(text="Asset metadata uploaded successfully")
+        ctx.info(text="Asset metadata uploaded successfully")

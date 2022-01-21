@@ -29,8 +29,8 @@ async def create_cdn_zip(
     paths: PathsBook = env.pathsBook
     artifacts_flow_path = paths.artifacts_flow(project_name=project.name, flow_id=flow_id)
     zip_files = [(f, '/'.join(f.relative_to(artifacts_flow_path).parts[2:])) for f in files]
-    await context.info(text="create CDN zip: files recovered",
-                       data={'files': [f"{name} -> {str(path)}" for path, name in zip_files]})
+    context.info(text="create CDN zip: files recovered",
+                 data={'files': [f"{name} -> {str(path)}" for path, name in zip_files]})
     create_zip_file(path=zip_path, files_to_zip=zip_files)
 
 
@@ -75,7 +75,7 @@ class PublishCdnLocalStep(PipelineStep):
             return PipelineStepStatus.OK
 
         if last_manifest.fingerprint != local_info['fingerprint']:
-            await context.info(
+            context.info(
                 text="Mismatch between cdn-backend fingerprint and saved manifest's fingerprint",
                 data={
                     'cdn-backend fingerprint': local_info['fingerprint'],
@@ -83,7 +83,7 @@ class PublishCdnLocalStep(PipelineStep):
                 }
             )
         if last_manifest.cmdOutputs['src_files_fingerprint'] != src_files_fingerprint:
-            await context.info(
+            context.info(
                 text="Mismatch between actual src files fingerprint and saved manifest's src_files_fingerprint",
                 data={
                     'actual src files fingerprint': src_files_fingerprint,
@@ -97,7 +97,7 @@ class PublishCdnLocalStep(PipelineStep):
 
         env = await context.get('env', YouwolEnvironment)
 
-        await context.info(text="create 'cdn.zip' in project")
+        context.info(text="create 'cdn.zip' in project")
         files = await self.packaged_files(project, flow_id, context)
         zip_path = project.path / 'cdn.zip'
         await create_cdn_zip(zip_path=zip_path, project=project, flow_id=flow_id, files=files, context=context)
@@ -110,7 +110,7 @@ class PublishCdnLocalStep(PipelineStep):
             folder_id = item['folderId']
         except HTTPException as e:
             if e.status_code == 404:
-                await context.info("The package has not been published yet, start creation")
+                context.info("The package has not been published yet, start creation")
                 drive: DefaultDriveResponse = await env.get_default_drive(context=context)
                 folder_id = drive.downloadFolderId
             else:
@@ -118,10 +118,10 @@ class PublishCdnLocalStep(PipelineStep):
 
         data = {'file': zip_path.read_bytes(), 'content_encoding': 'identity'}
         resp = await local_gtw.put_asset_with_raw(kind='package', folder_id=folder_id, data=data, timeout=600)
-        await context.info(text="Asset posted in assets_gtw", data=resp)
+        context.info(text="Asset posted in assets_gtw", data=resp)
         local_cdn = LocalClients.get_cdn_client(env=env)
         resp = await local_cdn.get_package(library_name=project.name, version=project.version, metadata=True)
-        await context.info(text="Package retrieved from local cdn", data=resp)
+        context.info(text="Package retrieved from local cdn", data=resp)
         resp['src_files_fingerprint'] = files_check_sum(files)
         base_path = env.pathsBook.artifacts_flow(project_name=project.name, flow_id=flow_id)
         resp['src_base_path'] = str(base_path)

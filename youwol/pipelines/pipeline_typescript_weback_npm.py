@@ -104,7 +104,7 @@ class SyncFromDownstreamStep(PipelineStep):
             if not last_manifest.succeeded:
                 return PipelineStepStatus.KO
 
-            await ctx.info(text='previous manifest', data=to_json(last_manifest))
+            ctx.info(text='previous manifest', data=to_json(last_manifest))
             data = await SyncFromDownstreamStep.get_input_data(project=project, flow_id=flow_id, context=context)
             prev_checksums = last_manifest.cmdOutputs['checksums']
             ok = len(data.keys()) == len(prev_checksums.keys())\

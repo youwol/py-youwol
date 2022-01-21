@@ -32,8 +32,8 @@ async def collect_updates(
             with_attributes={'topic': 'updatesCdn'}) as ctx:
 
         local_packages_latest = get_latest_local_cdn_version(env)
-        await ctx.info(text="local latest version of cdn packages retrieved",
-                       data={'packages': {f"{p.library_name}#{p.version}": p for p in local_packages_latest}})
+        ctx.info(text="local latest version of cdn packages retrieved",
+                 data={'packages': {f"{p.library_name}#{p.version}": p for p in local_packages_latest}})
         for package in local_packages_latest:
             queue.put_nowait(package)
         updates: List[CheckUpdateResponse] = []
@@ -44,7 +44,7 @@ async def collect_updates(
         response = CheckUpdatesResponse(
             updates=updates
         )
-        await ctx.send(response)
+        ctx.send(response)
         return response
 
 
@@ -65,8 +65,7 @@ async def download(
     async with context.start(
             action="download packages",
             with_attributes={'topic': 'updatesCdn'}) as ctx:
-
-        await ctx.info(text=f"Proceed to {len(body.packages)} packages download", data=body)
+        ctx.info(text=f"Proceed to {len(body.packages)} packages download", data=body)
         for package in body.packages:
             queue.put_nowait(package)
 

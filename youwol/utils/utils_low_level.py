@@ -4,7 +4,6 @@ import re
 import shutil
 import sys
 import tempfile
-from aiostream import stream
 from importlib.machinery import SourceFileLoader
 from importlib.util import spec_from_loader
 from pathlib import Path
@@ -12,6 +11,7 @@ from typing import Union, Mapping, List, Type, cast, TypeVar, Optional
 
 import aiohttp
 from aiohttp import ClientSession, TCPConnector
+from aiostream import stream
 from fastapi import HTTPException
 from starlette.requests import Request
 from starlette.responses import Response
@@ -190,7 +190,7 @@ def assert_python():
 async def execute_shell_cmd(cmd: str, context: Context, log_outputs=True):
 
     async with context.start(action="execute shell command", with_labels=["BASH"]) as ctx:
-        await ctx.info(text=cmd)
+        ctx.info(text=cmd)
         p = await asyncio.create_subprocess_shell(
             cmd=cmd,
             stdout=asyncio.subprocess.PIPE,
@@ -201,6 +201,6 @@ async def execute_shell_cmd(cmd: str, context: Context, log_outputs=True):
         async with stream.merge(p.stdout, p.stderr).stream() as messages_stream:
             async for message in messages_stream:
                 outputs.append(message.decode('utf-8'))
-                log_outputs and await context.info(text=outputs[-1])
+                log_outputs and context.info(text=outputs[-1])
         await p.communicate()
         return p.returncode, outputs

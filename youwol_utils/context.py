@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+import time
 import traceback
 import uuid
 from enum import Enum
@@ -113,12 +115,13 @@ class Context(NamedTuple):
                 await block
 
         try:
-            await ctx.info(text=action, labels=[str(Label.STARTED), *with_labels])
+            ctx.info(text=action, labels=[str(Label.STARTED), *with_labels])
+            start = time.time()
             await execute_block(on_enter)
             await yield_(ctx)
         except Exception as e:
             tb = traceback.format_exc()
-            await ctx.error(
+            ctx.error(
                 text=f"Exception raised",
                 data={
                     'error': e.__str__(),
@@ -134,13 +137,6 @@ class Context(NamedTuple):
         else:
             await ctx.info(text="", labels=[str(Label.DONE), *with_labels])
             await execute_block(on_exit)
-
-    async def send(self, data: BaseModel, labels: List[str] = None):
-        labels = labels or []
-        await log(level=LogLevel.DATA, text="",
-                  labels=[str(Label.DATA), *self.with_labels, data.__class__.__name__, *labels],
-                  with_attributes=self.with_attributes, data=data, context_id=self.uid,
-                  parent_context_id=self.parent_uid, web_socket=self.web_socket)
 
     async def log(self, level: LogLevel, text: str, labels: List[str] = None, data: Union[JSON, BaseModel] = None):
         label_level = {
@@ -159,14 +155,23 @@ class Context(NamedTuple):
                   parent_context_id=self.parent_uid,
                   web_socket=self.web_socket)
 
-    async def debug(self, text: str, labels: List[str] = None, data: Union[JSON, BaseModel] = None):
-        await self.log(level=LogLevel.DEBUG, text=text, labels=labels, data=data)
+    def send(self, data: BaseModel, labels: List[str] = None):
+        labels = labels or []
+        asyncio.create_task(
+            log(level=LogLevel.DATA, text="",
+                labels=[str(Label.DATA), *self.with_labels, data.__class__.__name__, *labels],
+                with_attributes=self.with_attributes, data=data, context_id=self.uid,
+                parent_context_id=self.parent_uid, web_socket=self.web_socket)
+        )
 
-    async def info(self, text: str, labels: List[str] = None, data: Union[JSON, BaseModel] = None):
-        await self.log(level=LogLevel.INFO, text=text, labels=labels, data=data)
+    def debug(self, text: str, labels: List[str] = None, data: Union[JSON, BaseModel] = None):
+        asyncio.create_task(self.log(level=LogLevel.DEBUG, text=text, labels=labels, data=data))
 
-    async def error(self, text: str, labels: List[str] = None, data: Union[JSON, BaseModel] = None):
-        await self.log(level=LogLevel.ERROR, text=text, labels=labels, data=data)
+    def info(self, text: str, labels: List[str] = None, data: Union[JSON, BaseModel] = None):
+        asyncio.create_task(self.log(level=LogLevel.INFO, text=text, labels=labels, data=data))
+
+    def error(self, text: str, labels: List[str] = None, data: Union[JSON, BaseModel] = None):
+        asyncio.create_task(self.log(level=LogLevel.ERROR, text=text, labels=labels, data=data))
 
     async def get(self, att_name: str, object_type: T) -> T():
         result = self.with_data[att_name]
@@ -188,4 +193,6 @@ class ContextFactory(NamedTuple):
 
     @staticmethod
     def get_instance(request: Request = None, web_socket: WebSocket = None, **kwargs) -> Context:
-        return Context(request=request, web_socket=web_socket, with_data={**ContextFactory.with_static_data, **kwargs})
+        return Context(request=request,
+                       web_socket=web_socket,
+                       with_data={**ContextFactory.with_static_data, **kwargs})

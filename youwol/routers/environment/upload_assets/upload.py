@@ -8,7 +8,6 @@ from fastapi import HTTPException
 from youwol.backends.treedb.models import PathResponse
 from youwol.environment.clients import RemoteClients, LocalClients
 from youwol.environment.youwol_environment import YouwolEnvironment
-from youwol_utils import to_json
 from youwol.routers.commons import Label
 from youwol.routers.commons import local_path, ensure_path
 from youwol.routers.environment.upload_assets.data import UploadDataTask
@@ -17,6 +16,7 @@ from youwol.routers.environment.upload_assets.models import UploadTask
 from youwol.routers.environment.upload_assets.package import UploadPackageTask
 from youwol.routers.environment.upload_assets.story import UploadStoryTask
 from youwol_utils import decode_id, JSON
+from youwol_utils import to_json
 from youwol_utils.clients.assets.assets import AssetsClient
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from youwol_utils.clients.treedb.treedb import TreeDbClient
@@ -50,11 +50,11 @@ async def synchronize_permissions(assets_gtw_client: AssetsGatewayClient, asset_
         env = await context.get('env', YouwolEnvironment)
         local_assets_gtw = LocalClients.get_assets_gateway_client(env=env)
         access_info = await local_assets_gtw.get_asset_access(asset_id=asset_id)
-        await ctx.info(
+        ctx.info(
             labels=[str(Label.RUNNING)],
             text="Permissions retrieved",
             data={"access_info": access_info}
-            )
+        )
         default_permission = access_info["ownerInfo"]["defaultAccess"]
         groups = access_info["ownerInfo"]["exposingGroups"]
         await asyncio.gather(
@@ -107,11 +107,11 @@ async def create_borrowed_item(borrowed_tree_id: str, item: Mapping[str, any], a
                 raise e
 
             path_item = await local_path({"treeId": tree_id}, context=ctx)
-            await ctx.info(
+            ctx.info(
                 labels=[Label.RUNNING],
                 text="Borrowed tree item not found, start creation",
                 data={"treeItemPath": to_json(path_item)}
-                )
+            )
             await ensure_path(path_item, assets_gtw_client)
             parent_id = path_item.drive.driveId
             if len(path_item.folders) > 0:
@@ -121,9 +121,9 @@ async def create_borrowed_item(borrowed_tree_id: str, item: Mapping[str, any], a
                                                  body={
                                                      "itemId": tree_id,
                                                      "destinationFolderId": parent_id
-                                                    }
+                                                 }
                                                  )
-        await ctx.info(text="Borrowed item created")
+        ctx.info(text="Borrowed item created")
 
 
 async def synchronize_metadata(asset_id: str, assets_gtw_client: AssetsGatewayClient, context: Context):
@@ -145,15 +145,15 @@ async def synchronize_metadata(asset_id: str, assets_gtw_client: AssetsGatewayCl
         full_urls = [f"http://localhost:{env.http_port}{url}" for url in missing_images_urls]
         filenames = [url.split('/')[-1] for url in full_urls]
 
-        await ctx.info(
+        ctx.info(
             labels=[str(Label.RUNNING)],
             text="Synchronise metadata",
             data={
                 'local_metadata': local_metadata,
                 'remote_metadata': remote_metadata,
                 'missing images': full_urls
-                }
-            )
+            }
+        )
 
         async def download_img(session: ClientSession, url: str):
             async with await session.get(url=url) as resp:
@@ -208,10 +208,10 @@ async def upload_asset(
             return_exceptions=True
             )
         if isinstance(asset, HTTPException) and asset.status_code == 404:
-            await ctx.error(text="Can not find the asset in the local assets store")
+            ctx.error(text="Can not find the asset in the local assets store")
             raise RuntimeError("Can not find the asset in the local assets store")
         if isinstance(tree_item, HTTPException) and tree_item.status_code == 404:
-            await ctx.error(text="Can not find the tree item in the local treedb store")
+            ctx.error(text="Can not find the tree item in the local treedb store")
             raise RuntimeError("Can not find the tree item in the local treedb store")
         if isinstance(asset, Exception) or isinstance(tree_item, Exception):
             raise RuntimeError("A problem occurred while fetching the local asset/tree items")
@@ -229,31 +229,31 @@ async def upload_asset(
             path_item = await local_treedb.get_path(item_id=tree_item['itemId'])
         except HTTPException as e:
             if e.status_code == 404:
-                await ctx.error(text=f"Can not get path of item with id '{tree_item['itemId']}'",
-                                data={"tree_item": tree_item, "error_detail": e.detail})
+                ctx.error(text=f"Can not get path of item with id '{tree_item['itemId']}'",
+                          data={"tree_item": tree_item, "error_detail": e.detail})
             raise e
 
-        await ctx.info(
+        ctx.info(
             text="Data retrieved",
             data={"path_item": path_item, "raw data": local_data}
-            )
+        )
 
         assets_gtw_client = await RemoteClients.get_assets_gateway_client(context=ctx)
 
         await ensure_path(path_item=PathResponse(**path_item), assets_gateway_client=assets_gtw_client)
         try:
             await assets_gtw_client.get_asset_metadata(asset_id=asset_id)
-            await ctx.info(
+            ctx.info(
                 text="Asset already found in deployed environment"
-                )
+            )
             await factory.update_raw(data=local_data, folder_id=tree_item['folderId'])
         except HTTPException as e:
             if e.status_code != 404:
                 raise e
-            await ctx.info(
+            ctx.info(
                 labels=[Label.RUNNING],
                 text="Project not already found => start creation"
-                )
+            )
             await factory.create_raw(data=local_data, folder_id=tree_item['folderId'])
 
         await synchronize_permissions_metadata_symlinks(

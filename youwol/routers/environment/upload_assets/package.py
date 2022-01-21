@@ -90,8 +90,8 @@ class UploadPackageTask(UploadTask):
         mismatch = [v for v, checksum in local_versions.items()
                     if v in remote_versions and checksum != remote_versions[v]]
         to_sync_releases = missing + mismatch
-        await self.context.info(text="package's versions to sync. resolved",
-                                data={"missing": missing, "mismatch": mismatch})
+        self.context.info(text="package's versions to sync. resolved",
+                          data={"missing": missing, "mismatch": mismatch})
 
         return to_sync_releases
 
@@ -107,9 +107,9 @@ class UploadPackageTask(UploadTask):
                 await remote_gtw.put_asset_with_raw(kind='package', folder_id=folder_id, data=data,
                                                     timeout=600)
             finally:
-                await ctx.info(
+                ctx.info(
                     text=f"{library_name}#{version}: synchronization done"
-                    )
+                )
                 # await check_package_status(package=local_package, context=context, target_versions=[version])
 
     async def create_raw(self, data: List[str], folder_id: str):

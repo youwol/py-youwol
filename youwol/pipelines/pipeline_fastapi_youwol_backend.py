@@ -202,7 +202,7 @@ class DeployGcStep(PipelineStep):
     async def execute_run(self, project: Project, flow_id: FlowId, context: Context):
 
         outputs = []
-        await context.info(text="")
+        context.info(text="")
         async with context.start(
                 action="deploy helm chart",
                 with_attributes={
@@ -226,7 +226,7 @@ class DeployGcStep(PipelineStep):
                 chart_explorer=get_chart_explorer(chart_path)
             )
 
-            await ctx.send(data=helm_package)
+            ctx.send(data=helm_package)
             installed = await helm_package.is_installed(context=ctx)
 
             if installed and '-next' in project.version:
@@ -236,7 +236,7 @@ class DeployGcStep(PipelineStep):
 
             if installed:
                 outputs.append(f"Helm chart already installed, proceed to chart upgrade")
-                await ctx.info(text=f"Start helm chart install")
+                ctx.info(text=f"Start helm chart install")
                 return_code, cmd, outputs_bash = await helm_package.upgrade(context=ctx)
                 outputs = outputs + [cmd] + outputs_bash
                 if return_code > 0:
@@ -244,7 +244,7 @@ class DeployGcStep(PipelineStep):
 
             if not installed:
                 outputs.append(f"Helm chart not already installed, start helm chart install")
-                await ctx.info(text=f"Start helm chart install")
+                ctx.info(text=f"Start helm chart install")
                 return_code, cmd, outputs_bash = await helm_package.install(context=ctx)
                 outputs = outputs + [cmd] + outputs_bash
                 if return_code > 0:

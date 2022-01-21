@@ -176,17 +176,17 @@ class PipelineStep(BaseModel):
             -> PipelineStepStatus:
 
         if last_manifest is None:
-            await context.info(text="No manifest found => status is none")
+            context.info(text="No manifest found => status is none")
             return PipelineStepStatus.none
 
-        await context.info(text="Manifest retrieved", data=last_manifest)
+        context.info(text="Manifest retrieved", data=last_manifest)
 
         fingerprint, _ = await self.get_fingerprint(project=project, flow_id=flow_id, context=context)
-        await context.info(text="Actual fingerprint", data=fingerprint)
+        context.info(text="Actual fingerprint", data=fingerprint)
 
         if last_manifest.fingerprint != fingerprint:
-            await context.info(text="Outdated entry",
-                               data={'actual fp': fingerprint, 'saved fp': last_manifest.fingerprint})
+            context.info(text="Outdated entry",
+                         data={'actual fp': fingerprint, 'saved fp': last_manifest.fingerprint})
             return PipelineStepStatus.outdated
 
         return PipelineStepStatus.OK if last_manifest.succeeded else PipelineStepStatus.KO
@@ -199,11 +199,11 @@ class PipelineStep(BaseModel):
             raise RuntimeError("When 'ExplicitNone' is provided, the step must overrides the 'execute_run' method")
 
         if isinstance(self.run, str):
-            await context.info(f'Run cmd {self.run}')
+            context.info(f'Run cmd {self.run}')
             return await PipelineStep.__execute_run_cmd(project=project, run_cmd=self.run, context=context)
 
         run = cast(Callable[['PipelineStep', 'Project', str, Context], Awaitable[str]], self.run)
-        await context.info(f'Run custom function')
+        context.info(f'Run custom function')
         run_cmd = run(self, project, flow_id, context)
         run_cmd = await run_cmd if isinstance(run_cmd, Awaitable) else run_cmd
         return await PipelineStep.__execute_run_cmd(project=project, run_cmd=run_cmd, context=context)
@@ -213,7 +213,7 @@ class PipelineStep(BaseModel):
         files = await self.get_sources(project=project, flow_id=flow_id, context=context)
         if files is None:
             return None, []
-        await context.info(text='got file listing', data={"files": [str(f) for f in files]})
+        context.info(text='got file listing', data={"files": [str(f) for f in files]})
         checksum = files_check_sum(files)
         return checksum, files
 

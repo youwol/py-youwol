@@ -74,7 +74,7 @@ class HelmPackage(K8sPackage):
 
     async def is_installed(self, context: Context):
         charts = await helm_list(namespace=self.namespace, selector=None, context=context)
-        await context.info(text="List of installed packages", data={"charts": [to_json(c) for c in charts]})
+        context.info(text="List of installed packages", data={"charts": [to_json(c) for c in charts]})
         return self.name in [r.name for r in charts]
 
     @staticmethod

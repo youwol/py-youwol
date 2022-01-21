@@ -54,7 +54,7 @@ async def k8s_create_secrets_if_needed(namespace: str, secrets: Dict[str, Path],
     existing = await k8s_secrets(namespace=namespace)
     needed = [k for k in secrets.keys() if k not in existing]
     for name in needed:
-        context and await context.info(f"Create secret {name} in namespace {namespace}")
+        context and context.info(f"Create secret {name} in namespace {namespace}")
         k8s_create_secret(namespace=namespace, file_path=secrets[name])
 
 
@@ -79,7 +79,7 @@ async def k8s_pod_exec(pod_name: str, namespace: str, commands: List[str], conte
     cmd_outputs = []
     for cmd in commands:
         full = f'kubectl exec -i  {pod_name} -n {namespace} -- bash -c "{cmd}"'
-        context and await context.info(full)
+        context and context.info(full)
         return_code, outputs = await execute_shell_cmd(full, context=context)
         if return_code > 0:
             raise CommandException(command=full, outputs=outputs)
@@ -114,7 +114,7 @@ async def k8s_port_forward(namespace: str, service_name: str, target_port: Optio
     cmd = f"kubectl port-forward -n {namespace} service/{service_name} {local_port}:{port_number}"
     kill_k8s_proxy(local_port)
     subprocess.Popen(cmd, shell=True)
-    await context.info(f"Port forward {namespace}#{service_name} using local port {local_port}")
+    context.info(f"Port forward {namespace}#{service_name} using local port {local_port}")
 
 
 async def k8s_get_ingress(namespace: str, name: str) -> Optional[ExtensionsV1beta1Ingress]:

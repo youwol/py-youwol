@@ -123,8 +123,8 @@ class YouwolEnvironment(BaseModel):
         deadline = datetime.timestamp(datetime.now()) + 1 * 60 * 60 * 1000
         self.tokensCache.append(DeadlinedCache(value=access_token, deadline=deadline, dependencies=dependencies))
 
-        await context.info(text="Access token renewed",
-                           data={"host": remote.host, "access_token": access_token})
+        context.info(text="Access token renewed",
+                     data={"host": remote.host, "access_token": access_token})
         return access_token
 
     async def get_default_drive(self, context: Context) -> DefaultDriveResponse:
@@ -241,7 +241,7 @@ class YouwolEnvironmentFactory:
         on_load_cb = config.events.onLoad(config, context)
         data = await on_load_cb if isinstance(on_load_cb, Awaitable) else on_load_cb
 
-        await context.info(text="Applied onLoad event's callback", data=data)
+        context.info(text="Applied onLoad event's callback", data=data)
 
 
 async def yw_config() -> YouwolEnvironment:
@@ -265,7 +265,7 @@ async def login(
             detail=f"User has not been identified, make sure it is defined in users info file ({users_info_path})"
         )
     if user_email not in parse_json(users_info_path)['users']:
-        context and await context.info(
+        context and context.info(
             text=f"User {user_email} not registered in {users_info_path}: switch user",
             data={"user_email": user_email, 'usersInfo': parse_json(users_info_path)
                   }
