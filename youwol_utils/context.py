@@ -135,7 +135,7 @@ class Context(NamedTuple):
             traceback.print_exc()
             raise e
         else:
-            await ctx.info(text="", labels=[str(Label.DONE), *with_labels])
+            ctx.info(text=f"Done in {time.time() - start}s", labels=[str(Label.DONE), *with_labels])
             await execute_block(on_exit)
 
     async def log(self, level: LogLevel, text: str, labels: List[str] = None, data: Union[JSON, BaseModel] = None):
