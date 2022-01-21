@@ -5,7 +5,7 @@ from fastapi import FastAPI, APIRouter, Depends, WebSocket
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
-import youwol.middlewares.dynamic_routing.custom_dispatch_rules as custom_dispatch
+import youwol.middlewares.custom_dispatch_middleware as custom_dispatch
 import youwol.middlewares.dynamic_routing.loading_graph_rules as loading_graph
 import youwol.middlewares.dynamic_routing.missing_asset_rules as missing_asset
 import youwol.middlewares.dynamic_routing.workspace_explorer_rules as workspace_explorer
@@ -46,7 +46,6 @@ ContextFactory.with_static_data = {
 app.add_middleware(
     DynamicRoutingMiddleware,
     dynamic_dispatch_rules=[
-        custom_dispatch.CustomDispatchesRule(),
         workspace_explorer.GetChildrenDispatch(),
         workspace_explorer.GetPermissionsDispatch(),
         workspace_explorer.GetItemDispatch(),
@@ -56,6 +55,9 @@ app.add_middleware(
         missing_asset.PostMetadataDispatch(),
     ]
 )
+
+app.add_middleware(custom_dispatch.CustomDispatchesMiddleware)
+app.add_middleware(BrowserCachingMiddleware)
 app.add_middleware(AuthMiddleware)
 app.add_middleware(RootMiddleware)
 
