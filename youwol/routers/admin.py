@@ -17,7 +17,6 @@ router = APIRouter()
 async def ws_endpoint(ws: WebSocket):
     await ws.accept()
     WebSocketsStore.adminChannel = ws
-    await ws.send_json({})
     await start_web_socket(ws)
 
 
