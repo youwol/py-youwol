@@ -28,7 +28,10 @@ class GetChildrenDispatch(AbstractDispatch):
         return request.method == "GET" \
                and request.url.path.startswith("/api/assets-gateway/tree/") \
                and "/folders/" in request.url.path and request.url.path.endswith('/children') \
-               and "Python" not in request.headers.get('user-agent')
+               and ('user-agent' in request.headers
+                    and "Python" not in request.headers.get('user-agent')
+                    # => for now, until for browser request
+                    )
 
     async def apply(self,
                     request: Request,
@@ -90,7 +93,7 @@ class GetPermissionsDispatch(AbstractDispatch):
         return request.method == "GET" \
                and request.url.path.startswith("/api/assets-gateway/tree/") \
                and request.url.path.endswith('/permissions') \
-               and "Python" not in request.headers.get('user-agent')
+               and ('user-agent' in request.headers and "Python" not in request.headers.get('user-agent'))
 
     async def apply(self,
                     request: Request,
@@ -101,20 +104,24 @@ class GetPermissionsDispatch(AbstractDispatch):
         if not await GetPermissionsDispatch.is_matching(request=request):
             return None
 
-        env = await context.get('env', YouwolEnvironment)
-        local_gtw = LocalClients.get_assets_gateway_client(env=env)
-        remote_gtw = await RemoteClients.get_assets_gateway_client(context=context)
-        item_id = request.url.path.split('/api/assets-gateway/tree/')[1].split('/')[0]
+        async with context.start(action="GetPermissionsDispatch.apply") as ctx:
 
-        local_resp, remote_resp = await asyncio.gather(
-            local_gtw.get_permissions(item_id=item_id),
-            remote_gtw.get_permissions(item_id=item_id),
-            return_exceptions=True
-            )
-        if isinstance(local_resp, Exception):
-            return JSONResponse(remote_resp)
+            env = await ctx.get('env', YouwolEnvironment)
+            local_gtw = LocalClients.get_assets_gateway_client(env=env)
+            remote_gtw = await RemoteClients.get_assets_gateway_client(context=ctx)
+            item_id = request.url.path.split('/api/assets-gateway/tree/')[1].split('/')[0]
 
-        return JSONResponse(local_resp)
+            local_resp, remote_resp = await asyncio.gather(
+                local_gtw.get_permissions(item_id=item_id),
+                remote_gtw.get_permissions(item_id=item_id),
+                return_exceptions=True
+                )
+            if isinstance(local_resp, Exception):
+                ctx.info("Asset not found in local store, return remote data")
+                return JSONResponse(remote_resp)
+
+            ctx.info("Asset found in local store, return local data")
+            return JSONResponse(local_resp)
 
 
 class GetItemDispatch(AbstractDispatch):
@@ -134,17 +141,20 @@ class GetItemDispatch(AbstractDispatch):
         if not await GetItemDispatch.is_matching(request=request):
             return None
 
-        env = await context.get('env', YouwolEnvironment)
-        local_gtw = LocalClients.get_assets_gateway_client(env=env)
-        remote_gtw = await RemoteClients.get_assets_gateway_client(context=context)
-        item_id = request.url.path.split('/api/assets-gateway/tree/items/')[1]
+        async with context.start(action="GetItemDispatch.apply") as ctx:
+            env = await ctx.get('env', YouwolEnvironment)
+            local_gtw = LocalClients.get_assets_gateway_client(env=env)
+            remote_gtw = await RemoteClients.get_assets_gateway_client(context=ctx)
+            item_id = request.url.path.split('/api/assets-gateway/tree/items/')[1]
 
-        local_resp, remote_resp = await asyncio.gather(
-            local_gtw.get_tree_item(item_id=item_id),
-            remote_gtw.get_tree_item(item_id=item_id),
-            return_exceptions=True
-            )
-        if isinstance(local_resp, Exception):
-            return JSONResponse(remote_resp)
+            local_resp, remote_resp = await asyncio.gather(
+                local_gtw.get_tree_item(item_id=item_id),
+                remote_gtw.get_tree_item(item_id=item_id),
+                return_exceptions=True
+                )
+            if isinstance(local_resp, Exception):
+                ctx.info("Asset not found in local store, return remote data")
+                return JSONResponse(remote_resp)
 
-        return JSONResponse(local_resp)
+            ctx.info("Asset found in local store, return local data")
+            return JSONResponse(local_resp)
