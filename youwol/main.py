@@ -55,7 +55,7 @@ app.add_middleware(
         missing_asset.GetMetadataDispatch(),
         missing_asset.PostMetadataDispatch()
     ],
-    disabling_header=RequestHeadersConstants.py_youwol_local_only
+    disabling_header=YouwolHeaders.py_youwol_local_only
 )
 
 app.add_middleware(custom_dispatch.CustomDispatchesMiddleware)

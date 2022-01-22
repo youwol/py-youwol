@@ -20,8 +20,18 @@ from youwol_utils.clients.utils import raise_exception_from_response, to_group_i
 flatten = itertools.chain.from_iterable
 
 
-class RequestHeadersConstants(NamedTuple):
+class YouwolHeaders(NamedTuple):
+
     py_youwol_local_only = 'py-youwol-local-only'
+    correlation_id = 'x-correlation-id'
+
+    @staticmethod
+    def get_correlation_id(request: Request):
+        return request.headers.get(YouwolHeaders.correlation_id, None)
+
+    @staticmethod
+    def get_py_youwol_local_only(request: Request):
+        return request.headers.get(YouwolHeaders.py_youwol_local_only, None)
 
 
 def find_platform_path():
@@ -177,11 +187,13 @@ def generate_headers_downstream(incoming_headers):
     headers = {}
     if "Authorization" in incoming_headers:
         headers["Authorization"] = incoming_headers.get("Authorization")
+
     if "user-name" in incoming_headers:
         headers["user-name"] = incoming_headers.get("user-name")
-    if RequestHeadersConstants.py_youwol_local_only in incoming_headers:
-        headers[RequestHeadersConstants.py_youwol_local_only] = \
-            incoming_headers.get(RequestHeadersConstants.py_youwol_local_only)
+
+    if YouwolHeaders.py_youwol_local_only in incoming_headers:
+        headers[YouwolHeaders.py_youwol_local_only] = \
+            incoming_headers.get(YouwolHeaders.py_youwol_local_only)
 
     return headers
 
