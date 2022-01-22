@@ -4,7 +4,7 @@ import time
 import uuid
 from itertools import groupby
 from threading import Thread
-from typing import Dict, Any
+from typing import Dict, Any, Set
 
 from youwol.environment.clients import RemoteClients
 from youwol_utils import YouWolException, encode_id, decode_id
@@ -39,7 +39,7 @@ class DownloadLogger:
 async def process_download_asset(
         queue: asyncio.Queue,
         factories: Dict[str, Any],
-        downloaded_ids: set[str],
+        downloaded_ids: Set[str],
         logger: DownloadLogger
         ):
     while True:
