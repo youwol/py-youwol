@@ -15,7 +15,6 @@ from youwol.environment.youwol_environment import YouwolEnvironmentFactory, yw_c
 from youwol.middlewares.auth_middleware import AuthMiddleware
 from youwol.middlewares.browser_caching_middleware import BrowserCachingMiddleware
 from youwol.middlewares.dynamic_routing_middleware import DynamicRoutingMiddleware
-from youwol.middlewares.root_middleware import RootMiddleware
 from youwol.routers import native_backends, admin, authorization
 from youwol.routers.environment.download_assets.data import DownloadDataTask
 from youwol.routers.environment.download_assets.flux_project import DownloadFluxProjectTask
@@ -24,6 +23,7 @@ from youwol.utils.utils_low_level import start_web_socket, assert_python
 from youwol.web_socket import WebSocketsStore, AdminContextLogger
 from youwol_utils import YouWolException, youwol_exception_handler, YouwolHeaders
 from youwol_utils.context import ContextFactory
+from youwol_utils.middlewares.root_middleware import RootMiddleware
 
 app = FastAPI(
     title="Local Dashboard",
@@ -43,6 +43,7 @@ ContextFactory.with_static_data = {
     "env": lambda: yw_config(),
     "download_thread": download_thread
 }
+
 
 app.add_middleware(
     DynamicRoutingMiddleware,
