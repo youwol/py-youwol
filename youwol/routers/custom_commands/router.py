@@ -4,8 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from starlette.requests import Request
 
 from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
-from youwol.web_socket import WebSocketsStore
-from youwol_utils.context import ContextFactory
+from youwol_utils.context import Context
 
 router = APIRouter()
 
@@ -16,10 +15,7 @@ async def execute_command(
         command_name: str,
         config: YouwolEnvironment = Depends(yw_config)
         ):
-    context = ContextFactory.get_instance(
-        request=request,
-        web_socket=WebSocketsStore.userChannel
-    )
+    context = Context.from_request(request)
     command = config.commands.get(command_name)
     if command is None:
         raise HTTPException(status_code=404, detail=f"Command '{command_name}' not found")
@@ -37,10 +33,9 @@ async def execute_command(
         command_name: str,
         config: YouwolEnvironment = Depends(yw_config)
 ):
-    context = ContextFactory.get_instance(
-        request=request,
-        web_socket=WebSocketsStore.userChannel
-    )
+
+    context = Context.from_request(request)
+
     body = await request.json()
     command = config.commands.get(command_name)
     if command is None:
@@ -59,10 +54,8 @@ async def execute_command(
         command_name: str,
         config: YouwolEnvironment = Depends(yw_config)
 ):
-    context = ContextFactory.get_instance(
-        request=request,
-        web_socket=WebSocketsStore.userChannel
-    )
+
+    context = Context.from_request(request)
     body = await request.json()
     command = config.commands.get(command_name)
     if command is None:
@@ -81,10 +74,8 @@ async def execute_command(
         command_name: str,
         config: YouwolEnvironment = Depends(yw_config)
 ):
-    context = ContextFactory.get_instance(
-        request=request,
-        web_socket=WebSocketsStore.userChannel
-    )
+
+    context = Context.from_request(request)
     command = config.commands.get(command_name)
     if command is None:
         raise HTTPException(status_code=404, detail=f"Command '{command_name}' not found")

@@ -27,23 +27,27 @@ class GetLoadingGraphDispatch(AbstractDispatch):
         if '/api/assets-gateway/cdn/queries/loading-graph' not in request.url.path:
             return None
 
-        body_raw = await request.body()
+        async with context.start(action="GetLoadingGraphDispatch.apply") as ctx:
 
-        body = LoadingGraphBody(**(json.loads(body_raw.decode('utf8'))))
-        yw_conf, cdn_conf = await asyncio.gather(
-            yw_config(),
-            get_configuration()
-            )
-        try:
-            resp = await cdn.resolve_loading_tree(request, body, cdn_conf)
-            return JSONResponse(resp.dict())
-        except PackagesNotFound:
-            url = f'https://{yw_conf.selectedRemote}{request.url.path}'
-            headers = {"Authorization": request.headers.get("authorization")}
-            async with aiohttp.ClientSession(
-                    connector=aiohttp.TCPConnector(verify_ssl=False),
-                    auto_decompress=False) as session:
-                async with await session.post(url=url, json=body.dict(), headers=headers) as resp:
-                    headers_resp = {k: v for k, v in resp.headers.items()}
-                    content = await resp.read()
-                    return Response(status_code=resp.status, content=content, headers=headers_resp)
+            body_raw = await request.body()
+
+            body = LoadingGraphBody(**(json.loads(body_raw.decode('utf8'))))
+            ctx.info("Loading graph body", data=body)
+            yw_conf, cdn_conf = await asyncio.gather(
+                yw_config(),
+                get_configuration()
+                )
+            try:
+                resp = await cdn.resolve_loading_tree(request, body, cdn_conf)
+                return JSONResponse(resp.dict())
+            except PackagesNotFound:
+                ctx.info("Loading tree can not be locally resolved, proceed to remote platform")
+                url = f'https://{yw_conf.selectedRemote}{request.url.path}'
+
+                async with aiohttp.ClientSession(
+                        connector=aiohttp.TCPConnector(verify_ssl=False),
+                        auto_decompress=False) as session:
+                    async with await session.post(url=url, json=body.dict(), headers=ctx.headers()) as resp:
+                        headers_resp = {k: v for k, v in resp.headers.items()}
+                        content = await resp.read()
+                        return Response(status_code=resp.status, content=content, headers=headers_resp)

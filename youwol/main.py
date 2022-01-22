@@ -21,8 +21,8 @@ from youwol.routers.environment.download_assets.data import DownloadDataTask
 from youwol.routers.environment.download_assets.flux_project import DownloadFluxProjectTask
 from youwol.routers.environment.download_assets.package import DownloadPackageTask
 from youwol.utils.utils_low_level import start_web_socket, assert_python
-from youwol.web_socket import WebSocketsStore
-from youwol_utils import YouWolException, youwol_exception_handler, RequestHeadersConstants
+from youwol.web_socket import WebSocketsStore, AdminContextLogger
+from youwol_utils import YouWolException, youwol_exception_handler, YouwolHeaders
 from youwol_utils.context import ContextFactory
 
 app = FastAPI(
@@ -61,7 +61,7 @@ app.add_middleware(
 app.add_middleware(custom_dispatch.CustomDispatchesMiddleware)
 app.add_middleware(BrowserCachingMiddleware)
 app.add_middleware(AuthMiddleware)
-app.add_middleware(RootMiddleware)
+app.add_middleware(RootMiddleware, ctx_logger=AdminContextLogger())
 
 router = APIRouter()
 

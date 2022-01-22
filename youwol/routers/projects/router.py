@@ -21,9 +21,9 @@ from youwol.routers.projects.implementation import (
 from youwol.routers.projects.models import (
     PipelineStepStatusResponse, PipelineStatusResponse, ArtifactsResponse, ProjectStatusResponse, CdnResponse,
     CdnVersionResponse, )
-from youwol.web_socket import WebSocketsStore
+from youwol.web_socket import UserContextLogger
 from youwol_utils import decode_id
-from youwol_utils.context import ContextFactory
+from youwol_utils.context import Context
 from youwol_utils.utils_paths import parse_json
 from youwol_utils.utils_paths import write_json
 
@@ -41,19 +41,15 @@ async def pipeline_step_status(
         step_id: str
         ) -> PipelineStepStatusResponse:
 
-    context = ContextFactory.get_instance(
-        request=request,
-        web_socket=WebSocketsStore.userChannel
-    )
-
-    async with context.start(
+    async with Context.from_request(request).start(
             action="Get pipeline status",
             with_labels=[str(Label.PIPELINE_STEP_STATUS_PENDING)],
             with_attributes={
                 'projectId': project_id,
                 'flowId': flow_id,
                 'stepId': step_id
-                }
+                },
+            logger=UserContextLogger()
             ) as ctx:
 
         project, step = await get_project_step(project_id=project_id, step_id=step_id, context=ctx)
@@ -70,21 +66,18 @@ async def project_status(
         project_id: str,
         config: YouwolEnvironment = Depends(yw_config)
         ):
-    context = ContextFactory.get_instance(
-        request=request,
-        web_socket=WebSocketsStore.userChannel
-    )
 
-    async with context.start(
+    async with Context.from_request(request).start(
             action="Get project status",
             with_attributes={
                 'projectId': project_id
-                }
+                },
+            logger=UserContextLogger()
             ) as ctx:
-        projects = await ProjectLoader.get_projects(await context.get("env", YouwolEnvironment), context)
+        projects = await ProjectLoader.get_projects(await ctx.get("env", YouwolEnvironment), ctx)
         project: Project = next(p for p in projects if p.id == project_id)
 
-        workspace_dependencies = await resolve_project_dependencies(project=project, context=context)
+        workspace_dependencies = await resolve_project_dependencies(project=project, context=ctx)
         ctx.info("Project dependencies retrieved", data=workspace_dependencies)
         response = ProjectStatusResponse(
             projectId=project_id,
@@ -104,16 +97,14 @@ async def flow_status(
         project_id: str,
         flow_id: str
         ):
-    context = ContextFactory.get_instance(
-        request=request,
-        web_socket=WebSocketsStore.userChannel
-    )
-    async with context.start(
+
+    async with Context.from_request(request).start(
             action=f"Get flow '{flow_id}' status",
             with_attributes={
                 'projectId': project_id,
                 'flowId': flow_id
-                }
+                },
+            logger=UserContextLogger()
             ) as ctx:
 
         project, flow, steps = await get_project_flow_steps(project_id=project_id, flow_id=flow_id, context=ctx)
@@ -134,20 +125,17 @@ async def project_artifacts(
         project_id: str,
         flow_id: str
         ):
-    context = ContextFactory.get_instance(
-        request=request,
-        web_socket=WebSocketsStore.userChannel
-    )
 
-    env = await context.get('env', YouwolEnvironment)
-    async with context.start(
+    async with Context.from_request(request).start(
             action="Get project's artifact",
             with_attributes={
                 'projectId': project_id,
                 'flowId': flow_id
-                }
+                },
+            logger=UserContextLogger()
             ) as ctx:
 
+        env = await ctx.get('env', YouwolEnvironment)
         paths: PathsBook = env.pathsBook
 
         project, flow, steps = await get_project_flow_steps(project_id=project_id, flow_id=flow_id, context=ctx)
@@ -172,14 +160,6 @@ async def run_pipeline_step(
         flow_id: str,
         step_id: str
         ):
-    context = ContextFactory.get_instance(
-        request=request,
-        web_socket=WebSocketsStore.userChannel
-    )
-
-    env = await context.get('env', YouwolEnvironment)
-    projects = await ProjectLoader.get_projects(env, context)
-    paths: PathsBook = env.pathsBook
 
     def refresh_status_downstream_steps():
         """
@@ -193,7 +173,7 @@ async def run_pipeline_step(
             for _step in steps
             ])
 
-    async with context.start(
+    async with Context.from_request(request).start(
             action="Run pipeline-step",
             with_labels=[str(Label.RUN_PIPELINE_STEP), str(Label.PIPELINE_STEP_RUNNING)],
             with_attributes={
@@ -201,8 +181,14 @@ async def run_pipeline_step(
                 'flowId': flow_id,
                 'stepId': step_id
                 },
-            on_exit=lambda _ctx: refresh_status_downstream_steps()
+            on_exit=lambda _ctx: refresh_status_downstream_steps(),
+            logger=UserContextLogger()
             ) as ctx:
+
+        env = await ctx.get('env', YouwolEnvironment)
+        projects = await ProjectLoader.get_projects(env, ctx)
+        paths: PathsBook = env.pathsBook
+
         project, step = await get_project_step(project_id, step_id, ctx)
         error_run = None
         try:
@@ -255,14 +241,11 @@ async def cdn_status(
         project_id: str,
         config: YouwolEnvironment = Depends(yw_config)
         ):
-    context = ContextFactory.get_instance(
-        request=request,
-        web_socket=WebSocketsStore.userChannel
-    )
 
-    async with context.start(
+    async with Context.from_request(request).start(
             action="Get local cdn status",
-            with_attributes={'event': 'CdnResponsePending', 'projectId': project_id}
+            with_attributes={'event': 'CdnResponsePending', 'projectId': project_id},
+            logger=UserContextLogger()
             ) as ctx:
 
         data = parse_json(config.pathsBook.local_cdn_docdb)['documents']

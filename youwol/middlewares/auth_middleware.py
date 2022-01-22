@@ -7,8 +7,7 @@ from starlette.types import ASGIApp
 
 from youwol.environment.youwol_environment import yw_config
 from youwol.routers.authorization import get_user_info
-from youwol.web_socket import WebSocketsStore
-from youwol_utils.context import ContextFactory
+from youwol_utils.context import Context, Label
 
 
 class AuthMiddleware(BaseHTTPMiddleware):
@@ -26,7 +25,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         config = await yw_config()
 
-        async with request.state.context.start(action=f"Authorisation middleware") as ctx:
+        async with Context.from_request(request).start(
+                action=f"Authorisation middleware",
+                with_labels=[Label.MIDDLEWARE]
+        ) as ctx:
             if not request.headers.get('authorization'):
 
                 ctx.info(text="No authorisation token found")
@@ -39,7 +41,6 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
             if await self.authenticate(config.userEmail, request):
                 ctx.info(text="User info retrieved", data=request.state.user_info)
-                request.state.context = ctx
                 response = await call_next(request)
             else:
                 ctx.error(text="Unauthorized")
