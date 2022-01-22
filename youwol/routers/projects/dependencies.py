@@ -102,12 +102,12 @@ async def resolve_workspace_dependencies(context: Context) -> ResolvedDependenci
 
     sorted_projects = await sort_projects(projects=projects, sorted_projects=[], context=context)
     deps_rec = {p.name:
-                    [d.name
-                     for d in await p.get_dependencies(recursive=True,
-                                                       projects=await ProjectLoader.get_projects(env, context),
-                                                       context=context
-                                                       )
-                     ]
+                [d.name
+                 for d in await p.get_dependencies(recursive=True,
+                                                   projects=await ProjectLoader.get_projects(env, context),
+                                                   context=context
+                                                   )
+                 ]
                 for p in sorted_projects
                 }
     cache['resolved_dependencies'] = ResolvedDependencies(
