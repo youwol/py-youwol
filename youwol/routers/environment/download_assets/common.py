@@ -21,7 +21,7 @@ async def get_remote_paths(
     items_path_ = await asyncio.gather(*[
         remote_treedb.get_path(item.treeId, headers=context.headers())
         for item in tree_items.items
-        ])
+    ])
     items_path = [PathResponse(**p) for p in items_path_]
 
     def is_borrowed(item: ItemResponse):
@@ -80,8 +80,8 @@ async def get_local_owning_folder_id(
     if owning_location:
         await ensure_local_path(owning_location, local_treedb, context)
 
-    return owning_location.folders[-1].folderId\
-        if owning_location\
+    return owning_location.folders[-1].folderId \
+        if owning_location \
         else default_folder_id
 
 
@@ -101,7 +101,7 @@ async def sync_borrowed_items(
             headers=context.headers()
         )
         for p in borrowed_locations
-        ])
+    ])
 
 T = TypeVar('T')
 
@@ -128,7 +128,7 @@ async def create_asset_local(
             remote_gtw.get_asset_metadata(asset_id=asset_id, headers=headers),
             remote_gtw.get_tree_items_by_related_id(related_id=asset_id, headers=headers),
             return_exceptions=True
-            )
+        )
 
         if isinstance(raw_data, Exception):
             ctx.error(f"Can not fetch raw part of the asset")

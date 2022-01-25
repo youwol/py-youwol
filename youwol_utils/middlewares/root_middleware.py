@@ -3,7 +3,6 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp
 
-from youwol.web_socket import UserContextLogger
 from youwol_utils import YouwolHeaders
 from youwol_utils.context import ContextFactory, Context, ContextLogger, Label
 from youwol_utils.request_info_factory import request_info
