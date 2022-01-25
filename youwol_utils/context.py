@@ -172,6 +172,28 @@ class Context(NamedTuple):
             self.request.state.context = self
             await execute_block(on_exit)
 
+    @staticmethod
+    def start_ep(
+            request: Request,
+            action: str,
+            with_labels: List[StringLike] = None,
+            with_attributes: JSON = None,
+            body: BaseModel = None,
+            response: Callable[[], BaseModel] = None,
+            logger: ContextLogger = None
+    ):
+        context = Context.from_request(request=request)
+        with_labels = with_labels or []
+        with_attributes = with_attributes or {}
+        return context.start(
+            action=action,
+            with_labels=[Label.END_POINT, *with_labels],
+            with_attributes={"method": request.method, **with_attributes},
+            logger=logger,
+            on_enter=lambda ctx: ctx.info('Body', data=body) if body else None,
+            on_exit=lambda ctx: ctx.info('Response', data=response()) if response else None
+        )
+
     async def log(self, level: LogLevel, text: str, labels: List[StringLike] = None,
                   data: Union[JSON, BaseModel] = None):
         label_level = {
