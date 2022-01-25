@@ -37,8 +37,7 @@ async def ensure_folder(
             with_attributes={"folder_id": folder_id, 'name': name}
     ) as ctx:
         try:
-            headers = ctx.headers()
-            resp = await treedb.get_folder(folder_id=folder_id, headers=headers)
+            resp = await treedb.get_folder(folder_id=folder_id, headers=ctx.headers())
             await ctx.info("Folder already exists")
             return resp
         except YouWolException as e:

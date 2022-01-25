@@ -23,7 +23,7 @@ async def get_raw_generic(
     async with Context.start_ep(
             request=request,
             action='get raw part of asset',
-            with_attributes={"kind": kind, 'rawId': raw_id, "restOfPath": rest_of_the_path}
+            with_attributes={"kind": kind, 'rawId': raw_id, "restOfPath": rest_of_the_path or ""}
     ) as ctx:
 
         headers = ctx.headers()
@@ -59,7 +59,7 @@ async def get_raw_metadata_generic(
     async with Context.start_ep(
             request=request,
             action='get raw metadata',
-            with_attributes={"kind": kind, 'rawId': raw_id, "restOfPath": rest_of_the_path}
+            with_attributes={"kind": kind, 'rawId': raw_id, "restOfPath": rest_of_the_path or ""}
     ) as ctx:
         assets_stores = configuration.assets_stores()
         store = next(store for store in assets_stores if kind == store.path_name)
