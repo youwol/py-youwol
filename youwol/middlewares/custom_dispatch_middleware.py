@@ -24,12 +24,13 @@ class CustomDispatchesMiddleware(BaseHTTPMiddleware):
         ) as ctx:
             env = await ctx.get('env', YouwolEnvironment)
             dispatches: List[AbstractDispatch] = env.customDispatches
-            ctx.info('list of custom dispatch', data={'dispatches': [to_json(d) for d in dispatches]})
+            await ctx.info('list of custom dispatch', data={'dispatches': [to_json(d) for d in dispatches]})
             responses = await asyncio.gather(*[
                 d.apply(incoming_request=request, call_next=call_next, context=ctx) for d in dispatches
             ])
             resp = next((r for r in responses if r is not None), None)
             if resp:
+                await ctx.info('Found a matching custom dispatch', data=dispatches[index])
                 return cast(Response, resp)
 
             return await call_next(request)

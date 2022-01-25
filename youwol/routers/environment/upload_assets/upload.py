@@ -50,7 +50,7 @@ async def synchronize_permissions(assets_gtw_client: AssetsGatewayClient, asset_
         env = await context.get('env', YouwolEnvironment)
         local_assets_gtw = LocalClients.get_assets_gateway_client(env=env)
         access_info = await local_assets_gtw.get_asset_access(asset_id=asset_id)
-        ctx.info(
+        await ctx.info(
             labels=[str(Label.RUNNING)],
             text="Permissions retrieved",
             data={"access_info": access_info}
@@ -107,7 +107,7 @@ async def create_borrowed_item(borrowed_tree_id: str, item: Mapping[str, any], a
                 raise e
 
             path_item = await local_path({"treeId": tree_id}, context=ctx)
-            ctx.info(
+            await ctx.info(
                 labels=[Label.RUNNING],
                 text="Borrowed tree item not found, start creation",
                 data={"treeItemPath": to_json(path_item)}
@@ -123,7 +123,7 @@ async def create_borrowed_item(borrowed_tree_id: str, item: Mapping[str, any], a
                                                      "destinationFolderId": parent_id
                                                  }
                                                  )
-        ctx.info(text="Borrowed item created")
+        await ctx.info(text="Borrowed item created")
 
 
 async def synchronize_metadata(asset_id: str, assets_gtw_client: AssetsGatewayClient, context: Context):
@@ -145,7 +145,7 @@ async def synchronize_metadata(asset_id: str, assets_gtw_client: AssetsGatewayCl
         full_urls = [f"http://localhost:{env.http_port}{url}" for url in missing_images_urls]
         filenames = [url.split('/')[-1] for url in full_urls]
 
-        ctx.info(
+        await ctx.info(
             labels=[str(Label.RUNNING)],
             text="Synchronise metadata",
             data={
@@ -233,7 +233,7 @@ async def upload_asset(
                           data={"tree_item": tree_item, "error_detail": e.detail})
             raise e
 
-        ctx.info(
+        await ctx.info(
             text="Data retrieved",
             data={"path_item": path_item, "raw data": local_data}
         )
@@ -243,14 +243,14 @@ async def upload_asset(
         await ensure_path(path_item=PathResponse(**path_item), assets_gateway_client=assets_gtw_client)
         try:
             await assets_gtw_client.get_asset_metadata(asset_id=asset_id)
-            ctx.info(
+            await ctx.info(
                 text="Asset already found in deployed environment"
             )
             await factory.update_raw(data=local_data, folder_id=tree_item['folderId'])
         except HTTPException as e:
             if e.status_code != 404:
                 raise e
-            ctx.info(
+            await ctx.info(
                 labels=[Label.RUNNING],
                 text="Project not already found => start creation"
             )

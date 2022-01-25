@@ -23,8 +23,7 @@ async def get_project_step(
     project = next(p for p in projects if p.id == project_id)
     step = next(s for s in project.pipeline.steps if s.id == step_id)
 
-    context.info(text="project & step retrieved",
-                 data={'project': to_json(project), 'step': to_json(step)})
+    await context.info(text="project & step retrieved", data={'project': to_json(project), 'step': to_json(step)})
     return project, step
 
 
@@ -33,16 +32,17 @@ async def get_project_flow_steps(
         flow_id: str,
         context: Context
         ) -> Tuple[Project, Flow, List[PipelineStep]]:
-
     env = await context.get('env', YouwolEnvironment)
     projects = await ProjectLoader.get_projects(env, context)
     project = next(p for p in projects if p.id == project_id)
     flow = next(f for f in project.pipeline.flows if f.name == flow_id)
     steps = project.get_flow_steps(flow_id=flow_id)
 
-    context.info(text="project & flow & steps retrieved",
-                 data={'project': to_json(project), 'flow': to_json(flow),
-                       'steps': [s.id for s in steps]})
+    await context.info(text="project & flow & steps retrieved",
+                       data={
+                           'project': to_json(project), 'flow': to_json(flow),
+                           'steps': [s.id for s in steps]
+                       })
     return project, flow, steps
 
 
@@ -143,7 +143,7 @@ async def create_artifact(
             )
 
         paths: PathsBook = env.pathsBook
-        ctx.info(text='got files listing', data=[str(f) for f in files])
+        await ctx.info(text='got files listing', data=[str(f) for f in files])
         destination_folder = paths.artifact(project_name=project.name, flow_id=flow_id, step_id=step.id,
                                             artifact_id=artifact.id)
 
@@ -152,4 +152,4 @@ async def create_artifact(
             os.makedirs(os.path.dirname(destination_path), exist_ok=True)
             shutil.copy(src=f, dst=destination_path)
 
-        context.info(text="Zip file created", data={'path': str(destination_path)})
+        await context.info(text="Zip file created", data={'path': str(destination_path)})

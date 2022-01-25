@@ -26,7 +26,7 @@ class GetRawDispatch(AbstractDispatch):
         async with context.start(action="GetRawDispatch.apply") as ctx:
             resp = await call_next(request)
             if resp.status_code == 404:
-                ctx.info("Raw data can not be locally retrieved, proceed to remote platform")
+                await ctx.info("Raw data can not be locally retrieved, proceed to remote platform")
                 headers = {"Authorization": request.headers.get("authorization")}
                 resp = await redirect_api_remote(request)
                 thread = await ctx.get('download_thread', AssetDownloadThread)

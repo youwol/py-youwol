@@ -139,13 +139,13 @@ class Context(NamedTuple):
             # When middleware are calling 'next' this seems the only way to pass information
             # see https://github.com/tiangolo/fastapi/issues/1529
             self.request.state.context = ctx
-            ctx.info(text=action, labels=[Label.STARTED, *ctx.with_labels])
+            await ctx.info(text=action, labels=[Label.STARTED])
             start = time.time()
             await execute_block(on_enter)
             await yield_(ctx)
         except Exception as e:
             tb = traceback.format_exc()
-            ctx.error(
+            await ctx.error(
                 text=f"Exception raised",
                 data={
                     'error': e.__str__(),
@@ -160,7 +160,7 @@ class Context(NamedTuple):
             self.request.state.context = self
             raise e
         else:
-            ctx.info(text=f"Done in {int(1000*(time.time() - start))} ms", labels=[Label.DONE])
+            await ctx.info(text=f"Done in {int(1000 * (time.time() - start))} ms", labels=[Label.DONE])
             self.request.state.context = self
             await execute_block(on_exit)
 
@@ -186,25 +186,25 @@ class Context(NamedTuple):
         )
         await self.logger.log(entry)
 
-    def send(self, data: BaseModel, labels: List[StringLike] = None):
+    async def send(self, data: BaseModel, labels: List[StringLike] = None):
         labels = labels or []
-        asyncio.create_task(
-            self.log(level=LogLevel.DATA, text="",
-                     labels=[data.__class__.__name__, *labels],
-                     data=data)
-        )
+        await self.log(level=LogLevel.DATA, text="", labels=[data.__class__.__name__, *labels], data=data)
 
-    def debug(self, text: str, labels: List[StringLike] = None, data: Union[JSON, BaseModel] = None):
-        asyncio.create_task(self.log(level=LogLevel.DEBUG, text=text, labels=labels, data=data))
+    async def debug(self, text: str, labels: List[StringLike] = None, data: Union[JSON, BaseModel] = None):
+        await self.log(level=LogLevel.DEBUG, text=text, labels=labels, data=data)
 
-    def info(self, text: str, labels: List[StringLike] = None, data: Union[JSON, BaseModel] = None):
-        asyncio.create_task(self.log(level=LogLevel.INFO, text=text, labels=labels, data=data))
+    async def info(self, text: str, labels: List[StringLike] = None, data: Union[JSON, BaseModel] = None):
+        await self.log(level=LogLevel.INFO, text=text, labels=labels, data=data)
 
-    def warning(self, text: str, labels: List[StringLike] = None, data: Union[JSON, BaseModel] = None):
-        asyncio.create_task(self.log(level=LogLevel.WARNING, text=text, labels=labels, data=data))
+    async def warning(self, text: str, labels: List[StringLike] = None, data: Union[JSON, BaseModel] = None):
+        await self.log(level=LogLevel.WARNING, text=text, labels=labels, data=data)
 
-    def error(self, text: str, labels: List[StringLike] = None, data: Union[JSON, BaseModel] = None):
-        asyncio.create_task(self.log(level=LogLevel.ERROR, text=text, labels=labels, data=data))
+    async def error(self, text: str, labels: List[StringLike] = None, data: Union[JSON, BaseModel] = None):
+        await self.log(level=LogLevel.ERROR, text=text, labels=labels, data=data)
+
+    async def failed(self, text: str, labels: List[StringLike] = None, data: Union[JSON, BaseModel] = None):
+        labels = labels or []
+        await self.log(level=LogLevel.ERROR, text=text, labels=[Label.FAILED, *labels], data=data)
 
     async def get(self, att_name: str, object_type: T) -> T():
         result = self.with_data[att_name]

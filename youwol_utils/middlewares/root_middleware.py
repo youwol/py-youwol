@@ -51,7 +51,7 @@ class RootMiddleware(BaseHTTPMiddleware):
                 with_attributes=info.attributes,
                 with_labels=[Label.API_GATEWAY, *info.labels]
         ) as ctx:
-            ctx.info(
+            await ctx.info(
                 text='incoming request',
                 data={
                     'url': request.url.path,

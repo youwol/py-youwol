@@ -59,9 +59,9 @@ async def check_update(
             remote_package = await remote_gtw_client.cdn_get_versions(package_id=package_id, headers=headers)
         except HTTPException as e:
             if e.status_code == 404:
-                ctx.info(text=f"{local_package.library_name} does not exist in remote")
+                await ctx.info(text=f"{local_package.library_name} does not exist in remote")
             raise e
-        ctx.info(text=f"Retrieved remote info", data={'remote_package': remote_package})
+        await ctx.info(text=f"Retrieved remote info", data={'remote_package': remote_package})
 
         latest = remote_package['releases'][0]
         status = UpdateStatus.mismatch
@@ -72,7 +72,7 @@ async def check_update(
         elif latest['version_number'] < local_package.version_number:
             status = UpdateStatus.localAhead
 
-        ctx.info(text=f"Status: {str(status)}")
+        await ctx.info(text=f"Status: {str(status)}")
         response = CheckUpdateResponse(
             status=status,
             packageName=local_package.library_name,
@@ -80,7 +80,7 @@ async def check_update(
                                                 fingerprint=local_package.fingerprint),
             remoteVersionInfo=PackageVersionInfo(version=latest['version'], fingerprint=latest['fingerprint'])
         )
-        ctx.send(response)
+        await ctx.send(response)
         return response
 
 
@@ -133,7 +133,7 @@ async def download_package(
         default_drive = await env.get_default_drive(context=ctx)
         asset_id = encode_id(encode_id(package_name))
 
-        ctx.info(text=f"asset_id: {asset_id} queued for download")
+        await ctx.info(text=f"asset_id: {asset_id} queued for download")
 
         await create_asset_local(
             asset_id=asset_id,
@@ -151,4 +151,4 @@ async def download_package(
             version=version,
             fingerprint=record[0]['fingerprint']
         )
-        ctx.send(response)
+        await ctx.send(response)

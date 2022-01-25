@@ -54,22 +54,22 @@ async def connect_to_remote(config: YouwolEnvironment, context: Context) -> bool
         await client.healthz()
         return True
     except HTTPException as e:
-        context.info(
+        await context.info(
             text="Authorization: HTTP Error",
             data={'host': remote_gateway_info.host, 'error': str(e)})
         return False
     except ClientConnectorError as e:
-        context.info(
+        await context.info(
             text="Authorization: Connection error (internet on?)",
             data={'host': remote_gateway_info.host, 'error': str(e)})
         return False
     except RuntimeError as e:
-        context.info(
+        await context.info(
             text="Authorization error",
             data={'host': remote_gateway_info.host, 'error': str(e)})
         return False
     except ContentTypeError as e:
-        context.info(
+        await context.info(
             text="Failed to call healthz on assets-gateway",
             data={'host': remote_gateway_info.host, 'error': str(e)})
         return False
@@ -158,8 +158,8 @@ async def status(
             remoteGatewayInfo=remote_gateway_info,
             remotesInfo=list(remotes_info)
         )
-        ctx.send(response)
-        ctx.send(ProjectsLoadingResults(results=await ProjectLoader.get_results(config, ctx)))
+        await ctx.send(response)
+        await ctx.send(ProjectsLoadingResults(results=await ProjectLoader.get_results(config, ctx)))
         return response
 
 
@@ -211,7 +211,7 @@ async def sync_user(
         except Exception:
             raise RuntimeError(f"Can not authorize from email/pwd @ {config.get_remote_info().host}")
 
-        ctx.info(text="Login successful")
+        await ctx.info(text="Login successful")
 
         secrets = parse_json(config.pathsBook.secrets)
         if body.email in secrets:
@@ -290,7 +290,7 @@ async def select_remote(
                           data={"tree_item": tree_item, "error_detail": e.detail})
             raise e
 
-        ctx.info(
+        await ctx.info(
             text="Data retrieved",
             data={"path_item": path_item, "raw data": local_data}
         )
@@ -301,14 +301,14 @@ async def select_remote(
         try:
             _asset = await assets_gtw_client.get_asset_metadata(asset_id=asset_id)
             _tree_item = await assets_gtw_client.get_tree_item(tree_item['itemId'])
-            ctx.info(
+            await ctx.info(
                 text="Asset already found in deployed environment"
             )
             await factory.update_raw(data=local_data, folder_id=tree_item['folderId'])
         except HTTPException as e:
             if e.status_code != 404:
                 raise e
-            ctx.info(
+            await ctx.info(
                 labels=[Label.RUNNING],
                 text="Project not already found => start creation"
             )

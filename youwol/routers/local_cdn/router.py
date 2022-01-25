@@ -31,8 +31,8 @@ async def collect_updates(
 
         env = await ctx.get('env', YouwolEnvironment)
         local_packages_latest = get_latest_local_cdn_version(env)
-        ctx.info(text="local latest version of cdn packages retrieved",
-                 data={'packages': {f"{p.library_name}#{p.version}": p for p in local_packages_latest}})
+        await ctx.info(text="local latest version of cdn packages retrieved",
+                       data={'packages': {f"{p.library_name}#{p.version}": p for p in local_packages_latest}})
         for package in local_packages_latest:
             queue.put_nowait(package)
         updates: List[CheckUpdateResponse] = []
@@ -43,7 +43,7 @@ async def collect_updates(
         response = CheckUpdatesResponse(
             updates=updates
         )
-        ctx.send(response)
+        await ctx.send(response)
         return response
 
 
@@ -62,7 +62,7 @@ async def download(
             with_attributes={'topic': 'updatesCdn'},
             logger=UserContextLogger()
     ) as ctx:
-        ctx.info(text=f"Proceed to {len(body.packages)} packages download", data=body)
+        await ctx.info(text=f"Proceed to {len(body.packages)} packages download", data=body)
         for package in body.packages:
             queue.put_nowait(package)
 

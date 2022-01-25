@@ -35,7 +35,8 @@ class DynamicRoutingMiddleware(BaseHTTPMiddleware):
                 match = await dispatch.apply(request, call_next, ctx)
                 if match:
                     return match
-            ctx.warning(text="No dynamic dispatch match")
+            await ctx.info(text="No dynamic dispatch match")
 
-            ctx.info(text="Request proceed to normal destination", data={"url": request.url.path})
+            await ctx.info(text="Request proceed to normal destination", data={"url": request.url.path})
+
             return await call_next(request)

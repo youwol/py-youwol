@@ -190,7 +190,7 @@ def assert_python():
 async def execute_shell_cmd(cmd: str, context: Context, log_outputs=True):
 
     async with context.start(action="execute shell command", with_labels=["BASH"]) as ctx:
-        ctx.info(text=cmd)
+        await ctx.info(text=cmd)
         p = await asyncio.create_subprocess_shell(
             cmd=cmd,
             stdout=asyncio.subprocess.PIPE,

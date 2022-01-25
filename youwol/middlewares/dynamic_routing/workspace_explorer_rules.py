@@ -117,10 +117,10 @@ class GetPermissionsDispatch(AbstractDispatch):
                 return_exceptions=True
                 )
             if isinstance(local_resp, Exception):
-                ctx.info("Asset not found in local store, return remote data")
+                await ctx.info("Asset not found in local store, return remote data")
                 return JSONResponse(remote_resp)
 
-            ctx.info("Asset found in local store, return local data")
+            await ctx.info("Asset found in local store, return local data")
             return JSONResponse(local_resp)
 
 
@@ -153,8 +153,8 @@ class GetItemDispatch(AbstractDispatch):
                 return_exceptions=True
                 )
             if isinstance(local_resp, Exception):
-                ctx.info("Asset not found in local store, return remote data")
+                await ctx.info("Asset not found in local store, return remote data")
                 return JSONResponse(remote_resp)
 
-            ctx.info("Asset found in local store, return local data")
+            await ctx.info("Asset found in local store, return local data")
             return JSONResponse(local_resp)

@@ -123,8 +123,8 @@ class YouwolEnvironment(BaseModel):
         deadline = datetime.timestamp(datetime.now()) + 1 * 60 * 60 * 1000
         self.tokensCache.append(DeadlinedCache(value=access_token, deadline=deadline, dependencies=dependencies))
 
-        context.info(text="Access token renewed",
-                     data={"host": remote.host, "access_token": access_token})
+        await context.info(text="Access token renewed",
+                           data={"host": remote.host, "access_token": access_token})
         return access_token
 
     async def get_default_drive(self, context: Context) -> DefaultDriveResponse:
@@ -242,7 +242,7 @@ class YouwolEnvironmentFactory:
         on_load_cb = config.events.onLoad(config, context)
         data = await on_load_cb if isinstance(on_load_cb, Awaitable) else on_load_cb
 
-        context.info(text="Applied onLoad event's callback", data=data)
+        await context.info(text="Applied onLoad event's callback", data=data)
 
 
 async def yw_config() -> YouwolEnvironment:

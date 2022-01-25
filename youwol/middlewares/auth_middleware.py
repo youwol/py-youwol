@@ -31,7 +31,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         ) as ctx:
             if not request.headers.get('authorization'):
 
-                ctx.info(text="No authorisation token found")
+                await ctx.info(text="No authorisation token found")
                 auth_token = await config.get_auth_token(context=ctx)
                 # A bit ugly, not very safe ... coming from:
                 # How to set request headers before path operation is executed
@@ -40,12 +40,11 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 request.headers.__dict__["_list"].append(auth_header)
 
             if await self.authenticate(config.userEmail, request):
-                ctx.info(text="User info retrieved", data=request.state.user_info)
-                response = await call_next(request)
+                await ctx.info(text="User info retrieved", data=request.state.user_info)
+                return await call_next(request)
             else:
                 ctx.error(text="Unauthorized")
-                response = Response(content="Unauthorized", status_code=403)
-            return response
+                return Response(content="Unauthorized", status_code=403)
 
     async def authenticate(self, user_name: str, request: Request) -> bool:
 
