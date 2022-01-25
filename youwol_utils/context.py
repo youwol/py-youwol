@@ -161,7 +161,8 @@ class Context(NamedTuple):
                 text=f"Exception raised",
                 data={
                     'error': e.__str__(),
-                    'traceback': tb.split('\n')
+                    'traceback': tb.split('\n'),
+                    'args': [str(arg) for arg in e.args]
                 },
                 labels=[Label.EXCEPTION, Label.FAILED]
             )
