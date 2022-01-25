@@ -1,5 +1,8 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends
 from starlette.requests import Request
+from youwol_utils.context import Context
 
 from .configurations import get_configuration
 from youwol_utils import (
@@ -63,20 +66,37 @@ async def healthz():
             )
 async def get_user_info(request: Request):
 
-    user = user_info(request)
-    groups = get_all_individual_groups(user["memberof"])
-    groups = [Group(id=private_group_id(user), path="private")] + \
-             [Group(id=str(to_group_id(g)), path=g) for g in groups if g]
+    response = Optional[User]
+    async with Context.start_ep(
+            request=request,
+            response=lambda: response,
+            action='get user info'
+    ) as _ctx:
 
-    return User(name=user['preferred_username'], groups=groups)
+        user = user_info(request)
+        groups = get_all_individual_groups(user["memberof"])
+        groups = [Group(id=private_group_id(user), path="private")] + \
+                 [Group(id=str(to_group_id(g)), path=g) for g in groups if g]
+
+        response = User(name=user['preferred_username'], groups=groups)
+        return response
 
 
 @router.get("/groups",
             response_model=GroupsResponse,
             summary="list subscribed groups")
 async def get_groups(request: Request):
-    user = user_info(request)
-    groups = get_all_individual_groups(user["memberof"])
-    groups = [Group(id=private_group_id(user), path="private")] + [Group(id=str(to_group_id(g)), path=g)
-                                                                   for g in groups if g]
-    return GroupsResponse(groups=groups)
+
+    response = Optional[GroupsResponse]
+    async with Context.start_ep(
+            request=request,
+            response=lambda: response,
+            action='get user groups'
+    ) as _ctx:
+
+        user = user_info(request)
+        groups = get_all_individual_groups(user["memberof"])
+        groups = [Group(id=private_group_id(user), path="private")] + [Group(id=str(to_group_id(g)), path=g)
+                                                                       for g in groups if g]
+        response = GroupsResponse(groups=groups)
+        return response

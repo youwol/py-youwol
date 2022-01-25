@@ -1,4 +1,4 @@
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Optional
 
 from fastapi import APIRouter, Depends
 
@@ -6,12 +6,13 @@ from pydantic import BaseModel
 
 from starlette.requests import Request
 from starlette.responses import Response, JSONResponse
+from youwol_utils.context import Context
 
 from ..configurations import Configuration, get_configuration
 
 from ..utils import raw_id_to_asset_id
 
-from youwol_utils import (generate_headers_downstream, HTTPException)
+from youwol_utils import (HTTPException)
 
 router = APIRouter()
 
@@ -40,18 +41,21 @@ class LoadingGraphBody(BaseModel):
 
 async def ensure_permission(
         permission: str,
-        request: Request,
         library_name: str,
-        configuration: Configuration):
+        configuration: Configuration,
+        context: Context):
 
-    headers = generate_headers_downstream(request.headers)
-    asset_id = raw_id_to_asset_id(library_name)
-    asset_id = raw_id_to_asset_id(asset_id)
+    async with context.start(
+            action='ensure permission',
+            with_attributes={"library_name": library_name}
+    ) as ctx:
+        asset_id = raw_id_to_asset_id(library_name)
+        asset_id = raw_id_to_asset_id(asset_id)
 
-    assets_db = configuration.assets_client
-    permissions = await assets_db.get_permissions(asset_id=asset_id, headers=headers)
-    if not permissions[permission]:
-        raise HTTPException(status_code=401, detail=f"Unauthorized to access {library_name}")
+        assets_db = configuration.assets_client
+        permissions = await assets_db.get_permissions(asset_id=asset_id, headers=ctx.headers())
+        if not permissions[permission]:
+            raise HTTPException(status_code=401, detail=f"Unauthorized to access {library_name}")
 
 
 @router.post("/queries/loading-graph",
@@ -62,9 +66,15 @@ async def resolve_loading_tree(
         body: LoadingGraphBody,
         configuration: Configuration = Depends(get_configuration)
         ):
-    headers = generate_headers_downstream(request.headers)
-    resp = await configuration.cdn_client.query_loading_graph(body=body.dict(), headers=headers)
-    return resp
+    response = Optional[LoadingGraphResponseV1]
+    async with Context.start_ep(
+            action='resolve loading tree',
+            request=request,
+            body=body,
+            response=lambda: response
+    ) as ctx:
+        response = await configuration.cdn_client.query_loading_graph(body=body.dict(), headers=ctx.headers())
+        return response
 
 
 async def delete_version_generic(
@@ -73,11 +83,16 @@ async def delete_version_generic(
         version: str,
         configuration: Configuration):
 
-    headers = generate_headers_downstream(request.headers)
-    await ensure_permission('write', request, library_name, configuration)
-
-    cdn_client = configuration.cdn_client
-    return await cdn_client.delete_version(library_name=library_name, version=version, headers=headers)
+    response = Optional[LoadingGraphResponseV1]
+    async with Context.start_ep(
+            action='delete package version',
+            request=request,
+            response=lambda: response,
+            with_attributes={"libraryName": library_name, version: 'version'}
+    ) as ctx:
+        await ensure_permission(permission='write', library_name=library_name, configuration=configuration, context=ctx)
+        cdn_client = configuration.cdn_client
+        return await cdn_client.delete_version(library_name=library_name, version=version, headers=ctx.headers())
 
 
 @router.delete("/libraries/{namespace}/{library_name}/{version}", summary="delete a specific version")
@@ -110,15 +125,22 @@ async def get_package_generic(
         metadata: bool,
         configuration: Configuration):
 
-    headers = generate_headers_downstream(request.headers)
-    await ensure_permission('read', request, library_name, configuration)
+    response = Optional[LoadingGraphResponseV1]
+    async with Context.start_ep(
+            action=f'get package ({"metadata" if metadata else "raw content"})',
+            request=request,
+            response=lambda: response,
+            with_attributes={"libraryName": library_name, version: 'version'}
+    ) as ctx:
 
-    cdn_client = configuration.cdn_client
-    resp = await cdn_client.get_package(library_name=library_name, version=version, metadata=metadata,
-                                        headers=headers)
-    return JSONResponse(resp) \
-        if metadata \
-        else Response(resp, media_type='multipart/form-data')
+        await ensure_permission(permission='read', library_name=library_name, configuration=configuration, context=ctx)
+
+        cdn_client = configuration.cdn_client
+        resp = await cdn_client.get_package(library_name=library_name, version=version, metadata=metadata,
+                                            headers=ctx.headers())
+        return JSONResponse(resp) \
+            if metadata \
+            else Response(resp, media_type='multipart/form-data')
 
 
 @router.get("/libraries/{namespace}/{library_name}/{version}", summary="delete a specific version")

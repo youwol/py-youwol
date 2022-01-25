@@ -1,12 +1,12 @@
 import asyncio
 import json
-import time
 from datetime import datetime
+from typing import Optional
 
 from fastapi import APIRouter, UploadFile, File, HTTPException, Query, Depends
 
 from starlette.requests import Request
-from starlette.responses import JSONResponse
+from youwol_utils.context import Context
 
 from ..configurations import Configuration, get_configuration
 from youwol_utils import (
@@ -15,12 +15,12 @@ from youwol_utils import (
 
 from ..models import (
     AssetResponse, AssetsResponse, ImportAssetsBody, NewAssetResponse, QueryFlatBody, OwnerInfo, ExposingGroup,
-    ConsumerInfo, AccessInfo, OwningGroup,  UpdateAssetBody, QueryTreeBody, ItemsResponse
-    )
+    ConsumerInfo, AccessInfo, OwningGroup, UpdateAssetBody, QueryTreeBody, ItemsResponse, PermissionsResponse
+)
 
 from ..raw_stores.interface import AssetMeta
 from ..utils import (
-    to_item_resp, to_asset_meta, to_asset_resp, get_items_rec, get_items, chrono, format_policy,
+    to_item_resp, to_asset_meta, to_asset_resp, get_items_rec, get_items, format_policy,
     raw_id_to_asset_id,
     )
 
@@ -132,14 +132,21 @@ async def get(
         asset_id: str,
         configuration: Configuration = Depends(get_configuration)):
 
-    headers = generate_headers_downstream(request.headers)
-    assets_client = configuration.assets_client
-    asset, permissions = await asyncio.gather(
-        assets_client.get(asset_id=asset_id, headers=headers),
-        assets_client.get_permissions(asset_id=asset_id, headers=headers)
-        )
-    resp = to_asset_resp(asset=asset, permissions=permissions)
-    return resp
+    response = Optional[AssetResponse]
+    async with Context.start_ep(
+            request=request,
+            response=lambda: response,
+            action='get asset'
+    ) as ctx:
+
+        headers = ctx.headers()
+        assets_client = configuration.assets_client
+        asset, permissions = await asyncio.gather(
+            assets_client.get(asset_id=asset_id, headers=headers),
+            assets_client.get_permissions(asset_id=asset_id, headers=headers)
+            )
+        response = to_asset_resp(asset=asset, permissions=permissions)
+        return response
 
 
 @router.put("/{kind}/location/{folder_id}",
@@ -179,68 +186,73 @@ async def put_asset_with_raw(
         group_id: str = Query(None, alias="group-id"),
         configuration: Configuration = Depends(get_configuration)):
 
-    headers = generate_headers_downstream(request.headers)
-    assets_stores = configuration.assets_stores()
-    now = time.time()
-    store = next(store for store in assets_stores if kind == store.path_name)
+    response = Optional[NewAssetResponse]
+    async with Context.start_ep(
+            request=request,
+            response=lambda: response,
+            action='create asset with raw data'
+    ) as ctx:
 
-    tree_db, assets_db = configuration.treedb_client, configuration.assets_client
+        assets_stores = configuration.assets_stores()
+        store = next(store for store in assets_stores if kind == store.path_name)
 
-    if not group_id:
-        try:
-            parent = await tree_db.get_folder(folder_id=folder_id, headers=headers)
-        except HTTPException:
-            parent = await tree_db.get_drive(drive_id=folder_id, headers=headers)
-        group_id = parent["groupId"]
+        tree_db, assets_db = configuration.treedb_client, configuration.assets_client
 
-    get_parent_time, now = chrono(now)
-    metadata = AssetMeta(name=f"new {kind}", description="", kind=kind, groupId=group_id, tags=[])
+        if not group_id:
+            async with ctx.start(action="Retrieve parent treedb item") as ctx_1:
+                try:
+                    parent = await tree_db.get_folder(folder_id=folder_id, headers=ctx_1.headers())
+                except HTTPException:
+                    parent = await tree_db.get_drive(drive_id=folder_id, headers=ctx_1.headers())
+                group_id = parent["groupId"]
+                await ctx_1.info(text="Parent treedb item found", data=parent)
 
-    raw_id, meta_new = await store.create_asset(request=request, metadata=metadata, rest_of_path=rest_of_path,
-                                                headers=headers)
+        metadata = AssetMeta(name=f"new {kind}", description="", kind=kind, groupId=group_id, tags=[])
 
-    create_raw, now = chrono(now)
-    asset_id = raw_id_to_asset_id(raw_id)
-    body_asset = {
-        "assetId": asset_id,
-        "relatedId": raw_id,
-        "kind": kind,
-        "name": metadata.name if not meta_new.name else meta_new.name,
-        "description": metadata.description if not meta_new.description else meta_new.description,
-        "groupId": group_id,
-        "tags": []
-        }
-    asset = await assets_db.create_asset(body=body_asset, headers=headers)
+        async with ctx.start(action="Create raw part of the asset") as ctx_1:
+            raw_id, meta_new = await store.create_asset(request=request, metadata=metadata, rest_of_path=rest_of_path,
+                                                        headers=ctx_1.headers())
 
-    create_asset_time, now = chrono(now)
+        asset_id = raw_id_to_asset_id(raw_id)
+        body_asset = {
+            "assetId": asset_id,
+            "relatedId": raw_id,
+            "kind": kind,
+            "name": metadata.name if not meta_new.name else meta_new.name,
+            "description": metadata.description if not meta_new.description else meta_new.description,
+            "groupId": group_id,
+            "tags": []
+            }
 
-    asset_id = asset['assetId']
+        async with ctx.start(action="Register new asset in assets_db") as ctx_1:
+            asset = await assets_db.create_asset(body=body_asset, headers=ctx_1.headers())
+            images_coroutines = [
+                assets_db.post_image(asset_id=asset_id, filename=image.name, src=image.content, headers=ctx_1.headers())
+                for image in meta_new.images
+            ] if meta_new.images else []
+            await asyncio.gather(*images_coroutines)
 
-    body_tree = {"itemId": asset_id,
-                 "name": body_asset['name'],
-                 "type": kind,
-                 "relatedId": asset_id,
-                 "metadata": json.dumps({"assetId": asset_id, "relatedId": raw_id, "borrowed": False, })}
+        asset_id = asset['assetId']
 
-    images_coroutines = [
-        assets_db.post_image(asset_id=asset_id, filename=image.name, src=image.content, headers=headers)
-        for image in meta_new.images
-        ] if meta_new.images else []
+        body_tree = {"itemId": asset_id,
+                     "name": body_asset['name'],
+                     "type": kind,
+                     "relatedId": asset_id,
+                     "metadata": json.dumps({"assetId": asset_id, "relatedId": raw_id, "borrowed": False, })}
 
-    create_tree_time, now = chrono(now)
-    resp_tree, *_ = await asyncio.gather(tree_db.create_item(folder_id=folder_id, body=body_tree, headers=headers),
-                                         *images_coroutines)
-    push_images_time, now = chrono(now)
+        async with ctx.start(action="Register new asset in tree_db", with_attributes={"folder_id": folder_id}) as ctx_1:
+            resp_tree = await tree_db.create_item(folder_id=folder_id, body=body_tree, headers=ctx_1.headers())
+            await ctx_1.info(text="Treedb response", data=resp_tree)
 
-    asset = await assets_db.get(asset_id=asset_id, headers=headers)
-    get_asset_time, now = chrono(now)
-    timings = f"get_parent_time;dur={get_parent_time}, create_raw;dur={create_raw}," + \
-              f"create_asset_time;dur={create_asset_time},create_tree_time;dur={create_tree_time}," + \
-              f"push_images_time;dur={push_images_time},get_asset_time;dur={get_asset_time}"
-    content = NewAssetResponse(**{**to_asset_resp(asset).dict(), **{"treeId": resp_tree["itemId"]}})
-    return JSONResponse(
-        content=content.dict(),
-        headers={"Server-Timing": timings})
+        async with ctx.start(action="Get created asset", with_attributes={"asset_id": asset_id}) as ctx_1:
+            asset = await assets_db.get(asset_id=asset_id, headers=ctx_1.headers())
+            await ctx_1.info(text="Asset response", data=asset)
+
+        response = NewAssetResponse(**{
+            **to_asset_resp(asset, permissions=PermissionsResponse(read=True, write=True, share=True)).dict(),
+            **{"treeId": resp_tree["itemId"]}
+        })
+        return response
 
 
 @router.get("/location/{tree_id}",
@@ -251,13 +263,25 @@ async def get_asset_by_tree_id(
         tree_id: str,
         configuration: Configuration = Depends(get_configuration)):
 
-    headers = generate_headers_downstream(request.headers)
-    tree_db, assets_db = configuration.treedb_client, configuration.assets_client
-    tree_item = await tree_db.get_item(item_id=tree_id, headers=headers)
-    asset_id = tree_item['relatedId']
-    asset = await assets_db.get(asset_id=asset_id,  headers=headers)
+    response = Optional[AssetResponse]
+    async with Context.start_ep(
+            action='Get asset by tree id',
+            request=request,
+            response=lambda: response
+    ) as ctx:
 
-    return to_asset_resp(asset)
+        tree_db, assets_db = configuration.treedb_client, configuration.assets_client
+
+        async with ctx.start(action="Get treedb item") as ctx_1:
+            tree_item = await tree_db.get_item(item_id=tree_id, headers=ctx_1.headers())
+            await ctx_1.info(text="Treedb item", data=tree_item)
+        asset_id = tree_item['relatedId']
+
+        async with ctx.start(action="Get asset") as ctx_1:
+            asset = await assets_db.get(asset_id=asset_id,  headers=ctx_1.headers())
+
+        response = to_asset_resp(asset)
+        return response
 
 
 @router.post("/{asset_id}",
@@ -269,31 +293,39 @@ async def update_asset(
         body: UpdateAssetBody,
         configuration: Configuration = Depends(get_configuration)):
 
-    # The next line provide a way to re-use the body of the request latter on in a middleware if needed
-    request.state.body = body
+    response = Optional[AssetResponse]
+    async with Context.start_ep(
+            action='update asset',
+            request=request,
+            response=lambda: response,
+            with_attributes={"asset_id": asset_id}
+    ) as ctx:
+        # The next line provide a way to re-use the body of the request latter on in a middleware if needed
+        request.state.body = body
+        assets_client, treedb_client = configuration.assets_client, configuration.treedb_client
+        assets_stores = configuration.assets_stores()
+        async with ctx.start(action="get asset") as ctx_1:
+            asset = await assets_client.get(asset_id=asset_id, headers=ctx_1.headers())
 
-    headers = generate_headers_downstream(request.headers)
-    assets_client, treedb_client = configuration.assets_client, configuration.treedb_client
-    assets_stores = configuration.assets_stores()
+        store = next(store for store in assets_stores if store.path_name == asset['kind'])
 
-    asset = await assets_client.get(asset_id=asset_id, headers=headers)
-    store = next(store for store in assets_stores if store.path_name == asset['kind'])
+        async with ctx.start(action="get treedb items from related id") as ctx_1:
+            items_tree = await treedb_client.get_items_from_related_id(related_id=asset_id, headers=ctx_1.headers())
+            if not items_tree['items']:
+                raise HTTPException(status_code=404, detail="tree item not found")
 
-    items_tree = await treedb_client.get_items_from_related_id(related_id=asset_id, headers=headers)
-    if not items_tree['items']:
-        raise HTTPException(status_code=404, detail="tree item not found")
+        coroutines_tree = [treedb_client.update_item(item_id=item['itemId'], body={"name": body.name},
+                                                     headers=ctx.headers())
+                           for item in items_tree['items']]
 
-    coroutines_tree = [treedb_client.update_item(item_id=item['itemId'], body={"name": body.name}, headers=headers)
-                       for item in items_tree['items']]
-
-    body = {**asset, ** {k: v for k, v in body.dict().items() if v is not None}}
-    await asyncio.gather(
-        *coroutines_tree,
-        assets_client.update_asset(asset_id=asset_id, body=body, headers=headers),
-        store.sync_asset_metadata(request=request, raw_id=asset['relatedId'], metadata=to_asset_meta(body),
-                                  headers=headers)
-        )
-    return to_asset_resp(body)
+        body = {**asset, ** {k: v for k, v in body.dict().items() if v is not None}}
+        await asyncio.gather(
+            *coroutines_tree,
+            assets_client.update_asset(asset_id=asset_id, body=body, headers=ctx.headers()),
+            store.sync_asset_metadata(request=request, raw_id=asset['relatedId'], metadata=to_asset_meta(body),
+                                      headers=ctx.headers())
+            )
+        return to_asset_resp(body)
 
 
 @router.post("/{asset_id}/images/{filename}",
@@ -306,12 +338,19 @@ async def post_image(
         file: UploadFile = File(...),
         configuration: Configuration = Depends(get_configuration)):
 
-    headers = generate_headers_downstream(request.headers)
-    assets_client = configuration.assets_client
-    await assets_client.post_image(asset_id=asset_id, filename=filename, src=await file.read(), headers=headers)
-    asset = await assets_client.get(asset_id=asset_id, headers=headers)
-
-    return to_asset_resp(asset)
+    response = Optional[AssetResponse]
+    async with Context.start_ep(
+            action='post image of asset',
+            request=request,
+            response=lambda: response,
+            with_attributes={"asset_id": asset_id}
+    ) as ctx:
+        assets_client = configuration.assets_client
+        await assets_client.post_image(asset_id=asset_id, filename=filename, src=await file.read(),
+                                       headers=ctx.headers())
+        asset = await assets_client.get(asset_id=asset_id, headers=ctx.headers())
+        response = to_asset_resp(asset)
+        return response
 
 
 @router.delete("/{asset_id}/images/{filename}",
@@ -323,14 +362,19 @@ async def remove_image(
         filename: str,
         configuration: Configuration = Depends(get_configuration)):
 
-    headers = generate_headers_downstream(request.headers)
-    assets_client = configuration.assets_client
+    response = Optional[AssetResponse]
+    async with Context.start_ep(
+            action='remove image of asset',
+            request=request,
+            response=lambda: response,
+            with_attributes={"asset_id": asset_id, "filename": filename}
+    ) as ctx:
+        assets_client = configuration.assets_client
 
-    await assets_client.remove_image(asset_id=asset_id, filename=filename, headers=headers)
+        await assets_client.remove_image(asset_id=asset_id, filename=filename, headers=ctx.headers())
+        asset = await assets_client.get(asset_id=asset_id, headers=ctx.headers())
 
-    asset = await assets_client.get(asset_id=asset_id, headers=headers)
-
-    return to_asset_resp(asset)
+        return to_asset_resp(asset)
 
 
 @router.get("/{asset_id}/access",
@@ -342,31 +386,38 @@ async def access_info(
         configuration: Configuration = Depends(get_configuration)
         ):
 
-    headers = generate_headers_downstream(request.headers)
-    assets_client, treedb = configuration.assets_client, configuration.treedb_client
-    asset, permissions = await asyncio.gather(
-        assets_client.get(asset_id=asset_id, headers=headers),
-        assets_client.get_permissions(asset_id=asset_id, headers=headers)
-        )
-    owner_info = None
-    if is_authorized_write(request, asset['groupId']):
-        resp = await treedb.get_items_from_related_id(related_id=asset_id, headers=headers)
-        groups = list({item['groupId'] for item in resp['items'] if item['groupId'] != asset["groupId"]})
-        policies = await asyncio.gather(*[
-            assets_client.get_access_policy(asset_id=asset_id, group_id=group_id, headers=headers)
-            for group_id in groups + ["*"]
-            ])
-        exposing_groups = [ExposingGroup(name=to_group_scope(group), groupId=group, access=format_policy(policy))
-                           for group, policy in zip(groups, policies[0:-1])]
-        default_access = format_policy(policies[-1])
-        owner_info = OwnerInfo(exposingGroups=exposing_groups, defaultAccess=default_access)
+    response = Optional[AccessInfo]
+    async with Context.start_ep(
+            action='retrieve access info',
+            request=request,
+            response=lambda: response,
+            with_attributes={"asset_id": asset_id}
+    ) as ctx:
 
-    permissions = PermissionsResp(write=permissions['write'], read=permissions['read'], share=permissions["share"],
-                                  expiration=permissions['expiration'])
-    consumer_info = ConsumerInfo(permissions=permissions)
+        assets_client, treedb = configuration.assets_client, configuration.treedb_client
+        asset, permissions = await asyncio.gather(
+            assets_client.get(asset_id=asset_id, headers=ctx.headers()),
+            assets_client.get_permissions(asset_id=asset_id, headers=ctx.headers())
+            )
+        owner_info = None
+        if is_authorized_write(request, asset['groupId']):
+            resp = await treedb.get_items_from_related_id(related_id=asset_id, headers=ctx.headers())
+            groups = list({item['groupId'] for item in resp['items'] if item['groupId'] != asset["groupId"]})
+            policies = await asyncio.gather(*[
+                assets_client.get_access_policy(asset_id=asset_id, group_id=group_id, headers=ctx.headers())
+                for group_id in groups + ["*"]
+                ])
+            exposing_groups = [ExposingGroup(name=to_group_scope(group), groupId=group, access=format_policy(policy))
+                               for group, policy in zip(groups, policies[0:-1])]
+            default_access = format_policy(policies[-1])
+            owner_info = OwnerInfo(exposingGroups=exposing_groups, defaultAccess=default_access)
 
-    return AccessInfo(owningGroup=OwningGroup(name=to_group_scope(asset['groupId']), groupId=asset['groupId']),
-                      ownerInfo=owner_info, consumerInfo=consumer_info)
+        permissions = PermissionsResp(write=permissions['write'], read=permissions['read'], share=permissions["share"],
+                                      expiration=permissions['expiration'])
+        consumer_info = ConsumerInfo(permissions=permissions)
+        response = AccessInfo(owningGroup=OwningGroup(name=to_group_scope(asset['groupId']), groupId=asset['groupId']),
+                              ownerInfo=owner_info, consumerInfo=consumer_info)
+        return response
 
 
 @router.put("/{asset_id}/access/{group_id}",
@@ -380,11 +431,20 @@ async def put_access_policy(
         configuration: Configuration = Depends(get_configuration)
         ):
 
-    headers = generate_headers_downstream(request.headers)
-    assets_client = configuration.assets_client
-    await assets_client.put_access_policy(asset_id=asset_id, group_id=group_id, body=body.dict(), headers=headers)
-    policy = await assets_client.get_access_policy(asset_id=asset_id, group_id=group_id, headers=headers)
-    return ExposingGroup(name=to_group_scope(group_id), groupId=group_id, access=format_policy(policy))
+    response = Optional[ExposingGroup]
+    async with Context.start_ep(
+            action='create access policy',
+            request=request,
+            response=lambda: response,
+            with_attributes={"asset_id": asset_id}
+    ) as ctx:
+
+        assets_client = configuration.assets_client
+        await assets_client.put_access_policy(asset_id=asset_id, group_id=group_id, body=body.dict(),
+                                              headers=ctx.headers())
+        policy = await assets_client.get_access_policy(asset_id=asset_id, group_id=group_id, headers=ctx.headers())
+        response = ExposingGroup(name=to_group_scope(group_id), groupId=group_id, access=format_policy(policy))
+        return response
 
 
 @router.get("/{asset_id}/statistics",

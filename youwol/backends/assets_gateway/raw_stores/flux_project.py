@@ -33,7 +33,7 @@ class FluxProjectsStore(RawStore):
             return body['projectId'], AssetMeta(name=body["name"])
 
         resp = await self.client.create_project(body=body, headers=headers)
-        return resp['projectId'], AssetMeta()
+        return resp['projectId'], AssetMeta(name=body["name"], description=body["description"])
 
     async def sync_asset_metadata(self, request: Request, raw_id: str, metadata: AssetMeta, headers):
 
