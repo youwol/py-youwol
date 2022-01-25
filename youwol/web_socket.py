@@ -13,7 +13,6 @@ from youwol_utils.context import WsContextLogger, ContextLogger, LogEntry, Label
 @dataclass(frozen=False)
 class WebSocketsStore:
     userChannel: Union[WebSocket, None] = None
-    adminChannel: Union[WebSocket, None] = None
 
 
 def web_socket_cache():
@@ -85,4 +84,4 @@ class AdminContextLogger(ContextLogger):
 
 class UserContextLogger(WsContextLogger):
     def __init__(self):
-        super().__init__(lambda: [WebSocketsStore.adminChannel, WebSocketsStore.userChannel])
+        super().__init__(lambda: [WebSocketsStore.userChannel])

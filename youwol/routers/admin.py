@@ -1,4 +1,4 @@
-from fastapi import APIRouter, WebSocket
+from fastapi import APIRouter
 
 import youwol.routers.authorization as authorization
 import youwol.routers.custom_commands.router as custom_commands
@@ -7,18 +7,8 @@ import youwol.routers.local_cdn.router as local_cdn
 import youwol.routers.projects.router as projects
 import youwol.routers.system.router as system
 from youwol.environment.youwol_environment import api_configuration
-from youwol.utils.utils_low_level import start_web_socket
-from youwol.web_socket import WebSocketsStore
 
 router = APIRouter()
-
-
-@router.websocket(api_configuration.base_path + "/ws")
-async def ws_endpoint(ws: WebSocket):
-    await ws.accept()
-    WebSocketsStore.adminChannel = ws
-    await start_web_socket(ws)
-
 
 router.include_router(system.router, prefix=api_configuration.base_path + "/system",
                       tags=["system"])
