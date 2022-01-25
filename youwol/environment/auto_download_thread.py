@@ -1,8 +1,5 @@
 import asyncio
-import pprint
-import time
 import uuid
-from itertools import groupby
 from threading import Thread
 from typing import Dict, Any, Set
 
@@ -10,37 +7,10 @@ from youwol.environment.clients import RemoteClients
 from youwol_utils import YouWolException, encode_id, decode_id
 
 
-class DownloadLogger:
-
-    messages = []
-
-    async def info(self, process_id: str, title: str, **kwargs):
-        self.messages.append({**{'title': title, 'time': time.time(), 'process_id': process_id, 'level': 'info'},
-                              **kwargs})
-
-    async def error(self, process_id: str, title: str, **kwargs):
-        self.messages.append({**{'title': title, 'time': time.time(), 'process_id': process_id, 'level': 'error'},
-                              **kwargs})
-
-    def dumps(self):
-        print("##### Dump logger")
-        messages = sorted(self.messages, key=lambda _: _['time'])
-        messages = sorted(messages, key=lambda _: _['process_id'])
-
-        for k, g in groupby(messages, lambda _: _['process_id']):
-            print("=> Process", k)
-            for m in g:
-                pprint.pprint(m)
-
-        print("##### Done dump logger")
-        self.messages = []
-
-
 async def process_download_asset(
         queue: asyncio.Queue,
         factories: Dict[str, Any],
-        downloaded_ids: Set[str],
-        logger: DownloadLogger
+        downloaded_ids: Set[str]
         ):
     while True:
         url, context, headers = await queue.get()
@@ -48,28 +18,30 @@ async def process_download_asset(
         raw_id = url.split('/api/assets-gateway/raw/')[1].split('/')[1]
         asset_id = encode_id(raw_id)
         remote_gtw_client = await RemoteClients.get_assets_gateway_client(context=context)
+
         try:
             asset = await remote_gtw_client.get_asset_metadata(asset_id=asset_id, headers=headers)
             raw_id = decode_id(asset_id)
             process_id = str(uuid.uuid4())
-            await logger.info(process_id=process_id,
-                              title=f"Lookup for eventual download of asset {asset['kind']} of id {raw_id}",
-                              url=url, raw_id=raw_id)
 
             task = factories[asset['kind']](
                 process_id=process_id, raw_id=raw_id, asset_id=asset_id, url=url, context=context
-                )
+            )
             download_id = task.download_id()
-            if download_id not in downloaded_ids and not await task.is_local_up_to_date():
+            up_to_date = await task.is_local_up_to_date()
+            if up_to_date:
+                await context.info(text="Asset up to date")
+
+            if download_id in downloaded_ids:
+                await context.info(text="Asset already in download queue")
+
+            if download_id not in downloaded_ids and not up_to_date:
                 downloaded_ids.add(download_id)
                 await task.create_local_asset()
-
         except YouWolException as e:
             print(e)
+
         queue.task_done()
-        print("remaining asset to download in the queue:", queue.qsize())
-        if queue.qsize() == 0:
-            logger.dumps()
 
 
 class AssetDownloadThread(Thread):
@@ -77,7 +49,6 @@ class AssetDownloadThread(Thread):
     event_loop = asyncio.new_event_loop()
     download_queue = asyncio.Queue(loop=event_loop)
     downloaded_ids = set()
-    logger = DownloadLogger()
 
     def __init__(self, factories, worker_count: int):
 
@@ -96,8 +67,7 @@ class AssetDownloadThread(Thread):
             coroutine = process_download_asset(
                 queue=self.download_queue,
                 downloaded_ids=self.downloaded_ids,
-                factories=self.factories,
-                logger=self.logger
+                factories=self.factories
                 )
             task = self.event_loop.create_task(coroutine)
             tasks.append(task)
