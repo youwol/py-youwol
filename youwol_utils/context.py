@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import time
 import traceback
 import uuid
@@ -28,6 +29,8 @@ class Label(Enum):
     STARTED = "STARTED"
     STATUS = "STATUS"
     INFO = "INFO"
+    LOG = "LOG"
+    APPLICATION = "APPLICATION"
     LOG_INFO = "LOG_INFO"
     LOG_DEBUG = "LOG_DEBUG"
     LOG_ERROR = "LOG_ERROR"
@@ -36,6 +39,7 @@ class Label(Enum):
     DATA = "DATA"
     DONE = "DONE"
     EXCEPTION = "EXCEPTION"
+    FAILED = "FAILED"
     MIDDLEWARE = "MIDDLEWARE"
     API_GATEWAY = "API_GATEWAY"
     ADMIN = "ADMIN"
@@ -160,7 +164,7 @@ class Context(NamedTuple):
                     'traceback': tb.split('\n'),
                     'args': [arg.__str__() for arg in e.args]
                 },
-                labels=[Label.EXCEPTION]
+                labels=[Label.EXCEPTION, Label.FAILED]
             )
             await execute_block(on_exception, e)
             await execute_block(on_exit)
@@ -204,7 +208,7 @@ class Context(NamedTuple):
             LogLevel.ERROR: Label.LOG_ERROR
         }[level]
         labels = labels or []
-        labels = [str(label) for label in [label_level, *labels]]
+        labels = [str(label) for label in [*self.with_labels, label_level, *labels]]
         entry = LogEntry(
             level=level,
             text=text,
