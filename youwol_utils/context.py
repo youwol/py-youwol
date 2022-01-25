@@ -83,8 +83,16 @@ class WsContextLogger(ContextLogger):
         websockets = self.websockets_getter()
 
         async def dispatch():
-            return asyncio.gather(*[ws.send_json(message) for ws in websockets if ws])
-        asyncio.create_task(dispatch())
+            try:
+                text = json.dumps(message)
+                exceptions = await asyncio.gather(*[ws.send_text(text) for ws in websockets if ws],
+                                                  return_exceptions=True)
+                if any([isinstance(e, Exception) for e in exceptions]):
+                    print("Error in ws.send")
+            except (TypeError, OverflowError):
+                print("Error in JSON serialization")
+
+        await dispatch()
 
 
 StringLike = Any
