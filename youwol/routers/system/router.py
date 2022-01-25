@@ -1,10 +1,14 @@
 import os
 from pathlib import Path
-from typing import List
+from typing import List, cast, Optional
 
 from fastapi import APIRouter
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
+from starlette.requests import Request
+
+from youwol.web_socket import AdminContextLogger, Log
+from youwol_utils.context import Context
 
 router = APIRouter()
 
@@ -37,9 +41,71 @@ async def folder_content(
         return FolderContentResp(
             files=[],
             folders=[]
-            )
+        )
     items = os.listdir(path)
     return FolderContentResp(
         files=[item for item in items if os.path.isfile(path / item)],
         folders=[item for item in items if os.path.isdir(path / item)]
-        )
+    )
+
+
+class QueryRootLogsBody(BaseModel):
+    fromTimestamp: int
+    maxCount: int
+
+
+class LeafLogResponse(Log):
+    pass
+
+
+class NodeLogResponse(Log):
+    failed: bool
+
+
+class LogsResponse(BaseModel):
+    logs: List[Log]
+
+
+@router.post("/logs", summary="return the logs")
+async def query_logs(
+        request: Request,
+        body: QueryRootLogsBody
+) -> LogsResponse:
+    response: Optional[LogsResponse]
+    async with Context.start_ep(
+            action="query logs",
+            body=body,
+            response=lambda: response,
+            request=request
+    ) as ctx:
+        logger = cast(AdminContextLogger, ctx.logger)
+        logs = []
+        for log in reversed(logger.root_node_logs):
+            if log.timestamp > body.fromTimestamp * 1000:
+                pass
+            failed = log.contextId in logger.errors
+            logs.append(NodeLogResponse(**log.dict(), failed=failed))
+            if len(logs) > body.maxCount:
+                break
+        response = LogsResponse(logs=logs)
+        return response
+
+
+@router.get("/logs/{parent_id}",
+            summary="return the logs")
+async def get_logs(request: Request, parent_id: str):
+    async with Context.start_ep(
+            action="get logs",
+            request=request
+    ) as ctx:
+        logger = cast(AdminContextLogger, ctx.logger)
+        nodes_logs, leaf_logs, errors = logger.node_logs, logger.leaf_logs, ctx.logger.errors
+
+        nodes: List[Log] = [NodeLogResponse(**log.dict(), failed=log.contextId in errors)
+                            for log in nodes_logs
+                            if log.parentContextId == parent_id]
+        leafs: List[Log] = [LeafLogResponse(**log.dict())
+                            for log in leaf_logs
+                            if log.contextId == parent_id]
+
+        return LogsResponse(logs=sorted(nodes + leafs, key=lambda n: n.timestamp))
