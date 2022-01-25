@@ -23,12 +23,14 @@ class DownloadPackageTask(DownloadTask):
     async def is_local_up_to_date(self):
         env = await self.context.get('env', YouwolEnvironment)
         local_cdn: CdnClient = LocalClients.get_cdn_client(env=env)
+        headers = self.context.headers()
         try:
             await local_cdn.get_package(
                 library_name=self.package_name,
                 version=self.version,
-                metadata=True
-                )
+                metadata=True,
+                headers=headers
+            )
             return True
         except HTTPException as e:
             if e.status_code == 404:
@@ -40,11 +42,15 @@ class DownloadPackageTask(DownloadTask):
         env = await self.context.get('env', YouwolEnvironment)
         remote_gtw = await RemoteClients.get_assets_gateway_client(context=self.context)
         default_drive = await env.get_default_drive(context=self.context)
+        headers = self.context.headers()
         await create_asset_local(
             asset_id=self.asset_id,
             kind='package',
             default_owning_folder_id=default_drive.systemPackagesFolderId,
-            get_raw_data=lambda: remote_gtw.cdn_get_package(library_name=self.package_name, version=self.version),
+            get_raw_data=lambda: remote_gtw.cdn_get_package(
+                library_name=self.package_name,
+                version=self.version,
+                headers=headers),
             to_post_raw_data=lambda pack: {'file': pack},
             context=self.context
-            )
+        )

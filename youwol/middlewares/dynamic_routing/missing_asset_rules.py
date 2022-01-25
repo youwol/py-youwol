@@ -28,11 +28,11 @@ class GetRawDispatch(AbstractDispatch):
             if resp.status_code == 404:
                 await ctx.info("Raw data can not be locally retrieved, proceed to remote platform")
                 headers = {"Authorization": request.headers.get("authorization")}
-                resp = await redirect_api_remote(request)
+                resp = await redirect_api_remote(request, ctx)
                 thread = await ctx.get('download_thread', AssetDownloadThread)
 
-                ctx.info("Enqueue asset for download in local store")
-                thread.enqueue_asset(url=request.url.path, context=ctx, headers=headers)
+                async with ctx.start(action="Enqueue asset for download in local store") as ctx_1:
+                    thread.enqueue_asset(url=request.url.path, context=ctx_1, headers=headers)
                 return resp
             return resp
 
@@ -51,8 +51,8 @@ class GetMetadataDispatch(AbstractDispatch):
         async with context.start(action="GetMetadataDispatch.apply") as ctx:
             resp = await call_next(request)
             if resp.status_code == 404:
-                ctx.info("Metadata can not be locally retrieved, proceed to remote platform")
-                return await redirect_api_remote(request)
+                await ctx.info("Metadata can not be locally retrieved, proceed to remote platform")
+                return await redirect_api_remote(request=request, context=ctx)
 
             return resp
 
@@ -75,15 +75,15 @@ class PostMetadataDispatch(AbstractDispatch):
             try:
                 # 'assets' and not 'assets_gateway' client is used such that following request won't be intercepted by
                 # dynamic_routing middlewares.
-                _resp = await LocalClients.get_assets_client(env).get(asset_id=asset_id)
-                ctx.info('Asset found in local store, only this version is updated')
+                _resp = await LocalClients.get_assets_client(env).get(asset_id=asset_id, headers=ctx.headers())
+                await ctx.info('Asset found in local store, only this version is updated')
                 return await call_next(request)
             except HTTPException as e:
                 if e.status_code != 404:
                     raise e
 
-            ctx.info('Asset not found in local store, proceed to remote platform')
-            resp_remote = await redirect_api_remote(request)
+            await ctx.info('Asset not found in local store, proceed to remote platform')
+            resp_remote = await redirect_api_remote(request=request, context=ctx)
 
             if resp_remote.status_code == 404:
                 raise HTTPException(

@@ -85,7 +85,7 @@ async def project_status(
             workspaceDependencies=workspace_dependencies
             )
         await cdn_status(request=request, project_id=project_id, config=config)
-        ctx.send(response)
+        await ctx.send(response)
         return response
 
 

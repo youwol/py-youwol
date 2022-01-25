@@ -60,4 +60,9 @@ class RootMiddleware(BaseHTTPMiddleware):
                                 for k, v in request.headers.items()
                                 }
                 })
-            return await call_next(request)
+            response = await call_next(request)
+            await ctx.info(f"Status code {response.status_code}")
+            if response.status_code != 200:
+                await ctx.failed(f"Request resolved to error {response.status_code}")
+
+            return response
