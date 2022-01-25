@@ -80,8 +80,40 @@ class Admin(RequestInfoExtractor):
         return [Label.ADMIN]
 
 
-class GetAssetGtwMetadata(RequestInfoExtractor):
+class Logs(RequestInfoExtractor):
+    prefix = "/admin/system/logs"
 
+    def match(self, request: Request):
+        return request.url.path.startswith(self.prefix)
+
+    def message(self, request: Request):
+        return "logs"
+
+    def attributes(self, request: Request):
+        return {'service': 'admin/logs'}
+
+    def labels(self, request):
+        return [Label.LOG]
+
+
+class CdnAppsServer(RequestInfoExtractor):
+    prefix = "/applications/"
+
+    def match(self, request: Request):
+        return request.url.path.startswith(self.prefix)
+
+    def message(self, request: Request):
+        resource = request.url.path.split(self.prefix)[1]
+        return '/'.join(resource.split('/')[0:2]) if resource.startswith('@') else resource.split('/')[0]
+
+    def attributes(self, request: Request):
+        return {'service': 'cdn-apps-server', 'resource': request.url.path.split(self.prefix)[1]}
+
+    def labels(self, request):
+        return [Label.APPLICATION]
+
+
+class GetAssetGtwPackageMetadata(RequestInfoExtractor):
     prefix = '/api/assets-gateway/raw/package/metadata/'
 
     def match(self, request: Request):
@@ -99,8 +131,25 @@ class GetAssetGtwMetadata(RequestInfoExtractor):
         return []
 
 
-class GetPackageMetadata(RequestInfoExtractor):
+class PutAssetGtwAsset(RequestInfoExtractor):
+    prefix = '/api/assets-gateway/assets/'
 
+    def match(self, request: Request):
+        return request.url.path.startswith(self.prefix) and request.method == 'PUT'
+
+    def message(self, request: Request):
+        kind = request.url.path.split(self.prefix)[1].split('/')[0]
+        return f"create asset {kind}"
+
+    def attributes(self, request: Request):
+        asset_id = request.url.path.split(self.prefix)[1].split('/')[0]
+        return {'assetId': asset_id}
+
+    def labels(self, request):
+        return []
+
+
+class GetPackageMetadata(RequestInfoExtractor):
     prefix = '/api/cdn-backend/libraries/'
 
     def match(self, request: Request):
@@ -118,7 +167,11 @@ class GetPackageMetadata(RequestInfoExtractor):
 
 
 scenarios = [
-    GetAssetGtwMetadata(),
+    Logs(),
+    Admin(),
+    CdnAppsServer(),
+    PutAssetGtwAsset(),
+    GetAssetGtwPackageMetadata(),
     GetPackageMetadata(),
     Api(),
     All()
