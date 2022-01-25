@@ -1,8 +1,9 @@
 import os
+import time
 from pathlib import Path
 from typing import List, cast, Optional
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from starlette.requests import Request
@@ -66,26 +67,27 @@ class LogsResponse(BaseModel):
     logs: List[Log]
 
 
-@router.post("/logs", summary="return the logs")
+@router.get("/logs/", summary="return the logs")
 async def query_logs(
         request: Request,
-        body: QueryRootLogsBody
+        from_timestamp: int = Query(alias='from-timestamp', default=time.time()),
+        max_count: int = Query(alias='max-count', default=1000),
 ) -> LogsResponse:
-    response: Optional[LogsResponse]
+    response: Optional[LogsResponse] = None
     async with Context.start_ep(
             action="query logs",
-            body=body,
+            with_attributes={"fromTimestamp": from_timestamp, "maxCount": max_count},
             response=lambda: response,
             request=request
     ) as ctx:
         logger = cast(AdminContextLogger, ctx.logger)
         logs = []
         for log in reversed(logger.root_node_logs):
-            if log.timestamp > body.fromTimestamp * 1000:
+            if log.timestamp > from_timestamp * 1000:
                 pass
             failed = log.contextId in logger.errors
             logs.append(NodeLogResponse(**log.dict(), failed=failed))
-            if len(logs) > body.maxCount:
+            if len(logs) > max_count:
                 break
         response = LogsResponse(logs=logs)
         return response
