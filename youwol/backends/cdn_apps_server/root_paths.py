@@ -1,11 +1,12 @@
-from typing import List, Mapping
+from typing import List
 import base64
 
 import aiohttp
 from starlette.requests import Request
 from starlette.responses import Response
 from fastapi import APIRouter
-from youwol_utils import generate_headers_downstream, log_info
+
+from youwol_utils.context import Context
 from .configurations import get_configuration
 from youwol_utils import raise_exception_from_response
 
@@ -25,7 +26,7 @@ async def get_raw_resource(
         name: str,
         version: str,
         resource: str,
-        headers: Mapping[str, str]):
+        ctx: Context):
 
     full_name = f"{namespace}/{name}" if namespace else name
     raw_id = base64.urlsafe_b64encode(str.encode(full_name)).decode()
@@ -38,7 +39,7 @@ async def get_raw_resource(
         }
 
     async with aiohttp.ClientSession(auto_decompress=False) as session:
-        async with await session.get(url=url, headers=headers) as resp:
+        async with await session.get(url=url, headers=ctx.headers()) as resp:
             if resp.status == 200:
                 return Response(
                     content=await resp.read(),
@@ -60,10 +61,14 @@ async def catch_all_no_namespace(
         request: Request,
         rest_of_path: str
         ):
-    headers = generate_headers_downstream(request.headers)
-    segments = rest_of_path.strip('/').split('/')
-    namespace, name, version, resource = get_info(segments) \
-        if segments[0].startswith('@') \
-        else get_info([""] + segments)
-    log_info("forward request to CDN:", namespace=namespace, name=name, version=version, resource=resource)
-    return await get_raw_resource(namespace, name, version, resource, headers)
+
+    async with Context.start_ep(
+            action="fetch application",
+            request=request
+    ) as ctx:
+
+        segments = rest_of_path.strip('/').split('/')
+        namespace, name, version, resource = get_info(segments) \
+            if segments[0].startswith('@') \
+            else get_info([""] + segments)
+        return await get_raw_resource(namespace, name, version, resource, ctx)
