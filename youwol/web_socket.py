@@ -45,7 +45,7 @@ class AdminContextLogger(ContextLogger):
 
     def resize_if_needed(self, items: List[any]):
         if len(items) > 2 * self.max_count:
-            return items[len(items) - self.max_count, :]
+            return items[len(items) - self.max_count:]
         return items
 
     async def log(self, entry: LogEntry):
