@@ -103,8 +103,7 @@ StringLike = Any
 
 
 class Context(NamedTuple):
-
-    logger: ContextLogger
+    loggers: List[ContextLogger]
     request: Request = None
 
     uid: Union[str, None] = 'root'
@@ -127,11 +126,11 @@ class Context(NamedTuple):
                     on_enter: 'CallableBlock' = None,
                     on_exit: 'CallableBlock' = None,
                     on_exception: 'CallableBlockException' = None,
-                    logger: ContextLogger = None
-                    ):
+                    with_loggers: List[ContextLogger] = None
+                    ) -> AsyncContextManager[Context]:
         with_attributes = with_attributes or {}
         with_labels = with_labels or []
-        ctx = Context(logger=logger or self.logger,
+        ctx = Context(loggers=self.loggers if with_loggers is None else self.loggers + with_loggers,
                       uid=str(uuid.uuid4()),
                       request=self.request,
                       parent_uid=self.uid,
@@ -184,18 +183,29 @@ class Context(NamedTuple):
             with_attributes: JSON = None,
             body: BaseModel = None,
             response: Callable[[], BaseModel] = None,
-            logger: ContextLogger = None
-    ):
+            with_loggers: List[ContextLogger] = None,
+            on_enter: 'CallableBlock' = None,
+            on_exit: 'CallableBlock' = None,
+    ) -> AsyncContextManager[Context]:
         context = Context.from_request(request=request)
         with_labels = with_labels or []
         with_attributes = with_attributes or {}
+
+        async def on_exit_fct(ctx):
+            await ctx.info('Response', data=response()) if response else None
+            on_exit and await on_exit(ctx)
+
+        async def on_enter_fct(ctx):
+            await ctx.info('Body', data=body) if body else None
+            on_enter and await on_enter(ctx)
+
         return context.start(
             action=action,
             with_labels=[Label.END_POINT, *with_labels],
             with_attributes={"method": request.method, **with_attributes},
-            logger=logger,
-            on_enter=lambda ctx: ctx.info('Body', data=body) if body else None,
-            on_exit=lambda ctx: ctx.info('Response', data=response()) if response else None
+            with_loggers=with_loggers,
+            on_enter=on_enter_fct,
+            on_exit=on_exit_fct
         )
 
     async def log(self, level: LogLevel, text: str, labels: List[StringLike] = None,
@@ -218,7 +228,7 @@ class Context(NamedTuple):
             context_id=self.uid,
             parent_context_id=self.parent_uid
         )
-        await self.logger.log(entry)
+        await asyncio.gather(*[logger.log(entry) for logger in self.loggers])
 
     async def send(self, data: BaseModel, labels: List[StringLike] = None):
         labels = labels or []
@@ -265,5 +275,5 @@ class ContextFactory(NamedTuple):
     @staticmethod
     def get_instance(request: Union[Request, None], logger: ContextLogger, **kwargs) -> Context:
         return Context(request=request,
-                       logger=logger,
+                       loggers=[logger],
                        with_data={**ContextFactory.with_static_data, **kwargs})
