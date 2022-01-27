@@ -264,7 +264,7 @@ class Project(BaseModel):
                                ignore: List[str] = None
                                ) -> List['Project']:
         ignore = ignore or []
-        all_dependencies = self.pipeline.dependencies(self, context)
+        all_dependencies = self.pipeline.dependencies(self, context) if self.pipeline.dependencies else []
         dependencies = [p for p in projects if p.name in all_dependencies and p.name not in
                         ignore]
         ignore = ignore + [p.name for p in dependencies]
