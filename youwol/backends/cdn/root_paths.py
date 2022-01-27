@@ -44,7 +44,6 @@ async def publish(
         file: UploadFile = File(...),
         content_encoding: str = Form('identity'),
         configuration: Configuration = Depends(get_configuration)):
-
     # https://www.toptal.com/python/beginners-guide-to-concurrency-and-parallelism-in-python
     # Publish needs to be done using a queue to let the cdn pods fully available to fetch resources
 
@@ -558,10 +557,21 @@ async def get_resource(request: Request,
             await ctx.info("'-next' suffix => max_age set to 0")
             max_age = "0"
 
-    forward_path = f"libraries/{package_name.replace('@', '')}/{version}/{'/'.join(parts[2:])}"
-    storage = configuration.storage
-    file_id = forward_path.split('/')[-1]
-    path = '/'.join(forward_path.split('/')[0:-1])
-    script = await fetch(request, path, file_id, storage)
+        forward_path = f"libraries/{package_name.replace('@', '')}/{version}/{'/'.join(parts[2:])}"
+
+        if len(parts) == 2:
+            await ctx.info(text="no resource specified => get the entry point")
+            doc = await configuration.doc_db.get_document(
+                partition_keys={"library_name": package_name},
+                clustering_keys={"version_number": get_version_number_str(version)},
+                owner=configuration.owner,
+                headers=ctx.headers())
+            forward_path = f"libraries/{package_name.replace('@', '')}/{version}/{doc['bundle']}"
+
+        await ctx.info('forward path constructed', data={"path": forward_path})
+        storage = configuration.storage
+        file_id = forward_path.split('/')[-1]
+        path = '/'.join(forward_path.split('/')[0:-1])
+        script = await fetch(request, path, file_id, storage)
 
         return format_response(script, file_id, max_age=max_age)
