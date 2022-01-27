@@ -302,7 +302,6 @@ async def get_parent(
         configuration: Configuration,
         context: Context
 ):
-
     folders_db, drives_db = configuration.doc_dbs.folders_db, configuration.doc_dbs.drives_db
     parent_folder, parent_drive = await asyncio.gather(
         ensure_query_permission(request=request, docdb=folders_db, key="folder_id", value=parent_id,

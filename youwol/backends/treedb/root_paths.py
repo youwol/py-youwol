@@ -1,7 +1,8 @@
+
 import asyncio
 import itertools
 import uuid
-from typing import Set, Tuple, List, Coroutine, Optional
+from typing import Set, Tuple, List, Coroutine, Optional, cast
 
 from fastapi import HTTPException, APIRouter, Depends
 from fastapi import Query as QueryParam
@@ -131,6 +132,7 @@ async def update_drive(
 
 
 async def _get_drive(request: Request, drive_id: str, configuration: Configuration, context: Context):
+
     async with context.start(action="_get_drive") as ctx:
         docdb = configuration.doc_dbs.drives_db
         doc = await ensure_get_permission(request=request, docdb=docdb, partition_keys={'drive_id': drive_id},
@@ -225,6 +227,7 @@ async def update_folder(
 
 
 async def _get_folder(request: Request, folder_id: str, configuration: Configuration, context: Context):
+
     async with context.start(action="_get_folder") as ctx:
         doc = await ensure_get_permission(request=request, partition_keys={'folder_id': folder_id}, context=ctx,
                                           docdb=configuration.doc_dbs.folders_db, configuration=configuration)
@@ -317,6 +320,7 @@ async def update_item(
 
 
 async def _get_item(request: Request, item_id: str, configuration: Configuration, context: Context):
+
     async with context.start(action="_get_item") as ctx:  # type: Context
         items_db = configuration.doc_dbs.items_db
         doc = await ensure_get_permission(request=request, partition_keys={'item_id': item_id}, docdb=items_db,
@@ -331,6 +335,7 @@ async def get_item(
         request: Request,
         item_id: str,
         configuration: Configuration = Depends(get_configuration)):
+
     response: Optional[ItemResponse] = None
     async with Context.start_ep(
             request=request,
@@ -416,19 +421,26 @@ async def move(
         items_db = configuration.doc_dbs.items_db
         folders_db = configuration.doc_dbs.folders_db
 
-        items, folders, to_folder_drive = await asyncio.gather(
+        items, folders, to_folder_or_drive = await asyncio.gather(
             ensure_query_permission(request=request, docdb=items_db, key="item_id", value=body.targetId, max_count=1,
                                     configuration=configuration, context=ctx),
             ensure_query_permission(request=request, docdb=folders_db, key="folder_id", value=body.targetId,
                                     max_count=1, configuration=configuration, context=ctx),
-            get_entity(request=request, entity_id=body.destinationFolderId, include_items=False,
-                       configuration=configuration)
-            # ensure_get_permission(request=request, docdb=folders_db, primary_key=body.destinationFolderId),
+            _get_entity(request=request, entity_id=body.destinationFolderId, include_items=False,
+                        configuration=configuration, context=ctx),
+            return_exceptions=True
         )
         if len(items) + len(folders) == 0:
-            raise HTTPException(status_code=404, detail="Item not found")
+            raise HTTPException(status_code=404, detail="Source item or folder not found in database")
 
-        destination = to_folder_drive.entity
+        if isinstance(to_folder_or_drive, HTTPException) and to_folder_or_drive.status_code == 404:
+            raise HTTPException(status_code=404, detail="Destination folder or drive not found in database")
+
+        if isinstance(to_folder_or_drive, Exception):
+            raise to_folder_or_drive
+
+        to_folder_or_drive = cast(EntityResponse, to_folder_or_drive)
+        destination = to_folder_or_drive.entity
         destination_id = destination.folderId if isinstance(destination, FolderResponse) else destination.driveId
         target = items[0] if len(items) > 0 else folders[0]
 
@@ -475,12 +487,13 @@ async def move(
 async def _get_entity(
         request: Request,
         entity_id: str,
-        include_drives: bool,
-        include_folders: bool,
-        include_items: bool,
         configuration: Configuration,
-        context: Context
+        context: Context,
+        include_drives: bool = True,
+        include_folders: bool = True,
+        include_items: bool = True,
 ):
+
     async with context.start(
             action="_get_entity"
     ) as ctx:  # type: Context
@@ -537,6 +550,7 @@ async def _children(
         folder_id: str,
         configuration: Configuration,
         context: Context):
+
     async with context.start(action="_children") as ctx:  # type: Context
 
         folders_db, items_db = configuration.doc_dbs.folders_db, configuration.doc_dbs.items_db
@@ -801,7 +815,7 @@ async def get_items_rec(request, folder_id: str, configuration: Configuration, c
 
     folders = [folder.folderId for folder in resp.folders] + \
               list(flatten([[folder for folder in folders]
-                      for items, folders in children_folders]))
+                            for items, folders in children_folders]))
     items = [item.itemId for item in resp.items] +\
         list(flatten([[item for item in items]
                       for items, folders in children_folders]))
