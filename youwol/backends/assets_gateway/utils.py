@@ -11,7 +11,8 @@ from youwol_utils import (
     ReadPolicyEnumFactory, SharePolicyEnumFactory, base64, log_info,
     )
 from .configurations import Configuration
-from .models import ItemResponse, AssetResponse, GroupAccess, FolderResponse, AssetWithPermissionResponse
+from .models import ItemResponse, AssetResponse, GroupAccess, FolderResponse, AssetWithPermissionResponse, \
+    PermissionsResponse
 from .raw_stores.interface import AssetMeta
 
 
@@ -75,7 +76,7 @@ def to_folder_resp(folder) -> FolderResponse:
                           driveId=folder["driveId"])
 
 
-def to_asset_resp(asset, permissions=None) -> Union[AssetResponse, AssetWithPermissionResponse]:
+def to_asset_resp(asset, permissions: PermissionsResponse = None) -> Union[AssetResponse, AssetWithPermissionResponse]:
 
     group_id = asset['groupId'] if 'groupId' in asset else to_group_id(asset['scope'])
     if permissions:

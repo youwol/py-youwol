@@ -6,8 +6,7 @@ from starlette.requests import Request
 from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
 from youwol.routers.environment.models import LoginBody
 from youwol.routers.environment.router import login as login_env
-from youwol.web_socket import WebSocketsStore
-from youwol_utils.context import ContextFactory
+from youwol_utils.context import Context
 
 router = APIRouter()
 
@@ -49,9 +48,6 @@ async def keycloak_token(
         request: Request,
         config: YouwolEnvironment = Depends(yw_config)
         ):
-    context = ContextFactory.get_instance(
-        request=request,
-        web_socket=WebSocketsStore.userChannel
-        )
-    token = await config.get_auth_token(context)
+
+    token = await config.get_auth_token(Context.from_request(request))
     return {"access_token": token}

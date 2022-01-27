@@ -15,12 +15,13 @@ from youwol_utils.context import Context
 
 async def get_remote_paths(
         remote_treedb: TreeDbClient,
-        tree_items: ItemsResponse
-        ):
+        tree_items: ItemsResponse,
+        context: Context
+):
     items_path_ = await asyncio.gather(*[
-        remote_treedb.get_path(item.treeId)
+        remote_treedb.get_path(item.treeId, headers=context.headers())
         for item in tree_items.items
-        ])
+    ])
     items_path = [PathResponse(**p) for p in items_path_]
 
     def is_borrowed(item: ItemResponse):
@@ -31,36 +32,41 @@ async def get_remote_paths(
     return owning_location, borrowed_locations
 
 
-async def ensure_local_path(path_item: PathResponse, local_treedb: TreeDbClient):
-
-    folders = path_item.folders
-    try:
-        if folders:
-            await local_treedb.get_folder(folder_id=folders[-1].folderId)
-        else:
-            await local_treedb.get_drive(drive_id=path_item.drive.driveId)
-    except HTTPException as e:
-        if e.status_code == 404:
-            if len(folders) <= 1:
-                await ensure_drive(path_item.drive, local_treedb)
+async def ensure_local_path(
+        path_item: PathResponse,
+        local_treedb: TreeDbClient,
+        context: Context):
+    async with context.start(action="ensure local path") as ctx:
+        folders = path_item.folders
+        try:
+            if folders:
+                await local_treedb.get_folder(folder_id=folders[-1].folderId, headers=ctx.headers())
             else:
-                await ensure_local_path(PathResponse(drive=path_item.drive, folders=folders[0:-1], item=path_item.item),
-                                        local_treedb)
-            if not folders:
-                return
-            folder = folders[-1]
-            body = {"folderId":  folder.folderId, "name": folder.name}
-            await local_treedb.create_folder(parent_folder_id=folder.parentFolderId, body=body)
+                await local_treedb.get_drive(drive_id=path_item.drive.driveId, headers=ctx.headers())
+        except HTTPException as e:
+            if e.status_code == 404:
+                if len(folders) <= 1:
+                    await ensure_drive(path_item.drive, local_treedb, context=ctx)
+                else:
+                    await ensure_local_path(PathResponse(drive=path_item.drive, folders=folders[0:-1],
+                                                         item=path_item.item),
+                                            local_treedb,
+                                            context=ctx)
+                if not folders:
+                    return
+                folder = folders[-1]
+                body = {"folderId": folder.folderId, "name": folder.name}
+                await local_treedb.create_folder(parent_folder_id=folder.parentFolderId, body=body,
+                                                 headers=context.headers())
 
 
-async def ensure_drive(drive: DriveResponse,  local_treedb: TreeDbClient):
-
+async def ensure_drive(drive: DriveResponse, local_treedb: TreeDbClient, context: Context):
     try:
-        await local_treedb.get_drive(drive_id=drive.driveId)
+        await local_treedb.get_drive(drive_id=drive.driveId, headers=context.headers())
     except HTTPException as e:
         if e.status_code == 404:
             body = {"driveId": drive.driveId, "name": drive.name}
-            await local_treedb.create_drive(group_id=drive.groupId, body=body)
+            await local_treedb.create_drive(group_id=drive.groupId, body=body, headers=context.headers())
             return
         raise e
 
@@ -68,13 +74,14 @@ async def ensure_drive(drive: DriveResponse,  local_treedb: TreeDbClient):
 async def get_local_owning_folder_id(
         owning_location: PathResponse,
         local_treedb: TreeDbClient,
-        default_folder_id: str
-        ):
+        default_folder_id: str,
+        context: Context
+):
     if owning_location:
-        await ensure_local_path(owning_location, local_treedb)
+        await ensure_local_path(owning_location, local_treedb, context)
 
-    return owning_location.folders[-1].folderId\
-        if owning_location\
+    return owning_location.folders[-1].folderId \
+        if owning_location \
         else default_folder_id
 
 
@@ -82,17 +89,19 @@ async def sync_borrowed_items(
         asset_id: str,
         borrowed_locations: List[PathResponse],
         local_treedb: TreeDbClient,
-        local_gtw: AssetsGatewayClient
-        ):
-    await asyncio.gather(*[ensure_local_path(p, local_treedb) for p in borrowed_locations])
+        local_gtw: AssetsGatewayClient,
+        context: Context
+):
+    await asyncio.gather(*[ensure_local_path(p, local_treedb, context) for p in borrowed_locations])
 
     await asyncio.gather(*[
         local_gtw.borrow_tree_item(
             asset_id,
-            {'itemId': p.item.itemId, 'destinationFolderId': p.folders[-1].folderId}
-            )
+            {'itemId': p.item.itemId, 'destinationFolderId': p.folders[-1].folderId},
+            headers=context.headers()
+        )
         for p in borrowed_locations
-        ])
+    ])
 
 T = TypeVar('T')
 
@@ -113,13 +122,13 @@ async def create_asset_local(
         local_gtw: AssetsGatewayClient = LocalClients.get_assets_gateway_client(env)
         remote_gtw = await RemoteClients.get_assets_gateway_client(context)
         remote_treedb = await RemoteClients.get_treedb_client(context)
-
+        headers = ctx.headers()
         raw_data, metadata, tree_items = await asyncio.gather(
             get_raw_data(),
-            remote_gtw.get_asset_metadata(asset_id=asset_id),
-            remote_gtw.get_tree_items_by_related_id(related_id=asset_id),
+            remote_gtw.get_asset_metadata(asset_id=asset_id, headers=headers),
+            remote_gtw.get_tree_items_by_related_id(related_id=asset_id, headers=headers),
             return_exceptions=True
-            )
+        )
 
         if isinstance(raw_data, Exception):
             await ctx.error(f"Can not fetch raw part of the asset")
@@ -143,8 +152,9 @@ async def create_asset_local(
         })
         owning_location, borrowed_locations = await get_remote_paths(
             remote_treedb=remote_treedb,
-            tree_items=ItemsResponse(**tree_items)
-            )
+            tree_items=ItemsResponse(**tree_items),
+            context=ctx
+        )
         await ctx.info(text="Explorer paths retrieved", data={
             "owning_location": owning_location.dict() if owning_location else "No owning location in available groups",
             "borrowed_locations": [p.dict() for p in borrowed_locations]
@@ -153,8 +163,9 @@ async def create_asset_local(
         owning_folder_id = await get_local_owning_folder_id(
             owning_location=owning_location,
             local_treedb=local_treedb,
-            default_folder_id=default_owning_folder_id
-            )
+            default_folder_id=default_owning_folder_id,
+            context=context
+        )
         await ctx.info(text="Owning folder retrieved", data={
             "owning_folder_id": owning_folder_id
         })
@@ -162,17 +173,19 @@ async def create_asset_local(
         await local_gtw.put_asset_with_raw(
             kind=kind,
             folder_id=owning_folder_id,
-            data=to_post_raw_data(raw_data)
-            )
+            data=to_post_raw_data(raw_data),
+            headers=ctx.headers()
+        )
         await ctx.info(text="Asset raw's data downloaded successfully")
 
         await sync_borrowed_items(
             asset_id=asset_id,
             borrowed_locations=borrowed_locations,
             local_treedb=local_treedb,
-            local_gtw=local_gtw
-            )
+            local_gtw=local_gtw,
+            context=ctx
+        )
         await ctx.info(text="Borrowed items created successfully")
         # the next line is not fetching images
-        await local_gtw.update_asset(asset_id=asset_id, body=metadata)
+        await local_gtw.update_asset(asset_id=asset_id, body=metadata, headers=ctx.headers())
         await ctx.info(text="Asset metadata uploaded successfully")

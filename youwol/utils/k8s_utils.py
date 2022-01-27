@@ -54,7 +54,7 @@ async def k8s_create_secrets_if_needed(namespace: str, secrets: Dict[str, Path],
     existing = await k8s_secrets(namespace=namespace)
     needed = [k for k in secrets.keys() if k not in existing]
     for name in needed:
-        context and await context.info(f"Create secret {name} in namespace {namespace}")
+        context and context.info(f"Create secret {name} in namespace {namespace}")
         k8s_create_secret(namespace=namespace, file_path=secrets[name])
 
 
@@ -79,7 +79,7 @@ async def k8s_pod_exec(pod_name: str, namespace: str, commands: List[str], conte
     cmd_outputs = []
     for cmd in commands:
         full = f'kubectl exec -i  {pod_name} -n {namespace} -- bash -c "{cmd}"'
-        context and await context.info(full)
+        context and context.info(full)
         return_code, outputs = await execute_shell_cmd(full, context=context)
         if return_code > 0:
             raise CommandException(command=full, outputs=outputs)

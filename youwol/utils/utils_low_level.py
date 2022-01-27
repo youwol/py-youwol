@@ -4,7 +4,6 @@ import re
 import shutil
 import sys
 import tempfile
-from aiostream import stream
 from importlib.machinery import SourceFileLoader
 from importlib.util import spec_from_loader
 from pathlib import Path
@@ -12,6 +11,7 @@ from typing import Union, Mapping, List, Type, cast, TypeVar, Optional
 
 import aiohttp
 from aiohttp import ClientSession, TCPConnector
+from aiostream import stream
 from fastapi import HTTPException
 from starlette.requests import Request
 from starlette.responses import Response
@@ -73,16 +73,17 @@ async def get_public_user_auth_token(username: str, pwd: str, client_id: str, op
             return resp['access_token']
 
 
-async def redirect_api_remote(request: Request):
-    # One of the header item leads to a server error ... for now only provide authorization
-    # headers = {k: v for k, v in request.headers.items()}
-    headers = {"Authorization": request.headers.get("authorization")}
+async def redirect_api_remote(request: Request, context: Context):
+    async with context.start(action="redirect API in remote") as ctx:
+        # One of the header item leads to a server error ... for now only provide authorization
+        # headers = {k: v for k, v in request.headers.items()}
+        # headers = {"Authorization": request.headers.get("authorization")}
 
-    return await redirect_request(
-        incoming_request=request,
-        origin_base_path="/api",
-        destination_base_path="https://gc.platform.youwol.com/api",
-        headers=headers,
+        return await redirect_request(
+            incoming_request=request,
+            origin_base_path="/api",
+            destination_base_path="https://gc.platform.youwol.com/api",
+            headers=ctx.headers(),
         )
 
 

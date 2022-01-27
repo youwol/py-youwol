@@ -7,8 +7,7 @@ from starlette.types import ASGIApp
 
 from youwol.environment.youwol_environment import yw_config
 from youwol.routers.authorization import get_user_info
-from youwol.web_socket import WebSocketsStore
-from youwol_utils.context import ContextFactory
+from youwol_utils.context import Context, Label
 
 
 class AuthMiddleware(BaseHTTPMiddleware):
@@ -25,24 +24,27 @@ class AuthMiddleware(BaseHTTPMiddleware):
             ) -> Response:
 
         config = await yw_config()
-        context = ContextFactory.get_instance(
-            web_socket=WebSocketsStore.userChannel,
-            request=request
-            )
 
-        if not request.headers.get('authorization'):
-            auth_token = await config.get_auth_token(context=context)
-            # A bit ugly, not very safe ... coming from:
-            # How to set request headers before path operation is executed
-            # https://github.com/tiangolo/fastapi/issues/2727
-            auth_header: Tuple[bytes, bytes] = "authorization".encode(), f"Bearer {auth_token}".encode()
-            request.headers.__dict__["_list"].append(auth_header)
+        async with Context.from_request(request).start(
+                action=f"Authorisation middleware",
+                with_labels=[Label.MIDDLEWARE]
+        ) as ctx:
+            if not request.headers.get('authorization'):
 
-        if await self.authenticate(config.userEmail, request):
-            response = await call_next(request)
-        else:
-            response = Response(content="Unauthorized", status_code=403)
-        return response
+                await ctx.info(text="No authorisation token found")
+                auth_token = await config.get_auth_token(context=ctx)
+                # A bit ugly, not very safe ... coming from:
+                # How to set request headers before path operation is executed
+                # https://github.com/tiangolo/fastapi/issues/2727
+                auth_header: Tuple[bytes, bytes] = "authorization".encode(), f"Bearer {auth_token}".encode()
+                request.headers.__dict__["_list"].append(auth_header)
+
+            if await self.authenticate(config.userEmail, request):
+                await ctx.info(text="User info retrieved", data=request.state.user_info)
+                return await call_next(request)
+            else:
+                ctx.error(text="Unauthorized")
+                return Response(content="Unauthorized", status_code=403)
 
     async def authenticate(self, user_name: str, request: Request) -> bool:
 

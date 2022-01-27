@@ -8,8 +8,8 @@ from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.local_cdn.implementation import get_latest_local_cdn_version, check_updates_from_queue, \
     download_packages_from_queue
 from youwol.routers.local_cdn.models import CheckUpdatesResponse, CheckUpdateResponse, DownloadPackagesBody
-from youwol.web_socket import WebSocketsStore
-from youwol_utils.context import ContextFactory
+from youwol.web_socket import UserContextLogger
+from youwol_utils.context import Context
 
 router = APIRouter()
 
@@ -21,16 +21,15 @@ router = APIRouter()
 async def collect_updates(
         request: Request
         ):
-    context = ContextFactory.get_instance(
-        request=request,
-        web_socket=WebSocketsStore.userChannel
-    )
-    queue = asyncio.Queue()
-    env = await context.get('env', YouwolEnvironment)
-    async with context.start(
-            action="collect available updates",
-            with_attributes={'topic': 'updatesCdn'}) as ctx:
 
+    queue = asyncio.Queue()
+    async with Context.from_request(request).start(
+            action="collect available updates",
+            with_attributes={'topic': 'updatesCdn'},
+            with_loggers=[UserContextLogger()]
+    ) as ctx:
+
+        env = await ctx.get('env', YouwolEnvironment)
         local_packages_latest = get_latest_local_cdn_version(env)
         await ctx.info(text="local latest version of cdn packages retrieved",
                        data={'packages': {f"{p.library_name}#{p.version}": p for p in local_packages_latest}})
@@ -56,16 +55,13 @@ async def download(
         body: DownloadPackagesBody
         ):
 
-    context = ContextFactory.get_instance(
-        request=request,
-        web_socket=WebSocketsStore.userChannel
-    )
     queue = asyncio.Queue()
 
-    async with context.start(
+    async with Context.from_request(request).start(
             action="download packages",
-            with_attributes={'topic': 'updatesCdn'}) as ctx:
-
+            with_attributes={'topic': 'updatesCdn'},
+            with_loggers=[UserContextLogger()]
+    ) as ctx:
         await ctx.info(text=f"Proceed to {len(body.packages)} packages download", data=body)
         for package in body.packages:
             queue.put_nowait(package)

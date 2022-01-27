@@ -109,7 +109,7 @@ class UploadPackageTask(UploadTask):
             finally:
                 await ctx.info(
                     text=f"{library_name}#{version}: synchronization done"
-                    )
+                )
                 # await check_package_status(package=local_package, context=context, target_versions=[version])
 
     async def create_raw(self, data: List[str], folder_id: str):

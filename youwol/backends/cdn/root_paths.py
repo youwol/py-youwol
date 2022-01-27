@@ -3,28 +3,29 @@ import functools
 import itertools
 import shutil
 from pathlib import Path
+from typing import Optional
 
 from fastapi import UploadFile, File, HTTPException, Form, APIRouter, Depends
-
 from starlette.requests import Request
 from starlette.responses import Response
 
+from youwol_utils import (
+    flatten, generate_headers_downstream, log_info, PackagesNotFound,
+)
+from youwol_utils.clients.docdb.models import WhereClause, QueryBody, Query, SelectClause
+from youwol_utils.context import Context
 from .configurations import Configuration, get_configuration
 from .models import (
     PublishResponse, ListLibsResponse, Release, ListVersionsResponse, SyncResponse,
     LoadingGraphResponseV1, LoadingGraphBody, DeleteBody, Library,
     ListPacksResponse, FluxPackSummary,
-    )
+)
 from .resources_initialization import init_resources, synchronize
 from .utils import (
     extract_zip_file, to_package_id, create_tmp_folder,
     to_package_name, get_query_version, loading_graph, get_url, fetch, format_response, publish_package,
     get_query_latest,
-    )
-from youwol_utils import (
-    flatten, generate_headers_downstream, log_info, PackagesNotFound,
-    )
-from youwol_utils.clients.docdb.models import WhereClause, QueryBody, Query, SelectClause
+)
 from .utils_indexing import get_version_number_str
 
 router = APIRouter()
@@ -43,12 +44,13 @@ async def publish(
         file: UploadFile = File(...),
         content_encoding: str = Form('identity'),
         configuration: Configuration = Depends(get_configuration)):
-
     # https://www.toptal.com/python/beginners-guide-to-concurrency-and-parallelism-in-python
-    # Publish needs to be done using a queue to elt the cdn pods fully available to fetch resources
+    # Publish needs to be done using a queue to let the cdn pods fully available to fetch resources
 
-    headers = generate_headers_downstream(request.headers)
-    return await publish_package(file.file, file.filename, content_encoding, configuration, headers)
+    async with Context.start_ep(
+            request=request
+    ) as ctx:  # type: Context
+        return await publish_package(file.file, file.filename, content_encoding, configuration, ctx.headers())
 
 
 @router.get("/queries/libraries", summary="list libraries available",
@@ -61,36 +63,42 @@ async def list_libraries(
     """
     WARNING: should not be used in prod: use allow filtering
     """
+    response: Optional[ListLibsResponse] = None
 
-    headers = generate_headers_downstream(request.headers)
-    doc_db = configuration.doc_db
-    query = QueryBody.parse(f"namespace={namespace}@library_name,version#1000") \
-        if namespace is not None \
-        else QueryBody.parse(f"@library_name,version#1000")
+    async with Context.start_ep(
+            request=request,
+            response=lambda: response
+    ) as ctx:  # type: Context
+        await ctx.warning(text="This should not be used in prod: use allow filtering")
 
-    query.allow_filtering = True
-    response = await doc_db.query(query_body=query, owner=Configuration.owner, headers=headers)
+        doc_db = configuration.doc_db
+        query = QueryBody.parse(f"namespace={namespace}@library_name,version#1000") \
+            if namespace is not None \
+            else QueryBody.parse(f"@library_name,version#1000")
 
-    data = sorted(response["documents"], key=lambda d: d["library_name"])
-    groups = []
-    for k, g in itertools.groupby(data, lambda d: d["library_name"]):
-        g = list(g)
-        ns = {lib["namespace"] for lib in g}.pop()
+        query.allow_filtering = True
+        resp = await doc_db.query(query_body=query, owner=Configuration.owner, headers=ctx.headers())
 
-        libs = sorted(g, key=lambda d: d["version_number"])
-        groups.append({"name": k,
-                       "namespace": ns,
-                       "id": to_package_id(k),
-                       "versions": [lib["version"] for lib in libs],
-                       "releases": [
-                           Release(version=lib['version'],
-                                   version_number=int(lib['version_number']),
-                                   fingerprint=lib['fingerprint'] if 'fingerprint' in lib else "")
-                           for lib in libs]
-                       })
+        data = sorted(resp["documents"], key=lambda d: d["library_name"])
+        groups = []
+        for k, g in itertools.groupby(data, lambda d: d["library_name"]):
+            g = list(g)
+            ns = {lib["namespace"] for lib in g}.pop()
 
-    return ListLibsResponse(libraries=[ListVersionsResponse(**d)
-                                       for d in sorted(groups,  key=lambda d: d["name"])])
+            libs = sorted(g, key=lambda d: d["version_number"])
+            groups.append({"name": k,
+                           "namespace": ns,
+                           "id": to_package_id(k),
+                           "versions": [lib["version"] for lib in libs],
+                           "releases": [
+                               Release(version=lib['version'],
+                                       version_number=int(lib['version_number']),
+                                       fingerprint=lib['fingerprint'] if 'fingerprint' in lib else "")
+                               for lib in libs]
+                           })
+        response = ListLibsResponse(libraries=[ListVersionsResponse(**d)
+                                               for d in sorted(groups, key=lambda d: d["name"])])
+        return response
 
 
 @router.post("/actions/sync",
@@ -100,54 +108,65 @@ async def sync(request: Request,
                file: UploadFile = File(...),
                reset: bool = False,
                configuration: Configuration = Depends(get_configuration)):
+    response: Optional[SyncResponse] = None
 
-    headers = generate_headers_downstream(request.headers)
+    async with Context.start_ep(
+            request=request,
+            response=lambda: response
+    ) as ctx:  # type: Context
 
-    if reset:
-        await asyncio.gather(configuration.doc_db.delete_table(headers=headers),
-                             configuration.storage.delete_bucket(force_not_empty=True, headers=headers))
-        await init_resources(configuration)
+        if reset:
+            await asyncio.gather(configuration.doc_db.delete_table(headers=ctx.headers()),
+                                 configuration.storage.delete_bucket(force_not_empty=True, headers=ctx.headers()))
+            await init_resources(configuration)
 
-    dir_path, zip_path, zip_dir_name = create_tmp_folder(file.filename)
+        dir_path, zip_path, zip_dir_name = create_tmp_folder(file.filename)
 
-    try:
-        compressed_size = extract_zip_file(file.file, zip_path, dir_path)
-        files_count, libraries_count, namespaces = await synchronize(dir_path, zip_dir_name, configuration, headers)
+        try:
+            compressed_size = extract_zip_file(file.file, zip_path, dir_path)
+            files_count, libraries_count, namespaces = await synchronize(dir_path, zip_dir_name, configuration,
+                                                                         ctx.headers())
 
-        return SyncResponse(filesCount=files_count, librariesCount=libraries_count, compressedSize=compressed_size,
-                            namespaces=namespaces)
-    finally:
-        shutil.rmtree(dir_path)
+            response = SyncResponse(filesCount=files_count, librariesCount=libraries_count,
+                                    compressedSize=compressed_size, namespaces=namespaces)
+            return response
+        finally:
+            shutil.rmtree(dir_path)
 
 
 async def list_versions(
-        request: Request,
         name: str,
-        max_results: int = 1000,
+        max_results: int,
+        context: Context,
         configuration: Configuration = Depends(get_configuration)):
+    async with context.start(
+            action="list version of package",
+            with_attributes={"name": name, "max_results": max_results}
+    ) as ctx:  # type: Context
 
-    headers = generate_headers_downstream(request.headers)
-    doc_db = configuration.doc_db
-    query = QueryBody(
-        max_results=max_results,
-        select_clauses=[SelectClause(selector="versions"), SelectClause(selector="namespace")],
-        query=Query(where_clause=[WhereClause(column="library_name", relation="eq", term=name)])
+        doc_db = configuration.doc_db
+        query = QueryBody(
+            max_results=max_results,
+            select_clauses=[SelectClause(selector="versions"), SelectClause(selector="namespace")],
+            query=Query(where_clause=[WhereClause(column="library_name", relation="eq", term=name)])
         )
 
-    response = await doc_db.query(query_body=query, owner=Configuration.owner, headers=headers)
+        response = await doc_db.query(query_body=query, owner=Configuration.owner, headers=ctx.headers())
 
-    if not response['documents']:
-        raise HTTPException(status_code=404, detail=f"The library {name} does not exist")
+        if not response['documents']:
+            raise HTTPException(status_code=404, detail=f"The library {name} does not exist")
 
-    namespace = {d['namespace'] for d in response['documents']}.pop()
-    ordered = sorted(response['documents'], key=lambda doc: doc['version_number'])
-    ordered.reverse()
-    return ListVersionsResponse(
-        name=name, namespace=namespace, id=to_package_id(name),
-        versions=[d['version'] for d in ordered],
-        releases=[Release(version=d['version'], version_number=int(d['version_number']), fingerprint=d['fingerprint'])
-                  for d in ordered]
-    )
+        namespace = {d['namespace'] for d in response['documents']}.pop()
+        ordered = sorted(response['documents'], key=lambda doc: doc['version_number'])
+        ordered.reverse()
+        return ListVersionsResponse(
+            name=name, namespace=namespace, id=to_package_id(name),
+            versions=[d['version'] for d in ordered],
+            releases=[Release(version=d['version'],
+                              version_number=int(d['version_number']),
+                              fingerprint=d['fingerprint'])
+                      for d in ordered]
+        )
 
 
 @router.get("/libraries/{library_id}", summary="list versions of a library",
@@ -156,10 +175,15 @@ async def get_library(
         request: Request,
         library_id: str,
         configuration: Configuration = Depends(get_configuration)
-        ):
-
-    name = to_package_name(library_id)
-    return await list_versions(request=request, name=name, configuration=configuration)
+):
+    response: Optional[ListVersionsResponse] = None
+    async with Context.start_ep(
+            request=request,
+            response=lambda: response
+    ) as ctx:  # type: Context
+        name = to_package_name(library_id)
+        response = await list_versions(name=name, context=ctx, max_results=1000, configuration=configuration)
+        return response
 
 
 @router.delete("/libraries/{library_id}", summary="delete a library")
@@ -167,20 +191,24 @@ async def delete_library(
         request: Request,
         library_id: str,
         configuration: Configuration = Depends(get_configuration)
-        ):
+):
+    async with Context.start_ep(
+            request=request,
+            with_attributes={"libraryId": library_id}
+    ) as ctx:  # type: Context
 
-    headers = generate_headers_downstream(request.headers)
-    doc_db = configuration.doc_db
-    name = to_package_name(library_id)
-    query = QueryBody(
-        max_results=100,
-        query=Query(where_clause=[WhereClause(column="library_name", relation="eq", term=name)])
+        doc_db = configuration.doc_db
+        name = to_package_name(library_id)
+        query = QueryBody(
+            max_results=100,
+            query=Query(where_clause=[WhereClause(column="library_name", relation="eq", term=name)])
         )
-    resp_query = await doc_db.query(query_body=query, owner=configuration.owner, headers=headers)
+        await ctx.info("scylla-db query", data=query)
+        resp_query = await doc_db.query(query_body=query, owner=configuration.owner, headers=ctx.headers())
 
-    await asyncio.gather(*[doc_db.delete_document(doc=d, owner=Configuration.owner, headers=headers)
-                           for d in resp_query["documents"]])
-    return {"deletedCount": len(resp_query["documents"])}
+        await asyncio.gather(*[doc_db.delete_document(doc=d, owner=Configuration.owner, headers=ctx.headers())
+                               for d in resp_query["documents"]])
+        return {"deletedCount": len(resp_query["documents"])}
 
 
 @router.delete("/libraries", summary="delete a library")
@@ -197,27 +225,30 @@ async def delete_version_generic(
         library_name: str,
         version: str,
         configuration: Configuration):
-    headers = generate_headers_downstream(request.headers)
-    doc_db = configuration.doc_db
-    storage = configuration.storage
+    async with Context.start_ep(
+            request=request,
+            with_attributes={"libraryName": library_name, "version": version}
+    ) as ctx:  # type: Context
+        doc_db = configuration.doc_db
+        storage = configuration.storage
 
-    namespace = namespace[1:] if namespace and namespace[0] == '@' else namespace
+        namespace = namespace[1:] if namespace and namespace[0] == '@' else namespace
 
-    doc = await doc_db.get_document(
-        partition_keys={"library_name": f"@{namespace}/{library_name}"},
-        clustering_keys={"version_number": get_version_number_str(version)},
-        owner=configuration.owner,
-        headers=headers)
-    await doc_db.delete_document(doc=doc, owner=Configuration.owner, headers=headers)
+        doc = await doc_db.get_document(
+            partition_keys={"library_name": f"@{namespace}/{library_name}"},
+            clustering_keys={"version_number": get_version_number_str(version)},
+            owner=configuration.owner,
+            headers=ctx.headers())
+        await doc_db.delete_document(doc=doc, owner=Configuration.owner, headers=ctx.headers())
 
-    if namespace != "":
-        await storage.delete_group(f"libraries/{namespace}/{library_name}/{version}",
-                                   owner=Configuration.owner, headers=headers)
-    else:
-        await storage.delete_group(f"libraries/{library_name}/{version}",
-                                   owner=Configuration.owner, headers=headers)
+        if namespace != "":
+            await storage.delete_group(f"libraries/{namespace}/{library_name}/{version}",
+                                       owner=Configuration.owner, headers=ctx.headers())
+        else:
+            await storage.delete_group(f"libraries/{library_name}/{version}",
+                                       owner=Configuration.owner, headers=ctx.headers())
 
-    return {"deletedCount": 1}
+        return {"deletedCount": 1}
 
 
 @router.delete("/libraries/{namespace}/{library_name}/{version}", summary="delete a specific version")
@@ -250,98 +281,104 @@ async def resolve_loading_tree(
         request: Request,
         body: LoadingGraphBody,
         configuration: Configuration = Depends(get_configuration)
-        ):
+):
+    response: Optional[LoadingGraphResponseV1] = None
+    async with Context.start_ep(
+            request=request,
+            response=lambda: response,
+            body=body
+    ) as ctx:  # type: Context
 
-    doc_db = configuration.doc_db
-    headers = generate_headers_downstream(request.headers)
-    libraries = {name: version for name, version in body.libraries.items()}
+        doc_db = configuration.doc_db
+        libraries = {name: version for name, version in body.libraries.items()}
 
-    log_info(f"Start resolving loading graph: {libraries}")
+        log_info(f"Start resolving loading graph: {libraries}")
 
-    latest_queries = [name for name, version in libraries.items() if version == "latest"]
-    versions_resp = await asyncio.gather(*[
-        list_versions(request=request, name=name, configuration=configuration)
-        for name in latest_queries
+        latest_queries = [name for name, version in libraries.items() if version == "latest"]
+        versions_resp = await asyncio.gather(*[
+            list_versions(name=name, context=ctx, max_results=1000, configuration=configuration)
+            for name in latest_queries
         ], return_exceptions=True)
 
-    if any(isinstance(v, Exception) for v in versions_resp):
-        packages_error = [f"{name}#latest"
-                          for e, name in zip(versions_resp, latest_queries)
-                          if isinstance(e, Exception)]
-        raise PackagesNotFound(
-            detail="Failed to retrieved latest version of package(s)",
-            packages=packages_error)
-
-    latest_versions = {name: resp.versions[0] for name, resp in zip(latest_queries, versions_resp)}
-    explicit_versions = {**libraries, **latest_versions}
-
-    log_info(f"Latest versions resolved", latest_versions=latest_versions, explicit_versions=explicit_versions)
-
-    queries = [doc_db.get_document(partition_keys={"library_name": name},
-                                   clustering_keys={"version_number": get_version_number_str(version)},
-                                   owner=configuration.owner, headers=headers)
-               for name, version in explicit_versions.items()]
-
-    dependencies = await asyncio.gather(*queries, return_exceptions=True)
-
-    if any(isinstance(v, Exception) for v in dependencies):
-        packages_error = [f"{name}#{version}" for e, (name, version) in zip(dependencies, explicit_versions.items())
-                          if isinstance(e, Exception)]
-        raise PackagesNotFound(detail="Failed to retrieved explicit version of package(s)",
-                               packages=packages_error)
-
-    dependencies_dict = {d["library_name"]: d for d in dependencies}
-
-    async def add_missing_dependencies(missing_previous_loop=None):
-        """ It maybe the case where some dependencies are missing in the provided body,
-        here we fetch using 'body.using' or the latest version of them"""
-        flatten_dependencies = set(flatten([[p.split("#")[0] for p in package['dependencies']]
-                                            for package in dependencies_dict.values()]))
-
-        missing = [d for d in flatten_dependencies if d not in dependencies_dict]
-        if not missing:
-            return dependencies_dict
-
-        if missing_previous_loop and missing == missing_previous_loop:
+        if any(isinstance(v, Exception) for v in versions_resp):
+            packages_error = [f"{name}#latest"
+                              for e, name in zip(versions_resp, latest_queries)
+                              if isinstance(e, Exception)]
             raise PackagesNotFound(
-                detail="Indirect dependencies not found in the CDN",
-                packages=missing
+                detail="Failed to retrieved latest version of package(s)",
+                packages=packages_error)
+
+        latest_versions = {name: resp.versions[0] for name, resp in zip(latest_queries, versions_resp)}
+        explicit_versions = {**libraries, **latest_versions}
+
+        log_info(f"Latest versions resolved", latest_versions=latest_versions, explicit_versions=explicit_versions)
+
+        queries = [doc_db.get_document(partition_keys={"library_name": name},
+                                       clustering_keys={"version_number": get_version_number_str(version)},
+                                       owner=configuration.owner, headers=ctx.headers())
+                   for name, version in explicit_versions.items()]
+
+        dependencies = await asyncio.gather(*queries, return_exceptions=True)
+
+        if any(isinstance(v, Exception) for v in dependencies):
+            packages_error = [f"{name}#{version}" for e, (name, version) in zip(dependencies, explicit_versions.items())
+                              if isinstance(e, Exception)]
+            raise PackagesNotFound(detail="Failed to retrieved explicit version of package(s)",
+                                   packages=packages_error)
+
+        dependencies_dict = {d["library_name"]: d for d in dependencies}
+
+        async def add_missing_dependencies(missing_previous_loop=None):
+            """ It maybe the case where some dependencies are missing in the provided body,
+            here we fetch using 'body.using' or the latest version of them"""
+            flatten_dependencies = set(flatten([[p.split("#")[0] for p in package['dependencies']]
+                                                for package in dependencies_dict.values()]))
+
+            missing = [d for d in flatten_dependencies if d not in dependencies_dict]
+            if not missing:
+                return dependencies_dict
+
+            if missing_previous_loop and missing == missing_previous_loop:
+                raise PackagesNotFound(
+                    detail="Indirect dependencies not found in the CDN",
+                    packages=missing
                 )
 
-        def get_dependency(dependency):
-            if dependency in body.using:
-                return get_query_version(configuration.doc_db, dependency, body.using[dependency], headers)
-            return get_query_latest(configuration.doc_db, dependency, headers)
+            def get_dependency(dependency):
+                if dependency in body.using:
+                    return get_query_version(configuration.doc_db, dependency, body.using[dependency], ctx.headers())
+                return get_query_latest(configuration.doc_db, dependency, ctx.headers())
 
-        versions = await asyncio.gather(
-            *[get_dependency(dependency) for dependency in missing],
-            return_exceptions=True
+            versions = await asyncio.gather(
+                *[get_dependency(dependency) for dependency in missing],
+                return_exceptions=True
             )
-        if any(len(v["documents"]) == 0 for v in versions):
-            raise PackagesNotFound(
-                detail="Failed to retrieve a version of indirect dependencies",
-                packages=[f"{name}#{body.using.get(name,'latest')}"
-                          for v, name in zip(versions, missing)
-                          if len(v["documents"]) == 0]
+            if any(len(v["documents"]) == 0 for v in versions):
+                raise PackagesNotFound(
+                    detail="Failed to retrieve a version of indirect dependencies",
+                    packages=[f"{name}#{body.using.get(name, 'latest')}"
+                              for v, name in zip(versions, missing)
+                              if len(v["documents"]) == 0]
                 )
 
-        versions = list(flatten([d['documents'] for d in versions]))
-        for version in versions:
-            lib_name = version["library_name"]
-            dependencies_dict[lib_name] = version
+            versions = list(flatten([d['documents'] for d in versions]))
+            for version in versions:
+                lib_name = version["library_name"]
+                dependencies_dict[lib_name] = version
 
-        return await add_missing_dependencies(missing_previous_loop=missing)
+            return await add_missing_dependencies(missing_previous_loop=missing)
 
-    await add_missing_dependencies()
-    items_dict = {d["library_name"]: [to_package_id(d["library_name"]), get_url(d)]
-                  for d in dependencies_dict.values()}
-    r = loading_graph([], dependencies_dict.values(), items_dict)
+        await add_missing_dependencies()
+        items_dict = {d["library_name"]: [to_package_id(d["library_name"]), get_url(d)]
+                      for d in dependencies_dict.values()}
+        r = loading_graph([], dependencies_dict.values(), items_dict)
 
-    lock = [Library(name=d["library_name"], version=d["version"], namespace=d["namespace"],
-                    id=to_package_id(d["library_name"]), type=d["type"], fingerprint=d["fingerprint"])
-            for d in dependencies_dict.values()]
+        lock = [Library(name=d["library_name"], version=d["version"], namespace=d["namespace"],
+                        id=to_package_id(d["library_name"]), type=d["type"], fingerprint=d["fingerprint"])
+                for d in dependencies_dict.values()]
 
-    return LoadingGraphResponseV1(graphType="sequential-v1", lock=lock, definition=r)
+        response = LoadingGraphResponseV1(graphType="sequential-v1", lock=lock, definition=r)
+        return response
 
 
 @router.get("/queries/flux-packs", summary="list packs", response_model=ListPacksResponse)
@@ -352,27 +389,37 @@ async def list_packs(
     """
     WARNING: should not be used in prod: use allow filtering
     """
-    headers = generate_headers_downstream(request.headers)
-    doc_db = configuration.doc_db
-    where_clauses = [WhereClause(column="type", relation="eq", term="flux_pack")]
-    if namespace:
-        where_clauses.append(WhereClause(column="namespace", relation="eq", term=namespace))
 
-    query = QueryBody(
-        max_results=1000,
-        allow_filtering=True,
-        query=Query(where_clause=where_clauses)
+    response: Optional[ListPacksResponse] = None
+    async with Context.start_ep(
+            request=request,
+            response=lambda: response
+    ) as ctx:  # type: Context
+
+        await ctx.warning(" should not be used in prod: use allow filtering")
+        doc_db = configuration.doc_db
+        where_clauses = [WhereClause(column="type", relation="eq", term="flux_pack")]
+        if namespace:
+            where_clauses.append(WhereClause(column="namespace", relation="eq", term=namespace))
+
+        query = QueryBody(
+            max_results=1000,
+            allow_filtering=True,
+            query=Query(where_clause=where_clauses)
         )
-    response = await doc_db.query(query_body=query, owner=Configuration.owner, headers=headers)
+        resp = await doc_db.query(query_body=query, owner=Configuration.owner, headers=ctx.headers())
 
-    if len(response["documents"]) == 1000:
-        raise Exception("Maximum number of items return for the current query mechanism")
-    latest = {lib["library_name"]: lib for lib in response["documents"]}
-    packs = [FluxPackSummary(name=doc["library_name"].split("/")[1], description=doc["description"], tags=doc["tags"],
-                             id=to_package_id(doc["library_name"]), namespace=doc["library_name"].split("/")[0][1:])
-             for doc in latest.values()]
+        if len(resp["documents"]) == 1000:
+            raise Exception("Maximum number of items return for the current query mechanism")
 
-    return ListPacksResponse(fluxPacks=packs)
+        latest = {lib["library_name"]: lib for lib in resp["documents"]}
+
+        packs = [FluxPackSummary(name=doc["library_name"].split("/")[1], description=doc["description"],
+                                 tags=doc["tags"], id=to_package_id(doc["library_name"]),
+                                 namespace=doc["library_name"].split("/")[0][1:])
+                 for doc in latest.values()]
+        response = ListPacksResponse(fluxPacks=packs)
+        return response
 
 
 @router.delete("/namespace/{namespace}", summary="clear the cdn resources")
@@ -383,28 +430,32 @@ async def clear(
     """
     WARNING: should not be used in prod: use allow filtering
     """
-    headers = generate_headers_downstream(request.headers)
+    async with Context.start_ep(
+            request=request
+    ) as ctx:  # type: Context
 
-    doc_db = configuration.doc_db
-    storage = configuration.storage
+        await ctx.warning(" should not be used in prod: use allow filtering")
 
-    if not namespace:
-        await asyncio.gather(doc_db.delete_table(headers=headers),
-                             storage.delete_bucket(force_not_empty=True, headers=headers))
-        await init_resources(configuration)
-        return
+        doc_db = configuration.doc_db
+        storage = configuration.storage
 
-    query = QueryBody(
-        select_clauses=[SelectClause(selector="library_name"), SelectClause(selector="version")],
-        max_results=1000,
-        allow_filtering=True,
-        query=Query(where_clause=[WhereClause(column="namespace", relation="eq", term=namespace)])
+        if not namespace:
+            await asyncio.gather(doc_db.delete_table(headers=ctx.headers()),
+                                 storage.delete_bucket(force_not_empty=True, headers=ctx.headers()))
+            await init_resources(configuration)
+            return
+
+        query = QueryBody(
+            select_clauses=[SelectClause(selector="library_name"), SelectClause(selector="version")],
+            max_results=1000,
+            allow_filtering=True,
+            query=Query(where_clause=[WhereClause(column="namespace", relation="eq", term=namespace)])
         )
-    resp_query = await doc_db.query(query_body=query, owner=Configuration.owner, headers=headers)
+        resp_query = await doc_db.query(query_body=query, owner=Configuration.owner, headers=ctx.headers())
 
-    await asyncio.gather(*[doc_db.delete_document(d, owner=Configuration.owner, headers=headers)
-                           for d in resp_query["documents"]])
-    await storage.delete_group(f"libraries/{namespace}", owner=Configuration.owner, headers=headers)
+        await asyncio.gather(*[doc_db.delete_document(d, owner=Configuration.owner, headers=ctx.headers())
+                               for d in resp_query["documents"]])
+        await storage.delete_group(f"libraries/{namespace}", owner=Configuration.owner, headers=ctx.headers())
 
 
 async def get_package_generic(
@@ -413,37 +464,40 @@ async def get_package_generic(
         version: str,
         metadata: bool = False,
         configuration: Configuration = Depends(get_configuration)
-        ):
+):
+    async with Context.start_ep(
+            request=request,
+            with_attributes={"libraryName": library_name, "version": version, "metadata": metadata}
+    ) as ctx:  # type: Context
 
-    headers = generate_headers_downstream(request.headers)
-    if version == 'latest':
-        versions_resp = await list_versions(request=request, name=library_name, max_results=1,
-                                            configuration=configuration)
-        version = versions_resp.versions[0]
+        if version == 'latest':
+            versions_resp = await list_versions(name=library_name, max_results=1, context=ctx,
+                                                configuration=configuration)
+            version = versions_resp.versions[0]
 
-    doc_db = configuration.doc_db
+        doc_db = configuration.doc_db
 
-    if metadata:
-        try:
-            d = await doc_db.get_document(
-                partition_keys={"library_name": library_name},
-                clustering_keys={"version_number": get_version_number_str(version)},
-                owner=configuration.owner,
-                headers=headers)
-            return Library(name=d["library_name"], version=d["version"], namespace=d["namespace"],
-                           id=to_package_id(d["library_name"]), type=d["type"], fingerprint=d["fingerprint"])
-        except HTTPException as e:
-            if e.status_code == 404:
-                raise PackagesNotFound(
-                    detail="Failed to retrieve a package",
-                    packages=[f"{library_name}#{version}"]
+        if metadata:
+            try:
+                d = await doc_db.get_document(
+                    partition_keys={"library_name": library_name},
+                    clustering_keys={"version_number": get_version_number_str(version)},
+                    owner=configuration.owner,
+                    headers=ctx.headers())
+                return Library(name=d["library_name"], version=d["version"], namespace=d["namespace"],
+                               id=to_package_id(d["library_name"]), type=d["type"], fingerprint=d["fingerprint"])
+            except HTTPException as e:
+                if e.status_code == 404:
+                    raise PackagesNotFound(
+                        detail="Failed to retrieve a package",
+                        packages=[f"{library_name}#{version}"]
                     )
 
-    headers = generate_headers_downstream(request.headers)
-    storage = configuration.storage
-    path = Path("libraries") / library_name.strip('@') / version / '__original.zip'
-    content = await storage.get_bytes(path=path, owner=configuration.owner, headers=headers)
-    return Response(content, media_type='multipart/form-data')
+        headers = generate_headers_downstream(request.headers)
+        storage = configuration.storage
+        path = Path("libraries") / library_name.strip('@') / version / '__original.zip'
+        content = await storage.get_bytes(path=path, owner=configuration.owner, headers=headers)
+        return Response(content, media_type='multipart/form-data')
 
 
 @router.get("/libraries/{namespace}/{library_name}/{version}", summary="retrieve original zip file of package")
@@ -476,29 +530,48 @@ async def get_resource(request: Request,
                        rest_of_path: str,
                        configuration: Configuration = Depends(get_configuration)
                        ):
-    # rest_of_path: $asset_id/$version/$path
-    parts = rest_of_path.split('/')
-    version = parts[1]
+    async with Context.start_ep(
+            action="fetch resource",
+            request=request,
+            with_attributes={"rest_of_path": rest_of_path}
+    ) as ctx:  # type: Context
 
-    # default browser's caching time, do not apply for 'latest' and '*-next'
-    max_age = "31536000"
-    try:
-        package_name = to_package_name(parts[0])
-    except Exception:
-        raise HTTPException(status_code=400, detail=f"'{parts[0]}' is not a valid asset id")
+        parts = [p for p in rest_of_path.split('/') if p]
+        version = parts[1]
 
-    if version == 'latest':
-        versions_resp = await list_versions(request=request, name=package_name, configuration=configuration)
-        version = versions_resp.versions[0]
-        max_age = "60"
+        # default browser's caching time, do not apply for 'latest' and '*-next'
+        max_age = "31536000"
+        try:
+            package_name = to_package_name(parts[0])
+        except Exception:
+            raise HTTPException(status_code=400, detail=f"'{parts[0]}' is not a valid asset id")
 
-    if '-next' in version:
-        max_age = "0"
+        if version == 'latest':
+            await ctx.info(text="retrieve latest version")
+            versions_resp = await list_versions(name=package_name, context=ctx, max_results=1000,
+                                                configuration=configuration)
+            version = versions_resp.versions[0]
+            max_age = "60"
 
-    forward_path = f"libraries/{package_name.replace('@', '')}/{version}/{'/'.join(parts[2:])}"
-    storage = configuration.storage
-    file_id = forward_path.split('/')[-1]
-    path = '/'.join(forward_path.split('/')[0:-1])
-    script = await fetch(request, path, file_id, storage)
+        if '-next' in version:
+            await ctx.info("'-next' suffix => max_age set to 0")
+            max_age = "0"
 
-    return format_response(script, file_id, max_age=max_age)
+        forward_path = f"libraries/{package_name.replace('@', '')}/{version}/{'/'.join(parts[2:])}"
+
+        if len(parts) == 2:
+            await ctx.info(text="no resource specified => get the entry point")
+            doc = await configuration.doc_db.get_document(
+                partition_keys={"library_name": package_name},
+                clustering_keys={"version_number": get_version_number_str(version)},
+                owner=configuration.owner,
+                headers=ctx.headers())
+            forward_path = f"libraries/{package_name.replace('@', '')}/{version}/{doc['bundle']}"
+
+        await ctx.info('forward path constructed', data={"path": forward_path})
+        storage = configuration.storage
+        file_id = forward_path.split('/')[-1]
+        path = '/'.join(forward_path.split('/')[0:-1])
+        script = await fetch(request, path, file_id, storage)
+
+        return format_response(script, file_id, max_age=max_age)

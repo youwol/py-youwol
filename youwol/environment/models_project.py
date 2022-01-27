@@ -182,11 +182,11 @@ class PipelineStep(BaseModel):
         await context.info(text="Manifest retrieved", data=last_manifest)
 
         fingerprint, _ = await self.get_fingerprint(project=project, flow_id=flow_id, context=context)
-        await context.info(text="Actual fingerprint", data=fingerprint)
+        await context.info(text="Actual fingerprint", data={'fingerprint': fingerprint})
 
         if last_manifest.fingerprint != fingerprint:
-            await context.info(text="Outdated entry",
-                               data={'actual fp': fingerprint, 'saved fp': last_manifest.fingerprint})
+            await context.info(text="Outdated entry", data={'actual fp': fingerprint,
+                                                            'saved fp': last_manifest.fingerprint})
             return PipelineStepStatus.outdated
 
         return PipelineStepStatus.OK if last_manifest.succeeded else PipelineStepStatus.KO
@@ -264,7 +264,7 @@ class Project(BaseModel):
                                ignore: List[str] = None
                                ) -> List['Project']:
         ignore = ignore or []
-        all_dependencies = self.pipeline.dependencies(self, context)
+        all_dependencies = self.pipeline.dependencies(self, context) if self.pipeline.dependencies else []
         dependencies = [p for p in projects if p.name in all_dependencies and p.name not in
                         ignore]
         ignore = ignore + [p.name for p in dependencies]

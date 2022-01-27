@@ -30,7 +30,7 @@ from youwol.main_args import get_main_arguments, MainArguments
 from youwol.middlewares.models_dispatch import AbstractDispatch
 from youwol.routers.custom_commands.models import Command
 from youwol.utils.utils_low_level import get_public_user_auth_token
-from youwol.web_socket import WebSocketsStore
+from youwol.web_socket import AdminContextLogger
 from youwol_utils import retrieve_user_info
 from youwol_utils.context import Context, ContextFactory
 from youwol_utils.utils_paths import parse_json, write_json
@@ -234,7 +234,8 @@ class YouwolEnvironmentFactory:
     @staticmethod
     async def trigger_on_load(config: YouwolEnvironment):
         context = ContextFactory.get_instance(
-            web_socket=WebSocketsStore.userChannel
+            logger=AdminContextLogger(),
+            request=None
         )
         if not config.events or not config.events.onLoad:
             return
@@ -265,7 +266,7 @@ async def login(
             detail=f"User has not been identified, make sure it is defined in users info file ({users_info_path})"
         )
     if user_email not in parse_json(users_info_path)['users']:
-        context and await context.info(
+        context and context.info(
             text=f"User {user_email} not registered in {users_info_path}: switch user",
             data={"user_email": user_email, 'usersInfo': parse_json(users_info_path)
                   }

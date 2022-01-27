@@ -5,7 +5,7 @@ from fastapi import FastAPI, APIRouter, Depends, WebSocket
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
-import youwol.middlewares.dynamic_routing.custom_dispatch_rules as custom_dispatch
+import youwol.middlewares.custom_dispatch_middleware as custom_dispatch
 import youwol.middlewares.dynamic_routing.loading_graph_rules as loading_graph
 import youwol.middlewares.dynamic_routing.missing_asset_rules as missing_asset
 import youwol.middlewares.dynamic_routing.workspace_explorer_rules as workspace_explorer
@@ -20,9 +20,10 @@ from youwol.routers.environment.download_assets.data import DownloadDataTask
 from youwol.routers.environment.download_assets.flux_project import DownloadFluxProjectTask
 from youwol.routers.environment.download_assets.package import DownloadPackageTask
 from youwol.utils.utils_low_level import start_web_socket, assert_python
-from youwol.web_socket import WebSocketsStore
-from youwol_utils import YouWolException, youwol_exception_handler
+from youwol.web_socket import WebSocketsStore, AdminContextLogger
+from youwol_utils import YouWolException, youwol_exception_handler, YouwolHeaders
 from youwol_utils.context import ContextFactory
+from youwol_utils.middlewares.root_middleware import RootMiddleware
 
 app = FastAPI(
     title="Local Dashboard",
@@ -43,21 +44,25 @@ ContextFactory.with_static_data = {
     "download_thread": download_thread
 }
 
+
 app.add_middleware(
     DynamicRoutingMiddleware,
     dynamic_dispatch_rules=[
-        custom_dispatch.CustomDispatchesRule(),
         workspace_explorer.GetChildrenDispatch(),
         workspace_explorer.GetPermissionsDispatch(),
         workspace_explorer.GetItemDispatch(),
         loading_graph.GetLoadingGraphDispatch(),
         missing_asset.GetRawDispatch(),
         missing_asset.GetMetadataDispatch(),
-        missing_asset.PostMetadataDispatch(),
-    ]
+        missing_asset.PostMetadataDispatch()
+    ],
+    disabling_header=YouwolHeaders.py_youwol_local_only
 )
-app.add_middleware(AuthMiddleware)
+
+app.add_middleware(custom_dispatch.CustomDispatchesMiddleware)
 app.add_middleware(BrowserCachingMiddleware)
+app.add_middleware(AuthMiddleware)
+app.add_middleware(RootMiddleware, ctx_logger=AdminContextLogger())
 
 router = APIRouter()
 

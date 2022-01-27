@@ -58,14 +58,14 @@ async def helm_upgrade(release_name: str, namespace: str, values_file: Path, cha
     cmd = f"helm upgrade {release_name} --namespace {namespace} --values {str(values_file)} " +\
           f"--atomic --timeout {timeout}s {str(chart_folder)}  {args}"
 
-    context and await context.info(text=cmd)
+    context and context.info(text=cmd)
     return_code, outputs = await execute_shell_cmd(cmd, context)
     return return_code, cmd, outputs
 
 
 async def helm_uninstall(release_name: str, namespace: str, context: Context = None):
     cmd = f"helm uninstall --namespace {namespace}  {release_name}"
-    context and await context.info(text=cmd)
+    context and context.info(text=cmd)
     await execute_shell_cmd(cmd, context)
 
 

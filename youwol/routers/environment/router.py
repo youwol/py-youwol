@@ -24,11 +24,11 @@ from youwol.routers.environment.upload_assets.package import UploadPackageTask
 from youwol.routers.environment.upload_assets.story import UploadStoryTask
 from youwol.routers.environment.upload_assets.upload import synchronize_permissions_metadata_symlinks
 from youwol.utils.utils_low_level import get_public_user_auth_token
-from youwol.web_socket import WebSocketsStore
+from youwol.web_socket import UserContextLogger
 from youwol_utils import retrieve_user_info, decode_id
 from youwol_utils.clients.assets.assets import AssetsClient
 from youwol_utils.clients.treedb.treedb import TreeDbClient
-from youwol_utils.context import Context, ContextFactory
+from youwol_utils.context import Context
 from youwol_utils.utils_paths import parse_json, write_json
 
 router = APIRouter()
@@ -139,14 +139,11 @@ async def status(
         request: Request,
         config: YouwolEnvironment = Depends(yw_config)
 ):
-    context = ContextFactory.get_instance(
-        request=request,
-        web_socket=WebSocketsStore.userChannel
-    )
-    async with context.start(
-            action="Get environment status"
+    async with Context.start_ep(
+            request=request,
+            with_loggers=[UserContextLogger()]
     ) as ctx:
-        connected = await connect_to_remote(config=config, context=context)
+        connected = await connect_to_remote(config=config, context=ctx)
         remote_gateway_info = config.get_remote_info()
         if remote_gateway_info:
             remote_gateway_info = RemoteGatewayInfo(name=remote_gateway_info.name,
@@ -161,7 +158,7 @@ async def status(
             remotesInfo=list(remotes_info)
         )
         await ctx.send(response)
-        await ctx.send(ProjectsLoadingResults(results=await ProjectLoader.get_results(config, context)))
+        await ctx.send(ProjectsLoadingResults(results=await ProjectLoader.get_results(config, ctx)))
         return response
 
 
@@ -198,11 +195,10 @@ async def sync_user(
         body: SyncUserBody,
         config: YouwolEnvironment = Depends(yw_config)
 ):
-    context = ContextFactory.get_instance(
-        request=request,
-        web_socket=WebSocketsStore.userChannel
-    )
-    async with context.start(f"Sync. user {body.email}") as ctx:
+    async with Context.start_ep(
+            request=request,
+            with_loggers=[UserContextLogger()]
+    ) as ctx:
 
         try:
             auth_token = await get_public_user_auth_token(
@@ -243,11 +239,6 @@ async def select_remote(
         request: Request,
         asset_id: str
 ):
-    context = ContextFactory.get_instance(
-        request=request,
-        web_socket=WebSocketsStore.userChannel
-    )
-
     upload_factories: Dict[str, any] = {
         "data": UploadDataTask,
         "flux-project": UploadFluxProjectTask,
@@ -255,14 +246,15 @@ async def select_remote(
         "package": UploadPackageTask
     }
 
-    async with context.start(
-            action="upload_asset",
+    async with Context.start_ep(
+            request=request,
             with_attributes={
                 'asset_id': asset_id
-            }
+            },
+            with_loggers=[UserContextLogger()]
     ) as ctx:
 
-        env = await context.get('env', YouwolEnvironment)
+        env = await ctx.get('env', YouwolEnvironment)
         local_treedb: TreeDbClient = LocalClients.get_treedb_client(env=env)
         local_assets: AssetsClient = LocalClients.get_assets_client(env=env)
         raw_id = decode_id(asset_id)

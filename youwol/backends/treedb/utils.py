@@ -5,16 +5,16 @@ from fastapi import HTTPException
 from starlette.requests import Request
 
 from youwol_utils import (
-    DocDb, get_all_individual_groups, asyncio, ensure_group_permission, generate_headers_downstream, user_info,
+    DocDb, get_all_individual_groups, asyncio, ensure_group_permission, user_info,
     get_user_group_ids, log_info,
-    )
+)
+from youwol_utils.context import Context
 from .configurations import Configuration
 
 
 async def init_resources(
         config: Configuration
-        ):
-
+):
     log_info("Ensure database resources")
     headers = await config.admin_headers if config.admin_headers else {}
     log_info("Successfully retrieved authorization for resources creation")
@@ -227,27 +227,34 @@ async def ensure_get_permission(
         request: Request,
         docdb: DocDb,
         partition_keys: Dict[str, Any],
-        configuration: Configuration
-        ):
+        configuration: Configuration,
+        context: Context
+):
+    async with context.start(
+            action="ensure_get_permission",
+    ) as ctx:  # type: Context
 
-    headers = generate_headers_downstream(request.headers)
-    asset = await docdb.get_document(partition_keys=partition_keys, clustering_keys={},
-                                     owner=configuration.public_owner, headers=headers)
-    # there is no restriction on access asset 'metadata' for now
-    ensure_group_permission(request=request, group_id=asset["group_id"])
-    return asset
+        await ctx.info(text="partition_keys", data=partition_keys)
+        asset = await docdb.get_document(partition_keys=partition_keys, clustering_keys={},
+                                         owner=configuration.public_owner, headers=ctx.headers())
+        # there is no restriction on access asset 'metadata' for now
+        ensure_group_permission(request=request, group_id=asset["group_id"])
+        return asset
 
 
 async def ensure_post_permission(
         request: Request,
         docdb: DocDb,
         doc: Any,
-        configuration: Configuration
-        ):
-
-    ensure_group_permission(request=request, group_id=doc["group_id"])
-    headers = generate_headers_downstream(request.headers)
-    return await docdb.update_document(doc, owner=configuration.public_owner, headers=headers)
+        configuration: Configuration,
+        context: Context
+):
+    async with context.start(
+            action="ensure_post_permission",
+            with_attributes={"groupId": doc["group_id"]}
+    ) as ctx:  # type: Context
+        ensure_group_permission(request=request, group_id=doc["group_id"])
+        return await docdb.update_document(doc, owner=configuration.public_owner, headers=ctx.headers())
 
 
 async def ensure_query_permission(
@@ -256,46 +263,52 @@ async def ensure_query_permission(
         key: str,
         value: str,
         max_count: int,
-        configuration: Configuration
-        ):
+        configuration: Configuration,
+        context: Context
+):
+    async with context.start(
+            action="ensure_query_permission"
+    ) as ctx:  # type: Context
+        user = user_info(request)
+        allowed_groups = get_user_group_ids(user)
+        r = await docdb.query(query_body=f"{key}={value}#{max_count}", owner=configuration.public_owner,
+                              headers=ctx.headers())
 
-    headers = generate_headers_downstream(request.headers)
-    user = user_info(request)
-    allowed_groups = get_user_group_ids(user)
-    r = await docdb.query(query_body=f"{key}={value}#{max_count}", owner=configuration.public_owner, headers=headers)
-
-    return [d for d in r["documents"] if d['group_id'] in allowed_groups]
+        return [d for d in r["documents"] if d['group_id'] in allowed_groups]
 
 
 async def ensure_delete_permission(
         request: Request,
         docdb: DocDb,
         doc: Dict[str, Any],
-        configuration: Configuration
-        ):
+        configuration: Configuration,
+        context: Context
+):
     # only owning group can delete
     # if isinstance(doc, FolderResponse) or isinstance(doc, ItemResponse) or isinstance(doc, DriveResponse):
-    doc = convert_in(doc)
 
-    ensure_group_permission(request=request, group_id=doc["group_id"])
+    async with context.start(
+            action="ensure_delete_permission"
+    ) as ctx:  # type: Context
+        doc = convert_in(doc)
 
-    headers = generate_headers_downstream(request.headers)
-    return await docdb.delete_document(doc=doc, owner=configuration.public_owner, headers=headers)
+        ensure_group_permission(request=request, group_id=doc["group_id"])
+        return await docdb.delete_document(doc=doc, owner=configuration.public_owner, headers=ctx.headers())
 
 
 async def get_parent(
         request: Request,
         parent_id: str,
-        configuration: Configuration
-        ):
-
+        configuration: Configuration,
+        context: Context
+):
     folders_db, drives_db = configuration.doc_dbs.folders_db, configuration.doc_dbs.drives_db
     parent_folder, parent_drive = await asyncio.gather(
         ensure_query_permission(request=request, docdb=folders_db, key="folder_id", value=parent_id,
-                                configuration=configuration, max_count=1),
+                                configuration=configuration, max_count=1, context=context),
         ensure_query_permission(request=request, docdb=drives_db, key="drive_id", value=parent_id,
-                                configuration=configuration, max_count=1)
-        )
+                                configuration=configuration, max_count=1, context=context)
+    )
     if len(parent_folder) + len(parent_drive) == 0:
         raise HTTPException(status_code=404, detail="Containing drive/folder not found")
     parent = (parent_folder + parent_drive)[0]
