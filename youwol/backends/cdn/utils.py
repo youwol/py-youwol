@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import hashlib
 import itertools
 import json
 import os
@@ -7,20 +8,19 @@ import time
 import zipfile
 from pathlib import Path
 from shutil import which
+from typing import IO
 from typing import Union, List, Mapping
 from uuid import uuid4
-import hashlib
 
+import brotli
 from fastapi import HTTPException
 from starlette.responses import Response
-from typing import IO
 
-from .utils_indexing import format_doc_db_record, get_version_number_str
 from youwol_utils import generate_headers_downstream, QueryBody, files_check_sum, shutil, log_info, log_error
 from youwol_utils.clients.docdb.models import Query, WhereClause, OrderingClause
 from .configurations import Configuration
-import brotli
 from .models import FormData, PublishResponse
+from .utils_indexing import format_doc_db_record, get_version_number_str
 
 flatten = itertools.chain.from_iterable
 
@@ -184,7 +184,18 @@ async def publish_package(file: IO, filename: str, content_encoding, configurati
         package_path = next(flatten([[Path(root) / f for f in files if f == "package.json"]
                                      for root, _, files in os.walk(dir_path)]), None)
 
-        package_json = json.loads(open(package_path).read())
+        if package_path is None:
+            raise RuntimeError("It is required for the package to include a package.json file")
+
+        try:
+            package_json = json.loads(open(package_path).read())
+        except ValueError:
+            raise ValueError("It was not possible to load the json file 'package.json'. Valid json file?")
+
+        mandatory_fields = ["name", "version"]
+        if any([field not in package_json for field in mandatory_fields]):
+            raise ValueError(f"The package.json file needs to define the attributes {str(mandatory_fields)}")
+
         library_id = package_json["name"].replace("@", '')
         version = package_json["version"]
         base_path = Path('libraries') / library_id / version
