@@ -139,10 +139,9 @@ async def status(
         request: Request,
         config: YouwolEnvironment = Depends(yw_config)
 ):
-
-    async with Context.from_request(request).start(
-            action="Get environment status",
-            logger=UserContextLogger()
+    async with Context.start_ep(
+            request=request,
+            with_loggers=[UserContextLogger()]
     ) as ctx:
         connected = await connect_to_remote(config=config, context=ctx)
         remote_gateway_info = config.get_remote_info()
@@ -196,10 +195,10 @@ async def sync_user(
         body: SyncUserBody,
         config: YouwolEnvironment = Depends(yw_config)
 ):
-    async with Context.from_request(request).start(
-            action=f"Sync. user {body.email}",
-            logger=UserContextLogger()
-            ) as ctx:
+    async with Context.start_ep(
+            request=request,
+            with_loggers=[UserContextLogger()]
+    ) as ctx:
 
         try:
             auth_token = await get_public_user_auth_token(
@@ -247,12 +246,12 @@ async def select_remote(
         "package": UploadPackageTask
     }
 
-    async with Context.from_request(request).start(
-            action="upload_asset",
+    async with Context.start_ep(
+            request=request,
             with_attributes={
                 'asset_id': asset_id
             },
-            logger=UserContextLogger()
+            with_loggers=[UserContextLogger()]
     ) as ctx:
 
         env = await ctx.get('env', YouwolEnvironment)

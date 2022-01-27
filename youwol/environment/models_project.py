@@ -182,7 +182,7 @@ class PipelineStep(BaseModel):
         await context.info(text="Manifest retrieved", data=last_manifest)
 
         fingerprint, _ = await self.get_fingerprint(project=project, flow_id=flow_id, context=context)
-        await context.info(text="Actual fingerprint", data=fingerprint)
+        await context.info(text="Actual fingerprint", data={'fingerprint': fingerprint})
 
         if last_manifest.fingerprint != fingerprint:
             await context.info(text="Outdated entry", data={'actual fp': fingerprint,

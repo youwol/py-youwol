@@ -26,7 +26,7 @@ async def collect_updates(
     async with Context.from_request(request).start(
             action="collect available updates",
             with_attributes={'topic': 'updatesCdn'},
-            logger=UserContextLogger()
+            with_loggers=[UserContextLogger()]
     ) as ctx:
 
         env = await ctx.get('env', YouwolEnvironment)
@@ -60,7 +60,7 @@ async def download(
     async with Context.from_request(request).start(
             action="download packages",
             with_attributes={'topic': 'updatesCdn'},
-            logger=UserContextLogger()
+            with_loggers=[UserContextLogger()]
     ) as ctx:
         await ctx.info(text=f"Proceed to {len(body.packages)} packages download", data=body)
         for package in body.packages:

@@ -74,19 +74,18 @@ async def get_status(
     env = await context.get('env', YouwolEnvironment)
     paths: PathsBook = env.pathsBook
     async with context.start(
-            action="get status",
+            action="implementation.get_status",
             with_attributes={'projectId': project.id, 'flowId': flow_id, 'stepId': step.id}
-            ) as _ctx:
+    ) as ctx:
         path = paths.artifacts_step(project_name=project.name, flow_id=flow_id, step_id=step.id)
         manifest = Manifest(**parse_json(path / 'manifest.json')) if (path / 'manifest.json').exists() else None
 
-        status = await step.get_status(project=project, flow_id=flow_id, last_manifest=manifest, context=context)
+        status = await step.get_status(project=project, flow_id=flow_id, last_manifest=manifest, context=ctx)
 
         artifacts = [format_artifact_response(project=project, flow_id=flow_id, step=step, artifact=artifact,
                                               env=env)
                      for artifact in step.artifacts]
-
-        return PipelineStepStatusResponse(
+        response = PipelineStepStatusResponse(
             projectId=project.id,
             flowId=flow_id,
             stepId=step.id,
@@ -94,7 +93,9 @@ async def get_status(
             artifactFolder=path,
             artifacts=artifacts,
             status=status
-            )
+        )
+        await ctx.send(response)
+        return response
 
 
 async def create_artifacts(
@@ -143,7 +144,7 @@ async def create_artifact(
             )
 
         paths: PathsBook = env.pathsBook
-        await ctx.info(text='got files listing', data=[str(f) for f in files])
+        await ctx.info(text='got files listing', data={"files": [str(f) for f in files]})
         destination_folder = paths.artifact(project_name=project.name, flow_id=flow_id, step_id=step.id,
                                             artifact_id=artifact.id)
 
@@ -152,4 +153,4 @@ async def create_artifact(
             os.makedirs(os.path.dirname(destination_path), exist_ok=True)
             shutil.copy(src=f, dst=destination_path)
 
-        await context.info(text="Zip file created", data={'path': str(destination_path)})
+        await ctx.info(text="Zip file created", data={'path': str(destination_path)})

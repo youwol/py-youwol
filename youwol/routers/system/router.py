@@ -75,12 +75,11 @@ async def query_logs(
 ) -> LogsResponse:
     response: Optional[LogsResponse] = None
     async with Context.start_ep(
-            action="query logs",
             with_attributes={"fromTimestamp": from_timestamp, "maxCount": max_count},
             response=lambda: response,
             request=request
     ) as ctx:
-        logger = cast(AdminContextLogger, ctx.logger)
+        logger = cast(AdminContextLogger, ctx.loggers[0])
         logs = []
         for log in reversed(logger.root_node_logs):
             if log.timestamp > from_timestamp * 1000:
@@ -97,11 +96,10 @@ async def query_logs(
             summary="return the logs")
 async def get_logs(request: Request, parent_id: str):
     async with Context.start_ep(
-            action="get logs",
             request=request
     ) as ctx:
-        logger = cast(AdminContextLogger, ctx.logger)
-        nodes_logs, leaf_logs, errors = logger.node_logs, logger.leaf_logs, ctx.logger.errors
+        logger = cast(AdminContextLogger, ctx.loggers[0])
+        nodes_logs, leaf_logs, errors = logger.node_logs, logger.leaf_logs, logger.errors
 
         nodes: List[Log] = [NodeLogResponse(**log.dict(), failed=log.contextId in errors)
                             for log in nodes_logs
