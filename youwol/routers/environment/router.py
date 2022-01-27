@@ -265,10 +265,10 @@ async def select_remote(
             return_exceptions=True
         )
         if isinstance(asset, HTTPException) and asset.status_code == 404:
-            ctx.error(text="Can not find the asset in the local assets store")
+            await ctx.error(text="Can not find the asset in the local assets store")
             raise RuntimeError("Can not find the asset in the local assets store")
         if isinstance(tree_item, HTTPException) and tree_item.status_code == 404:
-            ctx.error(text="Can not find the tree item in the local treedb store")
+            await ctx.error(text="Can not find the tree item in the local treedb store")
             raise RuntimeError("Can not find the tree item in the local treedb store")
         if isinstance(asset, Exception) or isinstance(tree_item, Exception):
             raise RuntimeError("A problem occurred while fetching the local asset/tree items")
@@ -286,8 +286,8 @@ async def select_remote(
             path_item = await local_treedb.get_path(item_id=tree_item['itemId'])
         except HTTPException as e:
             if e.status_code == 404:
-                ctx.error(text=f"Can not get path of item with id '{tree_item['itemId']}'",
-                          data={"tree_item": tree_item, "error_detail": e.detail})
+                await ctx.error(text=f"Can not get path of item with id '{tree_item['itemId']}'",
+                                data={"tree_item": tree_item, "error_detail": e.detail})
             raise e
 
         await ctx.info(
