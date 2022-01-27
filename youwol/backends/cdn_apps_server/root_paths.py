@@ -1,23 +1,34 @@
-from typing import List
 import base64
+from typing import List
 
 import aiohttp
+from fastapi import APIRouter
 from starlette.requests import Request
 from starlette.responses import Response
-from fastapi import APIRouter
 
+from youwol_utils import raise_exception_from_response
 from youwol_utils.context import Context
 from .configurations import get_configuration
-from youwol_utils import raise_exception_from_response
 
 router = APIRouter()
+# For the applications below the href path must be fixed by appending /dist at the end
+to_fix = [
+    "@youwol/platform",
+    "@youwol/flux-builder",
+    "@youwol/flux-runner",
+    "@youwol/explorer",
+    "@youwol/stories",
+    "@youwol/exhibition-halls"
+]
 
 
 def get_info(segments: List[str]):
     namespace = segments[0]
     name = segments[1]
+    full_name = f"{namespace}/{name}" if namespace else name
     version = segments[2]
-    resource = '/'.join(segments[3:]) if len(segments) >= 4 else 'index.html'
+    default = '/index.html' if full_name in to_fix else ''
+    resource = '/'.join(segments[3:]) if len(segments) >= 4 else default
     return namespace, name, version, resource
 
 
@@ -27,16 +38,18 @@ async def get_raw_resource(
         version: str,
         resource: str,
         ctx: Context):
-
     full_name = f"{namespace}/{name}" if namespace else name
     raw_id = base64.urlsafe_b64encode(str.encode(full_name)).decode()
     config = await get_configuration()
-    url = f"{config.gtw_client.url_base}/raw/package/{raw_id}/{version}/dist/{resource}"
+    url = f"{config.gtw_client.url_base}/raw/package/{raw_id}/{version}/{resource}"
+
+    if full_name in to_fix:
+        url = f"{config.gtw_client.url_base}/raw/package/{raw_id}/{version}/dist/{resource}"
 
     cors_headers = {
         'cross-origin-opener-policy': 'same-origin',
         'cross-origin-embedder-policy': 'require-corp'
-        }
+    }
 
     async with aiohttp.ClientSession(auto_decompress=False) as session:
         async with await session.get(url=url, headers=ctx.headers()) as resp:
