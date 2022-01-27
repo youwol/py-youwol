@@ -182,7 +182,7 @@ async def publish_package(file: IO, filename: str, content_encoding, configurati
         log_info("...zip extracted", compressed_size=compressed_size)
 
         package_path = next(flatten([[Path(root) / f for f in files if f == "package.json"]
-                                     for root, _, files in os.walk(dir_path)]))
+                                     for root, _, files in os.walk(dir_path)]), None)
 
         package_json = json.loads(open(package_path).read())
         library_id = package_json["name"].replace("@", '')
