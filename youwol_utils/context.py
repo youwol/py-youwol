@@ -6,10 +6,11 @@ import time
 import traceback
 import uuid
 from abc import ABC, abstractmethod
+from contextlib import asynccontextmanager
 from enum import Enum
-from typing import Union, NamedTuple, Callable, Awaitable, Optional, List, TypeVar, Dict, cast, Any
+from typing import Union, NamedTuple, Callable, Awaitable, Optional, List, TypeVar, Dict, cast, Any, \
+    AsyncContextManager
 
-from async_generator import async_generator, yield_, asynccontextmanager
 from pydantic import BaseModel
 from starlette.requests import Request
 from starlette.websockets import WebSocket
@@ -44,6 +45,7 @@ class Label(Enum):
     API_GATEWAY = "API_GATEWAY"
     ADMIN = "ADMIN"
     END_POINT = "END_POINT"
+    TREE_DB = "TREE_DB"
 
 
 T = TypeVar('T')
@@ -118,7 +120,6 @@ class Context(NamedTuple):
         return cast(Context, request.state.context)
 
     @asynccontextmanager
-    @async_generator
     async def start(self,
                     action: str,
                     with_labels: List[StringLike] = None,
@@ -153,13 +154,14 @@ class Context(NamedTuple):
             await ctx.info(text=action, labels=[Label.STARTED])
             start = time.time()
             await execute_block(on_enter)
-            await yield_(ctx)
+            yield ctx
         except Exception as e:
             tb = traceback.format_exc()
+
             await ctx.error(
                 text=f"Exception raised",
                 data={
-                    'error': e.__str__(),
+                    'error': str(e),
                     'traceback': tb.split('\n'),
                     'args': [str(arg) for arg in e.args]
                 },
@@ -178,7 +180,7 @@ class Context(NamedTuple):
     @staticmethod
     def start_ep(
             request: Request,
-            action: str,
+            action: str = None,
             with_labels: List[StringLike] = None,
             with_attributes: JSON = None,
             body: BaseModel = None,
@@ -188,6 +190,7 @@ class Context(NamedTuple):
             on_exit: 'CallableBlock' = None,
     ) -> AsyncContextManager[Context]:
         context = Context.from_request(request=request)
+        action = action or f"{request.method}: {request.scope['path']}"
         with_labels = with_labels or []
         with_attributes = with_attributes or {}
 
@@ -232,7 +235,8 @@ class Context(NamedTuple):
 
     async def send(self, data: BaseModel, labels: List[StringLike] = None):
         labels = labels or []
-        await self.log(level=LogLevel.DATA, text="", labels=[data.__class__.__name__, *labels], data=data)
+        await self.log(level=LogLevel.DATA, text=f"Send data '{data.__class__.__name__}'",
+                       labels=[data.__class__.__name__, *labels], data=data)
 
     async def debug(self, text: str, labels: List[StringLike] = None, data: Union[JSON, BaseModel] = None):
         await self.log(level=LogLevel.DEBUG, text=text, labels=labels, data=data)
