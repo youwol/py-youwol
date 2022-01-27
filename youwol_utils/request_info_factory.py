@@ -166,8 +166,26 @@ class GetPackageMetadata(RequestInfoExtractor):
         return []
 
 
+class GetTreedbItem(RequestInfoExtractor):
+    prefix = '/api/treedb-backend/items/'
+
+    def match(self, request: Request):
+        return request.url.path.startswith(self.prefix) and request.method == 'GET'
+
+    def message(self, request: Request):
+        return "treedb item"
+
+    def attributes(self, request: Request):
+        tree_id = request.url.path.split(self.prefix)[1]
+        return {'treeId': tree_id}
+
+    def labels(self, request):
+        return [Label.TREE_DB]
+
+
 scenarios = [
     Logs(),
+    GetTreedbItem(),
     Admin(),
     CdnAppsServer(),
     PutAssetGtwAsset(),

@@ -43,7 +43,7 @@ async def ensure_folder(
         except YouWolException as e:
             if e.status_code != 404:
                 raise e
-            ctx.warning("Folder does not exist yet, start creation")
+            await ctx.warning("Folder does not exist yet, start creation")
             return await treedb.create_folder(
                 parent_folder_id=parent_folder_id,
                 body={"name": name, "folderId": folder_id},

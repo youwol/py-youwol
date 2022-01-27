@@ -31,7 +31,7 @@ class RootMiddleware(BaseHTTPMiddleware):
         root_id = YouwolHeaders.get_correlation_id(request)
 
         return Context(request=request,
-                       logger=self.ctx_logger,
+                       loggers=[self.ctx_logger],
                        parent_uid=root_id,
                        uid=root_id if root_id else 'root',
                        with_data={**ContextFactory.with_static_data, **kwargs})
@@ -49,7 +49,7 @@ class RootMiddleware(BaseHTTPMiddleware):
                 action=info.message,
                 with_attributes=info.attributes,
                 with_labels=[Label.API_GATEWAY, *info.labels]
-        ) as ctx:
+        ) as ctx:  # type: Context
             await ctx.info(
                 text='incoming request',
                 data={
