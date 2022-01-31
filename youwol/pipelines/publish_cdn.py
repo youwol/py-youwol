@@ -1,5 +1,6 @@
 import asyncio
 import itertools
+import json
 from pathlib import Path
 from typing import Optional, cast, Mapping, List, Iterable
 
@@ -8,12 +9,12 @@ from fastapi import HTTPException
 from youwol.backends.assets_gateway.models import DefaultDriveResponse
 from youwol.environment.clients import LocalClients, RemoteClients
 from youwol.environment.models_project import (
-    PipelineStep, Project, Manifest, PipelineStepStatus, FlowId, ExplicitNone,
+    PipelineStep, Project, Manifest, PipelineStepStatus, FlowId, ExplicitNone, BrowserApp,
 )
 from youwol.environment.paths import PathsBook
 from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.environment.upload_assets.upload import upload_asset
-from youwol_utils import encode_id, files_check_sum
+from youwol_utils import encode_id, files_check_sum, to_json
 from youwol_utils.context import Context
 from youwol_utils.utils_paths import create_zip_file
 
@@ -31,7 +32,30 @@ async def create_cdn_zip(
     zip_files = [(f, '/'.join(f.relative_to(artifacts_flow_path).parts[2:])) for f in files]
     await context.info(text="create CDN zip: files recovered",
                        data={'files': [f"{name} -> {str(path)}" for path, name in zip_files]})
-    create_zip_file(path=zip_path, files_to_zip=zip_files)
+
+    yw_metadata = to_json(project.pipeline.target)
+    await context.info(text="Append target metadata", data=yw_metadata)
+    create_zip_file(path=zip_path, files_to_zip=zip_files, with_data=[('.yw_metadata.json', json.dumps(yw_metadata))])
+
+
+async def publish_browser_app_metadata(package: str, version: str, target: BrowserApp, env: YouwolEnvironment,
+                                       context: Context):
+
+    async with context.start(action="publish_browser_app_metadata") as ctx:
+        client = LocalClients.get_cdn_sessions_storage_client(env=env)
+        settings = await client.get(package="@youwol/platform-essentials", key="settings", headers=ctx.headers())
+        if 'applications' not in settings:
+            settings['browserApplications'] = []
+        settings['browserApplications'] = [s for s in settings['browserApplications'] if s['package'] != package]
+        settings['browserApplications'].append(
+            {
+                "package": package,
+                "version": version,
+                **to_json(target)
+            }
+        )
+        await ctx.info(text="user settings of @youwol/platform-essentials", data=settings)
+        await client.post(package="@youwol/platform-essentials", key="settings", body=settings, headers=ctx.headers())
 
 
 class PublishCdnLocalStep(PipelineStep):
@@ -134,6 +158,12 @@ class PublishCdnLocalStep(PipelineStep):
             resp = await local_gtw.put_asset_with_raw(kind='package', folder_id=folder_id, data=data,
                                                       headers=ctx.headers(), timeout=600)
             await ctx.info(text="Asset posted in assets_gtw", data=resp)
+
+            target = project.pipeline.target
+            if isinstance(target, BrowserApp):
+                await publish_browser_app_metadata(package=project.name, version=project.version, target=target,
+                                                   env=env, context=ctx)
+
             local_cdn = LocalClients.get_cdn_client(env=env)
             resp = await local_cdn.get_package(library_name=project.name, version=project.version, metadata=True,
                                                headers=ctx.headers())
