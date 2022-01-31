@@ -274,10 +274,12 @@ CallableBlockException = Callable[[Exception, Context], Union[Awaitable, None]]
 
 
 class ContextFactory(NamedTuple):
-    with_static_data: Dict[str, DataType] = {}
+    with_static_data: Dict[str, DataType] = None
 
     @staticmethod
     def get_instance(request: Union[Request, None], logger: ContextLogger, **kwargs) -> Context:
+        with_data = kwargs if not ContextFactory.with_static_data else {**ContextFactory.with_static_data, **kwargs}
+
         return Context(request=request,
                        loggers=[logger],
                        with_data={**ContextFactory.with_static_data, **kwargs})
