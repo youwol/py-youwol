@@ -3,9 +3,11 @@ import shutil
 from pathlib import Path
 from typing import Union, List, Optional, NamedTuple, Iterable, Mapping
 
+from pydantic import BaseModel
+
 from youwol.environment.models_project import Manifest, PipelineStepStatus, Link, ExplicitNone, Flow, \
-    Pipeline, parse_json, Skeleton, SkeletonParameter, PipelineStep, FileListing, \
-    Artifact, Project, FlowId
+    Pipeline, parse_json, PipelineStep, FileListing, \
+    Artifact, Project, FlowId, JsBundle, BrowserApp
 from youwol.environment.paths import PathsBook
 from youwol.environment.projects_loader import ProjectLoader
 from youwol.environment.youwol_environment import YouwolEnvironment
@@ -14,28 +16,6 @@ from youwol_utils import files_check_sum
 from youwol_utils import to_json
 from youwol_utils.context import Context
 from youwol_utils.utils_paths import copy_tree, copy_file, list_files
-
-
-def create_skeleton(path: Union[Path, str]):
-    async def generate():
-        return
-
-    return Skeleton(
-        folder=path,
-        description="A skeleton of npm package written in typescript and build with webpack.",
-        parameters=[
-            SkeletonParameter(
-                id="package-name",
-                displayName="Name",
-                type='string',
-                defaultValue=None,
-                placeholder="Package name",
-                description="Name of the package. Should follow npm semantic.",
-                required=True
-                )
-            ],
-        generate=generate
-        )
 
 
 def get_dependencies(project: Project):
