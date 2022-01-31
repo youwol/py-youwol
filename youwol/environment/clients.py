@@ -4,6 +4,7 @@ from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol_utils import CdnClient, StorageClient, TableBody, SecondaryIndex, DocDbClient
 from youwol_utils.clients.assets.assets import AssetsClient
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
+from youwol_utils.clients.cdn_sessions_storage import CdnSessionsStorageClient
 from youwol_utils.clients.flux.flux import FluxClient
 from youwol_utils.clients.stories.stories import StoriesClient
 from youwol_utils.clients.treedb.treedb import TreeDbClient
@@ -113,3 +114,8 @@ class LocalClients:
     def get_stories_client(env: YouwolEnvironment) -> StoriesClient:
         base_path = LocalClients.base_path(env)
         return StoriesClient(url_base=f"{base_path}/stories-backend")
+
+    @staticmethod
+    def get_cdn_sessions_storage_client(env: YouwolEnvironment) -> CdnSessionsStorageClient:
+        base_path = LocalClients.base_path(env)
+        return CdnSessionsStorageClient(url_base=f"{base_path}/cdn-sessions-storage")
