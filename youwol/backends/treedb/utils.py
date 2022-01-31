@@ -7,14 +7,15 @@ from starlette.requests import Request
 from youwol_utils import (
     DocDb, get_all_individual_groups, asyncio, ensure_group_permission, user_info,
     get_user_group_ids, log_info,
-)
+    )
 from youwol_utils.context import Context
 from .configurations import Configuration
 
 
 async def init_resources(
         config: Configuration
-):
+        ):
+
     log_info("Ensure database resources")
     headers = await config.admin_headers if config.admin_headers else {}
     log_info("Successfully retrieved authorization for resources creation")
@@ -229,10 +230,10 @@ async def ensure_get_permission(
         partition_keys: Dict[str, Any],
         configuration: Configuration,
         context: Context
-):
+        ):
     async with context.start(
             action="ensure_get_permission",
-    ) as ctx:  # type: Context
+    ) as ctx:   # type: Context
 
         await ctx.info(text="partition_keys", data=partition_keys)
         asset = await docdb.get_document(partition_keys=partition_keys, clustering_keys={},
@@ -248,10 +249,10 @@ async def ensure_post_permission(
         doc: Any,
         configuration: Configuration,
         context: Context
-):
+        ):
     async with context.start(
-            action="ensure_post_permission",
-            with_attributes={"groupId": doc["group_id"]}
+        action="ensure_post_permission",
+        with_attributes={"groupId": doc["group_id"]}
     ) as ctx:  # type: Context
         ensure_group_permission(request=request, group_id=doc["group_id"])
         return await docdb.update_document(doc, owner=configuration.public_owner, headers=ctx.headers())
@@ -265,9 +266,10 @@ async def ensure_query_permission(
         max_count: int,
         configuration: Configuration,
         context: Context
-):
+        ):
+
     async with context.start(
-            action="ensure_query_permission"
+        action="ensure_query_permission"
     ) as ctx:  # type: Context
         user = user_info(request)
         allowed_groups = get_user_group_ids(user)
@@ -283,12 +285,12 @@ async def ensure_delete_permission(
         doc: Dict[str, Any],
         configuration: Configuration,
         context: Context
-):
+        ):
     # only owning group can delete
     # if isinstance(doc, FolderResponse) or isinstance(doc, ItemResponse) or isinstance(doc, DriveResponse):
 
     async with context.start(
-            action="ensure_delete_permission"
+        action="ensure_delete_permission"
     ) as ctx:  # type: Context
         doc = convert_in(doc)
 
@@ -301,14 +303,15 @@ async def get_parent(
         parent_id: str,
         configuration: Configuration,
         context: Context
-):
+        ):
+
     folders_db, drives_db = configuration.doc_dbs.folders_db, configuration.doc_dbs.drives_db
     parent_folder, parent_drive = await asyncio.gather(
         ensure_query_permission(request=request, docdb=folders_db, key="folder_id", value=parent_id,
                                 configuration=configuration, max_count=1, context=context),
         ensure_query_permission(request=request, docdb=drives_db, key="drive_id", value=parent_id,
                                 configuration=configuration, max_count=1, context=context)
-    )
+        )
     if len(parent_folder) + len(parent_drive) == 0:
         raise HTTPException(status_code=404, detail="Containing drive/folder not found")
     parent = (parent_folder + parent_drive)[0]

@@ -1,9 +1,10 @@
 from starlette.requests import Request
 from fastapi import APIRouter, Depends, HTTPException
+from youwol_utils.context import Context
 
 from .configurations import Configuration, get_configuration
 from .utils import get_path
-from youwol_utils import generate_headers_downstream, JSON
+from youwol_utils import JSON
 
 router = APIRouter()
 
@@ -34,14 +35,17 @@ async def post_data_generic(
     Returns:
         empty response '{}'
     """
-    headers = generate_headers_downstream(request.headers)
-    await configuration.storage.post_json(
-        path=get_path(request=request, package=package, name=name, namespace=namespace),
-        json=body,
-        owner=configuration.default_owner,
-        headers=headers
-    )
-    return {}
+    async with Context.start_ep(
+            request=request,
+            with_attributes={"name": name, "package": package}
+    ) as ctx:
+        await configuration.storage.post_json(
+            path=get_path(request=request, package=package, name=name, namespace=namespace),
+            json=body,
+            owner=configuration.default_owner,
+            headers=ctx.headers()
+        )
+        return {}
 
 
 @router.post("/applications/{package}/{name}")
@@ -76,16 +80,20 @@ async def get_data_generic(
         namespace: str = None,
         configuration: Configuration = Depends(get_configuration)
 ):
-    headers = generate_headers_downstream(request.headers)
-    try:
-        return await configuration.storage.get_json(
-            path=get_path(request=request, package=package, name=name, namespace=namespace),
-            owner=configuration.default_owner,
-            headers=headers
-        )
-    except HTTPException as e:
-        if e.status_code == 404:
-            return {}
+    async with Context.start_ep(
+            request=request,
+            with_attributes={"name": name, "package": package}
+    ) as ctx:
+
+        try:
+            return await configuration.storage.get_json(
+                path=get_path(request=request, package=package, name=name, namespace=namespace),
+                owner=configuration.default_owner,
+                headers=ctx.headers()
+            )
+        except HTTPException as e:
+            if e.status_code == 404:
+                return {}
 
 
 @router.get("/applications/{package}/{name}")

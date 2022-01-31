@@ -1,6 +1,5 @@
 import asyncio
 import base64
-import hashlib
 import itertools
 import json
 import os
@@ -8,19 +7,20 @@ import time
 import zipfile
 from pathlib import Path
 from shutil import which
-from typing import IO
 from typing import Union, List, Mapping
 from uuid import uuid4
+import hashlib
 
-import brotli
 from fastapi import HTTPException
 from starlette.responses import Response
+from typing import IO
 
+from .utils_indexing import format_doc_db_record, get_version_number_str
 from youwol_utils import generate_headers_downstream, QueryBody, files_check_sum, shutil, log_info, log_error
 from youwol_utils.clients.docdb.models import Query, WhereClause, OrderingClause
 from .configurations import Configuration
+import brotli
 from .models import FormData, PublishResponse
-from .utils_indexing import format_doc_db_record, get_version_number_str
 
 flatten = itertools.chain.from_iterable
 
