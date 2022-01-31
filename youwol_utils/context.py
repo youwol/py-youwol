@@ -282,4 +282,15 @@ class ContextFactory(NamedTuple):
 
         return Context(request=request,
                        loggers=[logger],
-                       with_data={**ContextFactory.with_static_data, **kwargs})
+                       with_data=with_data)
+
+
+class DeployedContextLogger(ContextLogger):
+
+    errors = set()
+
+    def __init__(self):
+        super()
+
+    async def log(self, entry: LogEntry):
+        print(str(entry.level), entry.text)
