@@ -129,10 +129,15 @@ def files_check_sum(paths: Iterable[Union[str, Path]]):
     return sha_hash
 
 
-def create_zip_file(path: Path, files_to_zip: List[Tuple[Path, str]]):
+def create_zip_file(path: Path, files_to_zip: List[Tuple[Path, str]],
+                    with_data: List[Tuple[str, Union[str, bytes]]] = None):
+
     zipper = zipfile.ZipFile(path, 'w', zipfile.ZIP_DEFLATED)
     for path, name in files_to_zip:
         zipper.write(filename=path, arcname=name)
+    if with_data:
+        for arc_name, raw in with_data:
+            zipper.writestr(arc_name, data=raw)
     zipper.close()
 
 
