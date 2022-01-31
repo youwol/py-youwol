@@ -1,186 +1,170 @@
 import traceback
 from abc import ABC, abstractmethod
-from typing import NamedTuple, Dict, List
+from typing import Dict, List, Optional, Union
 
+from pydantic import BaseModel
 from starlette.requests import Request
 
 from youwol_utils import decode_id
 from youwol_utils.context import Label
 
 
+def url_match(request: Request, pattern: str):
+    method, regex = pattern.split(":")
+
+    if method != "*" and method != request.method:
+        return False, None
+
+    replaced = []
+    if method == "*":
+        replaced.append(request.method)
+    parts_target = request.url.path.split("/")
+    parts_regex = regex.split("/")
+    for i, part in enumerate(parts_target):
+        if i >= len(parts_regex):
+            return False, None
+        if i >= len(parts_regex) - 1 and parts_regex[-1] == "**":
+            replaced.append([t for t in parts_target[i:] if t])
+            return True, replaced
+        if part == parts_regex[i]:
+            continue
+        if parts_regex[i] == "*":
+            replaced.append(part)
+            continue
+
+        return False, None
+
+    return True, replaced
+
+
+class RequestInfo(BaseModel):
+    message: Optional[str]
+    attributes: Dict[str, str] = {}
+    labels: List[Label] = []
+
+
 class RequestInfoExtractor(ABC):
 
     @abstractmethod
-    def match(self, request: Request):
+    def extract(self, request: Request) -> Optional[RequestInfo]:
         return NotImplemented
+
+
+class PatternRequestInfoExtractor(RequestInfoExtractor):
+
+    pattern: str
+
+    def extract(self, request: Request) -> Optional[RequestInfo]:
+
+        match, substitutes = url_match(request=request, pattern=self.pattern)
+        if not match:
+            return None
+        return self.extract_from_pattern(substitutes)
 
     @abstractmethod
-    def message(self, request: Request):
-        return NotImplemented
-
-    @abstractmethod
-    def attributes(self, request: Request):
-        return NotImplemented
-
-    @abstractmethod
-    def labels(self, request: Request):
+    def extract_from_pattern(self, substitutes: List[Union[str, List[str]]]) -> RequestInfo:
         return NotImplemented
 
 
-class All(RequestInfoExtractor):
+class All(PatternRequestInfoExtractor):
 
-    def match(self, request: Request):
-        return True
+    pattern = "*:/**"
 
-    def message(self, request: Request):
-        return request.url.path.split('/')[-1]
+    def extract_from_pattern(self, substitutes: List[Union[str, List[str]]]):
 
-    def attributes(self, request: Request):
-        return {'method': request.method}
-
-    def labels(self, request):
-        return []
+        [method, [*_, last]] = substitutes
+        return RequestInfo(message=last, attributes={'method': method})
 
 
-class Api(RequestInfoExtractor):
+class Api(PatternRequestInfoExtractor):
 
-    prefix = "/api/"
+    pattern = "*:/api/**"
 
-    def match(self, request: Request):
-        return request.url.path.startswith(self.prefix)
-
-    def message(self, request: Request):
-        return request.url.path.split('/')[-1]
-
-    def attributes(self, request: Request):
-        rest_of_path = request.url.path.split(self.prefix)[1]
-        service = rest_of_path.split('/')[0]
-        return {'service': service}
-
-    def labels(self, request):
-        return []
+    def extract_from_pattern(self, substitutes: List[Union[str, List[str]]]):
+        [_method, [service, *_parts, last]] = substitutes
+        return RequestInfo(message=last, attributes={'service': service})
 
 
-class Admin(RequestInfoExtractor):
+class Admin(PatternRequestInfoExtractor):
 
-    prefix = "/admin/"
+    pattern = "*:/admin/**"
 
-    def match(self, request: Request):
-        return request.url.path.startswith(self.prefix)
-
-    def message(self, request: Request):
-        return request.url.path.split('/')[-1]
-
-    def attributes(self, request: Request):
-        rest_of_path = request.url.path.split(self.prefix)[1]
-        service = rest_of_path.split('/')[0]
-        return {'router': service}
-
-    def labels(self, request):
-        return [Label.ADMIN]
+    def extract_from_pattern(self, substitutes):
+        [*_, [service, *_]] = substitutes
+        return RequestInfo(message=f"admin/{service}", attributes={'router': service}, labels=[Label.ADMIN])
 
 
-class Logs(RequestInfoExtractor):
-    prefix = "/admin/system/logs"
+class Logs(PatternRequestInfoExtractor):
 
-    def match(self, request: Request):
-        return request.url.path.startswith(self.prefix)
+    pattern = "*:/admin/system/logs/**"
 
-    def message(self, request: Request):
-        return "logs"
-
-    def attributes(self, request: Request):
-        return {'service': 'admin/logs'}
-
-    def labels(self, request):
-        return [Label.LOG]
+    def extract_from_pattern(self, substitutes):
+        return RequestInfo(message="logs", attributes={'service': 'admin/logs'}, labels=[Label.LOG])
 
 
-class CdnAppsServer(RequestInfoExtractor):
-    prefix = "/applications/"
+class CdnAppsServer(PatternRequestInfoExtractor):
 
-    def match(self, request: Request):
-        return request.url.path.startswith(self.prefix)
+    pattern = "*:/applications/**"
 
-    def message(self, request: Request):
-        resource = request.url.path.split(self.prefix)[1]
-        return '/'.join(resource.split('/')[0:2]) if resource.startswith('@') else resource.split('/')[0]
-
-    def attributes(self, request: Request):
-        return {'service': 'cdn-apps-server', 'resource': request.url.path.split(self.prefix)[1]}
-
-    def labels(self, request):
-        return [Label.APPLICATION]
+    def extract_from_pattern(self, substitutes):
+        [_, [a, b, *_]] = substitutes
+        resource = f"{a}/{b}" if a.startswith('@') else a
+        return RequestInfo(message="application", attributes={'service': 'cdn-apps-server', 'resource': resource},
+                           labels=[Label.APPLICATION])
 
 
-class GetAssetGtwPackageMetadata(RequestInfoExtractor):
-    prefix = '/api/assets-gateway/raw/package/metadata/'
+class GetAssetGtwPackageMetadata(PatternRequestInfoExtractor):
 
-    def match(self, request: Request):
-        return request.url.path.startswith(self.prefix) and request.method == 'GET'
+    pattern = 'GET:/api/assets-gateway/raw/package/metadata/**'
 
-    def message(self, request: Request):
-        return "asset metadata"
-
-    def attributes(self, request: Request):
-        asset_id = request.url.path.split(self.prefix)[1].split('/')[0]
-        raw_id = decode_id(asset_id)
-        return {'assetId': asset_id, 'package': raw_id}
-
-    def labels(self, request):
-        return []
+    def extract_from_pattern(self, substitutes):
+        [[asset_id]] = substitutes
+        return RequestInfo(message="asset metadata", attributes={'assetId': asset_id, 'package': decode_id(asset_id)})
 
 
-class PutAssetGtwAsset(RequestInfoExtractor):
-    prefix = '/api/assets-gateway/assets/'
+class PutAssetGtwAccess(PatternRequestInfoExtractor):
 
-    def match(self, request: Request):
-        return request.url.path.startswith(self.prefix) and request.method == 'PUT'
+    pattern = 'PUT:/api/assets-gateway/assets/*/access/*'
 
-    def message(self, request: Request):
-        kind = request.url.path.split(self.prefix)[1].split('/')[0]
-        return f"create asset {kind}"
-
-    def attributes(self, request: Request):
-        asset_id = request.url.path.split(self.prefix)[1].split('/')[0]
-        return {'assetId': asset_id}
-
-    def labels(self, request):
-        return []
+    def extract_from_pattern(self, substitutes):
+        [asset_id, grp_id] = substitutes
+        return RequestInfo(message="Define access policy", attributes={'assetId': asset_id, "groupId": grp_id})
 
 
-class GetPackageMetadata(RequestInfoExtractor):
-    prefix = '/api/cdn-backend/libraries/'
+class UpdateAssetGtwAsset(PatternRequestInfoExtractor):
 
-    def match(self, request: Request):
-        return request.url.path.startswith(self.prefix) and request.method == 'GET'
+    pattern = 'POST:/api/assets-gateway/assets/*'
 
-    def message(self, request: Request):
-        return "package metadata"
-
-    def attributes(self, request: Request):
-        asset_id = request.url.path.split(self.prefix)[1]
-        return {'rawId': asset_id}
-
-    def labels(self, request):
-        return []
+    def extract_from_pattern(self, substitutes):
+        [asset_id] = substitutes
+        return RequestInfo(message="Update asset", attributes={'assetId': asset_id})
 
 
-class GetTreedbItem(RequestInfoExtractor):
-    prefix = '/api/treedb-backend/items/'
+class PutAssetGtwAsset(PatternRequestInfoExtractor):
 
-    def match(self, request: Request):
-        return request.url.path.startswith(self.prefix) and request.method == 'GET'
+    pattern = 'PUT:/api/assets-gateway/assets/*/location/**'
 
-    def message(self, request: Request):
-        return "treedb item"
+    def extract_from_pattern(self, substitutes):
+        [kind, _] = substitutes
+        return RequestInfo(message="Create asset", attributes={'kind': kind})
 
-    def attributes(self, request: Request):
-        tree_id = request.url.path.split(self.prefix)[1]
-        return {'treeId': tree_id}
 
-    def labels(self, request):
-        return [Label.TREE_DB]
+class GetPackageMetadata(PatternRequestInfoExtractor):
+
+    pattern = 'GET:/api/cdn-backend/libraries/*'
+
+    def extract_from_pattern(self, substitutes):
+        [raw_id] = substitutes
+        return RequestInfo(message="Package metadata", attributes={'rawId': raw_id})
+
+
+class GetTreedbItem(PatternRequestInfoExtractor):
+
+    pattern = 'GET:/api/treedb-backend/items/*'
+
+    def extract_from_pattern(self, substitutes):
+        [tree_id] = substitutes
+        return RequestInfo(message="Tree-db item", attributes={'treeId': tree_id}, labels=[Label.TREE_DB])
 
 
 scenarios = [
@@ -188,18 +172,14 @@ scenarios = [
     GetTreedbItem(),
     Admin(),
     CdnAppsServer(),
+    UpdateAssetGtwAsset(),
+    PutAssetGtwAccess(),
     PutAssetGtwAsset(),
     GetAssetGtwPackageMetadata(),
     GetPackageMetadata(),
     Api(),
     All()
 ]
-
-
-class RequestInfo(NamedTuple):
-    message: str
-    attributes: Dict[str, str]
-    labels: List[str]
 
 
 def request_info(request: Request):
@@ -210,20 +190,21 @@ def request_info(request: Request):
     for scenario in scenarios:
 
         try:
-            if scenario.match(request):
-                attributes = {**attributes, **scenario.attributes(request)}
-                labels = [*labels, *scenario.labels(request)]
+            info = scenario.extract(request)
+            if info:
+                attributes = {**attributes, **info.attributes}
+                labels = [*labels, *info.labels]
 
-            if scenario.match(request) and not message:
-                message = scenario.message(request=request)
+            if info and not message:
+                message = info.message
 
         except RuntimeError as e:
             tb = traceback.format_exc()
             request.state.context and request.state.context.error(
                 text="Error occurred trying to extract request info",
                 data={
-                    'error': e.__str__(),
+                    'error': str(e),
                     'traceback': tb.split('\n'),
-                    'args': [arg.__str__() for arg in e.args]
+                    'args': [str(arg) for arg in e.args]
                 })
     return RequestInfo(message=message, attributes=attributes, labels=labels)
