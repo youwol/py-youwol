@@ -1,42 +1,20 @@
 import os
 from pathlib import Path
-from typing import Union, List, Optional, Set, Callable
+from typing import List, Optional, Set, Callable
 
 import pkg_resources
 from pydantic import BaseModel
 
-from youwol.configuration.models_config import K8sCluster
+from youwol.environment.models import K8sInstance
 from youwol.environment.models_project import Manifest, PipelineStepStatus, Link, Flow, \
-    SourcesFctImplicit, Pipeline, Skeleton, SkeletonParameter, PipelineStep, FileListing, \
-    Artifact, Project, RunImplicit, FlowId, ExplicitNone
+    SourcesFctImplicit, Pipeline, PipelineStep, FileListing, \
+    Artifact, Project, RunImplicit, FlowId, ExplicitNone, MicroService
 from youwol.exceptions import CommandException
 from youwol.pipelines.deploy_service import HelmPackage
 from youwol.pipelines.publish_cdn import PublishCdnRemoteStep, PublishCdnLocalStep
 from youwol.utils.k8s_utils import get_cluster_info
 from youwol_utils.context import Context
 from youwol_utils.utils_paths import parse_yaml
-
-
-def create_skeleton(path: Union[Path, str]):
-    async def generate():
-        return
-
-    return Skeleton(
-        folder=path,
-        description="A skeleton of youwol backend service using FastApi",
-        parameters=[
-            SkeletonParameter(
-                id="package-name",
-                displayName="Name",
-                type='string',
-                defaultValue=None,
-                placeholder="Package name",
-                description="Name of the package. Should follow npm semantic.",
-                required=True
-                )
-            ],
-        generate=generate
-        )
 
 
 def get_dependencies(project: Project) -> Set[str]:
@@ -60,8 +38,8 @@ class PreconditionChecksStep(PipelineStep):
 
 class InitStep(PipelineStep):
     id: str = 'init'
-    run: str = 'python -m venv ./src/.virtualenv '\
-               '&& source ./src/.virtualenv/bin/activate ' \
+    run: str = 'python3.9 -m venv ./src/.virtualenv '\
+               '&& . ./src/.virtualenv/bin/activate ' \
                '&& pip install -r requirements.txt'
 
     async def get_status(self, project: Project, flow_id: str,
@@ -83,7 +61,7 @@ class DocStepConfiguration(BaseModel):
     def cmd(self, project: Project) -> str:
         return f"""
 . {self.venvPath}/bin/activate && 
-{self.venvPath}/bin/pdoc {self.srcPath} --html --force --output-dir {self.outputDir} &&
+pdoc {self.srcPath} --html --force --output-dir {self.outputDir} &&
 mv {self.outputDir}/{to_module_name(project.name)}/* {self.outputDir}
 """
 
@@ -264,29 +242,36 @@ def get_app_version(path: Path):
 def get_ingress(host: str):
     return {
         "hosts[0].host": host
-        # "annotations": { "konghq.com/plugins": "oidc-dev" if developers_only else "oidc-user"}
         }
 
 
+class PipelineConfig(BaseModel):
+
+    tags: List[str] = []
+    targetDockerRepo: str
+    k8sInstance: K8sInstance
+    docConfig: DocStepConfiguration = DocStepConfiguration()
+
+
 def pipeline(
-        docker_repo_name: str,
-        k8s_cluster: K8sCluster,
-        doc_conf: DocStepConfiguration = DocStepConfiguration()
+        config: PipelineConfig,
+        context: Context
 ):
-    docker_repo = next((repo for repo in k8s_cluster.docker.repositories if repo.name == docker_repo_name), None)
+    docker_repo = next((repo for repo in config.k8sInstance.docker.repositories
+                        if repo.name == config.targetDockerRepo), None)
+
     docker_secret_name = parse_yaml(docker_repo.pullSecret)['metadata']['name']
-    auth_secret_name = parse_yaml(k8s_cluster.openIdConnect.authSecret)['metadata']['name']
+    auth_secret_name = parse_yaml(config.k8sInstance.openIdConnect.authSecret)['metadata']['name']
     return Pipeline(
-        id=__name__,
-        language="python",
+        target=MicroService(),
+        tags=['python', 'microservice', 'fastapi'],
         projectName=lambda path: Path(path).name,
         projectVersion=lambda path: get_version(path),
         dependencies=lambda project, ctx: get_dependencies(project),
-        skeleton=lambda ctx: create_skeleton(ctx),
         steps=[
             PreconditionChecksStep(),
             InitStep(),
-            DocStep(conf=doc_conf),
+            DocStep(conf=config.docConfig),
             UnitTestStep(),
             ApiTestStep(),
             IntegrationTestStep(),
@@ -297,19 +282,19 @@ def pipeline(
             ),
             DeployGcStep(
                 namespace='prod',
-                overridingHelmValues=lambda project, context: {
+                overridingHelmValues=lambda project, _ctx: {
                     "image": {
                         "repository": f"{docker_repo.imageUrlBuilder(project, context)}",
                         "tag": get_app_version(project.path)
                     },
                     "imagePullSecrets[0].name": docker_secret_name,
-                    "ingress": get_ingress(host=k8s_cluster.host),
+                    "ingress": get_ingress(host=config.k8sInstance.host),
                     "keycloak": {
-                        "host": k8s_cluster.openIdConnect.host
+                        "host": config.k8sInstance.openIdConnect.host
                     },
                 },
                 secrets={
-                    auth_secret_name: k8s_cluster.openIdConnect.authSecret,
+                    auth_secret_name: config.k8sInstance.openIdConnect.authSecret,
                     docker_secret_name: docker_repo.pullSecret
                 }
             )
