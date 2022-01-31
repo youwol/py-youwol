@@ -69,36 +69,43 @@ async def load_projects(projects_dirs: List[Path],
                         env: YouwolEnvironment,
                         context: Context
                         ) -> List[Result]:
-    results_dirs = get_projects_dirs_candidates(projects_dirs)
-    candidates_dirs = [
-        candidate_dirs
-        for candidate_dirs in results_dirs
-        if isinstance(candidate_dirs, Path)
-    ]
 
-    results: List[Result] = [
-        candidate_dirs
-        for candidate_dirs in results_dirs
-        if not isinstance(candidate_dirs, Path)
-    ]
-    for dir_candidate in candidates_dirs:
-        try:
-            results.append(await get_project(dir_candidate, additional_python_scr_paths, env, context))
-        except SyntaxError as e:
-            msg = f"Could not load project in dir '{dir_candidate}' because of syntax error : {e.msg} "
-            print(msg)
-            results.append(FailureSyntax(path=str(dir_candidate), message=e.msg))
-        except Exception as e:
-            msg = f"Could not load project in dir '{dir_candidate}' : {e} "
-            print(msg)
-            results.append(Failure(path=str(dir_candidate), message=str(e)))
+    async with context.start(
+            action="load_projects"
+    ) as ctx:   # type: Context
 
-    print(f"""- list of projects successfully loaded:
-{chr(10).join([f"  * {p.name} at {p.path} with pipeline {p.pipeline.id}" for p in results if isinstance(p, Project)])}
+        results_dirs = get_projects_dirs_candidates(projects_dirs)
+        candidates_dirs = [
+            candidate_dirs
+            for candidate_dirs in results_dirs
+            if isinstance(candidate_dirs, Path)
+        ]
+        # await ctx.info(text="Candidates directory", data={"directories": candidates_dirs})
+        results: List[Result] = [
+            candidate_dirs
+            for candidate_dirs in results_dirs
+            if not isinstance(candidate_dirs, Path)
+        ]
+        for dir_candidate in candidates_dirs:
+            try:
+                results.append(await get_project(dir_candidate, additional_python_scr_paths, env, ctx))
+            except SyntaxError as e:
+                msg = f"Could not load project in dir '{dir_candidate}' because of syntax error : {e.msg} "
+                await ctx.error(text=msg)
+                print(msg)
+                results.append(FailureSyntax(path=str(dir_candidate), message=e.msg))
+            except Exception as e:
+                msg = f"Could not load project in dir '{dir_candidate}' : {e} "
+                await ctx.error(text=msg)
+                print(msg)
+                results.append(Failure(path=str(dir_candidate), message=str(e)))
+
+        print(f"""- list of projects successfully loaded:
+{chr(10).join([f"  * {p.name} at {p.path} with pipeline {p.pipeline.tags}" for p in results if isinstance(p, Project)])}
 - list of projects that failed to load:
 {chr(10).join([f"  * {p.path} : {p.message}" for p in results if not isinstance(p, Project)])}
     """)
-    return results
+        return results
 
 
 def get_projects_dirs_candidates(projects_dirs: List[Path]) -> List[Union[Path, Failure]]:
@@ -136,18 +143,23 @@ async def get_project(project_path: Path,
                       additional_python_src_paths: List[Path],
                       env: YouwolEnvironment,
                       context: Context) -> Project:
-    pipeline_factory = get_object_from_module(
-        module_absolute_path=project_path / PROJECT_PIPELINE_DIRECTORY / 'yw_pipeline.py',
-        object_or_class_name='PipelineFactory',
-        object_type=IPipelineFactory,
-        additional_src_absolute_paths=additional_python_src_paths
-    )
-    pipeline = await pipeline_factory.get(env, context)
-    name = pipeline.projectName(project_path)
-    return Project(
-        name=name,
-        id=encode_id(name),
-        version=pipeline.projectVersion(project_path),
-        pipeline=pipeline,
-        path=project_path
-    )
+
+    async with context.start(
+            action="get_project",
+            with_attributes={"folderName": project_path.name}
+    ) as ctx:  # type: Context
+        pipeline_factory = get_object_from_module(
+            module_absolute_path=project_path / PROJECT_PIPELINE_DIRECTORY / 'yw_pipeline.py',
+            object_or_class_name='PipelineFactory',
+            object_type=IPipelineFactory,
+            additional_src_absolute_paths=additional_python_src_paths
+        )
+        pipeline = await pipeline_factory.get(env, ctx)
+        name = pipeline.projectName(project_path)
+        return Project(
+            name=name,
+            id=encode_id(name),
+            version=pipeline.projectVersion(project_path),
+            pipeline=pipeline,
+            path=project_path
+        )
