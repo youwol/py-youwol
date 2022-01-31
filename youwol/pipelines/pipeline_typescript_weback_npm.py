@@ -257,45 +257,49 @@ class TestStep(PipelineStep):
     )
 
 
-def pipeline():
-    return Pipeline(
-        id=__name__,
-        language="typescript",
-        compiler="webpack",
-        output="javascript",
-        projectName=lambda path: parse_json(path / "package.json")["name"],
-        projectVersion=lambda path: parse_json(path / "package.json")["version"],
-        dependencies=lambda project, ctx: get_dependencies(project),
-        skeleton=lambda ctx: create_skeleton(ctx),
-        steps=[
-            PreconditionChecksStep(),
-            InitStep(),
-            SyncFromDownstreamStep(),
-            BuildStep(id="build-dev", run="yarn build:dev"),
-            BuildStep(id="build-prod", run="yarn build:prod"),
-            DocStep(),
-            TestStep(id="test", run="yarn test", artifacts=[test_result]),
-            TestStep(id="test-coverage", run="yarn test-coverage",
-                     artifacts=[test_coverage]
-                     ),
-            PublishCdnLocalStep(packagedArtifacts=['dist', 'docs']),
-            PublishCdnRemoteStep()
-            ],
-        flows=[
-            Flow(
-                name="prod",
-                dag=[
-                    "checks > init > sync-deps > build-prod > test > publish-local > publish-remote ",
-                    "build-prod > doc > publish-local",
-                    "build-prod > test-coverage"
-                    ]
-                ),
-            Flow(
-                name="dev",
-                dag=[
-                    "sync-deps > build-dev > publish-local",
-                    "build-dev > doc > publish-local"
-                    ]
-                )
-            ]
-        )
+class PipelineConfig(BaseModel):
+    target: Union[JsBundle, BrowserApp] = JsBundle()
+
+
+async def pipeline(config: PipelineConfig, context: Context):
+
+    async with context.start(action="pipeline") as ctx:
+        await ctx.info(text="Instantiate pipeline", data=config)
+        return Pipeline(
+            target=config.target,
+            tags=["typescript", "webpack", "library", "npm"],
+            projectName=lambda path: parse_json(path / "package.json")["name"],
+            projectVersion=lambda path: parse_json(path / "package.json")["version"],
+            dependencies=lambda project, ctx: get_dependencies(project),
+            steps=[
+                PreconditionChecksStep(),
+                InitStep(),
+                SyncFromDownstreamStep(),
+                BuildStep(id="build-dev", run="yarn build:dev"),
+                BuildStep(id="build-prod", run="yarn build:prod"),
+                DocStep(),
+                TestStep(id="test", run="yarn test", artifacts=[test_result]),
+                TestStep(id="test-coverage", run="yarn test-coverage",
+                         artifacts=[test_coverage]
+                         ),
+                PublishCdnLocalStep(packagedArtifacts=['dist', 'docs']),
+                PublishCdnRemoteStep()
+                ],
+            flows=[
+                Flow(
+                    name="prod",
+                    dag=[
+                        "checks > init > sync-deps > build-prod > test > publish-local > publish-remote ",
+                        "build-prod > doc > publish-local",
+                        "build-prod > test-coverage"
+                        ]
+                    ),
+                Flow(
+                    name="dev",
+                    dag=[
+                        "sync-deps > build-dev > publish-local",
+                        "build-dev > doc > publish-local"
+                        ]
+                    )
+                ]
+            )
