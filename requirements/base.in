@@ -10,6 +10,7 @@ kubernetes
 kubernetes-asyncio
 Pillow
 psutil
+python-daemon
 python-multipart
 pyyaml
 uvicorn
