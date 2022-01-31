@@ -28,8 +28,8 @@ class CustomDispatchesMiddleware(BaseHTTPMiddleware):
             responses = await asyncio.gather(*[
                 d.apply(incoming_request=request, call_next=call_next, context=ctx) for d in dispatches
             ])
-            index, resp = next(((i, r) for i, r in enumerate(responses) if r is not None), (None, None))
-            if resp:
+            index, resp = next(((i, r) for i, r in enumerate(responses) if r is not None), (-1, None))
+            if index and resp:
                 await ctx.info('Found a matching custom dispatch', data=dispatches[index])
                 return cast(Response, resp)
 
