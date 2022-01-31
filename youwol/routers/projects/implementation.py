@@ -109,7 +109,7 @@ async def create_artifacts(
     async with context.start(
             action="create artifacts",
             with_attributes={'projectId': project.id, 'flowId': flow_id, 'stepId': step.id,
-                             'src fingerprint': fingerprint}
+                             'srcFingerprint': fingerprint or "not-provided"}
             ) as ctx:
 
         for artifact in step.artifacts:
