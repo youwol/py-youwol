@@ -81,23 +81,6 @@ class FileListing(BaseModel):
     ignore: List[str] = []
 
 
-class SkeletonParameter(BaseModel):
-    displayName: str
-    id: str
-    type: str
-    required: bool
-    description: str
-    defaultValue: Any
-    placeholder: str
-
-
-class Skeleton(BaseModel):
-    folder: Union[Path, str]
-    description: str
-    parameters: List[SkeletonParameter]
-    generate: Callable[[Path, Dict[str, any], 'Pipeline', Context], Awaitable] = None
-
-
 class Link(BaseModel):
     name: str
     url: str
@@ -234,14 +217,68 @@ class Flow(BaseModel):
     dag: List[str]
 
 
+class Family(Enum):
+    application = "application"
+    library = "library"
+    service = "service"
+
+
+class Target(BaseModel):
+    family: Family
+
+
+class JsBundle(Target):
+    family: Family = Family.library
+    bundle: str = "javascript"
+
+
+class WASMBundle(Target):
+    family = Family.library
+    bundle = "wasm"
+
+
+class EntryPoint(Target):
+    name: str
+
+
+class Asset(BaseModel):
+    kind: str
+    mimeType: str
+    name: str
+    rawId: str
+    assetId: str
+
+
+class Parametrization(BaseModel):
+    pass
+
+
+class FromAsset(Parametrization):
+    match: Dict
+    parameters: Dict
+
+
+class Execution(BaseModel):
+    standalone: bool = True
+    parametrized: List[Parametrization] = []
+
+
+class BrowserApp(Target):
+    family: Family = Family.application
+    icon: Dict = {"class": "fas fa-play"}
+    displayName: Optional[str] = None
+    execution: Execution = Execution()
+
+
+class MicroService(Target):
+    family = Family.service
+
+
 class Pipeline(BaseModel):
 
-    id: str
-    language: Optional[str] = None
-    compiler: Optional[str] = None
-    output: Optional[str] = None
+    target: Target
+    tags: List[str] = []
     description: str = ""
-    skeleton: Union[Skeleton, Callable[[YouwolEnvironment], Skeleton]] = None
     steps: List[PipelineStep]
     flows: List[Flow]
     extends: Optional[str] = None
