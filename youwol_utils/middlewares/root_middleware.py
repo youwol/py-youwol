@@ -26,15 +26,15 @@ class RootMiddleware(BaseHTTPMiddleware):
         super().__init__(app, dispatch)
         self.ctx_logger = ctx_logger
 
-    def get_context(self, request: Request, **kwargs):
+    def get_context(self, request: Request):
 
         root_id = YouwolHeaders.get_correlation_id(request)
-
+        with_data = ContextFactory.with_static_data or {}
         return Context(request=request,
                        loggers=[self.ctx_logger],
                        parent_uid=root_id,
                        uid=root_id if root_id else 'root',
-                       with_data={**ContextFactory.with_static_data, **kwargs})
+                       with_data=with_data)
 
     async def dispatch(
             self,
