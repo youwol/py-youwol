@@ -1,0 +1,16 @@
+# Direct dependencies
+aiohttp
+aiostream
+appdirs
+Brotli
+colorama
+cowpy
+fastapi
+kubernetes
+kubernetes-asyncio
+Pillow
+psutil
+python-multipart
+pyyaml
+uvicorn
+websockets
