@@ -105,7 +105,7 @@ def main():
     try:
         download_thread.start()
         conf = asyncio.run(YouwolEnvironmentFactory.get())
-        print_invite(conf=conf)
+        print_invite(conf=conf, shutdown_script_path=shutdown_script_path if get_main_arguments().daemonize else None)
         # app: incorrect type. More here: https://github.com/tiangolo/fastapi/issues/3927
         # noinspection PyTypeChecker
         if get_main_arguments().daemonize:
@@ -129,7 +129,7 @@ else
 fi
 """
                 )
-                #### TODO: Output path to shutdown script to user
+
                 uvicorn.run(app, host="localhost", port=conf.http_port)
         else:
             uvicorn.run(app, host="localhost", port=conf.http_port)
