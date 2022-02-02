@@ -14,7 +14,7 @@ from youwol.main_args import get_main_arguments
 from youwol.middlewares.models_dispatch import CdnOverrideDispatch, RedirectDispatch, AbstractDispatch
 from youwol.routers.custom_commands.models import Command
 from youwol.utils.utils_low_level import get_object_from_module
-from youwol_utils.utils_paths import PathException, fail_on_missing_dir, ensure_dir_exists
+from youwol_utils.utils_paths import PathException, ensure_dir_exists
 
 SKELETON_DATABASES_ARCHIVE = 'databases.zip'
 
@@ -111,9 +111,9 @@ class ConfigurationHandler:
         path = self.effective_config_data.projectsDirs \
             if self.effective_config_data.projectsDirs else default_path_projects_dir
         if isinstance(path, str) or isinstance(path, Path):
-            return [ensure_dir_exists(path, root_candidates=Path().home(), create=fail_on_missing_dir)]
+            return [ensure_dir_exists(path, root_candidates=Path().home())]
         else:
-            return [ensure_dir_exists(path_str, root_candidates=Path().home(), create=fail_on_missing_dir)
+            return [ensure_dir_exists(path_str, root_candidates=Path().home())
                     for path_str in self.effective_config_data.projectsDirs]
 
     def get_dispatches(self) -> List[AbstractDispatch]:
