@@ -473,7 +473,7 @@ async def first_run(conf_path, main_args):
         write_json(user_info, conf_path.parent / 'users-info.json')
 
 
-def print_invite(conf: YouwolEnvironment):
+def print_invite(conf: YouwolEnvironment, shutdown_script_path: Optional[Path]):
     print(f"""{Fore.GREEN} Configuration loaded successfully {Style.RESET_ALL}.
 """)
     print(conf)
@@ -482,6 +482,10 @@ All good, you can now browse to
 http://localhost:{conf.http_port}/applications/@youwol/platform/latest
 """)
     print(msg)
+    if shutdown_script_path is not None:
+        print()
+        print(f"Py-youwol will run in background. Use {shutdown_script_path} to stop it :")
+        print(f"$ sh {shutdown_script_path}")
 
 
 api_configuration = ApiConfiguration(open_api_prefix="", base_path="")
