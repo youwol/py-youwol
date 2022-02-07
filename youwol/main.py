@@ -24,7 +24,7 @@ from youwol.routers import native_backends, admin, authorization
 from youwol.routers.environment.download_assets.data import DownloadDataTask
 from youwol.routers.environment.download_assets.flux_project import DownloadFluxProjectTask
 from youwol.routers.environment.download_assets.package import DownloadPackageTask
-from youwol.utils.utils_low_level import start_web_socket, assert_python
+from youwol.utils.utils_low_level import start_web_socket, assert_python, shutdown_daemon_script
 from youwol.web_socket import WebSocketsStore, AdminContextLogger
 from youwol_utils import YouWolException, youwol_exception_handler, YouwolHeaders
 from youwol_utils.context import ContextFactory
@@ -109,25 +109,7 @@ def main():
 
         if get_main_arguments().daemonize:
             with daemon.DaemonContext(pidfile=lockfile.FileLock("py-youwol")):
-                shutdown_script_path.write_text(
-                    f"""#/bin/sh
-py_youwol_pid={os.getpid()}
-## Sanity check
-program_name=$(ps -p $py_youwol_pid -o command=)
-echo "$program_name" | grep -q py-youwol
-if [[ $? -ne 0 ]]; then
-    echo "Pid $py_youwol_pid does not look like py-youwol - program name is '$program_name'
-Aborting"
-    exit
-fi
-kill $py_youwol_pid
-if [[ $? -eq 0 ]]; then
-    echo "Successfully send kill signal"
-else
-    echo "Failed to send kill signal"
-fi
-"""
-                )
+                shutdown_script_path.write_text(shutdown_daemon_script(pid=os.getpid()))
                 # app: incorrect type. More here: https://github.com/tiangolo/fastapi/issues/3927
                 # noinspection PyTypeChecker
                 uvicorn.run(app, host="localhost", port=conf.http_port)
