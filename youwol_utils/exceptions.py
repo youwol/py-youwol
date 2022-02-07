@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, List, Dict
 
 from aiohttp import ClientResponse
 from fastapi import HTTPException, Request
@@ -33,10 +33,30 @@ class PackagesNotFound(YouWolException):
         return f"""Packages not found. Context: {self.context}; Packages: {self.packages}"""
 
 
-class CyclicDependencies(YouWolException):
-    exceptionType = "CyclicDependencies"
+class IndirectPackagesNotFound(YouWolException):
+    exceptionType = "IndirectPackagesNotFound"
 
-    def __init__(self, context: str, packages: List[str], **kwargs):
+    def __init__(self, context: str, paths: Dict[str, List[str]], **kwargs):
+        YouWolException.__init__(
+            self,
+            status_code=404,
+            detail={
+                "context": context,
+                "paths": paths
+            },
+            **kwargs)
+        self.exceptionType = IndirectPackagesNotFound.exceptionType
+        self.paths = paths
+        self.context = context
+
+    def __str__(self):
+        return f"""Packages not found. Context: {self.context}; paths: {self.paths}"""
+
+
+class CircularDependencies(YouWolException):
+    exceptionType = "CircularDependencies"
+
+    def __init__(self, context: str, packages: Dict[str, List[str]], **kwargs):
         YouWolException.__init__(
             self,
             status_code=404,
@@ -45,7 +65,7 @@ class CyclicDependencies(YouWolException):
                 "packages": packages
             },
             **kwargs)
-        self.exceptionType = PackagesNotFound.exceptionType
+        self.exceptionType = CircularDependencies.exceptionType
         self.packages = packages
         self.context = context
 
@@ -55,7 +75,8 @@ class CyclicDependencies(YouWolException):
 
 YouwolExceptions = [
     PackagesNotFound,
-    CyclicDependencies
+    IndirectPackagesNotFound,
+    CircularDependencies
 ]
 
 
