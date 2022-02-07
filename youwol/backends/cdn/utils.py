@@ -15,7 +15,7 @@ import brotli
 from fastapi import HTTPException
 from starlette.responses import Response
 
-from youwol_utils import generate_headers_downstream, QueryBody, files_check_sum, shutil, log_info
+from youwol_utils import generate_headers_downstream, QueryBody, files_check_sum, shutil, log_info, CircularDependencies
 from youwol_utils.clients.docdb.models import Query, WhereClause, OrderingClause
 from .configurations import Configuration
 from .models import FormData, PublishResponse
@@ -87,8 +87,8 @@ def loading_graph(downloaded, deque, items_dict):
         not_founds = {pack: [dependencies_dict[pack][i] for i, found in enumerate(founds) if not found]
                       for pack, founds in dependencies.items()}
         print("Can not resolve dependency(ies)", new_deque, deque)
-        raise HTTPException(status_code=500,
-                            detail="loading_graph stuck: can not resolve some dependencies:" + str(not_founds))
+        raise CircularDependencies(context="Loading graph resolution stuck",
+                                   packages=not_founds)
 
     return [[items_dict[a] for a in to_add]] + loading_graph(downloaded + [r for r in to_add], new_deque, items_dict)
 
@@ -281,3 +281,15 @@ def to_package_name(package_id: str) -> str:
 
 def get_url(document: Mapping[str, str]) -> str:
     return to_package_id(document['library_name']) + "/" + document['version'] + "/" + get_filename(document)
+
+
+def retrieve_dependency_paths(dependencies_dict, from_package: str, suffix: str = None) -> List[str]:
+    parents = [name for name, data in dependencies_dict.items()
+               if any([dep_id.split("#")[0] == from_package for dep_id in data['dependencies']])]
+    if not parents:
+        return [f"{from_package} > {suffix}"]
+    paths = [retrieve_dependency_paths(dependencies_dict, parent,
+                                       f"{from_package} > {suffix}" if suffix else from_package)
+             for parent in parents]
+    paths = list(itertools.chain.from_iterable(paths))
+    return paths

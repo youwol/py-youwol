@@ -10,7 +10,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from youwol_utils import (
-    flatten, generate_headers_downstream, PackagesNotFound, CyclicDependencies,
+    flatten, generate_headers_downstream, PackagesNotFound, IndirectPackagesNotFound,
 )
 from youwol_utils.clients.docdb.models import WhereClause, QueryBody, Query, SelectClause
 from youwol_utils.context import Context
@@ -24,7 +24,7 @@ from .resources_initialization import init_resources, synchronize
 from .utils import (
     extract_zip_file, to_package_id, create_tmp_folder,
     to_package_name, get_query_version, loading_graph, get_url, fetch, format_response, publish_package,
-    get_query_latest,
+    get_query_latest, retrieve_dependency_paths,
 )
 from .utils_indexing import get_version_number_str
 
@@ -343,7 +343,7 @@ async def resolve_loading_tree(
             data={"resolvedDependencies": dependencies_dict},
         )
 
-        async def add_missing_dependencies(missing_previous_loop=None):
+        async def add_missing_dependencies():
             """ It maybe the case where some dependencies are missing in the provided body,
             here we fetch using 'body.using' or the latest version of them"""
 
@@ -358,17 +358,6 @@ async def resolve_loading_tree(
             await ctx.info(text="Start another loop to fetch missing dependencies",
                            data={"missing": missing, "retrieved": list(dependencies_dict.keys())})
 
-            if missing_previous_loop and missing == missing_previous_loop:
-                await ctx.error(
-                    text="Dependencies resolution stuck",
-                    data={"resolvedDependencies": dependencies_dict,
-                          "missing": missing},
-                )
-                raise CyclicDependencies(
-                    context="Dependencies resolution stuck",
-                    packages=missing
-                )
-
             def get_dependency(dependency):
                 if dependency in body.using:
                     return get_query_version(configuration.doc_db, dependency, body.using[dependency], ctx.headers())
@@ -381,14 +370,15 @@ async def resolve_loading_tree(
             if any(len(v["documents"]) == 0 for v in versions):
                 not_found = [f"{name}#{body.using.get(name, 'latest')}" for v, name in zip(versions, missing)
                              if len(v["documents"]) == 0]
+                names = [n.split("#")[0] for n in not_found]
+                paths = {name: retrieve_dependency_paths(dependencies_dict, name) for name in names}
                 await ctx.error(
                     text="Some packages are not found in the CDN ",
                     data={"notFound": not_found},
                 )
-
-                raise PackagesNotFound(
+                raise IndirectPackagesNotFound(
                     context="Failed to retrieve a version of indirect dependencies",
-                    packages=not_found
+                    paths=paths
                 )
 
             versions = list(flatten([d['documents'] for d in versions]))
@@ -396,7 +386,7 @@ async def resolve_loading_tree(
                 lib_name = version["library_name"]
                 dependencies_dict[lib_name] = version
 
-            return await add_missing_dependencies(missing_previous_loop=missing)
+            return await add_missing_dependencies()
 
         await add_missing_dependencies()
         items_dict = {d["library_name"]: [to_package_id(d["library_name"]), get_url(d)]
