@@ -216,14 +216,14 @@ test_coverage: Artifact = Artifact(
     id='test-coverage',
     files=FileListing(
         include=["coverage"],
-        ),
+    ),
     links=[
         Link(
             name='Coverage',
             url='coverage/lcov-report/index.html'
-            )
-        ]
-    )
+        )
+    ]
+)
 
 
 class TestStepConfig(BaseModel):
@@ -264,22 +264,18 @@ async def pipeline(config: PipelineConfig, context: Context):
                 BuildStep(id="build-dev", run="yarn build:dev"),
                 BuildStep(id="build-prod", run="yarn build:prod"),
                 DocStep(),
-                TestStep(id="test", run="yarn test", artifacts=[test_result]),
-                TestStep(id="test-coverage", run="yarn test-coverage",
-                         artifacts=[test_coverage]
-                         ),
+                TestStep(id="test", run="yarn test-coverage", artifacts=config.testConfig.artifacts),
                 PublishCdnLocalStep(packagedArtifacts=['dist', 'docs']),
                 PublishCdnRemoteStep()
-                ],
+            ],
             flows=[
                 Flow(
                     name="prod",
                     dag=[
                         "checks > init > sync-deps > build-prod > test > publish-local > publish-remote ",
-                        "build-prod > doc > publish-local",
-                        "build-prod > test-coverage"
-                        ]
-                    ),
+                        "build-prod > doc > publish-local"
+                    ]
+                ),
                 Flow(
                     name="dev",
                     dag=[
