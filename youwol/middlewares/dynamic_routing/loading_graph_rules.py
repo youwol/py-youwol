@@ -40,8 +40,11 @@ class GetLoadingGraphDispatch(AbstractDispatch):
             try:
                 resp = await cdn.resolve_loading_tree(request, body, cdn_conf)
                 return JSONResponse(resp.dict())
-            except PackagesNotFound:
-                await ctx.info("Loading tree can not be locally resolved, proceed to remote platform")
+            except PackagesNotFound as e:
+                await ctx.warning(
+                    text="Loading tree can not be resolved locally, proceed to remote platform",
+                    data={"notFound": e.packages}
+                )
                 url = f'https://{yw_conf.selectedRemote}{request.url.path}'
 
                 async with aiohttp.ClientSession(
@@ -50,4 +53,6 @@ class GetLoadingGraphDispatch(AbstractDispatch):
                     async with await session.post(url=url, json=body.dict(), headers=ctx.headers()) as resp:
                         headers_resp = {k: v for k, v in resp.headers.items()}
                         content = await resp.read()
+                        if not resp.ok:
+                            await ctx.error(text="Loading tree has not been resolved in remote neither")
                         return Response(status_code=resp.status, content=content, headers=headers_resp)
