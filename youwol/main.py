@@ -1,5 +1,9 @@
 import asyncio
+import os
+from pathlib import Path
 
+import daemon
+import lockfile
 import uvicorn
 from fastapi import FastAPI, APIRouter, Depends, WebSocket
 from starlette.requests import Request
@@ -12,6 +16,7 @@ import youwol.middlewares.dynamic_routing.workspace_explorer_rules as workspace_
 from youwol.configuration.configuration_validation import ConfigurationLoadingException
 from youwol.environment.auto_download_thread import AssetDownloadThread
 from youwol.environment.youwol_environment import YouwolEnvironmentFactory, yw_config, api_configuration, print_invite
+from youwol.main_args import get_main_arguments
 from youwol.middlewares.auth_middleware import AuthMiddleware
 from youwol.middlewares.browser_caching_middleware import BrowserCachingMiddleware
 from youwol.middlewares.dynamic_routing_middleware import DynamicRoutingMiddleware
@@ -96,18 +101,46 @@ async def ws_endpoint(ws: WebSocket):
 
 def main():
     assert_python()
+    shutdown_script_path = Path().cwd() / "py-youwol.shutdown.sh"
     try:
         download_thread.start()
         conf = asyncio.run(YouwolEnvironmentFactory.get())
-        print_invite(conf=conf)
-        # app: incorrect type. More here: https://github.com/tiangolo/fastapi/issues/3927
-        # noinspection PyTypeChecker
-        uvicorn.run(app, host="localhost", port=conf.http_port)
+        print_invite(conf=conf, shutdown_script_path=shutdown_script_path if get_main_arguments().daemonize else None)
+
+        if get_main_arguments().daemonize:
+            with daemon.DaemonContext(pidfile=lockfile.FileLock("py-youwol")):
+                shutdown_script_path.write_text(
+                    f"""#/bin/sh
+py_youwol_pid={os.getpid()}
+## Sanity check
+program_name=$(ps -p $py_youwol_pid -o command=)
+echo "$program_name" | grep -q py-youwol
+if [[ $? -ne 0 ]]; then
+    echo "Pid $py_youwol_pid does not look like py-youwol - program name is '$program_name'
+Aborting"
+    exit
+fi
+kill $py_youwol_pid
+if [[ $? -eq 0 ]]; then
+    echo "Successfully send kill signal"
+else
+    echo "Failed to send kill signal"
+fi
+"""
+                )
+                # app: incorrect type. More here: https://github.com/tiangolo/fastapi/issues/3927
+                # noinspection PyTypeChecker
+                uvicorn.run(app, host="localhost", port=conf.http_port)
+        else:
+            # app: incorrect type. More here: https://github.com/tiangolo/fastapi/issues/3927
+            # noinspection PyTypeChecker
+            uvicorn.run(app, host="localhost", port=conf.http_port)
     except ConfigurationLoadingException as e:
         print(e)
         exit()
     finally:
         download_thread.join()
+        shutdown_script_path.unlink(missing_ok=True)
 
 
 if __name__ == "__main__":
