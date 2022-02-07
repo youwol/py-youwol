@@ -4,7 +4,7 @@ from fastapi import HTTPException
 
 from youwol.backends.treedb.models import PathResponse, DriveResponse
 from youwol.environment.clients import RemoteClients, LocalClients
-from youwol.environment.youwol_environment import Context
+from youwol.environment.youwol_environment import Context, YouwolEnvironment
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 
 
@@ -53,8 +53,8 @@ async def ensure_drive(drive: DriveResponse,  assets_gateway_client: AssetsGatew
 
 
 async def local_path(tree_item: dict, context: Context):
-
-    treedb = LocalClients.get_treedb_client(context)
+    env = await context.get('env', YouwolEnvironment)
+    treedb = LocalClients.get_treedb_client(env=env)
     return await treedb.get_path(item_id=tree_item['treeId'])
 
 

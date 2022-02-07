@@ -107,6 +107,7 @@ async def create_borrowed_item(borrowed_tree_id: str, item: Mapping[str, any], a
                 raise e
 
             path_item = await local_path({"treeId": tree_id}, context=ctx)
+            path_item = PathResponse(**path_item)
             await ctx.info(
                 labels=[Label.RUNNING],
                 text="Borrowed tree item not found, start creation",
@@ -243,6 +244,7 @@ async def upload_asset(
         await ensure_path(path_item=PathResponse(**path_item), assets_gateway_client=assets_gtw_client)
         try:
             await assets_gtw_client.get_asset_metadata(asset_id=asset_id)
+            await assets_gtw_client.get_tree_item(tree_item['itemId'])
             await ctx.info(
                 text="Asset already found in deployed environment"
             )
