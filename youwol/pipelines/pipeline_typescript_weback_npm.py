@@ -1,13 +1,13 @@
 import functools
 import shutil
 from pathlib import Path
-from typing import Union, List, Optional, NamedTuple, Iterable, Mapping
+from typing import List, Optional, NamedTuple, Iterable, Mapping
 
 from pydantic import BaseModel
 
 from youwol.environment.models_project import Manifest, PipelineStepStatus, Link, ExplicitNone, Flow, \
     Pipeline, parse_json, PipelineStep, FileListing, \
-    Artifact, Project, FlowId, JsBundle, BrowserApp
+    Artifact, Project, FlowId, BrowserTarget, BrowserLibBundle
 from youwol.environment.paths import PathsBook
 from youwol.environment.projects_loader import ProjectLoader
 from youwol.environment.youwol_environment import YouwolEnvironment
@@ -238,7 +238,8 @@ class TestStep(PipelineStep):
 
 
 class PipelineConfig(BaseModel):
-    target: Union[JsBundle, BrowserApp] = JsBundle()
+    target: BrowserTarget = BrowserLibBundle()
+    with_tags: List[str] = []
 
 
 async def pipeline(config: PipelineConfig, context: Context):
@@ -247,10 +248,10 @@ async def pipeline(config: PipelineConfig, context: Context):
         await ctx.info(text="Instantiate pipeline", data=config)
         return Pipeline(
             target=config.target,
-            tags=["typescript", "webpack", "library", "npm"],
+            tags=["typescript", "webpack", "npm"] + config.with_tags,
             projectName=lambda path: parse_json(path / "package.json")["name"],
             projectVersion=lambda path: parse_json(path / "package.json")["version"],
-            dependencies=lambda project, ctx: get_dependencies(project),
+            dependencies=lambda project, _ctx: get_dependencies(project),
             steps=[
                 PreconditionChecksStep(),
                 InitStep(),

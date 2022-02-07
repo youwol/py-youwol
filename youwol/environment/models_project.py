@@ -227,14 +227,15 @@ class Target(BaseModel):
     family: Family
 
 
-class JsBundle(Target):
+class BrowserTarget(Target):
+    pass
+
+
+class BrowserLibBundle(BrowserTarget):
     family: Family = Family.library
-    bundle: str = "javascript"
 
 
-class WASMBundle(Target):
-    family = Family.library
-    bundle = "wasm"
+JsBundle = BrowserLibBundle
 
 
 class EntryPoint(Target):
@@ -263,11 +264,14 @@ class Execution(BaseModel):
     parametrized: List[Parametrization] = []
 
 
-class BrowserApp(Target):
+class BrowserAppBundle(BrowserTarget):
     family: Family = Family.application
     icon: Dict = {"class": "fas fa-play"}
     displayName: Optional[str] = None
     execution: Execution = Execution()
+
+
+BrowserApp = BrowserAppBundle
 
 
 class MicroService(Target):
@@ -275,7 +279,6 @@ class MicroService(Target):
 
 
 class Pipeline(BaseModel):
-
     target: Target
     tags: List[str] = []
     description: str = ""
