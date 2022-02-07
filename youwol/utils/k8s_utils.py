@@ -1,7 +1,7 @@
 import subprocess
 from pathlib import Path
 from signal import SIGTERM
-from typing import List, Dict, Optional, Union
+from typing import List, Optional, Union
 
 import kubernetes as k8s
 import psutil
@@ -17,6 +17,7 @@ from youwol.environment.models import K8sNodeInfo, K8sInstanceInfo
 from youwol.exceptions import CommandException
 from youwol.utils.utils_low_level import execute_shell_cmd
 from youwol_utils.context import Context
+from youwol_utils.utils_paths import parse_yaml
 
 
 async def k8s_access_token():
@@ -50,12 +51,13 @@ def k8s_create_secret(namespace: str, file_path: Path):
         k8s.client.CoreV1Api().create_namespaced_secret(namespace=namespace, body=data)
 
 
-async def k8s_create_secrets_if_needed(namespace: str, secrets: Dict[str, Path], context: Context = None):
+async def k8s_create_secrets_if_needed(namespace: str, secrets: List[Path], context: Context = None):
     existing = await k8s_secrets(namespace=namespace)
-    needed = [k for k in secrets.keys() if k not in existing]
-    for name in needed:
+    names = [parse_yaml(s)['metadata']['name'] for s in secrets]
+    needed = [(n, s) for n, s in zip(names, secrets) if n not in existing]
+    for name, secret in needed:
         context and context.info(f"Create secret {name} in namespace {namespace}")
-        k8s_create_secret(namespace=namespace, file_path=secrets[name])
+        k8s_create_secret(namespace=namespace, file_path=secret)
 
 
 async def k8s_create_namespace(name: str):
@@ -152,7 +154,6 @@ async def ensure_k8s_proxy_running(k8s_cluster: K8sCluster) -> Optional[K8sInsta
 
     return K8sInstanceInfo(
         access_token=access_token,
-        # api_gateway_ip=await get_api_gateway_ip()
         k8s_api_proxy=f"http://localhost:{k8s_cluster.proxyPort}",
         nodes=[to_node_info(node) for node in nodes]
     )
