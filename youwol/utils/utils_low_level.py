@@ -148,7 +148,7 @@ def get_object_from_module(
 
     def get_instance_from_module(imported_module):
         if not hasattr(imported_module, object_or_class_name):
-            raise Exception(f"{module_absolute_path} : Expected class '{object_or_class_name}' not found")
+            raise NameError(f"{module_absolute_path} : Expected class '{object_or_class_name}' not found")
 
         maybe_class_or_var = imported_module.__getattribute__(object_or_class_name)
 
@@ -158,7 +158,7 @@ def get_object_from_module(
         if issubclass(maybe_class_or_var, object_type):
             return cast(object_type, maybe_class_or_var(**object_instantiation_kwargs))
 
-        raise Exception(f"{module_absolute_path} : Expected class '{object_or_class_name}'"
+        raise TypeError(f"{module_absolute_path} : Expected class '{object_or_class_name}'"
                         f" does not implements expected type '{object_type}")
 
     module_name = module_absolute_path.stem
@@ -169,9 +169,9 @@ def get_object_from_module(
         loader.exec_module(module)
         instance = get_instance_from_module(module)
     except SyntaxError as e:
-        raise Exception(f"{module_absolute_path} : Syntax error '{e}'")
+        raise SyntaxError(f"{module_absolute_path} : Syntax error '{e}'")
     except NameError as e:
-        raise Exception(f"{module_absolute_path} :Name error '{e}")
+        raise NameError(f"{module_absolute_path} :Name error '{e}")
 
     return instance
 
