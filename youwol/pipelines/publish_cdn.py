@@ -44,7 +44,7 @@ async def publish_browser_app_metadata(package: str, version: str, target: Brows
     async with context.start(action="publish_browser_app_metadata") as ctx:
         client = LocalClients.get_cdn_sessions_storage_client(env=env)
         settings = await client.get(package="@youwol/platform-essentials", key="settings", headers=ctx.headers())
-        if 'applications' not in settings:
+        if 'browserApplications' not in settings:
             settings['browserApplications'] = []
         settings['browserApplications'] = [s for s in settings['browserApplications'] if s['package'] != package]
         settings['browserApplications'].append(
