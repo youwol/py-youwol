@@ -226,6 +226,10 @@ test_coverage: Artifact = Artifact(
     )
 
 
+class TestStepConfig(BaseModel):
+    artifacts: List[Artifact] = [test_result, test_coverage]
+
+
 class TestStep(PipelineStep):
     id: str
     run: str
@@ -240,6 +244,7 @@ class TestStep(PipelineStep):
 class PipelineConfig(BaseModel):
     target: BrowserTarget = BrowserLibBundle()
     with_tags: List[str] = []
+    testConfig: TestStepConfig = TestStepConfig()
 
 
 async def pipeline(config: PipelineConfig, context: Context):
