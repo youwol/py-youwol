@@ -1,33 +1,22 @@
-import asyncio
 import itertools
-from typing import List, Optional, Dict, cast
+from typing import List, Optional
 
 from aiohttp.client_exceptions import ClientConnectorError, ContentTypeError
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from starlette.requests import Request
 
-from youwol.backends.treedb.models import PathResponse
-from youwol.environment.clients import RemoteClients, LocalClients
+from youwol.environment.clients import RemoteClients
 from youwol.environment.models import UserInfo
 from youwol.environment.projects_loader import ProjectLoader
 from youwol.environment.youwol_environment import yw_config, YouwolEnvironment, YouwolEnvironmentFactory
-from youwol.routers.commons import Label
-from youwol.routers.commons import ensure_path
 from youwol.routers.environment.models import (
     SyncUserBody, LoginBody, RemoteGatewayInfo, SelectRemoteBody, AvailableProfiles, ProjectsLoadingResults
 )
-from youwol.routers.environment.upload_assets.data import UploadDataTask
-from youwol.routers.environment.upload_assets.flux_project import UploadFluxProjectTask
-from youwol.routers.environment.upload_assets.models import UploadTask
-from youwol.routers.environment.upload_assets.package import UploadPackageTask
-from youwol.routers.environment.upload_assets.story import UploadStoryTask
-from youwol.routers.environment.upload_assets.upload import synchronize_permissions_metadata_symlinks
+from youwol.routers.environment.upload_assets.upload import upload_asset
 from youwol.utils.utils_low_level import get_public_user_auth_token
 from youwol.web_socket import UserContextLogger
-from youwol_utils import retrieve_user_info, decode_id
-from youwol_utils.clients.assets.assets import AssetsClient
-from youwol_utils.clients.treedb.treedb import TreeDbClient
+from youwol_utils import retrieve_user_info
 from youwol_utils.context import Context
 from youwol_utils.utils_paths import parse_json, write_json
 
@@ -235,17 +224,10 @@ async def sync_user(
 
 @router.post("/upload/{asset_id}",
              summary="upload an asset")
-async def select_remote(
+async def upload(
         request: Request,
         asset_id: str
 ):
-    upload_factories: Dict[str, any] = {
-        "data": UploadDataTask,
-        "flux-project": UploadFluxProjectTask,
-        "story": UploadStoryTask,
-        "package": UploadPackageTask
-    }
-
     async with Context.start_ep(
             request=request,
             with_attributes={
@@ -253,71 +235,4 @@ async def select_remote(
             },
             with_loggers=[UserContextLogger()]
     ) as ctx:
-
-        env = await ctx.get('env', YouwolEnvironment)
-        local_treedb: TreeDbClient = LocalClients.get_treedb_client(env=env)
-        local_assets: AssetsClient = LocalClients.get_assets_client(env=env)
-        raw_id = decode_id(asset_id)
-        asset, tree_item = await asyncio.gather(
-            local_assets.get(asset_id=asset_id),
-            local_treedb.get_item(item_id=asset_id),
-            return_exceptions=True
-        )
-        if isinstance(asset, HTTPException) and asset.status_code == 404:
-            await ctx.error(text="Can not find the asset in the local assets store")
-            raise RuntimeError("Can not find the asset in the local assets store")
-        if isinstance(tree_item, HTTPException) and tree_item.status_code == 404:
-            await ctx.error(text="Can not find the tree item in the local treedb store")
-            raise RuntimeError("Can not find the tree item in the local treedb store")
-        if isinstance(asset, Exception) or isinstance(tree_item, Exception):
-            raise RuntimeError("A problem occurred while fetching the local asset/tree items")
-        asset = cast(Dict, asset)
-        tree_item = cast(Dict, tree_item)
-
-        factory: UploadTask = upload_factories[asset['kind']](
-            raw_id=raw_id,
-            asset_id=asset_id,
-            context=ctx
-        )
-
-        local_data = await factory.get_raw()
-        try:
-            path_item = await local_treedb.get_path(item_id=tree_item['itemId'])
-        except HTTPException as e:
-            if e.status_code == 404:
-                await ctx.error(text=f"Can not get path of item with id '{tree_item['itemId']}'",
-                                data={"tree_item": tree_item, "error_detail": e.detail})
-            raise e
-
-        await ctx.info(
-            text="Data retrieved",
-            data={"path_item": path_item, "raw data": local_data}
-        )
-
-        assets_gtw_client = await RemoteClients.get_assets_gateway_client(context=ctx)
-
-        await ensure_path(path_item=PathResponse(**path_item), assets_gateway_client=assets_gtw_client)
-        try:
-            _asset = await assets_gtw_client.get_asset_metadata(asset_id=asset_id)
-            _tree_item = await assets_gtw_client.get_tree_item(tree_item['itemId'])
-            await ctx.info(
-                text="Asset already found in deployed environment"
-            )
-            await factory.update_raw(data=local_data, folder_id=tree_item['folderId'])
-        except HTTPException as e:
-            if e.status_code != 404:
-                raise e
-            await ctx.info(
-                labels=[Label.RUNNING],
-                text="Project not already found => start creation"
-            )
-            await factory.create_raw(data=local_data, folder_id=tree_item['folderId'])
-
-        await synchronize_permissions_metadata_symlinks(
-            asset_id=asset_id,
-            tree_id=tree_item['itemId'],
-            assets_gtw_client=assets_gtw_client,
-            context=ctx
-        )
-
-    return {}
+        return await upload_asset(body={"assetId": asset_id}, context=ctx)
