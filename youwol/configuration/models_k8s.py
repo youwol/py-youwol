@@ -21,6 +21,9 @@ class OpenIdConnect(BaseModel):
 class Docker(BaseModel):
     repositories: List[DockerRepo]
 
+    def get_repo(self, repo_name: str):
+        return next(repo for repo in self.repositories if repo.name == repo_name)
+
 
 class K8sCluster(BaseModel):
     configFile: Path

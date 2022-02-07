@@ -29,7 +29,7 @@ class HelmPackage(K8sPackage):
     chart_folder: Path
     with_values: dict
     values_filename: str = 'values.yaml'
-    secrets: dict = {}
+    secrets: List[Path] = []
     chart_explorer: dict = {}
 
     async def before_cmd(self, context: Context):
