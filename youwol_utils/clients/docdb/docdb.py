@@ -6,11 +6,11 @@ import aiohttp
 from aiohttp import ClientResponse
 
 from youwol_utils.clients.docdb.models import TableBody, QueryBody, SecondaryIndex, Query, WhereClause
-from youwol_utils.clients.utils import raise_exception_from_response, aiohttp_resp_parameters
+from youwol_utils.clients.utils import aiohttp_resp_parameters
+from youwol_utils.exceptions import raise_exception_from_response
 
 
 def patch_query_body(query_body: QueryBody, table_body: TableBody) -> QueryBody:
-
     """
     This function is a workaround for queries involving columns with types ['int','bigint']
     (maybe other types suffer from the same problem but have not been revealed so far).
@@ -200,8 +200,7 @@ class DocDbClient:
         if not self.table_body.clustering_columns:
             del body['clustering_columns']
             del body['table_options']['clustering_order']
-            # if not body['table_options']:
-            #    del body['table_options']
+
         async with aiohttp.ClientSession(headers=self.headers) as session:
             async with await session.post(url=self.post_table_url, json=body, **kwargs) as resp:
                 if resp.status == 201:
@@ -222,7 +221,7 @@ class DocDbClient:
 
                 await self.raise_exception(resp, message="Creation of the index failed")
 
-    async def ensure_table(self, **kwargs) -> bool:
+    async def ensure_table(self, **kwargs):
 
         if not await self._keyspace_exists(**kwargs):
             print(f"keyspace {self.keyspace_name} does not exist")
@@ -237,16 +236,11 @@ class DocDbClient:
             update = get_update_description(table,  self.table_body.version)
 
             if update.type == UpdateType.MAJOR_UPDATE:
-                raise Exception(f"Major update needs to be manually done {str(update)}")
+                raise RuntimeError(f"Major update needs to be manually done {str(update)}")
 
             if update.type == UpdateType.MINOR_UPDATE:
                 print(f"Table '{self.table_name}' needs minor update, apply auto update ({str(update)})")
                 raise NotImplementedError(f"Auto update not implemented")
-
-            # if update.type == UpdateType.RECREATION:
-            #    print(f"Table '{self.table_name}' needs recreation")
-            #    await self.delete_table(**kwargs)
-            #    table_exist = False
 
             if update.type == UpdateType.NONE:
                 print(f"Table '{self.table_name}' schema up-to-date")
@@ -256,9 +250,6 @@ class DocDbClient:
             await self._create_table(**kwargs)
             for index in self.secondary_indexes:
                 await self._create_index(index, **kwargs)
-            return True
-
-        return True
 
     async def get_table(self, **kwargs):
 

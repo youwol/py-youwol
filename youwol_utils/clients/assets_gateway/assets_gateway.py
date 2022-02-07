@@ -3,7 +3,7 @@ from typing import Dict, Any, Optional
 
 import aiohttp
 
-from youwol_utils.clients.utils import raise_exception_from_response
+from youwol_utils.exceptions import raise_exception_from_response
 
 
 @dataclass(frozen=True)
@@ -48,7 +48,6 @@ class AssetsGatewayClient:
                 if resp.status == 200:
                     return await resp.json()
                 await raise_exception_from_response(resp)
-        pass
 
     async def get_raw(self, kind: str, raw_id: str, content_type=None, **kwargs):
 

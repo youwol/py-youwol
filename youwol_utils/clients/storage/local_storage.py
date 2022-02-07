@@ -127,7 +127,10 @@ class LocalStorageClient:
             shutil.rmtree(full_path)
             return
 
+        if not full_path.exists():
+            raise HTTPException(status_code=404, detail=f"File {full_path.name} not found")
         os.remove(full_path)
+
         return {}
 
     async def list_files(self, prefix: Union[str, Path], owner: Union[str, None], headers: Mapping[str, str] = None,

@@ -9,7 +9,7 @@ from aiohttp import FormData
 
 from youwol_utils.clients.storage.models import FileData
 from youwol_utils.clients.storage.patches import patch_files_name
-from youwol_utils.clients.utils import raise_exception_from_response
+from youwol_utils.exceptions import raise_exception_from_response
 from youwol_utils.types import JSON
 
 

@@ -5,7 +5,7 @@ from typing import Dict, Union, List, Iterable
 
 import aiohttp
 
-from youwol_utils.clients import raise_exception_from_response
+from youwol_utils.exceptions import raise_exception_from_response
 
 
 def md5_update_from_file(filename: Union[str, Path], current_hash):

@@ -4,18 +4,17 @@ import itertools
 import json
 import os
 from enum import Enum
-
-from pydantic import BaseModel
 from pathlib import Path, PosixPath
 from typing import Union, List, cast, Mapping, Callable, Iterable, Any, NamedTuple
 
 import aiohttp
 from fastapi import HTTPException
+from pydantic import BaseModel
 from starlette.requests import Request
 
-from youwol_utils import JSON
+from youwol_utils import JSON, to_group_scope, to_group_id
 from youwol_utils.clients.types import DocDb
-from youwol_utils.clients.utils import raise_exception_from_response, to_group_id, to_group_scope
+from youwol_utils.exceptions import raise_exception_from_response
 
 flatten = itertools.chain.from_iterable
 
@@ -102,7 +101,7 @@ def ensure_group_permission(request: Request, group_id: str):
 
 def full_local_fake_user(request):
     user_name = request.headers.get('user-name', "fake_account@youwol.com")
-
+    ta_name = "test account"
     if user_name == "public":
         return {
             "sub": to_group_id(user_name), "email_verified": True, "name": "public account",
@@ -113,26 +112,26 @@ def full_local_fake_user(request):
             }
     if user_name == "test":
         return {
-            "sub": to_group_id(user_name), "email_verified": True, "name": "test account",
-            "preferred_username": "test account", "email": "test-account@youwol.com",
+            "sub": to_group_id(user_name), "email_verified": True, "name": ta_name,
+            "preferred_username": ta_name, "email": "test-account@youwol.com",
             "memberof": ["/youwol-users/postman-tester/subchildtest1",
                          "/youwol-users/postman-tester/subchildtest2",
                          "/youwol-users/youwol-devs",
                          ],
-            }
+        }
     return {
         "sub": "82bcba26-65d7-4072-afc4-a28bb58611c4",
         "email_verified": True,
-        "name": "test account",
+        "name": ta_name,
         "preferred_username": user_name,
         "memberof": [
             "/youwol-users/postman-tester/subchildtest1",
             "/youwol-users/postman-tester/subchildtest2",
             "/youwol-users/youwol-devs",
             "/youwol-users/arche"
-            ],
+        ],
         "email": user_name,
-        }
+    }
 
 
 async def get_access_token(client_id: str, client_secret: str, client_scope: str, openid_host: str):

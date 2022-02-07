@@ -2,8 +2,9 @@ from dataclasses import field, dataclass
 from typing import Dict
 
 import aiohttp
+
 from youwol_utils import JSON
-from youwol_utils.clients import raise_exception_from_response
+from youwol_utils.exceptions import raise_exception_from_response
 
 
 @dataclass(frozen=True)
@@ -18,7 +19,7 @@ class CdnSessionsStorageClient:
 
     async def get(self, package: str, key: str, **kwargs):
 
-        url = self.base_path(package,key)
+        url = self.base_path(package, key)
         async with aiohttp.ClientSession(headers=self.headers) as session:
             async with await session.get(url=url, **kwargs) as resp:
                 if resp.status == 200:
@@ -27,7 +28,7 @@ class CdnSessionsStorageClient:
 
     async def post(self, package: str, key: str, body: JSON, **kwargs):
 
-        url = self.base_path(package,key)
+        url = self.base_path(package, key)
         async with aiohttp.ClientSession(headers=self.headers) as session:
             async with await session.post(url=url, json=body, **kwargs) as resp:
                 if resp.status == 200:

@@ -3,7 +3,7 @@ from typing import Dict
 
 import aiohttp
 
-from youwol_utils.clients.utils import raise_exception_from_response
+from youwol_utils.exceptions import raise_exception_from_response
 
 
 @dataclass(frozen=True)

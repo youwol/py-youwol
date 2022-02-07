@@ -1,11 +1,8 @@
 import base64
 import functools
-from typing import Mapping, Union, NamedTuple, List
+from typing import Mapping, Union, NamedTuple
 
 from aiohttp import ClientResponse
-from fastapi import HTTPException
-from starlette.requests import Request
-from starlette.responses import JSONResponse
 
 
 class GroupInfo(NamedTuple):
@@ -66,62 +63,11 @@ def ancestors_group_id(group_id):
     return ids
 
 
-class YouWolException(HTTPException):
-    def __init__(self, status_code: int, detail: str, **kwargs):
-        self.exceptionType = "YouWolException"
-        self.status_code = status_code
-        self.detail = detail
-        self.parameters = kwargs
-
-
-class PackagesNotFound(YouWolException):
-    def __init__(self, detail: str, packages: List[str], **kwargs):
-        YouWolException.__init__(self, 404, detail, packages=packages, **kwargs)
-        self.exceptionType = "PackagesNotFound"
-
-
-async def youwol_exception_handler(request: Request, exc: YouWolException):
-    log_error(f"{exc.detail}", exc.parameters)
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={
-            "type": exc.exceptionType,
-            "detail": f"{exc.detail}",
-            "parameters": exc.parameters,
-            "url": request.url.path
-        }
-    )
-
-
 def aiohttp_resp_parameters(resp: ClientResponse):
     return {
         "real_url": str(resp.request_info.real_url),
         "method": resp.request_info.method
     }
-
-
-async def raise_exception_from_response(raw_resp: ClientResponse, **kwargs):
-    detail = None
-
-    print(f"HTTPException with status code {raw_resp.status}")
-    parameters = {}
-    try:
-        resp = await raw_resp.json()
-        if resp:
-            detail = resp.get("detail", None) or resp.get("message", None) or ""
-            parameters = resp.get("parameters", None) or {}
-    except ValueError:
-        detail = raw_resp.reason
-    except Exception:
-        pass
-
-    detail = detail if detail else await raw_resp.text()
-
-    if detail:
-        print(f"detail:", detail)
-
-    print(raw_resp)
-    raise YouWolException(status_code=raw_resp.status, detail=detail, **{**kwargs, **parameters})
 
 
 def get_default_owner(headers: Mapping[str, str]):
