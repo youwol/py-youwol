@@ -1,6 +1,7 @@
 import functools
 import itertools
 from pathlib import Path
+from typing import List
 
 from pydantic.main import BaseModel
 
@@ -15,13 +16,13 @@ class K8sPackage(BaseModel):
     namespace: str
 
     async def install(self, context: Context):
-        pass
+        raise NotImplementedError()
 
     async def upgrade(self, context: Context):
-        pass
+        raise NotImplementedError()
 
     async def is_installed(self, context: Context):
-        pass
+        raise NotImplementedError()
 
 
 class HelmPackage(K8sPackage):
