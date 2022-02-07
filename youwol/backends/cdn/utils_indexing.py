@@ -7,20 +7,18 @@ from typing import Dict, Union, Any
 
 from fastapi import HTTPException
 
-
 skipped_dependencies = []
 flatten = itertools.chain.from_iterable
 
 
 def get_files(path: Union[Path, str]):
-
     path = str(path)
     p = ["", ""]
     minimized = [o for o in os.listdir(path) if o[-6:] == 'min.js']
     if len(minimized) == 1:
         p[0] = minimized[0]
     if len(minimized) > 1:
-        raise Exception("multiple min.js found", path)
+        raise RuntimeError("multiple min.js found", path)
 
     normal = [o for o in os.listdir(path) if o[-3:] == '.js' and '.min.js' not in o]
     if len(normal) == 1:
@@ -29,7 +27,6 @@ def get_files(path: Union[Path, str]):
 
 
 def get_library_type(package_json: Any):
-
     allowed_types = ['library', 'flux-pack', 'library-core', 'application']
     name = package_json['name']
 
@@ -37,7 +34,7 @@ def get_library_type(package_json: Any):
         return "core_library"
 
     if 'youwol' in package_json \
-            and 'type' in package_json['youwol']\
+            and 'type' in package_json['youwol'] \
             and package_json['youwol']['type'] in allowed_types:
         return package_json['youwol']['type']
 
@@ -59,13 +56,13 @@ def get_version_number(version_str: str) -> int:
     if "-next" in version_str:
         delta = 1
         version_str = version_str.split("-")[0]
-    return int(int(version_str.split('.')[0])*1e7 + int(version_str.split('.')[1])*1e4 +
-               int(version_str.split('.')[2])*10 + delta)
+    return int(int(version_str.split('.')[0]) * 1e7 + int(version_str.split('.')[1]) * 1e4 +
+               int(version_str.split('.')[2]) * 10 + delta)
 
 
 def get_version_number_str(version_str: str) -> str:
     base = str(get_version_number(version_str))
-    version = '0'*(10-len(base)) + base
+    version = '0' * (10 - len(base)) + base
     return version
 
 
@@ -74,7 +71,6 @@ def get_library_id(name: str, version: str) -> str:
 
 
 def format_doc_db_record(package_path: Path, fingerprint: str) -> Dict[str, str]:
-
     package_json = json.loads(package_path.read_bytes())
 
     name = package_json.get("name", None)
@@ -103,16 +99,15 @@ def format_doc_db_record(package_path: Path, fingerprint: str) -> Dict[str, str]
         "description": package_json.get("description", ""),
         "tags": package_json.get("keywords", []),
         "type": get_library_type(package_json),
-        "dependencies": [k+"#"+v for k, v in get_cdn_dependencies().items()],
+        "dependencies": [k + "#" + v for k, v in get_cdn_dependencies().items()],
         "bundle_min": "",
         "bundle": str(main),
         "version_number": get_version_number_str(version),
         "path": str(path),
         "fingerprint": fingerprint
-        }
+    }
 
 
 async def post_indexes(doc_db, data, count, headers):
-
     for chunk in chunks(data, count):
         await asyncio.gather(*[doc_db.create_document(d, owner="/youwol-users", headers=headers) for d in chunk])

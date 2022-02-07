@@ -8,7 +8,6 @@ from youwol_utils.clients.docdb.models import Column, TableOptions, OrderingClau
 
 
 class FormData(NamedTuple):
-
     objectName: Union[str, Path]
     objectData: bytes
     objectSize: int
@@ -108,17 +107,14 @@ class DependenciesResponseV1(BaseModel):
 
 
 class DependenciesLatestBody(BaseModel):
-
     libraries: List[str]
 
 
 class LibVersionsBody(BaseModel):
-
     name: str
 
 
 class LoadingGraphBody(BaseModel):
-
     libraries: Dict[str, str]
     using: Dict[str, str] = {}
 
@@ -140,10 +136,10 @@ LIBRARIES_TABLE = TableBody(
         Column(name="version_number", type="text"),
         Column(name="path", type="text"),
         Column(name="fingerprint", type="text")
-        ],
+    ],
     partition_key=["library_name"],
     clustering_columns=["version_number"],
     table_options=TableOptions(
         clustering_order=[OrderingClause(name='version_number', order='DESC')]
-        )
     )
+)

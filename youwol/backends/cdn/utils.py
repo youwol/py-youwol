@@ -1,48 +1,36 @@
 import asyncio
 import base64
+import hashlib
 import itertools
 import json
 import os
 import time
 import zipfile
 from pathlib import Path
-from shutil import which
+from typing import IO
 from typing import Union, List, Mapping
 from uuid import uuid4
-import hashlib
 
+import brotli
 from fastapi import HTTPException
 from starlette.responses import Response
-from typing import IO
 
-from .utils_indexing import format_doc_db_record, get_version_number_str
-from youwol_utils import generate_headers_downstream, QueryBody, files_check_sum, shutil, log_info, log_error
+from youwol_utils import generate_headers_downstream, QueryBody, files_check_sum, shutil, log_info
 from youwol_utils.clients.docdb.models import Query, WhereClause, OrderingClause
 from .configurations import Configuration
-import brotli
 from .models import FormData, PublishResponse
+from .utils_indexing import format_doc_db_record, get_version_number_str
 
 flatten = itertools.chain.from_iterable
 
 
 async def fetch(request, path, file_id, storage):
-
     headers = generate_headers_downstream(request.headers)
-
-    if request.headers.get("flux-mode") == "debug" and "min.js" in file_id:
-        file_id_debug = file_id.replace("min.js", "js")
-        try:
-            return await storage.get_bytes(path="{}/{}".format(path, file_id_debug), owner=Configuration.owner,
-                                           headers=headers)
-        finally:
-            return await storage.get_bytes(path="{}/{}".format(path, file_id), owner=Configuration.owner,
-                                           headers=headers)
     return await storage.get_bytes(path="{}/{}".format(path, file_id), owner=Configuration.owner,
                                    headers=headers)
 
 
 def create_tmp_folder(zip_filename):
-
     dir_path = Path("./tmp_zips") / str(uuid4())
     zip_path = (dir_path / zip_filename).with_suffix('.zip')
     zip_dir_name = zip_filename.split('.')[0]
@@ -51,21 +39,14 @@ def create_tmp_folder(zip_filename):
 
 
 def get_content_encoding(file_id):
-
     file_id = str(file_id)
     if ".json" not in file_id and ".js" in file_id or ".css" in file_id or '.data' in file_id or '.wasm' in file_id:
         return "br"
-    """ 
-    if ".gz" in file_id:
-        return "gzip"
-    if ".br" in file_id:
-        return "br"
-    """
+
     return "identity"
 
 
 def get_content_type(file_id):
-
     if ".json" in file_id:
         return "application/json"
     if ".js" in file_id:
@@ -84,7 +65,6 @@ def get_content_type(file_id):
 
 
 def get_filename(d):
-
     # for flux packs type introspection requires class name not being mangled
     if "flux-pack" in d["library_id"]:
         return d["bundle"]
@@ -94,7 +74,6 @@ def get_filename(d):
 
 
 def loading_graph(downloaded, deque, items_dict):
-
     dependencies = {d["library_name"]: [d2.split("#")[0] in downloaded for d2 in d["dependencies"]]
                     for d in deque}
     to_add = [name for name, dependencies_here in dependencies.items() if all(dependencies_here)]
@@ -109,7 +88,7 @@ def loading_graph(downloaded, deque, items_dict):
                       for pack, founds in dependencies.items()}
         print("Can not resolve dependency(ies)", new_deque, deque)
         raise HTTPException(status_code=500,
-                            detail="loading_graph stuck: can not resolve some dependencies:"+str(not_founds))
+                            detail="loading_graph stuck: can not resolve some dependencies:" + str(not_founds))
 
     return [[items_dict[a] for a in to_add]] + loading_graph(downloaded + [r for r in to_add], new_deque, items_dict)
 
@@ -119,26 +98,11 @@ async def format_download_form(file_path: Path, base_path: Path, dir_path: Path,
 
     if compress and get_content_encoding(file_path) == "br":
         path_log = "/".join(file_path.parts[2:])
+        log_info(f'brotlify (python) {path_log}')
         start = time.time()
-        if which('brotli'):
-            log_info(f'brotlify (system) {path_log} ...')
-            p = await asyncio.create_subprocess_shell(
-                cmd=f'brotli {str(file_path)}',
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-                shell=True)
-
-            async for f in p.stderr:
-                log_error(f.decode('utf-8'))
-            await p.communicate()
-            os.system(f'rm {str(file_path)}')
-            os.system(f'mv {str(file_path)}.br {str(file_path)}')
-        else:
-            log_info(f'brotlify (python) {path_log}')
-            start = time.time()
-            compressed = brotli.compress(file_path.read_bytes())
-            with file_path.open("wb") as f:
-                f.write(compressed)
+        compressed = brotli.compress(file_path.read_bytes())
+        with file_path.open("wb") as f:
+            f.write(compressed)
         log_info(f'...{path_log} => {time.time() - start} s')
 
     data = open(str(file_path), 'rb').read()
@@ -150,7 +114,6 @@ async def format_download_form(file_path: Path, base_path: Path, dir_path: Path,
 
 
 def extract_zip_file(file: IO, zip_path: Union[Path, str], dir_path: Union[Path, str], delete_original=True):
-
     dir_path = str(dir_path)
     with open(zip_path, 'ab') as f:
         for chunk in iter(lambda: file.read(10000), b''):
@@ -168,7 +131,6 @@ def extract_zip_file(file: IO, zip_path: Union[Path, str], dir_path: Union[Path,
 
 
 async def publish_package(file: IO, filename: str, content_encoding, configuration, headers):
-
     if content_encoding not in ['identity', 'brotli']:
         raise HTTPException(status_code=422, detail="Only identity and brotli encoding are accepted ")
     need_compression = content_encoding == 'identity'
@@ -207,7 +169,7 @@ async def publish_package(file: IO, filename: str, content_encoding, configurati
                                                    '__original.zip')
         forms = await asyncio.gather(*[
             format_download_form(path, base_path, package_path.parent, need_compression) for path in paths
-            ])
+        ])
         forms = list(forms) + [form_original]
         # the fingerprint in the md5 checksum of the included files after having eventually being compressed
         os.remove(zip_path)
@@ -235,7 +197,6 @@ async def publish_package(file: IO, filename: str, content_encoding, configurati
 
 
 def format_response(content: bytes, file_id: str, max_age: str = "31536000") -> Response:
-
     return Response(
         content=content,
         headers={
@@ -244,12 +205,11 @@ def format_response(content: bytes, file_id: str, max_age: str = "31536000") -> 
             "cache-control": f"public, max-age={max_age}",
             'Cross-Origin-Opener-Policy': 'same-origin',
             'Cross-Origin-Embedder-Policy': 'require-corp'
-            }
-        )
+        }
+    )
 
 
 def get_query(doc_db, lib_name_version, headers):
-
     if '#' in lib_name_version and lib_name_version.split('#')[1] != "latest":
         lib_name, version = lib_name_version.split('#')[0], lib_name_version.split('#')[1]
         return get_query_version(doc_db, lib_name, version, headers)
@@ -257,23 +217,21 @@ def get_query(doc_db, lib_name_version, headers):
 
 
 def get_query_latest(doc_db, lib_name, headers):
-
     query = QueryBody(
         max_results=1,
         query=Query(where_clause=[WhereClause(column="library_name", relation="eq", term=lib_name)],
                     ordering_clause=[OrderingClause(name="version_number", order="DESC")])
-        )
+    )
     return doc_db.query(query_body=query, owner=Configuration.owner, headers=headers)
 
 
 def get_query_version(doc_db, lib_name, version, headers):
-
     query = QueryBody(
         max_results=1,
         query=Query(where_clause=[WhereClause(column="library_name", relation="eq", term=lib_name),
                                   WhereClause(column="version_number", relation="eq",
                                               term=get_version_number_str(version))])
-        )
+    )
 
     return doc_db.query(query_body=query, owner=Configuration.owner, headers=headers)
 
@@ -285,9 +243,8 @@ def chunks(lst, n):
 
 
 async def post_storage_by_chunk(storage, forms: List[FormData], count, headers):
-
     for i, chunk in enumerate(chunks(forms, count)):
-        progress = 100 * i/(len(forms)/count)
+        progress = 100 * i / (len(forms) / count)
         print(f"post files chunk, progress: {progress}")
         print(f"chunk ${[c.objectName for c in chunk]}")
         await asyncio.gather(*[storage.post_object(path=form.objectName, content=form.objectData,
@@ -307,7 +264,7 @@ def md5_from_folder(dir_path: Path):
     paths = []
     for subdir, dirs, files in os.walk(dir_path):
         for filename in files:
-            paths.append(Path(subdir)/filename)
+            paths.append(Path(subdir) / filename)
     md5_stamp = files_check_sum(paths)
     return md5_stamp
 
@@ -323,4 +280,4 @@ def to_package_name(package_id: str) -> str:
 
 
 def get_url(document: Mapping[str, str]) -> str:
-    return to_package_id(document['library_name']) + "/"+document['version'] + "/" + get_filename(document)
+    return to_package_id(document['library_name']) + "/" + document['version'] + "/" + get_filename(document)

@@ -3,7 +3,6 @@ import os
 
 from youwol_utils import WhereClause, QueryBody, Query, Path, flatten
 from .configurations import Configuration
-
 from .utils import format_download_form, post_storage_by_chunk, md5_from_folder
 from .utils_indexing import format_doc_db_record, post_indexes, get_version_number_str
 
@@ -16,10 +15,10 @@ async def init_resources(config: Configuration):
     table_ok, bucket_ok = await asyncio.gather(
         doc_db.ensure_table(headers=headers),
         storage.ensure_bucket(headers=headers)
-        )
+    )
     if bucket_ok and not table_ok:
         print("Need to re-index stuffs of bucket")
-        raise Exception("The table index is not up-to-date w/ bucket content, manual index-synchronisation needed")
+        raise RuntimeError("The table index is not up-to-date w/ bucket content, manual index-synchronisation needed")
 
     clauses = [[WhereClause(column="library_name", relation="eq", term=lib.split("#")[0]),
                 WhereClause(column="version_number", relation="eq", term=get_version_number_str(lib.split("#")[1]))
@@ -41,7 +40,6 @@ async def init_resources(config: Configuration):
 
 
 async def synchronize(dir_path: Path, zip_dir_name: str, configuration: any, headers: any):
-
     paths = flatten([[Path(root) / f for f in files] for root, _, files in os.walk(str(dir_path))])
     paths = list(paths)
     forms = await asyncio.gather(*[format_download_form(path, Path(), dir_path / zip_dir_name, False)
