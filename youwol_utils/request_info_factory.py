@@ -197,14 +197,9 @@ def request_info(request: Request):
 
             if info and not message:
                 message = info.message
-
-        except RuntimeError as e:
+        except Exception:
             tb = traceback.format_exc()
-            request.state.context and request.state.context.error(
-                text="Error occurred trying to extract request info",
-                data={
-                    'error': str(e),
-                    'traceback': tb.split('\n'),
-                    'args': [str(arg) for arg in e.args]
-                })
+            print("Error occurred trying to extract request info")
+            print(tb)
+
     return RequestInfo(message=message, attributes=attributes, labels=labels)
