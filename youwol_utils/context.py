@@ -71,21 +71,25 @@ class ContextLogger(ABC):
         return NotImplemented
 
 
+def format_message(entry: LogEntry):
+    return {
+        "level": entry.level.name,
+        "attributes": entry.attributes,
+        "labels": [label for label in entry.labels],
+        "text": entry.text,
+        "data": to_json(entry.data) if isinstance(entry.data, BaseModel) else entry.data,
+        "contextId": entry.context_id,
+        "parentContextId": entry.parent_context_id
+    }
+
+
 class WsContextLogger(ContextLogger):
 
     def __init__(self, websockets_getter: Callable[[], List[WebSocket]]):
         self.websockets_getter = websockets_getter
 
     async def log(self, entry: LogEntry):
-        message = {
-            "level": entry.level.name,
-            "attributes": entry.attributes,
-            "labels": [label for label in entry.labels],
-            "text": entry.text,
-            "data": to_json(entry.data) if isinstance(entry.data, BaseModel) else entry.data,
-            "contextId": entry.context_id,
-            "parentContextId": entry.parent_context_id
-        }
+        message = format_message(entry)
         websockets = self.websockets_getter()
 
         async def dispatch():
