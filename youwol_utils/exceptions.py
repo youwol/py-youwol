@@ -13,6 +13,24 @@ class YouWolException(HTTPException):
         self.exceptionType = YouWolException.exceptionType
 
 
+class PublishPackageError(YouWolException):
+    exceptionType = "PublishPackageError"
+
+    def __init__(self, context: str, **kwargs):
+        YouWolException.__init__(
+            self,
+            status_code=422,
+            detail={
+                "context": context
+            },
+            **kwargs)
+        self.exceptionType = PublishPackageError.exceptionType
+        self.context = context
+
+    def __str__(self):
+        return f"""The package can not be published: {self.context}"""
+
+
 class PackagesNotFound(YouWolException):
     exceptionType = "PackagesNotFound"
 
@@ -74,6 +92,7 @@ class CircularDependencies(YouWolException):
 
 
 YouwolExceptions = [
+    PublishPackageError,
     PackagesNotFound,
     IndirectPackagesNotFound,
     CircularDependencies
