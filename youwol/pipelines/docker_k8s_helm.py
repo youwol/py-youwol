@@ -10,23 +10,38 @@ from youwol.exceptions import CommandException
 from youwol.pipelines.deploy_service import HelmPackage
 from youwol.utils.k8s_utils import get_cluster_info
 from youwol_utils.context import Context
-from youwol_utils.utils_paths import parse_yaml
+from youwol_utils.utils_paths import parse_yaml, FileListing
 
 
 class PublishDockerStepConfig(BaseModel):
     dockerRepo: DockerRepo
-    imageVersion: Union[str, Callable[[Project, Context], dict]] = "latest"
+    imageVersion: Union[str, Callable[[Project, Context], str]] = None
+    sources: FileListing = None
 
 
 class PublishDockerStep(PipelineStep):
+    dockerRepo: DockerRepo
     id: str = "publish-docker"
-    config: PublishDockerStepConfig
+    imageVersion: Union[str, Callable[[Project, Context], str]] = "latest"
 
-    run: RunImplicit = \
-        lambda self, p, flow, ctx: \
-            f"docker build -t {self.config.dockerRepo.imageUrlBuilder(p, ctx)}:" \
-            f"{self.config.imageVersion} . " \
-            f" && docker push {self.config.dockerRepo.imageUrlBuilder(p, ctx)}:{self.config.imageVersion}"
+    sources: FileListing = FileListing(
+        include=[f"src", 'Dockerfile']
+    )
+
+    run: RunImplicit = lambda self, p, flow, ctx: self.docker_build_command(self.config, p, ctx)
+
+    def get_image_version(self, project: Project, context: Context) -> str:
+        if isinstance(self.imageVersion, str):
+            return self.imageVersion
+        return self.imageVersion(project, context)
+
+    def docker_build_command(self, project: Project, context: Context):
+        docker_url = self.dockerRepo.imageUrlBuilder(project, context)
+
+        image_version = self.get_image_version(project, context)
+        return f"docker build -t {docker_url}:" \
+               f"{image_version} . " \
+               f" && docker push {docker_url}:{image_version}"
 
 
 def get_helm_version(path: Path):
