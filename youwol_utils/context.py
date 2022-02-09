@@ -295,7 +295,8 @@ class DeployedContextLogger(ContextLogger):
     errors = set()
 
     def __init__(self):
-        super()
+        super().__init__()
 
     async def log(self, entry: LogEntry):
-        print(str(entry.level), entry.text)
+        if Label.DONE not in entry.labels:
+            print(entry.level, entry.text)
