@@ -235,4 +235,4 @@ async def upload(
             },
             with_loggers=[UserContextLogger()]
     ) as ctx:
-        return await upload_asset(body={"assetId": asset_id}, context=ctx)
+        return await upload_asset(asset_id=asset_id, options=None, context=ctx)

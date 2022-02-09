@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import Optional, Any
 
 from youwol_utils.context import Context
 
@@ -9,6 +10,7 @@ class UploadTask(ABC):
     raw_id: str
     asset_id: str
     context: Context
+    options: Optional[Any] = None
 
     @abstractmethod
     async def get_raw(self) -> bytes:

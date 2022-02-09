@@ -1,6 +1,6 @@
 import asyncio
 import json
-from typing import Mapping, Dict, cast
+from typing import Mapping, Dict, cast, Optional, Any
 
 from aiohttp import FormData, ClientSession
 from fastapi import HTTPException
@@ -15,7 +15,7 @@ from youwol.routers.environment.upload_assets.flux_project import UploadFluxProj
 from youwol.routers.environment.upload_assets.models import UploadTask
 from youwol.routers.environment.upload_assets.package import UploadPackageTask
 from youwol.routers.environment.upload_assets.story import UploadStoryTask
-from youwol_utils import decode_id, JSON
+from youwol_utils import decode_id
 from youwol_utils import to_json
 from youwol_utils.clients.assets.assets import AssetsClient
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
@@ -40,16 +40,15 @@ async def synchronize_permissions_metadata_symlinks(
 
 
 async def synchronize_permissions(assets_gtw_client: AssetsGatewayClient, asset_id: str, context: Context):
-
     async with context.start(
             action="synchronize_permissions",
             with_attributes={
                 'assetId': asset_id
-                }
-            ) as ctx:
+            }
+    ) as ctx:  # type: Context
         env = await context.get('env', YouwolEnvironment)
         local_assets_gtw = LocalClients.get_assets_gateway_client(env=env)
-        access_info = await local_assets_gtw.get_asset_access(asset_id=asset_id)
+        access_info = await local_assets_gtw.get_asset_access(asset_id=asset_id, headers=ctx.headers())
         await ctx.info(
             labels=[str(Label.RUNNING)],
             text="Permissions retrieved",
@@ -58,12 +57,14 @@ async def synchronize_permissions(assets_gtw_client: AssetsGatewayClient, asset_
         default_permission = access_info["ownerInfo"]["defaultAccess"]
         groups = access_info["ownerInfo"]["exposingGroups"]
         await asyncio.gather(
-            assets_gtw_client.put_asset_access(asset_id=asset_id, group_id='*', body=default_permission),
+            assets_gtw_client.put_asset_access(asset_id=asset_id, group_id='*', body=default_permission,
+                                               headers=ctx.headers()),
             *[
-                assets_gtw_client.put_asset_access(asset_id=asset_id, group_id=g['groupId'], body=g['access'])
+                assets_gtw_client.put_asset_access(asset_id=asset_id, group_id=g['groupId'], body=g['access'],
+                                                   headers=ctx.headers())
                 for g in groups
-                ]
-            )
+            ]
+        )
 
 
 async def create_borrowed_items(asset_id: str, tree_id: str, assets_gtw_client: AssetsGatewayClient, context: Context):
@@ -95,12 +96,12 @@ async def create_borrowed_item(borrowed_tree_id: str, item: Mapping[str, any], a
             with_attributes={
                 'borrowed_tree_id': borrowed_tree_id,
                 'tree_id': item["item_id"]
-                }
-            ) as ctx:
+            }
+    ) as ctx:  # type: Context
 
         tree_id = item["item_id"]
         try:
-            await assets_gtw_client.get_tree_item(item_id=tree_id)
+            await assets_gtw_client.get_tree_item(item_id=tree_id, headers=ctx.headers())
             return
         except HTTPException as e:
             if e.status_code != 404:
@@ -113,7 +114,7 @@ async def create_borrowed_item(borrowed_tree_id: str, item: Mapping[str, any], a
                 text="Borrowed tree item not found, start creation",
                 data={"treeItemPath": to_json(path_item)}
             )
-            await ensure_path(path_item, assets_gtw_client)
+            await ensure_path(path_item=path_item, assets_gateway_client=assets_gtw_client, context=ctx)
             parent_id = path_item.drive.driveId
             if len(path_item.folders) > 0:
                 parent_id = path_item.folders[0].folderId
@@ -122,7 +123,8 @@ async def create_borrowed_item(borrowed_tree_id: str, item: Mapping[str, any], a
                                                  body={
                                                      "itemId": tree_id,
                                                      "destinationFolderId": parent_id
-                                                 }
+                                                 },
+                                                 headers=ctx.headers()
                                                  )
         await ctx.info(text="Borrowed item created")
 
@@ -133,15 +135,15 @@ async def synchronize_metadata(asset_id: str, assets_gtw_client: AssetsGatewayCl
             action="synchronize_metadata",
             with_attributes={
                 'asset_id': asset_id
-                }
-            ) as ctx:
+            }
+    ) as ctx:  # type: Context
 
         local_assets_gtw: AssetsGatewayClient = LocalClients.get_assets_gateway_client(env=env)
 
         local_metadata, remote_metadata = await asyncio.gather(
-            local_assets_gtw.get_asset_metadata(asset_id=asset_id),
-            assets_gtw_client.get_asset_metadata(asset_id=asset_id)
-            )
+            local_assets_gtw.get_asset_metadata(asset_id=asset_id, headers=ctx.headers()),
+            assets_gtw_client.get_asset_metadata(asset_id=asset_id, headers=ctx.headers())
+        )
         missing_images_urls = [p for p in local_metadata['images'] if p not in remote_metadata['images']]
         full_urls = [f"http://localhost:{env.http_port}{url}" for url in missing_images_urls]
         filenames = [url.split('/')[-1] for url in full_urls]
@@ -157,7 +159,7 @@ async def synchronize_metadata(asset_id: str, assets_gtw_client: AssetsGatewayCl
         )
 
         async def download_img(session: ClientSession, url: str):
-            async with await session.get(url=url) as resp:
+            async with await session.get(url=url, headers=ctx.headers()) as resp:
                 if resp.status == 200:
                     return await resp.read()
 
@@ -171,18 +173,19 @@ async def synchronize_metadata(asset_id: str, assets_gtw_client: AssetsGatewayCl
             forms.append(form_data)
 
         await asyncio.gather(
-            assets_gtw_client.update_asset(asset_id=asset_id, body=local_metadata),
+            assets_gtw_client.update_asset(asset_id=asset_id, body=local_metadata, headers=ctx.headers()),
             *[
-                assets_gtw_client.post_asset_image(asset_id=asset_id, filename=name, data=form)
+                assets_gtw_client.post_asset_image(asset_id=asset_id, filename=name, data=form, headers=ctx.headers())
                 for name, form in zip(filenames, forms)
-                ]
-            )
+            ]
+        )
 
 
 async def upload_asset(
-        body: JSON,
+        asset_id: str,
+        options: Optional[Any],
         context: Context
-        ):
+):
     upload_factories: Dict[str, any] = {
         "data": UploadDataTask,
         "flux-project": UploadFluxProjectTask,
@@ -190,24 +193,22 @@ async def upload_asset(
         "package": UploadPackageTask
         }
 
-    asset_id = body['assetId']
-
     async with context.start(
             action="upload_asset",
             with_attributes={
                 'asset_id': asset_id
-                }
-            ) as ctx:
+            }
+    ) as ctx:  # type: Context
 
         env = await context.get('env', YouwolEnvironment)
         local_treedb: TreeDbClient = LocalClients.get_treedb_client(env=env)
         local_assets: AssetsClient = LocalClients.get_assets_client(env=env)
         raw_id = decode_id(asset_id)
         asset, tree_item = await asyncio.gather(
-            local_assets.get(asset_id=asset_id),
-            local_treedb.get_item(item_id=asset_id),
+            local_assets.get(asset_id=asset_id, headers=ctx.headers()),
+            local_treedb.get_item(item_id=asset_id, headers=ctx.headers()),
             return_exceptions=True
-            )
+        )
         if isinstance(asset, HTTPException) and asset.status_code == 404:
             await ctx.error(text="Can not find the asset in the local assets store")
             raise RuntimeError("Can not find the asset in the local assets store")
@@ -222,12 +223,13 @@ async def upload_asset(
         factory: UploadTask = upload_factories[asset['kind']](
             raw_id=raw_id,
             asset_id=asset_id,
+            options=options,
             context=ctx
-            )
+        )
 
         local_data = await factory.get_raw()
         try:
-            path_item = await local_treedb.get_path(item_id=tree_item['itemId'])
+            path_item = await local_treedb.get_path(item_id=tree_item['itemId'], headers=ctx.headers())
         except HTTPException as e:
             if e.status_code == 404:
                 await ctx.error(text=f"Can not get path of item with id '{tree_item['itemId']}'",
@@ -241,10 +243,10 @@ async def upload_asset(
 
         assets_gtw_client = await RemoteClients.get_assets_gateway_client(context=ctx)
 
-        await ensure_path(path_item=PathResponse(**path_item), assets_gateway_client=assets_gtw_client)
+        await ensure_path(path_item=PathResponse(**path_item), assets_gateway_client=assets_gtw_client, context=ctx)
         try:
-            await assets_gtw_client.get_asset_metadata(asset_id=asset_id)
-            await assets_gtw_client.get_tree_item(tree_item['itemId'])
+            await assets_gtw_client.get_asset_metadata(asset_id=asset_id, headers=ctx.headers())
+            await assets_gtw_client.get_tree_item(tree_item['itemId'], headers=ctx.headers())
             await ctx.info(
                 text="Asset already found in deployed environment"
             )
