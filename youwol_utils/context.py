@@ -279,7 +279,7 @@ CallableBlockException = Callable[[Exception, Context], Union[Awaitable, None]]
 
 
 class ContextFactory(NamedTuple):
-    with_static_data: Dict[str, DataType] = None
+    with_static_data: Optional[Dict[str, DataType]] = None
 
     @staticmethod
     def get_instance(request: Union[Request, None], logger: ContextLogger, **kwargs) -> Context:
