@@ -236,7 +236,7 @@ class TestStep(PipelineStep):
     artifacts: List[Artifact]
 
     sources: FileListing = FileListing(
-        include=["package.json", "src/tests"],
+        include=["package.json", "src/lib", "src/tests"],
         ignore=["**/auto_generated.ts", "**/.*/*"]
     )
 
