@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List
+from typing import List, NamedTuple, Optional
 
 from fastapi import HTTPException
 from pydantic import BaseModel
@@ -67,6 +67,13 @@ def get_zip_path(asset_id: str, version, env: YouwolEnvironment):
     return library_name, library_path / "__original.zip"
 
 
+class UploadPackageOptions(NamedTuple):
+    """
+    If provided, only these versions will be considered to publish
+    """
+    versions: Optional[List[str]] = None
+
+
 @dataclass
 class UploadPackageTask(UploadTask):
 
@@ -76,6 +83,8 @@ class UploadPackageTask(UploadTask):
         assets_gateway_client = await RemoteClients.get_assets_gateway_client(context=self.context)
 
         to_sync_releases = [v.version for v in local_package.releases]
+        if self.options and self.options.versions:
+            to_sync_releases = [v for v in to_sync_releases if v in self.options.versions]
         try:
             raw_metadata = await assets_gateway_client.get_raw_metadata(kind='package', raw_id=decode_id(self.asset_id))
         except HTTPException as e:
@@ -120,7 +129,4 @@ class UploadPackageTask(UploadTask):
 
     async def update_raw(self, data: List[str], folder_id: str):
 
-        versions = data
-
-        for version in versions:
-            await self.publish_version(folder_id=folder_id, version=version)
+        await self.create_raw(data=data, folder_id=folder_id)
