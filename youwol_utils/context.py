@@ -164,9 +164,8 @@ class Context(NamedTuple):
             tb = traceback.format_exc()
 
             await ctx.error(
-                text=f"Exception raised",
+                text=f"Exception: {str(e)}",
                 data={
-                    'error': str(e),
                     'traceback': tb.split('\n'),
                     'args': [str(arg) for arg in e.args]
                 },
