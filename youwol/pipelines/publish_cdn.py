@@ -13,6 +13,7 @@ from youwol.environment.models_project import (
 )
 from youwol.environment.paths import PathsBook
 from youwol.environment.youwol_environment import YouwolEnvironment
+from youwol.routers.environment.upload_assets.package import UploadPackageOptions
 from youwol.routers.environment.upload_assets.upload import upload_asset
 from youwol_utils import encode_id, files_check_sum, to_json
 from youwol_utils.context import Context
@@ -228,7 +229,8 @@ class PublishCdnRemoteStep(PipelineStep):
                 action="PublishCdnRemoteStep.execute_run"
         ) as ctx:
             env = await context.get('env', YouwolEnvironment)
-            await upload_asset(body={'assetId': encode_id(project.id)}, context=ctx)
+            options = UploadPackageOptions(versions=[project.version])
+            await upload_asset(asset_id=encode_id(project.id), options=options, context=ctx)
             # # No ideal solution to get back the fingerprint here:
             # # (i) this one is brittle if the source code of the CDN is not the same between local vs remote
             local_cdn = LocalClients.get_cdn_client(env=env)
