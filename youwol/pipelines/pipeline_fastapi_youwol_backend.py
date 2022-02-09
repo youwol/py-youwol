@@ -50,7 +50,7 @@ def to_module_name(dir_name: str):
     return dir_name.replace('-', '_')
 
 
-class DocStepConfiguration(BaseModel):
+class DocStepConfig(BaseModel):
     venvPath: Path = Path('.') / 'src' / '.virtualenv'
     srcPath: Path = Path('.') / 'src'
     outputDir: Path = Path('.') / 'dist' / 'docs'
@@ -64,7 +64,7 @@ mv {self.outputDir}/{to_module_name(project.name)}/* {self.outputDir}
 
 
 class DocStep(PipelineStep):
-    config: DocStepConfiguration
+    config: DocStepConfig
     id = 'doc'
 
     run: RunImplicit = \
@@ -150,7 +150,7 @@ def get_ingress(host: str):
 class PipelineConfig(BaseModel):
     tags: List[str] = []
     k8sInstance: K8sInstance
-    docConfig: DocStepConfiguration
+    docConfig: DocStepConfig
     dockerConfig: PublishDockerStepConfig
     helmConfig: InstallHelmStepConfig
 
