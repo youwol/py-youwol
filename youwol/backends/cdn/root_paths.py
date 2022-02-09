@@ -48,9 +48,10 @@ async def publish(
     # Publish needs to be done using a queue to let the cdn pods fully available to fetch resources
 
     async with Context.start_ep(
-            request=request
+            request=request,
+            with_labels=['Publish']
     ) as ctx:  # type: Context
-        return await publish_package(file.file, file.filename, content_encoding, configuration, ctx.headers())
+        return await publish_package(file.file, file.filename, content_encoding, configuration, ctx)
 
 
 @router.get("/queries/libraries", summary="list libraries available",
@@ -125,7 +126,7 @@ async def sync(request: Request,
         try:
             compressed_size = extract_zip_file(file.file, zip_path, dir_path)
             files_count, libraries_count, namespaces = await synchronize(dir_path, zip_dir_name, configuration,
-                                                                         ctx.headers())
+                                                                         ctx.headers(), context=ctx)
 
             response = SyncResponse(filesCount=files_count, librariesCount=libraries_count,
                                     compressedSize=compressed_size, namespaces=namespaces)

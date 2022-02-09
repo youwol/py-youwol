@@ -7,7 +7,7 @@ import os
 import time
 import zipfile
 from pathlib import Path
-from typing import IO
+from typing import IO, Optional
 from typing import Union, List, Mapping
 from uuid import uuid4
 
@@ -15,8 +15,10 @@ import brotli
 from fastapi import HTTPException
 from starlette.responses import Response
 
-from youwol_utils import generate_headers_downstream, QueryBody, files_check_sum, shutil, log_info, CircularDependencies
+from youwol_utils import generate_headers_downstream, QueryBody, files_check_sum, shutil, \
+    CircularDependencies, PublishPackageError
 from youwol_utils.clients.docdb.models import Query, WhereClause, OrderingClause
+from youwol_utils.context import Context
 from .configurations import Configuration
 from .models import FormData, PublishResponse
 from .utils_indexing import format_doc_db_record, get_version_number_str
@@ -93,24 +95,40 @@ def loading_graph(downloaded, deque, items_dict):
     return [[items_dict[a] for a in to_add]] + loading_graph(downloaded + [r for r in to_add], new_deque, items_dict)
 
 
-async def format_download_form(file_path: Path, base_path: Path, dir_path: Path, compress: bool, rename: str = None) \
+async def prepare_files_to_post(base_path: Path, package_path: Path, zip_path: Path, paths: List[Path],
+                                need_compression, context: Context):
+    async with context.start(action=f"Preparation of {len(paths) + 1} files to download in minio",
+                             with_labels=["filesPreparation"]) as ctx:
+        form_original = await format_download_form(zip_path, base_path, package_path.parent, need_compression,
+                                                   '__original.zip', ctx)
+        forms = await asyncio.gather(*[
+            format_download_form(path, base_path, package_path.parent, need_compression, None, ctx)
+            for path in paths
+        ])
+        return list(forms) + [form_original]
+
+
+async def format_download_form(file_path: Path, base_path: Path, dir_path: Path, compress: bool, rename: Optional[str],
+                               context: Context) \
         -> FormData:
+    path_log = "/".join(file_path.parts[2:])
+    async with context.start(action=f"Prepare file '{path_log}' {'' if not rename else '(renamed :' + rename + ')'}",
+                             with_labels=["download"]) as ctx:
+        if compress and get_content_encoding(file_path) == "br":
+            await ctx.info(text="Apply brotli compression")
+            start = time.time()
+            compressed = brotli.compress(file_path.read_bytes())
+            with file_path.open("wb") as f:
+                f.write(compressed)
+            await ctx.info(text=f"Brotli done on {path_log}: md5 is '{md5_from_file(file_path)}', " +
+                                f"took {time.time() - start}s")
 
-    if compress and get_content_encoding(file_path) == "br":
-        path_log = "/".join(file_path.parts[2:])
-        log_info(f'brotlify (python) {path_log}')
-        start = time.time()
-        compressed = brotli.compress(file_path.read_bytes())
-        with file_path.open("wb") as f:
-            f.write(compressed)
-        log_info(f'...{path_log} => {time.time() - start} s')
+        data = open(str(file_path), 'rb').read()
+        path_bucket = base_path / file_path.relative_to(dir_path) if not rename else base_path / rename
 
-    data = open(str(file_path), 'rb').read()
-    path_bucket = base_path / file_path.relative_to(dir_path) if not rename else base_path / rename
-
-    return FormData(objectName=path_bucket, objectData=data, owner=Configuration.owner,
-                    objectSize=len(data), content_type=get_content_type(file_path.name),
-                    content_encoding=get_content_encoding(file_path.name))
+        return FormData(objectName=path_bucket, objectData=data, owner=Configuration.owner,
+                        objectSize=len(data), content_type=get_content_type(file_path.name),
+                        content_encoding=get_content_encoding(file_path.name))
 
 
 def extract_zip_file(file: IO, zip_path: Union[Path, str], dir_path: Union[Path, str], delete_original=True):
@@ -130,7 +148,7 @@ def extract_zip_file(file: IO, zip_path: Union[Path, str], dir_path: Union[Path,
     return compressed_size
 
 
-async def publish_package(file: IO, filename: str, content_encoding, configuration, headers):
+async def publish_package(file: IO, filename: str, content_encoding, configuration, context: Context):
     if content_encoding not in ['identity', 'brotli']:
         raise HTTPException(status_code=422, detail="Only identity and brotli encoding are accepted ")
     need_compression = content_encoding == 'identity'
@@ -138,25 +156,25 @@ async def publish_package(file: IO, filename: str, content_encoding, configurati
     zip_path = (dir_path / filename).with_suffix('.zip')
 
     os.makedirs(dir_path)
+    headers = context.headers()
     try:
-        log_info("extract .zip file...")
         compressed_size = extract_zip_file(file, zip_path, dir_path, delete_original=False)
-        log_info("...zip extracted", compressed_size=compressed_size)
+        await context.info(text=f"zip extracted, size={compressed_size / 1000}ko")
 
         package_path = next(flatten([[Path(root) / f for f in files if f == "package.json"]
                                      for root, _, files in os.walk(dir_path)]), None)
 
         if package_path is None:
-            raise RuntimeError("It is required for the package to include a package.json file")
+            raise PublishPackageError("It is required for the package to include a 'package.json' file")
 
         try:
             package_json = json.loads(open(package_path).read())
         except ValueError:
-            raise ValueError("It was not possible to load the json file 'package.json'. Valid json file?")
+            raise PublishPackageError("Error while loading the json file 'package.json' -> valid json file?")
 
         mandatory_fields = ["name", "version"]
         if any([field not in package_json for field in mandatory_fields]):
-            raise ValueError(f"The package.json file needs to define the attributes {str(mandatory_fields)}")
+            raise PublishPackageError(f"The package.json file needs to define the attributes {str(mandatory_fields)}")
 
         library_id = package_json["name"].replace("@", '')
         version = package_json["version"]
@@ -165,12 +183,10 @@ async def publish_package(file: IO, filename: str, content_encoding, configurati
 
         paths = flatten([[Path(root) / f for f in files] for root, _, files in os.walk(dir_path)])
         paths = [p for p in paths if p != zip_path]
-        form_original = await format_download_form(zip_path, base_path, package_path.parent, need_compression,
-                                                   '__original.zip')
-        forms = await asyncio.gather(*[
-            format_download_form(path, base_path, package_path.parent, need_compression) for path in paths
-        ])
-        forms = list(forms) + [form_original]
+        await context.info(text=f"Prepare {len(paths)} files to publish", data={"paths": paths})
+
+        forms = await prepare_files_to_post(base_path=base_path, package_path=package_path, zip_path=zip_path,
+                                            paths=paths, need_compression=need_compression, context=context)
         # the fingerprint in the md5 checksum of the included files after having eventually being compressed
         os.remove(zip_path)
         md5_stamp = md5_from_folder(dir_path)
@@ -179,16 +195,18 @@ async def publish_package(file: IO, filename: str, content_encoding, configurati
                                              content_type=form.content_type, owner=Configuration.owner, headers=headers)
                          for form in forms]
 
-        log_info(f"Clean directory {str(base_path)}")
+        await context.info(text=f"Clean minio directory {str(base_path)}")
         await storage.delete_group(prefix=base_path, owner=Configuration.owner, headers=headers)
 
-        log_info(f"Send {len(post_requests)} files to storage")
+        await context.info(text=f"Send {len(post_requests)} files to storage")
         await asyncio.gather(*post_requests)
         record = format_doc_db_record(package_path=package_path, fingerprint=md5_stamp)
-        log_info("Create docdb document", record=record)
+
+        await context.info(text=f"Send record to docdb", data={"record": record})
         await configuration.doc_db.create_document(record, owner=Configuration.owner, headers=headers)
 
-        log_info("Done", md5_stamp=md5_stamp)
+        await context.info(text=f"md5_stamp={md5_stamp}")
+
         return PublishResponse(name=package_json["name"], version=version, compressedSize=compressed_size,
                                id=to_package_id(package_json["name"]), fingerprint=md5_stamp,
                                url=f"{to_package_id(package_json['name'])}/{record['version']}/{record['bundle']}")

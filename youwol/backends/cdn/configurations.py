@@ -2,9 +2,11 @@ from dataclasses import dataclass
 from typing import Union, Any, Coroutine, Dict, Optional
 
 from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
+from youwol.web_socket import AdminContextLogger
 from youwol_utils.clients.docdb.docdb import DocDbClient as DocDb
 from youwol_utils.clients.docdb.local_docdb import LocalDocDbClient as LocalDocDb
 from youwol_utils.clients.storage.local_storage import LocalStorageClient as LocalStorage
+from youwol_utils.context import ContextLogger
 from .models import LIBRARIES_TABLE
 
 
@@ -26,12 +28,13 @@ class Configuration:
     replication_factor: int = 2
     owner: str = "/youwol-users"
 
+    ctx_logger: ContextLogger = AdminContextLogger()
+
 
 config_yw_cdn: Optional[Configuration] = None
 
 
 async def get_configuration(config_yw=None):
-
     global config_yw_cdn
     if not config_yw:
         config_yw = await yw_config()
