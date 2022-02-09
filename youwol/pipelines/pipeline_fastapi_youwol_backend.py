@@ -76,7 +76,7 @@ class DocStep(PipelineStep):
 
     sources: SourcesFctImplicit = \
         lambda self, project, flow_id, step_id: \
-            FileListing(include=[f"src/{project.name.replace('-', '_')}"])
+        FileListing(include=[f"src/{project.name.replace('-', '_')}"])
 
     artifacts: List[Artifact] = [
         Artifact(
