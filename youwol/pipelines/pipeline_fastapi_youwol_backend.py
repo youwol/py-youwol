@@ -1,16 +1,20 @@
+import shutil
 from pathlib import Path
 from typing import List, Optional, Set, Callable
 
 import pkg_resources
 from pydantic import BaseModel
 
+import youwol_utils
 from youwol.environment.models import K8sInstance
 from youwol.environment.models_project import Manifest, PipelineStepStatus, Link, Flow, \
     SourcesFctImplicit, Pipeline, PipelineStep, FileListing, \
-    Artifact, Project, RunImplicit, MicroService
+    Artifact, Project, RunImplicit, MicroService, ExplicitNone
+from youwol.exceptions import CommandException
 from youwol.pipelines.docker_k8s_helm import get_helm_version, InstallHelmStep, InstallHelmStepConfig, \
-    PublishDockerStepConfig, PublishDockerStep
+    PublishDockerStep, PublishDockerStepConfig
 from youwol.pipelines.publish_cdn import PublishCdnRemoteStep, PublishCdnLocalStep
+from youwol.utils.utils_low_level import execute_shell_cmd
 from youwol_utils.context import Context
 
 
@@ -155,12 +159,51 @@ class PipelineConfig(BaseModel):
     helmConfig: InstallHelmStepConfig
 
 
-def pipeline(
+class CustomPublishDockerStep(PublishDockerStep):
+    sources: FileListing = FileListing(
+        include=[f"src", 'Dockerfile'],
+        ignore=["src/.virtualenv"]
+    )
+
+    run: ExplicitNone = ExplicitNone()
+
+    async def execute_run(self, project: Project, flow_id: str, context: Context):
+        src_path = Path(youwol_utils.__file__).parent
+        dest_path = project.path / 'src' / 'youwol_utils'
+        outputs = []
+
+        async def cp_youwol_utils(ctx_enter: Context):
+            shutil.rmtree(dest_path, ignore_errors=True)
+            shutil.copytree(src_path, dest_path)
+            outputs.append(f"cp {src_path} {dest_path}")
+            await ctx_enter.info(text="successfully copied youwol_utils")
+
+        async def rm_youwol_utils(ctx_exit: Context):
+            outputs.append(f"rm {dest_path}")
+            await ctx_exit.info(text="successfully removed youwol_utils")
+            shutil.rmtree(dest_path, ignore_errors=True)
+
+        async with context.start(
+                action="Publish docker image with youwol_utils copy",
+                on_enter=cp_youwol_utils,
+                on_exit=rm_youwol_utils
+        ) as ctx:  # type: Context
+            cmd = self.docker_build_command(project, context)
+            return_code, cmd_outputs = await execute_shell_cmd(cmd=f"( cd {project.path} && {cmd})", context=ctx)
+            outputs = outputs + cmd_outputs
+            if return_code > 0:
+                raise CommandException(command=cmd, outputs=outputs)
+            return outputs
+
+
+async def pipeline(
         config: PipelineConfig,
         context: Context
 ):
     async with context.start(action="pipeline") as ctx:
         await ctx.info(text="Instantiate pipeline", data=config)
+
+        docker_fields = {k: v for k, v in config.dockerConfig.dict().items() if v is not None}
 
         return Pipeline(
             target=MicroService(),
@@ -177,9 +220,7 @@ def pipeline(
                 IntegrationTestStep(),
                 PublishCdnLocalStep(packagedArtifacts=['docs', 'test-coverage']),
                 PublishCdnRemoteStep(),
-                PublishDockerStep(
-                    config=config.dockerConfig
-                ),
+                CustomPublishDockerStep(**docker_fields),
                 InstallHelmStep(
                     config=config.helmConfig
                 )
