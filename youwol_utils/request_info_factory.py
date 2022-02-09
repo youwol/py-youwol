@@ -149,8 +149,7 @@ class PutAssetGtwAsset(PatternRequestInfoExtractor):
         return RequestInfo(message="Create asset", attributes={'kind': kind})
 
 
-class GetPackageMetadata(PatternRequestInfoExtractor):
-
+class GetCDNPackageMetadata(PatternRequestInfoExtractor):
     pattern = 'GET:/api/cdn-backend/libraries/*'
 
     def extract_from_pattern(self, substitutes):
@@ -158,8 +157,25 @@ class GetPackageMetadata(PatternRequestInfoExtractor):
         return RequestInfo(message="Package metadata", attributes={'rawId': raw_id})
 
 
-class GetTreedbItem(PatternRequestInfoExtractor):
+class GetCDNPackage1(PatternRequestInfoExtractor):
+    pattern = 'GET:/api/cdn-backend/libraries/*/*/*'
 
+    def extract_from_pattern(self, substitutes):
+        [namespace, name, version] = substitutes
+        return RequestInfo(message=f"{namespace}/{name}/{version}",
+                           attributes={'package': f"{namespace}/{name}", 'version': version})
+
+
+class GetCDNPackage2(PatternRequestInfoExtractor):
+    pattern = 'GET:/api/cdn-backend/libraries/*/*'
+
+    def extract_from_pattern(self, substitutes):
+        [name, version] = substitutes
+        return RequestInfo(message=f"{name}/{version}",
+                           attributes={'package': name, 'version': version})
+
+
+class GetTreedbItem(PatternRequestInfoExtractor):
     pattern = 'GET:/api/treedb-backend/items/*'
 
     def extract_from_pattern(self, substitutes):
@@ -176,7 +192,9 @@ scenarios = [
     PutAssetGtwAccess(),
     PutAssetGtwAsset(),
     GetAssetGtwPackageMetadata(),
-    GetPackageMetadata(),
+    GetCDNPackageMetadata(),
+    GetCDNPackage1(),
+    GetCDNPackage2(),
     Api(),
     All()
 ]
