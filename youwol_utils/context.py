@@ -110,7 +110,7 @@ StringLike = Any
 
 class Context(NamedTuple):
     loggers: List[ContextLogger]
-    request: Request = None
+    request: Optional[Request] = None
 
     uid: Union[str, None] = 'root'
     parent_uid: Union[str, None] = None
@@ -154,7 +154,8 @@ class Context(NamedTuple):
         try:
             # When middleware are calling 'next' this seems the only way to pass information
             # see https://github.com/tiangolo/fastapi/issues/1529
-            self.request.state.context = ctx
+            if self.request:
+                self.request.state.context = ctx
             await ctx.info(text=action, labels=[Label.STARTED])
             start = time.time()
             await execute_block(on_enter)
@@ -178,7 +179,8 @@ class Context(NamedTuple):
             raise e
         else:
             await ctx.info(text=f"Done in {int(1000 * (time.time() - start))} ms", labels=[Label.DONE])
-            self.request.state.context = self
+            if self.request:
+                self.request.state.context = self
             await execute_block(on_exit)
 
     @staticmethod
