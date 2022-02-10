@@ -233,7 +233,7 @@ async def run_pipeline_step(
             shutil.rmtree(path)
         path.mkdir(parents=True, exist_ok=False)
 
-        manifest = Manifest(succeeded=succeeded if succeeded is not None else False,
+        manifest = Manifest(succeeded=succeeded if succeeded else False,
                             fingerprint=fingerprint,
                             creationDate=datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
                             cmdOutputs=outputs,
