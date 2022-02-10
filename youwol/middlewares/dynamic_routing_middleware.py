@@ -28,7 +28,7 @@ class DynamicRoutingMiddleware(BaseHTTPMiddleware):
                 with_labels=[Label.MIDDLEWARE]
         ) as ctx:
             if request.headers.get(self.disabling_header, False):
-                ctx.warning(text="Dynamic dispatch disabled")
+                await ctx.warning(text="Dynamic dispatch disabled")
                 return await call_next(request)
 
             for dispatch in self.dynamic_dispatch_rules:
