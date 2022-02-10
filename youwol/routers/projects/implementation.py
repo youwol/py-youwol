@@ -135,7 +135,7 @@ async def create_artifact(
     async with context.start(
             action=f"create artifact '{artifact.id}'",
             with_attributes={'projectId': project.id, 'flowId': flow_id, 'stepId': step.id, 'artifactId': artifact.id,
-                             'src fingerprint': fingerprint}
+                             'src fingerprint': fingerprint or "not-provided"}
             ) as ctx:
 
         files = matching_files(

@@ -25,7 +25,6 @@ class AbstractDispatch(BaseModel):
 
 
 class RedirectDispatch(AbstractDispatch):
-
     origin: str
     destination: str
 
@@ -33,7 +32,6 @@ class RedirectDispatch(AbstractDispatch):
                     incoming_request: Request,
                     call_next: RequestResponseEndpoint,
                     context: Context) -> Optional[Response]:
-
         if not incoming_request.url.path.startswith(self.origin):
             return None
 
@@ -48,7 +46,6 @@ class RedirectDispatch(AbstractDispatch):
 
 
 class CdnOverrideDispatch(AbstractDispatch):
-
     packageName: str
     port: int
 
@@ -65,20 +62,34 @@ class CdnOverrideDispatch(AbstractDispatch):
         # - in any case the 'low-level' call to cdn-backend is intercepted
         # - the higher level call through assets-gateway is also intercepted such that permission call is skipped
         # (the package may not be published yet)
-        if not(incoming_request.url.path.startswith(f"/api/assets-gateway/raw/package/{encoded_id}") or
-               incoming_request.url.path.startswith(f"/api/cdn-backend/resources/{encoded_id}")):
+        if not (incoming_request.url.path.startswith(f"/api/assets-gateway/raw/package/{encoded_id}") or
+                incoming_request.url.path.startswith(f"/api/cdn-backend/resources/{encoded_id}")):
             return None
-
         rest_of_path = incoming_request.url.path.split('/')[-1]
         url = f"http://localhost:{self.port}/{rest_of_path}"
+        await context.info(text=f"CdnOverrideDispatch[{self}] matched",
+                           data={"origin": incoming_request.url.path,
+                                 "destination": url})
         try:
             # Try to connect to a dev server
             async with ClientSession(auto_decompress=False) as session:
                 async with await session.get(url=url) as resp:
                     if resp.status != 200:
+                        await context.error(text=f"CdnOverrideDispatch[{self}]: \
+                        Bad status response while dispatching", data={
+                            "origin": incoming_request.url.path,
+                            "destination": url,
+                            "status": resp.status
+                        })
                         return None
-                    return await self.dispatch(incoming_request=incoming_request)
-        except ClientConnectorError:
+                    response = await self.dispatch(incoming_request=incoming_request)
+                    return response
+        except ClientConnectorError as e:
+            await context.error(text="Error while dispatching", data={
+                "origin": incoming_request.url.path,
+                "destination": url,
+                "exception": e.os_error
+            })
             return None
 
     async def dispatch(self, incoming_request: Request) -> Response:
