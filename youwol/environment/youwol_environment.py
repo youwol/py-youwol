@@ -71,6 +71,10 @@ class YouwolEnvironment(BaseModel):
 
     k8sInstance: Optional[K8sInstance]
 
+    def reset_cache(self):
+        self.cache = {}
+        self.private_cache = {}
+
     def get_user_info(self) -> UserInfo:
 
         users_info = parse_json(self.pathsBook.usersInfo)['users']
