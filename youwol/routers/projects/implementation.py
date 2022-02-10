@@ -2,14 +2,14 @@ import os
 import shutil
 from typing import Tuple, List
 
-from youwol.environment.models_project import Project, PipelineStep, Artifact, Flow, Link, Manifest
+from youwol.environment.models_project import Project, PipelineStep, Artifact, Flow, Link, Manifest, PipelineStepStatus
 from youwol.environment.paths import PathsBook
 from youwol.environment.projects_loader import ProjectLoader
 from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.projects.models import (
     PipelineStepStatusResponse, ArtifactResponse
 )
-from youwol_utils import to_json
+from youwol_utils import to_json, ProjectNotFound, decode_id, PipelineStepNotFound, PipelineFlowNotFound
 from youwol_utils.context import Context
 from youwol_utils.utils_paths import matching_files, parse_json
 
@@ -20,8 +20,14 @@ async def get_project_step(
         context: Context
         ) -> Tuple[Project, PipelineStep]:
     projects = await ProjectLoader.get_projects(await context.get("env", YouwolEnvironment), context)
-    project = next(p for p in projects if p.id == project_id)
-    step = next(s for s in project.pipeline.steps if s.id == step_id)
+    project = next((p for p in projects if p.id == project_id), None)
+    if project is None:
+        raise ProjectNotFound(project=decode_id(project_id),
+                              context="py-youwol.admin.projects => get_project_step")
+    step = next((s for s in project.pipeline.steps if s.id == step_id), None)
+    if step is None:
+        raise PipelineStepNotFound(project=decode_id(project_id), step=step_id,
+                                   context="py-youwol.admin.projects => get_project_step")
 
     await context.info(text="project & step retrieved", data={'project': to_json(project), 'step': to_json(step)})
     return project, step
@@ -34,8 +40,18 @@ async def get_project_flow_steps(
         ) -> Tuple[Project, Flow, List[PipelineStep]]:
     env = await context.get('env', YouwolEnvironment)
     projects = await ProjectLoader.get_projects(env, context)
-    project = next(p for p in projects if p.id == project_id)
-    flow = next(f for f in project.pipeline.flows if f.name == flow_id)
+    project = next((p for p in projects if p.id == project_id), None)
+
+    if project is None:
+        raise ProjectNotFound(project=decode_id(project_id),
+                              context="py-youwol.admin.projects => get_project_flow_steps")
+
+    flow = next((f for f in project.pipeline.flows if f.name == flow_id), None)
+
+    if flow is None:
+        raise PipelineFlowNotFound(project=decode_id(project_id),
+                                   flow=flow_id,
+                                   context="py-youwol.admin.projects => get_project_flow_steps")
     steps = project.get_flow_steps(flow_id=flow_id)
 
     await context.info(text="project & flow & steps retrieved",
@@ -80,8 +96,11 @@ async def get_status(
         path = paths.artifacts_step(project_name=project.name, flow_id=flow_id, step_id=step.id)
         manifest = Manifest(**parse_json(path / 'manifest.json')) if (path / 'manifest.json').exists() else None
 
-        status = await step.get_status(project=project, flow_id=flow_id, last_manifest=manifest, context=ctx)
-
+        # noinspection PyBroadException
+        try:
+            status = await step.get_status(project=project, flow_id=flow_id, last_manifest=manifest, context=ctx)
+        except Exception:
+            status = PipelineStepStatus.KO
         artifacts = [format_artifact_response(project=project, flow_id=flow_id, step=step, artifact=artifact,
                                               env=env)
                      for artifact in step.artifacts]
