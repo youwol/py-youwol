@@ -14,6 +14,7 @@ from youwol.environment.projects_loader import ProjectLoader
 from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
 from youwol.exceptions import CommandException
 from youwol.routers.commons import Label
+from youwol.routers.environment.models import ProjectsLoadingResults
 from youwol.routers.projects.dependencies import resolve_project_dependencies
 from youwol.routers.projects.implementation import (
     create_artifacts, get_status, get_project_step, get_project_flow_steps, format_artifact_response
@@ -29,6 +30,22 @@ from youwol_utils.utils_paths import write_json
 
 router = APIRouter()
 flatten = itertools.chain.from_iterable
+
+
+@router.get("/status",
+            response_model=ProjectsLoadingResults,
+            summary="status")
+async def status(
+        request: Request,
+        config: YouwolEnvironment = Depends(yw_config)
+):
+    async with Context.start_ep(
+            request=request,
+            with_loggers=[UserContextLogger()]
+    ) as ctx:  # type: Context
+        response = ProjectsLoadingResults(results=await ProjectLoader.get_results(config, ctx))
+        await ctx.send(response)
+        return response
 
 
 @router.get("/{project_id}/flows/{flow_id}/steps/{step_id}",
