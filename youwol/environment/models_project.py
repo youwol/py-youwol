@@ -221,6 +221,7 @@ class Family(Enum):
     application = "application"
     library = "library"
     service = "service"
+    external = "external"
 
 
 class Target(BaseModel):
@@ -276,6 +277,10 @@ BrowserApp = BrowserAppBundle
 
 class MicroService(Target):
     family = Family.service
+
+
+class External(Target):
+    family = Family.external
 
 
 class Pipeline(BaseModel):
