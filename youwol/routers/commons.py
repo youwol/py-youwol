@@ -43,7 +43,7 @@ async def ensure_path(path_item: PathResponse, assets_gateway_client: AssetsGate
 
 
 async def ensure_drive(drive: DriveResponse, assets_gateway_client: AssetsGatewayClient, context: Context):
-    async with context.start(action="ensure drive", data=drive) as ctx:
+    async with context.start(action="ensure drive") as ctx:
         try:
             await assets_gateway_client.get_tree_drive(drive_id=drive.driveId, headers=ctx.headers())
         except HTTPException as e:
