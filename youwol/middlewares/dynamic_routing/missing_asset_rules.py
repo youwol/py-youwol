@@ -75,7 +75,7 @@ class PostMetadataDispatch(AbstractDispatch):
             try:
                 # 'assets' and not 'assets_gateway' client is used such that following request won't be intercepted by
                 # dynamic_routing middlewares.
-                _resp = await LocalClients.get_assets_client(env).get(asset_id=asset_id, headers=ctx.headers())
+                await LocalClients.get_assets_client(env).get(asset_id=asset_id, headers=ctx.headers())
                 await ctx.info('Asset found in local store, only this version is updated')
                 return await call_next(request)
             except HTTPException as e:
@@ -88,7 +88,7 @@ class PostMetadataDispatch(AbstractDispatch):
             if resp_remote.status_code == 404:
                 raise HTTPException(
                     status_code=404,
-                    detail="The asset seems to not exist neither in remote or local envs."
+                    detail="The asset seems to exist neither in remote nor local envs."
                 )
             if resp_remote.status_code != 200:
                 raise HTTPException(

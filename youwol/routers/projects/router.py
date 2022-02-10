@@ -160,7 +160,7 @@ async def run_pipeline_step(
     async def refresh_status_downstream_steps(refresh_ctx):
         """
         Downstream steps may depend on this guy => request status on them.
-        Shortcut => request status on all the steps of the flow (not only subsequent)
+        Shortcut => request status on all the steps of the flow (not only the ones downstream)
         """
         async with refresh_ctx.start(action="refresh_status_downstream_steps") as ctx_1:
             _project: Project = next(p for p in projects if p.id == project_id)
