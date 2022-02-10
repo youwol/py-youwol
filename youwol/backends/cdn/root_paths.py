@@ -213,8 +213,8 @@ async def delete_library(
 
 
 @router.delete("/libraries", summary="delete a library")
-async def delete_libraries(request: Request, body: DeleteBody):
-    responses = await asyncio.gather(*[delete_library(request=request, library_id=to_package_id(name))
+async def delete_libraries(request: Request, body: DeleteBody, configuration: Configuration = Depends(get_configuration)):
+    responses = await asyncio.gather(*[delete_library(request=request, library_id=to_package_id(name), configuration=configuration)
                                        for name in body.librariesName])
     return {"deletedCount": functools.reduce(lambda acc, e: acc + e['deletedCount'], responses, 0)}
 
