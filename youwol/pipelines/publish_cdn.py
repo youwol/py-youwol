@@ -210,8 +210,13 @@ class PublishCdnRemoteStep(PipelineStep):
                 await ctx.info(text="Package not found in local CDN => status is outdated")
                 return PipelineStepStatus.outdated
 
-            if isinstance(remote_info, Exception) or isinstance(local_info, Exception):
-                raise remote_info if isinstance(remote_info, Exception) else local_info
+            if isinstance(remote_info, Exception):
+                await ctx.error(text=f"Error retrieving remote info: {remote_info}")
+                return PipelineStepStatus.KO
+
+            if isinstance(local_info, Exception):
+                await ctx.error(text=f"Error retrieving local info {local_info}")
+                return PipelineStepStatus.KO
 
             local_info = cast(Mapping, local_info)
             remote_info = cast(Mapping, remote_info)
