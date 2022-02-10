@@ -145,7 +145,7 @@ async def synchronize_metadata(asset_id: str, assets_gtw_client: AssetsGatewayCl
             assets_gtw_client.get_asset_metadata(asset_id=asset_id, headers=ctx.headers())
         )
         missing_images_urls = [p for p in local_metadata['images'] if p not in remote_metadata['images']]
-        full_urls = [f"http://localhost:{env.http_port}{url}" for url in missing_images_urls]
+        full_urls = [f"http://localhost:{env.httpPort}{url}" for url in missing_images_urls]
         filenames = [url.split('/')[-1] for url in full_urls]
 
         await ctx.info(

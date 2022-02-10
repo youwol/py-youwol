@@ -37,9 +37,6 @@ class ApiConfiguration:
 
 class IPipelineFactory(ABC):
 
-    def __init__(self, **kwargs):
-        pass
-
     @abstractmethod
     async def get(self, env: YouwolEnvironment, context: Context) -> Pipeline:
         return NotImplemented
@@ -50,8 +47,6 @@ class Events(BaseModel):
 
 
 class IConfigurationCustomizer(ABC):
-    def __init__(self, **kwargs):
-        pass
 
     @abstractmethod
     async def customize(self, _youwol_configuration: YouwolEnvironment) -> YouwolEnvironment:
@@ -89,9 +84,9 @@ class K8sInstanceInfo(BaseModel):
 
 
 class K8sInstance(K8sCluster):
-    instance_info: K8sInstanceInfo
+    instanceInfo: K8sInstanceInfo
 
     def __str__(self):
         return f"""{super().__str__()}
-{self.instance_info.__str__()}
+{self.instanceInfo.__str__()}
 """

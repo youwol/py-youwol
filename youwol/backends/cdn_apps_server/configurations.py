@@ -29,7 +29,7 @@ async def get_configuration(config_yw=None):
     if config_yw_cdn_apps_server and config_yw_cdn_apps_server.yw_config == config_yw:
         return config_yw_cdn_apps_server
 
-    gtw_client = AssetsGatewayClient(url_base=f"http://localhost:{config_yw.http_port}/api/assets-gateway")
+    gtw_client = AssetsGatewayClient(url_base=f"http://localhost:{config_yw.httpPort}/api/assets-gateway")
 
     config_yw_cdn_apps_server = Configuration(
         yw_config=config_yw,

@@ -106,7 +106,7 @@ class PublishCdnLocalStep(PipelineStep):
             files = await self.packaged_files(project, flow_id, context)
             src_files_fingerprint = files_check_sum(files)
             if last_manifest.fingerprint == local_info['fingerprint'] and \
-                    last_manifest.cmdOutputs['src_files_fingerprint'] == src_files_fingerprint:
+                    last_manifest.cmdOutputs['srcFilesFingerprint'] == src_files_fingerprint:
                 return PipelineStepStatus.OK
 
             if last_manifest.fingerprint != local_info['fingerprint']:
@@ -117,12 +117,12 @@ class PublishCdnLocalStep(PipelineStep):
                         "saved manifest's fingerprint": last_manifest.fingerprint
                     }
                 )
-            if last_manifest.cmdOutputs['src_files_fingerprint'] != src_files_fingerprint:
+            if last_manifest.cmdOutputs['srcFilesFingerprint'] != src_files_fingerprint:
                 await context.info(
-                    text="Mismatch between actual src files fingerprint and saved manifest's src_files_fingerprint",
+                    text="Mismatch between actual src files fingerprint and saved manifest's srcFilesFingerprint",
                     data={
                         'actual src files fingerprint': src_files_fingerprint,
-                        "saved manifest's src_files_fingerprint": last_manifest.cmdOutputs['src_files_fingerprint']
+                        "saved manifest's srcFilesFingerprint": last_manifest.cmdOutputs['srcFilesFingerprint']
                     }
                 )
 
@@ -169,10 +169,10 @@ class PublishCdnLocalStep(PipelineStep):
             resp = await local_cdn.get_package(library_name=project.name, version=project.version, metadata=True,
                                                headers=ctx.headers())
             await ctx.info(text="Package retrieved from local cdn", data=resp)
-            resp['src_files_fingerprint'] = files_check_sum(files)
+            resp['srcFilesFingerprint'] = files_check_sum(files)
             base_path = env.pathsBook.artifacts_flow(project_name=project.name, flow_id=flow_id)
-            resp['src_base_path'] = str(base_path)
-            resp['src_files'] = [str(f.relative_to(base_path)) for f in files]
+            resp['srcBasePath'] = str(base_path)
+            resp['srcFiles'] = [str(f.relative_to(base_path)) for f in files]
             return resp
 
 

@@ -64,7 +64,7 @@ async def get_configuration(config_yw=None):
         table_body=COMPONENTS_TABLE
         )
 
-    assets_gtw_client = AssetsGatewayClient(url_base=f"http://localhost:{config_yw.http_port}/api/assets-gateway")
+    assets_gtw_client = AssetsGatewayClient(url_base=f"http://localhost:{config_yw.httpPort}/api/assets-gateway")
 
     config_yw_flux = Configuration(
         yw_config=config_yw,

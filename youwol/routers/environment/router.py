@@ -89,8 +89,8 @@ async def reload_configuration(
 async def change_configuration_profile(
         config: YouwolEnvironment = Depends(yw_config)
 ):
-    return AvailableProfiles(profiles=config.available_profiles,
-                             active=config.active_profile)
+    return AvailableProfiles(profiles=config.availableProfiles,
+                             active=config.activeProfile)
 
 
 @router.put("/configuration/profiles/active",
@@ -102,9 +102,9 @@ async def change_configuration_profile(
         config: YouwolEnvironment = Depends(yw_config)
 ):
     profile = body.active
-    if profile == config.active_profile:
+    if profile == config.activeProfile:
         raise HTTPException(status_code=409, detail=f"current configuration profile is already '{profile}'")
-    if profile not in config.available_profiles:
+    if profile not in config.availableProfiles:
         raise HTTPException(status_code=404, detail=f"no configuration profile '{profile}'")
 
     env = await YouwolEnvironmentFactory.reload(profile)
@@ -194,7 +194,7 @@ async def sync_user(
                 username=body.email,
                 pwd=body.password,
                 client_id=config.get_remote_info().metadata['keycloakClientId'],
-                openid_host=config.openid_host
+                openid_host=config.openidHost
             )
         except Exception:
             raise RuntimeError(f"Can not authorize from email/pwd @ {config.get_remote_info().host}")
@@ -208,7 +208,7 @@ async def sync_user(
             secrets[body.email] = {"password": body.password}
         write_json(secrets, config.pathsBook.secrets)
 
-        user_info = await retrieve_user_info(auth_token=auth_token, openid_host=config.openid_host)
+        user_info = await retrieve_user_info(auth_token=auth_token, openid_host=config.openidHost)
 
         users_info = parse_json(config.pathsBook.usersInfo)
         users_info['users'][body.email] = {

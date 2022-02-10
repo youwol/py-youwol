@@ -25,7 +25,6 @@ from youwol.environment.clients import LocalClients
 from youwol.environment.models import RemoteGateway, UserInfo, ApiConfiguration, Events, K8sInstance
 from youwol.environment.models_project import ErrorResponse
 from youwol.environment.paths import PathsBook, ensure_config_file_exists_or_create_it
-from youwol.environment.projects_loader import ProjectLoader
 from youwol.main_args import get_main_arguments, MainArguments
 from youwol.middlewares.models_dispatch import AbstractDispatch
 from youwol.routers.custom_commands.models import Command
@@ -51,11 +50,11 @@ class DeadlinedCache(BaseModel):
 
 
 class YouwolEnvironment(BaseModel):
-    available_profiles: List[str]
-    http_port: int
-    openid_host: str
+    availableProfiles: List[str]
+    httpPort: int
+    openidHost: str
     events: Events
-    active_profile: Optional[str]
+    activeProfile: Optional[str]
     cdnAutomaticUpdate: bool
     customDispatches: List[AbstractDispatch]
     commands: Dict[str, Command]
@@ -114,7 +113,7 @@ class YouwolEnvironment(BaseModel):
                 username=username,
                 pwd=pwd,
                 client_id=remote.metadata['keycloakClientId'],
-                openid_host=self.openid_host
+                openid_host=self.openidHost
             )
         except Exception as e:
             raise RuntimeError(f"Can not authorize from email/pwd provided in " +
@@ -144,14 +143,14 @@ Running with youwol:
 
 Configuration loaded from '{self.pathsBook.config}'
 - user email: {self.userEmail}
-- active profile: {self.active_profile if self.active_profile else "Default profile"}
+- active profile: {self.activeProfile if self.activeProfile else "Default profile"}
 - paths: {self.pathsBook}
 - cdn packages count: {len(parse_json(self.pathsBook.local_cdn_docdb)['documents'])}
 - assets count: {len(parse_json(self.pathsBook.local_docdb / 'assets' / 'entities' / 'data.json')['documents'])}
  list of redirections:
 {chr(10).join([f"  * {redirection}" for redirection in self.customDispatches])}
 - list of custom commands:
-{chr(10).join([f"  * http://localhost:{self.http_port}/admin/custom-commands/{command}"
+{chr(10).join([f"  * http://localhost:{self.httpPort}/admin/custom-commands/{command}"
                for command in self.commands.keys()])}
                
 {self.k8sInstance.__str__() if self.k8sInstance else "Not connected to a k8s cluster"}
@@ -172,7 +171,7 @@ class YouwolEnvironmentFactory:
         cached = YouwolEnvironmentFactory.__cached_config
         conf = await safe_load(
             path=cached.pathsBook.config,
-            profile=profile if profile is not None else cached.active_profile,
+            profile=profile if profile is not None else cached.activeProfile,
             user_email=cached.userEmail,
             selected_remote=cached.selectedRemote
         )
@@ -188,13 +187,13 @@ class YouwolEnvironmentFactory:
                                          conf.pathsBook.remotesInfo, context)
 
         new_conf = YouwolEnvironment(
-            openid_host=conf.openid_host,
+            openidHost=conf.openidHost,
             userEmail=email,
             selectedRemote=remote_name,
             pathsBook=conf.pathsBook,
-            http_port=conf.http_port,
+            httpPort=conf.httpPort,
             cache={},
-            available_profiles=conf.available_profiles,
+            availableProfiles=conf.availableProfiles,
             commands=conf.commands,
             customDispatches=conf.customDispatches,
             cdnAutomaticUpdate=conf.cdnAutomaticUpdate,
@@ -217,13 +216,13 @@ class YouwolEnvironmentFactory:
     def clear_cache():
         conf = YouwolEnvironmentFactory.__cached_config
         new_conf = YouwolEnvironment(
-            openid_host=conf.openid_host,
+            openidHost=conf.openidHost,
             userEmail=conf.userEmail,
             selectedRemote=conf.selectedRemote,
             pathsBook=conf.pathsBook,
-            http_port=conf.http_port,
+            httpPort=conf.httpPort,
             cache={},
-            available_profiles=conf.available_profiles,
+            availableProfiles=conf.availableProfiles,
             commands=conf.commands,
             customDispatches=conf.customDispatches,
             cdnAutomaticUpdate=conf.cdnAutomaticUpdate,
@@ -383,8 +382,6 @@ async def safe_load(
     if not paths_book.packages_cache_path.exists():
         open(paths_book.secrets, "w").write(json.dumps({}))
 
-    ProjectLoader.invalid_cache()
-
     user_email, selected_remote = await login(
         user_email=user_email,
         selected_remote=selected_remote,
@@ -396,15 +393,15 @@ async def safe_load(
     if k8s_cluster:
         # This dynamic import prevent 'paying the price' of k8s load-time/imports error/... if actually not needed
         from youwol.utils.k8s_utils import ensure_k8s_proxy_running
-        k8s_instance = K8sInstance(**k8s_cluster.dict(), instance_info=await ensure_k8s_proxy_running(k8s_cluster))
+        k8s_instance = K8sInstance(**k8s_cluster.dict(), instanceInfo=await ensure_k8s_proxy_running(k8s_cluster))
     else:
         k8s_instance = None
 
     youwol_configuration = YouwolEnvironment(
-        active_profile=conf_handler.get_profile(),
-        available_profiles=conf_handler.get_available_profiles(),
-        openid_host=conf_handler.get_openid_host(),
-        http_port=conf_handler.get_http_port(),
+        activeProfile=conf_handler.get_profile(),
+        availableProfiles=conf_handler.get_available_profiles(),
+        openidHost=conf_handler.get_openid_host(),
+        httpPort=conf_handler.get_http_port(),
         userEmail=user_email,
         selectedRemote=selected_remote,
         events=conf_handler.get_events(),
@@ -479,7 +476,7 @@ def print_invite(conf: YouwolEnvironment, shutdown_script_path: Optional[Path]):
     print(conf)
     msg = cow.milk_random_cow(f"""
 All good, you can now browse to
-http://localhost:{conf.http_port}/applications/@youwol/platform/latest
+http://localhost:{conf.httpPort}/applications/@youwol/platform/latest
 """)
     print(msg)
     if shutdown_script_path is not None:

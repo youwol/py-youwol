@@ -83,7 +83,7 @@ class LocalClients:
 
     @staticmethod
     def base_path(env: YouwolEnvironment):
-        return f"http://localhost:{env.http_port}/api"
+        return f"http://localhost:{env.httpPort}/api"
 
     @staticmethod
     def get_assets_gateway_client(env: YouwolEnvironment) -> AssetsGatewayClient:

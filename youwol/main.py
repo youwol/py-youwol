@@ -15,7 +15,8 @@ import youwol.middlewares.dynamic_routing.missing_asset_rules as missing_asset
 import youwol.middlewares.dynamic_routing.workspace_explorer_rules as workspace_explorer
 from youwol.configuration.configuration_validation import ConfigurationLoadingException
 from youwol.environment.auto_download_thread import AssetDownloadThread
-from youwol.environment.youwol_environment import YouwolEnvironmentFactory, yw_config, api_configuration, print_invite
+from youwol.environment.youwol_environment import YouwolEnvironmentFactory, yw_config, api_configuration, print_invite, \
+    YouwolEnvironment
 from youwol.main_args import get_main_arguments
 from youwol.middlewares.auth_middleware import AuthMiddleware
 from youwol.middlewares.browser_caching_middleware import BrowserCachingMiddleware
@@ -104,7 +105,7 @@ def main():
     shutdown_script_path = Path().cwd() / "py-youwol.shutdown.sh"
     try:
         download_thread.start()
-        conf = asyncio.run(YouwolEnvironmentFactory.get())
+        conf: YouwolEnvironment = asyncio.run(YouwolEnvironmentFactory.get())
         print_invite(conf=conf, shutdown_script_path=shutdown_script_path if get_main_arguments().daemonize else None)
 
         if get_main_arguments().daemonize:
@@ -112,11 +113,11 @@ def main():
                 shutdown_script_path.write_text(shutdown_daemon_script(pid=os.getpid()))
                 # app: incorrect type. More here: https://github.com/tiangolo/fastapi/issues/3927
                 # noinspection PyTypeChecker
-                uvicorn.run(app, host="localhost", port=conf.http_port)
+                uvicorn.run(app, host="localhost", port=conf.httpPort)
         else:
             # app: incorrect type. More here: https://github.com/tiangolo/fastapi/issues/3927
             # noinspection PyTypeChecker
-            uvicorn.run(app, host="localhost", port=conf.http_port)
+            uvicorn.run(app, host="localhost", port=conf.httpPort)
     except ConfigurationLoadingException as e:
         print(e)
         exit()

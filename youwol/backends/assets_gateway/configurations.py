@@ -69,12 +69,12 @@ async def get_configuration(config_yw=None):
                              )
 
     data_client = DataClient(storage=cast(Any, storage), docdb=cast(Any, docdb))
-    flux_client = FluxClient(url_base=f"http://localhost:{config_yw.http_port}/api/flux-backend")
-    cdn_client = CdnClient(url_base=f"http://localhost:{config_yw.http_port}/api/cdn-backend")
-    stories_client = StoriesClient(url_base=f"http://localhost:{config_yw.http_port}/api/stories-backend")
-    treedb_client = TreeDbClient(url_base=f"http://localhost:{config_yw.http_port}/api/treedb-backend")
-    assets_client = AssetsClient(url_base=f"http://localhost:{config_yw.http_port}/api/assets-backend")
-    assets_gtw_client = AssetsGatewayClient(url_base=f"http://localhost:{config_yw.http_port}/api/assets-gateway")
+    flux_client = FluxClient(url_base=f"http://localhost:{config_yw.httpPort}/api/flux-backend")
+    cdn_client = CdnClient(url_base=f"http://localhost:{config_yw.httpPort}/api/cdn-backend")
+    stories_client = StoriesClient(url_base=f"http://localhost:{config_yw.httpPort}/api/stories-backend")
+    treedb_client = TreeDbClient(url_base=f"http://localhost:{config_yw.httpPort}/api/treedb-backend")
+    assets_client = AssetsClient(url_base=f"http://localhost:{config_yw.httpPort}/api/assets-backend")
+    assets_gtw_client = AssetsGatewayClient(url_base=f"http://localhost:{config_yw.httpPort}/api/assets-gateway")
 
     def docdb_factory(keyspace: str, table: str, primary: str):
         return LocalDocDbClient(root_path=config_yw.pathsBook.local_docdb, keyspace_name=keyspace,

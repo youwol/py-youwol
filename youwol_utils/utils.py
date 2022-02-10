@@ -311,7 +311,7 @@ def to_json(obj: BaseModel) -> JSON:
         if isinstance(v, PosixPath):
             return str(v)
         if isinstance(v, Callable):
-            return "function"
+            return {}
         if isinstance(v, Enum):
             return v.name
         if isinstance(v, Iterable) and not isinstance(v, list) and not isinstance(v, str):
