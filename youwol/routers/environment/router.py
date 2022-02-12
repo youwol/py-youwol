@@ -130,7 +130,8 @@ async def status(
 ):
     async with Context.start_ep(
             request=request,
-            with_loggers=[UserContextLogger()]
+            with_loggers=[UserContextLogger()],
+            with_attributes={"profile": config.activeProfile or 'default'}
     ) as ctx:   # type: Context
         connected = await connect_to_remote(config=config, context=ctx)
         remote_gateway_info = config.get_remote_info()
