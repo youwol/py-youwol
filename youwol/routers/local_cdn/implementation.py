@@ -9,7 +9,8 @@ from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.commons import Label
 from youwol.routers.environment.download_assets.common import create_asset_local
 from youwol.routers.local_cdn.models import CheckUpdateResponse, UpdateStatus, PackageVersionInfo, \
-    DownloadedPackageResponse, DownloadPackageBody
+    DownloadedPackageResponse, DownloadPackageBody, PackageEvent, Event
+from youwol.web_socket import UserContextLogger
 from youwol_utils import encode_id
 from youwol_utils.context import Context
 from youwol_utils.utils_paths import parse_json
@@ -46,20 +47,30 @@ async def check_update(
     headers = {
         "authorization": context.request.headers.get("authorization")
     }
+    name, version = local_package.library_name, local_package.version
     async with context.start(
             action=f"Check update for {local_package.library_name}",
+            on_enter=lambda ctx_enter: ctx_enter.send(
+                PackageEvent(packageName=name, version=version, event=Event.updateCheckStarted)
+            ),
+            on_exit=lambda ctx_exit: ctx_exit.send(
+                PackageEvent(packageName=name, version=version, event=Event.updateCheckDone)
+            ),
             with_attributes={
                 'event': 'check_update_pending',
-                'packageName': local_package.library_name,
-                'packageVersion': local_package.version,
-            }) as ctx:
+                'packageName': name,
+                'packageVersion': version,
+            },
+            with_loggers=[] if any([isinstance(logger, UserContextLogger) for logger in context.loggers])
+            else [UserContextLogger()]
+    ) as ctx:  # type: Context
         package_id = encode_id(local_package.library_name)
 
         try:
             remote_package = await remote_gtw_client.cdn_get_versions(package_id=package_id, headers=headers)
         except HTTPException as e:
             if e.status_code == 404:
-                await ctx.info(text=f"{local_package.library_name} does not exist in remote")
+                await ctx.info(text=f"{name} does not exist in remote")
             raise e
         await ctx.info(text=f"Retrieved remote info", data={'remote_package': remote_package})
 
@@ -76,7 +87,7 @@ async def check_update(
         response = CheckUpdateResponse(
             status=status,
             packageName=local_package.library_name,
-            localVersionInfo=PackageVersionInfo(version=local_package.version,
+            localVersionInfo=PackageVersionInfo(version=version,
                                                 fingerprint=local_package.fingerprint),
             remoteVersionInfo=PackageVersionInfo(version=latest['version'], fingerprint=latest['fingerprint'])
         )

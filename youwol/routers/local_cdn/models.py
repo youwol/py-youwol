@@ -34,9 +34,23 @@ class DownloadPackageBody(BaseModel):
 
 class DownloadPackagesBody(BaseModel):
     packages: List[DownloadPackageBody]
+    checkUpdateStatus: bool
 
 
 class DownloadedPackageResponse(BaseModel):
     packageName: str
     version: str
     fingerprint: str
+
+
+class Event(Enum):
+    downloadStarted = 'downloadStarted'
+    downloadDone = 'downloadDone'
+    updateCheckStarted = 'updateCheckStarted'
+    updateCheckDone = 'updateCheckDone'
+
+
+class PackageEvent(BaseModel):
+    packageName: str
+    version: str
+    event: Event
