@@ -66,7 +66,9 @@ async def download(
         for package in body.packages:
             queue.put_nowait(package)
 
-        tasks = [asyncio.create_task(download_packages_from_queue(queue=queue, context=ctx))
+        tasks = [asyncio.create_task(download_packages_from_queue(queue=queue,
+                                                                  check_update_status=body.checkUpdateStatus,
+                                                                  context=ctx))
                  for _ in range(5)]
 
         await asyncio.gather(queue.join(), *tasks)

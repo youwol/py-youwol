@@ -107,17 +107,20 @@ async def check_updates_from_queue(
 
 async def download_packages_from_queue(
         queue: asyncio.Queue,
+        check_update_status: bool,
         context: Context):
 
     while not queue.empty():
         package: DownloadPackageBody = queue.get_nowait()
-        await download_package(package_name=package.packageName, version=package.version, context=context)
+        await download_package(package_name=package.packageName, version=package.version,
+                               check_update_status=check_update_status, context=context)
         queue.task_done()
 
 
 async def download_package(
         package_name: str,
         version: str,
+        check_update_status: bool,
         context: Context):
 
     async with context.start(
@@ -126,7 +129,13 @@ async def download_package(
             with_attributes={
                 'packageName': package_name,
                 'packageVersion': version,
-            }
+            },
+            on_enter=lambda ctx_enter: ctx_enter.send(
+                PackageEvent(packageName=package_name, version=version, event=Event.downloadStarted)
+            ),
+            on_exit=lambda ctx_exit: ctx_exit.send(
+                PackageEvent(packageName=package_name, version=version, event=Event.downloadDone)
+            ),
     ) as ctx:
         env = await context.get('env', YouwolEnvironment)
         remote_gtw = await RemoteClients.get_assets_gateway_client(context=ctx)
@@ -145,10 +154,14 @@ async def download_package(
             context=ctx
         )
         db = parse_json(env.pathsBook.local_cdn_docdb)
-        record = [d for d in db['documents'] if d['library_id'] == f"{package_name}#{version}"]
+        record = next(d for d in db['documents'] if d['library_id'] == f"{package_name}#{version}")
         response = DownloadedPackageResponse(
             packageName=package_name,
             version=version,
-            fingerprint=record[0]['fingerprint']
+            fingerprint=record['fingerprint']
         )
         await ctx.send(response)
+        await ctx.send(PackageEvent(packageName=package_name, version=version, event=Event.downloadDone))
+
+        if check_update_status:
+            asyncio.create_task(check_update(local_package=TargetPackage.from_response(record), context=context))
