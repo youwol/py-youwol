@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Union
 
 from pydantic import BaseModel
 
-from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol.environment.models import IPipelineFactory
 from youwol.environment.models_project import Project
+from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.utils.utils_low_level import get_object_from_module
 from youwol_utils import encode_id
 from youwol_utils.context import Context
@@ -40,11 +40,6 @@ Result = Union[Project, Failure]
 
 
 class ProjectLoader:
-    _cached_results: Optional[List[Result]] = None
-
-    @staticmethod
-    def invalid_cache():
-        ProjectLoader._cached_results = None
 
     @staticmethod
     async def get_projects(env: YouwolEnvironment, context: Context) -> List[Project]:
@@ -54,14 +49,14 @@ class ProjectLoader:
 
     @staticmethod
     async def get_results(env: YouwolEnvironment, context: Context) -> List[Result]:
-        if ProjectLoader._cached_results is None:
-            ProjectLoader._cached_results = \
+        if "ProjectLoader" not in env.private_cache:
+            env.private_cache["ProjectLoader"] = \
                 await load_projects(projects_dirs=env.pathsBook.projects,
                                     additional_python_scr_paths=env.pathsBook.additionalPythonScrPaths,
                                     env=env,
                                     context=context)
 
-        return ProjectLoader._cached_results
+        return env.private_cache["ProjectLoader"]
 
 
 async def load_projects(projects_dirs: List[Path],
