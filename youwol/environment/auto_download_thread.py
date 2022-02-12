@@ -1,20 +1,22 @@
 import asyncio
 import uuid
 from threading import Thread
-from typing import Dict, Any, Set
+from typing import Dict, Any
 
 from youwol.environment.clients import RemoteClients
+from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol_utils import YouWolException, encode_id, decode_id
 
 
 async def process_download_asset(
         queue: asyncio.Queue,
         factories: Dict[str, Any],
-        downloaded_ids: Set[str]
+        env: YouwolEnvironment
         ):
     while True:
         url, context, headers = await queue.get()
-
+        if "packages_downloaded_ids" not in env.private_cache:
+            env.private_cache["packages_downloaded_ids"] = set()
         raw_id = url.split('/api/assets-gateway/raw/')[1].split('/')[1]
         asset_id = encode_id(raw_id)
         remote_gtw_client = await RemoteClients.get_assets_gateway_client(context=context)
@@ -28,6 +30,7 @@ async def process_download_asset(
                 process_id=process_id, raw_id=raw_id, asset_id=asset_id, url=url, context=context
             )
             download_id = task.download_id()
+            downloaded_ids = env.private_cache["packages_downloaded_ids"]
             up_to_date = await task.is_local_up_to_date()
             if up_to_date:
                 await context.info(text="Asset up to date")
@@ -60,15 +63,15 @@ class AssetDownloadThread(Thread):
         self.worker_count = worker_count
         self.factories = factories
 
-    def start(self):
+    def go(self, env: YouwolEnvironment):
         super().start()
         tasks = []
-        for i in range(self.worker_count):
+        for _ in range(self.worker_count):
             coroutine = process_download_asset(
                 queue=self.download_queue,
-                downloaded_ids=self.downloaded_ids,
+                env=env,
                 factories=self.factories
-                )
+            )
             task = self.event_loop.create_task(coroutine)
             tasks.append(task)
 
