@@ -133,6 +133,12 @@ async def download_package(
         version: str,
         check_update_status: bool,
         context: Context):
+    async def on_exit(ctx_exit):
+        await ctx_exit.send(
+            PackageEvent(packageName=package_name, version=version, event=Event.downloadDone)
+        )
+        if check_update_status:
+            asyncio.create_task(check_update(local_package=TargetPackage.from_response(record), context=context))
 
     async with context.start(
             action=f"download package {package_name}#{version}",
@@ -144,9 +150,7 @@ async def download_package(
             on_enter=lambda ctx_enter: ctx_enter.send(
                 PackageEvent(packageName=package_name, version=version, event=Event.downloadStarted)
             ),
-            on_exit=lambda ctx_exit: ctx_exit.send(
-                PackageEvent(packageName=package_name, version=version, event=Event.downloadDone)
-            ),
+            on_exit=on_exit,
     ) as ctx:
         env = await context.get('env', YouwolEnvironment)
         remote_gtw = await RemoteClients.get_assets_gateway_client(context=ctx)
@@ -172,7 +176,3 @@ async def download_package(
             fingerprint=record['fingerprint']
         )
         await ctx.send(response)
-        await ctx.send(PackageEvent(packageName=package_name, version=version, event=Event.downloadDone))
-
-        if check_update_status:
-            asyncio.create_task(check_update(local_package=TargetPackage.from_response(record), context=context))
