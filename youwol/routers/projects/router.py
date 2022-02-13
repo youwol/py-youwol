@@ -21,7 +21,7 @@ from youwol.routers.projects.implementation import (
 )
 from youwol.routers.projects.models import (
     PipelineStepStatusResponse, PipelineStatusResponse, ArtifactsResponse, ProjectStatusResponse, CdnResponse,
-    CdnVersionResponse, )
+    CdnVersionResponse, PipelineStepEvent, Event, )
 from youwol.web_socket import UserContextLogger
 from youwol_utils import decode_id
 from youwol_utils.context import Context
@@ -174,12 +174,16 @@ async def run_pipeline_step(
         flow_id: str,
         step_id: str
         ):
-    async def refresh_status_downstream_steps(refresh_ctx):
+    async def refresh_status_downstream_steps(ctx_exit):
         """
         Downstream steps may depend on this guy => request status on them.
         Shortcut => request status on all the steps of the flow (not only the ones downstream)
         """
-        async with refresh_ctx.start(action="refresh_status_downstream_steps") as ctx_1:
+        async with ctx_exit.start(action="refresh_status_downstream_steps") as ctx_1:
+            await ctx_1.send(
+                PipelineStepEvent(projectId=project_id, flowId=flow_id, stepId=step_id, event=Event.runDone)
+            ),
+
             _project: Project = next(p for p in projects if p.id == project_id)
             steps = _project.get_flow_steps(flow_id=flow_id)
             return asyncio.gather(*[
@@ -196,7 +200,10 @@ async def run_pipeline_step(
                 'flowId': flow_id,
                 'stepId': step_id
             },
-            on_exit=lambda refresh_ctx: refresh_status_downstream_steps(refresh_ctx),
+            on_enter=lambda ctx_enter: ctx_enter.send(
+                PipelineStepEvent(projectId=project_id, flowId=flow_id, stepId=step_id, event=Event.runStarted)
+            ),
+            on_exit=lambda ctx_exit: refresh_status_downstream_steps(ctx_exit),
             with_loggers=[UserContextLogger()]
     ) as ctx:
 

@@ -1,3 +1,4 @@
+from enum import Enum
 from pathlib import Path
 from typing import List, Optional
 
@@ -69,3 +70,17 @@ class CdnVersionResponse(BaseModel):
 class CdnResponse(BaseModel):
     name: str
     versions: List[CdnVersionResponse]
+
+
+class Event(Enum):
+    runStarted = 'runStarted'
+    runDone = 'runDone'
+    statusCheckStarted = 'statusCheckStarted'
+    statusCheckDone = 'statusCheckDone'
+
+
+class PipelineStepEvent(BaseModel):
+    projectId: str
+    flowId: str
+    stepId: str
+    event: Event
