@@ -145,6 +145,16 @@ class TreeDbClient:
 
                 await raise_exception_from_response(resp, **kwargs)
 
+    async def get_path_folder(self, folder_id, **kwargs):
+        url = f"{self.url_base}/folders/{folder_id}/path"
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with await session.get(url=url, **kwargs) as resp:
+                if resp.status == 200:
+                    items = await resp.json()
+                    return items
+
+                await raise_exception_from_response(resp, **kwargs)
+
     async def get_entity(self, entity_id: str, include_drives: bool = True, include_folders: bool = True,
                          include_items: bool = True, **kwargs):
 
