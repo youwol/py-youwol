@@ -67,7 +67,7 @@ def included_services(src_backend_services: Path):
 def sync_services(src_backend_services: Path):
     services = included_services(src_backend_services)
 
-    for service in services[0:1]:
+    for service in services:
 
         files = flatten([glob.glob(str(service.src) + pattern, recursive=True)
                          for pattern in service.include])
