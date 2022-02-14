@@ -185,7 +185,8 @@ async def run_pipeline_step(
             ),
 
             _project: Project = next(p for p in projects if p.id == project_id)
-            steps = _project.get_flow_steps(flow_id=flow_id)
+
+            steps = _project.get_downstream_flow_steps(flow_id=flow_id, from_step_id=step_id, from_step_included=True)
             return asyncio.gather(*[
                 get_status(project=_project, flow_id=flow_id, step=_step, context=ctx_1)
                 for _step in steps
