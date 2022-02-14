@@ -94,6 +94,16 @@ class AssetsGatewayClient:
                     return await resp.json()
                 await raise_exception_from_response(resp)
 
+    async def delete_tree_folder(self, folder_id: str, **kwargs):
+
+        url = f"{self.url_base}/tree/folders/{folder_id}"
+
+        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
+            async with await session.delete(url=url, **kwargs) as resp:
+                if resp.status == 200:
+                    return await resp.json()
+                await raise_exception_from_response(resp)
+
     async def get_tree_items_by_related_id(self, related_id: str, **kwargs):
 
         url = f"{self.url_base}/tree/items/from-related/{related_id}"
@@ -110,6 +120,16 @@ class AssetsGatewayClient:
 
         async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
             async with await session.get(url=url, **kwargs) as resp:
+                if resp.status == 200:
+                    return await resp.json()
+                await raise_exception_from_response(resp)
+
+    async def move_tree_item(self, tree_id: str, body, **kwargs):
+
+        url = f"{self.url_base}/tree/{tree_id}/move"
+
+        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
+            async with await session.post(url=url, json=body, **kwargs) as resp:
                 if resp.status == 200:
                     return await resp.json()
                 await raise_exception_from_response(resp)
