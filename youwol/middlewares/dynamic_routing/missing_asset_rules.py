@@ -1,16 +1,19 @@
-from typing import Optional
+import json
+from typing import Optional, cast, Any
 
 from fastapi import HTTPException
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
-from starlette.responses import Response
+from starlette.responses import Response, JSONResponse
 
 from youwol.environment.auto_download_thread import AssetDownloadThread
 from youwol.environment.clients import LocalClients
 from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol.middlewares.models_dispatch import AbstractDispatch
+from youwol.routers.commons import ensure_local_path
 from youwol.utils.utils_low_level import redirect_api_remote
 from youwol_utils.context import Context
+from youwol_utils.request_info_factory import url_match
 
 
 class GetRawDispatch(AbstractDispatch):
@@ -96,3 +99,35 @@ class PostMetadataDispatch(AbstractDispatch):
                     detail="An error occurred while fetching the asset in remote env."
                 )
             return resp_remote
+
+
+class CreateAssetDispatch(AbstractDispatch):
+
+    async def apply(self,
+                    request: Request,
+                    call_next: RequestResponseEndpoint,
+                    context: Context
+                    ) -> Optional[Response]:
+
+        match, replaced = url_match(request=request, pattern='PUT:/api/assets-gateway/assets/*/location/*')
+        if not match:
+            return None
+        env = await context.get('env', YouwolEnvironment)
+
+        async with context.start(action="CreateAssetDispatch.apply") as ctx:
+            folder_id = replaced[-1]
+            await ensure_local_path(folder_id=folder_id, env=env, context=ctx)
+            resp = await call_next(request)
+            binary = b''
+            async for data in cast(Any, resp).body_iterator:
+                binary += data
+            data = {
+                **json.loads(binary),
+                **{
+                    'origin': {
+                        'remote': False,
+                        'local': True
+                    }
+                }
+            }
+            return JSONResponse(data)

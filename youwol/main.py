@@ -60,7 +60,8 @@ app.add_middleware(
         loading_graph.GetLoadingGraphDispatch(),
         missing_asset.GetRawDispatch(),
         missing_asset.GetMetadataDispatch(),
-        missing_asset.PostMetadataDispatch()
+        missing_asset.PostMetadataDispatch(),
+        missing_asset.CreateAssetDispatch()
     ],
     disabling_header=YouwolHeaders.py_youwol_local_only
 )
