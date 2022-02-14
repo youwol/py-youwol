@@ -48,7 +48,8 @@ class GetMetadataDispatch(AbstractDispatch):
                     context: Context
                     ) -> Optional[Response]:
 
-        if not (request.method == "GET" and '/api/assets-gateway/assets/' in request.url.path):
+        match, replaced = url_match(request=request, pattern='GET:/api/assets-gateway/assets/**')
+        if not match:
             return None
 
         async with context.start(action="GetMetadataDispatch.apply") as ctx:
@@ -68,12 +69,13 @@ class PostMetadataDispatch(AbstractDispatch):
                     context: Context
                     ) -> Optional[Response]:
 
-        if not (request.method == "POST" and '/api/assets-gateway/assets/' in request.url.path):
+        match, replaced = url_match(request=request, pattern='POST:/api/assets-gateway/assets/**')
+        if not match:
             return None
 
         async with context.start(action="PostMetadataDispatch.apply") as ctx:
             env = await ctx.get('env', YouwolEnvironment)
-            asset_id = request.url.path.split('/api/assets-gateway/assets/')[1].split('/')[0]
+            asset_id = replaced[0]
 
             try:
                 # 'assets' and not 'assets_gateway' client is used such that following request won't be intercepted by
