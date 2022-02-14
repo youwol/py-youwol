@@ -339,12 +339,34 @@ class Project(BaseModel):
     def get_flow_steps(
             self,
             flow_id: str
-            ) -> List[PipelineStep]:
+    ) -> List[PipelineStep]:
 
         flow = next(f for f in self.pipeline.flows if f.name == flow_id)
         involved_steps = set([step.strip() for b in flow.dag for step in b.split('>')])
         steps = [step for step in self.pipeline.steps if step.id in involved_steps]
 
+        return steps
+
+    def get_downstream_flow_steps(
+            self,
+            flow_id: str,
+            from_step_id: str,
+            from_step_included: bool
+    ) -> List[PipelineStep]:
+
+        flow = next(f for f in self.pipeline.flows if f.name == flow_id)
+        branches = [[step.strip() for step in branch.split('>')] for branch in flow.dag]
+
+        def implementation(from_step_tmp):
+            starts = [
+                (step, i, branch) for branch in branches for i, step in enumerate(branch) if step == from_step_tmp
+            ]
+            return set(s for step, i, branch in starts for s in branch[i + 1:])
+
+        downstream_steps = implementation(from_step_tmp=from_step_id)
+        indirect = [implementation(from_step_tmp=s) for s in downstream_steps]
+        involved_steps = downstream_steps.union(*indirect, {from_step_id} if from_step_included else {})
+        steps = [step for step in self.pipeline.steps if step.id in involved_steps]
         return steps
 
     def get_manifest(self, flow_id: FlowId, step: PipelineStep, env: YouwolEnvironment):
