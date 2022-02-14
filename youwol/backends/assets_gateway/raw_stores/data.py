@@ -2,9 +2,9 @@ import asyncio
 import json
 import uuid
 from abc import ABC
+from dataclasses import dataclass
 from typing import Union, Mapping
 
-from dataclasses import dataclass
 from fastapi import HTTPException
 from starlette.requests import Request
 from starlette.responses import Response
@@ -12,10 +12,9 @@ from starlette.responses import Response
 from youwol_utils import (
     user_info, get_all_individual_groups, get_group,
     # RecordsResponse, RecordsTable, RecordsKeyspace, RecordsDocDb, RecordsStorage, RecordsBucket, to_group_id,
-    )
+)
 from youwol_utils.clients.data_api.data import DataClient
 from .interface import (RawStore, RawId, AssetMeta, AssetImg)
-
 
 mime_types_text = ["application/json", "text/html", "application/javascript", "text/plain", "text/markdown",
                    "application/x-yaml", "text/yaml", "text/javascript"]
@@ -164,13 +163,3 @@ class DataStore(RawStore, ABC):
             storage.delete(path=raw_id, owner=self.owner, headers=headers),
             docdb.delete_document(doc={"file_id": raw_id}, owner=self.owner, headers=headers)
             )
-
-    # async def get_records(self, request: Request, raw_ids: str, group_id: str, headers):
-    #
-    #     storage, docdb = self.client.storage, self.client.docdb
-    #     table = RecordsTable(id=docdb.table_name, primaryKey="file_id", values=raw_ids)
-    #     keyspace = RecordsKeyspace(id=docdb.keyspace_name, groupId=to_group_id(self.owner), tables=[table])
-    #
-    #     bucket = RecordsBucket(id=storage.bucket_name, groupId=to_group_id(self.owner), paths=raw_ids)
-    #     response = RecordsResponse(docdb=RecordsDocDb(keyspaces=[keyspace]), storage=RecordsStorage(buckets=[bucket]))
-    #     return response

@@ -4,8 +4,10 @@ from typing import Any, Callable, Optional
 from fastapi.logger import logger
 
 from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
+from youwol.web_socket import AdminContextLogger
 from youwol_utils import get_valid_bucket_name
 from youwol_utils.clients.docdb.local_docdb import LocalDocDbClient
+from youwol_utils.context import ContextLogger
 from .models import create_doc_dbs, DocDbs, namespace
 
 logger.info("Setup treedb-backend")
@@ -31,6 +33,7 @@ class Configuration:
         url.path.split("/")[-1] == "healthz" or url.path.split("/")[-1] == "openapi-docs"
 
     public_owner = '/youwol-users'
+    ctx_logger: ContextLogger = AdminContextLogger()
 
 
 config_yw_treedb: Optional[Configuration] = None

@@ -1,4 +1,5 @@
-from typing import NamedTuple, List, Union, TypeVar
+from typing import NamedTuple, List, Union, TypeVar, Optional
+
 from pydantic import BaseModel
 
 from youwol_utils import TableBody, DocDb, get_valid_keyspace_name
@@ -8,7 +9,6 @@ namespace = "tree-db"
 
 
 class DocDbs(NamedTuple):
-
     items_db: DocDb
     folders_db: DocDb
     drives_db: DocDb
@@ -95,7 +95,7 @@ class ItemsResponse(BaseModel):
 
 
 class PathResponse(BaseModel):
-    item: ItemResponse
+    item: Optional[ItemResponse] = None
     folders: List[FolderResponse]
     drive: DriveResponse
 
@@ -104,7 +104,6 @@ WhereClause = dict
 
 
 class QueryFilesBody(BaseModel):
-
     whereClauses: List[WhereClause] = []
     maxResults: int = 10
 
@@ -123,7 +122,7 @@ class MoveResponse(BaseModel):
 class ItemBody(BaseModel):
     name: str
     type: str
-    itemId: str = None
+    itemId: Optional[str] = None
     relatedId: str = ""
     metadata: str = ""
 
@@ -141,12 +140,12 @@ class FolderBody(BaseModel):
     name: str
     type: str = ""
     metadata: str = ""
-    folderId: str = None
+    folderId: Optional[str] = None
 
 
 class DriveBody(BaseModel):
     name: str
-    driveId: str = None
+    driveId: Optional[str] = None
     metadata: str = ""
 
 
@@ -171,10 +170,10 @@ FILES_TABLE = TableBody(
         Column(name="name", type="text"),
         Column(name="type", type="text"),
         Column(name="metadata", type="text")
-        ],
+    ],
     partition_key=["item_id"],
     clustering_columns=[]
-    )
+)
 
 FILES_TABLE_PARENT_INDEX = SecondaryIndex(
     name="items_by_parent",
@@ -195,15 +194,14 @@ FOLDERS_TABLE = TableBody(
         Column(name="name", type="text"),
         Column(name="type", type="text"),
         Column(name="metadata", type="text")
-        ],
+    ],
     partition_key=["folder_id"],
     clustering_columns=[]
-    )
+)
 
 FOLDERS_TABLE_PARENT_INDEX = SecondaryIndex(
     name="folders_by_parent",
     identifier=IdentifierSI(column_name='parent_folder_id'))
-
 
 DRIVES_TABLE = TableBody(
     name='drives',
@@ -213,15 +211,14 @@ DRIVES_TABLE = TableBody(
         Column(name="group_id", type="text"),
         Column(name="name", type="text"),
         Column(name="metadata", type="text")
-        ],
+    ],
     partition_key=["drive_id"],
     clustering_columns=[]
-    )
+)
 
 DRIVES_TABLE_PARENT_INDEX = SecondaryIndex(
     name="drives_by_parent",
     identifier=IdentifierSI(column_name='group_id'))
-
 
 DELETED_TABLE = TableBody(
     name='deleted',
@@ -236,10 +233,10 @@ DELETED_TABLE = TableBody(
         Column(name="kind", type="text"),
         Column(name="metadata", type="text"),
         Column(name="parent_folder_id", type="text"),
-        ],
+    ],
     partition_key=["deleted_id"],
     clustering_columns=[]
-    )
+)
 
 DELETED_TABLE_DRIVE_INDEX = SecondaryIndex(
     name="deleted_by_drive",
@@ -249,7 +246,6 @@ TDocDb = TypeVar('TDocDb')
 
 
 def create_doc_dbs(factory_db: TDocDb, **kwargs) -> DocDbs:
-
     files_db = factory_db(
         keyspace_name=DocDbs.keyspace_name,
         table_body=FILES_TABLE,

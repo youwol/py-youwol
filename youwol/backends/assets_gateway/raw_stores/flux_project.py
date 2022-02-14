@@ -65,7 +65,7 @@ class FluxProjectsStore(RawStore):
             body_new = {
                 "name": metadata.name if metadata.name else actual_meta["name"],
                 "description": metadata.description if metadata.description else actual_meta["description"],
-                "libraries": body['libraries'] if "libraries" in body else None
+                "libraries": body['libraries'] if "libraries" in body else {}
                 }
             return await self.client.update_metadata(project_id=raw_id, body=body_new, headers=headers)
         raise HTTPException(status_code=404, detail='Endpoint not found')
