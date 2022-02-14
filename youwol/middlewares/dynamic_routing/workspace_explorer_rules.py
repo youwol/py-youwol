@@ -9,8 +9,10 @@ from youwol.backends.assets_gateway.models import ChildrenResponse, ItemResponse
 from youwol.environment.clients import RemoteClients, LocalClients
 from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.middlewares.models_dispatch import AbstractDispatch
+from youwol.routers.commons import ensure_local_path
 from youwol.utils.utils_low_level import JSON
 from youwol_utils.context import Context
+from youwol_utils.request_info_factory import url_match
 
 PydanticType = TypeVar("PydanticType")
 
@@ -151,10 +153,38 @@ class GetItemDispatch(AbstractDispatch):
                 local_gtw.get_tree_item(item_id=item_id),
                 remote_gtw.get_tree_item(item_id=item_id),
                 return_exceptions=True
-                )
+            )
             if isinstance(local_resp, Exception):
                 await ctx.info("Asset not found in local store, return remote data")
                 return JSONResponse(remote_resp)
 
             await ctx.info("Asset found in local store, return local data")
             return JSONResponse(local_resp)
+
+
+class MoveBorrowInRemoteFolderDispatch(AbstractDispatch):
+
+    async def apply(self,
+                    request: Request,
+                    call_next: RequestResponseEndpoint,
+                    context: Context
+                    ) -> Optional[Response]:
+        env = await context.get('env', YouwolEnvironment)
+        match, replaced = url_match(request=request, pattern='POST:/api/assets-gateway/tree/*/*')
+        if not match or replaced[-1] not in ['move', 'borrow']:
+            return None
+
+        async with context.start(action="MoveBorrowInRemoteFolderDispatch.apply") as ctx:
+            body = await request.json()
+            folder_id = body["destinationFolderId"]
+            await ensure_local_path(folder_id=folder_id, env=env, context=ctx)
+            gtw = LocalClients.get_assets_gateway_client(env=env)
+            # Ideally we would like to proceed to call_next(request), it is not possible because the body of the
+            # request has already been fetched (and would result in a fast api getting stuck trying to parse it again)
+            headers = {**ctx.headers(), 'py-youwol-local-only': 'true'}
+            if replaced[-1] == "move":
+                resp = await gtw.move_tree_item(tree_id=replaced[0], body=body, headers=headers)
+                return JSONResponse(resp)
+
+            resp = await gtw.borrow_tree_item(tree_id=replaced[0], body=body, headers=headers)
+            return JSONResponse(resp)

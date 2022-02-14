@@ -57,6 +57,7 @@ app.add_middleware(
         workspace_explorer.GetChildrenDispatch(),
         workspace_explorer.GetPermissionsDispatch(),
         workspace_explorer.GetItemDispatch(),
+        workspace_explorer.MoveBorrowInRemoteFolderDispatch(),
         loading_graph.GetLoadingGraphDispatch(),
         missing_asset.GetRawDispatch(),
         missing_asset.GetMetadataDispatch(),
