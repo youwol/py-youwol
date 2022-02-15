@@ -99,6 +99,9 @@ class UploadPackageTask(UploadTask):
         mismatch = [v for v, checksum in local_versions.items()
                     if v in remote_versions and checksum != remote_versions[v]]
         to_sync_releases = missing + mismatch
+        if self.options and self.options.versions:
+            to_sync_releases = [v for v in to_sync_releases if v in self.options.versions]
+
         await self.context.info(text="package's versions to sync. resolved",
                                 data={"missing": missing, "mismatch": mismatch})
 
@@ -109,6 +112,12 @@ class UploadPackageTask(UploadTask):
         remote_gtw = await RemoteClients.get_assets_gateway_client(self.context)
         env = await self.context.get('env', YouwolEnvironment)
         async with self.context.start(action="Sync") as ctx:
+
+            if self.options.versions and version not in self.options.versions:
+                await ctx.info(text=f"Version '{version}' not in explicit versions provided",
+                               data={"explicit versions": self.options.versions})
+                return
+
             library_name, zip_path = get_zip_path(asset_id=self.asset_id, version=version, env=env)
 
             try:
