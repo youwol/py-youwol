@@ -69,7 +69,7 @@ class PostMetadataDispatch(AbstractDispatch):
                     context: Context
                     ) -> Optional[Response]:
 
-        match, replaced = url_match(request=request, pattern='POST:/api/assets-gateway/assets/**')
+        match, replaced = url_match(request=request, pattern='POST:/api/assets-gateway/assets/*')
         if not match:
             return None
 
