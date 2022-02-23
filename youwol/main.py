@@ -109,17 +109,18 @@ def main():
         env: YouwolEnvironment = asyncio.run(YouwolEnvironmentFactory.get())
         download_thread.go(env)
         print_invite(conf=env, shutdown_script_path=shutdown_script_path if get_main_arguments().daemonize else None)
+        uvicorn_log_level = 'info' if get_main_arguments().verbose else 'critical'
 
         if get_main_arguments().daemonize:
             with daemon.DaemonContext(pidfile=lockfile.FileLock("py-youwol")):
                 shutdown_script_path.write_text(shutdown_daemon_script(pid=os.getpid()))
                 # app: incorrect type. More here: https://github.com/tiangolo/fastapi/issues/3927
                 # noinspection PyTypeChecker
-                uvicorn.run(app, host="localhost", port=env.httpPort)
+                uvicorn.run(app, host="localhost", port=env.httpPort, log_level=uvicorn_log_level)
         else:
             # app: incorrect type. More here: https://github.com/tiangolo/fastapi/issues/3927
             # noinspection PyTypeChecker
-            uvicorn.run(app, host="localhost", port=env.httpPort)
+            uvicorn.run(app, host="localhost", port=env.httpPort, log_level=uvicorn_log_level)
     except ConfigurationLoadingException as e:
         print(e)
         exit()
