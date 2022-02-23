@@ -72,7 +72,11 @@ class All(PatternRequestInfoExtractor):
 
     def extract_from_pattern(self, substitutes: List[Union[str, List[str]]]):
 
-        [method, [*_, last]] = substitutes
+        [method, messages] = substitutes
+        if len(messages) != 0:
+            *_, last = messages
+        else:
+            last = "root path"
         return RequestInfo(message=last, attributes={'method': method})
 
 
