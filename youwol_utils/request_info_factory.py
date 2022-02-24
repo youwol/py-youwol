@@ -161,9 +161,8 @@ class GetCDNPackage1(PatternRequestInfoExtractor):
     pattern = 'GET:/api/cdn-backend/libraries/*/*/*'
 
     def extract_from_pattern(self, substitutes):
-        [namespace, name, version] = substitutes
-        return RequestInfo(message=f"{namespace}/{name}/{version}",
-                           attributes={'package': f"{namespace}/{name}", 'version': version})
+        return RequestInfo(message="/".join(substitutes),
+                           attributes={'package': "/".join(substitutes[:-1]), 'version': substitutes[-1]})
 
 
 class GetCDNPackage2(PatternRequestInfoExtractor):
