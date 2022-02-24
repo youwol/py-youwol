@@ -176,9 +176,15 @@ class BuildStep(PipelineStep):
             files=FileListing(
                 include=["package.json", "dist"],
                 ignore=["dist/docs"]
+            ),
+            links=[
+                Link(
+                    name='bundle-analysis',
+                    url='dist/bundle-analysis.html'
                 )
-            )
-        ]
+            ]
+        )
+    ]
 
 
 class DocStep(PipelineStep):
