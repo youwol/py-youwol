@@ -1,10 +1,10 @@
-from starlette.requests import Request
 from fastapi import APIRouter, Depends, HTTPException
-from youwol_utils.context import Context
+from starlette.requests import Request
 
+from youwol_utils import JSON
+from youwol_utils.context import Context
 from .configurations import Configuration, get_configuration
 from .utils import get_path
-from youwol_utils import JSON
 
 router = APIRouter()
 

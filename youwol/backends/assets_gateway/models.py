@@ -1,4 +1,5 @@
 from typing import List, Any, Union, Optional
+
 from pydantic import BaseModel
 
 from youwol_utils import PermissionsResp, ReadPolicyEnum, SharePolicyEnum
@@ -36,7 +37,6 @@ class PermissionsResponse(BaseModel):
 
 
 class AssetResponse(BaseModel):
-
     assetId: str
     description: str
     images: List[str]
@@ -50,12 +50,10 @@ class AssetResponse(BaseModel):
 
 
 class AssetWithPermissionResponse(AssetResponse):
-
     permissions: Optional[PermissionsResponse]
 
 
 class NewAssetResponse(AssetResponse):
-
     treeId: str
 
 

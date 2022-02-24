@@ -1,4 +1,4 @@
-from typing import List, Dict, Union, Tuple
+from typing import List, Dict, Union, Tuple, Optional
 
 from pydantic import BaseModel, Field
 
@@ -31,7 +31,7 @@ class Adaptor(BaseModel):
 class Connection(BaseModel):
     start: Slot
     end: Slot
-    adaptor: Adaptor = None
+    adaptor: Optional[Adaptor] = None
 
 
 class FactoryId(BaseModel):
@@ -115,8 +115,8 @@ class Library(BaseModel):
 
 class LoadingGraph(BaseModel):
     graphType: str
-    lock: List[Library] = None
-    definition: Union[List[List[Url]],  List[List[Tuple[str, Url]]]]
+    lock: Optional[List[Library]] = None
+    definition: Union[List[List[Url]], List[List[Tuple[str, Url]]]]
 
 
 class Requirements(BaseModel):
@@ -181,7 +181,7 @@ class Component(BaseModel):
     fluxPacks: List[str]
     workflow: Workflow
     builderRendering: BuilderRendering
-    runnerRendering: RunnerRendering = None
+    runnerRendering: Optional[RunnerRendering] = None
 
 
 class Package(BaseModel):
@@ -218,10 +218,10 @@ PROJECTS_TABLE = TableBody(
         Column(name="description", type="text"),
         Column(name="name", type="text"),
         Column(name="packages", type="list<text>")
-        ],
+    ],
     partition_key=["project_id"],
     clustering_columns=[]
-    )
+)
 
 COMPONENTS_TABLE = TableBody(
     name='entities',
@@ -234,10 +234,10 @@ COMPONENTS_TABLE = TableBody(
         Column(name="name", type="text"),
         Column(name="packages", type="list<text>"),
         Column(name="has_view", type="boolean")
-        ],
+    ],
     partition_key=["component_id"],
     clustering_columns=[]
-    )
+)
 
 
 class DeprecatedData(BaseModel):

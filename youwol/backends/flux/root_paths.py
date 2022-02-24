@@ -8,21 +8,20 @@ from typing import Union, Mapping
 
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 
-from .configurations import Configuration, get_configuration
-from .models import (
-    Projects, ProjectSnippet, Project, NewProjectResponse, NewProject,
-    BuilderRendering, RunnerRendering, Requirements, LoadingGraph, UploadResponse, EditMetadata, Component,
-    )
-
-from .utils import (
-    init_resources, create_tmp_folder, extract_zip_file, retrieve_project, update_project,
-    create_project_from_json, update_metadata, update_component, retrieve_component
-    )
 from youwol_utils import (
     User, Request, user_info, get_all_individual_groups, Group, private_group_id, to_group_id,
     generate_headers_downstream, asyncio, chunks, check_permission_or_raise, RecordsResponse, GetRecordsBody,
     RecordsTable, RecordsKeyspace, RecordsBucket, RecordsDocDb, RecordsStorage, get_group, Query, QueryBody, log_info,
-    )
+)
+from .configurations import Configuration, get_configuration
+from .models import (
+    Projects, ProjectSnippet, Project, NewProjectResponse, NewProject,
+    BuilderRendering, RunnerRendering, Requirements, LoadingGraph, UploadResponse, EditMetadata, Component,
+)
+from .utils import (
+    init_resources, create_tmp_folder, extract_zip_file, retrieve_project, update_project,
+    create_project_from_json, update_metadata, update_component, retrieve_component
+)
 from .workflow_new_project import workflow_new_project
 
 router = APIRouter()
@@ -39,7 +38,6 @@ async def healthz():
     response_model=User,
     summary="retrieve user info")
 async def get_user_info(request: Request):
-
     user = user_info(request)
     groups = get_all_individual_groups(user["memberof"])
     groups = [Group(id=private_group_id(user), path="private")] + \
@@ -54,8 +52,7 @@ async def get_user_info(request: Request):
 async def list_projects(
         request: Request,
         configuration: Configuration = Depends(get_configuration)
-        ):
-
+):
     headers = generate_headers_downstream(request.headers)
     doc_db = configuration.doc_db
     user = user_info(request)
@@ -63,7 +60,7 @@ async def list_projects(
     requests = [doc_db.query(query_body=QueryBody(query=Query()), owner=group, headers=headers)
                 for group in groups]
     projects = await asyncio.gather(*requests)
-    flatten_groups = list(flatten([len(project["documents"])*[groups[i]] for i, project in enumerate(projects)]))
+    flatten_groups = list(flatten([len(project["documents"]) * [groups[i]] for i, project in enumerate(projects)]))
     flatten_projects = list(flatten([project["documents"] for project in projects]))
 
     snippets = [ProjectSnippet(name=r["name"], id=r["project_id"], description=r["description"],
@@ -79,8 +76,7 @@ async def list_projects(
 async def delete_projects(
         request: Request,
         configuration: Configuration = Depends(get_configuration)
-        ):
-
+):
     await asyncio.gather(configuration.doc_db.delete_table(), configuration.storage.delete_bucket(force_not_empty=True))
     await init_resources(configuration)
 
@@ -94,8 +90,7 @@ async def get_project(
         request: Request,
         project_id: str,
         configuration: Configuration = Depends(get_configuration)
-        ):
-
+):
     headers = generate_headers_downstream(request.headers)
     owner = configuration.default_owner
 
@@ -111,7 +106,6 @@ async def new_project(
         request: Request,
         project_body: NewProject,
         configuration: Configuration = Depends(get_configuration)):
-
     headers = generate_headers_downstream(request.headers)
 
     project_id = str(uuid.uuid4())
@@ -122,7 +116,7 @@ async def new_project(
                                 loadingGraph=LoadingGraph(graphType="sequential-v1", lock=[], definition=[[]])
                                 )
 
-    project = Project(name=project_body.name, schemaVersion=Configuration.currentSchemaVersion,
+    project = Project(name=project_body.name, schemaVersion=Configuration.current_schema_version,
                       description=project_body.description, workflow=workflow, builderRendering=builder_rendering,
                       runnerRendering=runner_rendering, requirements=requirements)
 
@@ -139,7 +133,6 @@ async def duplicate(
         request: Request,
         project_id: str,
         configuration: Configuration = Depends(get_configuration)):
-
     headers = generate_headers_downstream(request.headers)
     owner = configuration.default_owner
     project = await retrieve_project(project_id=project_id, owner=owner, storage=configuration.storage,
@@ -159,7 +152,6 @@ async def upload(
         request: Request,
         file: UploadFile = File(...),
         configuration: Configuration = Depends(get_configuration)):
-
     dir_path, zip_path, zip_dir_name = create_tmp_folder(file.filename)
     headers = generate_headers_downstream(request.headers)
 
@@ -188,7 +180,6 @@ async def delete_project(
         request: Request,
         project_id: str,
         configuration: Configuration = Depends(get_configuration)):
-
     headers = generate_headers_downstream(request.headers)
     doc_db = configuration.doc_db
     user = user_info(request)
@@ -214,7 +205,6 @@ async def post_metadata(
         project_id: str,
         metadata_body: EditMetadata,
         configuration: Configuration = Depends(get_configuration)):
-
     headers = generate_headers_downstream(request.headers)
     doc_db, storage, assets_gtw = configuration.doc_db, configuration.storage, configuration.assets_gtw_client
     owner = configuration.default_owner
@@ -223,7 +213,7 @@ async def post_metadata(
         storage.get_json(path="projects/{}/requirements.json".format(project_id), owner=owner, headers=headers),
         storage.get_json(path="projects/{}/workflow.json".format(project_id), owner=owner, headers=headers),
         storage.get_json(path="projects/{}/description.json".format(project_id), owner=owner, headers=headers)
-        )
+    )
     log_info("Flux-Backend@Post metadata: got requirements and workflow")
     libraries = {**req['libraries'], **metadata_body.libraries}
 
@@ -236,7 +226,7 @@ async def post_metadata(
     body = {
         "libraries": {name: version for name, version in libraries.items() if name in used_packages},
         "using": {name: version for name, version in libraries.items()}
-        }
+    }
     loading_graph = await assets_gtw.cdn_loading_graph(body=body, headers=headers)
     flux_packs = [p['name'] for p in loading_graph['lock'] if p['type'] == 'flux-pack']
     log_info("Flux-Backend@Post metadata: got loading graph", loading_graph=loading_graph)
@@ -245,7 +235,7 @@ async def post_metadata(
     requirements = Requirements(fluxComponents=[], fluxPacks=flux_packs,
                                 libraries=used_libraries, loadingGraph=loading_graph)
 
-    schema_version = description['schemaVersion'] if 'schemaVersion' else '0'
+    schema_version = description['schemaVersion'] if 'schemaVersion' in description else '0'
     coroutines = update_metadata(project_id=project_id, schema_version=schema_version,
                                  name=metadata_body.name, description=metadata_body.description,
                                  requirements=requirements, owner=owner, storage=storage, docdb=doc_db, headers=headers)
@@ -260,8 +250,7 @@ async def get_metadata(
         request: Request,
         project_id: str,
         configuration: Configuration = Depends(get_configuration)
-        ):
-
+):
     headers = generate_headers_downstream(request.headers)
     doc_db = configuration.doc_db
     owner = configuration.default_owner
@@ -280,8 +269,7 @@ async def post_project(
         project_id: str,
         project: Project,
         configuration: Configuration = Depends(get_configuration)
-        ):
-
+):
     headers = generate_headers_downstream(request.headers)
     storage, docdb = configuration.storage, configuration.doc_db
     owner = configuration.default_owner
@@ -298,7 +286,6 @@ async def post_component(
         component_id: str,
         component: Component,
         configuration: Configuration = Depends(get_configuration)):
-
     headers = generate_headers_downstream(request.headers)
     storage, docdb = configuration.storage, configuration.doc_db_component
     owner = configuration.default_owner
@@ -314,7 +301,6 @@ async def get_component(
         request: Request,
         component_id: str,
         configuration: Configuration = Depends(get_configuration)):
-
     headers = generate_headers_downstream(request.headers)
     owner = configuration.default_owner
 
@@ -328,7 +314,6 @@ async def delete_component(
         request: Request,
         component_id: str,
         configuration: Configuration = Depends(get_configuration)):
-
     headers = generate_headers_downstream(request.headers)
     docdb = configuration.doc_db_component
 
@@ -355,13 +340,12 @@ def group_scope_to_id(scope: str) -> str:
 async def records(
         body: GetRecordsBody,
         configuration: Configuration = Depends(get_configuration)
-        ):
-
+):
     doc_db = configuration.doc_db
     storage = configuration.storage
 
     def get_paths(project_id):
-        base = Path('projects')/project_id
+        base = Path('projects') / project_id
         return [base / name for name in ['builderRendering.json', 'description.json', 'requirements.json',
                                          'runnerRendering.json', 'workflow.json']]
 
@@ -372,21 +356,21 @@ async def records(
         id=doc_db.table_name,
         primaryKey=doc_db.table_body.partition_key[0],
         values=body.ids
-        )
+    )
     keyspace = RecordsKeyspace(
         id=doc_db.keyspace_name,
         groupId=group_id,
         tables=[table]
-        )
+    )
 
     bucket = RecordsBucket(
         id=storage.bucket_name,
         groupId=group_id,
         paths=[str(p) for p in paths]
-        )
+    )
     response = RecordsResponse(
         docdb=RecordsDocDb(keyspaces=[keyspace]),
         storage=RecordsStorage(buckets=[bucket])
-        )
+    )
 
     return response

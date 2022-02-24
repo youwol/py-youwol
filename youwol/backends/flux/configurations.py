@@ -36,7 +36,7 @@ class Configuration:
     replication_factor: int = 2
     admin_headers = None
     default_owner = "/youwol-users"
-    currentSchemaVersion = "1"
+    current_schema_version = "1"
 
 
 config_yw_flux: Optional[Configuration] = None

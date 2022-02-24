@@ -464,7 +464,7 @@ icons_smileys_people = [
     ['💍', ' Ring'],
     ['💼', ' Briefcase'],
     ['🩸', ' Drop of Blood']
-    ]
+]
 # noinspection SpellCheckingInspection
 icons_animals = [
     ['🙈', ' See-No-Evil Monkey'],
@@ -670,7 +670,7 @@ icons_animals = [
     ['✨', ' Sparkles'],
     ['🎋', ' Tanabata Tree'],
     ['🎍', ' Pine Decoration']
-    ]
+]
 icons_foods = [
     ['🍇', ' Grapes'],
     ['🍈', ' Melon'],
@@ -795,7 +795,7 @@ icons_foods = [
     ['🍽️', ' Fork and Knife with Plate'],
     ['🍴', ' Fork and Knife'],
     ['🥄', ' Spoon']
-    ]
+]
 icons_activities = [
     ['🕴️', ' Person in Suit Levitating'],
     ['🧗', ' Person Climbing'],
@@ -910,7 +910,7 @@ icons_activities = [
     ['🪘', ' Long Drum'],
     ['🎬', ' Clapper Board'],
     ['🏹', ' Bow and Arrow']
-    ]
+]
 # noinspection SpellCheckingInspection
 icons_travel = [
     ['🚣', ' Person Rowing Boat'],
@@ -1046,7 +1046,7 @@ icons_travel = [
     ['🛃', ' Customs'],
     ['🛄', ' Baggage Claim'],
     ['🛅', ' Left Luggage']
-    ]
+]
 # noinspection SpellCheckingInspection
 icons_objects = [
     ['💌', ' Love Letter'],
@@ -1282,7 +1282,7 @@ icons_objects = [
     ['🗿', ' Moai'],
     ['🪧', ' Placard'],
     ['🚰', ' Potable Water']
-    ]
+]
 # noinspection SpellCheckingInspection
 icons_symbols = [
     ['💘', ' Heart with Arrow'],
@@ -1578,7 +1578,7 @@ icons_symbols = [
     ['🔘', ' Radio Button'],
     ['🔳', ' White Square Button'],
     ['🔲', ' Black Square Button']
-    ]
+]
 # noinspection SpellCheckingInspection
 icons_flags = [
     ['🏁', ' Chequered Flag'],
@@ -1852,6 +1852,6 @@ icons_flags = [
     ['🏴󠁧󠁢󠁷󠁬󠁳󠁿', ' Flag: Wales'],
     ['🏴󠁵󠁳󠁴󠁸󠁿', ' Flag for Texas (US-TX)'],
     ['🏳&zwj;🟧&zwj;⬛&zwj;🟧', ' Refugee Nation Flag']
-    ]
+]
 icons_all = icons_smileys_people + icons_animals + icons_foods + icons_activities + icons_travel + icons_objects \
             + icons_symbols + icons_flags

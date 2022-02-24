@@ -1,8 +1,8 @@
 from abc import ABC
+from dataclasses import dataclass
 from typing import Union
 
 import aiohttp
-from dataclasses import dataclass
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -12,7 +12,6 @@ from .interface import (AssetMeta, RawStore, RawId)
 
 @dataclass(frozen=True)
 class PackagesStore(RawStore, ABC):
-
     path_name = 'package'
 
     async def create_asset(self, request: Request, metadata: AssetMeta, rest_of_path: str, headers) \
@@ -22,7 +21,7 @@ class PackagesStore(RawStore, ABC):
         form = {
             'file': await form.get('file').read(),
             'content_encoding': form.get('content_encoding', 'identity')
-            }
+        }
         async with aiohttp.ClientSession() as session:
             async with await session.post(self.client.publish_url, data=form, headers=headers) as resp:
                 if resp.status == 200:
@@ -33,7 +32,7 @@ class PackagesStore(RawStore, ABC):
     async def sync_asset_metadata(self, request: Request, raw_id: str, metadata: AssetMeta, headers):
         pass
 
-    async def get_asset(self, request: Request, raw_id: str,  rest_of_path: Union[str, None], headers):
+    async def get_asset(self, request: Request, raw_id: str, rest_of_path: Union[str, None], headers):
 
         url = "/".join([self.client.url_base, "resources", raw_id, rest_of_path])
         async with aiohttp.ClientSession(auto_decompress=False) as session:

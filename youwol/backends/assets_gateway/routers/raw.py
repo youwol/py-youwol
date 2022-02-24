@@ -18,8 +18,7 @@ async def get_raw_generic(
         raw_id: str,
         rest_of_the_path,
         configuration: Configuration
-        ):
-
+):
     async with Context.start_ep(
             request=request,
             action='get raw part of asset',
@@ -42,7 +41,7 @@ async def get_raw_generic(
 
         headers_resp = {'content-type': 'application/json'} if not isinstance(raw, Response) else raw.headers
         if permissions['expiration']:
-            headers_resp["cache-control"] = 'private, max-age='+str(permissions['expiration'])
+            headers_resp["cache-control"] = 'private, max-age=' + str(permissions['expiration'])
 
         content = json.dumps(raw) if not isinstance(raw, Response) else raw.body
         return Response(content=content, headers=headers_resp)
@@ -54,8 +53,7 @@ async def get_raw_metadata_generic(
         raw_id: str,
         configuration: Configuration,
         rest_of_the_path=None
-        ):
-
+):
     async with Context.start_ep(
             request=request,
             action='get raw metadata',
@@ -75,8 +73,7 @@ async def get_asset_by_raw_id(
         request: Request,
         raw_id: str,
         configuration: Configuration = Depends(get_configuration)
-        ):
-
+):
     async with Context.start_ep(
             action="get asset from raw record's id",
             request=request,
@@ -99,7 +96,7 @@ async def get_raw_metadata(
         kind: str,
         raw_id: str,
         configuration: Configuration = Depends(get_configuration)
-        ):
+):
     return await get_raw_metadata_generic(request=request, kind=kind, raw_id=raw_id,
                                           configuration=configuration, rest_of_the_path="")
 
@@ -112,7 +109,7 @@ async def get_raw_metadata(
         rest_of_path: str,
         raw_id: str,
         configuration: Configuration = Depends(get_configuration)
-        ):
+):
     return await get_raw_metadata_generic(request=request, kind=kind, raw_id=raw_id, rest_of_the_path=rest_of_path,
                                           configuration=configuration)
 
@@ -124,7 +121,7 @@ async def get_raw(
         kind: str,
         raw_id: str,
         configuration: Configuration = Depends(get_configuration)
-        ):
+):
     return await get_raw_generic(request=request, kind=kind, raw_id=raw_id, rest_of_the_path=None,
                                  configuration=configuration)
 
@@ -137,7 +134,7 @@ async def get_raw(
         rest_of_path: str,
         raw_id: str,
         configuration: Configuration = Depends(get_configuration)
-        ):
+):
     return await get_raw_generic(request=request, kind=kind, raw_id=raw_id, rest_of_the_path=rest_of_path,
                                  configuration=configuration)
 
@@ -148,7 +145,7 @@ async def update_raw_asset_generic(
         raw_id: str,
         rest_of_path,
         configuration: Configuration
-        ):
+):
     async with Context.start_ep(
             request=request,
             action="update raw part of asset",
@@ -176,8 +173,7 @@ async def update_raw_asset(
         kind: str,
         raw_id: str,
         configuration: Configuration = Depends(get_configuration)
-        ):
-
+):
     return await update_raw_asset_generic(request=request, kind=kind, raw_id=raw_id, rest_of_path="",
                                           configuration=configuration)
 
@@ -190,6 +186,5 @@ async def update_raw_asset(
         raw_id: str,
         rest_of_path: str,
         configuration: Configuration = Depends(get_configuration)):
-
     return await update_raw_asset_generic(request=request, kind=kind, raw_id=raw_id, rest_of_path=rest_of_path,
                                           configuration=configuration)

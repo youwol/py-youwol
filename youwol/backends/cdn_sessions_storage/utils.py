@@ -1,6 +1,7 @@
-from .configurations import Configuration
-from youwol_utils import log_info, get_user_id
 from starlette.requests import Request
+
+from youwol_utils import log_info, get_user_id
+from .configurations import Configuration
 
 
 async def init_resources(config: Configuration):

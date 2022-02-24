@@ -1,7 +1,7 @@
 import json
+from dataclasses import dataclass
 from typing import Union
 
-from dataclasses import dataclass
 from starlette.requests import Request
 
 from .interface import (RawStore, RawId, AssetMeta)
@@ -9,7 +9,6 @@ from .interface import (RawStore, RawId, AssetMeta)
 
 @dataclass(frozen=True)
 class StoriesStore(RawStore):
-
     path_name = 'story'
 
     async def create_asset(self, request: Request, metadata: AssetMeta, rest_of_path: str, headers) -> \
@@ -20,7 +19,7 @@ class StoriesStore(RawStore):
             form = {
                 'file': await form.get('file').read(),
                 'content_encoding': form.get('content_encoding', 'identity')
-                }
+            }
             resp = await self.client.publish_story(data=form, headers=headers)
             return resp['storyId'], AssetMeta(name=resp['title'])
 
@@ -30,7 +29,7 @@ class StoriesStore(RawStore):
         if body is None:
             body = {
                 "title": metadata.name
-                }
+            }
 
         resp = await self.client.create_story(body=body, headers=headers)
         return resp['storyId'], AssetMeta(name=resp['title'])
@@ -41,12 +40,12 @@ class StoriesStore(RawStore):
             story_id=raw_id,
             body={"title": metadata.name},
             headers=headers
-            )
+        )
 
     async def get_asset_metadata(self, request: Request, raw_id: str, rest_of_path: Union[str, None], headers):
         raise NotImplementedError("StoriesStore@get_asset_metadata: endpoint not found")
 
-    async def update_asset(self, request: Request, raw_id: str,  metadata: AssetMeta, rest_of_path: str, headers):
+    async def update_asset(self, request: Request, raw_id: str, metadata: AssetMeta, rest_of_path: str, headers):
 
         if rest_of_path.startswith('contents/'):
             # POST a new content
@@ -76,7 +75,7 @@ class StoriesStore(RawStore):
 
         raise NotImplementedError("StoriesStore@update_asset")
 
-    async def get_asset(self, request: Request, raw_id: str,  rest_of_path: Union[str, None], headers):
+    async def get_asset(self, request: Request, raw_id: str, rest_of_path: Union[str, None], headers):
 
         if not rest_of_path:
             return await self.client.get_story(story_id=raw_id, headers=headers)

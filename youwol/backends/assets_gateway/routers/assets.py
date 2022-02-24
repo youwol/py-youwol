@@ -4,25 +4,22 @@ from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, UploadFile, File, HTTPException, Query, Depends
-
 from starlette.requests import Request
-from youwol_utils.context import Context
 
-from ..configurations import Configuration, get_configuration
 from youwol_utils import (
     generate_headers_downstream, to_group_scope, itertools, is_authorized_write, AccessPolicyBody, PermissionsResp,
-    )
-
+)
+from youwol_utils.context import Context
+from ..configurations import Configuration, get_configuration
 from ..models import (
     AssetResponse, AssetsResponse, ImportAssetsBody, NewAssetResponse, QueryFlatBody, OwnerInfo, ExposingGroup,
     ConsumerInfo, AccessInfo, OwningGroup, UpdateAssetBody, QueryTreeBody, ItemsResponse, PermissionsResponse
 )
-
 from ..raw_stores.interface import AssetMeta
 from ..utils import (
     to_item_resp, to_asset_meta, to_asset_resp, get_items_rec, get_items, format_policy,
     raw_id_to_asset_id,
-    )
+)
 
 router = APIRouter()
 
@@ -34,8 +31,7 @@ async def query_flat(
         request: Request,
         body: QueryFlatBody,
         configuration: Configuration = Depends(get_configuration)
-        ):
-
+):
     headers = generate_headers_downstream(request.headers)
     resp = await configuration.assets_client.query(body=body.dict(), headers=headers)
     assets = [to_asset_resp(asset) for asset in resp["assets"]]
@@ -49,13 +45,12 @@ async def query_tree(
         request: Request,
         body: QueryTreeBody,
         configuration: Configuration = Depends(get_configuration)):
-
     headers = generate_headers_downstream(request.headers)
     assets_client = configuration.assets_client
     items = \
         await get_items_rec(folder_id=body.folderId, headers=headers, configuration=configuration) \
-        if body.recursive else \
-        await get_items(folder_id=body.folderId, headers=headers, configuration=configuration)
+            if body.recursive else \
+            await get_items(folder_id=body.folderId, headers=headers, configuration=configuration)
 
     async def get_asset(item):
         metadata = json.loads(item['metadata'])
@@ -74,7 +69,6 @@ async def import_treedb(
         request: Request,
         body: ImportAssetsBody,
         configuration: Configuration = Depends(get_configuration)):
-
     headers = generate_headers_downstream(request.headers)
     assets_db, tree_db = configuration.assets_client, configuration.treedb_client
     assets_stores = configuration.assets_stores()
@@ -82,7 +76,7 @@ async def import_treedb(
     folder, *assets = await asyncio.gather(
         tree_db.get_folder(folder_id=body.folderId, headers=headers),
         *[assets_db.get(asset_id=asset_id, headers=headers) for asset_id in body.assetIds]
-        )
+    )
     scope = to_group_scope(folder['groupId'])
 
     def harmonize_body_asset(asset_resp):
@@ -91,7 +85,8 @@ async def import_treedb(
             "tags": asset_resp["tags"],
             "description": asset_resp["description"],
             "scope": scope
-            }
+        }
+
     await asyncio.gather(*[assets_db.update_asset(asset_id=asset["assetId"], body=harmonize_body_asset(asset),
                                                   headers=headers)
                            for asset in assets])
@@ -105,9 +100,9 @@ async def import_treedb(
 
     for kind, group in itertools.groupby(all_assets, lambda asset: asset['kind']):
         store = next(store for store in assets_stores if store.path_name == kind)
-        coroutines = coroutines +\
-            [store.sync_asset_metadata(request=request, raw_id=asset['relatedId'], metadata=to_metadata(asset),
-                                       headers=headers) for asset in group]
+        coroutines = coroutines + \
+                     [store.sync_asset_metadata(request=request, raw_id=asset['relatedId'], metadata=to_metadata(asset),
+                                                headers=headers) for asset in group]
     await asyncio.gather(*coroutines)
 
     def to_body_treedb(asset):
@@ -116,7 +111,8 @@ async def import_treedb(
             "type": asset['kind'],
             "relatedId": asset["assetId"],
             "metadata": json.dumps({"assetId": asset["assetId"], "relatedId": asset["relatedId"], "borrowed": False})
-            }
+        }
+
     creates = [tree_db.create_item(folder_id=body.folderId, body=to_body_treedb(asset), headers=headers)
                for asset in assets]
     items = await asyncio.gather(*creates)
@@ -131,20 +127,18 @@ async def get(
         request: Request,
         asset_id: str,
         configuration: Configuration = Depends(get_configuration)):
-
     response = Optional[AssetResponse]
     async with Context.start_ep(
             request=request,
             response=lambda: response,
             action='get asset'
     ) as ctx:
-
         headers = ctx.headers()
         assets_client = configuration.assets_client
         asset, permissions = await asyncio.gather(
             assets_client.get(asset_id=asset_id, headers=headers),
             assets_client.get_permissions(asset_id=asset_id, headers=headers)
-            )
+        )
         response = to_asset_resp(asset=asset, permissions=permissions)
         return response
 
@@ -158,7 +152,6 @@ async def put_asset_with_raw_0(
         folder_id: str,
         group_id: str = Query(None, alias="group-id"),
         configuration: Configuration = Depends(get_configuration)):
-
     return await put_asset_with_raw(request=request, kind=kind, folder_id=folder_id, rest_of_path="", group_id=group_id,
                                     configuration=configuration)
 
@@ -173,7 +166,6 @@ async def put_asset_with_raw_1(
         rest_of_path: str,
         group_id: str = Query(None, alias="group-id"),
         configuration: Configuration = Depends(get_configuration)):
-
     return await put_asset_with_raw(request=request, kind=kind, folder_id=folder_id, rest_of_path=rest_of_path,
                                     group_id=group_id, configuration=configuration)
 
@@ -185,7 +177,6 @@ async def put_asset_with_raw(
         rest_of_path: str,
         group_id: str = Query(None, alias="group-id"),
         configuration: Configuration = Depends(get_configuration)):
-
     response = Optional[NewAssetResponse]
     async with Context.start_ep(
             request=request,
@@ -222,7 +213,7 @@ async def put_asset_with_raw(
             "description": metadata.description if not meta_new.description else meta_new.description,
             "groupId": group_id,
             "tags": []
-            }
+        }
 
         async with ctx.start(action="Register new asset in assets_db") as ctx_1:
             asset = await assets_db.create_asset(body=body_asset, headers=ctx_1.headers())
@@ -262,14 +253,12 @@ async def get_asset_by_tree_id(
         request: Request,
         tree_id: str,
         configuration: Configuration = Depends(get_configuration)):
-
     response = Optional[AssetResponse]
     async with Context.start_ep(
             action='Get asset by tree id',
             request=request,
             response=lambda: response
     ) as ctx:
-
         tree_db, assets_db = configuration.treedb_client, configuration.assets_client
 
         async with ctx.start(action="Get treedb item") as ctx_1:
@@ -278,7 +267,7 @@ async def get_asset_by_tree_id(
         asset_id = tree_item['relatedId']
 
         async with ctx.start(action="Get asset") as ctx_1:
-            asset = await assets_db.get(asset_id=asset_id,  headers=ctx_1.headers())
+            asset = await assets_db.get(asset_id=asset_id, headers=ctx_1.headers())
 
         response = to_asset_resp(asset)
         return response
@@ -292,7 +281,6 @@ async def update_asset(
         asset_id: str,
         body: UpdateAssetBody,
         configuration: Configuration = Depends(get_configuration)):
-
     response = Optional[AssetResponse]
     async with Context.start_ep(
             action='update asset',
@@ -318,13 +306,13 @@ async def update_asset(
                                                      headers=ctx.headers())
                            for item in items_tree['items']]
 
-        body = {**asset, ** {k: v for k, v in body.dict().items() if v is not None}}
+        body = {**asset, **{k: v for k, v in body.dict().items() if v is not None}}
         await asyncio.gather(
             *coroutines_tree,
             assets_client.update_asset(asset_id=asset_id, body=body, headers=ctx.headers()),
             store.sync_asset_metadata(request=request, raw_id=asset['relatedId'], metadata=to_asset_meta(body),
                                       headers=ctx.headers())
-            )
+        )
         return to_asset_resp(body)
 
 
@@ -337,7 +325,6 @@ async def post_image(
         filename: str,
         file: UploadFile = File(...),
         configuration: Configuration = Depends(get_configuration)):
-
     response = Optional[AssetResponse]
     async with Context.start_ep(
             action='post image of asset',
@@ -361,7 +348,6 @@ async def remove_image(
         asset_id: str,
         filename: str,
         configuration: Configuration = Depends(get_configuration)):
-
     response = Optional[AssetResponse]
     async with Context.start_ep(
             action='remove image of asset',
@@ -384,8 +370,7 @@ async def access_info(
         request: Request,
         asset_id: str,
         configuration: Configuration = Depends(get_configuration)
-        ):
-
+):
     response = Optional[AccessInfo]
     async with Context.start_ep(
             action='retrieve access info',
@@ -393,12 +378,11 @@ async def access_info(
             response=lambda: response,
             with_attributes={"asset_id": asset_id}
     ) as ctx:
-
         assets_client, treedb = configuration.assets_client, configuration.treedb_client
         asset, permissions = await asyncio.gather(
             assets_client.get(asset_id=asset_id, headers=ctx.headers()),
             assets_client.get_permissions(asset_id=asset_id, headers=ctx.headers())
-            )
+        )
         owner_info = None
         if is_authorized_write(request, asset['groupId']):
             resp = await treedb.get_items_from_related_id(related_id=asset_id, headers=ctx.headers())
@@ -406,7 +390,7 @@ async def access_info(
             policies = await asyncio.gather(*[
                 assets_client.get_access_policy(asset_id=asset_id, group_id=group_id, headers=ctx.headers())
                 for group_id in groups + ["*"]
-                ])
+            ])
             exposing_groups = [ExposingGroup(name=to_group_scope(group), groupId=group, access=format_policy(policy))
                                for group, policy in zip(groups, policies[0:-1])]
             default_access = format_policy(policies[-1])
@@ -429,8 +413,7 @@ async def put_access_policy(
         group_id: str,
         body: AccessPolicyBody,
         configuration: Configuration = Depends(get_configuration)
-        ):
-
+):
     response = Optional[ExposingGroup]
     async with Context.start_ep(
             action='create access policy',
@@ -438,7 +421,6 @@ async def put_access_policy(
             response=lambda: response,
             with_attributes={"asset_id": asset_id}
     ) as ctx:
-
         assets_client = configuration.assets_client
         await assets_client.put_access_policy(asset_id=asset_id, group_id=group_id, body=body.dict(),
                                               headers=ctx.headers())
@@ -454,8 +436,7 @@ async def statistics(
         asset_id: str,
         bins_count: int = Query(25, alias="bins-count"),
         configuration: Configuration = Depends(get_configuration)
-        ):
-
+):
     headers = generate_headers_downstream(request.headers)
     assets_client = configuration.assets_client
     resp = await assets_client.query_latest_access(asset_id=asset_id, max_count=1000, headers=headers)
@@ -464,21 +445,21 @@ async def statistics(
             "accessHistory": {
                 "bins": [],
                 "binSize": 0,
-                }
             }
+        }
     timestamps = [datetime.fromtimestamp(r['timestamp']).timestamp() for r in resp['records']]
     start, end = min(timestamps), datetime.now().timestamp()
     r = []
-    bin_size = (end-start)/bins_count
-    indexes = [(t-start)/bin_size for t in timestamps]
+    bin_size = (end - start) / bins_count
+    indexes = [(t - start) / bin_size for t in timestamps]
     for k, g in itertools.groupby(indexes, key=lambda index: int(index)):
         date = datetime.fromtimestamp(start + k * bin_size)
         count = len(list(g))
-        r.append({"date": date, "count":  count})
+        r.append({"date": date, "count": count})
 
     return {
         "accessHistory": {
-                "bins": r,
-                "binSize": bin_size,
-            }
+            "bins": r,
+            "binSize": bin_size,
         }
+    }

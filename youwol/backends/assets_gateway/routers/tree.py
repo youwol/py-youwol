@@ -30,8 +30,7 @@ async def ensure_folder(
         name: str,
         treedb: TreeDbClient,
         context: Context
-        ):
-
+):
     async with context.start(
             action='ensure folder',
             with_attributes={"folder_id": folder_id, 'name': name}
@@ -48,7 +47,7 @@ async def ensure_folder(
                 parent_folder_id=parent_folder_id,
                 body={"name": name, "folderId": folder_id},
                 headers=ctx.headers()
-                )
+            )
 
 
 async def ensure_items(
@@ -57,7 +56,7 @@ async def ensure_items(
         name: str,
         treedb: TreeDbClient,
         headers: Dict[str, str]
-        ):
+):
     try:
         await treedb.get_folder(folder_id=folder_id, headers=headers)
     except YouWolException as e:
@@ -67,7 +66,7 @@ async def ensure_items(
             parent_folder_id=parent_folder_id,
             body={"name": name, "folderId": folder_id},
             headers=headers
-            )
+        )
 
 
 @router.get("/default-drive",
@@ -75,7 +74,7 @@ async def ensure_items(
 async def get_default_user_drive(
         request: Request,
         configuration: Configuration = Depends(get_configuration)
-        ):
+):
     user = user_info(request)
     return await get_default_drive(request=request, group_id=private_group_id(user), configuration=configuration)
 
@@ -85,8 +84,7 @@ async def get_drives(
         request: Request,
         group_id: str,
         configuration: Configuration = Depends(get_configuration)
-        ):
-
+):
     headers = generate_headers_downstream(request.headers)
     treedb = configuration.treedb_client
     drives_resp = await treedb.get_drives(group_id=group_id, headers=headers)
@@ -100,7 +98,7 @@ async def get_default_drive(
         request: Request,
         group_id: str,
         configuration: Configuration = Depends(get_configuration)
-        ):
+):
     async with Context.from_request(request=request).start(
             action="get default drive",
             with_labels=[Label.END_POINT],
@@ -147,7 +145,7 @@ async def get_default_drive(
             systemFolderName=system['name'],
             systemPackagesFolderId=system_packages['folderId'],
             systemPackagesFolderName=system_packages['name']
-            )
+        )
         await ctx.info("Response", data=resp)
         return resp
 
@@ -158,7 +156,7 @@ async def create_drive(
         group_id: str,
         drive: PutDriveBody,
         configuration: Configuration = Depends(get_configuration)
-        ):
+):
     resp: Optional[DriveResponse] = None
     async with Context.start_ep(
             request=request,
@@ -171,7 +169,7 @@ async def create_drive(
         body = {
             'driveId': drive.driveId,
             'name': drive.name
-            }
+        }
         resp = DriveResponse(
             **await treedb.create_drive(group_id=group_id, body=body, headers=headers)
         )
@@ -184,8 +182,7 @@ async def update_drive(
         drive_id: str,
         drive: DriveBody,
         configuration: Configuration = Depends(get_configuration)
-        ):
-
+):
     resp: Optional[DriveResponse] = None
     async with Context.start_ep(
             request=request,
@@ -207,7 +204,7 @@ async def get_drive(
         request: Request,
         drive_id: str,
         configuration: Configuration = Depends(get_configuration)
-        ):
+):
     resp: Optional[DriveResponse] = None
     async with Context.start_ep(
             request=request,
@@ -227,7 +224,6 @@ async def delete_drive(
         request: Request,
         drive_id: str,
         configuration: Configuration = Depends(get_configuration)):
-
     async with Context.start_ep(
             request=request,
             action="delete drive",
@@ -244,7 +240,7 @@ async def get_children(
         request: Request,
         folder_id: str,
         configuration: Configuration = Depends(get_configuration)
-        ):
+):
     response = Optional[ChildrenResponse]
     async with Context.start_ep(
             request=request,
@@ -268,7 +264,6 @@ async def get_item(
         request: Request,
         item_id: str,
         configuration: Configuration = Depends(get_configuration)):
-
     response = Optional[ItemResponse]
     async with Context.start_ep(
             request=request,
@@ -290,8 +285,7 @@ async def get_items_by_related_id(
         request: Request,
         related_id: str,
         configuration: Configuration = Depends(get_configuration)
-        ):
-
+):
     response = Optional[ItemResponse]
     async with Context.start_ep(
             request=request,
@@ -311,7 +305,6 @@ async def get_folder(
         request: Request,
         folder_id: str,
         configuration: Configuration = Depends(get_configuration)):
-
     response = Optional[FolderResponse]
     async with Context.start_ep(
             request=request,
@@ -319,7 +312,6 @@ async def get_folder(
             response=lambda: response,
             with_attributes={'folder_id': folder_id}
     ) as ctx:
-
         treedb = configuration.treedb_client
         response = to_folder_resp(
             await treedb.get_folder(folder_id=folder_id, headers=ctx.headers())
@@ -334,7 +326,6 @@ async def create_folder(
         parent_folder_id: str,
         folder: PutFolderBody,
         configuration: Configuration = Depends(get_configuration)):
-
     response = Optional[FolderResponse]
     async with Context.start_ep(
             request=request,
@@ -348,7 +339,7 @@ async def create_folder(
             'folderId': folder.folderId,
             'name': folder.name,
             'parentFolderId': parent_folder_id
-            }
+        }
         response = FolderResponse(
             **await treedb.create_folder(parent_folder_id=parent_folder_id, body=body, headers=ctx.headers())
         )
@@ -360,7 +351,6 @@ async def remove_folder(
         request: Request,
         folder_id: str,
         configuration: Configuration = Depends(get_configuration)):
-
     async with Context.start_ep(
             request=request,
             action="remove folder",
@@ -376,7 +366,6 @@ async def remove_item(
         request: Request,
         item_id: str,
         configuration: Configuration = Depends(get_configuration)):
-
     async with Context.start_ep(
             request=request,
             action="remove item",
@@ -394,7 +383,6 @@ async def update_folder(
         folder_id: str,
         folder: FolderBody,
         configuration: Configuration = Depends(get_configuration)):
-
     response = Optional[FolderResponse]
     async with Context.start_ep(
             request=request,
@@ -414,7 +402,6 @@ async def move(
         tree_id: str,
         body: MoveBody,
         configuration: Configuration = Depends(get_configuration)):
-
     async with Context.start_ep(
             request=request,
             action="move folder or item",
@@ -423,14 +410,14 @@ async def move(
     ) as ctx:
         headers = ctx.headers()
         tree_db, assets_db, assets_stores = configuration.treedb_client, configuration.assets_client, \
-            configuration.assets_stores()
+                                            configuration.assets_stores()
 
         resp = await tree_db.get_entity(entity_id=tree_id, include_drives=False, headers=headers)
         group_id = resp['entity']['groupId']
         body_move_tree = {
             'targetId': tree_id,
             "destinationFolderId": body.destinationFolderId
-            }
+        }
         moved = await tree_db.move(body=body_move_tree, headers=headers)
 
         async def regroup(tree_item):
@@ -453,7 +440,6 @@ async def borrow(
         tree_id: str,
         body: BorrowBody,
         configuration: Configuration = Depends(get_configuration)):
-
     response = Optional[ItemResponse]
 
     async with Context.start_ep(
@@ -463,16 +449,15 @@ async def borrow(
             response=lambda: response,
             with_attributes={'tree_id': tree_id}
     ) as ctx:
-
         headers = ctx.headers()
         tree_db, assets_db, assets_stores = configuration.treedb_client, configuration.assets_client, \
-            configuration.assets_stores()
+                                            configuration.assets_stores()
 
         tree_item, asset, entity = await asyncio.gather(
             tree_db.get_item(item_id=tree_id, headers=headers),
             get_asset_by_tree_id(request=request, configuration=configuration, tree_id=tree_id),
             tree_db.get_entity(entity_id=body.destinationFolderId, include_items=False, headers=headers)
-            )
+        )
 
         permission = await assets_db.get_permissions(asset_id=asset.assetId, headers=headers)
         if not permission['share']:
@@ -495,7 +480,6 @@ async def permissions(
         request: Request,
         tree_id: str,
         configuration: Configuration = Depends(get_configuration)):
-
     response = Optional[PermissionsResponse]
 
     async with Context.start_ep(
@@ -546,7 +530,6 @@ async def get_deleted(
         request: Request,
         drive_id: str,
         configuration: Configuration = Depends(get_configuration)):
-
     response = Optional[DeletedResponse]
 
     async with Context.start_ep(
@@ -555,7 +538,6 @@ async def get_deleted(
             response=lambda: response,
             with_attributes={'tree_id': drive_id}
     ) as ctx:
-
         treedb = configuration.treedb_client
         response = DeletedResponse(
             **await treedb.get_deleted(drive_id=drive_id, headers=ctx.headers())
@@ -569,14 +551,12 @@ async def purge(
         request: Request,
         drive_id: str,
         configuration: Configuration = Depends(get_configuration)
-        ):
-
+):
     async with Context.start_ep(
             request=request,
             action="purge",
             with_attributes={'drive_id': drive_id}
     ) as ctx:
-
         headers = ctx.headers()
         assets_db, treedb_client = configuration.assets_client, configuration.treedb_client
         assets_stores = configuration.assets_stores()

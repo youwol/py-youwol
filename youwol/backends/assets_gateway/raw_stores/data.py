@@ -28,7 +28,7 @@ class DataStore(RawStore, ABC):
     path_name = 'data'
     owner = '/youwol-users'
 
-    async def create_asset(self, request: Request, metadata: AssetMeta, rest_of_path: str, headers)\
+    async def create_asset(self, request: Request, metadata: AssetMeta, rest_of_path: str, headers) \
             -> (RawId, AssetMeta):
 
         form = await request.form()
@@ -46,12 +46,12 @@ class DataStore(RawStore, ABC):
             storage.post_object(path=raw_id, content=content, content_type=file.content_type,
                                 owner=self.owner, headers=headers),
             docdb.create_document(doc=doc, owner=self.owner, headers=headers)
-            )
+        )
 
         dynamic_fields = {
             "content_type": file.content_type,
             "content_encoding": ""
-            }
+        }
         images = [AssetImg(name=file.filename, content=content)] if file.content_type in mime_types_images else None
         meta = AssetMeta(name=file.filename, images=images, dynamic_fields=dynamic_fields)
         return raw_id, meta
@@ -71,7 +71,7 @@ class DataStore(RawStore, ABC):
         await docdb.create_document(doc=doc, owner=self.owner, headers=headers)
         return doc
 
-    async def update_asset(self, request: Request, raw_id: str,  metadata: AssetMeta, rest_of_path: str, headers):
+    async def update_asset(self, request: Request, raw_id: str, metadata: AssetMeta, rest_of_path: str, headers):
 
         if rest_of_path not in ["metadata", "content"]:
             raise HTTPException(status_code=404, detail="End point not found")
@@ -82,7 +82,7 @@ class DataStore(RawStore, ABC):
         if rest_of_path == "content":
             return await self.update_content(request=request, raw_id=raw_id, headers=headers)
 
-    async def update_metadata(self, request: Request, raw_id: str,  metadata: AssetMeta, headers: Mapping[str, str]):
+    async def update_metadata(self, request: Request, raw_id: str, metadata: AssetMeta, headers: Mapping[str, str]):
 
         doc = await self.client.docdb.get_document(partition_keys={"file_id": raw_id}, clustering_keys={},
                                                    owner=self.owner, headers=headers)
@@ -108,7 +108,7 @@ class DataStore(RawStore, ABC):
         await storage.post_object(path=raw_id, content=content, content_type=file.content_type,
                                   owner=self.owner, headers=headers)
 
-    async def get_asset(self, request: Request, raw_id: str,  rest_of_path: Union[str, None], headers):
+    async def get_asset(self, request: Request, raw_id: str, rest_of_path: Union[str, None], headers):
 
         storage, docdb = self.client.storage, self.client.docdb
 
@@ -121,7 +121,7 @@ class DataStore(RawStore, ABC):
             "Content-Encoding": meta["content_encoding"],
             "Content-Type": meta["content_type"],
             "cache-control": "public, max-age=31536000"
-            })
+        })
 
     async def get_asset_metadata(self, request: Request, raw_id: str, rest_of_path: Union[str, None], headers):
 
@@ -138,22 +138,22 @@ class DataStore(RawStore, ABC):
             return {
                 "kind": "text",
                 "content": content
-                }
+            }
         if rest_of_path == "preview" and meta["content_type"] in mime_types_images:
             return {
                 "kind": "image",
                 "content": f"/api/assets-gateway/raw/data/{raw_id}"
-                }
+            }
         if rest_of_path == "preview":
             return {
                 "kind": "unknown",
                 "content": ""
-                }
+            }
 
         return {
             "contentEncoding": meta["content_encoding"],
             "contentType": meta["content_type"]
-            }
+        }
 
     async def delete_asset(self, request: Request, raw_id: str, headers):
 
@@ -162,4 +162,4 @@ class DataStore(RawStore, ABC):
         await asyncio.gather(
             storage.delete(path=raw_id, owner=self.owner, headers=headers),
             docdb.delete_document(doc={"file_id": raw_id}, owner=self.owner, headers=headers)
-            )
+        )

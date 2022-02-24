@@ -29,10 +29,10 @@ def from_0_to_1(project: Project, deprecated_data: DeprecatedData):
 {project.runnerRendering.layout}</div>""",
                 "moduleIds": deprecated_data.rootLayerTree["moduleIds"],
                 "environment": "return {}"
-                }
-            },
+            }
+        },
         factoryId=FactoryId(module="Component", pack='@youwol/flux-core')
-        )
+    )
     project.workflow.modules.append(root_component)
 
     group_modules = [module for module in project.workflow.modules
@@ -41,10 +41,11 @@ def from_0_to_1(project: Project, deprecated_data: DeprecatedData):
     def get_layers_data_recursive(acc, layer):
         if not layer['children']:
             return acc
-        data = {**acc, **{"GroupModules_"+child["layerId"]: child["moduleIds"] for child in layer["children"]}}
+        data = {**acc, **{"GroupModules_" + child["layerId"]: child["moduleIds"] for child in layer["children"]}}
         for child_layer in layer["children"]:
             data = get_layers_data_recursive(data, child_layer)
         return data
+
     all_layers = get_layers_data_recursive({}, deprecated_data.rootLayerTree)
     for group in group_modules:
         group.configuration["data"]["moduleIds"] = all_layers[group.moduleId]
@@ -55,16 +56,15 @@ def from_0_to_1(project: Project, deprecated_data: DeprecatedData):
 
 compatibilities_factory = {
     "0": from_0_to_1
-    }
+}
 
 
 def convert_project_to_current_version(project: Project, deprecated_data: DeprecatedData):
-
-    if project.schemaVersion == Configuration.currentSchemaVersion:
+    if project.schemaVersion == Configuration.current_schema_version:
         return project
 
     def apply_conversion(from_project: Project):
-        if from_project.schemaVersion == Configuration.currentSchemaVersion:
+        if from_project.schemaVersion == Configuration.current_schema_version:
             return from_project
         next_project_version = compatibilities_factory[from_project.schemaVersion](project, deprecated_data)
         return apply_conversion(from_project=next_project_version)

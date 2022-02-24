@@ -1,6 +1,6 @@
+from dataclasses import dataclass
 from typing import Union, Dict, List, Any
 
-from dataclasses import dataclass
 from pydantic import BaseModel
 from starlette.requests import Request
 
@@ -24,10 +24,9 @@ class AssetMeta(BaseModel):
 
 @dataclass(frozen=True)
 class RawStore:
-
     client: Any
 
-    async def create_asset(self, request: Request, metadata: AssetMeta, rest_of_path: str, headers)\
+    async def create_asset(self, request: Request, metadata: AssetMeta, rest_of_path: str, headers) \
             -> (RawId, AssetMeta):
         raise NotImplementedError
 

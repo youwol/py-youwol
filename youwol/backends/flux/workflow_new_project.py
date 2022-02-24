@@ -1,6 +1,5 @@
 from .models import Workflow, Module, FactoryId
 
-
 root_id = "root-component"
 # noinspection SpellCheckingInspection
 html = f"""
@@ -26,7 +25,6 @@ css = f"""#Component_{root_id}{{
     padding: 15px
 }}"""
 
-
 workflow_new_project = Workflow(
     modules=[
         Module(
@@ -36,14 +34,14 @@ workflow_new_project = Workflow(
                 "data": {
                     "html": html,
                     "css": css
-                    }
-                },
+                }
+            },
             moduleId="Component_root-component",
             factoryId=FactoryId(
                 module="Component",
                 pack="@youwol/flux-core"
-                )
             )
-        ],
+        )
+    ],
     connections=[]
-    )
+)

@@ -1,18 +1,14 @@
 from typing import List, Tuple, Dict, Optional
 
 from fastapi import APIRouter, Depends
-
 from pydantic import BaseModel
-
 from starlette.requests import Request
 from starlette.responses import Response, JSONResponse
-from youwol_utils.context import Context
-
-from ..configurations import Configuration, get_configuration
-
-from ..utils import raw_id_to_asset_id
 
 from youwol_utils import (HTTPException)
+from youwol_utils.context import Context
+from ..configurations import Configuration, get_configuration
+from ..utils import raw_id_to_asset_id
 
 router = APIRouter()
 
@@ -44,7 +40,6 @@ async def ensure_permission(
         library_name: str,
         configuration: Configuration,
         context: Context):
-
     async with context.start(
             action='ensure permission',
             with_attributes={"library_name": library_name}
@@ -65,7 +60,7 @@ async def resolve_loading_tree(
         request: Request,
         body: LoadingGraphBody,
         configuration: Configuration = Depends(get_configuration)
-        ):
+):
     response = Optional[LoadingGraphResponseV1]
     async with Context.start_ep(
             action='resolve loading tree',
@@ -82,7 +77,6 @@ async def delete_version_generic(
         library_name: str,
         version: str,
         configuration: Configuration):
-
     response = Optional[LoadingGraphResponseV1]
     async with Context.start_ep(
             action='delete package version',
@@ -102,7 +96,6 @@ async def delete_version_with_namespace(
         library_name: str,
         version: str,
         configuration: Configuration = Depends(get_configuration)):
-
     return await delete_version_generic(request=request, library_name=f"{namespace}/{library_name}",
                                         version=version, configuration=configuration)
 
@@ -113,7 +106,6 @@ async def delete_version_no_namespace(
         library_name: str,
         version: str,
         configuration: Configuration = Depends(get_configuration)):
-
     return await delete_version_generic(request=request, library_name=library_name,
                                         version=version, configuration=configuration)
 
@@ -124,7 +116,6 @@ async def get_package_generic(
         version: str,
         metadata: bool,
         configuration: Configuration):
-
     response = Optional[LoadingGraphResponseV1]
     async with Context.start_ep(
             action=f'get package ({"metadata" if metadata else "raw content"})',
@@ -132,7 +123,6 @@ async def get_package_generic(
             response=lambda: response,
             with_attributes={"libraryName": library_name, version: 'version'}
     ) as ctx:
-
         await ensure_permission(permission='read', library_name=library_name, configuration=configuration, context=ctx)
 
         cdn_client = configuration.cdn_client
@@ -151,7 +141,6 @@ async def get_package_with_namespace(
         version: str,
         metadata: bool = False,
         configuration: Configuration = Depends(get_configuration)):
-
     return await get_package_generic(request=request, library_name=f"{namespace}/{library_name}",
                                      version=version, metadata=metadata, configuration=configuration)
 
@@ -163,6 +152,5 @@ async def get_package_no_namespace(
         version: str,
         metadata: bool = False,
         configuration: Configuration = Depends(get_configuration)):
-
     return await get_package_generic(request=request, library_name=library_name,
                                      version=version, metadata=metadata, configuration=configuration)

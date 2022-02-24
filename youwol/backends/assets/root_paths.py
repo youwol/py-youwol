@@ -10,17 +10,17 @@ from fastapi import Query as RequestQuery
 from starlette.requests import Request
 from starlette.responses import Response
 
-from .configurations import Configuration, get_configuration
-from .models import AssetResponse, NewAssetBody, PostAssetBody, QueryAssetBody
-from .utils import (
-    to_doc_db_id, access_policy_record_id, ensure_post_permission, format_asset,
-    ensure_get_permission, to_snake_case, ensure_delete_permission, format_record_history, format_image, get_thumbnail,
-    )
 from youwol_utils import (
     User, user_info, get_all_individual_groups, Group, private_group_id, to_group_id,
     generate_headers_downstream, AccessPolicyBody, AccessPolicyResp, is_child_group, ReadPolicyEnum, SharePolicyEnum,
     ancestors_group_id, QueryBody, Query, WhereClause, PermissionsResp, get_leaf_group_ids, FileData, RecordsResponse,
     GetRecordsBody, List, RecordsTable, RecordsKeyspace, RecordsBucket, RecordsDocDb, RecordsStorage
+)
+from .configurations import Configuration, get_configuration
+from .models import AssetResponse, NewAssetBody, PostAssetBody, QueryAssetBody
+from .utils import (
+    to_doc_db_id, access_policy_record_id, ensure_post_permission, format_asset,
+    ensure_get_permission, to_snake_case, ensure_delete_permission, format_record_history, format_image, get_thumbnail,
 )
 
 router = APIRouter()
@@ -41,7 +41,6 @@ async def healthz():
             response_model=User,
             summary="retrieve user info")
 async def get_user_info(request: Request):
-
     user = user_info(request)
     groups = get_all_individual_groups(user["memberof"])
     groups = [Group(id=private_group_id(user), path="private")] + \
@@ -57,7 +56,6 @@ async def create_asset(
         request: Request,
         body: NewAssetBody,
         configuration: Configuration = Depends(get_configuration)):
-
     user = user_info(request)
     policy = body.defaultAccessPolicy
     headers = generate_headers_downstream(request.headers)
@@ -87,7 +85,7 @@ async def create_asset(
         "share": body.defaultAccessPolicy.share.value,
         "parameters": "{}",
         "timestamp": int(now)
-        }
+    }
 
     await asyncio.gather(
         ensure_post_permission(request=request, doc=doc_asset, configuration=configuration),
@@ -104,8 +102,7 @@ async def post_asset(
         asset_id: str,
         body: PostAssetBody,
         configuration: Configuration = Depends(get_configuration)
-        ):
-
+):
     headers = generate_headers_downstream(request.headers)
     docdb_access = configuration.doc_db_access_policy
     asset = await ensure_get_permission(request=request, asset_id=asset_id, scope="w", configuration=configuration)
@@ -132,7 +129,7 @@ async def post_asset(
             "share": body.defaultAccessPolicy.share.value,
             "parameters": "{}",
             "timestamp": int(now)
-            }
+        }
         await docdb_access.create_document(doc=doc_access, owner=configuration.public_owner, headers=headers)
 
     return format_asset(doc, request)
@@ -146,8 +143,7 @@ async def put_access_policy(
         group_id: str,
         body: AccessPolicyBody,
         configuration: Configuration = Depends(get_configuration)
-        ):
-
+):
     asset = await ensure_get_permission(request=request, asset_id=asset_id, scope="w", configuration=configuration)
     headers = generate_headers_downstream(request.headers)
     docdb_access = configuration.doc_db_access_policy
@@ -161,7 +157,7 @@ async def put_access_policy(
         "share": body.share.value,
         "parameters": json.dumps(body.parameters),
         "timestamp": int(now)
-        }
+    }
     await docdb_access.create_document(doc=doc_access, owner=configuration.public_owner, headers=headers)
 
     return {}
@@ -173,11 +169,10 @@ async def delete_access_policy(
         asset_id: str,
         group_id: str,
         configuration: Configuration = Depends(get_configuration)
-        ):
-
+):
     headers = generate_headers_downstream(request.headers)
     docdb_access = configuration.doc_db_access_policy
-    await docdb_access.delete_document(doc={"asset_id": asset_id, "consumer_group_id":  group_id},
+    await docdb_access.delete_document(doc={"asset_id": asset_id, "consumer_group_id": group_id},
                                        owner=configuration.public_owner,
                                        headers=headers)
     return {}
@@ -191,8 +186,7 @@ async def get_access_policy(
         asset_id: str,
         group_id: str,
         configuration: Configuration = Depends(get_configuration)
-        ):
-
+):
     headers = generate_headers_downstream(request.headers)
     docdb_access = configuration.doc_db_access_policy
     asset = await ensure_get_permission(request=request, asset_id=asset_id, scope='r', configuration=configuration)
@@ -205,7 +199,7 @@ async def get_access_policy(
         max_results=1,
         query=Query(where_clause=[WhereClause(column="asset_id", relation="eq", term=asset_id),
                                   WhereClause(column="consumer_group_id", relation="eq", term=group_id)])
-        ) for group_id in ancestors_groups]
+    ) for group_id in ancestors_groups]
 
     query_specific = [docdb_access.query(query_body=body, owner=configuration.public_owner, headers=headers)
                       for body in bodies_specific]
@@ -214,7 +208,7 @@ async def get_access_policy(
         max_results=1,
         query=Query(where_clause=[WhereClause(column="asset_id", relation="eq", term=asset_id),
                                   WhereClause(column="consumer_group_id", relation="eq", term="*")])
-        )
+    )
 
     query_default = docdb_access.query(query_body=body_default, owner=configuration.public_owner, headers=headers)
 
@@ -231,7 +225,6 @@ async def get_access_policy(
 
 
 def get_permission(write, policies):
-
     if not policies:
         return PermissionsResp(write=False, read=False, share=False, expiration=None)
 
@@ -242,7 +235,6 @@ def get_permission(write, policies):
 
     deadlines = [policy for policy in policies if policy['read'] == ReadPolicyEnum.expiration_date]
     if deadlines:
-
         expirations = [policy['timestamp'] + json.loads(policy['parameters'])["period"] for policy in deadlines]
         remaining = max(expirations) - int(time.time())
         return PermissionsResp(write=write, read=remaining > 0, share=share, expiration=remaining)
@@ -257,7 +249,6 @@ async def get_permissions(
         request: Request,
         asset_id: str,
         configuration: Configuration = Depends(get_configuration)):
-
     user = user_info(request)
     group_ids = get_leaf_group_ids(user)
     group_ids = list(flatten([[group_id] + ancestors_group_id(group_id) for group_id in group_ids]))
@@ -276,7 +267,7 @@ async def get_permissions(
         max_results=1,
         query=Query(where_clause=[WhereClause(column="asset_id", relation="eq", term=asset_id),
                                   WhereClause(column="consumer_group_id", relation="eq", term="*")])
-        )
+    )
 
     default = await docdb_access.query(query_body=body_default, owner=configuration.public_owner, headers=headers)
 
@@ -289,7 +280,7 @@ async def get_permissions(
         max_results=1,
         query=Query(where_clause=[WhereClause(column="asset_id", relation="eq", term=asset_id),
                                   WhereClause(column="consumer_group_id", relation="eq", term=group_id)])
-        ) for group_id in group_ids]
+    ) for group_id in group_ids]
 
     specifics = await asyncio.gather(*[docdb_access.query(query_body=body, owner=configuration.public_owner,
                                                           headers=headers) for body in bodies_specific])
@@ -304,8 +295,7 @@ async def delete_asset(
         request: Request,
         asset_id: str,
         configuration: Configuration = Depends(get_configuration)
-        ):
-
+):
     asset = await ensure_get_permission(request=request, asset_id=asset_id, scope="w", configuration=configuration)
     headers = generate_headers_downstream(request.headers)
     docdb_access = configuration.doc_db_access_policy
@@ -313,7 +303,7 @@ async def delete_asset(
     query = QueryBody(
         max_results=1000,
         query=Query(where_clause=[WhereClause(column="asset_id", relation="eq", term=asset_id)])
-        )
+    )
 
     _, docs = await asyncio.gather(
         ensure_delete_permission(request=request, asset=asset, configuration=configuration),
@@ -325,7 +315,7 @@ async def delete_asset(
 
 
 @router.post("/query", summary="query assets")
-async def query_asset(_request: Request,  _body: QueryAssetBody):
+async def query_asset(_request: Request, _body: QueryAssetBody):
     """
         start_time = time.time()
 
@@ -346,7 +336,6 @@ async def get_asset(
         request: Request,
         asset_id: str,
         configuration: Configuration = Depends(get_configuration)):
-
     asset = await ensure_get_permission(request=request, asset_id=asset_id, scope='r', configuration=configuration)
     return format_asset(asset, request)
 
@@ -356,7 +345,7 @@ async def record_access(
         request: Request,
         related_id: str,
         configuration: Configuration = Depends(get_configuration)
-        ):
+):
     """
     WARNING: use 'allow_filtering' => do not use in prod
     Probably need as secondary index on 'related_id'
@@ -369,7 +358,7 @@ async def record_access(
         max_results=1,
         allow_filtering=True,
         query=Query(where_clause=[WhereClause(column="related_id", relation="eq", term=related_id)])
-        )
+    )
     asset = await doc_db_assets.query(query_body=query, owner=configuration.public_owner, headers=headers)
 
     if len(asset["documents"]) == 0:
@@ -403,7 +392,7 @@ async def query_access(
         max_results=max_count,
         allow_filtering=True,
         query=Query(where_clause=[WhereClause(column="asset_id", relation="eq", term=asset_id)])
-        )
+    )
 
     results = await doc_db_history.query(query_body=query, owner=configuration.public_owner, headers=headers)
 
@@ -416,7 +405,7 @@ async def clear_asset_history(
         asset_id,
         count: int = 1000,
         configuration: Configuration = Depends(get_configuration)
-        ):
+):
     """
     WARNING: use 'allow_filtering' => do not use in prod
     Probably need as secondary index on 'related_id'
@@ -430,13 +419,13 @@ async def clear_asset_history(
         allow_filtering=True,
         query=Query(where_clause=[WhereClause(column="asset_id", relation="eq", term=asset_id),
                                   WhereClause(column="username", relation="eq", term=user["preferred_username"])])
-        )
+    )
 
     results = await doc_db_history.query(query_body=query, owner=configuration.public_owner, headers=headers)
     await asyncio.gather(*[
         doc_db_history.delete_document(doc=doc, owner=configuration.public_owner, headers=headers)
         for doc in results["documents"]
-        ])
+    ])
     return {}
 
 
@@ -447,8 +436,7 @@ async def post_image(
         filename: str,
         file: UploadFile = File(...),
         configuration: Configuration = Depends(get_configuration)
-        ):
-
+):
     headers = generate_headers_downstream(request.headers)
     storage, doc_db = configuration.storage, configuration.doc_db_asset
 
@@ -461,21 +449,22 @@ async def post_image(
     thumbnail = get_thumbnail(image, size=(200, 200))
 
     doc = {**asset, **{
-            "images": [*asset["images"], f"/api/assets-backend/assets/{asset_id}/images/{image.name}"],
-            "thumbnails": [*asset["thumbnails"], f"/api/assets-backend/assets/{asset_id}/thumbnails/{thumbnail.name}"]}
+        "images": [*asset["images"], f"/api/assets-backend/assets/{asset_id}/images/{image.name}"],
+        "thumbnails": [*asset["thumbnails"], f"/api/assets-backend/assets/{asset_id}/thumbnails/{thumbnail.name}"]}
            }
 
     await ensure_post_permission(request=request, doc=doc, configuration=configuration)
 
     post_image_body = FileData(
         objectData=image.content, objectName=Path(asset['kind']) / asset_id / "images" / image.name,
-        owner=configuration.public_owner, objectSize=len(image.content), content_type="image/"+image.extension,
+        owner=configuration.public_owner, objectSize=len(image.content), content_type="image/" + image.extension,
         content_encoding=""
-        )
+    )
 
     post_thumbnail_body = FileData(
         objectData=thumbnail.content, objectName=Path(asset['kind']) / asset_id / "thumbnails" / thumbnail.name,
-        owner=configuration.public_owner, objectSize=len(thumbnail.content), content_type="image/"+thumbnail.extension,
+        owner=configuration.public_owner, objectSize=len(thumbnail.content),
+        content_type="image/" + thumbnail.extension,
         content_encoding="")
 
     post_file_bodies = [post_image_body, post_thumbnail_body]
@@ -493,19 +482,18 @@ async def remove_image(
         asset_id: str,
         name: str,
         configuration: Configuration = Depends(get_configuration)
-        ):
-
+):
     headers = generate_headers_downstream(request.headers)
     storage, doc_db = configuration.storage, configuration.doc_db_asset
 
     asset = await ensure_get_permission(request=request, asset_id=asset_id, scope="w", configuration=configuration)
 
     doc = {**asset, **{
-            "images": [image for image in asset["images"]
-                       if image != str(Path("/api/assets-backend/")/'assets'/asset_id/"images"/name)],
-            "thumbnails": [thumbnail for thumbnail in asset["thumbnails"]
-                           if thumbnail != str(Path("/api/assets-backend/")/'assets'/asset_id/"thumbnails"/name)]
-            }
+        "images": [image for image in asset["images"]
+                   if image != str(Path("/api/assets-backend/") / 'assets' / asset_id / "images" / name)],
+        "thumbnails": [thumbnail for thumbnail in asset["thumbnails"]
+                       if thumbnail != str(Path("/api/assets-backend/") / 'assets' / asset_id / "thumbnails" / name)]
+    }
            }
     await ensure_post_permission(request=request, doc=doc, configuration=configuration)
     await asyncio.gather(storage.delete(Path(asset['kind']) / asset_id / "images" / name,
@@ -522,8 +510,7 @@ async def get_media(
         media_type: str,
         name: str,
         configuration: Configuration = Depends(get_configuration)
-        ):
-
+):
     headers = generate_headers_downstream(request.headers)
     asset = await ensure_get_permission(request=request, asset_id=asset_id, scope="r", configuration=configuration)
 
@@ -534,8 +521,7 @@ async def get_media(
         "Content-Encoding": "",
         "Content-Type": f"image/{path.suffix[1:]}",
         "cache-control": "public, max-age=31536000"
-        })
-    # return StreamingResponse(io.BytesIO(file), media_type=f"image/{path.suffix}")
+    })
 
 
 @router.post("/records",
@@ -545,16 +531,15 @@ async def get_records(
         request: Request,
         body: GetRecordsBody,
         configuration: Configuration = Depends(get_configuration)):
-
     doc_db = configuration.doc_db_asset
     storage = configuration.storage
     records = await asyncio.gather(*[
         ensure_get_permission(request=request, asset_id=asset_id, scope="r", configuration=configuration)
         for asset_id in body.ids
-        ])
+    ])
 
     def to_path(media_type: str, urls: List[str], asset) -> List[Path]:
-        return [Path(asset['kind'])/asset['asset_id']/media_type/url.split('/')[-1] for url in urls]
+        return [Path(asset['kind']) / asset['asset_id'] / media_type / url.split('/')[-1] for url in urls]
 
     paths_images = [to_path("images", asset["images"], asset) for asset in records]
     paths_images = list(flatten(paths_images))
@@ -565,22 +550,22 @@ async def get_records(
         id=doc_db.table_name,
         primaryKey=doc_db.table_body.partition_key[0],
         values=body.ids
-        )
+    )
     keyspace = RecordsKeyspace(
         id=doc_db.keyspace_name,
         groupId=to_group_id(configuration.public_owner),
         tables=[table]
-        )
+    )
 
     paths = [str(p) for p in paths_images + paths_thumbnails]
     bucket = RecordsBucket(
         id=storage.bucket_name,
         groupId=to_group_id(configuration.public_owner),
         paths=paths
-        )
+    )
     response = RecordsResponse(
         docdb=RecordsDocDb(keyspaces=[keyspace]),
         storage=RecordsStorage(buckets=[bucket])
-        )
+    )
 
     return response

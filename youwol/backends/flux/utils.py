@@ -9,12 +9,12 @@ from uuid import uuid4
 
 from fastapi import UploadFile, HTTPException
 
+from youwol_utils import JSON, DocDb, Storage, base64, log_info
 from .backward_compatibility import convert_project_to_current_version
 from .configurations import Configuration
-from youwol_utils import JSON, DocDb, Storage, base64, log_info
 from .models import (
     Workflow, BuilderRendering, RunnerRendering, Project, Component, Requirements, DeprecatedData
-    )
+)
 
 flatten = itertools.chain.from_iterable
 Filename = str
@@ -36,7 +36,7 @@ async def init_resources(config: Configuration):
         config.doc_db_component.ensure_table(headers=headers),
         config.doc_db.ensure_table(headers=headers),
         config.storage.ensure_bucket(headers=headers)
-        )
+    )
     log_info("resources initialization done")
 
 
@@ -45,7 +45,6 @@ def read_json(folder: Path, name: str) -> JSON:
 
 
 def create_project_from_json(folder: Path) -> (ProjectId, Project):
-
     description = read_json(folder, "description.json")
     workflow = read_json(folder, "workflow.json")
     builder_rendering = read_json(folder, "builderRendering.json")
@@ -64,7 +63,6 @@ def create_project_from_json(folder: Path) -> (ProjectId, Project):
 
 def update_project(project_id: str, owner: Union[str, None], project: Project, storage: Storage,
                    docdb: DocDb, headers: Mapping[str, str]) -> List[Coroutine]:
-
     base_path = f"projects/{project_id}"
     description = {"description": project.description, "name": project.name, "schemaVersion": project.schemaVersion}
     post_files_request = [
@@ -78,7 +76,7 @@ def update_project(project_id: str, owner: Union[str, None], project: Project, s
                           headers=headers) if project.requirements else None,
         storage.post_json(path="{}/description.json".format(base_path), json=description, owner=owner,
                           headers=headers)
-        ]
+    ]
     post_files_request = [req for req in post_files_request if req]
     document = create_project_document(project_id=project_id, name=project.name, description=description["description"],
                                        packages=project.requirements.fluxPacks, bucket=storage.bucket_name,
@@ -91,7 +89,6 @@ def update_project(project_id: str, owner: Union[str, None], project: Project, s
 def update_metadata(project_id: str, name: str, description: str, schema_version: str, owner: Union[str, None],
                     requirements: Requirements, storage: Storage, docdb: DocDb, headers: Mapping[str, str]) \
         -> List[Coroutine]:
-
     base_path = f"projects/{project_id}"
     description = {"description": description, "schemaVersion": schema_version, "name": name}
     post_files_request = [
@@ -99,7 +96,7 @@ def update_metadata(project_id: str, name: str, description: str, schema_version
                           headers=headers) if requirements else None,
         storage.post_json(path="{}/description.json".format(base_path), json=description, owner=owner,
                           headers=headers)
-        ]
+    ]
     post_files_request = [req for req in post_files_request if req]
     document = create_project_document(project_id=project_id, name=name, description=description["description"],
                                        packages=requirements.fluxPacks, bucket=storage.bucket_name, path=base_path)
@@ -113,9 +110,8 @@ async def retrieve_project(
         owner: Union[None, str],
         storage: Storage,
         headers: Mapping[str, str]
-        ) \
+) \
         -> (Project, Group, dict):
-
     workflow, builder_rendering, runner_rendering, requirements, description = await asyncio.gather(
         storage.get_json(path="projects/{}/workflow.json".format(project_id),
                          owner=owner, headers=headers),
@@ -127,7 +123,7 @@ async def retrieve_project(
                          owner=owner, headers=headers),
         storage.get_json(path="projects/{}/description.json".format(project_id),
                          owner=owner, headers=headers)
-        )
+    )
 
     deprecated_data = {}
     if 'rootLayerTree' in workflow:
@@ -142,16 +138,15 @@ async def retrieve_project(
                       runnerRendering=RunnerRendering(**runner_rendering)
                       )
 
-    if project.schemaVersion != Configuration.currentSchemaVersion:
+    if project.schemaVersion != Configuration.current_schema_version:
         project = convert_project_to_current_version(project, deprecated_data)
 
     return project
 
 
 async def update_component(component_id: str, owner: Union[str, None], component: Component, storage: Storage,
-                           doc_db_component: DocDb, headers: Mapping[str, str])\
+                           doc_db_component: DocDb, headers: Mapping[str, str]) \
         -> any:
-
     base_path = "components/{}".format(component_id)
     description = {"description": component.description, "name": component.name, "scope": component.scope}
     futures = [
@@ -171,7 +166,7 @@ async def update_component(component_id: str, owner: Union[str, None], component
                           json=description,
                           owner=owner,
                           headers=headers)
-        ]
+    ]
     if component.runnerRendering:
         futures.append(
             storage.post_json(path="{}/runnerRendering.json".format(base_path),
@@ -194,7 +189,6 @@ async def update_component(component_id: str, owner: Union[str, None], component
 
 async def retrieve_component(component_id: str, owner: Union[None, str], storage: Storage,
                              doc_db_component: DocDb, headers: Mapping[str, str]) -> Component:
-
     doc_db_response = await doc_db_component.query(query_body=f"component_id={component_id}#1", owner=owner,
                                                    headers=headers)
 
@@ -207,7 +201,7 @@ async def retrieve_component(component_id: str, owner: Union[None, str], storage
         storage.get_json(path=f"{base_path}/builderRendering.json", owner=owner, headers=headers),
         storage.get_json(path=f"{base_path}/requirements.json", owner=owner, headers=headers),
         storage.get_json(path=f"{base_path}/description.json", owner=owner, headers=headers)
-        ]
+    ]
     has_view = doc_db_response["documents"][0]["has_view"]
     if has_view:
         futures.append(storage.get_json(path=f"{base_path}/runnerRendering.json", owner=owner, headers=headers))
@@ -224,7 +218,6 @@ async def retrieve_component(component_id: str, owner: Union[None, str], storage
 
 
 def create_tmp_folder(zip_filename):
-
     dir_path = Path("./tmp_zips") / str(uuid4())
     zip_path = (dir_path / zip_filename).with_suffix('.zip')
     zip_dir_name = zip_filename.split('.')[0]
@@ -233,7 +226,6 @@ def create_tmp_folder(zip_filename):
 
 
 def extract_zip_file(file: UploadFile, zip_path: Union[Path, str], dir_path: Union[Path, str]):
-
     dir_path = str(dir_path)
     with open(zip_path, 'ab') as f:
         for chunk in iter(lambda: file.file.read(10000), b''):
@@ -254,7 +246,6 @@ def to_directory_name(name):
 
 
 def create_project_document(project_id, name, description, packages, bucket, path):
-
     return {
         "project_id": project_id,
         "bucket": bucket,
@@ -262,11 +253,10 @@ def create_project_document(project_id, name, description, packages, bucket, pat
         "name": name,
         "packages": packages,
         "path": path,
-        }
+    }
 
 
 def create_component_document(component_id, name, description, packages, bucket, path, has_view):
-
     return {
         "component_id": component_id,
         "bucket": bucket,
@@ -275,18 +265,16 @@ def create_component_document(component_id, name, description, packages, bucket,
         "packages": packages,
         "path": path,
         "has_view": has_view
-        }
+    }
 
 
 async def get_json_files(base_path: str, files: List[str], storage, headers):
-
-    futures = [storage.get_json(path=base_path + "/" + f, headers=headers)for f in files]
+    futures = [storage.get_json(path=base_path + "/" + f, headers=headers) for f in files]
     return await asyncio.gather(*futures)
 
 
 async def post_json_files(base_path: str, files: List[Tuple[str, any]], storage, headers):
-
-    futures = [storage.post_json(path=base_path + "/" + name, json=data, headers=headers)for name, data in files]
+    futures = [storage.post_json(path=base_path + "/" + name, json=data, headers=headers) for name, data in files]
     return await asyncio.gather(*futures)
 
 
