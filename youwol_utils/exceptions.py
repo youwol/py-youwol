@@ -1,6 +1,6 @@
 from typing import Any, List, Dict
 
-from aiohttp import ClientResponse
+from aiohttp import ClientResponse, ContentTypeError
 from fastapi import HTTPException, Request
 from starlette.responses import JSONResponse
 
@@ -211,10 +211,10 @@ async def raise_exception_from_response(raw_resp: ClientResponse, **kwargs):
             exception_type = next((e for e in YouwolExceptions if e.exceptionType == resp["exceptionType"]), None)
             if exception_type:
                 raise exception_type(**resp['detail'])
-    except ValueError:
+    except (ValueError, ContentTypeError):
         pass
 
-    detail = resp.get("detail", None) or resp.get("message", None) or raw_resp.reason
+    detail = resp and (resp.get("detail", None) or resp.get("message", None) or raw_resp.reason)
     detail = detail if detail else await raw_resp.text()
 
     raise YouWolException(status_code=raw_resp.status, detail=detail, **{**kwargs, **parameters})
