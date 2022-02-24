@@ -89,7 +89,7 @@ class StoriesClient:
         async with aiohttp.ClientSession(headers=self.headers) as session:
             async with await session.get(url=url, **kwargs) as resp:
                 if resp.status == 200:
-                    resp = await resp.text(encoding='utf8')
+                    resp = await resp.json()
                     return resp
 
                 await raise_exception_from_response(resp, **kwargs)
