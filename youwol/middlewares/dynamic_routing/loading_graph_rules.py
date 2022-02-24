@@ -12,7 +12,7 @@ from youwol.backends.cdn.configurations import get_configuration
 from youwol.backends.cdn.models import LoadingGraphBody
 from youwol.environment.youwol_environment import yw_config
 from youwol.middlewares.models_dispatch import AbstractDispatch
-from youwol_utils import PackagesNotFound
+from youwol_utils import PackagesNotFound, IndirectPackagesNotFound
 from youwol_utils.context import Context
 
 
@@ -40,7 +40,7 @@ class GetLoadingGraphDispatch(AbstractDispatch):
             try:
                 resp = await cdn.resolve_loading_tree(request, body, cdn_conf)
                 return JSONResponse(resp.dict())
-            except PackagesNotFound as e:
+            except (PackagesNotFound, IndirectPackagesNotFound) as e:
                 await ctx.warning(
                     text="Loading tree can not be resolved locally, proceed to remote platform",
                     data={"notFound": e.packages}
