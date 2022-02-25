@@ -61,7 +61,10 @@ class RootMiddleware(BaseHTTPMiddleware):
                 })
             response = await call_next(request)
             await ctx.info(f"Status code {response.status_code}")
-            if response.status_code != 200:
+            # Even for a very broad definition of failure, there are many « not failure »
+            # status code (i.e. 204,308, etc.)
+            # Only 4xx (client error) and 5xx (server error) are considered failure
+            if response.status_code >= 400:
                 await ctx.failed(f"Request resolved to error {response.status_code}")
 
             return response
