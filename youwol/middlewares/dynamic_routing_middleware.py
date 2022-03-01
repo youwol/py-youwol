@@ -6,6 +6,7 @@ from starlette.responses import Response
 from starlette.types import ASGIApp
 
 from youwol.middlewares.models_dispatch import AbstractDispatch
+from youwol_utils import YouWolException, youwol_exception_handler
 from youwol_utils.context import Context, Label
 
 
@@ -32,9 +33,13 @@ class DynamicRoutingMiddleware(BaseHTTPMiddleware):
                 return await call_next(request)
 
             for dispatch in self.dynamic_dispatch_rules:
-                match = await dispatch.apply(request, call_next, ctx)
-                if match:
-                    return match
+                try:
+                    match = await dispatch.apply(request, call_next, ctx)
+                    if match:
+                        return match
+                except YouWolException as e:
+                    return await youwol_exception_handler(request, e)
+
             await ctx.info(text="No dynamic dispatch match")
 
             await ctx.info(text="Request proceed to normal destination", data={"url": request.url.path})

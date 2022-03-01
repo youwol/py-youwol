@@ -11,6 +11,7 @@ from enum import Enum
 from typing import Union, NamedTuple, Callable, Awaitable, Optional, List, TypeVar, Dict, cast, Any, \
     AsyncContextManager
 
+from fastapi import HTTPException
 from pydantic import BaseModel
 from starlette.requests import Request
 from starlette.websockets import WebSocket
@@ -163,12 +164,16 @@ class Context(NamedTuple):
         except Exception as e:
             tb = traceback.format_exc()
 
+            detail = None
+            if isinstance(e, HTTPException):
+                detail = e.detail
+            data = {
+                'detail': detail,
+                'traceback': tb.split('\n'),
+            }
             await ctx.error(
                 text=f"Exception: {str(e)}",
-                data={
-                    'traceback': tb.split('\n'),
-                    'args': [str(arg) for arg in e.args]
-                },
+                data=data,
                 labels=[Label.EXCEPTION, Label.FAILED]
             )
             await execute_block(on_exception, e)
@@ -291,7 +296,6 @@ class ContextFactory(NamedTuple):
 
 
 class DeployedContextLogger(ContextLogger):
-
     errors = set()
 
     def __init__(self):

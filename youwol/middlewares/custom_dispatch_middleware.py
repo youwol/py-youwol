@@ -7,7 +7,7 @@ from starlette.responses import Response
 
 from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.middlewares.models_dispatch import AbstractDispatch
-from youwol_utils import to_json
+from youwol_utils import to_json, YouWolException, youwol_exception_handler
 from youwol_utils.context import Context, Label
 
 
@@ -25,9 +25,14 @@ class CustomDispatchesMiddleware(BaseHTTPMiddleware):
             env = await ctx.get('env', YouwolEnvironment)
             dispatches: List[AbstractDispatch] = env.customDispatches
             await ctx.info('list of custom dispatch', data={'dispatches': [to_json(d) for d in dispatches]})
-            responses = await asyncio.gather(*[
-                d.apply(incoming_request=request, call_next=call_next, context=ctx) for d in dispatches
-            ])
+
+            try:
+                responses = await asyncio.gather(*[
+                    d.apply(incoming_request=request, call_next=call_next, context=ctx) for d in dispatches
+                ])
+            except YouWolException as e:
+                return await youwol_exception_handler(request, e)
+
             index, resp = next(((i, r) for i, r in enumerate(responses) if r is not None), (-1, None))
             if resp:
                 await ctx.info('Found a matching custom dispatch', data=dispatches[index])

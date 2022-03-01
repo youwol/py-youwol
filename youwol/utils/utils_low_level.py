@@ -17,7 +17,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
-from youwol_utils import log_info
+from youwol_utils import log_info, assert_response
 from youwol_utils.context import Context
 
 JSON = Union[str, int, float, bool, None, Mapping[str, 'JSON'], List['JSON']]
@@ -98,6 +98,7 @@ async def redirect_request(
     redirect_url = f"{destination_base_path}/{rest_of_path}"
 
     async def forward_response(response):
+        await assert_response(response)
         headers_resp = {k: v for k, v in response.headers.items()}
         content = await response.read()
         return Response(status_code=response.status, content=content, headers=headers_resp)
