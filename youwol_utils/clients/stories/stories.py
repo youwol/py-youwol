@@ -137,3 +137,15 @@ class StoriesClient:
                     return resp
 
                 await raise_exception_from_response(resp, **kwargs)
+
+    async def add_plugin(self, story_id: str, body, **kwargs):
+
+        url = f"{self.url_base}/stories/{story_id}/plugins"
+
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with await session.post(url=url, json=body, **kwargs) as resp:
+                if resp.status == 200:
+                    resp = await resp.json()
+                    return resp
+
+                await raise_exception_from_response(resp, **kwargs)

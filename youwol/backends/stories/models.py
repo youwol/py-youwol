@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from pydantic import BaseModel
 
@@ -6,13 +6,6 @@ from youwol_utils.clients.docdb.models import (
     TableBody, Column, SecondaryIndex, IdentifierSI, TableOptions,
     OrderingClause,
 )
-
-
-class StoryResp(BaseModel):
-    storyId: str
-    rootDocumentId: str
-    title: str
-    authors: List[str]
 
 
 class PutStoryBody(BaseModel):
@@ -57,6 +50,51 @@ class PutDocumentBody(BaseModel):
 class PostDocumentBody(BaseModel):
     title: str
     content: Optional[ContentBody]
+
+
+class PostPluginBody(BaseModel):
+    packageName: str
+
+
+class Package(BaseModel):
+    name: str
+    version: str
+
+
+class Library(BaseModel):
+    name: str
+    version: str
+    id: str
+    namespace: str
+    type: str
+
+
+Url = str
+
+
+class LoadingGraphResponse(BaseModel):
+    graphType: str
+    lock: List[Library]
+    definition: List[List[Tuple[str, Url]]]
+
+
+class Requirements(BaseModel):
+    plugins: List[str]
+    loadingGraph: Optional[LoadingGraphResponse] = None
+
+
+class PostPluginResponse(BaseModel):
+    packageName: str
+    version: str
+    requirements: Requirements
+
+
+class StoryResp(BaseModel):
+    storyId: str
+    rootDocumentId: str
+    title: str
+    authors: List[str]
+    requirements: Requirements
 
 
 class DeleteResp(BaseModel):

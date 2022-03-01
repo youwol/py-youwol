@@ -5,6 +5,7 @@ from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
 from youwol_utils import (
     LocalDocDbClient, LocalStorageClient, DocDbClient, StorageClient, CacheClient, LocalCacheClient,
 )
+from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from youwol_utils.middlewares import Middleware
 from youwol_utils.middlewares.authentication_local import AuthLocalMiddleware
 from .models import STORIES_TABLE, DOCUMENTS_TABLE, DOCUMENTS_TABLE_BY_ID
@@ -25,6 +26,7 @@ class Configuration:
     storage: Storage
     doc_db_stories: DocDb
     doc_db_documents: DocDb
+    assets_gtw_client: AssetsGatewayClient
 
     namespace: str = "stories"
 
@@ -71,7 +73,8 @@ async def get_configuration(config_yw=None):
         keyspace_name=Configuration.namespace,
         table_body=DOCUMENTS_TABLE,
         secondary_indexes=[DOCUMENTS_TABLE_BY_ID]
-        )
+    )
+    assets_gtw_client = AssetsGatewayClient(url_base=f"http://localhost:{config_yw.httpPort}/api/assets-gateway")
 
     config_yw_stories = Configuration(
         yw_config=config_yw,
@@ -79,6 +82,7 @@ async def get_configuration(config_yw=None):
         base_path="/api/stories-backend",
         storage=storage,
         doc_db_stories=doc_db_stories,
-        doc_db_documents=doc_db_documents
-        )
+        doc_db_documents=doc_db_documents,
+        assets_gtw_client=assets_gtw_client
+    )
     return config_yw_stories

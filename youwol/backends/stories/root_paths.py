@@ -1,12 +1,10 @@
 import asyncio
 import itertools
 import math
-import tempfile
 import uuid
-from pathlib import Path
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi import Query as QueryParam
 
 from youwol_utils import (
@@ -14,7 +12,7 @@ from youwol_utils import (
     generate_headers_downstream, Query, WhereClause, DocDbClient,
 )
 from youwol_utils.clients.docdb.models import OrderingClause, QueryBody
-from youwol_utils.utils_paths import parse_json
+from youwol_utils.context import Context
 from .all_icons_emojipedia import (
     icons_smileys_people, icons_animals, icons_foods, icons_activities, icons_travel,
     icons_objects, icons_symbols, icons_flags,
@@ -22,11 +20,12 @@ from .all_icons_emojipedia import (
 from .configurations import Configuration, get_configuration
 from .models import (
     StoryResp, PutStoryBody, GetDocumentResp, GetChildrenResp, PutDocumentBody, DeleteResp,
-    PostContentBody, PostDocumentBody, PostStoryBody, GetContentResp,
+    PostContentBody, PostDocumentBody, PostStoryBody, GetContentResp, PostPluginBody, PostPluginResponse, Requirements,
+    LoadingGraphResponse,
 )
 from .utils import (
     query_document, position_start,
-    position_next, position_format, format_document_resp, extract_zip_file,
+    position_next, position_format, format_document_resp, get_requirements,
 )
 
 router = APIRouter()
@@ -104,54 +103,9 @@ async def put_story(
         storyId=story_id,
         title=body.title,
         authors=[user['sub']],
-        rootDocumentId=root_doc_id
+        rootDocumentId=root_doc_id,
+        requirements=Requirements(plugins=[])
     )
-
-
-@router.post(
-    "/stories",
-    response_model=StoryResp,
-    summary="publish a story from zip file")
-async def publish_story(
-        request: Request,
-        file: UploadFile = File(...),
-        configuration: Configuration = Depends(get_configuration)
-):
-    headers = generate_headers_downstream(request.headers)
-    owner = Configuration.default_owner
-    doc_db_stories = configuration.doc_db_stories
-    doc_db_docs = configuration.doc_db_documents
-    storage = configuration.storage
-
-    with tempfile.TemporaryDirectory() as tmp_folder:
-        dir_path = Path(tmp_folder)
-        zip_path = (dir_path / file.filename).with_suffix('.zip')
-        extract_zip_file(file.file, zip_path=zip_path, dir_path=dir_path)
-        data = parse_json(dir_path / 'data.json')
-        story = data['story']
-        story_id = story['story_id']
-        documents = data['documents']
-        docs = await doc_db_stories.query(
-            query_body=f"story_id={story_id}#1",
-            owner=Configuration.default_owner,
-            headers=headers
-        )
-        if docs['documents']:
-            await delete_story(request, story_id=story_id, configuration=configuration)
-        await asyncio.gather(
-            doc_db_stories.create_document(doc=story, owner=owner, headers=headers),
-            *[doc_db_docs.create_document(doc=doc, owner=owner, headers=headers)
-              for doc in documents],
-            *[storage.post_object(path=doc['content_id'], content=(dir_path / doc['content_id']).read_text(),
-                                  content_type=Configuration.text_content_type, owner=owner, headers=headers)
-              for doc in documents]
-        )
-        return StoryResp(
-            storyId=story['story_id'],
-            title=next(d for d in documents if d['document_id'] == story['root_document_id'])['title'],
-            authors=story['authors'],
-            rootDocumentId=story['root_document_id']
-        )
 
 
 @router.post(
@@ -164,25 +118,30 @@ async def post_story(
         body: PostStoryBody,
         configuration: Configuration = Depends(get_configuration)
 ):
-    headers = generate_headers_downstream(request.headers)
-    doc_db_stories = configuration.doc_db_stories
-    doc_db_docs = configuration.doc_db_documents
-    story_resp = await doc_db_stories.query(
-        query_body=f"story_id={story_id}#1",
-        owner=Configuration.default_owner,
-        headers=headers
-    )
-    story = story_resp['documents'][0]
-    docs_resp = await doc_db_docs.query(
-        query_body=f"document_id={story['root_document_id']}#1",
-        owner=Configuration.default_owner,
-        headers=headers
-    )
-    doc = {**docs_resp['documents'][0], **{"title": body.title}}
-    await doc_db_docs.update_document(doc=doc, owner=Configuration.default_owner, headers=headers)
+    async with Context.start_ep(
+            request=request
+    ) as ctx:  # type: Context
+        doc_db_stories = configuration.doc_db_stories
+        doc_db_docs = configuration.doc_db_documents
+        story_resp, requirements = await asyncio.gather(
+            doc_db_stories.query(
+                query_body=f"story_id={story_id}#1",
+                owner=Configuration.default_owner,
+                headers=ctx.headers()
+            ),
+            get_requirements(story_id=story_id, storage=configuration.storage, context=ctx)
+        )
+        story = story_resp['documents'][0]
+        docs_resp = await doc_db_docs.query(
+            query_body=f"document_id={story['root_document_id']}#1",
+            owner=Configuration.default_owner,
+            headers=ctx.headers()
+        )
+        doc = {**docs_resp['documents'][0], **{"title": body.title}}
+        await doc_db_docs.update_document(doc=doc, owner=Configuration.default_owner, headers=ctx.headers())
 
-    return StoryResp(storyId=story_id, rootDocumentId=story['root_document_id'], title=body.title,
-                     authors=story['authors'])
+        return StoryResp(storyId=story_id, rootDocumentId=story['root_document_id'], title=body.title,
+                         authors=story['authors'], requirements=requirements)
 
 
 @router.get(
@@ -194,35 +153,39 @@ async def get_story(
         story_id: str,
         configuration: Configuration = Depends(get_configuration)
 ):
-    headers = generate_headers_downstream(request.headers)
-    doc_db_stories = configuration.doc_db_stories
-    doc_db_docs = configuration.doc_db_documents
-    story, root_doc = await asyncio.gather(
-        doc_db_stories.get_document(
-            partition_keys={"story_id": story_id},
-            clustering_keys={},
-            owner=Configuration.default_owner,
-            headers=headers
-        ),
-        doc_db_docs.query(
-            query_body=f"parent_document_id={story_id}#1",
-            owner=Configuration.default_owner,
-            headers=headers
+    async with Context.start_ep(
+            request=request
+    ) as ctx:  # type: Context
+        doc_db_stories = configuration.doc_db_stories
+        doc_db_docs = configuration.doc_db_documents
+        story, root_doc, requirements = await asyncio.gather(
+            doc_db_stories.get_document(
+                partition_keys={"story_id": story_id},
+                clustering_keys={},
+                owner=Configuration.default_owner,
+                headers=ctx.headers()
+            ),
+            doc_db_docs.query(
+                query_body=f"parent_document_id={story_id}#1",
+                owner=Configuration.default_owner,
+                headers=ctx.headers()
+            ),
+            get_requirements(story_id=story_id, storage=configuration.storage, context=ctx)
         )
-    )
-    if not root_doc['documents']:
-        raise HTTPException(status_code=500, detail="Can not find root document of story")
-    if len(root_doc['documents']) > 1:
-        raise HTTPException(status_code=500, detail="Multiple root documents can not exist")
+        if not root_doc['documents']:
+            raise HTTPException(status_code=500, detail="Can not find root document of story")
+        if len(root_doc['documents']) > 1:
+            raise HTTPException(status_code=500, detail="Multiple root documents can not exist")
 
-    root_doc = root_doc['documents'][0]
+        root_doc = root_doc['documents'][0]
 
-    return StoryResp(
-        storyId=story['story_id'],
-        title=root_doc['title'],
-        authors=story['authors'],
-        rootDocumentId=root_doc['document_id']
-    )
+        return StoryResp(
+            storyId=story['story_id'],
+            title=root_doc['title'],
+            authors=story['authors'],
+            rootDocumentId=root_doc['document_id'],
+            requirements=requirements
+        )
 
 
 @router.get(
@@ -476,6 +439,58 @@ async def delete_story(
     await doc_db_stories.delete_document(doc={'story_id': story.storyId}, owner=configuration.default_owner,
                                          headers=headers)
     return deleted
+
+
+@router.post(
+    "/stories/{story_id}/plugins",
+    response_model=PostPluginResponse,
+    summary="update a document")
+async def add_plugin(
+        request: Request,
+        story_id: str,
+        body: PostPluginBody,
+        configuration: Configuration = Depends(get_configuration)
+):
+    async with Context.start_ep(
+            request=request,
+            with_labels=['plugin']
+    ) as ctx:  # type: Context
+
+        requirements_path = f"{story_id}/requirements.json"
+        storage = configuration.storage
+        requirements = await get_requirements(story_id=story_id, storage=storage, context=ctx)
+        if body.packageName in requirements.plugins:
+            return PostPluginResponse(
+                packageName=body.packageName,
+                version=next(lib.version for lib in requirements.loadingGraph.lock if lib.name == body.packageName),
+                requirements=requirements
+            )
+
+        await ctx.info("Initial requirements", data=requirements)
+        libraries = {} if not requirements.loadingGraph else \
+            {lib.name: lib.version for lib in requirements.loadingGraph.lock}
+        libraries[body.packageName] = "latest"
+
+        assets_gtw = configuration.assets_gtw_client
+        loading_graph = await assets_gtw.cdn_loading_graph(body={
+            "libraries": libraries
+        }, headers=ctx.headers())
+
+        new_requirements = Requirements(
+            plugins=[*requirements.plugins, body.packageName],
+            loadingGraph=LoadingGraphResponse(**loading_graph)
+        )
+        await storage.post_json(
+            path=requirements_path,
+            json=new_requirements.dict(),
+            owner=Configuration.default_owner,
+            headers=ctx.headers()
+        )
+        return PostPluginResponse(
+            packageName=body.packageName,
+            version=next(lib.version for lib in new_requirements.loadingGraph.lock if lib.name == body.packageName),
+            requirements=new_requirements
+        )
 
 
 async def get_children_rec(

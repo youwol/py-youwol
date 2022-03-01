@@ -73,6 +73,12 @@ class StoriesStore(RawStore):
             return await self.client.update_document(story_id=raw_id, document_id=document_id, body=body,
                                                      headers=headers)
 
+        if rest_of_path.startswith("plugins"):
+            # POST a plugin
+            body = await request.body()
+            body = json.loads(body.decode('utf8'))
+            return await self.client.add_plugin(story_id=raw_id, body=body, headers=headers)
+
         raise NotImplementedError("StoriesStore@update_asset")
 
     async def get_asset(self, request: Request, raw_id: str, rest_of_path: Union[str, None], headers):
