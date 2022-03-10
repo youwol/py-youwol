@@ -11,6 +11,7 @@ from fastapi import HTTPException
 
 from youwol_utils.clients.storage.models import FileData
 from youwol_utils.clients.utils import get_default_owner
+from youwol_utils.exceptions import ResourcesNotFoundException
 from youwol_utils.types import JSON
 
 flatten = itertools.chain.from_iterable
@@ -157,7 +158,7 @@ class LocalStorageClient:
 
         full_path = self.get_full_path(owner, path)
         if not full_path.is_file():
-            raise HTTPException(status_code=404, detail="File not found")
+            raise ResourcesNotFoundException(path=str(full_path))
 
         return full_path.open('rb').read()
 

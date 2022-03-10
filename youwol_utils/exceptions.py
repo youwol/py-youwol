@@ -178,6 +178,42 @@ class FolderNotFound(YouWolException):
         return f"""The folder '{self.folder}' is not found. Context: {self.context}"""
 
 
+class ResourcesNotFoundException(YouWolException):
+    exceptionType = "ResourcesNotFoundException"
+
+    def __init__(self, path: str, **kwargs):
+        YouWolException.__init__(
+            self,
+            status_code=404,
+            detail={
+                "path": path
+            },
+            **kwargs)
+        self.path = path
+        self.exceptionType = ResourcesNotFoundException.exceptionType
+
+    def __str__(self):
+        return f"""The resource at path '{self.path}' is not a file."""
+
+
+class UpstreamResponseException(YouWolException):
+    exceptionType = "UpstreamResponseException"
+
+    def __init__(self, status: int, url: str, detail: Any, exceptionType: str, **kwargs):
+        super().__init__(status_code=status,
+                         detail={
+                             "url": url,
+                             "status": status,
+                             "exceptionType": exceptionType,
+                             "detail": detail,
+                         },
+                         **kwargs)
+        self.exceptionType = UpstreamResponseException.exceptionType
+
+    def __str__(self):
+        return f"""Upstream Exception"""
+
+
 YouwolExceptions = [
     PipelineFlowNotFound,
     FolderNotFound,
@@ -186,18 +222,21 @@ YouwolExceptions = [
     PublishPackageError,
     PackagesNotFound,
     IndirectPackagesNotFound,
-    CircularDependencies
+    CircularDependencies,
+    ResourcesNotFoundException,
+    UpstreamResponseException
 ]
 
 
 async def youwol_exception_handler(request: Request, exc: YouWolException):
+    content = {
+        "url": request.url.path,
+        "exceptionType": exc.exceptionType,
+        "detail": exc.detail,
+    }
     return JSONResponse(
         status_code=exc.status_code,
-        content={
-            "exceptionType": exc.exceptionType,
-            "detail": exc.detail,
-            "url": request.url.path
-        }
+        content=content
     )
 
 
@@ -210,11 +249,25 @@ async def raise_exception_from_response(raw_resp: ClientResponse, **kwargs):
         if resp and "exceptionType" in resp:
             exception_type = next((e for e in YouwolExceptions if e.exceptionType == resp["exceptionType"]), None)
             if exception_type:
-                raise exception_type(**resp['detail'])
+                upstream_exception = exception_type(**resp["detail"])
+                raise UpstreamResponseException(url=raw_resp.url.human_repr(),
+                                                status=upstream_exception.status_code,
+                                                detail=upstream_exception.detail,
+                                                exceptionType=upstream_exception.exceptionType
+                                                )
     except (ValueError, ContentTypeError):
         pass
 
     detail = resp and (resp.get("detail", None) or resp.get("message", None) or raw_resp.reason)
     detail = detail if detail else await raw_resp.text()
 
-    raise YouWolException(status_code=raw_resp.status, detail=detail, **{**kwargs, **parameters})
+    raise UpstreamResponseException(url=raw_resp.url.human_repr(),
+                                    status=raw_resp.status,
+                                    detail=detail,
+                                    exceptionType="HTTP",
+                                    **{**kwargs, **parameters})
+
+
+async def assert_response(raw_resp: ClientResponse):
+    if raw_resp.status >= 400:
+        await raise_exception_from_response(raw_resp)

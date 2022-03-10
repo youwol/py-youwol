@@ -140,24 +140,35 @@ class YouwolEnvironment(BaseModel):
         return DefaultDriveResponse(**default_drive)
 
     def __str__(self):
+        def str_redirctions():
+            if len(self.customDispatches) != 0:
+                return f"""
+- list of redirections:
+{chr(10).join([f"  * {redirection}" for redirection in self.customDispatches])}
+"""
+            else:
+                return "- no redirections configured"
 
-        return f"""
-Running with youwol:
-- {youwol}
+        def str_commands():
+            if len(self.commands.keys()) != 0:
+                return f"""
+- list of custom commands:
+{chr(10).join([f"  * http://localhost:{self.httpPort}/admin/custom-commands/{command}"
+               for command in self.commands.keys()])}
+"""
+            else:
+                return "- no custom command configured"
 
+        return f"""Running with youwol: {youwol}
 Configuration loaded from '{self.pathsBook.config}'
 - user email: {self.userEmail}
 - active profile: {self.activeProfile if self.activeProfile else "Default profile"}
 - paths: {self.pathsBook}
 - cdn packages count: {len(parse_json(self.pathsBook.local_cdn_docdb)['documents'])}
 - assets count: {len(parse_json(self.pathsBook.local_docdb / 'assets' / 'entities' / 'data.json')['documents'])}
- list of redirections:
-{chr(10).join([f"  * {redirection}" for redirection in self.customDispatches])}
-- list of custom commands:
-{chr(10).join([f"  * http://localhost:{self.httpPort}/admin/custom-commands/{command}"
-               for command in self.commands.keys()])}
-               
-{self.k8sInstance.__str__() if self.k8sInstance else "Not connected to a k8s cluster"}
+{str_redirctions()}
+{str_commands()}
+{self.k8sInstance.__str__() if self.k8sInstance else "- not connected to a k8s cluster"}
 """
 
 
@@ -475,7 +486,7 @@ async def first_run(conf_path, main_args):
 
 
 def print_invite(conf: YouwolEnvironment, shutdown_script_path: Optional[Path]):
-    print(f"""{Fore.GREEN} Configuration loaded successfully {Style.RESET_ALL}.
+    print(f"""{Fore.GREEN}Configuration loaded successfully{Style.RESET_ALL}.
 """)
     print(conf)
     msg = cow.milk_random_cow(f"""

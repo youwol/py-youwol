@@ -91,4 +91,5 @@ class AssetDownloadThread(Thread):
             self.event_loop.stop()
 
         asyncio.run_coroutine_threadsafe(stop_loop(), self.event_loop)
-        super().join(timeout)
+        if self.is_alive():
+            super().join(timeout)
