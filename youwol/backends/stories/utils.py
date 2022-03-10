@@ -4,9 +4,7 @@ import time
 import zipfile
 from pathlib import Path
 from typing import IO, Union, Dict
-
 from fastapi import HTTPException
-
 from youwol_utils import log_info, StorageClient
 from youwol_utils.context import Context
 from .configurations import Configuration
@@ -82,6 +80,7 @@ def extract_zip_file(
 
 
 async def get_requirements(story_id: str, storage: StorageClient, context: Context) -> Requirements:
+
     requirements_path = f"{story_id}/requirements.json"
     try:
         req_json = await storage.get_json(
