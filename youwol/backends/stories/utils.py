@@ -81,7 +81,7 @@ def extract_zip_file(
 
 async def get_requirements(story_id: str, storage: StorageClient, context: Context) -> Requirements:
 
-    requirements_path = f"{story_id}/requirements.json"
+    requirements_path = get_document_path(story_id=story_id, document_id="requirements")
     try:
         req_json = await storage.get_json(
             path=requirements_path,
@@ -93,3 +93,7 @@ async def get_requirements(story_id: str, storage: StorageClient, context: Conte
         if e.status_code != 404:
             raise e
         return Requirements(plugins=[])
+
+
+def get_document_path(story_id: str, document_id: str):
+    return f"{story_id}/{document_id}.json"

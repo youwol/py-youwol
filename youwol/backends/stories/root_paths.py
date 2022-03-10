@@ -1,10 +1,12 @@
 import asyncio
 import itertools
 import math
+import tempfile
 import uuid
+from pathlib import Path
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi import Query as QueryParam
 
 from youwol_utils import (
@@ -13,6 +15,7 @@ from youwol_utils import (
 )
 from youwol_utils.clients.docdb.models import OrderingClause, QueryBody
 from youwol_utils.context import Context
+from youwol_utils.utils_paths import parse_json
 from .all_icons_emojipedia import (
     icons_smileys_people, icons_animals, icons_foods, icons_activities, icons_travel,
     icons_objects, icons_symbols, icons_flags,
@@ -25,7 +28,7 @@ from .models import (
 )
 from .utils import (
     query_document, position_start,
-    position_next, position_format, format_document_resp, get_requirements,
+    position_next, position_format, format_document_resp, get_requirements, extract_zip_file, get_document_path,
 )
 
 router = APIRouter()
@@ -50,6 +53,57 @@ async def get_user_info(
              [Group(id=str(to_group_id(g)), path=g) for g in groups if g]
 
     return User(name=user['preferred_username'], groups=groups)
+
+
+@router.post(
+    "/stories",
+    response_model=StoryResp,
+    summary="publish a story from zip file")
+async def publish_story(
+        request: Request,
+        file: UploadFile = File(...),
+        configuration: Configuration = Depends(get_configuration)
+):
+    headers = generate_headers_downstream(request.headers)
+    owner = Configuration.default_owner
+    doc_db_stories = configuration.doc_db_stories
+    doc_db_docs = configuration.doc_db_documents
+    storage = configuration.storage
+
+    with tempfile.TemporaryDirectory() as tmp_folder:
+        dir_path = Path(tmp_folder)
+        zip_path = (dir_path / file.filename).with_suffix('.zip')
+        extract_zip_file(file.file, zip_path=zip_path, dir_path=dir_path)
+        data = parse_json(dir_path / 'data.json')
+        story = data['story']
+        story_id = story['story_id']
+        documents = data['documents']
+        docs = await doc_db_stories.query(
+            query_body=f"story_id={story_id}#1",
+            owner=Configuration.default_owner,
+            headers=headers
+        )
+        if docs['documents']:
+            await delete_story(request, story_id=story_id, configuration=configuration)
+        await asyncio.gather(
+            doc_db_stories.create_document(doc=story, owner=owner, headers=headers),
+            *[doc_db_docs.create_document(doc=doc, owner=owner, headers=headers)
+              for doc in documents],
+            *[storage.post_json(path=get_document_path(story_id=story_id, document_id=doc['content_id']),
+                                json=parse_json(dir_path / (doc['content_id']+'.json')),
+                                owner=owner, headers=headers)
+              for doc in documents],
+            storage.post_json(path=get_document_path(story_id=story_id, document_id='requirements'),
+                              json=parse_json(dir_path / 'requirements.json'),
+                              owner=owner, headers=headers)
+        )
+        return StoryResp(
+            storyId=story['story_id'],
+            title=next(d for d in documents if d['document_id'] == story['root_document_id'])['title'],
+            authors=story['authors'],
+            rootDocumentId=story['root_document_id'],
+            requirements=Requirements(plugins=[])
+        )
 
 
 @router.put(
@@ -93,7 +147,7 @@ async def put_story(
             headers=headers
         ),
         storage.post_json(
-            path=root_doc_id,
+            path=get_document_path(story_id=story_id, document_id=root_doc_id),
             json={"html": "", "css": ""},
             owner=Configuration.default_owner,
             headers=headers
@@ -216,11 +270,13 @@ async def get_document(
     summary="retrieve a document's content")
 async def get_content(
         request: Request,
+        story_id: str,
         content_id: str,
         configuration: Configuration = Depends(get_configuration)
 ):
     headers = generate_headers_downstream(request.headers)
-    content = await configuration.storage.get_json(path=content_id, owner=Configuration.default_owner, headers=headers)
+    content = await configuration.storage.get_json(path=get_document_path(story_id=story_id, document_id=content_id),
+                                                   owner=Configuration.default_owner, headers=headers)
 
     return GetContentResp(**content)
 
@@ -230,13 +286,14 @@ async def get_content(
     summary="update a document's content")
 async def post_content(
         request: Request,
+        story_id: str,
         content_id: str,
         body: PostContentBody,
         configuration: Configuration = Depends(get_configuration)
 ):
     headers = generate_headers_downstream(request.headers)
     await configuration.storage.post_json(
-        path=content_id,
+        path=get_document_path(story_id=story_id, document_id=content_id),
         json=body.dict(),
         owner=Configuration.default_owner,
         headers=headers
@@ -332,7 +389,7 @@ async def put_document(
             headers=headers
         ),
         storage.post_json(
-            path=content_id,
+            path=get_document_path(story_id=story_id, document_id=content_id),
             json=body.content.dict(),
             owner=Configuration.default_owner,
             headers=headers
@@ -348,6 +405,7 @@ async def put_document(
     summary="update a document")
 async def post_document(
         request: Request,
+        story_id: str,
         document_id: str,
         body: PostDocumentBody,
         configuration: Configuration = Depends(get_configuration)
@@ -374,7 +432,7 @@ async def post_document(
     if body.content:
         coroutines.append(
             storage.post_json(
-                path=content_id,
+                path=get_document_path(story_id=story_id, document_id=content_id),
                 json=body.content.dict(),
                 owner=Configuration.default_owner,
                 headers=headers
@@ -391,6 +449,7 @@ async def post_document(
     summary="delete a document with its children")
 async def delete_document(
         request: Request,
+        story_id: str,
         document_id: str,
         configuration: Configuration = Depends(get_configuration)
 ):
@@ -416,7 +475,8 @@ async def delete_document(
             for doc in [document, *all_children]
         ],
         *[
-            storage.delete(path=doc['content_id'], owner=configuration.default_owner, headers=headers)
+            storage.delete(path=get_document_path(story_id=story_id, document_id=doc['content_id']),
+                           owner=configuration.default_owner, headers=headers)
             for doc in [document, *all_children]
         ]
     )
@@ -435,7 +495,8 @@ async def delete_story(
     headers = generate_headers_downstream(request.headers)
     doc_db_stories = configuration.doc_db_stories
     story = await get_story(request=request, story_id=story_id, configuration=configuration)
-    deleted = await delete_document(request=request, document_id=story.rootDocumentId, configuration=configuration)
+    deleted = await delete_document(request=request, story_id=story_id, document_id=story.rootDocumentId,
+                                    configuration=configuration)
     await doc_db_stories.delete_document(doc={'story_id': story.storyId}, owner=configuration.default_owner,
                                          headers=headers)
     return deleted
@@ -457,7 +518,6 @@ async def add_plugin(
             with_labels=['plugin']
     ) as ctx:  # type: Context
 
-        requirements_path = f"{story_id}/requirements.json"
         storage = configuration.storage
         requirements = await get_requirements(story_id=story_id, storage=storage, context=ctx)
         if body.packageName in requirements.plugins:
@@ -482,7 +542,7 @@ async def add_plugin(
             loadingGraph=LoadingGraphResponse(**loading_graph)
         )
         await storage.post_json(
-            path=requirements_path,
+            path=get_document_path(story_id=story_id, document_id="requirements"),
             json=new_requirements.dict(),
             owner=Configuration.default_owner,
             headers=ctx.headers()
