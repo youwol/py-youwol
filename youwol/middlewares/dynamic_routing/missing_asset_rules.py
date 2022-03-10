@@ -132,4 +132,4 @@ class CreateAssetDispatch(AbstractDispatch):
                     }
                 }
             }
-            return JSONResponse(data)
+            return JSONResponse(status_code=resp.status_code, content=data)
