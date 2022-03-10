@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import Dict, Union, Any
 
 from fastapi import HTTPException
+import semantic_version
+from configurations import Configuration
 
 skipped_dependencies = []
 flatten = itertools.chain.from_iterable
@@ -53,11 +55,13 @@ def chunks(lst, n):
 
 def get_version_number(version_str: str) -> int:
     delta = 0
-    if "-next" in version_str:
-        delta = 1
-        version_str = version_str.split("-")[0]
-    return int(int(version_str.split('.')[0]) * 1e7 + int(version_str.split('.')[1]) * 1e4 +
-               int(version_str.split('.')[2]) * 10 + delta)
+    version = semantic_version.Version(version_str)
+    if version.prerelease:
+        prerelease = version.prerelease[0]
+        # 'next' deprecated: for backward compatibility (10/03/2022)
+        delta = 1 if prerelease == 'next' else -Configuration.allowed_prerelease.index(prerelease)
+
+    return int(version.major * 1e7 + version.minor * 1e4 + version.patch * 10 + delta)
 
 
 def get_version_number_str(version_str: str) -> str:

@@ -561,7 +561,7 @@ async def get_resource(request: Request,
         parts = [p for p in rest_of_path.split('/') if p]
         version = parts[1]
 
-        # default browser's caching time, do not apply for 'latest' and '*-next'
+        # default browser's caching time, do not apply for 'latest' and '*-wip'
         max_age = "31536000"
         try:
             package_name = to_package_name(parts[0])
@@ -575,8 +575,8 @@ async def get_resource(request: Request,
             version = versions_resp.versions[0]
             max_age = "60"
 
-        if '-next' in version:
-            await ctx.info("'-next' suffix => max_age set to 0")
+        if '-wip' in version:
+            await ctx.info("'-wip' suffix => max_age set to 0")
             max_age = "0"
 
         forward_path = f"libraries/{package_name.replace('@', '')}/{version}/{'/'.join(parts[2:])}"

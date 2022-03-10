@@ -28,6 +28,7 @@ class Configuration:
     replication_factor: int = 2
     owner: str = "/youwol-users"
 
+    allowed_prerelease = ['wip', 'alpha', 'alpha-wip', 'beta', 'beta-wip']
     ctx_logger: ContextLogger = AdminContextLogger()
 
 

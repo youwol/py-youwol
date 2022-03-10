@@ -15,6 +15,7 @@ import brotli
 from fastapi import HTTPException
 from starlette.responses import Response
 
+import semantic_version
 from youwol_utils import generate_headers_downstream, QueryBody, files_check_sum, shutil, \
     CircularDependencies, PublishPackageError
 from youwol_utils.clients.docdb.models import Query, WhereClause, OrderingClause
@@ -178,6 +179,11 @@ async def publish_package(file: IO, filename: str, content_encoding, configurati
 
         library_id = package_json["name"].replace("@", '')
         version = package_json["version"]
+        parsed_version = semantic_version.Version(version)
+        if parsed_version.prerelease and parsed_version.prerelease[0] not in configuration.allowed_prerelease:
+            prerelease = parsed_version.prerelease[0]
+            raise PublishPackageError(f"Prerelease '{prerelease}' not in {configuration.allowed_prerelease}")
+
         base_path = Path('libraries') / library_id / version
         storage = configuration.storage
 
