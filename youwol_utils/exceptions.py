@@ -249,7 +249,7 @@ async def raise_exception_from_response(raw_resp: ClientResponse, **kwargs):
         if resp and "exceptionType" in resp:
             exception_type = next((e for e in YouwolExceptions if e.exceptionType == resp["exceptionType"]), None)
             if exception_type:
-                upstream_exception = exception_type(**resp["detail"])
+                upstream_exception = exception_type(exception_type=resp["exceptionType"], **resp["detail"])
                 raise UpstreamResponseException(url=raw_resp.url.human_repr(),
                                                 status=upstream_exception.status_code,
                                                 detail=upstream_exception.detail,
