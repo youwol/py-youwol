@@ -199,12 +199,12 @@ class ResourcesNotFoundException(YouWolException):
 class UpstreamResponseException(YouWolException):
     exceptionType = "UpstreamResponseException"
 
-    def __init__(self, status: int, url: str, detail: Any, exceptionType: str, **kwargs):
+    def __init__(self, status: int, url: str, detail: Any, exception_type: str, **kwargs):
         super().__init__(status_code=status,
                          detail={
                              "url": url,
                              "status": status,
-                             "exceptionType": exceptionType,
+                             "exceptionType": exception_type,
                              "detail": detail,
                          },
                          **kwargs)
@@ -253,7 +253,7 @@ async def raise_exception_from_response(raw_resp: ClientResponse, **kwargs):
                 raise UpstreamResponseException(url=raw_resp.url.human_repr(),
                                                 status=upstream_exception.status_code,
                                                 detail=upstream_exception.detail,
-                                                exceptionType=upstream_exception.exceptionType
+                                                exception_type=upstream_exception.exceptionType
                                                 )
     except (ValueError, ContentTypeError):
         pass
@@ -264,8 +264,9 @@ async def raise_exception_from_response(raw_resp: ClientResponse, **kwargs):
     raise UpstreamResponseException(url=raw_resp.url.human_repr(),
                                     status=raw_resp.status,
                                     detail=detail,
-                                    exceptionType="HTTP",
-                                    **{**kwargs, **parameters})
+                                    exception_type="HTTP",
+                                    **{k: v for k, v in {**kwargs, **parameters}.items()
+                                       if k not in ['url', 'status', 'detail', 'exceptionType']})
 
 
 async def assert_response(raw_resp: ClientResponse):
