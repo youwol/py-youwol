@@ -14,11 +14,11 @@ from youwol.utils.utils_low_level import assert_python, shutdown_daemon_script
 
 
 def main():
-    assert_python()
-    shutdown_script_path = Path().cwd() / "py-youwol.shutdown.sh"
-    uvicorn_log_level = 'info' if get_main_arguments().verbose else 'critical'
     print("Starting")
+    shutdown_script_path = Path().cwd() / "py-youwol.shutdown.sh"
+    assert_python()
     try:
+        uvicorn_log_level = 'info' if get_main_arguments().verbose else 'critical'
         env: YouwolEnvironment = asyncio.run(YouwolEnvironmentFactory.get())
         download_thread.go(env)
         print_invite(conf=env, shutdown_script_path=shutdown_script_path if get_main_arguments().daemonize else None)
