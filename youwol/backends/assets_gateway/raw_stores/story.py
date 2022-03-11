@@ -2,7 +2,9 @@ import json
 from dataclasses import dataclass
 from typing import Union
 
+import aiohttp
 from starlette.requests import Request
+from starlette.responses import Response
 
 from .interface import (RawStore, RawId, AssetMeta)
 
@@ -96,6 +98,10 @@ class StoriesStore(RawStore):
         if rest_of_path.startswith('contents/'):
             content_id = rest_of_path.split('/')[1]
             return await self.client.get_content(story_id=raw_id, content_id=content_id, headers=headers)
+
+        if rest_of_path == 'download-zip':
+            content: aiohttp.ClientResponse = await self.client.download_zip(story_id=raw_id, headers=headers)
+            return Response(content=content, headers={'content-type': 'application/zip'})
 
         raise NotImplementedError("StoriesStore@get_asset: endpoint not found")
 
