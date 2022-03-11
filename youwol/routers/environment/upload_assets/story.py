@@ -4,7 +4,7 @@ import zipfile
 from dataclasses import dataclass
 from pathlib import Path
 
-from youwol.environment.clients import RemoteClients
+from youwol.environment.clients import RemoteClients, LocalClients
 from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.environment.upload_assets.models import UploadTask
 from youwol_utils import JSON
@@ -40,7 +40,8 @@ class UploadStoryTask(UploadTask):
     async def get_raw(self) -> bytes:
 
         env = await self.context.get('env', YouwolEnvironment)
-        zip_content = zip_local_story(raw_id=self.raw_id, config=env)
+        story_client = LocalClients.get_stories_client(env=env)
+        zip_content = await story_client.download_zip(self.raw_id)
         return zip_content
 
     async def create_raw(self, data: bytes, folder_id: str):
