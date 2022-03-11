@@ -209,18 +209,18 @@ async def execute_shell_cmd(cmd: str, context: Context, log_outputs=True):
 
 
 def shutdown_daemon_script(pid: int) -> str:
-    return f"""#/bin/sh
+    return f"""#!/bin/sh
 py_youwol_pid={pid}
 ## Sanity check
 program_name=$(ps -p $py_youwol_pid -o command=)
 echo "$program_name" | grep -q py-youwol
-if [[ $? -ne 0 ]]; then
+if [ $? -ne 0 ]; then
     echo "Pid $py_youwol_pid does not look like py-youwol - program name is '$program_name'
 Aborting"
     exit
 fi
 kill $py_youwol_pid
-if [[ $? -eq 0 ]]; then
+if [ $? -eq 0 ]; then
     echo "Successfully send kill signal"
 else
     echo "Failed to send kill signal"
