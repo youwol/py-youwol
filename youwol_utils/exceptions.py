@@ -196,6 +196,44 @@ class ResourcesNotFoundException(YouWolException):
         return f"""The resource at path '{self.path}' is not a file."""
 
 
+class QueryIndexException(YouWolException):
+    exceptionType = "QueryIndexException"
+
+    def __init__(self, query: str, error: str, **kwargs):
+        YouWolException.__init__(
+            self,
+            status_code=404,
+            detail={
+                "query": query,
+                "error": error
+            },
+            **kwargs)
+        self.query = query
+        self.error = error
+        self.exceptionType = QueryIndexException.exceptionType
+
+    def __str__(self):
+        return f"""The query '{self.query}' resolved to unexpected result: ${self.error}"""
+
+
+class InvalidInput(YouWolException):
+    exceptionType = "InvalidInput"
+
+    def __init__(self, error: str, **kwargs):
+        YouWolException.__init__(
+            self,
+            status_code=422,
+            detail={
+                "error": error
+            },
+            **kwargs)
+        self.error = error
+        self.exceptionType = InvalidInput.exceptionType
+
+    def __str__(self):
+        return f"""Invalid input: {self.error}"""
+
+
 class UpstreamResponseException(YouWolException):
     exceptionType = "UpstreamResponseException"
 
@@ -224,6 +262,8 @@ YouwolExceptions = [
     IndirectPackagesNotFound,
     CircularDependencies,
     ResourcesNotFoundException,
+    QueryIndexException,
+    InvalidInput,
     UpstreamResponseException
 ]
 
