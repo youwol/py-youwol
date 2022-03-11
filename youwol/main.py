@@ -6,8 +6,7 @@ import daemon
 import lockfile
 import uvicorn
 
-from youwol.environment.youwol_environment import YouwolEnvironmentFactory, print_invite, \
-    YouwolEnvironment
+from youwol.environment.youwol_environment import YouwolEnvironmentFactory, YouwolEnvironment
 from youwol.fastapi_app import download_thread, fastapi_app
 from youwol.main_args import get_main_arguments
 from youwol.utils.utils_low_level import assert_python, shutdown_daemon_script
@@ -21,7 +20,7 @@ def main():
         uvicorn_log_level = 'info' if get_main_arguments().verbose else 'critical'
         env: YouwolEnvironment = asyncio.run(YouwolEnvironmentFactory.get())
         download_thread.go(env)
-        print_invite(conf=env, shutdown_script_path=shutdown_script_path if get_main_arguments().daemonize else None)
+        # print_invite(conf=env, shutdown_script_path=shutdown_script_path if get_main_arguments().daemonize else None)
 
         if get_main_arguments().daemonize:
             print("Daemonizing")
