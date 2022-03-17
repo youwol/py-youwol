@@ -36,6 +36,15 @@ class StoriesClient:
 
                 await raise_exception_from_response(resp, **kwargs)
 
+    async def download_zip(self, story_id: str, **kwargs):
+
+        url = f"{self.url_base}/stories/{story_id}/download-zip"
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with await session.get(url=url, **kwargs) as resp:
+                if resp.status == 200:
+                    return await resp.read()
+                await raise_exception_from_response(resp, **kwargs)
+
     async def get_story(self, story_id: str, **kwargs):
 
         url = f"{self.url_base}/stories/{story_id}"

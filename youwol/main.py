@@ -20,7 +20,7 @@ def main():
     uvicorn_log_level = 'info' if get_main_arguments().verbose else 'critical'
     try:
         env: YouwolEnvironment = asyncio.run(YouwolEnvironmentFactory.get())
-        download_thread.go(env)
+        download_thread.go()
         print_invite(conf=env, shutdown_script_path=shutdown_script_path if get_main_arguments().daemonize else None)
 
         if get_main_arguments().daemonize:

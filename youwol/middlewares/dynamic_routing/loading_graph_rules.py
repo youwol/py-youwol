@@ -43,7 +43,7 @@ class GetLoadingGraphDispatch(AbstractDispatch):
             except (PackagesNotFound, IndirectPackagesNotFound) as e:
                 await ctx.warning(
                     text="Loading tree can not be resolved locally, proceed to remote platform",
-                    data={"notFound": e.packages}
+                    data=e.detail
                 )
                 url = f'https://{yw_conf.selectedRemote}{request.url.path}'
 

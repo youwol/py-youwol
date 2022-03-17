@@ -5,10 +5,13 @@ import zipfile
 from pathlib import Path
 from typing import IO, Union, Dict
 from fastapi import HTTPException
-from youwol_utils import log_info, StorageClient
+from youwol_utils import log_info, StorageClient, QueryIndexException, DocDbClient
 from youwol_utils.context import Context
 from .configurations import Configuration
 from .models import GetDocumentResp, Requirements
+
+zip_data_filename = "data.json"
+zip_requirements_filename = "requirements.json"
 
 
 async def init_resources(config: Configuration):
@@ -22,6 +25,17 @@ async def init_resources(config: Configuration):
         config.storage.ensure_bucket(headers=headers)
     )
     log_info("resources initialization done")
+
+
+async def query_story(story_id: str, doc_db_stories: DocDbClient, context: Context):
+    docs = await doc_db_stories.query(
+        query_body=f"story_id={story_id}#1",
+        owner=Configuration.default_owner,
+        headers=context.headers()
+    )
+    if not docs:
+        raise QueryIndexException(query=f"story_id={story_id}#1", error="No document found")
+    return docs['documents'][0]
 
 
 async def query_document(document_id: str, configuration: Configuration, headers):

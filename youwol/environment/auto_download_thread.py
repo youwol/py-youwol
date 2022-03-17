@@ -10,11 +10,11 @@ from youwol_utils import YouWolException, encode_id, decode_id
 
 async def process_download_asset(
         queue: asyncio.Queue,
-        factories: Dict[str, Any],
-        env: YouwolEnvironment
+        factories: Dict[str, Any]
         ):
     while True:
         url, context, headers = await queue.get()
+        env = await context.get("env", YouwolEnvironment)
         if "packages_downloaded_ids" not in env.private_cache:
             env.private_cache["packages_downloaded_ids"] = set()
         raw_id = url.split('/api/assets-gateway/raw/')[1].split('/')[1]
@@ -63,13 +63,12 @@ class AssetDownloadThread(Thread):
         self.worker_count = worker_count
         self.factories = factories
 
-    def go(self, env: YouwolEnvironment):
+    def go(self):
         super().start()
         tasks = []
         for _ in range(self.worker_count):
             coroutine = process_download_asset(
                 queue=self.download_queue,
-                env=env,
                 factories=self.factories
             )
             task = self.event_loop.create_task(coroutine)
