@@ -20,7 +20,6 @@ FlowId = str
 
 
 class ErrorResponse(BaseModel):
-
     reason: str
     hints: List[str] = []
 
@@ -33,7 +32,7 @@ def format_unknown_error(reason: str, error: Exception):
     return ErrorResponse(
         reason=reason,
         hints=[f"{error_class} at line {line_number}: {detail}"]
-        )
+    )
 
 
 class Check(BaseModel):
@@ -59,7 +58,7 @@ def parameter_enum(name: str, value: str, description: str, values: List[str]):
         value=value,
         description=description,
         meta={"type": 'ENUM', 'values': values}
-        )
+    )
 
 
 class ConfigParameters(BaseModel):
@@ -72,6 +71,7 @@ class ConfigParameters(BaseModel):
         def new_param(pid: str, p: FormalParameter):
             return FormalParameter(name=p.name, description=p.description, meta=p.meta,
                                    value=new_values[pid] if pid in new_values else p.value)
+
         new_params = {pid: new_param(pid, p) for pid, p in self.parameters.items()}
         return ConfigParameters(parameters=new_params)
 
@@ -118,23 +118,22 @@ StatusFct = Callable[
 RunImplicit = Callable[
     ['PipelineStep', 'Project', FlowId, Context],
     Union[str, Awaitable[str]]
-    ]
+]
 SourcesFct = Callable[
     ['PipelineStep', 'Project', FlowId, Context],
     Union[Any, Awaitable[Any]]
-    ]
+]
 SourcesFctImplicit = Callable[
     ['PipelineStep', 'Project', FlowId, Context],
     Union[FileListing, Awaitable[FileListing]]
-    ]
+]
 SourcesFctExplicit = Callable[
     ['PipelineStep', 'Project', FlowId, Context],
     Union[Iterable[Path], Awaitable[Iterable[Path]]]
-    ]
+]
 
 
 class PipelineStep(BaseModel):
-
     id: str = ""
 
     artifacts: List[Artifact] = []
@@ -310,7 +309,7 @@ class Project(BaseModel):
         ignore = ignore + [p.name for p in dependencies]
         if not recursive:
             return dependencies
-        dependencies_rec = functools.reduce(lambda acc, e: acc+e, [
+        dependencies_rec = functools.reduce(lambda acc, e: acc + e, [
             dependencies,
             *[await p.get_dependencies(recursive=recursive,
                                        projects=projects,
@@ -368,6 +367,22 @@ class Project(BaseModel):
         involved_steps = downstream_steps.union(*indirect, {from_step_id} if from_step_included else {})
         steps = [step for step in self.pipeline.steps if step.id in involved_steps]
         return steps
+
+    def get_direct_upstream_steps(self, flow_id: str, step_id: str) -> List[PipelineStep]:
+        def get_direct_upstream_step_in_branch(branch: List[str]) -> Optional[str]:
+            if step_id not in branch:
+                return None
+
+            if branch.index(step_id) == 0:
+                return None
+
+            return branch[(branch.index(step_id) - 1)]
+
+        flow = next(f for f in self.pipeline.flows if f.name == flow_id)
+        branches = [[step.strip() for step in branch.split('>')] for branch in flow.dag]
+        steps_ids = [step for step in [get_direct_upstream_step_in_branch(branch) for branch in branches]
+                     if step is not None]
+        return [step for step in self.pipeline.steps if step.id in steps_ids]
 
     def get_manifest(self, flow_id: FlowId, step: PipelineStep, env: YouwolEnvironment):
 
