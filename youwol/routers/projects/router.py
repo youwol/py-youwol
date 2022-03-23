@@ -8,7 +8,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends
 from starlette.requests import Request
 
-from youwol.environment.models_project import Project, Manifest
+from youwol.environment.models_project import Project, Manifest, PipelineStepStatus
 from youwol.environment.paths import PathsBook
 from youwol.environment.projects_loader import ProjectLoader
 from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
@@ -173,7 +173,7 @@ async def run_pipeline_step(
         project_id: str,
         flow_id: str,
         step_id: str
-        ):
+):
     async def refresh_status_downstream_steps(ctx_exit):
         """
         Downstream steps may depend on this guy => request status on them.
@@ -215,6 +215,23 @@ async def run_pipeline_step(
         project, step = await get_project_step(project_id, step_id, ctx)
         error_run = None
         try:
+            parent_steps = project.get_direct_upstream_steps(flow_id, step_id)
+            parent_steps_ids_to_run = [statusStep.stepId
+                                       for statusStep in [await get_status(project, flow_id, parent_step, context=ctx)
+                                                          for parent_step in parent_steps]
+                                       if statusStep.status != PipelineStepStatus.OK]
+            for parent_step_id in parent_steps_ids_to_run:
+                await run_pipeline_step(request, project_id, flow_id, parent_step_id)
+
+            # Is this really necessary ?
+            # parent_steps_ids_ko = [statusStep.stepId
+            #                        for statusStep in [await get_status(project, flow_id, parent_step, context=ctx)
+            #                                           for parent_step in parent_steps]
+            #                        if statusStep.status != PipelineStepStatus.OK]
+            #
+            # if len(parent_steps_ids_ko) > 0:
+            #     raise Exception("Some parents steps failed to run")
+
             outputs = await step.execute_run(project, flow_id, ctx)
             outputs = outputs or []
             succeeded = True
@@ -263,14 +280,12 @@ async def cdn_status(
         request: Request,
         project_id: str,
         config: YouwolEnvironment = Depends(yw_config)
-        ):
-
+):
     async with Context.from_request(request).start(
             action="Get local cdn status",
             with_attributes={'event': 'CdnResponsePending', 'projectId': project_id},
             with_loggers=[UserContextLogger()]
-            ) as ctx:
-
+    ) as ctx:
         data = parse_json(config.pathsBook.local_cdn_docdb)['documents']
         data = [d for d in data if d["library_name"] == decode_id(project_id)]
 
@@ -288,11 +303,11 @@ async def cdn_status(
                 bundleSize=bundle_size,
                 path=folder_path,
                 namespace=doc['namespace']
-                )
+            )
 
         response = CdnResponse(
             name=decode_id(project_id),
             versions=[format_version(d) for d in data]
-            )
+        )
         await ctx.send(response)
         return response
