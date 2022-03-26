@@ -1,3 +1,5 @@
+import uuid
+
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint, DispatchFunction
 from starlette.requests import Request
 from starlette.responses import Response
@@ -29,10 +31,12 @@ class RootMiddleware(BaseHTTPMiddleware):
     def get_context(self, request: Request):
 
         root_id = YouwolHeaders.get_correlation_id(request)
+        trace_id = YouwolHeaders.get_trace_id(request)
         with_data = ContextFactory.with_static_data or {}
         return Context(request=request,
                        loggers=[self.ctx_logger],
                        parent_uid=root_id,
+                       trace_uid=trace_id if trace_id else str(uuid.uuid4()),
                        uid=root_id if root_id else 'root',
                        with_data=with_data)
 
@@ -47,7 +51,7 @@ class RootMiddleware(BaseHTTPMiddleware):
 
         async with context.start(
                 action=info.message,
-                with_attributes=info.attributes,
+                with_attributes={**info.attributes, "traceId": context.trace_uid},
                 with_labels=[Label.API_GATEWAY, *info.labels]
         ) as ctx:  # type: Context
             await ctx.info(
@@ -60,11 +64,13 @@ class RootMiddleware(BaseHTTPMiddleware):
                                 }
                 })
             response = await call_next(request)
-            await ctx.info(f"Status code {response.status_code}")
+            await ctx.info(f"{request.method} {request.url.path}: {response.status_code}")
             # Even for a very broad definition of failure, there are many « not failure »
             # status code (i.e. 204,308, etc.)
             # Only 4xx (client error) and 5xx (server error) are considered failure
             if response.status_code >= 400:
                 await ctx.failed(f"Request resolved to error {response.status_code}")
+
+            response.headers[YouwolHeaders.trace_id] = ctx.trace_uid
 
             return response

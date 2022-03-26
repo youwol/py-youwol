@@ -9,6 +9,7 @@ from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.environment.upload_assets.models import UploadTask
 from youwol_utils import JSON
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
+from youwol_utils.context import Context
 from youwol_utils.utils_paths import parse_json, write_json
 
 
@@ -46,15 +47,21 @@ class UploadStoryTask(UploadTask):
 
     async def create_raw(self, data: bytes, folder_id: str):
 
-        remote_gtw: AssetsGatewayClient = await RemoteClients.get_assets_gateway_client(context=self.context)
-        await remote_gtw.put_asset_with_raw(
-            kind='story',
-            folder_id=folder_id,
-            data={'file': data, 'content_encoding': 'identity'},
-            rest_of_path="/publish"
-            )
+        async with self.context.start("UploadStoryTask.create_raw") as ctx:  # type: Context
+            remote_gtw: AssetsGatewayClient = await RemoteClients.get_assets_gateway_client(context=ctx)
+            await remote_gtw.put_asset_with_raw(
+                kind='story',
+                folder_id=folder_id,
+                data={'file': data, 'content_encoding': 'identity'},
+                rest_of_path="/publish",
+                headers=ctx.headers()
+                )
 
     async def update_raw(self, data: JSON, folder_id: str):
         # <!> stories_client will be removed as it should not be available
-        stories_client = await RemoteClients.get_stories_client(context=self.context)
-        await stories_client.publish_story(data={'file': data, 'content_encoding': 'identity'})
+        async with self.context.start("UploadStoryTask.update_raw") as ctx:  # type: Context
+            stories_client = await RemoteClients.get_stories_client(context=ctx)
+            await stories_client.publish_story(
+                data={'file': data, 'content_encoding': 'identity'},
+                headers=ctx.headers()
+            )

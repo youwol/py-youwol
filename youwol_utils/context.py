@@ -60,6 +60,7 @@ class LogEntry(NamedTuple):
     attributes: Dict[str, str]
     context_id: str
     parent_context_id: str
+    trace_uid: Union[str, None]
 
 
 DataType = Union[T, Callable[[], T], Callable[[], Awaitable[T]]]
@@ -115,6 +116,7 @@ class Context(NamedTuple):
 
     uid: Union[str, None] = 'root'
     parent_uid: Union[str, None] = None
+    trace_uid: Union[str, None] = None
 
     with_data: Dict[str, DataType] = {}
     with_attributes: JSON = {}
@@ -140,6 +142,7 @@ class Context(NamedTuple):
                       uid=str(uuid.uuid4()),
                       request=self.request,
                       parent_uid=self.uid,
+                      trace_uid=self.trace_uid,
                       with_data=self.with_data,
                       with_labels=[*self.with_labels, *with_labels],
                       with_attributes={**self.with_attributes, **with_attributes})
@@ -157,7 +160,7 @@ class Context(NamedTuple):
             # see https://github.com/tiangolo/fastapi/issues/1529
             if self.request:
                 self.request.state.context = ctx
-            await ctx.info(text=action, labels=[Label.STARTED])
+            await ctx.info(text=f"{action}", labels=[Label.STARTED])
             start = time.time()
             await execute_block(on_enter)
             yield ctx
@@ -179,10 +182,11 @@ class Context(NamedTuple):
             await execute_block(on_exception, e)
             await execute_block(on_exit)
             traceback.print_exc()
-            self.request.state.context = self
+            if self.request.state:
+                self.request.state.context = self
             raise e
         else:
-            await ctx.info(text=f"Done in {int(1000 * (time.time() - start))} ms", labels=[Label.DONE])
+            await ctx.info(text=f"{action} in {int(1000 * (time.time() - start))} ms", labels=[Label.DONE])
             if self.request:
                 self.request.state.context = self
             await execute_block(on_exit)
@@ -239,7 +243,8 @@ class Context(NamedTuple):
             labels=labels,
             attributes=self.with_attributes,
             context_id=self.uid,
-            parent_context_id=self.parent_uid
+            parent_context_id=self.parent_uid,
+            trace_uid=self.trace_uid
         )
         await asyncio.gather(*[logger.log(entry) for logger in self.loggers])
 
@@ -276,7 +281,11 @@ class Context(NamedTuple):
 
     def headers(self):
         headers = generate_headers_downstream(self.request.headers) if self.request else {}
-        return {**headers, YouwolHeaders.correlation_id: self.uid}
+        return {
+            **headers,
+            YouwolHeaders.correlation_id: self.uid,
+            YouwolHeaders.trace_id: self.trace_uid
+        }
 
 
 CallableBlock = Callable[[Context], Union[Awaitable, None]]
@@ -302,5 +311,24 @@ class DeployedContextLogger(ContextLogger):
         super().__init__()
 
     async def log(self, entry: LogEntry):
-        if Label.DONE not in entry.labels:
-            print(entry.level, entry.text)
+        prefix = ""
+        if str(Label.STARTED) in entry.labels:
+            prefix = "<START>"
+
+        if str(Label.DONE) in entry.labels:
+            prefix = "<DONE>"
+        base = {
+            "message": f"{prefix} {entry.text}",
+            "level": entry.level.name,
+            "spanId": entry.context_id,
+            "labels": [str(label) for label in entry.labels],
+            "traceId": entry.trace_uid,
+            "logging.googleapis.com/spanId": entry.context_id,
+            "logging.googleapis.com/trace": entry.trace_uid
+        }
+        data = to_json(entry.data) if isinstance(entry.data, BaseModel) else entry.data
+
+        try:
+            print(json.dumps({**base, "data": data}))
+        except TypeError:
+            print(json.dumps({**base, "message": f"{base['message']} (FAILED PARSING DATA IN JSON)"}))

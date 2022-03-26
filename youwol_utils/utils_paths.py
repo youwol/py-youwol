@@ -10,6 +10,7 @@ from os import PathLike
 from pathlib import Path
 from typing import cast, Union, List, Set, Iterable, Tuple, Optional, Callable
 
+import aiohttp
 import yaml
 from pydantic import BaseModel
 
@@ -219,3 +220,12 @@ def existing_path_or_default(path: Union[str, Path],
 
     final_root = Path(default_root) if default_root else Path(root_candidates[0])
     return final_root / typed_path, False
+
+
+async def get_databases_path(pyyouwol_port):
+    async with aiohttp.ClientSession() as session:
+        async with await session.get(url=f"http://localhost:{pyyouwol_port}/admin/environment/status") as resp:
+            if resp.status == 200:
+                json_resp = await resp.json()
+                return Path(json_resp['configuration']['pathsBook']['databases'])
+
