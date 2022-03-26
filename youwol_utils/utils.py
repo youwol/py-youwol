@@ -20,13 +20,18 @@ flatten = itertools.chain.from_iterable
 
 
 class YouwolHeaders(NamedTuple):
-
+    #  About tracing & headers: https://www.w3.org/TR/trace-context/
     py_youwol_local_only = 'py-youwol-local-only'
     correlation_id = 'x-correlation-id'
+    trace_id = 'x-trace-id'
 
     @staticmethod
     def get_correlation_id(request: Request):
         return request.headers.get(YouwolHeaders.correlation_id, None)
+
+    @staticmethod
+    def get_trace_id(request: Request):
+        return request.headers.get(YouwolHeaders.trace_id, None)
 
     @staticmethod
     def get_py_youwol_local_only(request: Request):
