@@ -311,5 +311,24 @@ class DeployedContextLogger(ContextLogger):
         super().__init__()
 
     async def log(self, entry: LogEntry):
-        if Label.DONE not in entry.labels:
-            print(entry.level, entry.text)
+        prefix = ""
+        if str(Label.STARTED) in entry.labels:
+            prefix = "<START>"
+
+        if str(Label.DONE) in entry.labels:
+            prefix = "<DONE>"
+        base = {
+            "message": f"{prefix} {entry.text}",
+            "level": entry.level.name,
+            "spanId": entry.context_id,
+            "labels": [str(label) for label in entry.labels],
+            "traceId": entry.trace_uid,
+            "logging.googleapis.com/spanId": entry.context_id,
+            "logging.googleapis.com/trace": entry.trace_uid
+        }
+        data = to_json(entry.data) if isinstance(entry.data, BaseModel) else entry.data
+
+        try:
+            print(json.dumps({**base, "data": data}))
+        except TypeError:
+            print(json.dumps({**base, "message": f"{base['message']} (FAILED PARSING DATA IN JSON)"}))
