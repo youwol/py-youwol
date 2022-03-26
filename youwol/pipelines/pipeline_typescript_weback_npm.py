@@ -271,7 +271,7 @@ async def pipeline(config: PipelineConfig, context: Context):
                 BuildStep(id="build-prod", run="yarn build:prod"),
                 DocStep(),
                 TestStep(id="test", run="yarn test-coverage", artifacts=config.testConfig.artifacts),
-                PublishCdnLocalStep(packagedArtifacts=['dist', 'docs']),
+                PublishCdnLocalStep(packagedArtifacts=['dist', 'docs', 'test-coverage']),
                 PublishCdnRemoteStep()
             ],
             flows=[
