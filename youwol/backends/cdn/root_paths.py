@@ -18,7 +18,7 @@ from .configurations import Configuration, get_configuration
 from .models import (
     PublishResponse, ListLibsResponse, Release, ListVersionsResponse, SyncResponse,
     LoadingGraphResponseV1, LoadingGraphBody, DeleteBody, Library,
-    ListPacksResponse, FluxPackSummary,
+    ListPacksResponse, FluxPackSummary, ExplorerResponse,
 )
 from .resources_initialization import init_resources, synchronize
 from .utils import (
@@ -32,8 +32,13 @@ router = APIRouter()
 
 
 @router.get("/healthz")
-async def healthz():
-    return {"status": "cdn-backend ok"}
+async def healthz(
+        configuration: Configuration = Depends(get_configuration)
+):
+    return {
+        "status": "cdn-backend ok",
+        "root_path": configuration.root_path
+    }
 
 
 @router.post("/actions/publish-library",
@@ -243,13 +248,12 @@ async def delete_version_generic(
             headers=ctx.headers())
         await doc_db.delete_document(doc=doc, owner=Configuration.owner, headers=ctx.headers())
 
-        if namespace != "":
-            await storage.delete_group(f"libraries/{namespace}/{library_name}/{version}",
-                                       owner=Configuration.owner, headers=ctx.headers())
-        else:
-            await storage.delete_group(f"libraries/{library_name}/{version}",
-                                       owner=Configuration.owner, headers=ctx.headers())
+        path_folder = f"{namespace}/{library_name}/{version}" if namespace else f"{library_name}/{version}"
 
+        await asyncio.gather(
+            storage.delete_group(f"libraries/{path_folder}", owner=Configuration.owner, headers=ctx.headers()),
+            storage.delete_group(f"generated/explorer/{path_folder}", owner=Configuration.owner, headers=ctx.headers())
+        )
         return {"deletedCount": 1}
 
 
@@ -597,3 +601,30 @@ async def get_resource(request: Request,
         script = await fetch(request, path, file_id, storage)
 
         return format_response(script, file_id, max_age=max_age)
+
+
+@router.get("/explorer/{library_id}/{version}/{rest_of_path:path}",
+            summary="get a library",
+            response_model=ExplorerResponse)
+async def explorer(
+        request: Request,
+        library_id: str,
+        version: str,
+        rest_of_path: str,
+        configuration: Configuration = Depends(get_configuration)
+):
+    async with Context.start_ep(
+            action="get explorer's items",
+            request=request,
+            with_attributes={"rest_of_path": rest_of_path}
+    ) as ctx:  # type: Context
+
+        try:
+            package_name = to_package_name(library_id)
+        except Exception:
+            raise HTTPException(status_code=400, detail=f"'{library_id}' is not a valid library id")
+
+        path = f"generated/explorer/{package_name.replace('@', '')}/{version}/{rest_of_path}/".replace('//', '/')
+        storage = configuration.storage
+        items = await storage.get_json(path + "items.json", owner=configuration.owner, headers=ctx.headers())
+        return ExplorerResponse(**items)

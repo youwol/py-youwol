@@ -18,8 +18,14 @@ from youwol_utils.context import Context
 from youwol_utils.utils_paths import copy_tree, copy_file, list_files
 
 
+class Paths(NamedTuple):
+    package_json_file = "package.json"
+    lib_folder = "src/lib"
+    auto_generated_file = "**/auto_generated.ts"
+
+
 def get_dependencies(project: Project):
-    package_json = parse_json(project.path / "package.json")
+    package_json = parse_json(project.path / Paths.package_json_file)
     return set({
         **package_json.get("dependencies", {}),
         **package_json.get("peerDependencies", {}),
@@ -166,15 +172,16 @@ class BuildStep(PipelineStep):
     id: str
     run: str
     sources: FileListing = FileListing(
-        include=["package.json", "webpack.config.js", "src/lib", "src/app", "src/index.ts", "src/tests"],
-        ignore=["**/auto_generated.ts", "**/.*/*"]
+        include=[Paths.package_json_file, "webpack.config.js", Paths.lib_folder, "src/app",
+                 "src/index.ts", "src/tests"],
+        ignore=[Paths.auto_generated_file, "**/.*/*"]
     )
 
     artifacts: List[Artifact] = [
         Artifact(
             id='dist',
             files=FileListing(
-                include=["package.json", "dist"],
+                include=[Paths.package_json_file, "dist"],
                 ignore=["dist/docs"]
             ),
             links=[
@@ -191,8 +198,8 @@ class DocStep(PipelineStep):
     id = 'doc'
     run: str = "yarn doc"
     sources: FileListing = FileListing(
-        include=["src/lib", "src/index.ts"],
-        ignore=["**/auto_generated.ts"]
+        include=[Paths.lib_folder, "src/index.ts"],
+        ignore=[Paths.auto_generated_file]
         )
 
     artifacts: List[Artifact] = [
@@ -242,8 +249,8 @@ class TestStep(PipelineStep):
     artifacts: List[Artifact]
 
     sources: FileListing = FileListing(
-        include=["package.json", "src/lib", "src/tests"],
-        ignore=["**/auto_generated.ts", "**/.*/*"]
+        include=[Paths.package_json_file, Paths.lib_folder, "src/tests"],
+        ignore=[Paths.auto_generated_file, "**/.*/*"]
     )
 
 
@@ -260,8 +267,8 @@ async def pipeline(config: PipelineConfig, context: Context):
         return Pipeline(
             target=config.target,
             tags=["typescript", "webpack", "npm"] + config.with_tags,
-            projectName=lambda path: parse_json(path / "package.json")["name"],
-            projectVersion=lambda path: parse_json(path / "package.json")["version"],
+            projectName=lambda path: parse_json(path / Paths.package_json_file)["name"],
+            projectVersion=lambda path: parse_json(path / Paths.package_json_file)["version"],
             dependencies=lambda project, _ctx: get_dependencies(project),
             steps=[
                 PreconditionChecksStep(),
@@ -271,7 +278,7 @@ async def pipeline(config: PipelineConfig, context: Context):
                 BuildStep(id="build-prod", run="yarn build:prod"),
                 DocStep(),
                 TestStep(id="test", run="yarn test-coverage", artifacts=config.testConfig.artifacts),
-                PublishCdnLocalStep(packagedArtifacts=['dist', 'docs']),
+                PublishCdnLocalStep(packagedArtifacts=['dist', 'docs', 'test-coverage']),
                 PublishCdnRemoteStep()
             ],
             flows=[

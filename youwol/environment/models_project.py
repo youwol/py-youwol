@@ -225,6 +225,7 @@ class Family(Enum):
 
 class Target(BaseModel):
     family: Family
+    links: List[Link] = []
 
 
 class BrowserTarget(Target):

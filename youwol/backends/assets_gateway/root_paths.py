@@ -9,7 +9,7 @@ from youwol_utils import (
 )
 from youwol_utils.context import Context
 from .configurations import get_configuration
-from .routers import tree, assets, raw, cdn, misc
+from .routers import tree, assets, raw, cdn, misc, cdn_backend
 
 router = APIRouter()
 
@@ -48,6 +48,13 @@ router.include_router(
     tags=["misc"]
 )
 
+router.include_router(
+    cdn_backend.router,
+    prefix="/cdn-backend",
+    dependencies=[Depends(get_configuration)],
+    tags=["cdn"]
+)
+
 
 @router.get("/.ambassador-internal/openapi-docs")
 async def patch_until_this_call_is_removed():
@@ -69,7 +76,7 @@ async def get_user_info(request: Request):
             request=request,
             response=lambda: response,
             action='get user info'
-    ) as _ctx:
+    ):
         user = user_info(request)
         groups = get_all_individual_groups(user["memberof"])
         groups = [Group(id=private_group_id(user), path="private")] + \
@@ -88,7 +95,7 @@ async def get_groups(request: Request):
             request=request,
             response=lambda: response,
             action='get user groups'
-    ) as _ctx:
+    ):
         user = user_info(request)
         groups = get_all_individual_groups(user["memberof"])
         groups = [Group(id=private_group_id(user), path="private")] + [Group(id=str(to_group_id(g)), path=g)
