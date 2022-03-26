@@ -17,7 +17,7 @@ class Configuration:
     # there are no required libs in local install: they will be fetched from remote anyway
     required_libs = []
 
-    open_api_prefix: str
+    root_path: str
     base_path: str
     storage: any
     doc_db: Union[DocDb, LocalDocDb]
@@ -52,7 +52,7 @@ async def get_configuration(config_yw=None):
 
     config_yw_cdn = Configuration(
         yw_config=config_yw,
-        open_api_prefix='',
+        root_path="",
         base_path="/api/cdn-backend",
         storage=storage,
         doc_db=doc_db,

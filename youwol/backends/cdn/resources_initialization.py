@@ -40,21 +40,21 @@ async def init_resources(config: Configuration):
 
 
 async def synchronize(dir_path: Path, zip_dir_name: str, configuration: any, headers: any, context: Context):
-    paths = flatten([[Path(root) / f for f in files] for root, _, files in os.walk(str(dir_path))])
-    paths = list(paths)
-    forms = await asyncio.gather(*[format_download_form(path, Path(), dir_path / zip_dir_name, False, rename=None,
-                                                        context=context)
-                                   for path in paths])
 
-    await post_storage_by_chunk(configuration.storage, list(forms), 1, headers)
+    async with context.start(action="synchronize"):
+        paths = flatten([[Path(root) / f for f in files] for root, _, files in os.walk(str(dir_path))])
+        paths = list(paths)
+        forms = [format_download_form(path, Path(), dir_path / zip_dir_name, False, rename=None) for path in paths]
 
-    paths_index = flatten([[Path(root) / f for f in files if f == "package.json"]
-                           for root, _, files in os.walk(str(dir_path))])
+        await post_storage_by_chunk(configuration.storage, list(forms), 1, headers)
 
-    check_dum = md5_from_folder(dir_path)
+        paths_index = flatten([[Path(root) / f for f in files if f == "package.json"]
+                               for root, _, files in os.walk(str(dir_path))])
 
-    indexes = [format_doc_db_record(package_path=path, fingerprint=check_dum) for path in paths_index]
-    namespaces = {d["namespace"] for d in indexes}
-    await post_indexes(configuration.doc_db, indexes, 25, headers)
+        check_dum = md5_from_folder(dir_path)
 
-    return len(forms), len(indexes), namespaces
+        indexes = [format_doc_db_record(package_path=path, fingerprint=check_dum) for path in paths_index]
+        namespaces = {d["namespace"] for d in indexes}
+        await post_indexes(configuration.doc_db, indexes, 25, headers)
+
+        return len(forms), len(indexes), namespaces
