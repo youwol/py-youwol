@@ -154,12 +154,12 @@ class CdnClient:
                     return await resp.json() if metadata else await resp.read()
                 await raise_exception_from_response(resp, url=self.push_url, headers=self.headers)
 
-    async def get_records(self, body, **kwargs):
+    async def get_explorer(self, library_id: str, version: str, folder_path: str, **kwargs):
 
-        url = f"{self.url_base}/records"
+        url = f"{self.url_base}/explorer/{library_id}/{version}/{folder_path}"
 
         async with aiohttp.ClientSession(headers=self.headers) as session:
-            async with await session.post(url, json=body, **kwargs) as resp:
+            async with await session.get(url, **kwargs) as resp:
                 if resp.status == 200:
                     return await resp.json()
                 await raise_exception_from_response(resp, url=self.push_url, headers=self.headers)
