@@ -14,7 +14,6 @@ from youwol_utils.http_clients.cdn_backend import LIBRARIES_TABLE
 class Constants:
     namespace: str = "cdn"
     owner: str = "/youwol-users"
-    replication_factor: int = 2
     allowed_prerelease = ['wip', 'alpha', 'alpha-wip', 'beta', 'beta-wip']
     schema_docdb = LIBRARIES_TABLE
 
