@@ -2,9 +2,9 @@ import os
 
 from youwol_utils import Path, flatten
 from youwol_utils.context import Context
-from .configurations import Configuration
-from .utils import format_download_form, post_storage_by_chunk, md5_from_folder
-from .utils_indexing import format_doc_db_record, post_indexes
+from youwol_cdn_backend.configurations import Configuration
+from youwol_cdn_backend.utils import format_download_form, post_storage_by_chunk, md5_from_folder
+from youwol_cdn_backend.utils_indexing import format_doc_db_record, post_indexes
 
 
 async def init_resources(_config: Configuration):
