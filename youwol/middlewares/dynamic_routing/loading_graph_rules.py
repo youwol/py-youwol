@@ -7,13 +7,12 @@ from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response, JSONResponse
 
-import youwol.backends.cdn.root_paths as cdn
-from youwol.backends.cdn.configurations import get_configuration
-from youwol.backends.cdn.models import LoadingGraphBody
 from youwol.environment.youwol_environment import yw_config
 from youwol.middlewares.models_dispatch import AbstractDispatch
+from youwol_cdn_backend import resolve_loading_tree, Dependencies
 from youwol_utils import PackagesNotFound, IndirectPackagesNotFound
 from youwol_utils.context import Context
+from youwol_utils.http_clients.cdn_backend import LoadingGraphBody
 
 
 class GetLoadingGraphDispatch(AbstractDispatch):
@@ -35,10 +34,10 @@ class GetLoadingGraphDispatch(AbstractDispatch):
             await ctx.info("Loading graph body", data=body)
             yw_conf, cdn_conf = await asyncio.gather(
                 yw_config(),
-                get_configuration()
+                Dependencies.get_configuration()
                 )
             try:
-                resp = await cdn.resolve_loading_tree(request, body, cdn_conf)
+                resp = await resolve_loading_tree(request, body, cdn_conf)
                 return JSONResponse(resp.dict())
             except (PackagesNotFound, IndirectPackagesNotFound) as e:
                 await ctx.warning(

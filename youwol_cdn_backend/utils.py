@@ -19,16 +19,17 @@ from youwol_utils import generate_headers_downstream, QueryBody, files_check_sum
     CircularDependencies, PublishPackageError
 from youwol_utils.clients.docdb.models import Query, WhereClause, OrderingClause
 from youwol_utils.context import Context
-from .configurations import Configuration
-from .models import FormData, PublishResponse, FileResponse, FolderResponse, ExplorerResponse
-from .utils_indexing import format_doc_db_record, get_version_number_str
+from youwol_cdn_backend.configurations import Constants, Configuration
+from youwol_utils.http_clients.cdn_backend import FormData, PublishResponse, FileResponse, \
+    FolderResponse, ExplorerResponse
+from youwol_cdn_backend.utils_indexing import format_doc_db_record, get_version_number_str
 
 flatten = itertools.chain.from_iterable
 
 
 async def fetch(request, path, file_id, storage):
     headers = generate_headers_downstream(request.headers)
-    return await storage.get_bytes(path="{}/{}".format(path, file_id), owner=Configuration.owner,
+    return await storage.get_bytes(path="{}/{}".format(path, file_id), owner=Constants.owner,
                                    headers=headers)
 
 
@@ -123,7 +124,7 @@ def format_download_form(file_path: Path, base_path: Path, dir_path: Path, compr
     data = open(str(file_path), 'rb').read()
     path_bucket = base_path / file_path.relative_to(dir_path) if not rename else base_path / rename
 
-    return FormData(objectName=path_bucket, objectData=data, owner=Configuration.owner,
+    return FormData(objectName=path_bucket, objectData=data, owner=Constants.owner,
                     objectSize=len(data), content_type=get_content_type(file_path.name),
                     content_encoding=get_content_encoding(file_path.name))
 
@@ -145,7 +146,8 @@ def extract_zip_file(file: IO, zip_path: Union[Path, str], dir_path: Union[Path,
     return compressed_size
 
 
-async def publish_package(file: IO, filename: str, content_encoding, configuration, context: Context):
+async def publish_package(file: IO, filename: str, content_encoding, configuration: Configuration, context: Context):
+
     if content_encoding not in ['identity', 'brotli']:
         raise HTTPException(status_code=422, detail="Only identity and brotli encoding are accepted ")
     need_compression = content_encoding == 'identity'
@@ -176,9 +178,9 @@ async def publish_package(file: IO, filename: str, content_encoding, configurati
         library_id = package_json["name"].replace("@", '')
         version = package_json["version"]
         parsed_version = semantic_version.Version(version)
-        if parsed_version.prerelease and parsed_version.prerelease[0] not in configuration.allowed_prerelease:
+        if parsed_version.prerelease and parsed_version.prerelease[0] not in Constants.allowed_prerelease:
             prerelease = parsed_version.prerelease[0]
-            raise PublishPackageError(f"Prerelease '{prerelease}' not in {configuration.allowed_prerelease}")
+            raise PublishPackageError(f"Prerelease '{prerelease}' not in {Constants.allowed_prerelease}")
 
         base_path = Path('libraries') / library_id / version
         storage = configuration.storage
@@ -195,19 +197,19 @@ async def publish_package(file: IO, filename: str, content_encoding, configurati
         await context.info(text=f"md5_stamp={md5_stamp}")
 
         post_requests = [storage.post_object(path=form.objectName, content=form.objectData,
-                                             content_type=form.content_type, owner=Configuration.owner, headers=headers)
+                                             content_type=form.content_type, owner=Constants.owner, headers=headers)
                          for form in forms]
 
         async with context.start(action="Upload data in storage"):
             await context.info(text=f"Clean minio directory {str(base_path)}")
-            await storage.delete_group(prefix=base_path, owner=Configuration.owner, headers=headers)
+            await storage.delete_group(prefix=base_path, owner=Constants.owner, headers=headers)
             await context.info(text=f"Send {len(post_requests)} files to storage")
             await asyncio.gather(*post_requests)
 
         async with context.start(action="Create record in docdb"):
             record = format_doc_db_record(package_path=package_path, fingerprint=md5_stamp)
             await context.info(text=f"Send record to docdb", data={"record": record})
-            await configuration.doc_db.create_document(record, owner=Configuration.owner, headers=headers)
+            await configuration.doc_db.create_document(record, owner=Constants.owner, headers=headers)
 
         await context.info(text=f"Create explorer data", data={"record": record})
         explorer_data = await create_explorer_data(root_path=base_path, forms=forms, context=context)
@@ -217,7 +219,7 @@ async def publish_package(file: IO, filename: str, content_encoding, configurati
             return f"{base}/{folder}/items.json" if folder and folder != '.' else f"{base}/items.json"
 
         await asyncio.gather(*[storage.post_json(path=get_explorer_path(folder), json=items.dict(),
-                                                 owner=Configuration.owner, headers=headers)
+                                                 owner=Constants.owner, headers=headers)
                                for folder, items in explorer_data.items()])
 
         return PublishResponse(name=package_json["name"], version=version, compressedSize=compressed_size,
@@ -315,7 +317,7 @@ def get_query_latest(doc_db, lib_name, headers):
         query=Query(where_clause=[WhereClause(column="library_name", relation="eq", term=lib_name)],
                     ordering_clause=[OrderingClause(name="version_number", order="DESC")])
     )
-    return doc_db.query(query_body=query, owner=Configuration.owner, headers=headers)
+    return doc_db.query(query_body=query, owner=Constants.owner, headers=headers)
 
 
 def get_query_version(doc_db, lib_name, version, headers):
@@ -326,7 +328,7 @@ def get_query_version(doc_db, lib_name, version, headers):
                                               term=get_version_number_str(version))])
     )
 
-    return doc_db.query(query_body=query, owner=Configuration.owner, headers=headers)
+    return doc_db.query(query_body=query, owner=Constants.owner, headers=headers)
 
 
 def chunks(lst, n):

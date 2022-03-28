@@ -1,15 +1,15 @@
-import asyncio
 import os
 
-from youwol_utils import WhereClause, QueryBody, Query, Path, flatten
+from youwol_utils import Path, flatten
 from youwol_utils.context import Context
 from .configurations import Configuration
 from .utils import format_download_form, post_storage_by_chunk, md5_from_folder
-from .utils_indexing import format_doc_db_record, post_indexes, get_version_number_str
+from .utils_indexing import format_doc_db_record, post_indexes
 
 
-async def init_resources(config: Configuration):
-    print("### Ensure database resources ###")
+async def init_resources(_config: Configuration):
+    print("### Ensure database resources => DISABLED ###")
+    """
     init_ctx = Context(loggers=[config.ctx_logger])
     async with init_ctx.start(action="init_resources") as ctx:  # type: Context
 
@@ -37,6 +37,7 @@ async def init_resources(config: Configuration):
         await synchronize(Path(__file__).parent / "initial_resources", "", config, headers=headers, context=ctx)
 
         print("### resources initialization done ###")
+    """
 
 
 async def synchronize(dir_path: Path, zip_dir_name: str, configuration: any, headers: any, context: Context):
