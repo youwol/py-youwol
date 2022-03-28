@@ -14,30 +14,27 @@ from youwol_utils import (
 )
 from youwol_utils.clients.docdb.models import WhereClause, QueryBody, Query, SelectClause
 from youwol_utils.context import Context
-from .configurations import Configuration, get_configuration
-from .models import (
+from youwol_utils.http_clients.cdn_backend import (
     PublishResponse, ListLibsResponse, Release, ListVersionsResponse, SyncResponse,
     LoadingGraphResponseV1, LoadingGraphBody, DeleteBody, Library,
     ListPacksResponse, FluxPackSummary, ExplorerResponse,
 )
-from .resources_initialization import init_resources, synchronize
-from .utils import (
+from youwol_cdn_backend.configurations import Configuration, Constants, get_configuration
+from youwol_cdn_backend.resources_initialization import synchronize
+from youwol_cdn_backend.utils import (
     extract_zip_file, to_package_id, create_tmp_folder,
     to_package_name, get_query_version, loading_graph, get_url, fetch, format_response, publish_package,
     get_query_latest, retrieve_dependency_paths,
 )
-from .utils_indexing import get_version_number_str
+from youwol_cdn_backend.utils_indexing import get_version_number_str
 
 router = APIRouter()
 
 
 @router.get("/healthz")
-async def healthz(
-        configuration: Configuration = Depends(get_configuration)
-):
+async def healthz():
     return {
-        "status": "cdn-backend ok",
-        "root_path": configuration.root_path
+        "status": "cdn-backend ok"
     }
 
 
@@ -83,7 +80,7 @@ async def list_libraries(
             else QueryBody.parse(f"@library_name,version#1000")
 
         query.allow_filtering = True
-        resp = await doc_db.query(query_body=query, owner=Configuration.owner, headers=ctx.headers())
+        resp = await doc_db.query(query_body=query, owner=Constants.owner, headers=ctx.headers())
 
         data = sorted(resp["documents"], key=lambda d: d["library_name"])
         groups = []
@@ -112,7 +109,6 @@ async def list_libraries(
              response_model=SyncResponse)
 async def sync(request: Request,
                file: UploadFile = File(...),
-               reset: bool = False,
                configuration: Configuration = Depends(get_configuration)):
     response: Optional[SyncResponse] = None
 
@@ -120,11 +116,6 @@ async def sync(request: Request,
             request=request,
             response=lambda: response
     ) as ctx:  # type: Context
-
-        if reset:
-            await asyncio.gather(configuration.doc_db.delete_table(headers=ctx.headers()),
-                                 configuration.storage.delete_bucket(force_not_empty=True, headers=ctx.headers()))
-            await init_resources(configuration)
 
         dir_path, zip_path, zip_dir_name = create_tmp_folder(file.filename)
 
@@ -157,7 +148,7 @@ async def list_versions(
             query=Query(where_clause=[WhereClause(column="library_name", relation="eq", term=name)])
         )
 
-        response = await doc_db.query(query_body=query, owner=Configuration.owner, headers=ctx.headers())
+        response = await doc_db.query(query_body=query, owner=Constants.owner, headers=ctx.headers())
 
         if not response['documents']:
             raise HTTPException(status_code=404, detail=f"The library {name} does not exist")
@@ -210,9 +201,9 @@ async def delete_library(
             query=Query(where_clause=[WhereClause(column="library_name", relation="eq", term=name)])
         )
         await ctx.info("scylla-db query", data=query)
-        resp_query = await doc_db.query(query_body=query, owner=configuration.owner, headers=ctx.headers())
+        resp_query = await doc_db.query(query_body=query, owner=Constants.owner, headers=ctx.headers())
 
-        await asyncio.gather(*[doc_db.delete_document(doc=d, owner=Configuration.owner, headers=ctx.headers())
+        await asyncio.gather(*[doc_db.delete_document(doc=d, owner=Constants.owner, headers=ctx.headers())
                                for d in resp_query["documents"]])
         return {"deletedCount": len(resp_query["documents"])}
 
@@ -244,15 +235,15 @@ async def delete_version_generic(
         doc = await doc_db.get_document(
             partition_keys={"library_name": f"@{namespace}/{library_name}"},
             clustering_keys={"version_number": get_version_number_str(version)},
-            owner=configuration.owner,
+            owner=Constants.owner,
             headers=ctx.headers())
-        await doc_db.delete_document(doc=doc, owner=Configuration.owner, headers=ctx.headers())
+        await doc_db.delete_document(doc=doc, owner=Constants.owner, headers=ctx.headers())
 
         path_folder = f"{namespace}/{library_name}/{version}" if namespace else f"{library_name}/{version}"
 
         await asyncio.gather(
-            storage.delete_group(f"libraries/{path_folder}", owner=Configuration.owner, headers=ctx.headers()),
-            storage.delete_group(f"generated/explorer/{path_folder}", owner=Configuration.owner, headers=ctx.headers())
+            storage.delete_group(f"libraries/{path_folder}", owner=Constants.owner, headers=ctx.headers()),
+            storage.delete_group(f"generated/explorer/{path_folder}", owner=Constants.owner, headers=ctx.headers())
         )
         return {"deletedCount": 1}
 
@@ -328,7 +319,7 @@ async def resolve_loading_tree(
 
         queries = [doc_db.get_document(partition_keys={"library_name": name},
                                        clustering_keys={"version_number": get_version_number_str(version)},
-                                       owner=configuration.owner, headers=ctx.headers())
+                                       owner=Constants.owner, headers=ctx.headers())
                    for name, version in explicit_versions.items()]
 
         dependencies = await asyncio.gather(*queries, return_exceptions=True)
@@ -434,7 +425,7 @@ async def list_packs(
             allow_filtering=True,
             query=Query(where_clause=where_clauses)
         )
-        resp = await doc_db.query(query_body=query, owner=Configuration.owner, headers=ctx.headers())
+        resp = await doc_db.query(query_body=query, owner=Constants.owner, headers=ctx.headers())
 
         if len(resp["documents"]) == 1000:
             raise RuntimeError("Maximum number of items return for the current query mechanism")
@@ -447,42 +438,6 @@ async def list_packs(
                  for doc in latest.values()]
         response = ListPacksResponse(fluxPacks=packs)
         return response
-
-
-@router.delete("/namespace/{namespace}", summary="clear the cdn resources")
-async def clear(
-        request: Request,
-        namespace: str,
-        configuration: Configuration = Depends(get_configuration)):
-    """
-    WARNING: should not be used in prod: use allow filtering
-    """
-    async with Context.start_ep(
-            request=request
-    ) as ctx:  # type: Context
-
-        await ctx.warning(" should not be used in prod: use allow filtering")
-
-        doc_db = configuration.doc_db
-        storage = configuration.storage
-
-        if not namespace:
-            await asyncio.gather(doc_db.delete_table(headers=ctx.headers()),
-                                 storage.delete_bucket(force_not_empty=True, headers=ctx.headers()))
-            await init_resources(configuration)
-            return
-
-        query = QueryBody(
-            select_clauses=[SelectClause(selector="library_name"), SelectClause(selector="version")],
-            max_results=1000,
-            allow_filtering=True,
-            query=Query(where_clause=[WhereClause(column="namespace", relation="eq", term=namespace)])
-        )
-        resp_query = await doc_db.query(query_body=query, owner=Configuration.owner, headers=ctx.headers())
-
-        await asyncio.gather(*[doc_db.delete_document(d, owner=Configuration.owner, headers=ctx.headers())
-                               for d in resp_query["documents"]])
-        await storage.delete_group(f"libraries/{namespace}", owner=Configuration.owner, headers=ctx.headers())
 
 
 async def get_package_generic(
@@ -509,7 +464,7 @@ async def get_package_generic(
                 d = await doc_db.get_document(
                     partition_keys={"library_name": library_name},
                     clustering_keys={"version_number": get_version_number_str(version)},
-                    owner=configuration.owner,
+                    owner=Constants.owner,
                     headers=ctx.headers())
                 return Library(name=d["library_name"], version=d["version"], namespace=d["namespace"],
                                id=to_package_id(d["library_name"]), type=d["type"], fingerprint=d["fingerprint"])
@@ -523,7 +478,7 @@ async def get_package_generic(
         headers = generate_headers_downstream(request.headers)
         storage = configuration.storage
         path = Path("libraries") / library_name.strip('@') / version / '__original.zip'
-        content = await storage.get_bytes(path=path, owner=configuration.owner, headers=headers)
+        content = await storage.get_bytes(path=path, owner=Constants.owner, headers=headers)
         return Response(content, media_type='multipart/form-data')
 
 
@@ -590,7 +545,7 @@ async def get_resource(request: Request,
             doc = await configuration.doc_db.get_document(
                 partition_keys={"library_name": package_name},
                 clustering_keys={"version_number": get_version_number_str(version)},
-                owner=configuration.owner,
+                owner=Constants.owner,
                 headers=ctx.headers())
             forward_path = f"libraries/{package_name.replace('@', '')}/{version}/{doc['bundle']}"
 
@@ -626,5 +581,5 @@ async def explorer(
 
         path = f"generated/explorer/{package_name.replace('@', '')}/{version}/{rest_of_path}/".replace('//', '/')
         storage = configuration.storage
-        items = await storage.get_json(path + "items.json", owner=configuration.owner, headers=ctx.headers())
+        items = await storage.get_json(path + "items.json", owner=Constants.owner, headers=ctx.headers())
         return ExplorerResponse(**items)

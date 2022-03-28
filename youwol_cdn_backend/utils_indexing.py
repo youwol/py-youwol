@@ -7,7 +7,7 @@ from typing import Dict, Union, Any
 
 from fastapi import HTTPException
 import semantic_version
-from .configurations import Configuration
+from .configurations import Constants
 
 skipped_dependencies = []
 flatten = itertools.chain.from_iterable
@@ -59,7 +59,7 @@ def get_version_number(version_str: str) -> int:
     if version.prerelease:
         prerelease = version.prerelease[0]
         # 'next' deprecated: for backward compatibility (10/03/2022)
-        delta = 1 if prerelease == 'next' else -Configuration.allowed_prerelease.index(prerelease)
+        delta = 1 if prerelease == 'next' else -Constants.allowed_prerelease.index(prerelease)
 
     return int(version.major * 1e7 + version.minor * 1e4 + version.patch * 10 + delta)
 
