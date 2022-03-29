@@ -64,7 +64,8 @@ fastapi_app.add_middleware(RootMiddleware, ctx_logger=AdminContextLogger())
 
 fastapi_app.include_router(native_backends.router, tags=["native backends"])
 fastapi_app.include_router(admin.router, prefix=api_configuration.base_path + "/admin", tags=["admin"])
-fastapi_app.include_router(authorization.router, prefix=api_configuration.base_path + "/authorization", tags=["authorization"])
+fastapi_app.include_router(authorization.router, prefix=api_configuration.base_path + "/authorization",
+                           tags=["authorization"])
 
 
 @fastapi_app.exception_handler(YouWolException)

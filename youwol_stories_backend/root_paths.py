@@ -19,17 +19,17 @@ from youwol_utils import (
 from youwol_utils.clients.docdb.models import OrderingClause, QueryBody
 from youwol_utils.context import Context
 from youwol_utils.utils_paths import parse_json, write_json
-from .all_icons_emojipedia import (
+from youwol_stories_backend.all_icons_emojipedia import (
     icons_smileys_people, icons_animals, icons_foods, icons_activities, icons_travel,
     icons_objects, icons_symbols, icons_flags,
 )
-from .configurations import Configuration, get_configuration
-from .models import (
+from youwol_stories_backend.configurations import Configuration, get_configuration, Constants
+from youwol_utils.http_clients.stories_backend import (
     StoryResp, PutStoryBody, GetDocumentResp, GetChildrenResp, PutDocumentBody, DeleteResp,
     PostContentBody, PostDocumentBody, PostStoryBody, GetContentResp, PostPluginBody, PostPluginResponse, Requirements,
     LoadingGraphResponse,
 )
-from .utils import (
+from youwol_stories_backend.utils import (
     query_document, position_start,
     position_next, position_format, format_document_resp, get_requirements, extract_zip_file, get_document_path,
     query_story, zip_data_filename, zip_requirements_filename,
@@ -69,7 +69,7 @@ async def publish_story(
         configuration: Configuration = Depends(get_configuration)
 ):
     headers = generate_headers_downstream(request.headers)
-    owner = Configuration.default_owner
+    owner = Constants.default_owner
     doc_db_stories = configuration.doc_db_stories
     doc_db_docs = configuration.doc_db_documents
     storage = configuration.storage
@@ -87,7 +87,7 @@ async def publish_story(
         documents = data['documents']
         docs = await doc_db_stories.query(
             query_body=f"story_id={story_id}#1",
-            owner=Configuration.default_owner,
+            owner=Constants.default_owner,
             headers=headers
         )
         if docs['documents']:
@@ -121,7 +121,7 @@ async def download_zip(
         story_id: str,
         configuration: Configuration = Depends(get_configuration)
 ):
-    owner = Configuration.default_owner
+    owner = Constants.default_owner
     doc_db_stories = configuration.doc_db_stories
     doc_db_docs = configuration.doc_db_documents
     storage = configuration.storage
@@ -185,7 +185,7 @@ async def put_story(
                 "authors": [user['sub']],
                 "root_document_id": root_doc_id
             },
-            owner=Configuration.default_owner,
+            owner=Constants.default_owner,
             headers=headers
         ),
         doc_db_docs.create_document(
@@ -198,13 +198,13 @@ async def put_story(
                 "position": position_start(),
                 "complexity_order": 0,
             },
-            owner=Configuration.default_owner,
+            owner=Constants.default_owner,
             headers=headers
         ),
         storage.post_json(
             path=get_document_path(story_id=story_id, document_id=root_doc_id),
             json={"html": "", "css": ""},
-            owner=Configuration.default_owner,
+            owner=Constants.default_owner,
             headers=headers
         )
     )
@@ -235,7 +235,7 @@ async def post_story(
         story_resp, requirements = await asyncio.gather(
             doc_db_stories.query(
                 query_body=f"story_id={story_id}#1",
-                owner=Configuration.default_owner,
+                owner=Constants.default_owner,
                 headers=ctx.headers()
             ),
             get_requirements(story_id=story_id, storage=configuration.storage, context=ctx)
@@ -243,11 +243,11 @@ async def post_story(
         story = story_resp['documents'][0]
         docs_resp = await doc_db_docs.query(
             query_body=f"document_id={story['root_document_id']}#1",
-            owner=Configuration.default_owner,
+            owner=Constants.default_owner,
             headers=ctx.headers()
         )
         doc = {**docs_resp['documents'][0], **{"title": body.title}}
-        await doc_db_docs.update_document(doc=doc, owner=Configuration.default_owner, headers=ctx.headers())
+        await doc_db_docs.update_document(doc=doc, owner=Constants.default_owner, headers=ctx.headers())
 
         return StoryResp(storyId=story_id, rootDocumentId=story['root_document_id'], title=body.title,
                          authors=story['authors'], requirements=requirements)
@@ -271,12 +271,12 @@ async def get_story(
             doc_db_stories.get_document(
                 partition_keys={"story_id": story_id},
                 clustering_keys={},
-                owner=Configuration.default_owner,
+                owner=Constants.default_owner,
                 headers=ctx.headers()
             ),
             doc_db_docs.query(
                 query_body=f"parent_document_id={story_id}#1",
-                owner=Configuration.default_owner,
+                owner=Constants.default_owner,
                 headers=ctx.headers()
             ),
             get_requirements(story_id=story_id, storage=configuration.storage, context=ctx)
@@ -331,7 +331,7 @@ async def get_content(
 ):
     headers = generate_headers_downstream(request.headers)
     content = await configuration.storage.get_json(path=get_document_path(story_id=story_id, document_id=content_id),
-                                                   owner=Configuration.default_owner, headers=headers)
+                                                   owner=Constants.default_owner, headers=headers)
 
     return GetContentResp(**content)
 
@@ -350,7 +350,7 @@ async def post_content(
     await configuration.storage.post_json(
         path=get_document_path(story_id=story_id, document_id=content_id),
         json=body.dict(),
-        owner=Configuration.default_owner,
+        owner=Constants.default_owner,
         headers=headers
     )
     return {}
@@ -378,7 +378,7 @@ async def get_children(
     )
     documents_resp = await doc_db_docs.query(
         query_body=QueryBody(max_results=count, query=query),
-        owner=Configuration.default_owner,
+        owner=Constants.default_owner,
         headers=headers
     )
     documents = [d for d in documents_resp['documents']]
@@ -421,7 +421,7 @@ async def put_document(
     )
     documents_resp = await doc_db_docs.query(
         query_body=QueryBody(max_results=1, query=query),
-        owner=Configuration.default_owner,
+        owner=Constants.default_owner,
         headers=headers
     )
     order_token = position_start() \
@@ -440,13 +440,13 @@ async def put_document(
     await asyncio.gather(
         doc_db_docs.create_document(
             doc=doc,
-            owner=Configuration.default_owner,
+            owner=Constants.default_owner,
             headers=headers
         ),
         storage.post_json(
             path=get_document_path(story_id=story_id, document_id=content_id),
             json=body.content.dict(),
-            owner=Configuration.default_owner,
+            owner=Constants.default_owner,
             headers=headers
         )
     )
@@ -470,7 +470,7 @@ async def post_document(
     doc_db_docs = configuration.doc_db_documents
     storage = configuration.storage
 
-    docs = await doc_db_docs.query(query_body=f"document_id={document_id}#1", owner=configuration.default_owner,
+    docs = await doc_db_docs.query(query_body=f"document_id={document_id}#1", owner=Constants.default_owner,
                                    headers=headers)
     document = docs['documents'][0]
     doc = {
@@ -480,7 +480,7 @@ async def post_document(
     coroutines = [
         doc_db_docs.update_document(
             doc=doc,
-            owner=Configuration.default_owner,
+            owner=Constants.default_owner,
             headers=headers
         )
     ]
@@ -489,7 +489,7 @@ async def post_document(
             storage.post_json(
                 path=get_document_path(story_id=story_id, document_id=content_id),
                 json=body.content.dict(),
-                owner=Configuration.default_owner,
+                owner=Constants.default_owner,
                 headers=headers
             )
         )
@@ -520,18 +520,18 @@ async def delete_document(
         doc_db_docs=doc_db_docs
     )
 
-    docs = await doc_db_docs.query(query_body=f"document_id={document_id}#1", owner=configuration.default_owner,
+    docs = await doc_db_docs.query(query_body=f"document_id={document_id}#1", owner=Constants.default_owner,
                                    headers=headers)
     document = docs['documents'][0]
 
     await asyncio.gather(
         *[
-            doc_db_docs.delete_document(doc=doc, owner=configuration.default_owner, headers=headers)
+            doc_db_docs.delete_document(doc=doc, owner=Constants.default_owner, headers=headers)
             for doc in [document, *all_children]
         ],
         *[
             storage.delete(path=get_document_path(story_id=story_id, document_id=doc['content_id']),
-                           owner=configuration.default_owner, headers=headers)
+                           owner=Constants.default_owner, headers=headers)
             for doc in [document, *all_children]
         ]
     )
@@ -552,7 +552,7 @@ async def delete_story(
     story = await get_story(request=request, story_id=story_id, configuration=configuration)
     deleted = await delete_document(request=request, story_id=story_id, document_id=story.rootDocumentId,
                                     configuration=configuration)
-    await doc_db_stories.delete_document(doc={'story_id': story.storyId}, owner=configuration.default_owner,
+    await doc_db_stories.delete_document(doc={'story_id': story.storyId}, owner=Constants.default_owner,
                                          headers=headers)
     return deleted
 
@@ -599,7 +599,7 @@ async def add_plugin(
         await storage.post_json(
             path=get_document_path(story_id=story_id, document_id="requirements"),
             json=new_requirements.dict(),
-            owner=Configuration.default_owner,
+            owner=Constants.default_owner,
             headers=ctx.headers()
         )
         return PostPluginResponse(
@@ -619,7 +619,7 @@ async def get_children_rec(
     headers = generate_headers_downstream(headers)
     documents_resp = await doc_db_docs.query(
         query_body=f"parent_document_id={document_id},position>={start_index}#{chunk_size}",
-        owner=Configuration.default_owner,
+        owner=Constants.default_owner,
         headers=headers
     )
     direct_children = documents_resp["documents"]

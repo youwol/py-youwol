@@ -6,7 +6,7 @@ from typing import Optional, cast, Mapping, List, Iterable
 
 from fastapi import HTTPException
 
-from youwol.backends.assets_gateway.models import DefaultDriveResponse
+from youwol_utils.http_clients.assets_gateway import DefaultDriveResponse
 from youwol.environment.clients import LocalClients, RemoteClients
 from youwol.environment.models_project import (
     PipelineStep, Project, Manifest, PipelineStepStatus, FlowId, ExplicitNone, BrowserApp,
