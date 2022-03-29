@@ -12,7 +12,7 @@ from fastapi import HTTPException
 from pydantic import BaseModel
 
 import youwol
-from youwol.backends.assets_gateway.models import DefaultDriveResponse
+from youwol_utils.http_clients.assets_gateway import DefaultDriveResponse
 from youwol.configuration.config_from_module import configuration_from_python
 from youwol.configuration.config_from_static_file import configuration_from_json
 from youwol.configuration.configuration_handler import ConfigurationHandler
