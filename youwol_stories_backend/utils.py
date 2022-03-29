@@ -7,8 +7,8 @@ from typing import IO, Union, Dict
 from fastapi import HTTPException
 from youwol_utils import log_info, StorageClient, QueryIndexException, DocDbClient
 from youwol_utils.context import Context
-from .configurations import Configuration
-from .models import GetDocumentResp, Requirements
+from youwol_stories_backend.configurations import Configuration, Constants
+from youwol_utils.http_clients.stories_backend import GetDocumentResp, Requirements
 
 zip_data_filename = "data.json"
 zip_requirements_filename = "requirements.json"
@@ -30,7 +30,7 @@ async def init_resources(config: Configuration):
 async def query_story(story_id: str, doc_db_stories: DocDbClient, context: Context):
     docs = await doc_db_stories.query(
         query_body=f"story_id={story_id}#1",
-        owner=Configuration.default_owner,
+        owner=Constants.default_owner,
         headers=context.headers()
     )
     if not docs:
@@ -41,7 +41,7 @@ async def query_story(story_id: str, doc_db_stories: DocDbClient, context: Conte
 async def query_document(document_id: str, configuration: Configuration, headers):
     docs = await configuration.doc_db_documents.query(
         query_body=f"document_id={document_id}#1",
-        owner=Configuration.default_owner,
+        owner=Constants.default_owner,
         headers=headers
     )
     return docs['documents'][0]
@@ -99,7 +99,7 @@ async def get_requirements(story_id: str, storage: StorageClient, context: Conte
     try:
         req_json = await storage.get_json(
             path=requirements_path,
-            owner=Configuration.default_owner,
+            owner=Constants.default_owner,
             headers=context.headers()
         )
         return Requirements(**req_json)

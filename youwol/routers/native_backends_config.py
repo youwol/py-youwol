@@ -1,10 +1,12 @@
-
+from youwol.environment.clients import LocalClients
 from youwol.web_socket import AdminContextLogger
 from dataclasses import dataclass
 from typing import Union
 
 import youwol_cdn_backend as cdn
 import youwol_assets_gateway as assets_gtw
+import youwol_stories_backend as stories
+from youwol_stories_backend import Configuration
 from youwol_utils import TableBody, CdnClient
 from youwol_utils.clients.assets.assets import AssetsClient
 from youwol_utils.clients.data_api.data import DataClient
@@ -73,3 +75,35 @@ async def get_assets_gtw_config():
     )
 
     return config_yw_assets_gateway
+
+
+async def get_stories_config():
+
+    env = await yw_config()
+    storage = LocalStorage(
+        root_path=env.pathsBook.local_storage,
+        bucket_name=stories.Constants.namespace
+    )
+
+    doc_db_stories = LocalDocDb(
+        root_path=env.pathsBook.local_docdb,
+        keyspace_name=stories.Constants.namespace,
+        table_body=stories.Constants.db_schema_stories
+    )
+
+    doc_db_documents = LocalDocDb(
+        root_path=env.pathsBook.local_docdb,
+        keyspace_name=stories.Constants.namespace,
+        table_body=stories.Constants.db_schema_documents,
+        secondary_indexes=[stories.Constants.db_schema_doc_by_id]
+    )
+
+    assets_gtw_client = LocalClients.get_assets_gateway_client(env=env)
+
+    return Configuration(
+        storage=storage,
+        doc_db_stories=doc_db_stories,
+        doc_db_documents=doc_db_documents,
+        assets_gtw_client=assets_gtw_client,
+        ctx_logger=AdminContextLogger()
+    )

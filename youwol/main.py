@@ -24,6 +24,7 @@ def main():
         print_invite(conf=env, shutdown_script_path=shutdown_script_path if get_main_arguments().daemonize else None)
 
         if get_main_arguments().daemonize:
+            # noinspection PyUnresolvedReferences
             with daemon.DaemonContext(pidfile=lockfile.FileLock("py-youwol")):
                 shutdown_script_path.write_text(shutdown_daemon_script(pid=os.getpid()))
                 # app: incorrect type. More here: https://github.com/tiangolo/fastapi/issues/3927
