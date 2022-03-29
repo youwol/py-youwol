@@ -1,8 +1,10 @@
 import itertools
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import List, Any, Type, Dict
 
 import uvicorn
 from fastapi import FastAPI, APIRouter
+from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 
 from youwol_utils import (YouWolException, youwol_exception_handler)
@@ -18,6 +20,12 @@ class FastApiRouter:
 
 
 @dataclass(frozen=True)
+class FastApiMiddleware:
+    middleware: Type[BaseHTTPMiddleware]
+    args: Dict[str, Any]
+
+
+@dataclass(frozen=True)
 class FastApiApp:
     title: str
     description: str
@@ -26,6 +34,7 @@ class FastApiApp:
     root_router: FastApiRouter
     http_port: int
     ctx_logger: ContextLogger
+    middlewares: List[FastApiMiddleware] = field(default_factory=list)
 
 
 def serve(
@@ -40,6 +49,9 @@ def serve(
     @app.exception_handler(YouWolException)
     async def exception_handler(request: Request, exc: YouWolException):
         return await youwol_exception_handler(request, exc)
+
+    for m in app_data.middlewares:
+        app.add_middleware(m.middleware, **m.args)
 
     app.add_middleware(RootMiddleware, ctx_logger=app_data.ctx_logger)
 
