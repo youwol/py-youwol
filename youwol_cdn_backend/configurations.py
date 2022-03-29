@@ -32,6 +32,4 @@ class Dependencies:
 
 
 async def get_configuration():
-
-    current_configuration = await Dependencies.get_configuration()
-    return current_configuration
+    return await Dependencies.get_configuration()
