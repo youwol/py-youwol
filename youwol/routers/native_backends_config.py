@@ -68,7 +68,8 @@ async def get_assets_gtw_config():
         cdn_client=CdnClient(url_base=f"{url_base}/cdn-backend"),
         stories_client=StoriesClient(url_base=f"{url_base}/stories-backend"),
         treedb_client=TreeDbClient(url_base=f"{url_base}/treedb-backend"),
-        assets_client=AssetsClient(url_base=f"{url_base}/assets-backend")
+        assets_client=AssetsClient(url_base=f"{url_base}/assets-backend"),
+        ctx_logger=AdminContextLogger()
     )
 
     return config_yw_assets_gateway
