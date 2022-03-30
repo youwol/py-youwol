@@ -26,18 +26,23 @@ class GetDocumentResp(BaseModel):
     position: float
 
 
-class GetContentResp(BaseModel):
+class Content(BaseModel):
     css: str
     html: str
+    components: str
+    styles: str
+
+
+class GetContentResp(Content):
+    pass
 
 
 class GetChildrenResp(BaseModel):
     documents: List[GetDocumentResp]
 
 
-class ContentBody(BaseModel):
-    html: str
-    css: str
+class ContentBody(Content):
+    pass
 
 
 class PutDocumentBody(BaseModel):
@@ -101,9 +106,8 @@ class DeleteResp(BaseModel):
     deletedDocuments: int
 
 
-class PostContentBody(BaseModel):
-    html: str
-    css: str
+class PostContentBody(Content):
+    pass
 
 
 DOCUMENTS_TABLE = TableBody(

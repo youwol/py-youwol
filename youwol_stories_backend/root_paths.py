@@ -203,7 +203,7 @@ async def put_story(
         ),
         storage.post_json(
             path=get_document_path(story_id=story_id, document_id=root_doc_id),
-            json={"html": "", "css": ""},
+            json={"html": "", "css": "", "components": "", "styles": ""},
             owner=Constants.default_owner,
             headers=headers
         )
