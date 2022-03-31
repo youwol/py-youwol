@@ -49,7 +49,7 @@ class PutDocumentBody(BaseModel):
     title: str
     parentDocumentId: str
     documentId: Optional[str]
-    content: ContentBody
+    content: Optional[ContentBody]
 
 
 class PostDocumentBody(BaseModel):

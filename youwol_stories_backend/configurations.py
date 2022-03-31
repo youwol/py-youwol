@@ -10,7 +10,7 @@ from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClie
 from youwol_utils.context import ContextLogger
 from youwol_utils.middlewares import Middleware
 from youwol_utils.middlewares.authentication_local import AuthLocalMiddleware
-from youwol_utils.http_clients.stories_backend import DOCUMENTS_TABLE, STORIES_TABLE, DOCUMENTS_TABLE_BY_ID
+from youwol_utils.http_clients.stories_backend import DOCUMENTS_TABLE, STORIES_TABLE, DOCUMENTS_TABLE_BY_ID, Content
 
 DocDb = Union[DocDbClient, LocalDocDbClient]
 Storage = Union[StorageClient, LocalStorageClient]
@@ -29,6 +29,12 @@ class Constants:
     db_schema_documents = DOCUMENTS_TABLE
     db_schema_stories = STORIES_TABLE
     db_schema_doc_by_id = DOCUMENTS_TABLE_BY_ID
+    default_doc = Content(
+        html='<div data-gjs-type="root" class="root" style="height:100%; width:100%; overflow:auto"></div>',
+        css='',
+        components='',
+        styles=''
+    )
 
 
 @dataclass(frozen=True)
