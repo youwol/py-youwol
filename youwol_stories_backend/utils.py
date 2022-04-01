@@ -111,3 +111,27 @@ async def get_requirements(story_id: str, storage: StorageClient, context: Conte
 
 def get_document_path(story_id: str, document_id: str):
     return f"{story_id}/{document_id}.json"
+
+
+async def create_default_global_contents(story_id: str, configuration: Configuration, context: Context):
+    await configuration.storage.post_json(
+        path=get_document_path(story_id=story_id, document_id=Constants.global_content_filename),
+        json=Constants.global_default_content.dict(),
+        owner=Constants.default_owner,
+        headers=context.headers()
+    )
+
+
+async def create_global_contents_if_needed(story_id: str, configuration: Configuration, context: Context):
+    try:
+        await configuration.storage.get_json(
+            path=get_document_path(story_id=story_id, document_id=Constants.global_content_filename),
+            owner=Constants.default_owner,
+            headers=context.headers()
+        )
+    except HTTPException as e:
+        if e.status_code == 404:
+            await context.info("Global content does not exist, create it", labels=["Backward compatibility"])
+            await create_default_global_contents(story_id=story_id, configuration=configuration, context=context)
+            return
+        raise e

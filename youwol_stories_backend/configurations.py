@@ -10,7 +10,8 @@ from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClie
 from youwol_utils.context import ContextLogger
 from youwol_utils.middlewares import Middleware
 from youwol_utils.middlewares.authentication_local import AuthLocalMiddleware
-from youwol_utils.http_clients.stories_backend import DOCUMENTS_TABLE, STORIES_TABLE, DOCUMENTS_TABLE_BY_ID, Content
+from youwol_utils.http_clients.stories_backend import DOCUMENTS_TABLE, STORIES_TABLE, DOCUMENTS_TABLE_BY_ID, Content, \
+    GlobalContent
 
 DocDb = Union[DocDbClient, LocalDocDbClient]
 Storage = Union[StorageClient, LocalStorageClient]
@@ -34,6 +35,12 @@ class Constants:
         css='',
         components='',
         styles=''
+    )
+    global_content_filename = "global-contents"
+    global_default_content = GlobalContent(
+        css="/*provides the list of rules that apply on all pages*/",
+        javascript="return async (window) => {}",
+        components="return async (grapesEditor, appState) => { return {components:[], blocks:[]} }"
     )
 
 

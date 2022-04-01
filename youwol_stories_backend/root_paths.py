@@ -27,12 +27,13 @@ from youwol_stories_backend.configurations import Configuration, get_configurati
 from youwol_utils.http_clients.stories_backend import (
     StoryResp, PutStoryBody, GetDocumentResp, GetChildrenResp, PutDocumentBody, DeleteResp,
     PostContentBody, PostDocumentBody, PostStoryBody, GetContentResp, PostPluginBody, PostPluginResponse, Requirements,
-    LoadingGraphResponse,
+    LoadingGraphResponse, GetGlobalContentResp, PostGlobalContentBody,
 )
 from youwol_stories_backend.utils import (
     query_document, position_start,
     position_next, position_format, format_document_resp, get_requirements, extract_zip_file, get_document_path,
-    query_story, zip_data_filename, zip_requirements_filename,
+    query_story, zip_data_filename, zip_requirements_filename, create_global_contents_if_needed,
+    create_default_global_contents,
 )
 
 router = APIRouter()
@@ -170,51 +171,54 @@ async def put_story(
         body: PutStoryBody,
         configuration: Configuration = Depends(get_configuration)
 ):
-    user = user_info(request)
-    story_id = body.storyId if body.storyId else str(uuid.uuid4())
-    headers = generate_headers_downstream(request.headers)
-    doc_db_stories = configuration.doc_db_stories
-    doc_db_docs = configuration.doc_db_documents
-    storage = configuration.storage
-    root_doc_id = "root_" + story_id
+    async with Context.start_ep(
+            request=request
+    ) as ctx:
+        user = user_info(request)
+        story_id = body.storyId if body.storyId else str(uuid.uuid4())
+        doc_db_stories = configuration.doc_db_stories
+        doc_db_docs = configuration.doc_db_documents
+        storage = configuration.storage
+        root_doc_id = "root_" + story_id
 
-    await asyncio.gather(
-        doc_db_stories.create_document(
-            doc={
-                "story_id": story_id,
-                "authors": [user['sub']],
-                "root_document_id": root_doc_id
-            },
-            owner=Constants.default_owner,
-            headers=headers
-        ),
-        doc_db_docs.create_document(
-            doc={
-                "document_id": root_doc_id,
-                "parent_document_id": story_id,
-                "story_id": story_id,
-                "content_id": root_doc_id,
-                "title": body.title,
-                "position": position_start(),
-                "complexity_order": 0,
-            },
-            owner=Constants.default_owner,
-            headers=headers
-        ),
-        storage.post_json(
-            path=get_document_path(story_id=story_id, document_id=root_doc_id),
-            json=Constants.default_doc.dict(),
-            owner=Constants.default_owner,
-            headers=headers
+        await asyncio.gather(
+            doc_db_stories.create_document(
+                doc={
+                    "story_id": story_id,
+                    "authors": [user['sub']],
+                    "root_document_id": root_doc_id
+                },
+                owner=Constants.default_owner,
+                headers=ctx.headers()
+            ),
+            doc_db_docs.create_document(
+                doc={
+                    "document_id": root_doc_id,
+                    "parent_document_id": story_id,
+                    "story_id": story_id,
+                    "content_id": root_doc_id,
+                    "title": body.title,
+                    "position": position_start(),
+                    "complexity_order": 0,
+                },
+                owner=Constants.default_owner,
+                headers=ctx.headers()
+            ),
+            storage.post_json(
+                path=get_document_path(story_id=story_id, document_id=root_doc_id),
+                json=Constants.default_doc.dict(),
+                owner=Constants.default_owner,
+                headers=ctx.headers()
+            ),
+            create_default_global_contents(story_id=story_id, configuration=configuration, context=ctx)
         )
-    )
-    return StoryResp(
-        storyId=story_id,
-        title=body.title,
-        authors=[user['sub']],
-        rootDocumentId=root_doc_id,
-        requirements=Requirements(plugins=[])
-    )
+        return StoryResp(
+            storyId=story_id,
+            title=body.title,
+            authors=[user['sub']],
+            rootDocumentId=root_doc_id,
+            requirements=Requirements(plugins=[])
+        )
 
 
 @router.post(
@@ -287,7 +291,7 @@ async def get_story(
             raise HTTPException(status_code=500, detail="Multiple root documents can not exist")
 
         root_doc = root_doc['documents'][0]
-
+        await create_global_contents_if_needed(story_id=story_id, configuration=configuration, context=ctx)
         return StoryResp(
             storyId=story['story_id'],
             title=root_doc['title'],
@@ -317,6 +321,55 @@ async def get_document(
         parentDocumentId=document['parent_document_id'],
         contentId=document["content_id"]
     )
+
+
+@router.get(
+    "/stories/{story_id}/global-contents",
+    response_model=GetGlobalContentResp,
+    summary="retrieve a document's content")
+async def get_global_content(
+        request: Request,
+        story_id: str,
+        configuration: Configuration = Depends(get_configuration)
+):
+    async with Context.start_ep(
+            request=request
+    ) as ctx:  # type: Context
+        try:
+            content = await configuration.storage.get_json(
+                path=get_document_path(story_id=story_id, document_id=Constants.global_content_filename),
+                owner=Constants.default_owner,
+                headers=ctx.headers()
+            )
+        except HTTPException as e:
+            if e.status_code == 404:
+                return GetGlobalContentResp(**Constants.global_default_content.dict())
+            raise e
+
+        return GetGlobalContentResp(**content)
+
+
+@router.post(
+    "/stories/{story_id}/global-contents",
+    summary="retrieve a document's content")
+async def post_global_content(
+        request: Request,
+        story_id: str,
+        body: PostGlobalContentBody,
+        configuration: Configuration = Depends(get_configuration)
+):
+
+    async with Context.start_ep(
+            request=request
+    ) as ctx:  # type: Context
+        actual_content = await get_global_content(request=request, story_id=story_id, configuration=configuration)
+        await configuration.storage.post_json(
+            path=get_document_path(story_id=story_id, document_id=Constants.global_content_filename),
+            json={**actual_content.dict(), **{k: v for k, v in body.dict().items() if v}},
+            owner=Constants.default_owner,
+            headers=ctx.headers()
+        )
+        return {}
 
 
 @router.get(

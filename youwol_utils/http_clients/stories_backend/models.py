@@ -33,6 +33,24 @@ class Content(BaseModel):
     styles: str
 
 
+class GlobalContent(BaseModel):
+    css: str
+    javascript: str
+    components: str
+
+
+class PostGlobalContentBody(BaseModel):
+    css: Optional[str]
+    javascript: Optional[str]
+    components: Optional[str]
+
+
+class GetGlobalContentResp(BaseModel):
+    css: str
+    javascript: str
+    components: str
+
+
 class GetContentResp(Content):
     pass
 
