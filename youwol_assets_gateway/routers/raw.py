@@ -5,7 +5,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from youwol_utils.context import Context
-from ..configurations import Configuration, get_configuration
+from youwol_assets_gateway.configurations import Configuration, get_configuration
 from youwol_assets_gateway.raw_stores.interface import AssetMeta
 from youwol_assets_gateway.utils import raw_id_to_asset_id
 
