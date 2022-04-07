@@ -1,6 +1,8 @@
+import asyncio
+import inspect
 import itertools
 from dataclasses import dataclass, field
-from typing import List, Any, Type, Dict
+from typing import List, Any, Type, Dict, Callable, Union, Awaitable
 
 import uvicorn
 from fastapi import FastAPI, APIRouter
@@ -35,6 +37,7 @@ class FastApiApp:
     http_port: int
     ctx_logger: ContextLogger
     middlewares: List[FastApiMiddleware] = field(default_factory=list)
+    on_before_startup: Callable[[], Union[None, Awaitable[None]]] = None
 
 
 def serve(
@@ -60,6 +63,11 @@ def serve(
         prefix=app_data.base_path,
         tags=[]
     )
+    before = app_data.on_before_startup or (lambda: True)
+    if inspect.iscoroutinefunction(before):
+        asyncio.get_event_loop().run_until_complete(before())
+    else:
+        before()
 
     # app: incorrect type. More here: https://github.com/tiangolo/fastapi/issues/3927
     # noinspection PyTypeChecker
