@@ -129,7 +129,7 @@ class UploadPackageTask(UploadTask):
             try:
                 data = {'file': zip_path.read_bytes(), 'content_encoding': 'identity'}
                 await remote_gtw.put_asset_with_raw(kind='package', folder_id=folder_id, data=data,
-                                                    timeout=600, headers=ctx.headers())
+                                                    timeout=60000, headers=ctx.headers())
             finally:
                 await ctx.info(
                     text=f"{library_name}#{version}: synchronization done"
