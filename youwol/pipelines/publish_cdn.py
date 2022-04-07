@@ -157,7 +157,7 @@ class PublishCdnLocalStep(PipelineStep):
 
             data = {'file': zip_path.read_bytes(), 'content_encoding': 'identity'}
             resp = await local_gtw.put_asset_with_raw(kind='package', folder_id=folder_id, data=data,
-                                                      headers=ctx.headers(), timeout=600)
+                                                      headers=ctx.headers(), timeout=60000)
             await ctx.info(text="Asset posted in assets_gtw", data=resp)
 
             target = project.pipeline.target
