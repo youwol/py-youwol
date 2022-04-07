@@ -30,18 +30,34 @@ class Constants:
     db_schema_documents = DOCUMENTS_TABLE
     db_schema_stories = STORIES_TABLE
     db_schema_doc_by_id = DOCUMENTS_TABLE_BY_ID
-    default_doc = Content(
-        html='<div data-gjs-type="root" class="root" style="height:100%; width:100%; overflow:auto"></div>',
-        css='',
-        components='',
-        styles=''
-    )
     global_content_filename = "global-contents"
     global_default_content = GlobalContent(
         css="/*provides the list of rules that apply on all pages*/",
         javascript="return async (window) => {}",
-        components="return async (grapesEditor, appState) => { return {components:[], blocks:[]} }"
+        components="""
+class BlockEx{
+    label = "BlockEx"
+    content = "<div> Hello blocks :) </div>"
+    constructor({appState,grapesEditor,idFactory}){
+        this.blockType = idFactory(this.label)
+    }
+}
+return async () => ({
+    getComponents: () => [], 
+    getBlocks: () => [BlockEx]
+})
+"""
     )
+
+    @staticmethod
+    def get_default_doc(document_id):
+        return Content(
+            html=f'<div id="{document_id}" '
+                 f'data-gjs-type="root" class="root" style="height:100%; width:100%; overflow:auto"></div>',
+            css='',
+            components='',
+            styles=''
+        )
 
 
 @dataclass(frozen=True)

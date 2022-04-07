@@ -206,7 +206,7 @@ async def put_story(
             ),
             storage.post_json(
                 path=get_document_path(story_id=story_id, document_id=root_doc_id),
-                json=Constants.default_doc.dict(),
+                json=Constants.get_default_doc(root_doc_id).dict(),
                 owner=Constants.default_owner,
                 headers=ctx.headers()
             ),
@@ -490,7 +490,7 @@ async def put_document(
         "position": order_token,
         "complexity_order": 0,
     }
-    content = body.content or Constants.default_doc
+    content = body.content or Constants.get_default_doc(document_id)
     await asyncio.gather(
         doc_db_docs.create_document(
             doc=doc,
