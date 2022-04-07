@@ -107,7 +107,8 @@ Url = str
 class LoadingGraphResponse(BaseModel):
     graphType: str
     lock: List[Library]
-    definition: List[List[Tuple[str, Url]]]
+    # the innest List should be Tuple[str, Url] => fastapi fails to parse it to create open-api doc
+    definition: List[List[List[str]]]
 
 
 class Requirements(BaseModel):
