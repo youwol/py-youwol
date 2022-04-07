@@ -8,7 +8,7 @@ from starlette.types import ASGIApp
 class Middleware(BaseHTTPMiddleware):
 
     def __init__(self, app: ASGIApp, auth_client, cache_client,
-                 unprotected_paths,
+                 unprotected_paths=lambda url: False,
                  dispatch: DispatchFunction = None,
                  **_) -> None:
         self.auth_client = auth_client
