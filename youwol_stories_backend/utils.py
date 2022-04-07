@@ -16,7 +16,7 @@ zip_requirements_filename = "requirements.json"
 
 async def init_resources(config: Configuration):
     log_info("Ensure database resources")
-    headers = await config.admin_headers if config.admin_headers else {}
+    headers = config.admin_headers or {}
 
     log_info("Successfully retrieved authorization for resources creation")
     await asyncio.gather(
