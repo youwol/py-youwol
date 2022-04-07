@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -23,6 +23,15 @@ class GetDocumentResp(BaseModel):
     parentDocumentId: str
     title: str
     contentId: str
+    position: float
+
+
+class MoveDocumentResp(BaseModel):
+    pass
+
+
+class MoveDocumentBody(BaseModel):
+    parent: str
     position: float
 
 

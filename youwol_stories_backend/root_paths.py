@@ -27,7 +27,7 @@ from youwol_stories_backend.configurations import Configuration, get_configurati
 from youwol_utils.http_clients.stories_backend import (
     StoryResp, PutStoryBody, GetDocumentResp, GetChildrenResp, PutDocumentBody, DeleteResp,
     PostContentBody, PostDocumentBody, PostStoryBody, GetContentResp, PostPluginBody, PostPluginResponse, Requirements,
-    LoadingGraphResponse, GetGlobalContentResp, PostGlobalContentBody,
+    LoadingGraphResponse, GetGlobalContentResp, PostGlobalContentBody, MoveDocumentResp, MoveDocumentBody,
 )
 from youwol_stories_backend.utils import (
     query_document, position_start,
@@ -550,6 +550,31 @@ async def post_document(
 
     await asyncio.gather(*coroutines)
     return format_document_resp(doc)
+
+
+@router.post(
+    "/stories/{story_id}/documents/{document_id}/move",
+    response_model=MoveDocumentResp,
+    summary="update a document")
+async def move_document(
+        request: Request,
+        document_id: str,
+        body: MoveDocumentBody,
+        configuration: Configuration = Depends(get_configuration)
+):
+
+    async with Context.start_ep(
+            request=request
+    ) as ctx:  # type: Context
+        doc_db_docs = configuration.doc_db_documents
+        docs = await doc_db_docs.query(query_body=f"document_id={document_id}#1", owner=Constants.default_owner,
+                                       headers=ctx.headers())
+        doc = docs['documents'][0]
+        await doc_db_docs.delete_document(doc=doc, owner=Constants.default_owner, headers=ctx.headers())
+        doc['parent_document_id'] = body.parent
+        doc['position'] = str(body.position)
+        await doc_db_docs.create_document(doc=doc, owner=Constants.default_owner, headers=ctx.headers())
+        return MoveDocumentResp()
 
 
 @router.delete(
