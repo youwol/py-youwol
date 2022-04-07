@@ -40,6 +40,7 @@ class ConfigurationData(BaseModel):
     httpPort: Optional[int]
     openIdHost: Optional[str]
     user: Optional[str]
+    portsBook: Optional[Dict[str, int]]
     projectsDirs: Optional[Union[ConfigPath, List[ConfigPath]]]
     configDir: Optional[ConfigPath]
     dataDir: Optional[ConfigPath]

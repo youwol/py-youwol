@@ -63,6 +63,7 @@ class YouwolEnvironment(BaseModel):
     selectedRemote: Optional[str]
 
     pathsBook: PathsBook
+    portsBook: Dict[str, int] = {}
 
     cache: Dict[str, Any] = {}
     private_cache: Dict[str, Any] = {}
@@ -417,6 +418,7 @@ async def safe_load(
         availableProfiles=conf_handler.get_available_profiles(),
         openidHost=conf_handler.get_openid_host(),
         httpPort=conf_handler.get_http_port(),
+        portsBook=conf_handler.get_ports_book(),
         userEmail=user_email,
         selectedRemote=selected_remote,
         events=conf_handler.get_events(),

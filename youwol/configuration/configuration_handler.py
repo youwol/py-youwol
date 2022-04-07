@@ -231,6 +231,9 @@ class ConfigurationHandler:
     def get_k8s_cluster(self) -> K8sCluster:
         return self.effective_config_data.k8sCluster
 
+    def get_ports_book(self) -> Dict[str, int]:
+        return self.effective_config_data.portsBook or {}
+
 
 def ensure_loading_source_exists(arg: Union[str, ModuleLoading],
                                  default_source: Path,
