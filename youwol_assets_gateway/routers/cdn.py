@@ -1,4 +1,4 @@
-from typing import List, Tuple, Dict, Optional
+from typing import List, Dict, Optional
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
@@ -27,7 +27,7 @@ Url = str
 class LoadingGraphResponseV1(BaseModel):
     graphType: str
     lock: List[Library]
-    definition: List[List[Tuple[str, Url]]]
+    definition: List[List[List[str]]]
 
 
 class LoadingGraphBody(BaseModel):
