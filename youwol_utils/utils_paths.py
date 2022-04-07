@@ -229,3 +229,11 @@ async def get_databases_path(pyyouwol_port):
                 json_resp = await resp.json()
                 return Path(json_resp['configuration']['pathsBook']['databases'])
 
+
+async def get_running_py_youwol_env(py_youwol_port):
+    async with aiohttp.ClientSession() as session:
+        async with await session.get(url=f"http://localhost:{py_youwol_port}/admin/environment/status") as resp:
+            if resp.status == 200:
+                json_resp = await resp.json()
+                return json_resp['configuration']
+
