@@ -6,7 +6,7 @@ from typing import Union
 import youwol_cdn_backend as cdn
 import youwol_assets_gateway as assets_gtw
 import youwol_stories_backend as stories
-from youwol_stories_backend import Configuration
+from youwol_stories_backend import Configuration as StoriesConfig
 from youwol_utils import TableBody, CdnClient
 from youwol_utils.clients.assets.assets import AssetsClient
 from youwol_utils.clients.data_api.data import DataClient
@@ -77,7 +77,7 @@ async def get_assets_gtw_config():
     return config_yw_assets_gateway
 
 
-async def get_stories_config():
+async def stories_config_py_youwol():
 
     env = await yw_config()
     storage = LocalStorage(
@@ -100,7 +100,7 @@ async def get_stories_config():
 
     assets_gtw_client = LocalClients.get_assets_gateway_client(env=env)
 
-    return Configuration(
+    return StoriesConfig(
         storage=storage,
         doc_db_stories=doc_db_stories,
         doc_db_documents=doc_db_documents,
