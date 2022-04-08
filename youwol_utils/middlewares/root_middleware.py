@@ -72,5 +72,6 @@ class RootMiddleware(BaseHTTPMiddleware):
                 await ctx.failed(f"Request resolved to error {response.status_code}")
 
             response.headers[YouwolHeaders.trace_id] = ctx.trace_uid
-
+            response.headers['cross-origin-opener-policy'] = 'same-origin'
+            response.headers['cross-origin-embedder-policy'] = 'require-corp'
             return response
