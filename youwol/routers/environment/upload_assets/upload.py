@@ -5,7 +5,7 @@ from typing import Mapping, Dict, cast, Optional, Any
 from aiohttp import FormData, ClientSession
 from fastapi import HTTPException
 
-from youwol.backends.treedb.models import PathResponse
+from youwol_utils.http_clients.tree_db_backend import PathResponse
 from youwol.environment.clients import RemoteClients, LocalClients
 from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.commons import Label

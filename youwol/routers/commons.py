@@ -2,7 +2,7 @@ from enum import Enum
 
 from fastapi import HTTPException
 
-from youwol.backends.treedb.models import PathResponse, DriveResponse
+from youwol_utils.http_clients.tree_db_backend import PathResponse, DriveResponse
 from youwol.environment.clients import RemoteClients, LocalClients
 from youwol.environment.youwol_environment import Context, YouwolEnvironment
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
