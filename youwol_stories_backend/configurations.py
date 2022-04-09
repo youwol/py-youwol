@@ -1,12 +1,11 @@
 from dataclasses import dataclass
-from typing import Union, Callable, Type, Awaitable, Dict
+from typing import Union, Callable, Type, Awaitable, Dict, Optional
 
 from youwol_utils import (
     CacheClient, LocalCacheClient, LocalDocDbClient,
     LocalStorageClient, DocDbClient, StorageClient
 )
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
-from youwol_utils.context import ContextLogger
 
 from youwol_utils.middlewares import Middleware
 from youwol_utils.middlewares.authentication_local import AuthLocalMiddleware
@@ -60,17 +59,14 @@ return async () => ({
         )
 
 
+@dataclass(frozen=True)
 class Configuration:
 
-    def __init__(self, storage: Storage, doc_db_stories: DocDb, doc_db_documents: DocDb,
-                 assets_gtw_client: AssetsGatewayClient, ctx_logger: ContextLogger,
-                 admin_headers: Dict[str, str] = None):
-        self.storage = storage
-        self.doc_db_stories = doc_db_stories
-        self.doc_db_documents = doc_db_documents
-        self.assets_gtw_client = assets_gtw_client
-        self.ctx_logger = ctx_logger
-        self.admin_headers = admin_headers
+    storage: Storage
+    doc_db_stories: DocDb
+    doc_db_documents: DocDb
+    assets_gtw_client: AssetsGatewayClient
+    admin_headers: Optional[Dict[str, str]] = None
 
 
 class Dependencies:
