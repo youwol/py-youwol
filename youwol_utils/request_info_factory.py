@@ -111,7 +111,14 @@ class CdnAppsServer(PatternRequestInfoExtractor):
     pattern = "*:/applications/**"
 
     def extract_from_pattern(self, substitutes):
-        [_, [a, b, *_]] = substitutes
+        try:
+            [_, [a, b, *_]] = substitutes
+        except ValueError:
+            # e.g., for the 'healthz' end-point
+            [_, a] = substitutes
+            return RequestInfo(message=f"application ({a})", attributes={'service': 'cdn-apps-server'},
+                               labels=[Label.APPLICATION])
+
         resource = f"{a}/{b}" if a.startswith('@') else a
         return RequestInfo(message="application", attributes={'service': 'cdn-apps-server', 'resource': resource},
                            labels=[Label.APPLICATION])
