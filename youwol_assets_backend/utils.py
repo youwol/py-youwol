@@ -16,15 +16,15 @@ from youwol_utils import (
     chunks, Storage, get_content_type, user_info, generate_headers_downstream,
     get_user_group_ids, ensure_group_permission, QueryBody, DocDb, log_info,
 )
-from .configurations import Configuration
-from .models import ParsedFile, FormData, AssetResponse
+from youwol_assets_backend.configurations import Configuration, Constants
+from youwol_utils.http_clients.assets_backend.models import ParsedFile, FormData, AssetResponse
 
 flatten = itertools.chain.from_iterable
 
 
 async def init_resources(config: Configuration):
     log_info("Ensure database resources")
-    headers = await config.admin_headers if config.admin_headers else {}
+    headers = config.admin_headers if config.admin_headers else {}
 
     log_info("Successfully retrieved authorization for resources creation")
     log_info("Ensure assets table")
@@ -215,7 +215,7 @@ async def ensure_get_permission(
     docdb = configuration.doc_db_asset
     headers = generate_headers_downstream(request.headers)
     asset = await docdb.get_document(partition_keys={"asset_id": asset_id}, clustering_keys={},
-                                     owner=configuration.public_owner, headers=headers)
+                                     owner=Constants.public_owner, headers=headers)
     # there is no restriction on access asset 'metadata' for now fo read
     if 'w' in scope:
         ensure_group_permission(request=request, group_id=asset["group_id"])
@@ -235,7 +235,7 @@ async def ensure_query_permission(
     headers = generate_headers_downstream(request.headers)
     doc_db = configuration.doc_db_asset
 
-    r = await doc_db.query(query_body=query, owner=configuration.public_owner, headers=headers)
+    r = await doc_db.query(query_body=query, owner=Constants.public_owner, headers=headers)
     user = user_info(request)
     allowed_groups = get_user_group_ids(user)
     if 'w' in scope:
@@ -257,8 +257,8 @@ async def ensure_delete_permission(
     asset_id = asset["asset_id"]
 
     await asyncio.gather(
-        storage.delete_group(prefix=Path(asset['kind']) / asset_id, owner=configuration.public_owner, headers=headers),
-        doc_db.delete_document(doc=asset, owner=configuration.public_owner, headers=headers))
+        storage.delete_group(prefix=Path(asset['kind']) / asset_id, owner=Constants.public_owner, headers=headers),
+        doc_db.delete_document(doc=asset, owner=Constants.public_owner, headers=headers))
 
     return asset
 
@@ -272,7 +272,7 @@ async def ensure_post_permission(
     ensure_group_permission(request=request, group_id=doc["group_id"])
     headers = generate_headers_downstream(request.headers)
     doc_db = configuration.doc_db_asset
-    return await doc_db.update_document(doc, owner=configuration.public_owner, headers=headers)
+    return await doc_db.update_document(doc, owner=Constants.public_owner, headers=headers)
 
 
 def access_policy_record_id(

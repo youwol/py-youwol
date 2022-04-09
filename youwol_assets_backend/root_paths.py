@@ -16,8 +16,8 @@ from youwol_utils import (
     ancestors_group_id, QueryBody, Query, WhereClause, PermissionsResp, get_leaf_group_ids, FileData, RecordsResponse,
     GetRecordsBody, List, RecordsTable, RecordsKeyspace, RecordsBucket, RecordsDocDb, RecordsStorage
 )
-from .configurations import Configuration, get_configuration
-from .models import AssetResponse, NewAssetBody, PostAssetBody, QueryAssetBody
+from youwol_assets_backend.configurations import Configuration, get_configuration, Constants
+from youwol_utils.http_clients.assets_backend import AssetResponse, NewAssetBody, PostAssetBody, QueryAssetBody
 from .utils import (
     to_doc_db_id, access_policy_record_id, ensure_post_permission, format_asset,
     ensure_get_permission, to_snake_case, ensure_delete_permission, format_record_history, format_image, get_thumbnail,
@@ -89,7 +89,7 @@ async def create_asset(
 
     await asyncio.gather(
         ensure_post_permission(request=request, doc=doc_asset, configuration=configuration),
-        docdb_access.create_document(doc=doc_access_default, owner=configuration.public_owner, headers=headers))
+        docdb_access.create_document(doc=doc_access_default, owner=Constants.public_owner, headers=headers))
     return format_asset(doc_asset, request)
 
 
@@ -130,7 +130,7 @@ async def post_asset(
             "parameters": "{}",
             "timestamp": int(now)
         }
-        await docdb_access.create_document(doc=doc_access, owner=configuration.public_owner, headers=headers)
+        await docdb_access.create_document(doc=doc_access, owner=Constants.public_owner, headers=headers)
 
     return format_asset(doc, request)
 
@@ -158,7 +158,7 @@ async def put_access_policy(
         "parameters": json.dumps(body.parameters),
         "timestamp": int(now)
     }
-    await docdb_access.create_document(doc=doc_access, owner=configuration.public_owner, headers=headers)
+    await docdb_access.create_document(doc=doc_access, owner=Constants.public_owner, headers=headers)
 
     return {}
 
@@ -173,7 +173,7 @@ async def delete_access_policy(
     headers = generate_headers_downstream(request.headers)
     docdb_access = configuration.doc_db_access_policy
     await docdb_access.delete_document(doc={"asset_id": asset_id, "consumer_group_id": group_id},
-                                       owner=configuration.public_owner,
+                                       owner=Constants.public_owner,
                                        headers=headers)
     return {}
 
@@ -201,7 +201,7 @@ async def get_access_policy(
                                   WhereClause(column="consumer_group_id", relation="eq", term=group_id)])
     ) for group_id in ancestors_groups]
 
-    query_specific = [docdb_access.query(query_body=body, owner=configuration.public_owner, headers=headers)
+    query_specific = [docdb_access.query(query_body=body, owner=Constants.public_owner, headers=headers)
                       for body in bodies_specific]
 
     body_default = QueryBody(
@@ -210,7 +210,7 @@ async def get_access_policy(
                                   WhereClause(column="consumer_group_id", relation="eq", term="*")])
     )
 
-    query_default = docdb_access.query(query_body=body_default, owner=configuration.public_owner, headers=headers)
+    query_default = docdb_access.query(query_body=body_default, owner=Constants.public_owner, headers=headers)
 
     *specifics, default = await asyncio.gather(*query_specific, query_default)
     closed = {"read": "forbidden", "parameters": "{}", "timestamp": -1, "share": "forbidden"}
@@ -269,7 +269,7 @@ async def get_permissions(
                                   WhereClause(column="consumer_group_id", relation="eq", term="*")])
     )
 
-    default = await docdb_access.query(query_body=body_default, owner=configuration.public_owner, headers=headers)
+    default = await docdb_access.query(query_body=body_default, owner=Constants.public_owner, headers=headers)
 
     if len(default['documents']) > 0 and default['documents'][0]['read'] == ReadPolicyEnum.authorized \
             and default['documents'][0]['share'] == SharePolicyEnum.authorized:
@@ -282,7 +282,7 @@ async def get_permissions(
                                   WhereClause(column="consumer_group_id", relation="eq", term=group_id)])
     ) for group_id in group_ids]
 
-    specifics = await asyncio.gather(*[docdb_access.query(query_body=body, owner=configuration.public_owner,
+    specifics = await asyncio.gather(*[docdb_access.query(query_body=body, owner=Constants.public_owner,
                                                           headers=headers) for body in bodies_specific])
     policies = list(flatten([d["documents"] for d in specifics]))
     permission = get_permission(False, policies)
@@ -307,9 +307,9 @@ async def delete_asset(
 
     _, docs = await asyncio.gather(
         ensure_delete_permission(request=request, asset=asset, configuration=configuration),
-        docdb_access.query(query_body=query, owner=configuration.public_owner, headers=headers))
+        docdb_access.query(query_body=query, owner=Constants.public_owner, headers=headers))
 
-    await asyncio.gather(*[docdb_access.delete_document(doc=d, owner=configuration.public_owner, headers=headers)
+    await asyncio.gather(*[docdb_access.delete_document(doc=d, owner=Constants.public_owner, headers=headers)
                            for d in docs['documents']])
     return {}
 
@@ -359,7 +359,7 @@ async def record_access(
         allow_filtering=True,
         query=Query(where_clause=[WhereClause(column="related_id", relation="eq", term=related_id)])
     )
-    asset = await doc_db_assets.query(query_body=query, owner=configuration.public_owner, headers=headers)
+    asset = await doc_db_assets.query(query_body=query, owner=Constants.public_owner, headers=headers)
 
     if len(asset["documents"]) == 0:
         raise HTTPException(status_code=404, detail=f"Asset with related_id ${related_id} not found")
@@ -370,7 +370,7 @@ async def record_access(
     now = time.time()  # s since epoch (January 1, 1970)
     doc = {"record_id": str(uuid.uuid4()), "asset_id": asset["asset_id"], "related_id": asset["related_id"],
            "username": user['preferred_username'], "timestamp": int(now)}
-    await doc_db_history.create_document(doc=doc, owner=configuration.public_owner, headers=headers)
+    await doc_db_history.create_document(doc=doc, owner=Constants.public_owner, headers=headers)
 
     return doc
 
@@ -394,7 +394,7 @@ async def query_access(
         query=Query(where_clause=[WhereClause(column="asset_id", relation="eq", term=asset_id)])
     )
 
-    results = await doc_db_history.query(query_body=query, owner=configuration.public_owner, headers=headers)
+    results = await doc_db_history.query(query_body=query, owner=Constants.public_owner, headers=headers)
 
     return {"records": [format_record_history(r) for r in results["documents"]]}
 
@@ -421,9 +421,9 @@ async def clear_asset_history(
                                   WhereClause(column="username", relation="eq", term=user["preferred_username"])])
     )
 
-    results = await doc_db_history.query(query_body=query, owner=configuration.public_owner, headers=headers)
+    results = await doc_db_history.query(query_body=query, owner=Constants.public_owner, headers=headers)
     await asyncio.gather(*[
-        doc_db_history.delete_document(doc=doc, owner=configuration.public_owner, headers=headers)
+        doc_db_history.delete_document(doc=doc, owner=Constants.public_owner, headers=headers)
         for doc in results["documents"]
     ])
     return {}
@@ -457,13 +457,13 @@ async def post_image(
 
     post_image_body = FileData(
         objectData=image.content, objectName=Path(asset['kind']) / asset_id / "images" / image.name,
-        owner=configuration.public_owner, objectSize=len(image.content), content_type="image/" + image.extension,
+        owner=Constants.public_owner, objectSize=len(image.content), content_type="image/" + image.extension,
         content_encoding=""
     )
 
     post_thumbnail_body = FileData(
         objectData=thumbnail.content, objectName=Path(asset['kind']) / asset_id / "thumbnails" / thumbnail.name,
-        owner=configuration.public_owner, objectSize=len(thumbnail.content),
+        owner=Constants.public_owner, objectSize=len(thumbnail.content),
         content_type="image/" + thumbnail.extension,
         content_encoding="")
 
@@ -497,9 +497,9 @@ async def remove_image(
            }
     await ensure_post_permission(request=request, doc=doc, configuration=configuration)
     await asyncio.gather(storage.delete(Path(asset['kind']) / asset_id / "images" / name,
-                                        owner=configuration.public_owner, headers=headers),
+                                        owner=Constants.public_owner, headers=headers),
                          storage.delete(Path(asset['kind']) / asset_id / "thumbnails" / name,
-                                        owner=configuration.public_owner, headers=headers))
+                                        owner=Constants.public_owner, headers=headers))
     return {}
 
 
@@ -516,7 +516,7 @@ async def get_media(
 
     storage = configuration.storage
     path = Path(asset['kind']) / asset_id / media_type / name
-    file = await storage.get_bytes(path, owner=configuration.public_owner, headers=headers)
+    file = await storage.get_bytes(path, owner=Constants.public_owner, headers=headers)
     return Response(content=file, headers={
         "Content-Encoding": "",
         "Content-Type": f"image/{path.suffix[1:]}",
@@ -553,14 +553,14 @@ async def get_records(
     )
     keyspace = RecordsKeyspace(
         id=doc_db.keyspace_name,
-        groupId=to_group_id(configuration.public_owner),
+        groupId=to_group_id(Constants.public_owner),
         tables=[table]
     )
 
     paths = [str(p) for p in paths_images + paths_thumbnails]
     bucket = RecordsBucket(
         id=storage.bucket_name,
-        groupId=to_group_id(configuration.public_owner),
+        groupId=to_group_id(Constants.public_owner),
         paths=paths
     )
     response = RecordsResponse(
