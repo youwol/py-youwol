@@ -18,7 +18,7 @@ from youwol_assets_gateway.raw_stores.interface import AssetMeta
 
 async def init_resources(config: Configuration):
     log_info("Ensure database resources")
-    headers = await config.admin_headers if config.admin_headers else {}
+    headers = config.admin_headers if config.admin_headers else {}
     log_info("Successfully retrieved authorization for resources creation")
     doc_db = config.data_client.docdb
     storage = config.data_client.storage
@@ -106,7 +106,7 @@ async def regroup_asset(
     headers = generate_headers_downstream(request.headers)
     new_group_id = tree_item['groupId']
     tree_db, assets_db, assets_stores = configuration.treedb_client, configuration.assets_client, \
-                                        configuration.assets_stores()
+        configuration.assets_stores()
 
     # from here we change the owner of the group, extra care is needed
     store = next(store for store in assets_stores if store.path_name == asset.kind)
