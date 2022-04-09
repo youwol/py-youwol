@@ -2,12 +2,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Union, Optional, Callable, Awaitable
 
-from youwol_utils.clients.docdb.docdb import DocDbClient as DocDb
+from youwol_utils.clients.docdb.docdb import DocDbClient as RemoteDocDb
 from youwol_utils.clients.docdb.local_docdb import LocalDocDbClient as LocalDocDb
 from youwol_utils.clients.storage.local_storage import LocalStorageClient as LocalStorage
-from youwol_utils.clients.storage.storage import StorageClient as Storage
-from youwol_utils.context import ContextLogger
+from youwol_utils.clients.storage.storage import StorageClient as RemoteStorage
 from youwol_utils.http_clients.cdn_backend import LIBRARIES_TABLE
+
+Storage = Union[RemoteStorage, LocalStorage]
+DocDb = Union[RemoteDocDb, LocalDocDb]
 
 
 @dataclass(frozen=True)
@@ -21,10 +23,9 @@ class Constants:
 @dataclass(frozen=True)
 class Configuration:
 
-    storage: Union[Storage, LocalStorage]
-    doc_db: Union[DocDb, LocalDocDb]
-    ctx_logger: ContextLogger
-    required_libs: Optional[Path] = None
+    storage: Storage
+    doc_db: DocDb
+    required_libs:  Optional[Path] = None
 
 
 class Dependencies:
@@ -32,4 +33,7 @@ class Dependencies:
 
 
 async def get_configuration():
-    return await Dependencies.get_configuration()
+    conf = Dependencies.get_configuration()
+    if isinstance(conf, Configuration):
+        return conf
+    return await conf
