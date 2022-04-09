@@ -8,7 +8,7 @@ from starlette.responses import Response
 
 from youwol_utils import raise_exception_from_response
 from youwol_utils.context import Context
-from .configurations import get_configuration
+from youwol_cdn_apps_server.configurations import get_configuration
 
 router = APIRouter()
 # For the applications below the href path must be fixed by appending /dist at the end
@@ -41,10 +41,10 @@ async def get_raw_resource(
     full_name = f"{namespace}/{name}" if namespace else name
     raw_id = base64.urlsafe_b64encode(str.encode(full_name)).decode()
     config = await get_configuration()
-    url = f"{config.gtw_client.url_base}/raw/package/{raw_id}/{version}/{resource}"
+    url = f"{config.assets_gtw_client.url_base}/raw/package/{raw_id}/{version}/{resource}"
 
     if full_name in to_fix:
-        url = f"{config.gtw_client.url_base}/raw/package/{raw_id}/{version}/dist/{resource}"
+        url = f"{config.assets_gtw_client.url_base}/raw/package/{raw_id}/{version}/dist/{resource}"
 
     cors_headers = {
         'cross-origin-opener-policy': 'same-origin',
