@@ -1,5 +1,5 @@
-from .configurations import Configuration
-from .models import Project, DeprecatedData, Module, FactoryId
+from youwol_flux_backend.configurations import Constants
+from youwol_utils.http_clients.flux_backend import Project, DeprecatedData, Module, FactoryId
 
 
 def from_0_to_1(project: Project, deprecated_data: DeprecatedData):
@@ -60,11 +60,11 @@ compatibilities_factory = {
 
 
 def convert_project_to_current_version(project: Project, deprecated_data: DeprecatedData):
-    if project.schemaVersion == Configuration.current_schema_version:
+    if project.schemaVersion == Constants.current_schema_version:
         return project
 
     def apply_conversion(from_project: Project):
-        if from_project.schemaVersion == Configuration.current_schema_version:
+        if from_project.schemaVersion == Constants.current_schema_version:
             return from_project
         next_project_version = compatibilities_factory[from_project.schemaVersion](project, deprecated_data)
         return apply_conversion(from_project=next_project_version)

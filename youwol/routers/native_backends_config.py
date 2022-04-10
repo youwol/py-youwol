@@ -9,6 +9,7 @@ import youwol_stories_backend as stories
 import youwol_cdn_apps_server as cdn_apps_server
 import youwol_tree_db_backend as tree_db
 import youwol_assets_backend as assets_backend
+import youwol_flux_backend as flux_backend
 from youwol_stories_backend import Configuration as StoriesConfig
 from youwol_utils import TableBody, CdnClient, LocalDocDbInMemoryClient
 from youwol_utils.clients.assets.assets import AssetsClient
@@ -24,6 +25,7 @@ from youwol_utils.context import ContextLogger
 
 from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
 from youwol_utils.http_clients.assets_backend import ASSETS_TABLE, ACCESS_HISTORY, ACCESS_POLICY
+from youwol_utils.http_clients.flux_backend import PROJECTS_TABLE, COMPONENTS_TABLE
 from youwol_utils.http_clients.tree_db_backend import create_doc_dbs
 
 
@@ -96,6 +98,24 @@ async def assets_backend_config_py_youwol():
             keyspace_name=assets_backend.Constants.namespace,
             table_body=ACCESS_POLICY
         )
+    )
+
+
+async def flux_backend_config_py_youwol():
+    env = await yw_config()
+    return flux_backend.Configuration(
+        storage=LocalStorage(root_path=env.pathsBook.local_storage,
+                             bucket_name=flux_backend.Constants.namespace),
+        doc_db=LocalDocDbClient(root_path=env.pathsBook.local_docdb,
+                                keyspace_name=flux_backend.Constants.namespace,
+                                table_body=PROJECTS_TABLE
+                                ),
+        doc_db_component=LocalDocDbClient(
+            root_path=env.pathsBook.local_docdb,
+            keyspace_name=flux_backend.Constants.namespace,
+            table_body=COMPONENTS_TABLE
+        ),
+        assets_gtw_client=LocalClients.get_assets_gateway_client(env=env)
     )
 
 

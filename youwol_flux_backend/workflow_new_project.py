@@ -1,4 +1,4 @@
-from .models import Workflow, Module, FactoryId
+from youwol_utils.http_clients.flux_backend import Workflow, Module, FactoryId
 
 root_id = "root-component"
 # noinspection SpellCheckingInspection

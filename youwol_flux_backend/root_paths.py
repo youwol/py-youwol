@@ -13,8 +13,8 @@ from youwol_utils import (
     generate_headers_downstream, asyncio, chunks, check_permission_or_raise, RecordsResponse, GetRecordsBody,
     RecordsTable, RecordsKeyspace, RecordsBucket, RecordsDocDb, RecordsStorage, get_group, Query, QueryBody, log_info,
 )
-from .configurations import Configuration, get_configuration
-from .models import (
+from .configurations import Configuration, get_configuration, Constants
+from youwol_utils.http_clients.flux_backend import (
     Projects, ProjectSnippet, Project, NewProjectResponse, NewProject,
     BuilderRendering, RunnerRendering, Requirements, LoadingGraph, UploadResponse, EditMetadata, Component,
 )
@@ -92,7 +92,7 @@ async def get_project(
         configuration: Configuration = Depends(get_configuration)
 ):
     headers = generate_headers_downstream(request.headers)
-    owner = configuration.default_owner
+    owner = Constants.default_owner
 
     project = await retrieve_project(project_id=project_id, owner=owner, storage=configuration.storage, headers=headers)
 
@@ -116,11 +116,11 @@ async def new_project(
                                 loadingGraph=LoadingGraph(graphType="sequential-v1", lock=[], definition=[[]])
                                 )
 
-    project = Project(name=project_body.name, schemaVersion=Configuration.current_schema_version,
+    project = Project(name=project_body.name, schemaVersion=Constants.current_schema_version,
                       description=project_body.description, workflow=workflow, builderRendering=builder_rendering,
                       runnerRendering=runner_rendering, requirements=requirements)
 
-    coroutines = update_project(project_id=project_id, owner=configuration.default_owner, project=project,
+    coroutines = update_project(project_id=project_id, owner=Constants.default_owner, project=project,
                                 storage=configuration.storage, docdb=configuration.doc_db, headers=headers)
     await asyncio.gather(*coroutines)
     return NewProjectResponse(projectId=project_id, libraries=requirements.libraries)
@@ -134,7 +134,7 @@ async def duplicate(
         project_id: str,
         configuration: Configuration = Depends(get_configuration)):
     headers = generate_headers_downstream(request.headers)
-    owner = configuration.default_owner
+    owner = Constants.default_owner
     project = await retrieve_project(project_id=project_id, owner=owner, storage=configuration.storage,
                                      headers=headers)
 
@@ -162,7 +162,7 @@ async def upload(
         projects_folder = list(projects_folder)
         projects = [create_project_from_json(folder) for folder in projects_folder]
 
-        coroutines = [update_project(project_id=pid, owner=configuration.default_owner, project=project,
+        coroutines = [update_project(project_id=pid, owner=Constants.default_owner, project=project,
                                      storage=configuration.storage, docdb=configuration.doc_db, headers=headers)
                       for pid, project in projects]
 
@@ -207,7 +207,7 @@ async def post_metadata(
         configuration: Configuration = Depends(get_configuration)):
     headers = generate_headers_downstream(request.headers)
     doc_db, storage, assets_gtw = configuration.doc_db, configuration.storage, configuration.assets_gtw_client
-    owner = configuration.default_owner
+    owner = Constants.default_owner
 
     req, workflow, description = await asyncio.gather(
         storage.get_json(path="projects/{}/requirements.json".format(project_id), owner=owner, headers=headers),
@@ -253,7 +253,7 @@ async def get_metadata(
 ):
     headers = generate_headers_downstream(request.headers)
     doc_db = configuration.doc_db
-    owner = configuration.default_owner
+    owner = Constants.default_owner
     meta = await doc_db.get_document(partition_keys={"project_id": project_id},
                                      clustering_keys={},
                                      owner=owner,
@@ -272,7 +272,7 @@ async def post_project(
 ):
     headers = generate_headers_downstream(request.headers)
     storage, docdb = configuration.storage, configuration.doc_db
-    owner = configuration.default_owner
+    owner = Constants.default_owner
 
     coroutines = update_project(project_id=project_id, owner=owner,
                                 project=project, storage=storage, docdb=docdb, headers=headers)
@@ -288,7 +288,7 @@ async def post_component(
         configuration: Configuration = Depends(get_configuration)):
     headers = generate_headers_downstream(request.headers)
     storage, docdb = configuration.storage, configuration.doc_db_component
-    owner = configuration.default_owner
+    owner = Constants.default_owner
 
     await update_component(component_id=component_id, owner=owner,
                            component=component, storage=configuration.storage, doc_db_component=docdb,
@@ -302,7 +302,7 @@ async def get_component(
         component_id: str,
         configuration: Configuration = Depends(get_configuration)):
     headers = generate_headers_downstream(request.headers)
-    owner = configuration.default_owner
+    owner = Constants.default_owner
 
     component = await retrieve_component(component_id=component_id, owner=owner, storage=configuration.storage,
                                          doc_db_component=configuration.doc_db_component, headers=headers)
@@ -317,7 +317,7 @@ async def delete_component(
     headers = generate_headers_downstream(request.headers)
     docdb = configuration.doc_db_component
 
-    owner = configuration.default_owner
+    owner = Constants.default_owner
 
     base_path = "components/{}".format(component_id)
     storage = configuration.storage
@@ -351,7 +351,7 @@ async def records(
 
     paths = [get_paths(project_id) for project_id in body.ids]
     paths = list(flatten(paths))
-    group_id = to_group_id(configuration.default_owner)
+    group_id = to_group_id(Constants.default_owner)
     table = RecordsTable(
         id=doc_db.table_name,
         primaryKey=doc_db.table_body.partition_key[0],

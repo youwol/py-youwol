@@ -1,4 +1,4 @@
-from typing import List, Dict, Union, Optional
+from typing import List, Dict, Union, Tuple, Optional
 
 from pydantic import BaseModel, Field
 
@@ -116,7 +116,7 @@ class Library(BaseModel):
 class LoadingGraph(BaseModel):
     graphType: str
     lock: Optional[List[Library]] = None
-    definition: Union[List[List[Url]], List[List[List[str]]]]
+    definition: Union[List[List[Url]], List[List[Tuple[str, Url]]]]
 
 
 class Requirements(BaseModel):

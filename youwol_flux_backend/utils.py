@@ -4,15 +4,15 @@ import json
 import os
 import zipfile
 from pathlib import Path
-from typing import Union, List, Tuple, Coroutine, NamedTuple, Mapping
+from typing import Union, List, Tuple, Coroutine, Mapping
 from uuid import uuid4
 
 from fastapi import UploadFile, HTTPException
 
 from youwol_utils import JSON, DocDb, Storage, base64, log_info
-from .backward_compatibility import convert_project_to_current_version
-from .configurations import Configuration
-from .models import (
+from youwol_flux_backend.backward_compatibility import convert_project_to_current_version
+from youwol_flux_backend.configurations import Configuration, Constants
+from youwol_utils.http_clients.flux_backend import (
     Workflow, BuilderRendering, RunnerRendering, Project, Component, Requirements, DeprecatedData
 )
 
@@ -22,14 +22,9 @@ Group = str
 ProjectId = str
 
 
-class Constants(NamedTuple):
-    user_group = None
-    public_group: str = "/youwol-users"
-
-
 async def init_resources(config: Configuration):
     log_info("Ensure database resources")
-    headers = await config.admin_headers if config.admin_headers else {}
+    headers = config.admin_headers if config.admin_headers else {}
 
     log_info("Successfully retrieved authorization for resources creation")
     await asyncio.gather(
@@ -66,15 +61,15 @@ def update_project(project_id: str, owner: Union[str, None], project: Project, s
     base_path = f"projects/{project_id}"
     description = {"description": project.description, "name": project.name, "schemaVersion": project.schemaVersion}
     post_files_request = [
-        storage.post_json(path="{}/workflow.json".format(base_path), json=project.workflow.dict(), owner=owner,
+        storage.post_json(path=Constants.workflow_path(base_path), json=project.workflow.dict(), owner=owner,
                           headers=headers) if project.workflow else None,
-        storage.post_json(path="{}/builderRendering.json".format(base_path), json=project.builderRendering.dict(),
+        storage.post_json(path=Constants.builder_rendering_path(base_path), json=project.builderRendering.dict(),
                           owner=owner, headers=headers) if project.builderRendering else None,
-        storage.post_json(path="{}/runnerRendering.json".format(base_path), json=project.runnerRendering.dict(),
+        storage.post_json(path=Constants.runner_rendering_path(base_path), json=project.runnerRendering.dict(),
                           owner=owner, headers=headers) if project.runnerRendering else None,
-        storage.post_json(path="{}/requirements.json".format(base_path), json=project.requirements.dict(), owner=owner,
+        storage.post_json(path=Constants.requirements_path(base_path), json=project.requirements.dict(), owner=owner,
                           headers=headers) if project.requirements else None,
-        storage.post_json(path="{}/description.json".format(base_path), json=description, owner=owner,
+        storage.post_json(path=Constants.description_path(base_path), json=description, owner=owner,
                           headers=headers)
     ]
     post_files_request = [req for req in post_files_request if req]
@@ -138,7 +133,7 @@ async def retrieve_project(
                       runnerRendering=RunnerRendering(**runner_rendering)
                       )
 
-    if project.schemaVersion != Configuration.current_schema_version:
+    if project.schemaVersion != Constants.current_schema_version:
         project = convert_project_to_current_version(project, deprecated_data)
 
     return project
@@ -197,14 +192,14 @@ async def retrieve_component(component_id: str, owner: Union[None, str], storage
 
     base_path = "components/{}".format(component_id)
     futures = [
-        storage.get_json(path=f"{base_path}/workflow.json", owner=owner, headers=headers),
-        storage.get_json(path=f"{base_path}/builderRendering.json", owner=owner, headers=headers),
-        storage.get_json(path=f"{base_path}/requirements.json", owner=owner, headers=headers),
-        storage.get_json(path=f"{base_path}/description.json", owner=owner, headers=headers)
+        storage.get_json(path=Constants.workflow_path(base_path), owner=owner, headers=headers),
+        storage.get_json(path=Constants.builder_rendering_path(base_path), owner=owner, headers=headers),
+        storage.get_json(path=Constants.requirements_path(base_path), owner=owner, headers=headers),
+        storage.get_json(path=Constants.description_path(base_path), owner=owner, headers=headers)
     ]
     has_view = doc_db_response["documents"][0]["has_view"]
     if has_view:
-        futures.append(storage.get_json(path=f"{base_path}/runnerRendering.json", owner=owner, headers=headers))
+        futures.append(storage.get_json(path=Constants.runner_rendering_path(base_path), owner=owner, headers=headers))
     components = await asyncio.gather(*futures)
 
     workflow, builder_rendering, requirements, description = components[0:4]
