@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-from youwol_utils import StorageClient, DocDbClient, LocalStorageClient, LocalDocDbClient, TableBody
+from youwol_utils import StorageClient, DocDbClient, LocalStorageClient, LocalDocDbClient, TableBody, Storage, DocDb
 from youwol_utils.clients.docdb.models import Column
 
 FILES_TABLE = TableBody(
@@ -45,5 +45,5 @@ def get_local_docdb_client(database_path):
 @dataclass(frozen=True)
 class DataClient:
 
-    storage: StorageClient
-    docdb: DocDbClient
+    storage: Storage
+    docdb: DocDb
