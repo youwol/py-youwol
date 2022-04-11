@@ -3,8 +3,8 @@ from starlette.requests import Request
 
 from youwol_utils import JSON
 from youwol_utils.context import Context
-from .configurations import Configuration, get_configuration
-from .utils import get_path
+from youwol_cdn_sessions_storage.configurations import Configuration, get_configuration, Constants
+from youwol_cdn_sessions_storage.utils import get_path
 
 router = APIRouter()
 
@@ -42,7 +42,7 @@ async def post_data_generic(
         await configuration.storage.post_json(
             path=get_path(request=request, package=package, name=name, namespace=namespace),
             json=body,
-            owner=configuration.default_owner,
+            owner=Constants.default_owner,
             headers=ctx.headers()
         )
         return {}
@@ -88,7 +88,7 @@ async def get_data_generic(
         try:
             return await configuration.storage.get_json(
                 path=get_path(request=request, package=package, name=name, namespace=namespace),
-                owner=configuration.default_owner,
+                owner=Constants.default_owner,
                 headers=ctx.headers()
             )
         except HTTPException as e:

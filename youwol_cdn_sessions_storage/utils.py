@@ -1,12 +1,12 @@
 from starlette.requests import Request
 
 from youwol_utils import log_info, get_user_id
-from .configurations import Configuration
+from youwol_cdn_sessions_storage.configurations import Configuration
 
 
 async def init_resources(config: Configuration):
     log_info("Ensure database resources")
-    headers = await config.admin_headers if config.admin_headers else {}
+    headers = config.admin_headers if config.admin_headers else {}
 
     log_info("Successfully retrieved authorization for resources creation")
     await config.storage.ensure_bucket(headers=headers)

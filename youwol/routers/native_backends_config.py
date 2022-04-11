@@ -7,6 +7,7 @@ import youwol_cdn_apps_server as cdn_apps_server
 import youwol_tree_db_backend as tree_db
 import youwol_assets_backend as assets_backend
 import youwol_flux_backend as flux_backend
+import youwol_cdn_sessions_storage as cdn_sessions_storage
 from youwol_stories_backend import Configuration as StoriesConfig
 from youwol_utils import CdnClient, LocalDocDbInMemoryClient
 from youwol_utils.clients.assets.assets import AssetsClient
@@ -139,4 +140,14 @@ async def cdn_apps_server_config_py_youwol():
     env = await yw_config()
     return cdn_apps_server.Configuration(
         assets_gtw_client=LocalClients.get_assets_gateway_client(env=env)
+    )
+
+
+async def cdn_session_storage_config_py_youwol():
+    env = await yw_config()
+    return cdn_sessions_storage.Configuration(
+        storage=LocalStorage(
+            root_path=env.pathsBook.local_storage,
+            bucket_name=cdn_sessions_storage.Constants.namespace
+        ),
     )
