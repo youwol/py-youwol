@@ -69,49 +69,61 @@ async def publish_story(
         file: UploadFile = File(...),
         configuration: Configuration = Depends(get_configuration)
 ):
-    headers = generate_headers_downstream(request.headers)
-    owner = Constants.default_owner
-    doc_db_stories = configuration.doc_db_stories
-    doc_db_docs = configuration.doc_db_documents
-    storage = configuration.storage
+    async with Context.start_ep(
+            action="publish from zip",
+            request=request
+    ) as ctx:
+        owner = Constants.default_owner
+        doc_db_stories = configuration.doc_db_stories
+        doc_db_docs = configuration.doc_db_documents
+        storage = configuration.storage
 
-    with tempfile.TemporaryDirectory() as tmp_folder:
-        dir_path = Path(tmp_folder)
-        zip_path = (dir_path / file.filename).with_suffix('.zip')
-        try:
-            extract_zip_file(file.file, zip_path=zip_path, dir_path=dir_path)
-        except zipfile.BadZipFile:
-            raise InvalidInput(error="Bad zip file")
-        data = parse_json(dir_path / zip_data_filename)
-        story = data['story']
-        story_id = story['story_id']
-        documents = data['documents']
-        docs = await doc_db_stories.query(
-            query_body=f"story_id={story_id}#1",
-            owner=Constants.default_owner,
-            headers=headers
-        )
-        if docs['documents']:
-            await delete_story(request, story_id=story_id, configuration=configuration)
-        await asyncio.gather(
-            doc_db_stories.create_document(doc=story, owner=owner, headers=headers),
-            *[doc_db_docs.create_document(doc=doc, owner=owner, headers=headers)
-              for doc in documents],
-            *[storage.post_json(path=get_document_path(story_id=story_id, document_id=doc['content_id']),
-                                json=parse_json(dir_path / (doc['content_id']+'.json')),
-                                owner=owner, headers=headers)
-              for doc in documents],
-            storage.post_json(path=get_document_path(story_id=story_id, document_id='requirements'),
-                              json=parse_json(dir_path / zip_requirements_filename),
-                              owner=owner, headers=headers)
-        )
-        return StoryResp(
-            storyId=story['story_id'],
-            title=next(d for d in documents if d['document_id'] == story['root_document_id'])['title'],
-            authors=story['authors'],
-            rootDocumentId=story['root_document_id'],
-            requirements=Requirements(plugins=[])
-        )
+        with tempfile.TemporaryDirectory() as tmp_folder:
+            dir_path = Path(tmp_folder)
+            zip_path = (dir_path / file.filename).with_suffix('.zip')
+            try:
+                extract_zip_file(file.file, zip_path=zip_path, dir_path=dir_path)
+            except zipfile.BadZipFile as e:
+                await ctx.error(f"Extracting zip file failed {e}", )
+                raise InvalidInput(error="Bad zip file")
+
+            await ctx.info(f"Zip file extracted successfully")
+            data = parse_json(dir_path / zip_data_filename)
+            await ctx.info(f"Story data recovered", data=data)
+            story = data['story']
+            story_id = story['story_id']
+            documents = data['documents']
+            docs = await doc_db_stories.query(
+                query_body=f"story_id={story_id}#1",
+                owner=Constants.default_owner,
+                headers=ctx.headers()
+            )
+            if docs['documents']:
+                await ctx.info("Story already exist, proceed to its destruction")
+                await delete_story(request, story_id=story_id, configuration=configuration)
+            contents = {doc['document_id']: parse_json(dir_path / (doc['content_id']+'.json')) for doc in documents}
+            await ctx.info(f"Story contents recovered", data=contents)
+            requirements = parse_json(dir_path / zip_requirements_filename)
+            await ctx.info(f"Story requirements recovered", data=requirements)
+            await asyncio.gather(
+                doc_db_stories.create_document(doc=story, owner=owner, headers=ctx.headers()),
+                *[doc_db_docs.create_document(doc=doc, owner=owner, headers=ctx.headers())
+                  for doc in documents],
+                *[storage.post_json(path=get_document_path(story_id=story_id, document_id=doc['content_id']),
+                                    json=contents[doc['document_id']],
+                                    owner=owner, headers=ctx.headers())
+                  for doc in documents],
+                storage.post_json(path=get_document_path(story_id=story_id, document_id='requirements'),
+                                  json=requirements,
+                                  owner=owner, headers=ctx.headers())
+            )
+            return StoryResp(
+                storyId=story['story_id'],
+                title=next(d for d in documents if d['document_id'] == story['root_document_id'])['title'],
+                authors=story['authors'],
+                rootDocumentId=story['root_document_id'],
+                requirements=Requirements(plugins=[])
+            )
 
 
 @router.get(
