@@ -141,7 +141,7 @@ class YouwolEnvironment(BaseModel):
         return DefaultDriveResponse(**default_drive)
 
     def __str__(self):
-        def str_redirctions():
+        def str_redirections():
             if len(self.customDispatches) != 0:
                 return f"""
 - list of redirections:
@@ -167,7 +167,7 @@ Configuration loaded from '{self.pathsBook.config}'
 - paths: {self.pathsBook}
 - cdn packages count: {len(parse_json(self.pathsBook.local_cdn_docdb)['documents'])}
 - assets count: {len(parse_json(self.pathsBook.local_docdb / 'assets' / 'entities' / 'data.json')['documents'])}
-{str_redirctions()}
+{str_redirections()}
 {str_commands()}
 {self.k8sInstance.__str__() if self.k8sInstance else "- not connected to a k8s cluster"}
 """
