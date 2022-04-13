@@ -16,7 +16,7 @@ from starlette.responses import Response
 
 import semantic_version
 from youwol_utils import generate_headers_downstream, QueryBody, files_check_sum, shutil, \
-    CircularDependencies, PublishPackageError
+    CircularDependencies, PublishPackageError, get_content_encoding, get_content_type
 from youwol_utils.clients.docdb.models import Query, WhereClause, OrderingClause, SelectClause
 from youwol_utils.context import Context
 from youwol_cdn_backend.configurations import Constants, Configuration
@@ -39,32 +39,6 @@ def create_tmp_folder(zip_filename):
     zip_dir_name = zip_filename.split('.')[0]
     os.makedirs(dir_path)
     return dir_path, zip_path, zip_dir_name
-
-
-def get_content_encoding(file_id):
-    file_id = str(file_id)
-    if ".json" not in file_id and ".js" in file_id or ".css" in file_id or '.data' in file_id or '.wasm' in file_id:
-        return "br"
-
-    return "identity"
-
-
-def get_content_type(file_id):
-    if ".json" in file_id:
-        return "application/json"
-    if ".js" in file_id:
-        return "application/javascript; charset=UTF-8"
-    elif ".css" in file_id:
-        return "text/css"
-    elif ".woff2" in file_id:
-        return "font/woff2"
-    elif '.svg' in file_id:
-        return "image / svg + xml"
-    elif '.html' in file_id:
-        return "text/html"
-    elif '.wasm' in file_id:
-        return 'application/wasm'
-    return "application/octet-stream"
 
 
 def get_filename(d):
