@@ -228,8 +228,8 @@ def check_permission_or_raise(target_group: Union[str, None], allowed_groups: Li
                             detail=f"scope '{target_group}' not included in user groups")
 
 
-def get_content_type(file_name: str):
-    extensions = file_name.split('.')[1:]
+def get_content_type(file_name: Union[str, Path]):
+    extensions = Path(file_name).name.split('.')[1:]
     if "json" in extensions:
         return "application/json"
     if "yaml" in extensions:
@@ -249,15 +249,15 @@ def get_content_type(file_name: str):
     return "application/octet-stream"
 
 
-def get_content_encoding(file_name: str):
+def get_content_encoding(file_name: Union[str, Path]):
 
-    extension = file_name.split('.')[-1]
+    extension = Path(file_name).name.split('.')[-1]
     if extension == "br":
         return "br"
     if extension == "gzip":
         return "gzip"
 
-    return ""
+    return "identity"
 
 
 async def retrieve_user_info(auth_token: str, openid_host: str):
