@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from starlette.requests import Request
 from starlette.responses import Response, JSONResponse
 
-from youwol_utils import (HTTPException)
+from youwol_utils import (HTTPException, encode_id)
 from youwol_utils.context import Context
 from youwol_assets_gateway.configurations import Configuration, get_configuration
 from youwol_assets_gateway.utils import raw_id_to_asset_id
@@ -86,7 +86,8 @@ async def delete_version_generic(
     ) as ctx:
         await ensure_permission(permission='write', library_name=library_name, configuration=configuration, context=ctx)
         cdn_client = configuration.cdn_client
-        return await cdn_client.delete_version(library_name=library_name, version=version, headers=ctx.headers())
+        return await cdn_client.delete_version(library_id=encode_id(library_name), version=version,
+                                               headers=ctx.headers())
 
 
 @router.delete("/libraries/{namespace}/{library_name}/{version}", summary="delete a specific version")
@@ -126,8 +127,12 @@ async def get_package_generic(
         await ensure_permission(permission='read', library_name=library_name, configuration=configuration, context=ctx)
 
         cdn_client = configuration.cdn_client
-        resp = await cdn_client.get_package(library_name=library_name, version=version, metadata=metadata,
-                                            headers=ctx.headers())
+        library_id = encode_id(library_name)
+
+        resp = await cdn_client.get_library_info(library_id=library_id, version=version, headers=ctx.headers()) \
+            if metadata else \
+            await cdn_client.download_library(library_id=library_id, version=version, headers=ctx.headers())
+
         return JSONResponse(resp) \
             if metadata \
             else Response(resp, media_type='multipart/form-data')
