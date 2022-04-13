@@ -25,6 +25,11 @@ async def assert_write_permissions_from_raw_id(raw_id: str, configuration: Confi
         raise HTTPException(status_code=403, detail=f"Unauthorized to write {raw_id}")
 
 
+async def assert_write_permissions_folder_id(folder_id: str, context: Context):
+    # need to be implemented
+    pass
+
+
 async def create_asset(
         kind: str,
         raw_id: str,

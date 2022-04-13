@@ -5,7 +5,7 @@ from starlette.responses import Response
 
 from youwol_assets_gateway.raw_stores import AssetMeta
 from youwol_assets_gateway.routers.common import assert_read_permissions_from_raw_id, \
-    assert_write_permissions_from_raw_id, create_asset, delete_asset
+    assert_write_permissions_from_raw_id, create_asset, delete_asset, assert_write_permissions_folder_id
 from youwol_utils.context import Context
 from youwol_assets_gateway.configurations import Configuration, get_configuration
 from youwol_utils.http_clients.assets_gateway import AssetResponse
@@ -39,6 +39,7 @@ async def put_story(
     async with Context.start_ep(
             request=request
     ) as ctx:
+        await assert_write_permissions_folder_id(folder_id=folder_id, context=ctx)
         story = await configuration.stories_client.create_story(body=body.dict(), headers=ctx.headers())
         return await create_asset(
             kind="story",
