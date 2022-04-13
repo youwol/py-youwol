@@ -44,7 +44,7 @@ class PackagesStore(RawStore, ABC):
                 await raise_exception_from_response(resp, url=url, headers=headers)
 
     async def get_asset_metadata(self, request: Request, raw_id: str, rest_of_path: Union[str, None], headers):
-        return await self.client.get_versions(raw_id, headers=headers)
+        return await self.client.get_library_info(raw_id, headers=headers)
 
     async def delete_asset(self, request: Request, raw_id, headers):
         # Not relevant for this asset

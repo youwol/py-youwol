@@ -8,7 +8,7 @@ from youwol.routers.commons import Label
 from youwol.routers.environment.download_assets.models import DownloadTask
 from youwol.routers.local_cdn.implementation import download_package
 from youwol.web_socket import UserContextLogger
-from youwol_utils import CdnClient, decode_id
+from youwol_utils import CdnClient, decode_id, encode_id
 
 
 @dataclass
@@ -26,10 +26,9 @@ class DownloadPackageTask(DownloadTask):
         local_cdn: CdnClient = LocalClients.get_cdn_client(env=env)
         headers = self.context.headers()
         try:
-            await local_cdn.get_package(
-                library_name=self.package_name,
+            await local_cdn.get_version_info(
+                library_id=encode_id(self.package_name),
                 version=self.version,
-                metadata=True,
                 headers=headers
             )
             return True
