@@ -10,7 +10,7 @@ from youwol_utils import (
 from youwol_utils.context import Context
 from youwol_assets_gateway.configurations import get_configuration
 from youwol_assets_gateway.routers_deprecated import tree, assets, raw, cdn, misc
-from youwol_assets_gateway.routers import stories_backend, cdn_backend
+from youwol_assets_gateway.routers import stories_backend, cdn_backend, files_backend
 
 router = APIRouter()
 
@@ -64,9 +64,12 @@ router.include_router(
 )
 
 
-@router.get("/.ambassador-internal/openapi-docs")
-async def patch_until_this_call_is_removed():
-    return {}
+router.include_router(
+    files_backend.router,
+    prefix="/files-backend",
+    dependencies=[Depends(get_configuration)],
+    tags=["files"]
+)
 
 
 @router.get("/healthz")

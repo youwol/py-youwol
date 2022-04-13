@@ -6,6 +6,7 @@ from youwol_utils.clients.assets.assets import AssetsClient
 from youwol_utils.clients.data_api.data import (
     DataClient, FILES_TABLE
 )
+from youwol_utils.clients.files import FilesClient
 from youwol_utils.clients.flux.flux import FluxClient
 from youwol_utils.clients.stories.stories import StoriesClient
 from youwol_utils.clients.treedb.treedb import TreeDbClient
@@ -37,6 +38,7 @@ class Configuration:
     stories_client: StoriesClient
     treedb_client: TreeDbClient
     assets_client: AssetsClient
+    files_client: FilesClient
     admin_headers: Optional[Dict[str, str]] = None
 
     def assets_stores(self):
