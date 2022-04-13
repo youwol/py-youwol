@@ -7,7 +7,7 @@ from youwol_assets_gateway.routers.common import assert_write_permissions_folder
     assert_read_permissions_from_raw_id, assert_write_permissions_from_raw_id, create_asset, delete_asset
 from youwol_utils.context import Context
 from youwol_assets_gateway.configurations import Configuration, get_configuration
-from youwol_utils.http_clients.assets_gateway import AssetResponse
+from youwol_utils.http_clients.assets_gateway import NewAssetResponse
 from youwol_utils.http_clients.cdn_backend import ListVersionsResponse, \
     LoadingGraphResponseV1, LoadingGraphBody
 
@@ -16,7 +16,7 @@ router = APIRouter()
 
 @router.post("/publish-library",
              summary="upload a library",
-             response_model=AssetResponse)
+             response_model=NewAssetResponse)
 async def publish_library(
         request: Request,
         folder_id: str = Query(None, alias="folder-id"),
@@ -38,6 +38,7 @@ async def publish_library(
         return await create_asset(
             kind="package",
             raw_id=package["id"],
+            raw_response=package,
             folder_id=folder_id,
             metadata=AssetMeta(name=package["name"]),
             context=ctx,

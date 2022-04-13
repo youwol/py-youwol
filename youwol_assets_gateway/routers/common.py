@@ -1,5 +1,6 @@
 import asyncio
 import json
+from typing import Dict
 
 from fastapi import HTTPException
 from youwol_assets_gateway.configurations import Configuration
@@ -33,11 +34,12 @@ async def assert_write_permissions_folder_id(folder_id: str, context: Context):
 async def create_asset(
         kind: str,
         raw_id: str,
+        raw_response: Dict[str, any],
         folder_id: str,
         metadata: AssetMeta,
         context: Context,
         configuration: Configuration
-):
+) -> NewAssetResponse:
 
     async with context.start(
             action='create asset',
@@ -91,7 +93,8 @@ async def create_asset(
 
         response = NewAssetResponse(**{
             **to_asset_resp(asset, permissions=PermissionsResponse(read=True, write=True, share=True)).dict(),
-            **{"treeId": resp_tree["itemId"]}
+            "treeId": resp_tree["itemId"],
+            "rawResponse": raw_response
         })
         return response
 

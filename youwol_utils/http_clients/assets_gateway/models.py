@@ -1,4 +1,4 @@
-from typing import List, Any, Union, Optional
+from typing import List, Any, Union, Optional, Dict
 
 from pydantic import BaseModel
 
@@ -55,6 +55,7 @@ class AssetWithPermissionResponse(AssetResponse):
 
 class NewAssetResponse(AssetResponse):
     treeId: str
+    rawResponse: Optional[Dict[str, Any]]
 
 
 class AssetsResponse(BaseModel):

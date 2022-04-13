@@ -8,7 +8,7 @@ from youwol_assets_gateway.routers.common import assert_read_permissions_from_ra
     assert_write_permissions_from_raw_id, create_asset, delete_asset, assert_write_permissions_folder_id
 from youwol_utils.context import Context
 from youwol_assets_gateway.configurations import Configuration, get_configuration
-from youwol_utils.http_clients.assets_gateway import AssetResponse
+from youwol_utils.http_clients.assets_gateway import NewAssetResponse
 from youwol_utils.http_clients.stories_backend import StoryResp, GetGlobalContentResp, PostGlobalContentBody, \
     MoveDocumentResp, MoveDocumentBody, GetDocumentResp, PostDocumentBody, PutDocumentBody, GetChildrenResp, \
     PostStoryBody, GetContentResp, PostContentBody, DeleteResp, PutStoryBody, PostPluginBody, PostPluginResponse
@@ -28,7 +28,7 @@ async def healthz(
 
 @router.put(
     "/stories",
-    response_model=AssetResponse,
+    response_model=NewAssetResponse,
     summary="create a new story")
 async def put_story(
         request: Request,
@@ -44,6 +44,7 @@ async def put_story(
         return await create_asset(
             kind="story",
             raw_id=story["storyId"],
+            raw_response=story,
             folder_id=folder_id,
             metadata=AssetMeta(name=story["title"]),
             context=ctx,
@@ -53,7 +54,7 @@ async def put_story(
 
 @router.post(
     "/stories",
-    response_model=AssetResponse,
+    response_model=NewAssetResponse,
     summary="publish a story from zip file")
 async def publish_story(
         request: Request,
@@ -72,6 +73,7 @@ async def publish_story(
         return await create_asset(
             kind="story",
             raw_id=story["storyId"],
+            raw_response=story,
             folder_id=folder_id,
             metadata=AssetMeta(name=story["title"]),
             context=ctx,
