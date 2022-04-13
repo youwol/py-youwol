@@ -129,7 +129,7 @@ async def get_package_generic(
         cdn_client = configuration.cdn_client
         library_id = encode_id(library_name)
 
-        resp = await cdn_client.get_library_info(library_id=library_id, version=version, headers=ctx.headers()) \
+        resp = await cdn_client.get_version_info(library_id=library_id, version=version, headers=ctx.headers()) \
             if metadata else \
             await cdn_client.download_library(library_id=library_id, version=version, headers=ctx.headers())
 
