@@ -51,11 +51,15 @@ class CdnClient:
 
     @property
     def publish_url(self):
-        return f"{self.url_base}/actions/publish-library"
+        return f"{self.url_base}/publish-library"
+
+    @property
+    def download_url(self):
+        return f"{self.url_base}/download-library"
 
     @property
     def push_url(self):
-        return f"{self.url_base}/actions/sync"
+        return f"{self.url_base}/publish_libraries"
 
     async def query_packs(self, namespace: str = None, **kwargs):
 
@@ -98,16 +102,7 @@ class CdnClient:
                     return await resp.json()
                 await raise_exception_from_response(resp, url=f"{self.url_base}/{str(url)}", headers=self.headers)
 
-    async def get_library(self, library_id: str, version: str, **kwargs):
-
-        url = f"{self.url_base}/libraries/{library_id}/{version}"
-        async with aiohttp.ClientSession(headers=self.headers) as session:
-            async with await session.get(url=url, **kwargs) as resp:
-                if resp.status == 200:
-                    return await resp.json()
-                await raise_exception_from_response(resp, url=url, headers=self.headers)
-
-    async def get_versions(self, library_id: str, **kwargs):
+    async def get_library_info(self, library_id: str, **kwargs):
 
         url = f"{self.url_base}/libraries/{library_id}"
         async with aiohttp.ClientSession(headers=self.headers) as session:
@@ -116,27 +111,45 @@ class CdnClient:
                     return await resp.json()
                 await raise_exception_from_response(resp, url=url, headers=self.headers)
 
-    async def publish(self, zip_path: Union[Path, str], **kwargs):
+    async def get_version_info(self, library_id: str, version: str, **kwargs):
 
-        files = {'file': open(zip_path, 'rb')}
+        url = f"{self.url_base}/libraries/{library_id}/{version}"
         async with aiohttp.ClientSession(headers=self.headers) as session:
-            async with await session.post(self.publish_url, data=files, **kwargs) as resp:
+            async with await session.get(url=url, **kwargs) as resp:
+                if resp.status == 200:
+                    return await resp.json()
+                await raise_exception_from_response(resp, url=url, headers=self.headers)
+
+    async def publish(self, data, **kwargs):
+
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with await session.post(self.publish_url, data=data, **kwargs) as resp:
                 if resp.status == 200:
                     return await resp.json()
                 await raise_exception_from_response(resp, url=self.publish_url, headers=self.headers)
 
-    async def sync(self, zip_path: Union[Path, str], **kwargs):
+    async def download_library(self, library_id: str, version: str, **kwargs):
+
+        url = f"{self.download_url}/{library_id}/{version}"
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with await session.get(url=url, **kwargs) as resp:
+                if resp.status == 200:
+                    return await resp.read()
+                await raise_exception_from_response(resp, url=url, headers=self.headers)
+
+    async def publish_libraries(self, zip_path: Union[Path, str], **kwargs):
 
         files = {'file': open(zip_path, 'rb')}
+
         async with aiohttp.ClientSession(headers=self.headers) as session:
             async with await session.post(self.push_url, data=files, **kwargs) as resp:
                 if resp.status == 200:
                     return await resp.json()
                 await raise_exception_from_response(resp, url=self.push_url, headers=self.headers)
 
-    async def delete_version(self, library_name: str, version: str, **kwargs):
+    async def delete_library(self, library_id: str, **kwargs):
 
-        url = f"{self.url_base}/libraries/{library_name}/{version}"
+        url = f"{self.url_base}/libraries/{library_id}"
 
         async with aiohttp.ClientSession(headers=self.headers) as session:
             async with await session.delete(url, **kwargs) as resp:
@@ -144,14 +157,14 @@ class CdnClient:
                     return await resp.json()
                 await raise_exception_from_response(resp, url=self.push_url, headers=self.headers)
 
-    async def get_package(self, library_name: str, version: str, metadata: bool = False, **kwargs):
+    async def delete_version(self, library_id: str, version: str, **kwargs):
 
-        url = f"{self.url_base}/libraries/{library_name}/{version}"
-        params = {"metadata": str(metadata)}
+        url = f"{self.url_base}/libraries/{library_id}/{version}"
+
         async with aiohttp.ClientSession(headers=self.headers) as session:
-            async with await session.get(url=url, params=params, **kwargs) as resp:
+            async with await session.delete(url, **kwargs) as resp:
                 if resp.status == 200:
-                    return await resp.json() if metadata else await resp.read()
+                    return await resp.json()
                 await raise_exception_from_response(resp, url=self.push_url, headers=self.headers)
 
     async def get_explorer(self, library_id: str, version: str, folder_path: str, **kwargs):
@@ -163,3 +176,25 @@ class CdnClient:
                 if resp.status == 200:
                     return await resp.json()
                 await raise_exception_from_response(resp, url=self.push_url, headers=self.headers)
+
+    async def get_entry_point(self, library_id: str, version: str, **kwargs):
+
+        return await self.get_resource(library_id=library_id, version=version, rest_of_path='', **kwargs)
+
+    async def get_resource(self, library_id: str, version: str, rest_of_path: str, **kwargs):
+
+        url = f"{self.url_base}/resources/{library_id}/{version}/{rest_of_path}" \
+            if rest_of_path else \
+            f"{self.url_base}/resources/{library_id}/{version}"
+
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with await session.get(url, **kwargs) as resp:
+                if resp.status == 200:
+                    if resp.content_type in ['text/html']:
+                        return await resp.text()
+                    if resp.content_type in ['application/json']:
+                        return await resp.json()
+                    return resp.read()
+                await raise_exception_from_response(resp, url=self.push_url, headers=self.headers)
+
+

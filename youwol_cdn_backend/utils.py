@@ -17,11 +17,11 @@ from starlette.responses import Response
 import semantic_version
 from youwol_utils import generate_headers_downstream, QueryBody, files_check_sum, shutil, \
     CircularDependencies, PublishPackageError
-from youwol_utils.clients.docdb.models import Query, WhereClause, OrderingClause
+from youwol_utils.clients.docdb.models import Query, WhereClause, OrderingClause, SelectClause
 from youwol_utils.context import Context
 from youwol_cdn_backend.configurations import Constants, Configuration
 from youwol_utils.http_clients.cdn_backend import FormData, PublishResponse, FileResponse, \
-    FolderResponse, ExplorerResponse
+    FolderResponse, ExplorerResponse, ListVersionsResponse, Release
 from youwol_cdn_backend.utils_indexing import format_doc_db_record, get_version_number_str
 
 flatten = itertools.chain.from_iterable
@@ -369,9 +369,12 @@ def to_package_id(package_name: str) -> str:
     return base64.urlsafe_b64encode(b).decode()
 
 
-def to_package_name(package_id: str) -> str:
-    b = str.encode(package_id)
-    return base64.urlsafe_b64decode(b).decode()
+def to_package_name(library_id: str) -> str:
+    try:
+        b = str.encode(library_id)
+        return base64.urlsafe_b64decode(b).decode()
+    except Exception:
+        raise HTTPException(status_code=400, detail=f"'{library_id}' is not a valid library id")
 
 
 def get_url(document: Mapping[str, str]) -> str:
@@ -388,3 +391,79 @@ def retrieve_dependency_paths(dependencies_dict, from_package: str, suffix: str 
              for parent in parents]
     paths = list(itertools.chain.from_iterable(paths))
     return paths
+
+
+async def list_versions(
+        name: str,
+        max_results: int,
+        context: Context,
+        configuration):
+    async with context.start(
+            action="list version of package",
+            with_attributes={"name": name, "max_results": max_results}
+    ) as ctx:  # type: Context
+
+        doc_db = configuration.doc_db
+        query = QueryBody(
+            max_results=max_results,
+            select_clauses=[SelectClause(selector="versions"), SelectClause(selector="namespace")],
+            query=Query(where_clause=[WhereClause(column="library_name", relation="eq", term=name)])
+        )
+
+        response = await doc_db.query(query_body=query, owner=Constants.owner, headers=ctx.headers())
+
+        if not response['documents']:
+            raise HTTPException(status_code=404, detail=f"The library {name} does not exist")
+
+        namespace = {d['namespace'] for d in response['documents']}.pop()
+        ordered = sorted(response['documents'], key=lambda doc: doc['version_number'])
+        ordered.reverse()
+        return ListVersionsResponse(
+            name=name, namespace=namespace, id=to_package_id(name),
+            versions=[d['version'] for d in ordered],
+            releases=[Release(version=d['version'],
+                              version_number=int(d['version_number']),
+                              fingerprint=d['fingerprint'])
+                      for d in ordered]
+        )
+
+
+async def resolve_explicit_version(package_name: str, input_version: str, configuration: Configuration,
+                                   context: Context):
+    if input_version == 'latest':
+        await context.info(text="retrieve latest version")
+        versions_resp = await list_versions(name=package_name, context=context, max_results=1,
+                                            configuration=configuration)
+        return versions_resp.versions[0]
+    return input_version
+
+
+async def resolve_caching_max_age(version: str, context: Context):
+    if "-wip" in version:
+        await context.info("'-wip' suffix => max_age set to 0")
+        return "0"
+    return "31536000"
+
+
+async def resolve_resource(library_id: str, input_version: str, configuration: Configuration,
+                           context: Context):
+
+    package_name = to_package_name(library_id)
+    version = await resolve_explicit_version(package_name=package_name, input_version=input_version,
+                                             configuration=configuration, context=context)
+    max_age = await resolve_caching_max_age(version=version, context=context)
+    return package_name, version, max_age
+
+
+async def fetch_resource(path: str, max_age: str, configuration: Configuration, context: Context):
+    content = await configuration.storage.get_bytes(
+        path=path,
+        owner=Constants.owner,
+        headers=context.headers())
+
+    return format_response(content=content, file_id=path.split('/')[-1], max_age=max_age)
+
+
+def get_path(library_id: str, version: str, rest_of_path: str):
+    name = to_package_name(library_id)
+    return f"libraries/{name.replace('@', '')}/{version}/{rest_of_path}"

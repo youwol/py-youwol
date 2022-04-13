@@ -16,18 +16,6 @@ class FormData(NamedTuple):
     owner: Union[str, None]
 
 
-class FluxPackSummary(BaseModel):
-    name: str
-    id: str
-    description: str
-    tags: List[str]
-    namespace: str
-
-
-class ListPacksResponse(BaseModel):
-    fluxPacks: List[FluxPackSummary]
-
-
 class PublishResponse(BaseModel):
     name: str
     id: str
@@ -44,7 +32,7 @@ class UploadResponse(BaseModel):
     namespace: str
 
 
-class SyncResponse(BaseModel):
+class PublishLibrariesResponse(BaseModel):
     filesCount: int
     librariesCount: int
     compressedSize: int
@@ -74,6 +62,10 @@ Url = str
 
 class DeleteBody(BaseModel):
     librariesName: List[str]
+
+
+class DeleteLibraryResponse(BaseModel):
+    deletedVersionsCount: int
 
 
 class LoadingGraphResponse(BaseModel):
