@@ -10,10 +10,11 @@ import youwol_cdn_apps_server as cdn_apps_server
 import youwol_tree_db_backend as tree_db_backend
 import youwol_assets_backend as assets_backend
 import youwol_flux_backend as flux_backend
+import youwol_files_backend as files_backend
 import youwol_cdn_sessions_storage as cdn_sessions_storage
 from youwol.routers.native_backends_config import assets_gtw_config_py_youwol, stories_config_py_youwol, \
     cdn_config_py_youwol, cdn_apps_server_config_py_youwol, tree_db_config_py_youwol, assets_backend_config_py_youwol, \
-    flux_backend_config_py_youwol, cdn_session_storage_config_py_youwol
+    flux_backend_config_py_youwol, cdn_session_storage_config_py_youwol, files_backend_config_py_youwol
 
 router = APIRouter()
 
@@ -65,6 +66,11 @@ backends = [
         prefix="/api/cdn-sessions-storage",
         tags=["cdn-sessions-storage"],
         router=cdn_sessions_storage.get_router(cdn_session_storage_config_py_youwol)
+    ),
+    BackendPlugin(
+        prefix="/api/files-backend",
+        tags=["files"],
+        router=files_backend.get_router(files_backend_config_py_youwol)
     )
 ]
 

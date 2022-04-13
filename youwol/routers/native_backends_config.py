@@ -8,12 +8,15 @@ import youwol_tree_db_backend as tree_db
 import youwol_assets_backend as assets_backend
 import youwol_flux_backend as flux_backend
 import youwol_cdn_sessions_storage as cdn_sessions_storage
+import youwol_files_backend as youwol_files_backend
 from youwol_stories_backend import Configuration as StoriesConfig
 from youwol_utils import CdnClient, LocalDocDbInMemoryClient
 from youwol_utils.clients.assets.assets import AssetsClient
 from youwol_utils.clients.data_api.data import DataClient
 from youwol_utils.clients.docdb.local_docdb import LocalDocDbClient as LocalDocDb, LocalDocDbClient
+from youwol_utils.clients.files import FilesClient
 from youwol_utils.clients.flux.flux import FluxClient
+from youwol_utils.clients.minio import MockMinioPersistentClient
 from youwol_utils.clients.storage.local_storage import LocalStorageClient as LocalStorage
 from youwol_utils.clients.stories.stories import StoriesClient
 from youwol_utils.clients.treedb.treedb import TreeDbClient
@@ -107,7 +110,8 @@ async def assets_gtw_config_py_youwol():
         cdn_client=CdnClient(url_base=f"{url_base}/cdn-backend"),
         stories_client=StoriesClient(url_base=f"{url_base}/stories-backend"),
         treedb_client=TreeDbClient(url_base=f"{url_base}/treedb-backend"),
-        assets_client=AssetsClient(url_base=f"{url_base}/assets-backend")
+        assets_client=AssetsClient(url_base=f"{url_base}/assets-backend"),
+        files_client=FilesClient(url_base=f"{url_base}/files-backend")
     )
 
     return config_yw_assets_gateway
@@ -149,5 +153,15 @@ async def cdn_session_storage_config_py_youwol():
         storage=LocalStorage(
             root_path=env.pathsBook.local_storage,
             bucket_name=cdn_sessions_storage.Constants.namespace
+        ),
+    )
+
+
+async def files_backend_config_py_youwol():
+    env = await yw_config()
+    return youwol_files_backend.Configuration(
+        minio=MockMinioPersistentClient(
+            root_path=env.pathsBook.local_storage,
+            bucket_name=youwol_files_backend.Constants.namespace
         ),
     )
