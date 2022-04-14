@@ -16,7 +16,7 @@ from starlette.responses import Response
 
 import semantic_version
 from youwol_utils import generate_headers_downstream, QueryBody, files_check_sum, shutil, \
-    CircularDependencies, PublishPackageError, get_content_encoding, get_content_type
+    CircularDependencies, PublishPackageError, get_content_type
 from youwol_utils.clients.docdb.models import Query, WhereClause, OrderingClause, SelectClause
 from youwol_utils.context import Context
 from youwol_cdn_backend.configurations import Constants, Configuration
@@ -263,6 +263,14 @@ async def create_explorer_data(root_path: Path, forms: List[FormData], context: 
         compute_folders_size_rec(data['.'], data, results)
         await ctx.info('folders tree re-constructed', data={k: f"{len(d.files)} file(s)" for k, d in data.items()})
         return data
+
+
+def get_content_encoding(file_id):
+    file_id = str(file_id)
+    if ".json" not in file_id and ".js" in file_id or ".css" in file_id or '.data' in file_id or '.wasm' in file_id:
+        return "br"
+
+    return "identity"
 
 
 def format_response(content: bytes, file_id: str, max_age: str = "31536000") -> Response:
