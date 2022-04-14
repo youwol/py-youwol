@@ -246,6 +246,10 @@ def get_content_type(file_name: Union[str, Path]):
         return "image/png"
     if 'txt' in extensions:
         return 'text/plain'
+    if 'html' in extensions:
+        return 'text/html'
+    if 'wasm' in extensions:
+        return 'application/wasm'
     return "application/octet-stream"
 
 
