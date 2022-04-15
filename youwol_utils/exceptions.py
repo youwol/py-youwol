@@ -197,12 +197,13 @@ class FolderNotFound(YouWolException):
 class ResourcesNotFoundException(YouWolException):
     exceptionType = "ResourcesNotFoundException"
 
-    def __init__(self, path: str, **kwargs):
+    def __init__(self, path: str, detail: str = "", **kwargs):
         YouWolException.__init__(
             self,
             status_code=404,
             detail={
-                "path": path
+                "path": path,
+                "detail": detail
             },
             **kwargs)
         self.path = path
