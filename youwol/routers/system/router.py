@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from starlette.requests import Request
 
 from youwol.web_socket import AdminContextLogger, Log
-from youwol_utils.context import Context
+from youwol_utils.context import Context, LogEntry, LogLevel
 
 router = APIRouter()
 
@@ -67,6 +67,14 @@ class LogsResponse(BaseModel):
     logs: List[Log]
 
 
+class PostLogBody(Log):
+    traceUid: str
+
+
+class PostLogsBody(BaseModel):
+    logs: List[PostLogBody]
+
+
 @router.get("/logs/", summary="return the logs")
 async def query_logs(
         request: Request,
@@ -82,8 +90,6 @@ async def query_logs(
         logger = cast(AdminContextLogger, ctx.loggers[0])
         logs = []
         for log in reversed(logger.root_node_logs):
-            if log.timestamp > from_timestamp * 1000:
-                pass
             failed = log.contextId in logger.errors
             logs.append(NodeLogResponse(**log.dict(), failed=failed))
             if len(logs) > max_count:
@@ -109,3 +115,21 @@ async def get_logs(request: Request, parent_id: str):
                             if log.contextId == parent_id]
 
         return LogsResponse(logs=sorted(nodes + leafs, key=lambda n: n.timestamp))
+
+
+@router.post(
+    "/logs",
+    summary="post logs"
+)
+async def post_logs(
+        request: Request,
+        body: PostLogsBody
+):
+    context = Context.from_request(request=request)
+    logger = cast(AdminContextLogger, context.loggers[0])
+    for log in body.logs:
+        entry = LogEntry(
+            level=LogLevel.INFO, text=log.text, data=log.data, labels=log.labels, attributes=log.attributes,
+            context_id=log.contextId, parent_context_id=log.parentContextId, trace_uid=log.traceUid
+        )
+        await logger.log(entry=entry)
