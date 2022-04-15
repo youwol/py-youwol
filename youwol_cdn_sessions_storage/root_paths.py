@@ -6,7 +6,7 @@ from youwol_utils.context import Context
 from youwol_cdn_sessions_storage.configurations import Configuration, get_configuration, Constants
 from youwol_cdn_sessions_storage.utils import get_path
 
-router = APIRouter()
+router = APIRouter(tags=["cdn-sessions-storage"])
 
 
 @router.get("/healthz")

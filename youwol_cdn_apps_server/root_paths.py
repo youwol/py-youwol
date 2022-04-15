@@ -10,7 +10,7 @@ from youwol_utils import raise_exception_from_response
 from youwol_utils.context import Context
 from youwol_cdn_apps_server.configurations import get_configuration
 
-router = APIRouter()
+router = APIRouter(tags=["cdn-apps-server"])
 # For the applications below the href path must be fixed by appending /dist at the end
 to_fix = [
     "@youwol/platform",

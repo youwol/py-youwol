@@ -11,7 +11,7 @@ from youwol_utils.http_clients.assets_gateway import NewAssetResponse
 from youwol_utils.http_clients.cdn_backend import ListVersionsResponse, \
     LoadingGraphResponseV1, LoadingGraphBody
 
-router = APIRouter()
+router = APIRouter(tags=["assets-gateway.cdn-backend"])
 
 
 @router.post("/publish-library",

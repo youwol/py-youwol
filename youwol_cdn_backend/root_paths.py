@@ -26,7 +26,7 @@ from youwol_cdn_backend.utils import (
 )
 from youwol_cdn_backend.utils_indexing import get_version_number_str
 
-router = APIRouter()
+router = APIRouter(tags=["cdn-backend"])
 
 
 @router.get("/healthz")

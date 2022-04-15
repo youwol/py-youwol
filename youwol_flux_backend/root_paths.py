@@ -24,7 +24,7 @@ from .utils import (
 )
 from .workflow_new_project import workflow_new_project
 
-router = APIRouter()
+router = APIRouter(tags=["flux-backend"])
 flatten = itertools.chain.from_iterable
 
 

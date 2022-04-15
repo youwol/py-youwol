@@ -36,7 +36,7 @@ from youwol_stories_backend.utils import (
     create_default_global_contents,
 )
 
-router = APIRouter()
+router = APIRouter(tags=["stories-backend"])
 flatten = itertools.chain.from_iterable
 
 

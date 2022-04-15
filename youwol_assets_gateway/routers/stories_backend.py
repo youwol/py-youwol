@@ -13,7 +13,7 @@ from youwol_utils.http_clients.stories_backend import StoryResp, GetGlobalConten
     MoveDocumentResp, MoveDocumentBody, GetDocumentResp, PostDocumentBody, PutDocumentBody, GetChildrenResp, \
     PostStoryBody, GetContentResp, PostContentBody, DeleteResp, PutStoryBody, PostPluginBody, PostPluginResponse
 
-router = APIRouter()
+router = APIRouter(tags=["assets-gateway.stories-backend"])
 
 
 @router.get("/healthz")

@@ -12,7 +12,7 @@ from youwol_utils import get_content_type, get_content_encoding
 from youwol_utils.context import Context
 from youwol_utils.http_clients.files_backend import PostFileResponse, GetStatsResponse, PostMetadataBody
 
-router = APIRouter()
+router = APIRouter(tags=["files-backend"])
 flatten = itertools.chain.from_iterable
 
 

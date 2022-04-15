@@ -21,7 +21,7 @@ from youwol_assets_gateway.utils import (
     raw_id_to_asset_id,
 )
 
-router = APIRouter()
+router = APIRouter(tags=["assets-gateway.assets"])
 
 
 @router.post("/query-flat",

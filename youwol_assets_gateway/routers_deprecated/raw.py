@@ -9,7 +9,7 @@ from youwol_assets_gateway.configurations import Configuration, get_configuratio
 from youwol_assets_gateway.raw_stores.interface import AssetMeta
 from youwol_assets_gateway.utils import raw_id_to_asset_id
 
-router = APIRouter()
+router = APIRouter(tags=["assets-gateway.raw"])
 
 
 async def get_raw_generic(

@@ -5,7 +5,7 @@ from youwol_assets_gateway.all_icons_emojipedia import (
     icons_travel, icons_activities, icons_symbols,
 )
 
-router = APIRouter()
+router = APIRouter(tags=["assets-gateway.misc"])
 
 
 @router.get("/emojis/{category}",

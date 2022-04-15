@@ -21,7 +21,7 @@ from youwol_utils.http_clients.assets_gateway import (
 from youwol_assets_gateway.routers_deprecated.assets import get_asset_by_tree_id
 from youwol_assets_gateway.utils import to_item_resp, regroup_asset, to_folder_resp
 
-router = APIRouter()
+router = APIRouter(tags=["assets-gateway.tree"])
 
 
 async def ensure_folder(

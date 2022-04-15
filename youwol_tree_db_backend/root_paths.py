@@ -22,7 +22,7 @@ from youwol_tree_db_backend.utils import (
     ensure_query_permission, ensure_delete_permission,
 )
 
-router = APIRouter()
+router = APIRouter(tags=["treedb-backend"])
 flatten = itertools.chain.from_iterable
 
 

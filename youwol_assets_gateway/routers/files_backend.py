@@ -10,9 +10,9 @@ from youwol_assets_gateway.routers.common import assert_write_permissions_folder
 from youwol_utils.context import Context
 from youwol_assets_gateway.configurations import Configuration, get_configuration
 from youwol_utils.http_clients.assets_gateway import NewAssetResponse
-from youwol_utils.http_clients.files_backend import GetStatsResponse, PostFileResponse, PostMetadataBody
+from youwol_utils.http_clients.files_backend import GetInfoResponse, PostFileResponse, PostMetadataBody
 
-router = APIRouter()
+router = APIRouter(tags=["assets-gateway.files-backend"])
 
 
 mime_types_images = ["image/png", "image/jpeg", "image/gif", "image/bmp", "image/x-icon", "image/tiff",

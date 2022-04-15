@@ -23,7 +23,7 @@ from .utils import (
     ensure_get_permission, to_snake_case, ensure_delete_permission, format_record_history, format_image, get_thumbnail,
 )
 
-router = APIRouter()
+router = APIRouter(tags=["assets-backend"])
 flatten = itertools.chain.from_iterable
 
 

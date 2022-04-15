@@ -12,63 +12,55 @@ from youwol_assets_gateway.configurations import get_configuration
 from youwol_assets_gateway.routers_deprecated import tree, assets, raw, cdn, misc
 from youwol_assets_gateway.routers import stories_backend, cdn_backend, files_backend
 
-router = APIRouter()
+router = APIRouter(tags=["assets-gateway"])
 
 router.include_router(
     tree.router,
     prefix="/tree",
-    dependencies=[Depends(get_configuration)],
-    tags=["tree"]
+    dependencies=[Depends(get_configuration)]
 )
 
 router.include_router(
     assets.router,
     prefix="/assets",
-    dependencies=[Depends(get_configuration)],
-    tags=["assets"]
+    dependencies=[Depends(get_configuration)]
 )
 
 router.include_router(
     raw.router,
     prefix="/raw",
-    dependencies=[Depends(get_configuration)],
-    tags=["raw"]
+    dependencies=[Depends(get_configuration)]
 )
 
 router.include_router(
     cdn.router,
     prefix="/cdn",
-    dependencies=[Depends(get_configuration)],
-    tags=["cdn"]
+    dependencies=[Depends(get_configuration)]
 )
 
 router.include_router(
     misc.router,
     prefix="/misc",
-    dependencies=[Depends(get_configuration)],
-    tags=["misc"]
+    dependencies=[Depends(get_configuration)]
 )
 
 router.include_router(
     cdn_backend.router,
     prefix="/cdn-backend",
-    dependencies=[Depends(get_configuration)],
-    tags=["cdn"]
+    dependencies=[Depends(get_configuration)]
 )
 
 router.include_router(
     stories_backend.router,
     prefix="/stories-backend",
-    dependencies=[Depends(get_configuration)],
-    tags=["cdn"]
+    dependencies=[Depends(get_configuration)]
 )
 
 
 router.include_router(
     files_backend.router,
     prefix="/files-backend",
-    dependencies=[Depends(get_configuration)],
-    tags=["files"]
+    dependencies=[Depends(get_configuration)]
 )
 
 
