@@ -1,8 +1,7 @@
 from dataclasses import dataclass
-from typing import Union, Type, Callable, Awaitable, Optional, Dict
+from typing import Union, Type, Callable, Awaitable, Optional, Dict, TypeVar, Generic
 
-from youwol_utils.clients.minio import IMinioClient
-
+from youwol_utils.clients.file_system.interfaces import FileSystemInterface
 from youwol_utils.middlewares import Middleware
 from youwol_utils.middlewares.authentication_local import AuthLocalMiddleware
 
@@ -14,10 +13,13 @@ class Constants:
     namespace: str = "data"
 
 
-@dataclass(frozen=True)
-class Configuration:
+FileSystemImplementation = TypeVar('FileSystemImplementation', bound=FileSystemInterface)
 
-    minio: IMinioClient
+
+@dataclass(frozen=True)
+class Configuration(Generic[FileSystemImplementation]):
+
+    file_system: FileSystemImplementation
     admin_headers: Optional[Dict[str, str]] = None
 
 

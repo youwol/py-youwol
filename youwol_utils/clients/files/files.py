@@ -34,9 +34,9 @@ class FilesClient:
                     return await resp.json()
                 await raise_exception_from_response(resp, url=url, headers=self.headers)
 
-    async def get_stats(self, file_id: str, **kwargs):
+    async def get_info(self, file_id: str, **kwargs):
 
-        url = f"{self.url_base}/files/{file_id}/stats"
+        url = f"{self.url_base}/files/{file_id}/info"
 
         async with aiohttp.ClientSession(headers=self.headers) as session:
             async with await session.get(url=url, **kwargs) as resp:
@@ -59,7 +59,7 @@ class FilesClient:
 
         url = f"{self.url_base}/files/{file_id}"
 
-        async with aiohttp.ClientSession(headers=self.headers) as session:
+        async with aiohttp.ClientSession(headers=self.headers, auto_decompress=False) as session:
             async with await session.get(url=url, **kwargs) as resp:
                 if resp.status == 200:
                     if reader:

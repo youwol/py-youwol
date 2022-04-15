@@ -10,7 +10,7 @@ from youwol_files_backend import Configuration
 from youwol_files_backend.configurations import get_configuration
 from youwol_utils import get_content_type, get_content_encoding
 from youwol_utils.context import Context
-from youwol_utils.http_clients.files_backend import PostFileResponse, GetStatsResponse, PostMetadataBody
+from youwol_utils.http_clients.files_backend import PostFileResponse, GetInfoResponse, PostMetadataBody
 
 router = APIRouter(tags=["files-backend"])
 flatten = itertools.chain.from_iterable
@@ -46,18 +46,24 @@ async def upload(
             }
         await ctx.info("File metadata", data=metadata)
         content = await file.read()
-        configuration.minio.put_object(object_name=file_id, data=io.BytesIO(content),
-                                       content_type=metadata["contentType"], metadata=metadata)
-        return PostFileResponse(fileId=file_id, fileName=metadata['fileName'], contentType=metadata["contentType"],
+        await configuration.file_system.put_object(
+            object_name=file_id,
+            data=io.BytesIO(content),
+            content_type=metadata["contentType"],
+            metadata=metadata)
+
+        resp = PostFileResponse(fileId=file_id, fileName=metadata['fileName'], contentType=metadata["contentType"],
                                 contentEncoding=metadata["contentEncoding"])
+
+        return resp
 
 
 @router.get(
-    "/files/{file_id}/stats",
-    response_model=GetStatsResponse,
+    "/files/{file_id}/info",
+    response_model=GetInfoResponse,
     summary="get file stats information"
 )
-async def get_stats(
+async def get_info(
         request: Request,
         file_id: str,
         configuration: Configuration = Depends(get_configuration)
@@ -65,12 +71,12 @@ async def get_stats(
     async with Context.start_ep(
             request=request
     ):  # type: Context
-        return configuration.minio.get_stats(object_name=file_id)
+        return await configuration.file_system.get_info(object_name=file_id)
 
 
 @router.post(
     "/files/{file_id}/metadata",
-    summary="get file stats information"
+    summary="update metadata"
 )
 async def update_metadata(
         request: Request,
@@ -81,9 +87,9 @@ async def update_metadata(
     async with Context.start_ep(
             request=request
     ):  # type: Context
-        actual_meta = configuration.minio.get_stats(object_name=file_id)['metadata']
+        actual_meta = (await configuration.file_system.get_info(object_name=file_id))['metadata']
         new_fields = {k: v for k, v in body.dict().items() if v}
-        configuration.minio.set_metadata(object_name=file_id, metadata={**actual_meta, **new_fields})
+        await configuration.file_system.set_metadata(object_name=file_id, metadata={**actual_meta, **new_fields})
         return {}
 
 
@@ -97,17 +103,23 @@ async def get_file(
         configuration: Configuration = Depends(get_configuration)
 ):
     async with Context.start_ep(
-            request=request
-    ):  # type: Context
-        stats = configuration.minio.get_stats(object_name=file_id)
-        content = configuration.minio.get_object(object_name=file_id)
+            request=request,
+            with_attributes={'fileId': file_id}
+    ) as ctx:  # type: Context
+        stats = await configuration.file_system.get_info(object_name=file_id)
+        content = await configuration.file_system.get_object(object_name=file_id)
         max_age = "31536000"
+        await ctx.info("Retrieved file", data={
+            "stats": stats,
+            "size": len(content)
+        })
         return Response(
             content=content,
             headers={
                 "Content-Encoding": stats['metadata']["contentEncoding"],
                 "Content-Type": stats['metadata']["contentType"],
                 "cache-control": f"public, max-age={max_age}",
+                "content-length": f"{len(content)}"
             }
         )
 
@@ -124,5 +136,5 @@ async def remove_file(
     async with Context.start_ep(
             request=request
     ):  # type: Context
-        configuration.minio.remove_object(object_name=file_id)
+        await configuration.file_system.remove_object(object_name=file_id)
         return {}

@@ -10,11 +10,13 @@ class PostFileResponse(BaseModel):
     contentEncoding: str
 
 
-class Metadata(PostFileResponse):
-    pass
+class Metadata(BaseModel):
+    fileName: str
+    contentType: str
+    contentEncoding: str
 
 
-class GetStatsResponse(BaseModel):
+class GetInfoResponse(BaseModel):
     metadata: Metadata
 
 
