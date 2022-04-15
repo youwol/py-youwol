@@ -14,6 +14,7 @@ from youwol.main_args import get_main_arguments
 from youwol.middlewares.models_dispatch import CdnOverrideDispatch, RedirectDispatch, AbstractDispatch
 from youwol.routers.custom_commands.models import Command
 from youwol.utils.utils_low_level import get_object_from_module
+from youwol_utils.servers.fast_api import FastApiRouter
 from youwol_utils.utils_paths import PathException, ensure_dir_exists
 
 SKELETON_DATABASES_ARCHIVE = 'databases.zip'
@@ -233,6 +234,9 @@ class ConfigurationHandler:
 
     def get_ports_book(self) -> Dict[str, int]:
         return self.effective_config_data.portsBook or {}
+
+    def get_routers(self) -> List[FastApiRouter]:
+        return self.effective_config_data.routers or []
 
 
 def ensure_loading_source_exists(arg: Union[str, ModuleLoading],

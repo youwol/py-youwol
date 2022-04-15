@@ -12,6 +12,8 @@ from fastapi import HTTPException
 from pydantic import BaseModel
 
 import youwol
+from youwol.routers.custom_backends import install_routers
+
 from youwol_utils.http_clients.assets_gateway import DefaultDriveResponse
 from youwol.configuration.config_from_module import configuration_from_python
 from youwol.configuration.config_from_static_file import configuration_from_json
@@ -32,6 +34,7 @@ from youwol.utils.utils_low_level import get_public_user_auth_token
 from youwol.web_socket import AdminContextLogger
 from youwol_utils import retrieve_user_info
 from youwol_utils.context import Context, ContextFactory
+from youwol_utils.servers.fast_api import FastApiRouter
 from youwol_utils.utils_paths import parse_json, write_json
 
 
@@ -64,7 +67,7 @@ class YouwolEnvironment(BaseModel):
 
     pathsBook: PathsBook
     portsBook: Dict[str, int] = {}
-
+    routers: List[FastApiRouter] = []
     cache: Dict[str, Any] = {}
     private_cache: Dict[str, Any] = {}
 
@@ -160,6 +163,16 @@ class YouwolEnvironment(BaseModel):
             else:
                 return "- no custom command configured"
 
+        def str_routers():
+            if self.routers:
+                return f"""
+- list of additional routers:
+{chr(10).join([f"  * {router.base_path}"
+               for router in self.routers])}
+"""
+            else:
+                return "- no custom command configured"
+
         return f"""Running with youwol: {youwol}
 Configuration loaded from '{self.pathsBook.config}'
 - user email: {self.userEmail}
@@ -169,6 +182,7 @@ Configuration loaded from '{self.pathsBook.config}'
 - assets count: {len(parse_json(self.pathsBook.local_docdb / 'assets' / 'entities' / 'data.json')['documents'])}
 {str_redirections()}
 {str_commands()}
+{str_routers()}
 {self.k8sInstance.__str__() if self.k8sInstance else "- not connected to a k8s cluster"}
 """
 
@@ -252,12 +266,13 @@ class YouwolEnvironmentFactory:
             logger=AdminContextLogger(),
             request=None
         )
-        if not config.events or not config.events.onLoad:
-            return
-        on_load_cb = config.events.onLoad(config, context)
-        data = await on_load_cb if isinstance(on_load_cb, Awaitable) else on_load_cb
+        if config.events and config.events.onLoad:
+            on_load_cb = config.events.onLoad(config, context)
+            data = await on_load_cb if isinstance(on_load_cb, Awaitable) else on_load_cb
+            await context.info(text="Applied onLoad event's callback", data=data)
 
-        await context.info(text="Applied onLoad event's callback", data=data)
+        await install_routers(config.routers, context)
+        await context.info(text="Additional routers installed")
 
 
 async def yw_config() -> YouwolEnvironment:
@@ -419,6 +434,7 @@ async def safe_load(
         openidHost=conf_handler.get_openid_host(),
         httpPort=conf_handler.get_http_port(),
         portsBook=conf_handler.get_ports_book(),
+        routers=conf_handler.get_routers(),
         userEmail=user_email,
         selectedRemote=selected_remote,
         events=conf_handler.get_events(),
