@@ -62,8 +62,8 @@ fastapi_app.add_middleware(BrowserCachingMiddleware)
 fastapi_app.add_middleware(AuthMiddleware)
 fastapi_app.add_middleware(RootMiddleware, ctx_logger=AdminContextLogger())
 
-fastapi_app.include_router(native_backends.router, tags=["native backends"])
-fastapi_app.include_router(admin.router, prefix=api_configuration.base_path + "/admin", tags=["admin"])
+fastapi_app.include_router(native_backends.router)
+fastapi_app.include_router(admin.router, prefix=api_configuration.base_path + "/admin")
 fastapi_app.include_router(authorization.router, prefix=api_configuration.base_path + "/authorization",
                            tags=["authorization"])
 

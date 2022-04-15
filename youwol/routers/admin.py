@@ -8,17 +8,17 @@ import youwol.routers.projects.router as projects
 import youwol.routers.system.router as system
 from youwol.environment.youwol_environment import api_configuration
 
-router = APIRouter()
+router = APIRouter(tags=["admin"])
 
 router.include_router(system.router, prefix=api_configuration.base_path + "/system",
-                      tags=["system"])
+                      tags=["admin.system"])
 router.include_router(environment.router, prefix=api_configuration.base_path + "/environment",
-                      tags=["environment"])
+                      tags=["admin.environment"])
 router.include_router(projects.router, prefix=api_configuration.base_path + "/projects",
-                      tags=["projects"])
+                      tags=["admin.projects"])
 router.include_router(local_cdn.router, prefix=api_configuration.base_path + "/local-cdn",
-                      tags=["local-cdn"])
+                      tags=["admin.local-cdn"])
 router.include_router(custom_commands.router, prefix=api_configuration.base_path + "/custom-commands",
-                      tags=["custom commands"])
+                      tags=["admin.custom commands"])
 router.include_router(authorization.router, prefix=api_configuration.base_path+"/authorization",
-                      tags=["authorization"])
+                      tags=["admin.authorization"])

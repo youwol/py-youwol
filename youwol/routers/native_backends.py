@@ -75,4 +75,4 @@ backends = [
 ]
 
 for backend in backends:
-    router.include_router(router=backend.router, prefix=backend.prefix, tags=backend.tags)
+    router.include_router(router=backend.router, prefix=backend.prefix)
