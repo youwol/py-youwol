@@ -3,23 +3,27 @@ import inspect
 import itertools
 import sys
 from dataclasses import dataclass
-from typing import List, Any, Type, Dict, Callable, Union, Awaitable
+from typing import List, Any, Type, Dict, Callable, Union, Awaitable, Optional, TypeVar, Generic
 
 import uvicorn
 from fastapi import FastAPI, APIRouter
+from pydantic import BaseModel, BaseConfig, create_model
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 
 from youwol_utils import (YouWolException, youwol_exception_handler, log_info)
-from youwol_utils.context import ContextLogger
+from youwol_utils.context import ContextLogger, Context
 from youwol_utils.middlewares.root_middleware import RootMiddleware
 
 flatten = itertools.chain.from_iterable
 
+BaseConfig.arbitrary_types_allowed = True
 
-@dataclass(frozen=True)
-class FastApiRouter:
-    router: APIRouter
+
+class FastApiRouter(BaseModel):
+    router: Union[APIRouter, Callable[[Context], Union[APIRouter, Awaitable[APIRouter]]]]
+    base_path: Optional[str] = ""
+    __pydantic_model__ = create_model("FastApiRouter")
 
 
 @dataclass(frozen=True)
@@ -38,13 +42,13 @@ class ServerOptions:
     on_before_startup: Callable[[], Union[None, Awaitable[None]]] = None
 
 
-ServiceConfiguration = 'ServiceConfiguration'
+T = TypeVar("T")
 
 
 @dataclass(frozen=True)
-class AppConfiguration:
+class AppConfiguration(Generic[T]):
     server: ServerOptions
-    service: ServiceConfiguration
+    service: T
 
 
 @dataclass(frozen=True)
