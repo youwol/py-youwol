@@ -14,9 +14,9 @@ from youwol_utils import CdnClient, LocalDocDbInMemoryClient
 from youwol_utils.clients.assets.assets import AssetsClient
 from youwol_utils.clients.data_api.data import DataClient
 from youwol_utils.clients.docdb.local_docdb import LocalDocDbClient as LocalDocDb, LocalDocDbClient
+from youwol_utils.clients.file_system.local_file_system import LocalFileSystem
 from youwol_utils.clients.files import FilesClient
 from youwol_utils.clients.flux.flux import FluxClient
-from youwol_utils.clients.minio import MockMinioPersistentClient
 from youwol_utils.clients.storage.local_storage import LocalStorageClient as LocalStorage
 from youwol_utils.clients.stories.stories import StoriesClient
 from youwol_utils.clients.treedb.treedb import TreeDbClient
@@ -159,9 +159,10 @@ async def cdn_session_storage_config_py_youwol():
 
 async def files_backend_config_py_youwol():
     env = await yw_config()
+    bucket_name = youwol_files_backend.Constants.namespace
+
     return youwol_files_backend.Configuration(
-        minio=MockMinioPersistentClient(
-            root_path=env.pathsBook.local_storage,
-            bucket_name=youwol_files_backend.Constants.namespace
+        file_system=LocalFileSystem(
+            root_path=env.pathsBook.local_storage / bucket_name / 'youwol-users'
         ),
     )
