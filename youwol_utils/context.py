@@ -11,6 +11,7 @@ from enum import Enum
 from typing import Union, NamedTuple, Callable, Awaitable, Optional, List, TypeVar, Dict, cast, Any, \
     AsyncContextManager
 
+import aiohttp
 from fastapi import HTTPException
 from pydantic import BaseModel
 from starlette.requests import Request
@@ -349,3 +350,34 @@ class ConsoleContextLogger(ContextLogger):
             "traceId": entry.trace_uid
         }
         print(json.dumps(base))
+
+
+class PyYouwolContextLogger(ContextLogger):
+
+    def __init__(self, py_youwol_port, headers=None):
+        super().__init__()
+        self.py_youwol_port = py_youwol_port
+        self.headers = headers or {}
+
+    async def log(self, entry: LogEntry):
+
+        url = f"http://localhost:{self.py_youwol_port}/admin/system/logs"
+        body = {
+            "logs": [
+                {
+                    "level": entry.level.name,
+                    "attributes": entry.attributes,
+                    "labels": entry.labels,
+                    "text": entry.text,
+                    "data": entry.data,
+                    "contextId": entry.context_id,
+                    "parentContextId": entry.parent_context_id,
+                    "timestamp": int(time.time()),
+                    "traceUid": entry.trace_uid,
+                }
+            ]
+        }
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with await session.post(url=url, json=body):
+                # nothing to do
+                pass
