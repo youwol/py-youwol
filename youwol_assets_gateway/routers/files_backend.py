@@ -72,9 +72,9 @@ async def upload(
 
 
 @router.get(
-    "/files/{file_id}/stats",
-    response_model=GetStatsResponse,
-    summary="get file stats information"
+    "/files/{file_id}/info",
+    response_model=GetInfoResponse,
+    summary="get file information"
 )
 async def get_stats(
         request: Request,
@@ -85,7 +85,7 @@ async def get_stats(
             request=request
     ) as ctx:  # type: Context
         await assert_read_permissions_from_raw_id(raw_id=file_id, configuration=configuration, context=ctx)
-        return await configuration.files_client.get_stats(
+        return await configuration.files_client.get_info(
             file_id=file_id,
             headers=ctx.headers()
         )
