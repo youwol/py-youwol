@@ -37,7 +37,8 @@ download_thread = AssetDownloadThread(
 
 ContextFactory.with_static_data = {
     "env": lambda: yw_config(),
-    "download_thread": download_thread
+    "download_thread": download_thread,
+    "fastapi_app": lambda: fastapi_app
 }
 
 
