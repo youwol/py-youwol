@@ -40,7 +40,7 @@ class AdminContextLogger(ContextLogger):
     errors = set()
 
     def __init__(self):
-        super()
+        super().__init__()
 
     def resize_if_needed(self, items: List[any]):
         if len(items) > 2 * self.max_count:
@@ -48,9 +48,12 @@ class AdminContextLogger(ContextLogger):
         return items
 
     async def log(self, entry: LogEntry):
+        if str(Label.LOG) in entry.labels:
+            return
+
         try:
             data = to_json(entry.data) if isinstance(entry.data, BaseModel) else entry.data
-            _text = json.dumps(data)
+            json.dumps(data)
         except (TypeError, OverflowError):
             print("error in JSON serialization")
             return
