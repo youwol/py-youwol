@@ -55,7 +55,7 @@ class RootMiddleware(BaseHTTPMiddleware):
                 with_labels=[Label.API_GATEWAY, *info.labels]
         ) as ctx:  # type: Context
             await ctx.info(
-                text='incoming request',
+                text='Root middleware => incoming request',
                 data={
                     'url': request.url.path,
                     'method': request.method,
@@ -64,7 +64,11 @@ class RootMiddleware(BaseHTTPMiddleware):
                                 }
                 })
             response = await call_next(request)
-            await ctx.info(f"{request.method} {request.url.path}: {response.status_code}")
+
+            await ctx.info(
+                f"{request.method} {request.url.path}: {response.status_code}",
+                data={"headers": {k: v for k, v in response.headers.items()}}
+            )
             # Even for a very broad definition of failure, there are many « not failure »
             # status code (i.e. 204,308, etc.)
             # Only 4xx (client error) and 5xx (server error) are considered failure

@@ -35,7 +35,7 @@ class CustomDispatchesMiddleware(BaseHTTPMiddleware):
 
             index, resp = next(((i, r) for i, r in enumerate(responses) if r is not None), (-1, None))
             if resp:
-                await ctx.info('Found a matching custom dispatch', data=dispatches[index])
+                await ctx.info(f"Got response from dispatch '{dispatches[index]}'", data=dispatches[index])
                 return cast(Response, resp)
 
             return await call_next(request)

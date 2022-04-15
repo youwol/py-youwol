@@ -35,11 +35,34 @@ class RedirectDispatch(AbstractDispatch):
         if not incoming_request.url.path.startswith(self.origin):
             return None
 
-        return await redirect_request(
-            incoming_request=incoming_request,
-            origin_base_path=self.origin,
-            destination_base_path=self.destination,
-        )
+        async with context.start(action=self.__str__()) as ctx:  # type: Context
+
+            headers = {
+                **{k: v for k, v in incoming_request.headers.items()},
+                **ctx.headers()
+            }
+            await ctx.info(
+                "incoming request",
+                data={
+                    "headers": headers,
+                    "method": incoming_request.method,
+                    "url": incoming_request.url.path
+                }
+            )
+            resp = await redirect_request(
+                incoming_request=incoming_request,
+                origin_base_path=self.origin,
+                destination_base_path=self.destination,
+                headers=headers
+            )
+            await ctx.info(
+                f"Got response from dispatch",
+                data={
+                    "headers": {k: v for k, v in resp.headers.items()},
+                    "status": resp.status_code
+                }
+            )
+            return resp
 
     def __str__(self):
         return f"redirecting '{self.origin}' to '{self.destination}'"
