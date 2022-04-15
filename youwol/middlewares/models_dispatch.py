@@ -1,3 +1,4 @@
+import socket
 from typing import Optional
 
 from aiohttp import ClientSession, ClientConnectorError
@@ -33,6 +34,11 @@ class RedirectDispatch(AbstractDispatch):
                     call_next: RequestResponseEndpoint,
                     context: Context) -> Optional[Response]:
         if not incoming_request.url.path.startswith(self.origin):
+            return None
+        a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        location = ('localhost', int(self.destination.split(':')[-1]))
+        if a_socket.connect_ex(location) != 0:
+            await context.info(f"Dispatch {self} not listening -> proceed with no dispatch")
             return None
 
         async with context.start(action=self.__str__()) as ctx:  # type: Context
