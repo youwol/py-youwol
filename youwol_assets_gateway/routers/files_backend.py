@@ -61,7 +61,7 @@ async def upload(
             if file.contentType in mime_types_images else \
             []
         return await create_asset(
-            kind="package",
+            kind="data",
             raw_id=file.fileId,
             raw_response=file.dict(),
             folder_id=folder_id,
