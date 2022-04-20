@@ -39,21 +39,21 @@ def read_json(folder: Path, name: str) -> JSON:
     return json.loads((folder / name).read_text())
 
 
-def create_project_from_json(folder: Path) -> (ProjectId, Project):
+def create_project_from_json(folder: Path) -> Project:
     description = read_json(folder, "description.json")
     workflow = read_json(folder, "workflow.json")
     builder_rendering = read_json(folder, "builderRendering.json")
     runner_rendering = read_json(folder, "runnerRendering.json")
     requirements = read_json(folder, "requirements.json")
-    project = Project(name=description["name"],
-                      schemaVersion=description["schemaVersion"] if "schemaVersion" in description else "0",
-                      description=description["description"],
-                      workflow=Workflow(**workflow),
-                      builderRendering=BuilderRendering(**builder_rendering),
-                      runnerRendering=RunnerRendering(**runner_rendering),
-                      requirements=Requirements(**requirements)
-                      )
-    return str(folder), project
+    return Project(
+        name=description["name"],
+        schemaVersion=description["schemaVersion"] if "schemaVersion" in description else "0",
+        description=description["description"],
+        workflow=Workflow(**workflow),
+        builderRendering=BuilderRendering(**builder_rendering),
+        runnerRendering=RunnerRendering(**runner_rendering),
+        requirements=Requirements(**requirements)
+    )
 
 
 def update_project(project_id: str, owner: Union[str, None], project: Project, storage: Storage,
