@@ -10,7 +10,7 @@ from youwol_utils import (
 from youwol_utils.context import Context
 from youwol_assets_gateway.configurations import get_configuration
 from youwol_assets_gateway.routers_deprecated import tree, assets, raw, cdn, misc
-from youwol_assets_gateway.routers import stories_backend, cdn_backend, files_backend
+from youwol_assets_gateway.routers import stories_backend, cdn_backend, files_backend, flux_backend
 
 router = APIRouter(tags=["assets-gateway"])
 
