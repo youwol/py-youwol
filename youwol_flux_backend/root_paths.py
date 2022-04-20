@@ -176,17 +176,40 @@ async def upload(
             return NewProjectResponse(projectId=project_id, libraries=project.requirements.libraries)
 
 
-        coroutines = [update_project(project_id=pid, owner=Constants.default_owner, project=project,
-                                     storage=configuration.storage, docdb=configuration.doc_db, headers=headers)
-                      for pid, project in projects]
+@router.get(
+    "/projects/{project_id}/download-zip",
+    summary="download a project as zip file")
+async def download_zip(
+        request: Request,
+        project_id: str,
+        configuration: Configuration = Depends(get_configuration)
+):
+    async with Context.start_ep(
+            action="download zip",
+            request=request
+    ) as ctx:  # type: Context
 
-        coroutines_flat = flatten(coroutines)
-        for chunk in chunks(coroutines_flat, 25):
-            await asyncio.gather(*chunk)
+        owner = Constants.default_owner
+        project = await retrieve_project(project_id=project_id, owner=owner, storage=configuration.storage,
+                                         headers=ctx.headers())
+        project = project.dict()
+        await ctx.info(text="Project retrieved")
 
-        return UploadResponse(project_ids=[pid for pid, _ in projects])
-    finally:
-        shutil.rmtree(dir_path)
+        with tempfile.TemporaryDirectory() as tmp_folder:
+            base_path = Path(tmp_folder)
+            zipper = zipfile.ZipFile(base_path / 'flux-project.zip', 'w', zipfile.ZIP_DEFLATED)
+            for file in ["workflow", "runnerRendering", "requirements", "description", "builderRendering"]:
+                if file == "description":
+                    description = {"description": project['description'], "name": project['name'],
+                                   "schemaVersion": project['schemaVersion']}
+                    write_json(data=description, path=base_path / f"{file}.json")
+                else:
+                    write_json(data=project[file], path=base_path / f"{file}.json")
+                zipper.write(base_path / f"{file}.json", arcname=f"{file}.json")
+
+            zipper.close()
+            content_bytes = (Path(tmp_folder) / "flux-project.zip").read_bytes()
+            return StreamingResponse(io.BytesIO(content_bytes), media_type="application/zip")
 
 
 @router.delete("/projects/{project_id}", summary="delete a project")
