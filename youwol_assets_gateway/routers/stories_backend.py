@@ -69,6 +69,7 @@ async def publish_story(
             'file': await form.get('file').read(),
             'content_encoding': form.get('content_encoding', 'identity')
         }
+        await assert_write_permissions_folder_id(folder_id=folder_id, context=ctx)
         story = await configuration.stories_client.publish_story(data=form, headers=ctx.headers())
         return await create_asset(
             kind="story",
