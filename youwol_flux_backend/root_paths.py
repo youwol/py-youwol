@@ -1,25 +1,30 @@
 import base64
 import itertools
 import os
-import shutil
+import io
+import tempfile
 import uuid
+import zipfile
 from pathlib import Path
 from typing import Union, Mapping
 
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Query as QueryParam
+from starlette.responses import StreamingResponse
 
 from youwol_utils import (
     User, Request, user_info, get_all_individual_groups, Group, private_group_id, to_group_id,
-    generate_headers_downstream, asyncio, chunks, check_permission_or_raise, RecordsResponse, GetRecordsBody,
-    RecordsTable, RecordsKeyspace, RecordsBucket, RecordsDocDb, RecordsStorage, get_group, Query, QueryBody, log_info,
+    generate_headers_downstream, asyncio, check_permission_or_raise, RecordsResponse, GetRecordsBody,
+    RecordsTable, RecordsKeyspace, RecordsBucket, RecordsDocDb, RecordsStorage, get_group, Query, QueryBody,
 )
+from youwol_utils.context import Context
+from youwol_utils.utils_paths import write_json
 from .configurations import Configuration, get_configuration, Constants
 from youwol_utils.http_clients.flux_backend import (
     Projects, ProjectSnippet, Project, NewProjectResponse, NewProject,
-    BuilderRendering, RunnerRendering, Requirements, LoadingGraph, UploadResponse, EditMetadata, Component,
+    BuilderRendering, RunnerRendering, Requirements, LoadingGraph, EditMetadata, Component,
 )
 from .utils import (
-    init_resources, create_tmp_folder, extract_zip_file, retrieve_project, update_project,
+    init_resources, extract_zip_file, retrieve_project, update_project,
     create_project_from_json, update_metadata, update_component, retrieve_component
 )
 from .workflow_new_project import workflow_new_project
