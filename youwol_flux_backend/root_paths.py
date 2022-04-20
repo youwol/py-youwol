@@ -242,42 +242,61 @@ async def post_metadata(
         project_id: str,
         metadata_body: EditMetadata,
         configuration: Configuration = Depends(get_configuration)):
-    headers = generate_headers_downstream(request.headers)
-    doc_db, storage, assets_gtw = configuration.doc_db, configuration.storage, configuration.assets_gtw_client
-    owner = Constants.default_owner
 
-    req, workflow, description = await asyncio.gather(
-        storage.get_json(path="projects/{}/requirements.json".format(project_id), owner=owner, headers=headers),
-        storage.get_json(path="projects/{}/workflow.json".format(project_id), owner=owner, headers=headers),
-        storage.get_json(path="projects/{}/description.json".format(project_id), owner=owner, headers=headers)
-    )
-    log_info("Flux-Backend@Post metadata: got requirements and workflow")
-    libraries = {**req['libraries'], **metadata_body.libraries}
+    async with Context.start_ep(
+            action="update requirements",
+            request=request
+    ) as ctx:  # type: Context
 
-    def get_package_id(factory_id: Union[str, Mapping[str, str]]):
-        return "@youwol/" + factory_id.split("@")[1] if isinstance(factory_id, str) else factory_id['pack']
+        doc_db, storage, assets_gtw = configuration.doc_db, configuration.storage, configuration.assets_gtw_client
+        owner = Constants.default_owner
 
-    used_packages = {get_package_id(m["factoryId"]) for m in workflow["modules"] + workflow["plugins"]}
-    log_info("Flux-Backend@Post metadata: used_packages", used_packages=used_packages)
+        actual_requirements, workflow, description = await asyncio.gather(
+            storage.get_json(path="projects/{}/requirements.json".format(project_id), owner=owner,
+                             headers=ctx.headers()),
+            storage.get_json(path="projects/{}/workflow.json".format(project_id), owner=owner,
+                             headers=ctx.headers()),
+            storage.get_json(path="projects/{}/description.json".format(project_id), owner=owner,
+                             headers=ctx.headers())
+        )
+        await ctx.info("Requirements and workflow retrieved", data={"requirements": actual_requirements})
+        new_requirements = None
+        if metadata_body.libraries:
+            libraries = {**actual_requirements['libraries'], **metadata_body.libraries}
 
-    body = {
-        "libraries": {name: version for name, version in libraries.items() if name in used_packages},
-        "using": {name: version for name, version in libraries.items()}
-    }
-    loading_graph = await assets_gtw.cdn_loading_graph(body=body, headers=headers)
-    flux_packs = [p['name'] for p in loading_graph['lock'] if p['type'] == 'flux-pack']
-    log_info("Flux-Backend@Post metadata: got loading graph", loading_graph=loading_graph)
+            def get_package_id(factory_id: Union[str, Mapping[str, str]]):
+                return "@youwol/" + factory_id.split("@")[1] if isinstance(factory_id, str) else factory_id['pack']
 
-    used_libraries = {lib["name"]: lib["version"] for lib in loading_graph["lock"]}
-    requirements = Requirements(fluxComponents=[], fluxPacks=flux_packs,
-                                libraries=used_libraries, loadingGraph=loading_graph)
+            used_packages = {get_package_id(m["factoryId"]) for m in workflow["modules"] + workflow["plugins"]}
+            await ctx.info("used_packages", data={"usedPackages": used_packages})
 
-    schema_version = description['schemaVersion'] if 'schemaVersion' in description else '0'
-    coroutines = update_metadata(project_id=project_id, schema_version=schema_version,
-                                 name=metadata_body.name, description=metadata_body.description,
-                                 requirements=requirements, owner=owner, storage=storage, docdb=doc_db, headers=headers)
-    await asyncio.gather(*coroutines)
-    return {}
+            body = {
+                "libraries": {name: version for name, version in libraries.items() if name in used_packages},
+                "using": {name: version for name, version in libraries.items()}
+            }
+            loading_graph = await assets_gtw.cdn_loading_graph(body=body, headers=ctx.headers())
+            flux_packs = [p['name'] for p in loading_graph['lock'] if p['type'] == 'flux-pack']
+            await ctx.info("loading graph retrieved", data={"loading graph": loading_graph})
+
+            used_libraries = {lib["name"]: lib["version"] for lib in loading_graph["lock"]}
+            new_requirements = Requirements(fluxComponents=[], fluxPacks=flux_packs,
+                                            libraries=used_libraries, loadingGraph=loading_graph)
+            await ctx.info("requirements re-computed", data={"requirements": new_requirements})
+
+        schema_version = description['schemaVersion'] if 'schemaVersion' in description else '0'
+        coroutines = update_metadata(
+            project_id=project_id,
+            schema_version=schema_version,
+            name=metadata_body.name or description['name'],
+            description=metadata_body.description or description['description'],
+            requirements=new_requirements or actual_requirements,
+            owner=owner,
+            storage=storage,
+            docdb=doc_db,
+            headers=ctx.headers()
+        )
+        await asyncio.gather(*coroutines)
+        return {}
 
 
 @router.get("/projects/{project_id}/metadata",
