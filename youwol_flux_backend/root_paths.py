@@ -13,7 +13,7 @@ from starlette.responses import StreamingResponse
 
 from youwol_utils import (
     User, Request, user_info, get_all_individual_groups, Group, private_group_id, to_group_id,
-    generate_headers_downstream, asyncio, check_permission_or_raise, RecordsResponse, GetRecordsBody,
+    asyncio, check_permission_or_raise, RecordsResponse, GetRecordsBody,
     RecordsTable, RecordsKeyspace, RecordsBucket, RecordsDocDb, RecordsStorage, get_group, Query, QueryBody,
 )
 from youwol_utils.context import Context
@@ -24,7 +24,7 @@ from youwol_utils.http_clients.flux_backend import (
     BuilderRendering, RunnerRendering, Requirements, LoadingGraph, EditMetadata, Component,
 )
 from .utils import (
-    init_resources, extract_zip_file, retrieve_project, update_project,
+    extract_zip_file, retrieve_project, update_project,
     create_project_from_json, update_metadata, update_component, retrieve_component
 )
 from .workflow_new_project import workflow_new_project
@@ -43,6 +43,7 @@ async def healthz():
     response_model=User,
     summary="retrieve user info")
 async def get_user_info(request: Request):
+
     user = user_info(request)
     groups = get_all_individual_groups(user["memberof"])
     groups = [Group(id=private_group_id(user), path="private")] + \
@@ -58,34 +59,24 @@ async def list_projects(
         request: Request,
         configuration: Configuration = Depends(get_configuration)
 ):
-    headers = generate_headers_downstream(request.headers)
-    doc_db = configuration.doc_db
-    user = user_info(request)
-    groups = get_all_individual_groups(user["memberof"])
-    requests = [doc_db.query(query_body=QueryBody(query=Query()), owner=group, headers=headers)
-                for group in groups]
-    projects = await asyncio.gather(*requests)
-    flatten_groups = list(flatten([len(project["documents"]) * [groups[i]] for i, project in enumerate(projects)]))
-    flatten_projects = list(flatten([project["documents"] for project in projects]))
+    async with Context.start_ep(
+            request=request
+    ) as ctx:  # type: Context
 
-    snippets = [ProjectSnippet(name=r["name"], id=r["project_id"], description=r["description"],
-                               fluxPacks=r["packages"])
-                for r, group in zip(flatten_projects, flatten_groups)]
+        doc_db = configuration.doc_db
+        user = user_info(request)
+        groups = get_all_individual_groups(user["memberof"])
+        requests = [doc_db.query(query_body=QueryBody(query=Query()), owner=group, headers=ctx.headers())
+                    for group in groups]
+        projects = await asyncio.gather(*requests)
+        flatten_groups = list(flatten([len(project["documents"]) * [groups[i]] for i, project in enumerate(projects)]))
+        flatten_projects = list(flatten([project["documents"] for project in projects]))
 
-    return Projects(projects=snippets)
+        snippets = [ProjectSnippet(name=r["name"], id=r["project_id"], description=r["description"],
+                                   fluxPacks=r["packages"])
+                    for r, group in zip(flatten_projects, flatten_groups)]
 
-
-@router.delete("/projects",
-               response_model=Projects,
-               summary="delete all the projects")
-async def delete_projects(
-        request: Request,
-        configuration: Configuration = Depends(get_configuration)
-):
-    await asyncio.gather(configuration.doc_db.delete_table(), configuration.storage.delete_bucket(force_not_empty=True))
-    await init_resources(configuration)
-
-    return await list_projects(request)
+        return Projects(projects=snippets)
 
 
 @router.get("/projects/{project_id}",
@@ -96,12 +87,15 @@ async def get_project(
         project_id: str,
         configuration: Configuration = Depends(get_configuration)
 ):
-    headers = generate_headers_downstream(request.headers)
-    owner = Constants.default_owner
+    async with Context.start_ep(
+            request=request
+    ) as ctx:  # type: Context
+        owner = Constants.default_owner
 
-    project = await retrieve_project(project_id=project_id, owner=owner, storage=configuration.storage, headers=headers)
+        project = await retrieve_project(project_id=project_id, owner=owner, storage=configuration.storage,
+                                         headers=ctx.headers())
 
-    return project
+        return project
 
 
 @router.post("/projects/create",
@@ -111,24 +105,27 @@ async def new_project(
         request: Request,
         project_body: NewProject,
         configuration: Configuration = Depends(get_configuration)):
-    headers = generate_headers_downstream(request.headers)
 
-    project_id = str(uuid.uuid4())
-    workflow = workflow_new_project
-    builder_rendering = BuilderRendering(modulesView=[], connectionsView=[], descriptionsBoxes=[])
-    runner_rendering = RunnerRendering(layout="", style="")
-    requirements = Requirements(fluxPacks=[], fluxComponents=[], libraries={},
-                                loadingGraph=LoadingGraph(graphType="sequential-v1", lock=[], definition=[[]])
-                                )
+    async with Context.start_ep(
+            request=request
+    ) as ctx:  # type: Context
 
-    project = Project(name=project_body.name, schemaVersion=Constants.current_schema_version,
-                      description=project_body.description, workflow=workflow, builderRendering=builder_rendering,
-                      runnerRendering=runner_rendering, requirements=requirements)
+        project_id = str(uuid.uuid4())
+        workflow = workflow_new_project
+        builder_rendering = BuilderRendering(modulesView=[], connectionsView=[], descriptionsBoxes=[])
+        runner_rendering = RunnerRendering(layout="", style="")
+        requirements = Requirements(fluxPacks=[], fluxComponents=[], libraries={},
+                                    loadingGraph=LoadingGraph(graphType="sequential-v1", lock=[], definition=[[]])
+                                    )
 
-    coroutines = update_project(project_id=project_id, owner=Constants.default_owner, project=project,
-                                storage=configuration.storage, docdb=configuration.doc_db, headers=headers)
-    await asyncio.gather(*coroutines)
-    return NewProjectResponse(projectId=project_id, libraries=requirements.libraries)
+        project = Project(name=project_body.name, schemaVersion=Constants.current_schema_version,
+                          description=project_body.description, workflow=workflow, builderRendering=builder_rendering,
+                          runnerRendering=runner_rendering, requirements=requirements)
+
+        coroutines = update_project(project_id=project_id, owner=Constants.default_owner, project=project,
+                                    storage=configuration.storage, docdb=configuration.doc_db, headers=ctx.headers())
+        await asyncio.gather(*coroutines)
+        return NewProjectResponse(projectId=project_id, libraries=requirements.libraries)
 
 
 @router.post("/projects/{project_id}/duplicate",
@@ -138,18 +135,22 @@ async def duplicate(
         request: Request,
         project_id: str,
         configuration: Configuration = Depends(get_configuration)):
-    headers = generate_headers_downstream(request.headers)
-    owner = Constants.default_owner
-    project = await retrieve_project(project_id=project_id, owner=owner, storage=configuration.storage,
-                                     headers=headers)
 
-    project_id = str(uuid.uuid4())
+    async with Context.start_ep(
+            request=request
+    ) as ctx:  # type: Context
 
-    coroutines = update_project(project_id=project_id, project=project, owner=owner, storage=configuration.storage,
-                                docdb=configuration.doc_db, headers=headers)
-    await asyncio.gather(*coroutines)
+        owner = Constants.default_owner
+        project = await retrieve_project(project_id=project_id, owner=owner, storage=configuration.storage,
+                                         headers=ctx.headers())
 
-    return NewProjectResponse(projectId=project_id, libraries=project.requirements.libraries)
+        project_id = str(uuid.uuid4())
+
+        coroutines = update_project(project_id=project_id, project=project, owner=owner, storage=configuration.storage,
+                                    docdb=configuration.doc_db, headers=ctx.headers())
+        await asyncio.gather(*coroutines)
+
+        return NewProjectResponse(projectId=project_id, libraries=project.requirements.libraries)
 
 
 @router.post("/projects/upload", summary="upload projects")
@@ -222,23 +223,26 @@ async def delete_project(
         request: Request,
         project_id: str,
         configuration: Configuration = Depends(get_configuration)):
-    headers = generate_headers_downstream(request.headers)
-    doc_db = configuration.doc_db
-    user = user_info(request)
-    groups = get_all_individual_groups(user["memberof"])
-    group = await get_group("project_id", project_id, groups, doc_db, headers)
 
-    if group == -1:
-        raise HTTPException(status_code=404, detail="delete_project: project not found")
+    async with Context.start_ep(
+            request=request
+    ) as ctx:  # type: Context
+        doc_db = configuration.doc_db
+        user = user_info(request)
+        groups = get_all_individual_groups(user["memberof"])
+        group = await get_group("project_id", project_id, groups, doc_db, ctx.headers())
 
-    check_permission_or_raise(group, user["memberof"])
+        if group == -1:
+            raise HTTPException(status_code=404, detail="delete_project: project not found")
 
-    base_path = f"projects/{project_id}"
-    storage = configuration.storage
-    await doc_db.delete_document(doc={"project_id": project_id}, owner=group, headers=headers)
-    await storage.delete_group(prefix=base_path, owner=group, headers=headers)
+        check_permission_or_raise(group, user["memberof"])
 
-    return {"status": "deleted", "projectId": project_id}
+        base_path = f"projects/{project_id}"
+        storage = configuration.storage
+        await doc_db.delete_document(doc={"project_id": project_id}, owner=group, headers=ctx.headers())
+        await storage.delete_group(prefix=base_path, owner=group, headers=ctx.headers())
+
+        return {"status": "deleted", "projectId": project_id}
 
 
 @router.post("/projects/{project_id}/metadata", summary="edit metadata of a project")
@@ -313,16 +317,19 @@ async def get_metadata(
         project_id: str,
         configuration: Configuration = Depends(get_configuration)
 ):
-    headers = generate_headers_downstream(request.headers)
-    doc_db = configuration.doc_db
-    owner = Constants.default_owner
-    meta = await doc_db.get_document(partition_keys={"project_id": project_id},
-                                     clustering_keys={},
-                                     owner=owner,
-                                     headers=headers)
+    async with Context.start_ep(
+            request=request
+    ) as ctx:  # type: Context
 
-    return ProjectSnippet(name=meta["name"], id=meta["project_id"], description=meta["description"],
-                          fluxPacks=meta["packages"])
+        doc_db = configuration.doc_db
+        owner = Constants.default_owner
+        meta = await doc_db.get_document(partition_keys={"project_id": project_id},
+                                         clustering_keys={},
+                                         owner=owner,
+                                         headers=ctx.headers())
+
+        return ProjectSnippet(name=meta["name"], id=meta["project_id"], description=meta["description"],
+                              fluxPacks=meta["packages"])
 
 
 @router.post("/projects/{project_id}", summary="post a project")
@@ -332,14 +339,18 @@ async def post_project(
         project: Project,
         configuration: Configuration = Depends(get_configuration)
 ):
-    headers = generate_headers_downstream(request.headers)
-    storage, docdb = configuration.storage, configuration.doc_db
-    owner = Constants.default_owner
 
-    coroutines = update_project(project_id=project_id, owner=owner,
-                                project=project, storage=storage, docdb=docdb, headers=headers)
-    await asyncio.gather(*coroutines)
-    return {}
+    async with Context.start_ep(
+            request=request
+    ) as ctx:  # type: Context
+
+        storage, docdb = configuration.storage, configuration.doc_db
+        owner = Constants.default_owner
+
+        coroutines = update_project(project_id=project_id, owner=owner,
+                                    project=project, storage=storage, docdb=docdb, headers=ctx.headers())
+        await asyncio.gather(*coroutines)
+        return {}
 
 
 @router.post("/components/{component_id}", summary="post a component")
@@ -348,14 +359,18 @@ async def post_component(
         component_id: str,
         component: Component,
         configuration: Configuration = Depends(get_configuration)):
-    headers = generate_headers_downstream(request.headers)
-    storage, docdb = configuration.storage, configuration.doc_db_component
-    owner = Constants.default_owner
 
-    await update_component(component_id=component_id, owner=owner,
-                           component=component, storage=configuration.storage, doc_db_component=docdb,
-                           headers=headers)
-    return {}
+    async with Context.start_ep(
+            request=request
+    ) as ctx:  # type: Context
+
+        storage, docdb = configuration.storage, configuration.doc_db_component
+        owner = Constants.default_owner
+
+        await update_component(component_id=component_id, owner=owner,
+                               component=component, storage=configuration.storage, doc_db_component=docdb,
+                               headers=ctx.headers())
+        return {}
 
 
 @router.get("/components/{component_id}", summary="post a component")
@@ -363,12 +378,15 @@ async def get_component(
         request: Request,
         component_id: str,
         configuration: Configuration = Depends(get_configuration)):
-    headers = generate_headers_downstream(request.headers)
-    owner = Constants.default_owner
 
-    component = await retrieve_component(component_id=component_id, owner=owner, storage=configuration.storage,
-                                         doc_db_component=configuration.doc_db_component, headers=headers)
-    return component
+    async with Context.start_ep(
+            request=request
+    ) as ctx:  # type: Context
+        owner = Constants.default_owner
+        component = await retrieve_component(component_id=component_id, owner=owner, storage=configuration.storage,
+                                             doc_db_component=configuration.doc_db_component,
+                                             headers=ctx.headers())
+        return component
 
 
 @router.delete("/components/{component_id}", summary="delete a component")
@@ -376,17 +394,22 @@ async def delete_component(
         request: Request,
         component_id: str,
         configuration: Configuration = Depends(get_configuration)):
-    headers = generate_headers_downstream(request.headers)
-    docdb = configuration.doc_db_component
+    async with Context.start_ep(
+            request=request
+    ) as ctx:  # type: Context
 
-    owner = Constants.default_owner
+        docdb = configuration.doc_db_component
 
-    base_path = "components/{}".format(component_id)
-    storage = configuration.storage
-    await asyncio.gather(docdb.delete_document(doc={"component_id": component_id}, owner=owner, headers=headers),
-                         storage.delete_group(prefix=base_path, owner=owner, headers=headers))
+        owner = Constants.default_owner
 
-    return {"status": "deleted", "componentId": component_id}
+        base_path = "components/{}".format(component_id)
+        storage = configuration.storage
+        await asyncio.gather(docdb.delete_document(doc={"component_id": component_id}, owner=owner,
+                                                   headers=ctx.headers()),
+                             storage.delete_group(prefix=base_path, owner=owner,
+                                                  headers=ctx.headers()))
+
+        return {"status": "deleted", "componentId": component_id}
 
 
 def group_scope_to_id(scope: str) -> str:
