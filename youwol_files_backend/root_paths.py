@@ -36,7 +36,7 @@ async def upload(
 
         form = await request.form()
         file = form.get('file')
-        file_id = form.get('file_id', str(uuid.uuid4()))
+        file_id = form.get('file_id', None) or str(uuid.uuid4())
         filename = form.get('file_name', "default_name")
         metadata = {
             "fileId": file_id,
