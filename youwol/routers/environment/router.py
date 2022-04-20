@@ -122,7 +122,6 @@ async def file_content(
 
 
 @router.get("/status",
-            response_model=EnvironmentStatusResponse,
             summary="status")
 async def status(
         request: Request,
@@ -147,9 +146,13 @@ async def status(
             remoteGatewayInfo=remote_gateway_info,
             remotesInfo=list(remotes_info)
         )
+        #  The environment is parsed in json here such that latter calls (e.g. get_results) do not modify it
+        #  Also, using 'response_model=EnvironmentStatusResponse' lead to problems of parsing some data
+        #  (e.g. RedirectDispatch)
+        http_response = response.dict()
         await ctx.send(response)
         await ctx.send(ProjectsLoadingResults(results=await ProjectLoader.get_results(config, ctx)))
-        return response
+        return http_response
 
 
 @router.post("/login",
