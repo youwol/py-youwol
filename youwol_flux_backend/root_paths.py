@@ -264,10 +264,11 @@ async def post_metadata(
             storage.get_json(path="projects/{}/description.json".format(project_id), owner=owner,
                              headers=ctx.headers())
         )
+        actual_requirements = Requirements(**actual_requirements)
         await ctx.info("Requirements and workflow retrieved", data={"requirements": actual_requirements})
         new_requirements = None
         if metadata_body.libraries:
-            libraries = {**actual_requirements['libraries'], **metadata_body.libraries}
+            libraries = {**actual_requirements.libraries, **metadata_body.libraries}
 
             def get_package_id(factory_id: Union[str, Mapping[str, str]]):
                 return "@youwol/" + factory_id.split("@")[1] if isinstance(factory_id, str) else factory_id['pack']
