@@ -128,7 +128,7 @@ async def publish_story(
 
 @router.get(
     "/stories/{story_id}/download-zip",
-    summary="create a new story")
+    summary="download a story as zip file")
 async def download_zip(
         request: Request,
         story_id: str,
