@@ -150,17 +150,31 @@ async def duplicate(
 @router.post("/projects/upload", summary="upload projects")
 async def upload(
         request: Request,
+        project_id: str = QueryParam(None, alias="project-id"),
         file: UploadFile = File(...),
         configuration: Configuration = Depends(get_configuration)):
-    dir_path, zip_path, zip_dir_name = create_tmp_folder(file.filename)
-    headers = generate_headers_downstream(request.headers)
 
-    try:
-        compressed_size, _ = extract_zip_file(file, zip_path, dir_path)
-        projects_folder = flatten([[Path(root) for f in files if f == "workflow.json"]
-                                   for root, _, files in os.walk(dir_path / zip_dir_name)])
-        projects_folder = list(projects_folder)
-        projects = [create_project_from_json(folder) for folder in projects_folder]
+    async with Context.start_ep(
+            request=request
+    ) as ctx:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            dir_path = Path(tmp_dir)
+            zip_path = dir_path / 'upload.zip'
+            extract_zip_file(file, zip_path, dir_path)
+            files = os.listdir(dir_path)
+            await ctx.info("Zip extracted", data={"files": files})
+            project = create_project_from_json(dir_path)
+            project_id = project_id or str(uuid.uuid4())
+            await asyncio.gather(*update_project(
+                project_id=project_id,
+                owner=Constants.default_owner,
+                project=project,
+                storage=configuration.storage,
+                docdb=configuration.doc_db,
+                headers=ctx.headers()
+            ))
+            return NewProjectResponse(projectId=project_id, libraries=project.requirements.libraries)
+
 
         coroutines = [update_project(project_id=pid, owner=Constants.default_owner, project=project,
                                      storage=configuration.storage, docdb=configuration.doc_db, headers=headers)
