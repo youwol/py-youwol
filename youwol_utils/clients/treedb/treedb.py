@@ -14,6 +14,16 @@ class TreeDbClient:
     headers: Dict[str, str] = field(default_factory=lambda: {})
     connector = aiohttp.TCPConnector(verify_ssl=False)
 
+    async def healthz(self, **kwargs):
+        url = f"{self.url_base}/healthz"
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with await session.get(url=url, **kwargs) as resp:
+                if resp.status == 200:
+                    drives = await resp.json()
+                    return drives
+
+                await raise_exception_from_response(resp, **kwargs)
+
     async def get_drives(self, group_id: str, **kwargs):
 
         url = f"{self.url_base}/groups/{group_id}/drives"

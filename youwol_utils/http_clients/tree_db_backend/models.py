@@ -8,6 +8,10 @@ from youwol_utils.clients.docdb.models import Column, SecondaryIndex, Identifier
 namespace = "tree-db"
 
 
+class HealthzResponse(BaseModel):
+    status: str = "treedb-backend ok"
+
+
 class DocDbs(NamedTuple):
     items_db: DocDb
     folders_db: DocDb
