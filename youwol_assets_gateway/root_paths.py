@@ -56,10 +56,15 @@ router.include_router(
     dependencies=[Depends(get_configuration)]
 )
 
-
 router.include_router(
     files_backend.router,
     prefix="/files-backend",
+    dependencies=[Depends(get_configuration)]
+)
+
+router.include_router(
+    flux_backend.router,
+    prefix="/flux-backend",
     dependencies=[Depends(get_configuration)]
 )
 
