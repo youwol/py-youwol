@@ -99,9 +99,9 @@ class PackageLink(BaseModel):
 
 
 class EditMetadata(BaseModel):
-    name: str
-    description: str
-    libraries: Dict[str, str] = {}
+    name: Optional[str]
+    description: Optional[str]
+    libraries: Optional[Dict[str, str]]
 
 
 Url = str
@@ -161,7 +161,7 @@ class DuplicateProject(BaseModel):
 
 
 class UploadResponse(BaseModel):
-    project_ids: List[str]
+    project_id: str
 
 
 class Project(BaseModel):
