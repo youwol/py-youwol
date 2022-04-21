@@ -10,7 +10,7 @@ import youwol_flux_backend as flux_backend
 import youwol_cdn_sessions_storage as cdn_sessions_storage
 import youwol_files_backend as youwol_files_backend
 from youwol_stories_backend import Configuration as StoriesConfig
-from youwol_utils import CdnClient, LocalDocDbInMemoryClient
+from youwol_utils import CdnClient
 from youwol_utils.clients.assets.assets import AssetsClient
 from youwol_utils.clients.data_api.data import DataClient
 from youwol_utils.clients.docdb.local_docdb import LocalDocDbClient as LocalDocDb, LocalDocDbClient
@@ -63,7 +63,7 @@ async def assets_backend_config_py_youwol():
             keyspace_name=assets_backend.Constants.namespace,
             table_body=ASSETS_TABLE
         ),
-        doc_db_access_history=LocalDocDbInMemoryClient(
+        doc_db_access_history=LocalDocDb(
             root_path=env.pathsBook.local_docdb,
             keyspace_name=assets_backend.Constants.namespace,
             table_body=ACCESS_HISTORY
