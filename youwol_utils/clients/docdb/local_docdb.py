@@ -65,7 +65,7 @@ class LocalDocDbClient:
         query_valid = any(valid_for_indexes)
 
         if not allow_filtering and not query_valid:
-            raise Exception("The query can not proceed")
+            raise RuntimeError("The query can not proceed")
 
         where_clauses = [WhereClause(column=k, relation="eq", term=partition_keys[k])
                          for k in partition_keys.keys()] + \
@@ -100,7 +100,7 @@ class LocalDocDbClient:
             query_body = QueryBody.parse(query_body)
 
         if len(query_body.query.ordering_clause) > 1:
-            raise Exception("Ordering emulated only for 1 ordering clause")
+            raise RuntimeError("Ordering emulated only for 1 ordering clause")
 
         data = json.loads(self.data_path.read_text())["documents"]
 
