@@ -34,7 +34,6 @@ class StoriesClient:
                     return resp
                 await raise_exception_from_response(resp, **kwargs)
 
-
     async def create_story(self, body, **kwargs):
 
         url = f"{self.url_base}/stories"
@@ -211,7 +210,6 @@ class StoriesClient:
                     return resp
 
                 await raise_exception_from_response(resp, **kwargs)
-
 
     async def add_plugin(self, story_id: str, body, **kwargs):
 

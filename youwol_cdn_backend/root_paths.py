@@ -69,7 +69,7 @@ async def download_library(
     ) as ctx:  # type: Context
         storage = configuration.storage
         path = get_path(library_id=library_id, version=version, rest_of_path='__original.zip')
-        await ctx.info("Original zip path retrieved", data={"path":path})
+        await ctx.info("Original zip path retrieved", data={"path": path})
         content = await storage.get_bytes(path=path, owner=Constants.owner, headers=ctx.headers())
         return Response(content, media_type='multipart/form-data')
 
@@ -365,7 +365,7 @@ async def get_entry_point(
     async with Context.start_ep(
             action="fetch entry point",
             request=request,
-            with_attributes={"library_id": library_id, "version": version }
+            with_attributes={"library_id": library_id, "version": version}
     ) as ctx:  # type: Context
 
         package_name, version, max_age = await resolve_resource(library_id=library_id, input_version=version,

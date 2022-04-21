@@ -19,7 +19,7 @@ class LocalFileSystem(FileSystemInterface):
         return self.root_path / path
 
     async def put_object(self, object_name: str, data: io.BytesIO, length: int = -1,
-                   content_type: str = "", metadata: Dict[str, str] = None):
+                         content_type: str = "", metadata: Dict[str, str] = None):
 
         metadata = metadata or {}
         path = self.get_full_path(object_name)

@@ -103,6 +103,7 @@ async def delete_story(
             # delete treedb item
             pass
 
+
 @router.get(
     "/stories/{story_id}",
     response_model=StoryResp,
@@ -313,8 +314,8 @@ async def post_content(
             request=request
     ) as ctx:
         await assert_write_permissions_from_raw_id(raw_id=story_id, configuration=configuration, context=ctx)
-        return await configuration.stories_client.set_content(story_id=story_id, content_id=content_id, body=body.dict(),
-                                                              headers=ctx.headers())
+        return await configuration.stories_client.set_content(story_id=story_id, content_id=content_id,
+                                                              body=body.dict(), headers=ctx.headers())
 
 
 @router.delete(
