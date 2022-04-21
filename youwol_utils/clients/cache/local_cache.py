@@ -11,13 +11,13 @@ class LocalCacheClient:
 
     prefix: str = ""
 
-    async def set(self, name: str, value: any, ex: int,  **kwargs) -> bool:
+    async def set(self, name: str, value: any) -> bool:
 
         key = self._get_key(name)
         self.cache[key] = value
         return True
 
-    async def get(self, name: str, **kwargs) -> Union[JSON, None]:
+    async def get(self, name: str) -> Union[JSON, None]:
 
         key = self._get_key(name)
         if key not in self.cache:
