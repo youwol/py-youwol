@@ -27,31 +27,19 @@ router = APIRouter(tags=["assets-backend"])
 flatten = itertools.chain.from_iterable
 
 
-@router.get("/.ambassador-internal/openapi-docs")
-async def patch_until_this_call_is_removed():
-    return {}
-
-
-@router.get("/healthz")
+@router.get(
+    "/healthz",
+    response_model=HealthzResponse
+)
 async def healthz():
-    return {"status": "assets-backend ok"}
+    return HealthzResponse()
 
 
-@router.get("/user-info",
-            response_model=User,
-            summary="retrieve user info")
-async def get_user_info(request: Request):
-    user = user_info(request)
-    groups = get_all_individual_groups(user["memberof"])
-    groups = [Group(id=private_group_id(user), path="private")] + \
-             [Group(id=str(to_group_id(g)), path=g) for g in groups if g]
-
-    return User(name=user['preferred_username'], groups=groups)
-
-
-@router.put("/assets",
-            response_model=AssetResponse,
-            summary="new asset")
+@router.put(
+    "/assets",
+    response_model=AssetResponse,
+    summary="new asset"
+)
 async def create_asset(
         request: Request,
         body: NewAssetBody,
@@ -68,7 +56,10 @@ async def create_asset(
         "name": body.name,
         "description": body.description,
         "kind": body.kind,
-        "tags": [], "images": [], "thumbnails": []}
+        "tags": body.tags,
+        "images": [],
+        "thumbnails": []
+    }
 
     if policy.read == ReadPolicyEnum.forbidden and policy.share == SharePolicyEnum.forbidden:
         await ensure_post_permission(request=request, doc=doc_asset, configuration=configuration)
@@ -242,9 +233,11 @@ def get_permission(write, policies):
     return PermissionsResp(write=write, read=False, share=False, expiration=None)
 
 
-@router.get("/assets/{asset_id}/permissions",
-            response_model=PermissionsResp,
-            summary="permissions of the user on the asset")
+@router.get(
+    "/assets/{asset_id}/permissions",
+    response_model=PermissionsResp,
+    summary="permissions of the user on the asset"
+)
 async def get_permissions(
         request: Request,
         asset_id: str,
@@ -314,24 +307,11 @@ async def delete_asset(
     return {}
 
 
-@router.post("/query", summary="query assets")
-async def query_asset(_request: Request, _body: QueryAssetBody):
-    """
-        start_time = time.time()
-
-        docs = await ensure_query_permission(request=request, query=body, scope='r')
-        elapsed_time = time.time() - start_time
-
-        return JSONResponse(
-            content={"assets": [format_asset(asset, request).dict() for asset in docs]},
-            headers={"Server-Timing": f"doc_db;dur={elapsed_time*1000}"})
-    """
-    raise NotImplementedError()
-
-
-@router.get("/assets/{asset_id}",
-            response_model=AssetResponse,
-            summary="return an asset")
+@router.get(
+    "/assets/{asset_id}",
+    response_model=AssetResponse,
+    summary="return an asset"
+)
 async def get_asset(
         request: Request,
         asset_id: str,
@@ -340,7 +320,10 @@ async def get_asset(
     return format_asset(asset, request)
 
 
-@router.put("/raw/access/{related_id}", summary="register access")
+@router.put(
+    "/raw/access/{related_id}",
+    summary="register access"
+)
 async def record_access(
         request: Request,
         related_id: str,
@@ -476,29 +459,29 @@ async def post_image(
     return {}
 
 
-@router.delete("/assets/{asset_id}/images/{name}", summary="remove an image")
+@router.delete("/assets/{asset_id}/images/{filename}", summary="remove an image")
 async def remove_image(
         request: Request,
         asset_id: str,
-        name: str,
+        filename: str,
         configuration: Configuration = Depends(get_configuration)
 ):
     headers = generate_headers_downstream(request.headers)
     storage, doc_db = configuration.storage, configuration.doc_db_asset
 
     asset = await ensure_get_permission(request=request, asset_id=asset_id, scope="w", configuration=configuration)
-
+    base_path = Path("/api/assets-backend/") / 'assets' / asset_id
     doc = {**asset, **{
         "images": [image for image in asset["images"]
-                   if image != str(Path("/api/assets-backend/") / 'assets' / asset_id / "images" / name)],
+                   if image != str(base_path / "images" / filename)],
         "thumbnails": [thumbnail for thumbnail in asset["thumbnails"]
-                       if thumbnail != str(Path("/api/assets-backend/") / 'assets' / asset_id / "thumbnails" / name)]
+                       if thumbnail != str(base_path / "thumbnails" / filename)]
     }
            }
     await ensure_post_permission(request=request, doc=doc, configuration=configuration)
-    await asyncio.gather(storage.delete(Path(asset['kind']) / asset_id / "images" / name,
+    await asyncio.gather(storage.delete(Path(asset['kind']) / asset_id / "images" / filename,
                                         owner=Constants.public_owner, headers=headers),
-                         storage.delete(Path(asset['kind']) / asset_id / "thumbnails" / name,
+                         storage.delete(Path(asset['kind']) / asset_id / "thumbnails" / filename,
                                         owner=Constants.public_owner, headers=headers))
     return {}
 
@@ -522,50 +505,3 @@ async def get_media(
         "Content-Type": f"image/{path.suffix[1:]}",
         "cache-control": "public, max-age=31536000"
     })
-
-
-@router.post("/records",
-             response_model=RecordsResponse,
-             summary="return a media")
-async def get_records(
-        request: Request,
-        body: GetRecordsBody,
-        configuration: Configuration = Depends(get_configuration)):
-    doc_db = configuration.doc_db_asset
-    storage = configuration.storage
-    records = await asyncio.gather(*[
-        ensure_get_permission(request=request, asset_id=asset_id, scope="r", configuration=configuration)
-        for asset_id in body.ids
-    ])
-
-    def to_path(media_type: str, urls: List[str], asset) -> List[Path]:
-        return [Path(asset['kind']) / asset['asset_id'] / media_type / url.split('/')[-1] for url in urls]
-
-    paths_images = [to_path("images", asset["images"], asset) for asset in records]
-    paths_images = list(flatten(paths_images))
-    paths_thumbnails = [to_path("thumbnails", asset["thumbnails"], asset) for asset in records]
-    paths_thumbnails = list(flatten(paths_thumbnails))
-
-    table = RecordsTable(
-        id=doc_db.table_name,
-        primaryKey=doc_db.table_body.partition_key[0],
-        values=body.ids
-    )
-    keyspace = RecordsKeyspace(
-        id=doc_db.keyspace_name,
-        groupId=to_group_id(Constants.public_owner),
-        tables=[table]
-    )
-
-    paths = [str(p) for p in paths_images + paths_thumbnails]
-    bucket = RecordsBucket(
-        id=storage.bucket_name,
-        groupId=to_group_id(Constants.public_owner),
-        paths=paths
-    )
-    response = RecordsResponse(
-        docdb=RecordsDocDb(keyspaces=[keyspace]),
-        storage=RecordsStorage(buckets=[bucket])
-    )
-
-    return response
