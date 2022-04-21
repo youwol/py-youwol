@@ -27,8 +27,10 @@ async def assert_write_permissions_from_raw_id(raw_id: str, configuration: Confi
 
 
 async def assert_write_permissions_folder_id(folder_id: str, context: Context):
-    # need to be implemented
-    pass
+    await context.error("Missing implementation of 'assert_write_permissions_folder_id'",
+                        data={"folderId": folder_id},
+                        labels=["TODO", "SECURITY BREACH"])
+    return True
 
 
 async def create_asset(
