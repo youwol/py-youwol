@@ -19,10 +19,6 @@ from youwol_utils import (
 from youwol_utils.clients.docdb.models import OrderingClause, QueryBody
 from youwol_utils.context import Context
 from youwol_utils.utils_paths import parse_json, write_json
-from youwol_stories_backend.all_icons_emojipedia import (
-    icons_smileys_people, icons_animals, icons_foods, icons_activities, icons_travel,
-    icons_objects, icons_symbols, icons_flags,
-)
 from youwol_stories_backend.configurations import Configuration, get_configuration, Constants
 from youwol_utils.http_clients.stories_backend import (
     StoryResp, PutStoryBody, GetDocumentResp, GetChildrenResp, PutDocumentBody, DeleteResp,
@@ -718,22 +714,3 @@ async def get_children_rec(
         return [*direct_children, *indirect_children, *children_next]
 
     return [*direct_children, *indirect_children]
-
-
-@router.get("/emojis/{category}",
-            summary="return available emojis",
-            )
-async def list_emojis(category):
-    icons = {
-        "smileys_people": icons_smileys_people,
-        "animals": icons_animals,
-        "foods": icons_foods,
-        "activities": icons_activities,
-        "travel": icons_travel,
-        "objects": icons_objects,
-        "symbols": icons_symbols,
-        "flags": icons_flags
-    }
-    return {
-        'emojis': [icon[0] for icon in icons[category]]
-    }
