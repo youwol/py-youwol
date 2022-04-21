@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Query a
 from starlette.responses import StreamingResponse
 
 from youwol_utils import (
-    User, Request, user_info, get_all_individual_groups, Group, private_group_id, to_group_id,
+    Request, user_info, get_all_individual_groups, to_group_id,
     asyncio, check_permission_or_raise, RecordsResponse, GetRecordsBody,
     RecordsTable, RecordsKeyspace, RecordsBucket, RecordsDocDb, RecordsStorage, get_group, Query, QueryBody,
 )
@@ -36,20 +36,6 @@ flatten = itertools.chain.from_iterable
 @router.get("/healthz")
 async def healthz():
     return {"status": "flux-backend serving"}
-
-
-@router.get(
-    "/user-info",
-    response_model=User,
-    summary="retrieve user info")
-async def get_user_info(request: Request):
-
-    user = user_info(request)
-    groups = get_all_individual_groups(user["memberof"])
-    groups = [Group(id=private_group_id(user), path="private")] + \
-             [Group(id=str(to_group_id(g)), path=g) for g in groups if g]
-
-    return User(name=user['preferred_username'], groups=groups)
 
 
 @router.get("/projects",
