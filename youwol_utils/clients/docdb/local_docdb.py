@@ -119,7 +119,7 @@ class LocalDocDbClient:
         for ordering in self.table_body.table_options.clustering_order:
             order = ordering.order
             col = ordering.name
-            sorted_result = sorted(r, key=lambda doc: doc[col])
+            sorted_result = sorted(r, key=lambda doc, c=col: doc[c])
             r = sorted_result
             if order == "DESC" or (col in query_ordering and query_ordering[col] == "DESC"):
                 r.reverse()
