@@ -1,10 +1,61 @@
+from enum import Enum
 from pathlib import Path
-from typing import List, NamedTuple, Union, Dict, Optional
+from typing import List, NamedTuple, Union, Dict, Optional, Mapping, Any
 
 from pydantic import BaseModel
 
-from youwol_utils import AccessPolicyBody, TableBody, ReadPolicyEnum, SharePolicyEnum
+from youwol_utils import TableBody
 from youwol_utils.clients.docdb.models import Column, TableOptions, OrderingClause
+
+
+class HealthzResponse(BaseModel):
+    status: str = "assets-backend ok"
+
+
+class ReadPolicyEnum(str, Enum):
+    forbidden = "forbidden"
+    authorized = "authorized"
+    owning = "owning"
+    expiration_date = "expiration-date"
+
+
+ReadPolicyEnumFactory = {
+    "forbidden": ReadPolicyEnum.forbidden,
+    "authorized": ReadPolicyEnum.authorized,
+    "owning": ReadPolicyEnum.owning,
+    "expiration-date": ReadPolicyEnum.expiration_date
+}
+
+
+class SharePolicyEnum(str, Enum):
+    forbidden = "forbidden"
+    authorized = "authorized"
+
+
+SharePolicyEnumFactory = {
+    "forbidden": SharePolicyEnum.forbidden,
+    "authorized": SharePolicyEnum.authorized,
+}
+
+
+class AccessPolicyBody(BaseModel):
+    read: ReadPolicyEnum
+    share: SharePolicyEnum
+    parameters: Mapping[str, Any] = {}
+
+
+class AccessPolicyResp(BaseModel):
+    read: ReadPolicyEnum
+    share: SharePolicyEnum
+    parameters: Mapping[str, Any] = {}
+    timestamp: Union[int, None]
+
+
+class PermissionsResp(BaseModel):
+    write: bool
+    read: bool
+    share: bool
+    expiration: Union[int, None]
 
 
 class Group(BaseModel):
@@ -57,7 +108,7 @@ class PostAssetBody(BaseModel):
     description: Optional[str] = None
     tags: Optional[List[str]] = None
     groupId: Optional[str] = None
-    defaultAccessPolicy: AccessPolicyBody = None
+    defaultAccessPolicy: Optional[AccessPolicyBody] = None
 
 
 WhereClause = dict

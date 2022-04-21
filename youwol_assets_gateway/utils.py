@@ -8,8 +8,9 @@ from starlette.requests import Request
 
 from youwol_utils import (
     to_group_id, flatten, generate_headers_downstream,
-    ReadPolicyEnumFactory, SharePolicyEnumFactory, base64, log_info,
+    base64, log_info,
 )
+from youwol_utils.http_clients.assets_backend import ReadPolicyEnumFactory, SharePolicyEnumFactory
 from youwol_assets_gateway.configurations import Configuration
 from youwol_utils.http_clients.assets_gateway import ItemResponse, AssetResponse, GroupAccess, FolderResponse, \
     AssetWithPermissionResponse, PermissionsResponse

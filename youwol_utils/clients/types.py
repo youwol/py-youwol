@@ -1,5 +1,4 @@
-from enum import Enum
-from typing import Union, List, Mapping, Any
+from typing import Union, List
 
 from pydantic import BaseModel
 
@@ -60,50 +59,3 @@ class RecordsStorage(BaseModel):
 class RecordsResponse(BaseModel):
     docdb: RecordsDocDb
     storage: RecordsStorage
-
-
-class ReadPolicyEnum(str, Enum):
-    forbidden = "forbidden"
-    authorized = "authorized"
-    owning = "owning"
-    expiration_date = "expiration-date"
-
-
-#  factory_read = {item.value: item for item in ReadPolicyEnum}
-ReadPolicyEnumFactory = {
-    "forbidden": ReadPolicyEnum.forbidden,
-    "authorized": ReadPolicyEnum.authorized,
-    "owning": ReadPolicyEnum.owning,
-    "expiration-date": ReadPolicyEnum.expiration_date
-    }
-
-
-class SharePolicyEnum(str, Enum):
-    forbidden = "forbidden"
-    authorized = "authorized"
-
-
-SharePolicyEnumFactory = {
-    "forbidden": SharePolicyEnum.forbidden,
-    "authorized": SharePolicyEnum.authorized,
-    }
-
-
-class AccessPolicyBody(BaseModel):
-    read: ReadPolicyEnum
-    share: SharePolicyEnum
-    parameters: Mapping[str, Any] = {}
-
-
-class AccessPolicyResp(BaseModel):
-    read: ReadPolicyEnum
-    share: SharePolicyEnum
-    parameters: Mapping[str, Any] = {}
-    timestamp: Union[int, None]
-
-
-class PermissionsResp(BaseModel):
-    write: bool
-    read: bool
-    share: bool
-    expiration: Union[int, None]

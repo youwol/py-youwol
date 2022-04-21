@@ -7,10 +7,11 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Query, Depends
 from starlette.requests import Request
 
 from youwol_utils import (
-    generate_headers_downstream, to_group_scope, itertools, is_authorized_write, AccessPolicyBody, PermissionsResp,
+    generate_headers_downstream, to_group_scope, itertools, is_authorized_write
 )
 from youwol_utils.context import Context
 from youwol_assets_gateway.configurations import Configuration, get_configuration
+from youwol_utils.http_clients.assets_backend import AccessPolicyBody, PermissionsResp
 from youwol_utils.http_clients.assets_gateway import (
     AssetResponse, AssetsResponse, ImportAssetsBody, NewAssetResponse, QueryFlatBody, OwnerInfo, ExposingGroup,
     ConsumerInfo, AccessInfo, OwningGroup, UpdateAssetBody, QueryTreeBody, ItemsResponse, PermissionsResponse
