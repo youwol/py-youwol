@@ -67,9 +67,9 @@ class LocalDocDbClient:
         if not allow_filtering and not query_valid:
             raise Exception("The query can not proceed")
 
-        where_clauses = [{"column": k, "relation": "eq", "term": partition_keys[k]}
+        where_clauses = [WhereClause(column=k, relation="eq", term=partition_keys[k])
                          for k in partition_keys.keys()] + \
-                        [{"column": k, "relation": "eq", "term": clustering_keys[k]}
+                        [WhereClause(column=k, relation="eq", term=clustering_keys[k])
                          for k in clustering_keys.keys()]
 
         query = QueryBody(
