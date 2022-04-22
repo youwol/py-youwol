@@ -1,9 +1,7 @@
 import asyncio
 import math
 import time
-import zipfile
-from pathlib import Path
-from typing import IO, Union, Dict
+from typing import Dict
 from fastapi import HTTPException
 from youwol_utils import log_info, StorageClient, QueryIndexException, DocDbClient
 from youwol_utils.context import Context
@@ -73,24 +71,6 @@ def format_document_resp(docdb_doc: Dict[str, str]):
         contentId=docdb_doc['content_id'],
         position=float(docdb_doc['position'])
     )
-
-
-def extract_zip_file(
-        file: IO,
-        zip_path: Union[Path, str],
-        dir_path: Union[Path, str]
-):
-    dir_path = str(dir_path)
-    with open(zip_path, 'ab') as f:
-        for chunk in iter(lambda: file.read(10000), b''):
-            f.write(chunk)
-
-    compressed_size = zip_path.stat().st_size
-
-    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-        zip_ref.extractall(dir_path)
-
-    return compressed_size
 
 
 async def get_requirements(story_id: str, storage: StorageClient, context: Context) -> Requirements:

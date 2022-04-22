@@ -14,11 +14,11 @@ from starlette.responses import StreamingResponse
 
 from youwol_utils import (
     Request, user_info,
-    generate_headers_downstream, Query, WhereClause, DocDbClient, InvalidInput,
+    generate_headers_downstream, Query, WhereClause, DocDbClient, InvalidInput
 )
 from youwol_utils.clients.docdb.models import OrderingClause, QueryBody
 from youwol_utils.context import Context
-from youwol_utils.utils_paths import parse_json, write_json
+from youwol_utils.utils_paths import parse_json, write_json, extract_zip_file
 from youwol_stories_backend.configurations import Configuration, get_configuration, Constants
 from youwol_utils.http_clients.stories_backend import (
     StoryResp, PutStoryBody, GetDocumentResp, GetChildrenResp, PutDocumentBody, DeleteResp,
@@ -27,7 +27,7 @@ from youwol_utils.http_clients.stories_backend import (
 )
 from youwol_stories_backend.utils import (
     query_document, position_start,
-    position_next, position_format, format_document_resp, get_requirements, extract_zip_file, get_document_path,
+    position_next, position_format, format_document_resp, get_requirements, get_document_path,
     query_story, zip_data_filename, zip_requirements_filename, create_global_contents_if_needed,
     create_default_global_contents,
 )

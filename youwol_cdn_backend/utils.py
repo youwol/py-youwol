@@ -4,9 +4,8 @@ import hashlib
 import itertools
 import json
 import os
-import zipfile
 from pathlib import Path
-from typing import IO, Optional, Iterable, Dict
+from typing import IO, Optional, Dict
 from typing import Union, List, Mapping
 from uuid import uuid4
 
@@ -23,6 +22,7 @@ from youwol_cdn_backend.configurations import Constants, Configuration
 from youwol_utils.http_clients.cdn_backend import FormData, PublishResponse, FileResponse, \
     FolderResponse, ExplorerResponse, ListVersionsResponse, Release
 from youwol_cdn_backend.utils_indexing import format_doc_db_record, get_version_number_str
+from youwol_utils.utils_paths import extract_zip_file
 
 flatten = itertools.chain.from_iterable
 
@@ -101,23 +101,6 @@ def format_download_form(file_path: Path, base_path: Path, dir_path: Path, compr
     return FormData(objectName=path_bucket, objectData=data, owner=Constants.owner,
                     objectSize=len(data), content_type=get_content_type(file_path.name),
                     content_encoding=get_content_encoding(file_path.name))
-
-
-def extract_zip_file(file: IO, zip_path: Union[Path, str], dir_path: Union[Path, str], delete_original=True):
-    dir_path = str(dir_path)
-    with open(zip_path, 'ab') as f:
-        for chunk in iter(lambda: file.read(10000), b''):
-            f.write(chunk)
-
-    compressed_size = zip_path.stat().st_size
-
-    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-        zip_ref.extractall(dir_path)
-
-    if delete_original:
-        os.remove(zip_path)
-
-    return compressed_size
 
 
 async def publish_package(file: IO, filename: str, content_encoding, configuration: Configuration, context: Context):
