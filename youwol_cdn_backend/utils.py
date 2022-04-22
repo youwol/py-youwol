@@ -186,7 +186,8 @@ async def publish_package(file: IO, filename: str, content_encoding, configurati
             await configuration.doc_db.create_document(record, owner=Constants.owner, headers=headers)
 
         await context.info(text=f"Create explorer data", data={"record": record})
-        explorer_data = await create_explorer_data(root_path=base_path, forms=forms, context=context)
+        explorer_data = await create_explorer_data(dir_path=package_path.parent, root_path=base_path, forms=forms,
+                                                   context=context)
 
         def get_explorer_path(folder):
             base = f"generated/explorer/{library_id}/{version}"
@@ -203,29 +204,8 @@ async def publish_package(file: IO, filename: str, content_encoding, configurati
         shutil.rmtree(dir_path)
 
 
-async def create_explorer_data(root_path: Path, forms: List[FormData], context: Context) -> Dict[str, ExplorerResponse]:
-
-    def parent_dir(form: FormData):
-        p = form.objectName.relative_to(root_path)
-        return p.parent
-
-    def folders_children(parent: Path, folders: Iterable[Path]):
-        children = []
-        for folder in folders:
-            try:
-                p = folder.relative_to(parent)
-                child = parent / p.parts[0]
-                if len(p.parts) >= 1 and child not in children:
-                    children.append(child)
-            except (IndexError, ValueError):
-                pass
-        return children
-
-    def to_file_data(form: FormData):
-        return FileResponse(name=Path(form.objectName).name, size=form.objectSize, encoding=form.content_encoding)
-
-    def to_folder_data(path: Path):
-        return FolderResponse(name=path.name, path=str(path), size=-1)
+async def create_explorer_data(dir_path: Path, root_path: Path, forms: List[FormData], context: Context)\
+        -> Dict[str, ExplorerResponse]:
 
     def compute_folders_size_rec(content: ExplorerResponse, all_data, result):
 
@@ -241,26 +221,23 @@ async def create_explorer_data(root_path: Path, forms: List[FormData], context: 
     async with context.start(action="create explorer data",
                              with_attributes={"path": str(root_path)}
                              ) as ctx:  # type: Context
+        data = {}
+        forms_data_dict = {f"{Path(form.objectName).relative_to(root_path)}": {
+            "size": form.objectSize,
+            "encoding": form.content_encoding
+        } for form in forms}
 
-        forms.sort(key=lambda d: parent_dir(d))
-        grouped = itertools.groupby(forms, lambda d: parent_dir(d))
-        grouped = {k: list(v) for k, v in grouped}
-        non_empty_folders = grouped.keys()
-        data_folders = {str(parent): ExplorerResponse(
-            size=-1,
-            files=[to_file_data(f) for f in files],
-            folders=[to_folder_data(path) for path in folders_children(parent, non_empty_folders)]
-        ) for parent, files in grouped.items()}
-        empty_folders = [folder for v in data_folders.values() for folder in v.folders
-                         if not str(folder.path) in data_folders]
-        data_empty_folders = {str(k.path): ExplorerResponse(
-            size=-1,
-            files=[],
-            folders=[to_folder_data(path) for path in folders_children(Path(k.path), non_empty_folders)]
-        ) for k in empty_folders}
-        data = {**data_folders, ** data_empty_folders}
+        for root, folders, files in os.walk(dir_path):
+            base_path = f"{Path(root).relative_to(dir_path)}".lstrip('./')
+            base_path = base_path + "/" if base_path else base_path
+            data[base_path.rstrip('/')] = ExplorerResponse(
+                size=-1,
+                files=[FileResponse(name=f, **forms_data_dict[f"{base_path}{f}"]) for f in files],
+                folders=[FolderResponse(name=f, size=-1, path=f"{base_path}{f}") for f in folders],
+            )
+        data[''].files.append(FileResponse(name="__original.zip", **forms_data_dict["__original.zip"]))
         results = {}
-        compute_folders_size_rec(data['.'], data, results)
+        compute_folders_size_rec(data[''], data, results)
         await ctx.info('folders tree re-constructed', data={k: f"{len(d.files)} file(s)" for k, d in data.items()})
         return data
 
