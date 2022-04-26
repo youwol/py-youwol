@@ -671,6 +671,7 @@ async def list_deleted(
 async def queue_delete_item(
         request: Request,
         item_id: str,
+        erase: bool = False,
         configuration: Configuration = Depends(get_configuration)
 ):
     async with Context.start_ep(
@@ -685,14 +686,17 @@ async def queue_delete_item(
         doc = await ensure_get_permission(request=request, partition_keys={'item_id': item_id}, docdb=items_db,
                                           context=ctx)
 
-        doc = {"deleted_id": doc['item_id'], "drive_id": doc["drive_id"], "type": doc['type'],
-               "kind": 'item', "related_id": doc["related_id"], "name": doc['name'],
-               "parent_folder_id": doc["folder_id"], "group_id": doc["group_id"], "metadata": doc["metadata"]}
+        if not erase:
+            deleted_doc = {
+                "deleted_id": doc['item_id'], "drive_id": doc["drive_id"], "type": doc['type'],
+                "kind": 'item', "related_id": doc["related_id"], "name": doc['name'],
+                "parent_folder_id": doc["folder_id"], "group_id": doc["group_id"], "metadata": doc["metadata"]
+            }
+            deleted_db = configuration.doc_dbs.deleted_db
+            await ensure_post_permission(request=request, doc=deleted_doc, docdb=deleted_db, context=ctx)
 
-        deleted_db = configuration.doc_dbs.deleted_db
-        await ensure_post_permission(request=request, doc=doc, docdb=deleted_db, context=ctx)
         await ensure_delete_permission(request=request, docdb=items_db,
-                                       doc={"item_id": doc['deleted_id'], "group_id": doc["group_id"]}, context=ctx)
+                                       doc={"item_id": doc['item_id'], "group_id": doc["group_id"]}, context=ctx)
         return {}
 
 
