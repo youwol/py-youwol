@@ -41,6 +41,10 @@ class PathsBook(BaseModel):
         return self.local_docdb / 'tree_db' / 'items' / 'data.json'
 
     @property
+    def local_assets_entities_docdb(self) -> Path:
+        return self.local_docdb / 'assets' / 'entities' / 'data.json'
+
+    @property
     def local_storage(self) -> Path:
         return self.databases / 'storage'
 
