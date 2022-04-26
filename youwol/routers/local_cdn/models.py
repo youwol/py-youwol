@@ -57,6 +57,10 @@ class DownloadPackagesBody(BaseModel):
     checkUpdateStatus: bool
 
 
+class ResetCdnBody(BaseModel):
+    keepProjectPackages: bool = True
+
+
 class DownloadedPackageResponse(BaseModel):
     packageName: str
     version: str

@@ -5,6 +5,8 @@ from typing import List
 from fastapi import APIRouter
 from starlette.requests import Request
 
+from youwol.environment.clients import LocalClients
+from youwol.environment.projects_loader import ProjectLoader
 from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.local_cdn.implementation import get_latest_local_cdn_version, check_updates_from_queue, \
     download_packages_from_queue, get_version_info
@@ -123,3 +125,37 @@ async def download(
                  for _ in range(5)]
 
         await asyncio.gather(queue.join(), *tasks)
+
+
+@router.post("/reset",
+             summary="reset local CDN"
+             )
+async def reset(
+        request: Request,
+        body: ResetCdnBody
+):
+    async with Context.from_request(request).start(
+            action="reset CDN",
+            with_attributes={'topic': 'updatesCdn'},
+            with_loggers=[UserContextLogger()]
+    ) as ctx:  # type: Context
+        env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
+        packages = [p for p in parse_json(env.pathsBook.local_assets_entities_docdb)['documents']
+                    if p['kind'] == 'package']
+        await ctx.info(f"Found a total of {len(packages)} packages",
+                       data={"packages": [p['name'] for p in packages]})
+        if body.keepProjectPackages:
+            projects = [p.name for p in await ProjectLoader.get_projects(env, ctx)]
+            packages = [p for p in packages if p['name'] not in projects]
+            await ctx.info(f"Filter out packages from local projects",
+                           data={"packages": [p['name'] for p in packages]})
+
+        cdn_client = LocalClients.get_gtw_cdn_client(env)
+        for package in packages:
+            info = await cdn_client.get_library_info(library_id=package['related_id'])
+            for version in info['versions']:
+                await ctx.send(
+                    PackageEvent(packageName=package['name'], version=version, event=Event.updateCheckStarted)
+                )
+
+            await cdn_client.delete_library(library_id=package['related_id'], params={'purge': "true"})
