@@ -113,6 +113,7 @@ async def delete_asset(
         asset_id = raw_id_to_asset_id(raw_id)
         tree_db, assets_db = configuration.treedb_client, configuration.assets_client
         resp = await tree_db.get_items_from_related_id(related_id=asset_id, headers=ctx.headers())
-        await asyncio.gather(*[tree_db.remove_item(item_id=item['item_id'], headers=ctx.headers())
+        await asyncio.gather(*[tree_db.remove_item(item_id=item['itemId'], params={'erase': 'true'},
+                                                   headers=ctx.headers())
                                for item in resp['items']])
         await assets_db.delete_asset(asset_id=asset_id, headers=ctx.headers())
