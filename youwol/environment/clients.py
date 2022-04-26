@@ -111,6 +111,11 @@ class LocalClients:
         return CdnClient(url_base=f"{base_path}/cdn-backend")
 
     @staticmethod
+    def get_gtw_cdn_client(env: YouwolEnvironment) -> CdnClient:
+        base_path = LocalClients.base_path(env)
+        return CdnClient(url_base=f"{base_path}/assets-gateway/cdn-backend")
+
+    @staticmethod
     def get_stories_client(env: YouwolEnvironment) -> StoriesClient:
         base_path = LocalClients.base_path(env)
         return StoriesClient(url_base=f"{base_path}/stories-backend")
