@@ -1,4 +1,5 @@
 import asyncio
+import os
 from itertools import groupby
 from typing import NamedTuple, List
 
@@ -176,3 +177,14 @@ async def download_package(
             fingerprint=record['fingerprint']
         )
         await ctx.send(response)
+
+
+def get_version_info(version_data, env: YouwolEnvironment):
+    minio_path = env.pathsBook.local_cdn_storage
+    package_path = version_data["library_name"].replace("@", "")
+    version = version_data['version']
+    entry_point = version_data['bundle']
+    base_path = minio_path / 'libraries' / package_path / version
+    files_count = sum([len(files) for r, d, files in os.walk(base_path)])
+    entry_point_size = (base_path / entry_point).stat().st_size if (base_path / entry_point).exists() else '-1'
+    return {"filesCount": files_count, "entryPointSize": entry_point_size, "version": version}

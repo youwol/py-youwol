@@ -4,6 +4,26 @@ from typing import List
 from pydantic import BaseModel
 
 
+class CdnVersion(BaseModel):
+    version: str
+    filesCount: int
+    entryPointSize: int  # total size, in bytes
+
+
+class CdnPackage(BaseModel):
+    name: str
+    id: str
+    versions: List[CdnVersion]
+
+
+class CdnStatusResponse(BaseModel):
+    packages: List[CdnPackage]
+
+
+class CdnPackageResponse(CdnPackage):
+    pass
+
+
 class UpdateStatus(Enum):
     upToDate = 'upToDate'
     mismatch = 'mismatch'
