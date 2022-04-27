@@ -14,6 +14,9 @@ from youwol_utils.context import Context
 
 class AbstractDispatch(BaseModel):
 
+    async def status(self):
+        return {'description': "no 'status' method provided"}
+
     async def apply(self,
                     incoming_request: Request,
                     call_next: RequestResponseEndpoint,
@@ -37,6 +40,13 @@ class RedirectDispatch(AbstractDispatch):
 
     def is_listening(self):
         return is_localhost_ws_listening(int(self.destination.split(':')[-1]))
+
+    async def status(self):
+        return {
+            'resource': self.origin,
+            'redirect to': self.destination,
+            'activated': self.is_listening()
+        }
 
     async def apply(self,
                     incoming_request: Request,
@@ -85,6 +95,13 @@ class RedirectDispatch(AbstractDispatch):
 class CdnOverrideDispatch(AbstractDispatch):
     packageName: str
     port: int
+
+    async def status(self):
+        return {
+            'package': self.packageName,
+            'redirect to': f'localhost:{self.port}',
+            'activated': is_localhost_ws_listening(self.port)
+        }
 
     async def apply(self,
                     incoming_request: Request,

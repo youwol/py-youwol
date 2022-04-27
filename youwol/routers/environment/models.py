@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Any, Dict
 
 from pydantic import BaseModel
 
@@ -10,6 +10,15 @@ from youwol.environment.projects_loader import Result
 class AvailableProfiles(BaseModel):
     profiles: Optional[List[str]]
     active: str
+
+
+class CustomDispatch(BaseModel):
+    type: str
+    status: Dict[str, Any]
+
+
+class CustomDispatchesResponse(BaseModel):
+    dispatches: Dict[str, List[CustomDispatch]]
 
 
 class ProjectsLoadingResults(BaseModel):

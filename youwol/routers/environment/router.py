@@ -11,7 +11,8 @@ from youwol.environment.models import UserInfo
 from youwol.environment.projects_loader import ProjectLoader
 from youwol.environment.youwol_environment import yw_config, YouwolEnvironment, YouwolEnvironmentFactory
 from youwol.routers.environment.models import (
-    SyncUserBody, LoginBody, RemoteGatewayInfo, SelectRemoteBody, AvailableProfiles, ProjectsLoadingResults
+    SyncUserBody, LoginBody, RemoteGatewayInfo, SelectRemoteBody, AvailableProfiles, ProjectsLoadingResults,
+    CustomDispatch, CustomDispatchesResponse
 )
 from youwol.routers.environment.upload_assets.upload import upload_asset
 from youwol.utils.utils_low_level import get_public_user_auth_token
@@ -153,6 +154,27 @@ async def status(
         await ctx.send(response)
         await ctx.send(ProjectsLoadingResults(results=await ProjectLoader.get_results(config, ctx)))
         return http_response
+
+
+@router.get("/configuration/custom-dispatches",
+            response_model=CustomDispatchesResponse,
+            summary="list custom dispatches")
+async def select_remote(
+        request: Request,
+        config: YouwolEnvironment = Depends(yw_config)
+):
+    async with Context.start_ep(
+            request=request,
+            with_loggers=[UserContextLogger()],
+    ):
+        dispatches = [CustomDispatch(type=d.__class__.__name__, status=await d.status())
+                      for d in config.customDispatches]
+
+        def key_fct(d):
+            return d.type
+        grouped = itertools.groupby(sorted(dispatches, key=key_fct), key=key_fct)
+        dispatches = {k: list(items) for k, items in grouped}
+        return CustomDispatchesResponse(dispatches=dispatches)
 
 
 @router.post("/login",
