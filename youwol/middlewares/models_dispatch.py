@@ -1,7 +1,7 @@
 import socket
 from typing import Optional
 
-from aiohttp import ClientSession, ClientConnectorError
+from aiohttp import ClientSession
 from pydantic import BaseModel
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
@@ -25,9 +25,18 @@ class AbstractDispatch(BaseModel):
         raise NotImplementedError("AbstractDispatch.dispatch not implemented")
 
 
+def is_localhost_ws_listening(port: int):
+    a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    location = ('localhost', port)
+    return a_socket.connect_ex(location) == 0
+
+
 class RedirectDispatch(AbstractDispatch):
     origin: str
     destination: str
+
+    def is_listening(self):
+        return is_localhost_ws_listening(int(self.destination.split(':')[-1]))
 
     async def apply(self,
                     incoming_request: Request,
@@ -35,9 +44,8 @@ class RedirectDispatch(AbstractDispatch):
                     context: Context) -> Optional[Response]:
         if not incoming_request.url.path.startswith(self.origin):
             return None
-        a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        location = ('localhost', int(self.destination.split(':')[-1]))
-        if a_socket.connect_ex(location) != 0:
+
+        if not self.is_listening():
             await context.info(f"Dispatch {self} not listening -> proceed with no dispatch")
             return None
 
@@ -99,26 +107,21 @@ class CdnOverrideDispatch(AbstractDispatch):
         await context.info(text=f"CdnOverrideDispatch[{self}] matched",
                            data={"origin": incoming_request.url.path,
                                  "destination": url})
-        try:
-            # Try to connect to a dev server
-            async with ClientSession(auto_decompress=False) as session:
-                async with await session.get(url=url) as resp:
-                    if resp.status != 200:
-                        await context.error(text=f"CdnOverrideDispatch[{self}]: \
-                        Bad status response while dispatching", data={
-                            "origin": incoming_request.url.path,
-                            "destination": url,
-                            "status": resp.status
-                        })
-                        return None
-                    return await self.dispatch(incoming_request=incoming_request)
-        except ClientConnectorError as e:
-            await context.error(text="ClientConnectorError while dispatching", data={
-                "origin": incoming_request.url.path,
-                "destination": url,
-                "exception": e.os_error
-            })
+        if not is_localhost_ws_listening(self.port):
+            await context.info(text=f"CdnOverrideDispatch[{self}] not listening")
             return None
+
+        async with ClientSession(auto_decompress=False) as session:
+            async with await session.get(url=url) as resp:
+                if resp.status != 200:
+                    await context.error(text=f"CdnOverrideDispatch[{self}]: \
+                        Bad status response while dispatching", data={
+                        "origin": incoming_request.url.path,
+                        "destination": url,
+                        "status": resp.status
+                    })
+                    return None
+                return await self.dispatch(incoming_request=incoming_request)
 
     async def dispatch(self, incoming_request: Request) -> Response:
         rest_of_path = incoming_request.url.path.split('/')[-1]
