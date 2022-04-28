@@ -3,6 +3,7 @@ from typing import List, Optional
 
 from aiohttp.client_exceptions import ClientConnectorError, ContentTypeError
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from starlette.requests import Request
 
@@ -112,14 +113,13 @@ async def change_configuration_profile(
     return await status(request, env)
 
 
-@router.get("/file-content",
+@router.get("/configuration/config-file",
+            response_class=PlainTextResponse,
             summary="text content of the configuration file")
 async def file_content(
         config: YouwolEnvironment = Depends(yw_config)
 ):
-    return {
-        "content": config.pathsBook.config.read_text()
-    }
+    return config.pathsBook.config.read_text()
 
 
 @router.get("/status",
