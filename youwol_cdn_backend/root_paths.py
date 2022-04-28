@@ -389,6 +389,9 @@ async def get_resource(
         rest_of_path: str,
         configuration: Configuration = Depends(get_configuration)
 ):
+    if rest_of_path == '':
+        return await get_entry_point(request=request, library_id=library_id, version=version,
+                                     configuration=configuration)
     async with Context.start_ep(
             action="fetch resource",
             request=request,
