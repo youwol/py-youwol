@@ -159,7 +159,7 @@ async def status(
 @router.get("/configuration/custom-dispatches",
             response_model=CustomDispatchesResponse,
             summary="list custom dispatches")
-async def select_remote(
+async def custom_dispatches(
         request: Request,
         config: YouwolEnvironment = Depends(yw_config)
 ):
@@ -167,7 +167,8 @@ async def select_remote(
             request=request,
             with_loggers=[UserContextLogger()],
     ):
-        dispatches = [CustomDispatch(type=d.__class__.__name__, status=await d.status())
+
+        dispatches = [CustomDispatch(type=d.__class__.__name__, **(await d.info()).dict())
                       for d in config.customDispatches]
 
         def key_fct(d):

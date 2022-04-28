@@ -1,5 +1,5 @@
 import socket
-from typing import Optional
+from typing import Optional, Dict
 
 from aiohttp import ClientSession
 from pydantic import BaseModel
@@ -12,10 +12,17 @@ from youwol_utils import encode_id
 from youwol_utils.context import Context
 
 
+class DispatchInfo(BaseModel):
+    name: str
+    activated: Optional[bool]
+    parameters: Optional[Dict[str, str]]
+
+
 class AbstractDispatch(BaseModel):
 
-    async def status(self):
-        return {'description': "no 'status' method provided"}
+    async def info(self) -> DispatchInfo:
+        return DispatchInfo(name=self.__str__(), activated=True,
+                            parameters={"description": "no 'status' method defined"})
 
     async def apply(self,
                     incoming_request: Request,
@@ -41,12 +48,14 @@ class RedirectDispatch(AbstractDispatch):
     def is_listening(self):
         return is_localhost_ws_listening(int(self.destination.split(':')[-1]))
 
-    async def status(self):
-        return {
-            'resource': self.origin,
-            'redirect to': self.destination,
-            'activated': self.is_listening()
-        }
+    async def info(self) -> DispatchInfo:
+        return DispatchInfo(
+            name=self.origin,
+            activated=self.is_listening(),
+            parameters={
+                'from url': self.origin,
+                'redirected to': self.destination
+            })
 
     async def apply(self,
                     incoming_request: Request,
@@ -96,12 +105,14 @@ class CdnOverrideDispatch(AbstractDispatch):
     packageName: str
     port: int
 
-    async def status(self):
-        return {
-            'package': self.packageName,
-            'redirect to': f'localhost:{self.port}',
-            'activated': is_localhost_ws_listening(self.port)
-        }
+    async def info(self):
+        return DispatchInfo(
+            name=self.packageName,
+            activated=is_localhost_ws_listening(self.port),
+            parameters={
+                'package': self.packageName,
+                'redirected to':  f'localhost:{self.port}'
+            })
 
     async def apply(self,
                     incoming_request: Request,
