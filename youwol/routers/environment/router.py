@@ -2,6 +2,7 @@ import itertools
 from typing import List, Optional
 
 from aiohttp.client_exceptions import ClientConnectorError, ContentTypeError
+from cowpy import cow
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
@@ -64,6 +65,15 @@ async def connect_to_remote(config: YouwolEnvironment, context: Context) -> bool
             text="Failed to call healthz on assets-gateway",
             data={'host': remote_gateway_info.host, 'error': str(e)})
         return False
+
+
+@router.get("/cow-say",
+            response_class=PlainTextResponse,
+            summary="status")
+async def cow_say():
+    return cow.milk_random_cow(f"""If error is corrected whenever it is recognized as such, the path of
+     error is the path of truth (H. Reichenbach).
+""")
 
 
 @router.get("/configuration",
