@@ -168,6 +168,15 @@ async def get_youwol_environment(port: int = 2000):
             return resp
 
 
+async def reload_youwol_environment(port: int):
+
+    url = f"http://localhost:{port}/admin/environment/configuration"
+    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
+        async with await session.post(url=url) as resp:
+            if resp.status != 200:
+                raise HTTPException(status_code=resp.status, detail=await resp.read())
+
+
 async def get_headers_auth_admin_from_env():
     client_id = os.getenv("AUTH_CLIENT_ID")
     client_secret = os.getenv("AUTH_CLIENT_SECRET")
