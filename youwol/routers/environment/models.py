@@ -1,10 +1,11 @@
 from enum import Enum
-from typing import List, Optional, Any, Dict
+from typing import List, Optional, Dict
 
 from pydantic import BaseModel
 
 from youwol.environment.models_project import ErrorResponse
 from youwol.environment.projects_loader import Result
+from youwol.middlewares.models_dispatch import DispatchInfo
 
 
 class AvailableProfiles(BaseModel):
@@ -14,11 +15,13 @@ class AvailableProfiles(BaseModel):
 
 class CustomDispatch(BaseModel):
     type: str
-    status: Dict[str, Any]
+    name: str
+    activated: Optional[bool]
+    parameters: Optional[Dict[str, str]]
 
 
 class CustomDispatchesResponse(BaseModel):
-    dispatches: Dict[str, List[CustomDispatch]]
+    dispatches: Dict[str, List[DispatchInfo]]
 
 
 class ProjectsLoadingResults(BaseModel):
