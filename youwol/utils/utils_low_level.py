@@ -203,7 +203,7 @@ async def execute_shell_cmd(cmd: str, context: Context, log_outputs=True):
         async with stream.merge(p.stdout, p.stderr).stream() as messages_stream:
             async for message in messages_stream:
                 outputs.append(message.decode('utf-8'))
-                log_outputs and await context.info(text=outputs[-1])
+                log_outputs and await ctx.info(text=outputs[-1])
         await p.communicate()
         return p.returncode, outputs
 
