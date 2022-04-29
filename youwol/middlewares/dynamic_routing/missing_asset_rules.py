@@ -23,9 +23,12 @@ class GetRawDispatch(AbstractDispatch):
                     call_next: RequestResponseEndpoint,
                     context: Context
                     ) -> Optional[Response]:
-        if not (request.method == "GET" and '/api/assets-gateway/raw/' in request.url.path):
-            return None
 
+        match, params = url_match(request, "GET:/api/assets-gateway/raw/*/*/**")
+
+        if not match:
+            return None
+        kind, raw_id, _ = params if len(params) >= 3 else params + [None]
         async with context.start(action="GetRawDispatch.apply") as ctx:
             resp = await call_next(request)
             if resp.status_code == 404:
@@ -33,9 +36,8 @@ class GetRawDispatch(AbstractDispatch):
                 headers = {"Authorization": request.headers.get("authorization")}
                 resp = await redirect_api_remote(request, ctx)
                 thread = await ctx.get('download_thread', AssetDownloadThread)
-
-                async with ctx.start(action="Enqueue asset for download in local store") as ctx_1:
-                    thread.enqueue_asset(url=request.url.path, context=ctx_1, headers=headers)
+                await ctx.info("~> schedule asset download")
+                thread.enqueue_asset(url=request.url.path, kind=kind, raw_id=raw_id, context=ctx, headers=headers)
                 return resp
             return resp
 

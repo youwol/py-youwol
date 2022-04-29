@@ -7,7 +7,6 @@ from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.commons import Label
 from youwol.routers.environment.download_assets.models import DownloadTask
 from youwol.routers.local_cdn.implementation import download_package
-from youwol.web_socket import UserContextLogger
 from youwol_utils import CdnClient, decode_id, encode_id
 
 
@@ -45,8 +44,7 @@ class DownloadPackageTask(DownloadTask):
                 with_attributes={
                     'packageName': self.package_name,
                     'packageVersion': self.version,
-                },
-                with_loggers=[UserContextLogger()]
+                }
         ) as ctx:
             await download_package(package_name=self.package_name, version=self.version, check_update_status=False,
                                    context=ctx)
