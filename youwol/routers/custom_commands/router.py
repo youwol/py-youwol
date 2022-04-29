@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from starlette.requests import Request
 
 from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
+from youwol.web_socket import UserContextLogger
 from youwol_utils.context import Context
 
 router = APIRouter()
@@ -33,51 +34,83 @@ def get_command(command_name: str, method: CmdMethod, env: YouwolEnvironment):
     return command
 
 
-@router.get("/{command_name}", summary="execute a custom command")
+@router.get("/{command_name}", summary="execute a GET custom command")
 async def execute_command(
         request: Request,
         command_name: str,
         env: YouwolEnvironment = Depends(yw_config)
 ):
-    context = Context.from_request(request)
-    command = get_command(command_name, CmdMethod.GET, env)
-    result = command.do_get(context)
-    return await result if isinstance(result, Awaitable) else result
+    async with Context.start_ep(
+            request=request,
+            with_attributes={
+                'topic': "commands",
+                "commandName": command_name,
+                "method": "GET"
+            },
+            with_loggers=[UserContextLogger()]
+    ) as ctx:
+        command = get_command(command_name, CmdMethod.GET, env)
+        result = command.do_get(ctx)
+        return await result if isinstance(result, Awaitable) else result
 
 
-@router.post("/{command_name}", summary="execute a custom command")
+@router.post("/{command_name}", summary="execute a POST custom command")
 async def execute_command(
         request: Request,
         command_name: str,
         env: YouwolEnvironment = Depends(yw_config)
 ):
-    context = Context.from_request(request)
-    body = await request.json()
-    command = get_command(command_name, CmdMethod.POST, env)
-    result = command.do_post(body, context)
-    return await result if isinstance(result, Awaitable) else result
+    async with Context.start_ep(
+            request=request,
+            with_attributes={
+                'topic': "commands",
+                "commandName": command_name,
+                "method": "POST"
+            },
+            with_loggers=[UserContextLogger()]
+    ) as ctx:
+        body = await request.json()
+        command = get_command(command_name, CmdMethod.POST, env)
+        result = command.do_post(body, ctx)
+        return await result if isinstance(result, Awaitable) else result
 
 
-@router.put("/{command_name}", summary="execute a custom command")
+@router.put("/{command_name}", summary="execute a PUT custom command")
 async def execute_command(
         request: Request,
         command_name: str,
         env: YouwolEnvironment = Depends(yw_config)
 ):
-    context = Context.from_request(request)
-    body = await request.json()
-    command = get_command(command_name, CmdMethod.PUT, env)
-    result = command.do_put(body, context)
-    return await result if isinstance(result, Awaitable) else result
+    async with Context.start_ep(
+            request=request,
+            with_attributes={
+                'topic': "commands",
+                "commandName": command_name,
+                "method": "PUT"
+            },
+            with_loggers=[UserContextLogger()]
+    ) as ctx:
+        body = await request.json()
+        command = get_command(command_name, CmdMethod.PUT, env)
+        result = command.do_put(body, ctx)
+        return await result if isinstance(result, Awaitable) else result
 
 
-@router.delete("/{command_name}", summary="execute a custom command")
+@router.delete("/{command_name}", summary="execute a DELETE custom command")
 async def execute_command(
         request: Request,
         command_name: str,
         env: YouwolEnvironment = Depends(yw_config)
 ):
-    context = Context.from_request(request)
-    command = get_command(command_name, CmdMethod.DELETE, env)
-    result = command.do_delete(context)
-    return await result if isinstance(result, Awaitable) else result
+    async with Context.start_ep(
+            request=request,
+            with_attributes={
+                'topic': "commands",
+                "commandName": command_name,
+                "method": "DELETE"
+            },
+            with_loggers=[UserContextLogger()]
+    ) as ctx:
+        command = get_command(command_name, CmdMethod.DELETE, env)
+        result = command.do_delete(ctx)
+        return await result if isinstance(result, Awaitable) else result
