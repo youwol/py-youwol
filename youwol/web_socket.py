@@ -42,6 +42,11 @@ class AdminContextLogger(ContextLogger):
     def __init__(self):
         super().__init__()
 
+    def clear(self):
+        self.root_node_logs = []
+        self.node_logs = []
+        self.leaf_logs = []
+
     def resize_if_needed(self, items: List[any]):
         if len(items) > 2 * self.max_count:
             return items[len(items) - self.max_count:]
