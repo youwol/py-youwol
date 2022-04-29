@@ -11,7 +11,8 @@ from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.local_cdn.implementation import get_latest_local_cdn_version, check_updates_from_queue, \
     download_packages_from_queue, get_version_info
 from youwol.routers.local_cdn.models import CheckUpdatesResponse, CheckUpdateResponse, DownloadPackagesBody, \
-    ResetCdnBody, PackageEvent, Event, CdnStatusResponse, CdnPackage, CdnVersion, CdnPackageResponse
+    ResetCdnBody, PackageEvent, Event, CdnStatusResponse, CdnPackage, CdnVersion, CdnPackageResponse, cdn_topic, \
+    ResetCdnResponse
 from youwol.web_socket import UserContextLogger
 from youwol_utils import decode_id, encode_id
 from youwol_utils.context import Context
@@ -21,13 +22,13 @@ router = APIRouter()
 
 
 @router.get("/status",
-            summary="Provides description of available updates",
+            summary="Provides description of available packages",
             response_model=CdnStatusResponse
             )
 async def status(request: Request):
     async with Context.from_request(request).start(
             action="CDN status",
-            with_attributes={'topic': 'cdn'},
+            with_attributes={'topic': cdn_topic},
             with_loggers=[UserContextLogger()]
     ) as ctx:  # type: Context
         env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
@@ -51,7 +52,7 @@ async def status(request: Request):
 async def package_info(request: Request, package_id: str):
     async with Context.from_request(request).start(
             action="package info",
-            with_attributes={'topic': 'cdn', 'packageId': package_id},
+            with_attributes={'topic': cdn_topic, 'packageId': package_id},
             with_loggers=[UserContextLogger()]
     ) as ctx:  # type: Context
         package_name = decode_id(package_id)

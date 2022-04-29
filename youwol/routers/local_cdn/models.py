@@ -4,6 +4,9 @@ from typing import List
 from pydantic import BaseModel
 
 
+cdn_topic = "cdn"
+
+
 class CdnVersion(BaseModel):
     version: str
     filesCount: int
