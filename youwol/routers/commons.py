@@ -55,12 +55,15 @@ async def ensure_drive(drive: DriveResponse, assets_gateway_client: AssetsGatewa
 
 
 async def ensure_local_path(folder_id: str, env: YouwolEnvironment, context: Context):
-    async with context.start(action="ensure_local_path", with_attributes={"folderId": folder_id}):
+    async with context.start(
+            action="ensure_local_path",
+            with_attributes={"folderId": folder_id}
+    ) as ctx: # type: Context
 
         local_gtw, local_treedb = LocalClients.get_assets_gateway_client(env=env), \
                                   LocalClients.get_treedb_client(env=env)
         try:
-            await local_treedb.get_folder(folder_id=folder_id)
+            await local_treedb.get_folder(folder_id=folder_id, headers=ctx.headers())
         except HTTPException as e:
             if e.status_code == 404:
                 remote_treedb = await RemoteClients.get_treedb_client(context)
