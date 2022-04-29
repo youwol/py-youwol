@@ -180,9 +180,11 @@ class GetCDNPackage2(PatternRequestInfoExtractor):
     pattern = 'GET:/api/cdn-backend/libraries/*/*'
 
     def extract_from_pattern(self, substitutes):
-        [name, version] = substitutes
-        return RequestInfo(message=f"{name}/{version}",
-                           attributes={'package': name, 'version': version})
+        if len(substitutes) >= 2:
+            [name, version] = substitutes
+            return RequestInfo(message=f"{name}/{version}", attributes={'package': name, 'version': version})
+        name = substitutes[0]
+        return RequestInfo(message=f"{name}", attributes={'package': name})
 
 
 class GetTreedbItem(PatternRequestInfoExtractor):
