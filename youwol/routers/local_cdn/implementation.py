@@ -146,7 +146,7 @@ async def download_package(
             with_labels=[str(Label.PACKAGE_DOWNLOADING)],
             with_attributes={
                 'packageName': package_name,
-                'packageVersion': version,
+                'packageVersion': version
             },
             on_enter=lambda ctx_enter: ctx_enter.send(
                 PackageEvent(packageName=package_name, version=version, event=Event.downloadStarted)
@@ -170,10 +170,12 @@ async def download_package(
             context=ctx
         )
         db = parse_json(env.pathsBook.local_cdn_docdb)
-        record = next(d for d in db['documents'] if d['library_id'] == f"{package_name}#{version}")
+        versions = [d for d in db['documents'] if d['library_name'] == package_name]
+        record = next(d for d in versions if d['library_id'] == f"{package_name}#{version}")
         response = DownloadedPackageResponse(
             packageName=package_name,
             version=version,
+            versions=[d['version'] for d in versions],
             fingerprint=record['fingerprint']
         )
         await ctx.send(response)

@@ -64,6 +64,7 @@ class ResetCdnBody(BaseModel):
 class DownloadedPackageResponse(BaseModel):
     packageName: str
     version: str
+    versions: List[str]
     fingerprint: str
 
 
