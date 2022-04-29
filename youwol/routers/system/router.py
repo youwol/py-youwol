@@ -133,3 +133,15 @@ async def post_logs(
             context_id=log.contextId, parent_context_id=log.parentContextId, trace_uid=log.traceUid
         )
         await logger.log(entry=entry)
+
+
+@router.delete(
+    "/logs",
+    summary="clear logs"
+)
+async def clear_logs(
+        request: Request
+):
+    context = Context.from_request(request=request)
+    logger = cast(AdminContextLogger, context.loggers[0])
+    logger.clear()
