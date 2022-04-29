@@ -61,6 +61,10 @@ class ResetCdnBody(BaseModel):
     keepProjectPackages: bool = True
 
 
+class ResetCdnResponse(BaseModel):
+    deletedPackages: List[str]
+
+
 class DownloadedPackageResponse(BaseModel):
     packageName: str
     version: str

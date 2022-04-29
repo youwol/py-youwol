@@ -128,13 +128,15 @@ async def download(
 
 
 @router.post("/reset",
+             response_model=ResetCdnResponse,
              summary="reset local CDN"
              )
 async def reset(
         request: Request,
         body: ResetCdnBody
 ):
-    async with Context.from_request(request).start(
+    async with Context.start_ep(
+            request=request,
             action="reset CDN",
             with_attributes={'topic': 'updatesCdn'},
             with_loggers=[UserContextLogger()]
@@ -152,10 +154,13 @@ async def reset(
 
         cdn_client = LocalClients.get_gtw_cdn_client(env)
         for package in packages:
-            info = await cdn_client.get_library_info(library_id=package['related_id'])
+            info = await cdn_client.get_library_info(library_id=package['related_id'], headers=ctx.headers())
             for version in info['versions']:
                 await ctx.send(
                     PackageEvent(packageName=package['name'], version=version, event=Event.updateCheckStarted)
                 )
 
-            await cdn_client.delete_library(library_id=package['related_id'], params={'purge': "true"})
+            await cdn_client.delete_library(library_id=package['related_id'], params={'purge': "true"},
+                                            headers=ctx.headers())
+        await status(request=request)
+        return ResetCdnResponse(deletedPackages=[p['name'] for p in packages])
