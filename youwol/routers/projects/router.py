@@ -174,11 +174,19 @@ async def run_pipeline_step(
         flow_id: str,
         step_id: str
         ):
-    async def refresh_status_downstream_steps(ctx_exit):
-        """
-        Downstream steps may depend on this guy => request status on them.
-        Shortcut => request status on all the steps of the flow (not only the ones downstream)
-        """
+
+    async def on_enter(ctx_enter):
+        env_enter = await ctx_enter.get('env', YouwolEnvironment)
+        if 'runningProjectSteps' not in env_enter.private_cache:
+            env_enter.private_cache['runningProjectSteps'] = set()
+        env_enter.private_cache['runningProjectSteps'].add(f"{project_id}#{flow_id}#{step_id}")
+        await ctx_enter.send(
+            PipelineStepEvent(projectId=project_id, flowId=flow_id, stepId=step_id, event=Event.runStarted)
+        ),
+
+    async def on_exit(ctx_exit):
+        env_exit = await ctx_exit.get('env', YouwolEnvironment)
+        env_exit.private_cache['runningProjectSteps'].remove(f"{project_id}#{flow_id}#{step_id}")
         async with ctx_exit.start(action="refresh_status_downstream_steps") as ctx_1:
             await ctx_1.send(
                 PipelineStepEvent(projectId=project_id, flowId=flow_id, stepId=step_id, event=Event.runDone)
@@ -190,6 +198,7 @@ async def run_pipeline_step(
             return asyncio.gather(*[
                 get_status(project=_project, flow_id=flow_id, step=_step, context=ctx_1)
                 for _step in steps
+                if f"{project_id}#{flow_id}#{_step.id}" not in env.private_cache['runningProjectSteps']
             ])
 
     async with Context.start_ep(
@@ -201,13 +210,10 @@ async def run_pipeline_step(
                 'flowId': flow_id,
                 'stepId': step_id
             },
-            on_enter=lambda ctx_enter: ctx_enter.send(
-                PipelineStepEvent(projectId=project_id, flowId=flow_id, stepId=step_id, event=Event.runStarted)
-            ),
-            on_exit=lambda ctx_exit: refresh_status_downstream_steps(ctx_exit),
+            on_enter=lambda ctx_enter: on_enter(ctx_enter),
+            on_exit=lambda ctx_exit: on_exit(ctx_exit),
             with_reporters=[LogsStreamer()]
     ) as ctx:
-
         env = await ctx.get('env', YouwolEnvironment)
         projects = await ProjectLoader.get_projects(env, ctx)
         paths: PathsBook = env.pathsBook

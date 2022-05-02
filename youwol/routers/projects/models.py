@@ -76,7 +76,6 @@ class Event(Enum):
     runStarted = 'runStarted'
     runDone = 'runDone'
     statusCheckStarted = 'statusCheckStarted'
-    statusCheckDone = 'statusCheckDone'
 
 
 class PipelineStepEvent(BaseModel):
