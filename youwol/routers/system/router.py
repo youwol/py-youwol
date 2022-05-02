@@ -126,7 +126,7 @@ async def post_logs(
         body: PostLogsBody
 ):
     context = Context.from_request(request=request)
-    logger = cast(InMemoryReporter, context.loggers[0])
+    logger = cast(InMemoryReporter, context.logs_reporters[0])
     for log in body.logs:
         entry = LogEntry(
             level=LogLevel.INFO, text=log.text, data=log.data, labels=log.labels, attributes=log.attributes,
@@ -143,5 +143,5 @@ async def clear_logs(
         request: Request
 ):
     context = Context.from_request(request=request)
-    logger = cast(InMemoryReporter, context.loggers[0])
+    logger = cast(InMemoryReporter, context.logs_reporters[0])
     logger.clear()
