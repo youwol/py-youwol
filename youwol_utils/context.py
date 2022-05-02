@@ -67,7 +67,7 @@ class LogEntry(NamedTuple):
 DataType = Union[T, Callable[[], T], Callable[[], Awaitable[T]]]
 
 
-class ContextLogger(ABC):
+class ContextReporter(ABC):
 
     @abstractmethod
     async def log(self, entry: LogEntry):
@@ -86,7 +86,7 @@ def format_message(entry: LogEntry):
     }
 
 
-class WsContextLogger(ContextLogger):
+class WsContextReporter(ContextReporter):
 
     def __init__(self, websockets_getter: Callable[[], List[WebSocket]]):
         self.websockets_getter = websockets_getter
@@ -305,7 +305,7 @@ class ContextFactory(NamedTuple):
                        with_data=with_data)
 
 
-class DeployedContextLogger(ContextLogger):
+class DeployedContextReporter(ContextReporter):
     errors = set()
 
     def __init__(self):
@@ -335,7 +335,7 @@ class DeployedContextLogger(ContextLogger):
             print(json.dumps({**base, "message": f"{base['message']} (FAILED PARSING DATA IN JSON)"}))
 
 
-class ConsoleContextLogger(ContextLogger):
+class ConsoleContextReporter(ContextReporter):
 
     def __init__(self):
         super().__init__()
@@ -352,7 +352,7 @@ class ConsoleContextLogger(ContextLogger):
         print(json.dumps(base))
 
 
-class PyYouwolContextLogger(ContextLogger):
+class PyYouwolContextReporter(ContextReporter):
 
     def __init__(self, py_youwol_port, headers=None):
         super().__init__()

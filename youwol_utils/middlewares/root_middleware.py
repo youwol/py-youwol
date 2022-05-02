@@ -6,13 +6,13 @@ from starlette.responses import Response
 from starlette.types import ASGIApp
 
 from youwol_utils import YouwolHeaders
-from youwol_utils.context import ContextFactory, Context, ContextLogger, Label
+from youwol_utils.context import ContextFactory, Context, ContextReporter, Label
 from youwol_utils.request_info_factory import request_info
 
 
 class RootMiddleware(BaseHTTPMiddleware):
 
-    ctx_logger: ContextLogger
+    ctx_logger: ContextReporter
 
     black_list = [
         "authorization"
