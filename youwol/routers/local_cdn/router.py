@@ -11,7 +11,7 @@ from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.local_cdn.implementation import get_latest_local_cdn_version, check_updates_from_queue, \
     download_packages_from_queue, get_version_info
 from youwol.routers.local_cdn.models import CheckUpdatesResponse, CheckUpdateResponse, DownloadPackagesBody, \
-    ResetCdnBody, PackageEvent, Event, CdnStatusResponse, CdnPackage, CdnVersion, CdnPackageResponse, cdn_topic, \
+    ResetCdnBody, PackageEventResponse, Event, CdnStatusResponse, CdnPackage, CdnVersion, CdnPackageResponse, cdn_topic, \
     ResetCdnResponse
 from youwol.web_socket import LogsStreamer
 from youwol_utils import decode_id, encode_id
@@ -158,7 +158,7 @@ async def reset(
             info = await cdn_client.get_library_info(library_id=package['related_id'], headers=ctx.headers())
             for version in info['versions']:
                 await ctx.send(
-                    PackageEvent(packageName=package['name'], version=version, event=Event.updateCheckStarted)
+                    PackageEventResponse(packageName=package['name'], version=version, event=Event.updateCheckStarted)
                 )
 
             await cdn_client.delete_library(library_id=package['related_id'], params={'purge': "true"},
