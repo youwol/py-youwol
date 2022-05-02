@@ -11,7 +11,6 @@ from youwol.routers.commons import Label
 from youwol.routers.environment.download_assets.common import create_asset_local
 from youwol.routers.local_cdn.models import CheckUpdateResponse, UpdateStatus, PackageVersionInfo, \
     DownloadedPackageResponse, DownloadPackageBody, PackageEvent, Event
-from youwol.web_socket import UserContextLogger
 from youwol_utils import encode_id
 from youwol_utils.context import Context
 from youwol_utils.utils_paths import parse_json
@@ -61,9 +60,7 @@ async def check_update(
                 'event': 'check_update_pending',
                 'packageName': name,
                 'packageVersion': version,
-            },
-            with_loggers=[] if any([isinstance(logger, UserContextLogger) for logger in context.loggers])
-            else [UserContextLogger()]
+            }
     ) as ctx:  # type: Context
         package_id = encode_id(local_package.library_name)
 

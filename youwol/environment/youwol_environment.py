@@ -31,7 +31,7 @@ from youwol.main_args import get_main_arguments, MainArguments
 from youwol.middlewares.models_dispatch import AbstractDispatch
 from youwol.routers.custom_commands.models import Command
 from youwol.utils.utils_low_level import get_public_user_auth_token
-from youwol.web_socket import AdminContextLogger
+from youwol.web_socket import InMemoryReporter, WsDataStreamer
 from youwol_utils import retrieve_user_info
 from youwol_utils.context import Context, ContextFactory
 from youwol_utils.servers.fast_api import FastApiRouter
@@ -263,7 +263,8 @@ class YouwolEnvironmentFactory:
     @staticmethod
     async def trigger_on_load(config: YouwolEnvironment):
         context = ContextFactory.get_instance(
-            logger=AdminContextLogger(),
+            logs_reporter=InMemoryReporter(),
+            data_reporter=WsDataStreamer(),
             request=None
         )
         if config.events and config.events.onLoad:

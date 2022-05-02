@@ -47,6 +47,8 @@ def sed_inplace(filename, pattern, repl):
 
 
 async def start_web_socket(ws: WebSocket):
+    await ws.accept()
+    await ws.send_json({})
     while True:
         try:
             _ = await ws.receive_text()
