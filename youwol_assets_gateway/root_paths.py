@@ -82,7 +82,6 @@ router.include_router(
 )
 
 
-
 @router.get("/healthz")
 async def healthz():
     return {"status": "assets-gateway ok"}

@@ -165,8 +165,8 @@ class TreeDbClient:
 
                 await raise_exception_from_response(resp, **kwargs)
 
-    async def get_entity(self, entity_id: str, headers: Dict[str, str], include_drives: bool = True, include_folders: bool = True,
-                         include_items: bool = True, **kwargs):
+    async def get_entity(self, entity_id: str, headers: Dict[str, str], include_drives: bool = True,
+                         include_folders: bool = True, include_items: bool = True, **kwargs):
 
         url = f"{self.url_base}/entities/{entity_id}"
         params = {"include-drives": int(include_drives),
