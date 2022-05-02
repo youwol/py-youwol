@@ -1,4 +1,6 @@
 import itertools
+import random
+from pathlib import Path
 from typing import List, Optional
 
 from aiohttp.client_exceptions import ClientConnectorError, ContentTypeError
@@ -71,9 +73,9 @@ async def connect_to_remote(config: YouwolEnvironment, context: Context) -> bool
             response_class=PlainTextResponse,
             summary="status")
 async def cow_say():
-    return cow.milk_random_cow(f"""If error is corrected whenever it is recognized as such, the path of
-     error is the path of truth (H. Reichenbach).
-""")
+    #  https://github.com/bmc/fortunes/
+    quotes = (Path(__file__).parent / 'fortunes.txt').read_text().split("%")
+    return cow.milk_random_cow(random.choice(quotes))
 
 
 @router.get("/configuration",
