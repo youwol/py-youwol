@@ -112,7 +112,8 @@ StringLike = Any
 
 
 class Context(NamedTuple):
-    loggers: List[ContextLogger]
+    logs_reporters: List[ContextReporter]
+    data_reporters: List[ContextReporter]
     request: Optional[Request] = None
 
     uid: Union[str, None] = 'root'
@@ -135,11 +136,13 @@ class Context(NamedTuple):
                     on_enter: 'CallableBlock' = None,
                     on_exit: 'CallableBlock' = None,
                     on_exception: 'CallableBlockException' = None,
-                    with_loggers: List[ContextLogger] = None
+                    with_reporters: List[ContextReporter] = None
                     ) -> AsyncContextManager[Context]:
         with_attributes = with_attributes or {}
         with_labels = with_labels or []
-        ctx = Context(loggers=self.loggers if with_loggers is None else self.loggers + with_loggers,
+        logs_reporters = self.logs_reporters if with_reporters is None else self.logs_reporters + with_reporters
+        ctx = Context(logs_reporters=logs_reporters,
+                      data_reporters=self.data_reporters,
                       uid=str(uuid.uuid4()),
                       request=self.request,
                       parent_uid=self.uid,
@@ -200,7 +203,7 @@ class Context(NamedTuple):
             with_attributes: JSON = None,
             body: BaseModel = None,
             response: Callable[[], BaseModel] = None,
-            with_loggers: List[ContextLogger] = None,
+            with_reporters: List[ContextReporter] = None,
             on_enter: 'CallableBlock' = None,
             on_exit: 'CallableBlock' = None,
     ) -> AsyncContextManager[Context]:
@@ -221,7 +224,7 @@ class Context(NamedTuple):
             action=action,
             with_labels=[Label.END_POINT, *with_labels],
             with_attributes={"method": request.method, **with_attributes},
-            with_loggers=with_loggers,
+            with_reporters=with_reporters,
             on_enter=on_enter_fct,
             on_exit=on_exit_fct
         )
@@ -247,7 +250,10 @@ class Context(NamedTuple):
             parent_context_id=self.parent_uid,
             trace_uid=self.trace_uid
         )
-        await asyncio.gather(*[logger.log(entry) for logger in self.loggers])
+        if level == LogLevel.DATA:
+            await asyncio.gather(*[logger.log(entry) for logger in self.data_reporters])
+
+        await asyncio.gather(*[logger.log(entry) for logger in self.logs_reporters])
 
     async def send(self, data: BaseModel, labels: List[StringLike] = None):
         labels = labels or []
@@ -297,11 +303,18 @@ class ContextFactory(NamedTuple):
     with_static_data: Optional[Dict[str, DataType]] = None
 
     @staticmethod
-    def get_instance(request: Union[Request, None], logger: ContextLogger, **kwargs) -> Context:
-        with_data = kwargs if not ContextFactory.with_static_data else {**ContextFactory.with_static_data, **kwargs}
+    def get_instance(
+            request: Union[Request, None],
+            logs_reporter: ContextReporter,
+            data_reporter: ContextReporter,
+            **kwargs
+    ) -> Context:
+        static_data = ContextFactory.with_static_data
+        with_data = kwargs if not static_data else {**static_data, **kwargs}
 
         return Context(request=request,
-                       loggers=[logger],
+                       logs_reporters=[logs_reporter],
+                       data_reporters=[data_reporter],
                        with_data=with_data)
 
 

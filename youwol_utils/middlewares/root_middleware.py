@@ -1,4 +1,5 @@
 import uuid
+from typing import Optional
 
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint, DispatchFunction
 from starlette.requests import Request
@@ -21,12 +22,14 @@ class RootMiddleware(BaseHTTPMiddleware):
     def __init__(
             self,
             app: ASGIApp,
-            ctx_logger: ContextLogger,
+            logs_reporter: ContextReporter,
+            data_reporter: Optional[ContextReporter],
             dispatch: DispatchFunction = None,
             **_
     ) -> None:
         super().__init__(app, dispatch)
-        self.ctx_logger = ctx_logger
+        self.logs_reporters = [logs_reporter]
+        self.data_reporters = [data_reporter] if data_reporter else []
 
     def get_context(self, request: Request):
 
@@ -34,7 +37,8 @@ class RootMiddleware(BaseHTTPMiddleware):
         trace_id = YouwolHeaders.get_trace_id(request)
         with_data = ContextFactory.with_static_data or {}
         return Context(request=request,
-                       loggers=[self.ctx_logger],
+                       logs_reporters=self.logs_reporters,
+                       data_reporters=self.data_reporters,
                        parent_uid=root_id,
                        trace_uid=trace_id if trace_id else str(uuid.uuid4()),
                        uid=root_id if root_id else 'root',
