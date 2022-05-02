@@ -151,14 +151,6 @@ class Context(NamedTuple):
                       with_labels=[*self.with_labels, *with_labels],
                       with_attributes={**self.with_attributes, **with_attributes})
 
-        async def execute_block(block: Optional[Union[CallableBlock, CallableBlockException]],
-                                exception: Optional[Exception] = None):
-            if not block:
-                return
-            block = block(ctx) if not exception else block(exception, ctx)
-            if isinstance(block, Awaitable):
-                await block
-
         try:
             # When middleware are calling 'next' this seems the only way to pass information
             # see https://github.com/tiangolo/fastapi/issues/1529
@@ -166,25 +158,20 @@ class Context(NamedTuple):
                 self.request.state.context = ctx
             await ctx.info(text=f"{action}", labels=[Label.STARTED])
             start = time.time()
-            await execute_block(on_enter)
-            yield ctx
+            await Context.__execute_block(ctx, on_enter)
+            yield ctx  # NOSONAR => can not find proper type annotation
         except Exception as e:
-            tb = traceback.format_exc()
 
-            detail = None
-            if isinstance(e, HTTPException):
-                detail = e.detail
-            data = {
-                'detail': detail,
-                'traceback': tb.split('\n'),
-            }
             await ctx.error(
                 text=f"Exception: {str(e)}",
-                data=data,
+                data={
+                    'detail': e.detail if isinstance(e, HTTPException) else f"No detail available",
+                    'traceback': traceback.format_exc().split('\n'),
+                },
                 labels=[Label.EXCEPTION, Label.FAILED]
             )
-            await execute_block(on_exception, e)
-            await execute_block(on_exit)
+            await Context.__execute_block(ctx, on_exception, e)
+            await Context.__execute_block(ctx, on_exit)
             traceback.print_exc()
             if self.request.state:
                 self.request.state.context = self
@@ -193,7 +180,7 @@ class Context(NamedTuple):
             await ctx.info(text=f"{action} in {int(1000 * (time.time() - start))} ms", labels=[Label.DONE])
             if self.request:
                 self.request.state.context = self
-            await execute_block(on_exit)
+            await self.__execute_block(ctx, on_exit)
 
     @staticmethod
     def start_ep(
@@ -293,6 +280,17 @@ class Context(NamedTuple):
             YouwolHeaders.correlation_id: self.uid,
             YouwolHeaders.trace_id: self.trace_uid
         }
+
+    @staticmethod
+    async def __execute_block(
+            ctx: Context,
+            block: Optional[Union[CallableBlock, CallableBlockException]],
+            exception: Optional[Exception] = None):
+        if not block:
+            return
+        block = block(ctx) if not exception else block(exception, ctx)
+        if isinstance(block, Awaitable):
+            await block
 
 
 CallableBlock = Callable[[Context], Union[Awaitable, None]]
