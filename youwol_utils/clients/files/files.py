@@ -64,7 +64,7 @@ class FilesClient:
                 if resp.status == 200:
                     if reader:
                         return await reader(resp)
-                    return resp.read()
+                    return await resp.read()
                 await raise_exception_from_response(resp, url=url, headers=self.headers)
 
     async def remove(self, file_id: str, **kwargs):
