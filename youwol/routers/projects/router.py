@@ -186,7 +186,8 @@ async def run_pipeline_step(
 
     async def on_exit(ctx_exit):
         env_exit = await ctx_exit.get('env', YouwolEnvironment)
-        env_exit.private_cache['runningProjectSteps'].remove(f"{project_id}#{flow_id}#{step_id}")
+        if f"{project_id}#{flow_id}#{step_id}" in env_exit.private_cache['runningProjectSteps']:
+            env_exit.private_cache['runningProjectSteps'].remove(f"{project_id}#{flow_id}#{step_id}")
         async with ctx_exit.start(action="refresh_status_downstream_steps") as ctx_1:
             await ctx_1.send(
                 PipelineStepEvent(projectId=project_id, flowId=flow_id, stepId=step_id, event=Event.runDone)
