@@ -13,20 +13,23 @@ from youwol_utils.context import Context
 @dataclass
 class UploadDataTask(UploadTask):
 
-    async def get_raw(self) -> FormData:
+    async def get_raw(self, context: Context) -> FormData:
         # a dedicated asset service for data should be available and used here instead of assets_gateway_client
-        env = await self.context.get('env', YouwolEnvironment)
-        asset_gtw = LocalClients.get_assets_gateway_client(env=env)
-        data, metadata, raw_metadata = await asyncio.gather(
-            asset_gtw.get_raw(kind='data', raw_id=self.raw_id),
-            asset_gtw.get_asset_metadata(asset_id=self.asset_id),
-            asset_gtw.get_raw_metadata(kind='data', raw_id=self.raw_id)
-            )
-        form_data = FormData()
-        form_data.add_field(name='file', value=data, filename=metadata['name'],
-                            content_type=raw_metadata['contentType'])
-        form_data.add_field('rawId', self.raw_id)
-        return form_data
+        async with context.start(action="UploadDataTask.get_raw") as ctx:  # type: Context
+            env = await context.get('env', YouwolEnvironment)
+            asset_client = LocalClients.get_assets_client(env=env)
+            files_client = LocalClients.get_files_client(env=env)
+            headers = {**ctx.headers(), YouwolHeaders.py_youwol_local_only: "true"}
+            data, asset, info = await asyncio.gather(
+                files_client.get(file_id=self.raw_id, headers=headers),
+                asset_client.get_asset(asset_id=self.asset_id, headers=headers),
+                files_client.get_info(file_id=self.raw_id, headers=headers)
+                )
+            form_data = FormData()
+            form_data.add_field(name='file', value=data, filename=asset['name'],
+                                content_type=info['metadata']['contentType'])
+            form_data.add_field('rawId', self.raw_id)
+            return form_data
 
     async def create_raw(self, data: FormData, folder_id: str, context: Context):
 
