@@ -38,16 +38,17 @@ def zip_local_story(raw_id: str, config: YouwolEnvironment) -> bytes:
 @dataclass
 class UploadStoryTask(UploadTask):
 
-    async def get_raw(self) -> bytes:
+    async def get_raw(self, context: Context) -> bytes:
 
-        env = await self.context.get('env', YouwolEnvironment)
-        story_client = LocalClients.get_stories_client(env=env)
-        zip_content = await story_client.download_zip(self.raw_id)
-        return zip_content
+        async with context.start(action="UploadPackageTask.get_raw") as ctx:  # type: Context
+            env = await context.get('env', YouwolEnvironment)
+            story_client = LocalClients.get_stories_client(env=env)
+            zip_content = await story_client.download_zip(self.raw_id, headers=ctx.headers())
+            return zip_content
 
-    async def create_raw(self, data: bytes, folder_id: str):
+    async def create_raw(self, data: bytes, folder_id: str, context: Context):
 
-        async with self.context.start("UploadStoryTask.create_raw") as ctx:  # type: Context
+        async with context.start("UploadStoryTask.create_raw") as ctx:  # type: Context
             remote_gtw: AssetsGatewayClient = await RemoteClients.get_assets_gateway_client(context=ctx)
             await remote_gtw.put_asset_with_raw(
                 kind='story',
@@ -57,9 +58,9 @@ class UploadStoryTask(UploadTask):
                 headers=ctx.headers()
                 )
 
-    async def update_raw(self, data: JSON, folder_id: str):
+    async def update_raw(self, data: JSON, folder_id: str, context: Context):
         # <!> stories_client will be removed as it should not be available
-        async with self.context.start("UploadStoryTask.update_raw") as ctx:  # type: Context
+        async with context.start("UploadStoryTask.update_raw") as ctx:  # type: Context
             stories_client = await RemoteClients.get_stories_client(context=ctx)
             await stories_client.publish_story(
                 data={'file': data, 'content_encoding': 'identity'},

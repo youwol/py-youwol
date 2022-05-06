@@ -16,7 +16,7 @@ from youwol.routers.environment.download_assets.data import DownloadDataTask
 from youwol.routers.environment.download_assets.flux_project import DownloadFluxProjectTask
 from youwol.routers.environment.download_assets.package import DownloadPackageTask
 from youwol.utils.utils_low_level import start_web_socket
-from youwol.web_socket import WebSocketsStore, AdminContextLogger
+from youwol.web_socket import WebSocketsStore, InMemoryReporter, WsDataStreamer
 from youwol_utils import YouWolException, youwol_exception_handler, YouwolHeaders
 from youwol_utils.context import ContextFactory
 from youwol_utils.middlewares.root_middleware import RootMiddleware
@@ -61,7 +61,11 @@ fastapi_app.add_middleware(
 fastapi_app.add_middleware(custom_dispatch.CustomDispatchesMiddleware)
 fastapi_app.add_middleware(BrowserCachingMiddleware)
 fastapi_app.add_middleware(AuthMiddleware)
-fastapi_app.add_middleware(RootMiddleware, ctx_logger=AdminContextLogger())
+fastapi_app.add_middleware(
+    RootMiddleware,
+    logs_reporter=InMemoryReporter(),
+    data_reporter=WsDataStreamer()
+)
 
 fastapi_app.include_router(native_backends.router)
 fastapi_app.include_router(admin.router, prefix=api_configuration.base_path + "/admin")
@@ -84,9 +88,13 @@ async def home():
     return RedirectResponse(status_code=308, url=f'/applications/@youwol/platform/latest')
 
 
-@fastapi_app.websocket(api_configuration.base_path + "/ws")
-async def ws_endpoint(ws: WebSocket):
-    await ws.accept()
-    WebSocketsStore.userChannel = ws
-    await ws.send_json({})
+@fastapi_app.websocket(api_configuration.base_path + "/ws-logs")
+async def ws_logs(ws: WebSocket):
+    WebSocketsStore.logs = ws
+    await start_web_socket(ws)
+
+
+@fastapi_app.websocket(api_configuration.base_path + "/ws-data")
+async def ws_data(ws: WebSocket):
+    WebSocketsStore.data = ws
     await start_web_socket(ws)

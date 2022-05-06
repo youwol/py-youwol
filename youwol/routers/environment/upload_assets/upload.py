@@ -217,17 +217,20 @@ async def upload_asset(
             raise RuntimeError("Can not find the tree item in the local treedb store")
         if isinstance(asset, Exception) or isinstance(tree_item, Exception):
             raise RuntimeError("A problem occurred while fetching the local asset/tree items")
+
+        await ctx.info(text="Asset & treedb item retrieved",
+                       data={"treedbItem": tree_item, "asset": asset}
+                       )
         asset = cast(Dict, asset)
         tree_item = cast(Dict, tree_item)
 
         factory: UploadTask = upload_factories[asset['kind']](
             raw_id=raw_id,
             asset_id=asset_id,
-            options=options,
-            context=ctx
+            options=options
         )
 
-        local_data = await factory.get_raw()
+        local_data = await factory.get_raw(context=ctx)
         try:
             path_item = await local_treedb.get_path(item_id=tree_item['itemId'], headers=ctx.headers())
         except HTTPException as e:
@@ -250,15 +253,15 @@ async def upload_asset(
             await ctx.info(
                 text="Asset already found in deployed environment"
             )
-            await factory.update_raw(data=local_data, folder_id=tree_item['folderId'])
+            await factory.update_raw(data=local_data, folder_id=tree_item['folderId'], context=ctx)
         except HTTPException as e:
             if e.status_code != 404:
                 raise e
             await ctx.info(
                 labels=[Label.RUNNING],
-                text="Project not already found => start creation"
+                text="Asset not already found => start creation"
             )
-            await factory.create_raw(data=local_data, folder_id=tree_item['folderId'])
+            await factory.create_raw(data=local_data, folder_id=tree_item['folderId'], context=ctx)
 
         await synchronize_permissions_metadata_symlinks(
             asset_id=asset_id,

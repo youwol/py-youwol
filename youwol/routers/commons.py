@@ -58,7 +58,7 @@ async def ensure_local_path(folder_id: str, env: YouwolEnvironment, context: Con
     async with context.start(
             action="ensure_local_path",
             with_attributes={"folderId": folder_id}
-    ) as ctx: # type: Context
+    ) as ctx:  # type: Context
 
         local_gtw, local_treedb = LocalClients.get_assets_gateway_client(env=env), \
                                   LocalClients.get_treedb_client(env=env)

@@ -12,7 +12,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 
 from youwol_utils import (YouWolException, youwol_exception_handler, log_info)
-from youwol_utils.context import ContextLogger, Context
+from youwol_utils.context import ContextReporter, Context
 from youwol_utils.middlewares.root_middleware import RootMiddleware
 
 flatten = itertools.chain.from_iterable
@@ -38,7 +38,7 @@ class ServerOptions:
     http_port: int
     base_path: str
     middlewares: List[FastApiMiddleware]
-    ctx_logger: ContextLogger
+    ctx_logger: ContextReporter
     on_before_startup: Callable[[], Union[None, Awaitable[None]]] = None
 
 
@@ -90,7 +90,11 @@ def serve(
     for m in app_data.server_options.middlewares:
         app.add_middleware(m.middleware, **m.args)
 
-    app.add_middleware(RootMiddleware, ctx_logger=app_data.server_options.ctx_logger)
+    app.add_middleware(
+        RootMiddleware,
+        logs_reporter=app_data.server_options.ctx_logger,
+        data_reporter=app_data.server_options.ctx_logger
+    )
 
     app.include_router(
         app_data.root_router.router,

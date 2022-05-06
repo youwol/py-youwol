@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from starlette.requests import Request
 
-from youwol.web_socket import AdminContextLogger, Log
+from youwol.web_socket import InMemoryReporter, Log
 from youwol_utils.context import Context, LogEntry, LogLevel
 
 router = APIRouter()
@@ -87,7 +87,7 @@ async def query_logs(
             response=lambda: response,
             request=request
     ) as ctx:
-        logger = cast(AdminContextLogger, ctx.loggers[0])
+        logger = cast(InMemoryReporter, ctx.logs_reporters[0])
         logs = []
         for log in reversed(logger.root_node_logs):
             failed = log.contextId in logger.errors
@@ -104,7 +104,7 @@ async def get_logs(request: Request, parent_id: str):
     async with Context.start_ep(
             request=request
     ) as ctx:
-        logger = cast(AdminContextLogger, ctx.loggers[0])
+        logger = cast(InMemoryReporter, ctx.logs_reporters[0])
         nodes_logs, leaf_logs, errors = logger.node_logs, logger.leaf_logs, logger.errors
 
         nodes: List[Log] = [NodeLogResponse(**log.dict(), failed=log.contextId in errors)
@@ -126,7 +126,7 @@ async def post_logs(
         body: PostLogsBody
 ):
     context = Context.from_request(request=request)
-    logger = cast(AdminContextLogger, context.loggers[0])
+    logger = cast(InMemoryReporter, context.logs_reporters[0])
     for log in body.logs:
         entry = LogEntry(
             level=LogLevel.INFO, text=log.text, data=log.data, labels=log.labels, attributes=log.attributes,
@@ -143,5 +143,5 @@ async def clear_logs(
         request: Request
 ):
     context = Context.from_request(request=request)
-    logger = cast(AdminContextLogger, context.loggers[0])
+    logger = cast(InMemoryReporter, context.logs_reporters[0])
     logger.clear()

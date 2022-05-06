@@ -78,12 +78,12 @@ class UploadPackageOptions(NamedTuple):
 @dataclass
 class UploadPackageTask(UploadTask):
 
-    async def get_raw(self):
-        env = await self.context.get('env', YouwolEnvironment)
-        async with self.context.start(action="UploadPackageTask.get_raw") as ctx:  # type: Context
+    async def get_raw(self, context: Context):
+        env = await context.get('env', YouwolEnvironment)
+        async with context.start(action="UploadPackageTask.get_raw") as ctx:  # type: Context
 
             local_package = get_local_package(asset_id=self.asset_id, config=env)
-            assets_gateway_client = await RemoteClients.get_assets_gateway_client(context=self.context)
+            assets_gateway_client = await RemoteClients.get_assets_gateway_client(context=ctx)
 
             to_sync_releases = [v.version for v in local_package.releases]
             if self.options and self.options.versions:
@@ -108,16 +108,16 @@ class UploadPackageTask(UploadTask):
             if self.options and self.options.versions:
                 to_sync_releases = [v for v in to_sync_releases if v in self.options.versions]
 
-            await self.context.info(text="package's versions to sync. resolved",
-                                    data={"missing": missing, "mismatch": mismatch})
+            await ctx.info(text="package's versions to sync. resolved",
+                           data={"missing": missing, "mismatch": mismatch})
 
             return to_sync_releases
 
-    async def publish_version(self, folder_id: str, version: str):
+    async def publish_version(self, folder_id: str, version: str, context: Context):
 
-        remote_gtw = await RemoteClients.get_assets_gateway_client(self.context)
-        env = await self.context.get('env', YouwolEnvironment)
-        async with self.context.start(action="Sync") as ctx:  # type: Context
+        remote_gtw = await RemoteClients.get_assets_gateway_client(context)
+        env = await context.get('env', YouwolEnvironment)
+        async with context.start(action="UploadPackageTask.publish_version") as ctx:  # type: Context
 
             if self.options.versions and version not in self.options.versions:
                 await ctx.info(text=f"Version '{version}' not in explicit versions provided",
@@ -136,12 +136,13 @@ class UploadPackageTask(UploadTask):
                 )
                 # await check_package_status(package=local_package, context=context, target_versions=[version])
 
-    async def create_raw(self, data: List[str], folder_id: str):
+    async def create_raw(self, data: List[str], folder_id: str, context: Context):
 
-        versions = data
-        for version in versions:
-            await self.publish_version(folder_id=folder_id, version=version)
+        async with context.start(action="UploadPackageTask.create_raw") as ctx:  # type: Context
+            versions = data
+            for version in versions:
+                await self.publish_version(folder_id=folder_id, version=version, context=ctx)
 
-    async def update_raw(self, data: List[str], folder_id: str):
-
-        await self.create_raw(data=data, folder_id=folder_id)
+    async def update_raw(self, data: List[str], folder_id: str, context: Context):
+        async with context.start(action="UploadPackageTask.update_raw") as ctx:  # type: Context
+            await self.create_raw(data=data, folder_id=folder_id, context=ctx)

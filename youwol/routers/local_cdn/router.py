@@ -11,9 +11,9 @@ from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.local_cdn.implementation import get_latest_local_cdn_version, check_updates_from_queue, \
     download_packages_from_queue, get_version_info
 from youwol.routers.local_cdn.models import CheckUpdatesResponse, CheckUpdateResponse, DownloadPackagesBody, \
-    ResetCdnBody, PackageEvent, Event, CdnStatusResponse, CdnPackage, CdnVersion, CdnPackageResponse, cdn_topic, \
+    ResetCdnBody, PackageEventResponse, Event, CdnStatusResponse, CdnPackage, CdnVersion, CdnPackageResponse, cdn_topic, \
     ResetCdnResponse
-from youwol.web_socket import UserContextLogger
+from youwol.web_socket import LogsStreamer
 from youwol_utils import decode_id, encode_id
 from youwol_utils.context import Context
 from youwol_utils.utils_paths import parse_json
@@ -29,7 +29,7 @@ async def status(request: Request):
     async with Context.from_request(request).start(
             action="CDN status",
             with_attributes={'topic': cdn_topic},
-            with_loggers=[UserContextLogger()]
+            with_reporters=[LogsStreamer()]
     ) as ctx:  # type: Context
         env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
         cdn_docs = parse_json(env.pathsBook.local_cdn_docdb)["documents"]
@@ -53,7 +53,7 @@ async def package_info(request: Request, package_id: str):
     async with Context.from_request(request).start(
             action="package info",
             with_attributes={'topic': cdn_topic, 'packageId': package_id},
-            with_loggers=[UserContextLogger()]
+            with_reporters=[LogsStreamer()]
     ) as ctx:  # type: Context
         package_name = decode_id(package_id)
         env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
@@ -80,7 +80,7 @@ async def collect_updates(
     async with Context.from_request(request).start(
             action="collect available updates",
             with_attributes={'topic': 'updatesCdn'},
-            with_loggers=[UserContextLogger()]
+            with_reporters=[LogsStreamer()]
     ) as ctx:
 
         env = await ctx.get('env', YouwolEnvironment)
@@ -114,7 +114,7 @@ async def download(
     async with Context.from_request(request).start(
             action="download packages",
             with_attributes={'topic': 'updatesCdn'},
-            with_loggers=[UserContextLogger()]
+            with_reporters=[LogsStreamer()]
     ) as ctx:
         await ctx.info(text=f"Proceed to {len(body.packages)} packages download", data=body)
         for package in body.packages:
@@ -140,7 +140,7 @@ async def reset(
             request=request,
             action="reset CDN",
             with_attributes={'topic': 'updatesCdn'},
-            with_loggers=[UserContextLogger()]
+            with_reporters=[LogsStreamer()]
     ) as ctx:  # type: Context
         env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
         packages = [p for p in parse_json(env.pathsBook.local_assets_entities_docdb)['documents']
@@ -158,7 +158,7 @@ async def reset(
             info = await cdn_client.get_library_info(library_id=package['related_id'], headers=ctx.headers())
             for version in info['versions']:
                 await ctx.send(
-                    PackageEvent(packageName=package['name'], version=version, event=Event.updateCheckStarted)
+                    PackageEventResponse(packageName=package['name'], version=version, event=Event.updateCheckStarted)
                 )
 
             await cdn_client.delete_library(library_id=package['related_id'], params={'purge': "true"},

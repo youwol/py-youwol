@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from youwol.environment.clients import RemoteClients
 from youwol.environment.youwol_environment import YouwolEnvironment
-from youwol.web_socket import UserContextLogger
+from youwol.web_socket import LogsStreamer
 from youwol_utils import encode_id
 from youwol_utils.context import Context
 
@@ -131,7 +131,7 @@ class AssetDownloadThread(Thread):
                         'kind': kind,
                         'raw_id': raw_id,
                     },
-                    with_loggers=[UserContextLogger()]
+                    with_reporters=[LogsStreamer()]
             ) as ctx:
                 await ctx.send(DownloadEvent(
                     kind=kind,

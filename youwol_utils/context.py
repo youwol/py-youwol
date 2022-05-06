@@ -67,7 +67,7 @@ class LogEntry(NamedTuple):
 DataType = Union[T, Callable[[], T], Callable[[], Awaitable[T]]]
 
 
-class ContextLogger(ABC):
+class ContextReporter(ABC):
 
     @abstractmethod
     async def log(self, entry: LogEntry):
@@ -86,7 +86,7 @@ def format_message(entry: LogEntry):
     }
 
 
-class WsContextLogger(ContextLogger):
+class WsContextReporter(ContextReporter):
 
     def __init__(self, websockets_getter: Callable[[], List[WebSocket]]):
         self.websockets_getter = websockets_getter
@@ -112,7 +112,8 @@ StringLike = Any
 
 
 class Context(NamedTuple):
-    loggers: List[ContextLogger]
+    logs_reporters: List[ContextReporter]
+    data_reporters: List[ContextReporter]
     request: Optional[Request] = None
 
     uid: Union[str, None] = 'root'
@@ -135,11 +136,13 @@ class Context(NamedTuple):
                     on_enter: 'CallableBlock' = None,
                     on_exit: 'CallableBlock' = None,
                     on_exception: 'CallableBlockException' = None,
-                    with_loggers: List[ContextLogger] = None
+                    with_reporters: List[ContextReporter] = None
                     ) -> AsyncContextManager[Context]:
         with_attributes = with_attributes or {}
         with_labels = with_labels or []
-        ctx = Context(loggers=self.loggers if with_loggers is None else self.loggers + with_loggers,
+        logs_reporters = self.logs_reporters if with_reporters is None else self.logs_reporters + with_reporters
+        ctx = Context(logs_reporters=logs_reporters,
+                      data_reporters=self.data_reporters,
                       uid=str(uuid.uuid4()),
                       request=self.request,
                       parent_uid=self.uid,
@@ -148,14 +151,6 @@ class Context(NamedTuple):
                       with_labels=[*self.with_labels, *with_labels],
                       with_attributes={**self.with_attributes, **with_attributes})
 
-        async def execute_block(block: Optional[Union[CallableBlock, CallableBlockException]],
-                                exception: Optional[Exception] = None):
-            if not block:
-                return
-            block = block(ctx) if not exception else block(exception, ctx)
-            if isinstance(block, Awaitable):
-                await block
-
         try:
             # When middleware are calling 'next' this seems the only way to pass information
             # see https://github.com/tiangolo/fastapi/issues/1529
@@ -163,25 +158,20 @@ class Context(NamedTuple):
                 self.request.state.context = ctx
             await ctx.info(text=f"{action}", labels=[Label.STARTED])
             start = time.time()
-            await execute_block(on_enter)
-            yield ctx
+            await Context.__execute_block(ctx, on_enter)
+            yield ctx  # NOSONAR => can not find proper type annotation
         except Exception as e:
-            tb = traceback.format_exc()
 
-            detail = None
-            if isinstance(e, HTTPException):
-                detail = e.detail
-            data = {
-                'detail': detail,
-                'traceback': tb.split('\n'),
-            }
             await ctx.error(
                 text=f"Exception: {str(e)}",
-                data=data,
+                data={
+                    'detail': e.detail if isinstance(e, HTTPException) else f"No detail available",
+                    'traceback': traceback.format_exc().split('\n'),
+                },
                 labels=[Label.EXCEPTION, Label.FAILED]
             )
-            await execute_block(on_exception, e)
-            await execute_block(on_exit)
+            await Context.__execute_block(ctx, on_exception, e)
+            await Context.__execute_block(ctx, on_exit)
             traceback.print_exc()
             if self.request.state:
                 self.request.state.context = self
@@ -190,7 +180,7 @@ class Context(NamedTuple):
             await ctx.info(text=f"{action} in {int(1000 * (time.time() - start))} ms", labels=[Label.DONE])
             if self.request:
                 self.request.state.context = self
-            await execute_block(on_exit)
+            await self.__execute_block(ctx, on_exit)
 
     @staticmethod
     def start_ep(
@@ -200,7 +190,7 @@ class Context(NamedTuple):
             with_attributes: JSON = None,
             body: BaseModel = None,
             response: Callable[[], BaseModel] = None,
-            with_loggers: List[ContextLogger] = None,
+            with_reporters: List[ContextReporter] = None,
             on_enter: 'CallableBlock' = None,
             on_exit: 'CallableBlock' = None,
     ) -> AsyncContextManager[Context]:
@@ -221,7 +211,7 @@ class Context(NamedTuple):
             action=action,
             with_labels=[Label.END_POINT, *with_labels],
             with_attributes={"method": request.method, **with_attributes},
-            with_loggers=with_loggers,
+            with_reporters=with_reporters,
             on_enter=on_enter_fct,
             on_exit=on_exit_fct
         )
@@ -247,7 +237,10 @@ class Context(NamedTuple):
             parent_context_id=self.parent_uid,
             trace_uid=self.trace_uid
         )
-        await asyncio.gather(*[logger.log(entry) for logger in self.loggers])
+        if level == LogLevel.DATA:
+            await asyncio.gather(*[logger.log(entry) for logger in self.data_reporters])
+
+        await asyncio.gather(*[logger.log(entry) for logger in self.logs_reporters])
 
     async def send(self, data: BaseModel, labels: List[StringLike] = None):
         labels = labels or []
@@ -288,6 +281,17 @@ class Context(NamedTuple):
             YouwolHeaders.trace_id: self.trace_uid
         }
 
+    @staticmethod
+    async def __execute_block(
+            ctx: Context,
+            block: Optional[Union[CallableBlock, CallableBlockException]],
+            exception: Optional[Exception] = None):
+        if not block:
+            return
+        block = block(ctx) if not exception else block(exception, ctx)
+        if isinstance(block, Awaitable):
+            await block
+
 
 CallableBlock = Callable[[Context], Union[Awaitable, None]]
 CallableBlockException = Callable[[Exception, Context], Union[Awaitable, None]]
@@ -297,15 +301,22 @@ class ContextFactory(NamedTuple):
     with_static_data: Optional[Dict[str, DataType]] = None
 
     @staticmethod
-    def get_instance(request: Union[Request, None], logger: ContextLogger, **kwargs) -> Context:
-        with_data = kwargs if not ContextFactory.with_static_data else {**ContextFactory.with_static_data, **kwargs}
+    def get_instance(
+            request: Union[Request, None],
+            logs_reporter: ContextReporter,
+            data_reporter: ContextReporter,
+            **kwargs
+    ) -> Context:
+        static_data = ContextFactory.with_static_data
+        with_data = kwargs if not static_data else {**static_data, **kwargs}
 
         return Context(request=request,
-                       loggers=[logger],
+                       logs_reporters=[logs_reporter],
+                       data_reporters=[data_reporter],
                        with_data=with_data)
 
 
-class DeployedContextLogger(ContextLogger):
+class DeployedContextReporter(ContextReporter):
     errors = set()
 
     def __init__(self):
@@ -335,7 +346,7 @@ class DeployedContextLogger(ContextLogger):
             print(json.dumps({**base, "message": f"{base['message']} (FAILED PARSING DATA IN JSON)"}))
 
 
-class ConsoleContextLogger(ContextLogger):
+class ConsoleContextReporter(ContextReporter):
 
     def __init__(self):
         super().__init__()
@@ -352,7 +363,7 @@ class ConsoleContextLogger(ContextLogger):
         print(json.dumps(base))
 
 
-class PyYouwolContextLogger(ContextLogger):
+class PyYouwolContextReporter(ContextReporter):
 
     def __init__(self, py_youwol_port, headers=None):
         super().__init__()

@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from starlette.requests import Request
 
 from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
-from youwol.web_socket import UserContextLogger
+from youwol.web_socket import LogsStreamer
 from youwol_utils.context import Context
 
 router = APIRouter()
@@ -47,7 +47,7 @@ async def execute_command(
                 "commandName": command_name,
                 "method": "GET"
             },
-            with_loggers=[UserContextLogger()]
+            with_reporters=[LogsStreamer()]
     ) as ctx:
         command = get_command(command_name, CmdMethod.GET, env)
         result = command.do_get(ctx)
@@ -67,7 +67,7 @@ async def execute_command(
                 "commandName": command_name,
                 "method": "POST"
             },
-            with_loggers=[UserContextLogger()]
+            with_reporters=[LogsStreamer()]
     ) as ctx:
         body = await request.json()
         command = get_command(command_name, CmdMethod.POST, env)
@@ -88,7 +88,7 @@ async def execute_command(
                 "commandName": command_name,
                 "method": "PUT"
             },
-            with_loggers=[UserContextLogger()]
+            with_reporters=[LogsStreamer()]
     ) as ctx:
         body = await request.json()
         command = get_command(command_name, CmdMethod.PUT, env)
@@ -109,7 +109,7 @@ async def execute_command(
                 "commandName": command_name,
                 "method": "DELETE"
             },
-            with_loggers=[UserContextLogger()]
+            with_reporters=[LogsStreamer()]
     ) as ctx:
         command = get_command(command_name, CmdMethod.DELETE, env)
         result = command.do_delete(ctx)

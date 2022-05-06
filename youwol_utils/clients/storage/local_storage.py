@@ -60,7 +60,7 @@ class LocalStorageClient:
         full_path.open('wb').write(form.objectData)
         return {}
 
-    async def post_object(self, path: Union[Path, str], content: bytes, content_type: str,  owner: Union[str, None],
+    async def post_object(self, path: Union[Path, str], content: bytes, owner: Union[str, None],
                           headers: Mapping[str, str] = None, **_kwargs):
 
         if not headers:

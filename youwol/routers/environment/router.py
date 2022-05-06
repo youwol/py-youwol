@@ -1,4 +1,6 @@
 import itertools
+import random
+from pathlib import Path
 from typing import List, Optional
 
 from aiohttp.client_exceptions import ClientConnectorError, ContentTypeError
@@ -18,7 +20,7 @@ from youwol.routers.environment.models import (
 )
 from youwol.routers.environment.upload_assets.upload import upload_asset
 from youwol.utils.utils_low_level import get_public_user_auth_token
-from youwol.web_socket import UserContextLogger
+from youwol.web_socket import LogsStreamer
 from youwol_utils import retrieve_user_info
 from youwol_utils.context import Context
 from youwol_utils.utils_paths import parse_json, write_json
@@ -71,9 +73,9 @@ async def connect_to_remote(config: YouwolEnvironment, context: Context) -> bool
             response_class=PlainTextResponse,
             summary="status")
 async def cow_say():
-    return cow.milk_random_cow(f"""If error is corrected whenever it is recognized as such, the path of
-     error is the path of truth (H. Reichenbach).
-""")
+    #  https://github.com/bmc/fortunes/
+    quotes = (Path(__file__).parent / 'fortunes.txt').read_text().split("%")
+    return cow.milk_random_cow(random.choice(quotes))
 
 
 @router.get("/configuration",
@@ -140,7 +142,7 @@ async def status(
 ):
     async with Context.start_ep(
             request=request,
-            with_loggers=[UserContextLogger()],
+            with_reporters=[LogsStreamer()],
             with_attributes={"profile": config.activeProfile or 'default'}
     ) as ctx:   # type: Context
         connected = await connect_to_remote(config=config, context=ctx)
@@ -175,7 +177,7 @@ async def custom_dispatches(
 ):
     async with Context.start_ep(
             request=request,
-            with_loggers=[UserContextLogger()],
+            with_reporters=[LogsStreamer()],
     ):
 
         dispatches = [CustomDispatch(type=d.__class__.__name__, **(await d.info()).dict())
@@ -223,7 +225,7 @@ async def sync_user(
 ):
     async with Context.start_ep(
             request=request,
-            with_loggers=[UserContextLogger()]
+            with_reporters=[LogsStreamer()]
     ) as ctx:
 
         try:
@@ -270,6 +272,6 @@ async def upload(
             with_attributes={
                 'asset_id': asset_id
             },
-            with_loggers=[UserContextLogger()]
+            with_reporters=[LogsStreamer()]
     ) as ctx:
         return await upload_asset(asset_id=asset_id, options=None, context=ctx)

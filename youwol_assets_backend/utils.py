@@ -13,10 +13,11 @@ from fastapi import UploadFile
 from starlette.requests import Request
 
 from youwol_utils import (
-    chunks, Storage, get_content_type, user_info, generate_headers_downstream,
+    chunks, Storage, get_content_type, user_info,
     get_user_group_ids, ensure_group_permission, QueryBody, DocDb, log_info,
 )
 from youwol_assets_backend.configurations import Configuration, Constants
+from youwol_utils.context import Context
 from youwol_utils.http_clients.assets_backend.models import ParsedFile, FormData, AssetResponse
 
 flatten = itertools.chain.from_iterable
@@ -210,69 +211,72 @@ async def ensure_get_permission(
         request: Request,
         asset_id: str,
         scope: str,
-        configuration: Configuration
+        configuration: Configuration,
+        context: Context
 ):
-    docdb = configuration.doc_db_asset
-    headers = generate_headers_downstream(request.headers)
-    asset = await docdb.get_document(partition_keys={"asset_id": asset_id}, clustering_keys={},
-                                     owner=Constants.public_owner, headers=headers)
-    # there is no restriction on access asset 'metadata' for now fo read
-    if 'w' in scope:
-        ensure_group_permission(request=request, group_id=asset["group_id"])
-    return asset
+    async with context.start(action="ensure_get_permission") as ctx:  # type: Context
+        docdb = configuration.doc_db_asset
+        asset = await docdb.get_document(partition_keys={"asset_id": asset_id}, clustering_keys={},
+                                         owner=Constants.public_owner, headers=ctx.headers())
+        # there is no restriction on access asset 'metadata' for now fo read
+        if 'w' in scope:
+            ensure_group_permission(request=request, group_id=asset["group_id"])
+        return asset
 
 
 async def ensure_query_permission(
         request: Request,
         query: QueryBody,
         scope: str,
-        configuration: Configuration
+        configuration: Configuration,
+        context: Context
 ):
     # there is no restriction on access asset 'metadata' for now
     # ensure_group_permission(request=request, group_id=asset["group_id"])
     # ensure_group_permission(request=request, group_id=query.groupId)
+    async with context.start(action="ensure_query_permission") as ctx:  # type: Context
+        doc_db = configuration.doc_db_asset
 
-    headers = generate_headers_downstream(request.headers)
-    doc_db = configuration.doc_db_asset
-
-    r = await doc_db.query(query_body=query, owner=Constants.public_owner, headers=headers)
-    user = user_info(request)
-    allowed_groups = get_user_group_ids(user)
-    if 'w' in scope:
-        return [d for d in r["documents"] if d["group_id"] in allowed_groups]
-    return r["documents"]
+        r = await doc_db.query(query_body=query, owner=Constants.public_owner, headers=ctx.headers())
+        user = user_info(request)
+        allowed_groups = get_user_group_ids(user)
+        if 'w' in scope:
+            return [d for d in r["documents"] if d["group_id"] in allowed_groups]
+        return r["documents"]
 
 
 async def ensure_delete_permission(
         request: Request,
         asset: any,
-        configuration: Configuration
+        configuration: Configuration,
+        context: Context
 ):
     # only owning group can delete
-    ensure_group_permission(request=request, group_id=asset["group_id"])
+    async with context.start(action="ensure_delete_permission") as ctx:  # type: Context
+        ensure_group_permission(request=request, group_id=asset["group_id"])
 
-    storage, doc_db = configuration.storage, configuration.doc_db_asset
+        storage, doc_db = configuration.storage, configuration.doc_db_asset
+        asset_id = asset["asset_id"]
 
-    headers = generate_headers_downstream(request.headers)
-    asset_id = asset["asset_id"]
+        await asyncio.gather(
+            storage.delete_group(prefix=Path(asset['kind']) / asset_id, owner=Constants.public_owner,
+                                 headers=ctx.headers()),
+            doc_db.delete_document(doc=asset, owner=Constants.public_owner, headers=ctx.headers()))
 
-    await asyncio.gather(
-        storage.delete_group(prefix=Path(asset['kind']) / asset_id, owner=Constants.public_owner, headers=headers),
-        doc_db.delete_document(doc=asset, owner=Constants.public_owner, headers=headers))
-
-    return asset
+        return asset
 
 
 async def ensure_post_permission(
         request: Request,
         doc,
-        configuration: Configuration
+        configuration: Configuration,
+        context: Context
 ):
     # only owning group can put/post
-    ensure_group_permission(request=request, group_id=doc["group_id"])
-    headers = generate_headers_downstream(request.headers)
-    doc_db = configuration.doc_db_asset
-    return await doc_db.update_document(doc, owner=Constants.public_owner, headers=headers)
+    async with context.start(action="ensure_post_permission") as ctx:  # type: Context
+        ensure_group_permission(request=request, group_id=doc["group_id"])
+        doc_db = configuration.doc_db_asset
+        return await doc_db.update_document(doc, owner=Constants.public_owner, headers=ctx.headers())
 
 
 def access_policy_record_id(

@@ -10,8 +10,7 @@ from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.commons import Label
 from youwol.routers.environment.download_assets.common import create_asset_local
 from youwol.routers.local_cdn.models import CheckUpdateResponse, UpdateStatus, PackageVersionInfo, \
-    DownloadedPackageResponse, DownloadPackageBody, PackageEvent, Event
-from youwol.web_socket import UserContextLogger
+    DownloadedPackageResponse, DownloadPackageBody, PackageEventResponse, Event
 from youwol_utils import encode_id
 from youwol_utils.context import Context
 from youwol_utils.utils_paths import parse_json
@@ -52,18 +51,16 @@ async def check_update(
     async with context.start(
             action=f"Check update for {local_package.library_name}",
             on_enter=lambda ctx_enter: ctx_enter.send(
-                PackageEvent(packageName=name, version=version, event=Event.updateCheckStarted)
+                PackageEventResponse(packageName=name, version=version, event=Event.updateCheckStarted)
             ),
             on_exit=lambda ctx_exit: ctx_exit.send(
-                PackageEvent(packageName=name, version=version, event=Event.updateCheckDone)
+                PackageEventResponse(packageName=name, version=version, event=Event.updateCheckDone)
             ),
             with_attributes={
                 'event': 'check_update_pending',
                 'packageName': name,
                 'packageVersion': version,
-            },
-            with_loggers=[] if any([isinstance(logger, UserContextLogger) for logger in context.loggers])
-            else [UserContextLogger()]
+            }
     ) as ctx:  # type: Context
         package_id = encode_id(local_package.library_name)
 
@@ -136,7 +133,7 @@ async def download_package(
         context: Context):
     async def on_exit(ctx_exit):
         await ctx_exit.send(
-            PackageEvent(packageName=package_name, version=version, event=Event.downloadDone)
+            PackageEventResponse(packageName=package_name, version=version, event=Event.downloadDone)
         )
         if check_update_status:
             asyncio.create_task(check_update(local_package=TargetPackage.from_response(record), context=context))
@@ -149,7 +146,7 @@ async def download_package(
                 'packageVersion': version
             },
             on_enter=lambda ctx_enter: ctx_enter.send(
-                PackageEvent(packageName=package_name, version=version, event=Event.downloadStarted)
+                PackageEventResponse(packageName=package_name, version=version, event=Event.downloadStarted)
             ),
             on_exit=on_exit,
     ) as ctx:

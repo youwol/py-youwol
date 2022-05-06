@@ -20,6 +20,11 @@ def url_match(request: Request, pattern: str):
         replaced.append(request.method)
     parts_target = request.url.path.split("/")
     parts_regex = regex.split("/")
+    if '**' not in parts_regex and len(parts_target) != len(parts_regex):
+        return False, None
+    if '**' in parts_regex and parts_regex.index('**') != len(parts_regex) - 1:
+        raise ValueError("'**' can only be located at the trailing part of the pattern")
+
     for i, part in enumerate(parts_target):
         if i >= len(parts_regex):
             return False, None

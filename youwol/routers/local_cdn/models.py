@@ -82,7 +82,7 @@ class Event(Enum):
     updateCheckDone = 'updateCheckDone'
 
 
-class PackageEvent(BaseModel):
+class PackageEventResponse(BaseModel):
     packageName: str
     version: str
     event: Event
