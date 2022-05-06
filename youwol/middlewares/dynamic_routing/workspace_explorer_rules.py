@@ -1,11 +1,12 @@
 import asyncio
 from typing import Union, TypeVar, List, Optional
 
+from fastapi import HTTPException
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response, JSONResponse
 
-from youwol_utils.http_clients.assets_gateway import ChildrenResponse, ItemResponse, FolderResponse
+from youwol_utils.http_clients.tree_db_backend import ChildrenResponse, ItemResponse, FolderResponse
 from youwol.environment.clients import RemoteClients, LocalClients
 from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.middlewares.models_dispatch import AbstractDispatch
@@ -26,57 +27,64 @@ def cast_response(response: Union[JSON, BaseException], _type: PydanticType):
 class GetChildrenDispatch(AbstractDispatch):
 
     @staticmethod
-    async def is_matching(request: Request) -> bool:
-        return request.method == "GET" \
-               and request.url.path.startswith("/api/assets-gateway/tree/") \
-               and "/folders/" in request.url.path and request.url.path.endswith('/children') \
-               and ('user-agent' in request.headers
-                    and "Python" not in request.headers.get('user-agent')
-                    # => for now, until for browser request
-                    )
+    def is_matching(request: Request) -> Union[None, str]:
+        match, params = url_match(request, "GET:/api/assets-gateway/treedb-backend/folders/*/children")
+        if 'user-agent' not in request.headers or "Python" in request.headers.get('user-agent'):
+            # => for now, until for browser request
+            return None
+        return params[0] if match else None
 
     async def apply(self,
                     request: Request,
                     call_next: RequestResponseEndpoint,
                     context: Context
                     ) -> Optional[Response]:
-
-        if not await GetChildrenDispatch.is_matching(request=request):
+        folder_id = GetChildrenDispatch.is_matching(request=request)
+        if not folder_id:
             return None
+        await context.info(text="GetChildrenDispatch matching incoming request")
+        async with context.start(action="GetChildrenDispatch.apply") as ctx:
+            env = await context.get('env', YouwolEnvironment)
 
-        env = await context.get('env', YouwolEnvironment)
-        local_gtw = LocalClients.get_assets_gateway_client(env=env)
-        remote_gtw = await RemoteClients.get_assets_gateway_client(context=context)
-        folder_id = request.url.path.split('/api/assets-gateway/tree/folders/')[1].split('/')[0]
+            local_gtw_treedb = LocalClients.get_gtw_treedb_client(env=env)
+            try:
+                await local_gtw_treedb.get_folder(folder_id=folder_id, headers=ctx.headers())
+            except HTTPException as e:
+                if e.status_code != 404:
+                    raise e
+                await ctx.info(text="The folder is not found in local installation, proceed to download from remote")
+                await ensure_local_path(folder_id=folder_id, env=env, context=ctx)
 
-        local_resp, remote_resp = await asyncio.gather(
-            local_gtw.get_tree_folder_children(folder_id=folder_id),
-            remote_gtw.get_tree_folder_children(folder_id=folder_id),
-            return_exceptions=True
-            )
-        if isinstance(remote_resp, Exception):
-            return JSONResponse(local_resp)
-        if isinstance(local_resp, Exception):
-            return JSONResponse(remote_resp)
-        local_children: ChildrenResponse = cast_response(local_resp, ChildrenResponse)
-        remote_children: ChildrenResponse = cast_response(remote_resp, ChildrenResponse)
-        local_ids = [c.treeId for c in local_children.items] + [c.folderId for c in local_children.folders]
-        remote_ids = [c.treeId for c in remote_children.items] + [c.folderId for c in remote_children.folders]
+            remote_gtw_treedb = await RemoteClients.get_gtw_treedb_client(context=ctx)
 
-        return JSONResponse({
-            "items": [self.decorate_with_metadata(item, local_ids, remote_ids)
-                      for item in local_children.items] +
-                     [self.decorate_with_metadata(item, local_ids, remote_ids)
-                      for item in remote_children.items if item.treeId not in local_ids],
-            "folders": [self.decorate_with_metadata(folder, local_ids, remote_ids)
-                        for folder in local_children.folders] +
-                       [self.decorate_with_metadata(folder, local_ids, remote_ids)
-                        for folder in remote_children.folders if folder.folderId not in local_ids],
-            })
+            local_resp, remote_resp = await asyncio.gather(
+                local_gtw_treedb.get_children(folder_id=folder_id, headers=ctx.headers()),
+                remote_gtw_treedb.get_children(folder_id=folder_id, headers=ctx.headers()),
+                return_exceptions=True
+                )
+            if isinstance(remote_resp, Exception):
+                return JSONResponse(local_resp)
+            if isinstance(local_resp, Exception):
+                return JSONResponse(remote_resp)
+            local_children: ChildrenResponse = cast_response(local_resp, ChildrenResponse)
+            remote_children: ChildrenResponse = cast_response(remote_resp, ChildrenResponse)
+            local_ids = [c.itemId for c in local_children.items] + [c.folderId for c in local_children.folders]
+            remote_ids = [c.itemId for c in remote_children.items] + [c.folderId for c in remote_children.folders]
+
+            return JSONResponse({
+                "items": [self.decorate_with_metadata(item, local_ids, remote_ids)
+                          for item in local_children.items] +
+                         [self.decorate_with_metadata(item, local_ids, remote_ids)
+                          for item in remote_children.items if item.itemId not in local_ids],
+                "folders": [self.decorate_with_metadata(folder, local_ids, remote_ids)
+                            for folder in local_children.folders] +
+                           [self.decorate_with_metadata(folder, local_ids, remote_ids)
+                            for folder in remote_children.folders if folder.folderId not in local_ids],
+                })
 
     @staticmethod
     def decorate_with_metadata(item: Union[ItemResponse, FolderResponse], local_ids: List[str], remote_ids: List[str]):
-        tree_id = item.treeId if isinstance(item, ItemResponse) else item.folderId
+        tree_id = item.itemId if isinstance(item, ItemResponse) else item.folderId
         return {
             **item.dict(),
             **{
