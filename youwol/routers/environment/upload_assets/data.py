@@ -6,6 +6,8 @@ from aiohttp import FormData
 from youwol.environment.clients import RemoteClients, LocalClients
 from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.environment.upload_assets.models import UploadTask
+from youwol_utils import YouwolHeaders
+from youwol_utils.context import Context
 
 
 @dataclass
@@ -26,17 +28,20 @@ class UploadDataTask(UploadTask):
         form_data.add_field('rawId', self.raw_id)
         return form_data
 
-    async def create_raw(self, data: FormData, folder_id: str):
+    async def create_raw(self, data: FormData, folder_id: str, context: Context):
 
-        remote_gtw = await RemoteClients.get_assets_gateway_client(context=self.context)
-        await remote_gtw.put_asset_with_raw(kind='data', folder_id=folder_id, data=data)
+        async with context.start(action="UploadDataTask.create_raw") as ctx:  # type: Context
+            remote_gtw = await RemoteClients.get_assets_gateway_client(context=ctx)
+            await remote_gtw.put_asset_with_raw(kind='data', folder_id=folder_id, data=data, headers=ctx.headers())
 
-    async def update_raw(self, data: bytes, folder_id: str):
+    async def update_raw(self, data: bytes, folder_id: str, context: Context):
 
-        remote_gtw = await RemoteClients.get_assets_gateway_client(context=self.context)
-        await remote_gtw.update_raw_asset(
-            kind='data',
-            raw_id=self.raw_id,
-            data=data,
-            rest_of_path="content"
-            )
+        async with context.start(action="UploadDataTask.update_raw") as ctx:  # type: Context
+            remote_gtw = await RemoteClients.get_assets_gateway_client(context=ctx)
+            await remote_gtw.update_raw_asset(
+                kind='data',
+                raw_id=self.raw_id,
+                data=data,
+                rest_of_path="content",
+                headers=ctx.headers()
+                )

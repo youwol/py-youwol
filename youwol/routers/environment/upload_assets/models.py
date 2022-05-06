@@ -9,17 +9,16 @@ from youwol_utils.context import Context
 class UploadTask(ABC):
     raw_id: str
     asset_id: str
-    context: Context
     options: Optional[Any] = None
 
     @abstractmethod
-    async def get_raw(self) -> bytes:
+    async def get_raw(self, context: Context) -> bytes:
         pass
 
     @abstractmethod
-    async def create_raw(self, data: bytes, folder_id: str):
+    async def create_raw(self, data: bytes, folder_id: str, context: Context):
         pass
 
     @abstractmethod
-    async def update_raw(self, data: bytes, folder_id: str):
+    async def update_raw(self, data: bytes, folder_id: str, context: Context):
         pass
