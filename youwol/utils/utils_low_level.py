@@ -196,7 +196,7 @@ def assert_py_youwol_starting_preconditions(http_port: int):
     a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     location = ("127.0.0.1", http_port)
     if a_socket.connect_ex(location) == 0:
-        raise ValueError(f"The port {http_port} is already listening")
+        raise ValueError(f"The port {http_port} is already bound to a process")
 
 
 async def execute_shell_cmd(cmd: str, context: Context, log_outputs=True):
