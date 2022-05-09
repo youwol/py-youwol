@@ -20,13 +20,18 @@ flatten = itertools.chain.from_iterable
 
 
 class YouwolHeaders(NamedTuple):
-
+    #  About tracing & headers: https://www.w3.org/TR/trace-context/
     py_youwol_local_only = 'py-youwol-local-only'
     correlation_id = 'x-correlation-id'
+    trace_id = 'x-trace-id'
 
     @staticmethod
     def get_correlation_id(request: Request):
         return request.headers.get(YouwolHeaders.correlation_id, None)
+
+    @staticmethod
+    def get_trace_id(request: Request):
+        return request.headers.get(YouwolHeaders.trace_id, None)
 
     @staticmethod
     def get_py_youwol_local_only(request: Request):
@@ -163,6 +168,15 @@ async def get_youwol_environment(port: int = 2000):
             return resp
 
 
+async def reload_youwol_environment(port: int):
+
+    url = f"http://localhost:{port}/admin/environment/configuration"
+    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
+        async with await session.post(url=url) as resp:
+            if resp.status != 200:
+                raise HTTPException(status_code=resp.status, detail=await resp.read())
+
+
 async def get_headers_auth_admin_from_env():
     client_id = os.getenv("AUTH_CLIENT_ID")
     client_secret = os.getenv("AUTH_CLIENT_SECRET")
@@ -223,8 +237,8 @@ def check_permission_or_raise(target_group: Union[str, None], allowed_groups: Li
                             detail=f"scope '{target_group}' not included in user groups")
 
 
-def get_content_type(file_name: str):
-    extensions = file_name.split('.')[1:]
+def get_content_type(file_name: Union[str, Path]):
+    extensions = Path(file_name).name.split('.')[1:]
     if "json" in extensions:
         return "application/json"
     if "yaml" in extensions:
@@ -241,18 +255,22 @@ def get_content_type(file_name: str):
         return "image/png"
     if 'txt' in extensions:
         return 'text/plain'
+    if 'html' in extensions:
+        return 'text/html'
+    if 'wasm' in extensions:
+        return 'application/wasm'
     return "application/octet-stream"
 
 
-def get_content_encoding(file_name: str):
+def get_content_encoding(file_name: Union[str, Path]):
 
-    extension = file_name.split('.')[-1]
+    extension = Path(file_name).name.split('.')[-1]
     if extension == "br":
         return "br"
     if extension == "gzip":
         return "gzip"
 
-    return ""
+    return "identity"
 
 
 async def retrieve_user_info(auth_token: str, openid_host: str):

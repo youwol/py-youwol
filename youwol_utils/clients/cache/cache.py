@@ -18,11 +18,11 @@ class CacheClient:
         except ModuleNotFoundError:
             pass
 
-    async def get(self, name: str, **kwargs) -> Union[JSON, None]:
+    async def get(self, name: str) -> Union[JSON, None]:
         val = self.cache.get(name=self._get_key(name))
         return json.loads(val) if val else None
 
-    async def set(self, name: str, value: JSON, ex: int, **kwargs):
+    async def set(self, name: str, value: JSON, ex: int):
         return self.cache.set(name=self._get_key(name), value=json.dumps(value), ex=ex)
 
     def _get_key(self, name: str):

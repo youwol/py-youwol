@@ -8,6 +8,7 @@ from youwol.environment.clients import RemoteClients
 from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.environment.upload_assets.models import UploadTask
 from youwol_utils import decode_id
+from youwol_utils.context import Context
 from youwol_utils.utils_paths import parse_json
 
 
@@ -77,41 +78,46 @@ class UploadPackageOptions(NamedTuple):
 @dataclass
 class UploadPackageTask(UploadTask):
 
-    async def get_raw(self):
-        env = await self.context.get('env', YouwolEnvironment)
-        local_package = get_local_package(asset_id=self.asset_id, config=env)
-        assets_gateway_client = await RemoteClients.get_assets_gateway_client(context=self.context)
+    async def get_raw(self, context: Context):
+        env = await context.get('env', YouwolEnvironment)
+        async with context.start(action="UploadPackageTask.get_raw") as ctx:  # type: Context
 
-        to_sync_releases = [v.version for v in local_package.releases]
-        if self.options and self.options.versions:
-            to_sync_releases = [v for v in to_sync_releases if v in self.options.versions]
-        try:
-            raw_metadata = await assets_gateway_client.get_raw_metadata(kind='package', raw_id=decode_id(self.asset_id))
-        except HTTPException as e:
-            if e.status_code == 404:
-                return to_sync_releases
-            raise e
+            local_package = get_local_package(asset_id=self.asset_id, config=env)
+            assets_gateway_client = await RemoteClients.get_assets_gateway_client(context=ctx)
 
-        remote_versions = {release['version']: release['fingerprint'] for release in raw_metadata['releases']}
-        local_versions = {release.version: release.fingerprint for release in local_package.releases}
+            to_sync_releases = [v.version for v in local_package.releases]
+            if self.options and self.options.versions:
+                to_sync_releases = [v for v in to_sync_releases if v in self.options.versions]
+            try:
+                raw_metadata = await assets_gateway_client.get_raw_metadata(
+                    kind='package',
+                    raw_id=decode_id(self.asset_id),
+                    headers=ctx.headers())
+            except HTTPException as e:
+                if e.status_code == 404:
+                    return to_sync_releases
+                raise e
 
-        missing = [v for v in local_versions.keys() if v not in remote_versions]
-        mismatch = [v for v, checksum in local_versions.items()
-                    if v in remote_versions and checksum != remote_versions[v]]
-        to_sync_releases = missing + mismatch
-        if self.options and self.options.versions:
-            to_sync_releases = [v for v in to_sync_releases if v in self.options.versions]
+            remote_versions = {release['version']: release['fingerprint'] for release in raw_metadata['releases']}
+            local_versions = {release.version: release.fingerprint for release in local_package.releases}
 
-        await self.context.info(text="package's versions to sync. resolved",
-                                data={"missing": missing, "mismatch": mismatch})
+            missing = [v for v in local_versions.keys() if v not in remote_versions]
+            mismatch = [v for v, checksum in local_versions.items()
+                        if v in remote_versions and checksum != remote_versions[v]]
+            to_sync_releases = missing + mismatch
+            if self.options and self.options.versions:
+                to_sync_releases = [v for v in to_sync_releases if v in self.options.versions]
 
-        return to_sync_releases
+            await ctx.info(text="package's versions to sync. resolved",
+                           data={"missing": missing, "mismatch": mismatch})
 
-    async def publish_version(self, folder_id: str, version: str):
+            return to_sync_releases
 
-        remote_gtw = await RemoteClients.get_assets_gateway_client(self.context)
-        env = await self.context.get('env', YouwolEnvironment)
-        async with self.context.start(action="Sync") as ctx:
+    async def publish_version(self, folder_id: str, version: str, context: Context):
+
+        remote_gtw = await RemoteClients.get_assets_gateway_client(context)
+        env = await context.get('env', YouwolEnvironment)
+        async with context.start(action="UploadPackageTask.publish_version") as ctx:  # type: Context
 
             if self.options.versions and version not in self.options.versions:
                 await ctx.info(text=f"Version '{version}' not in explicit versions provided",
@@ -123,19 +129,20 @@ class UploadPackageTask(UploadTask):
             try:
                 data = {'file': zip_path.read_bytes(), 'content_encoding': 'identity'}
                 await remote_gtw.put_asset_with_raw(kind='package', folder_id=folder_id, data=data,
-                                                    timeout=600)
+                                                    timeout=60000, headers=ctx.headers())
             finally:
                 await ctx.info(
                     text=f"{library_name}#{version}: synchronization done"
                 )
                 # await check_package_status(package=local_package, context=context, target_versions=[version])
 
-    async def create_raw(self, data: List[str], folder_id: str):
+    async def create_raw(self, data: List[str], folder_id: str, context: Context):
 
-        versions = data
-        for version in versions:
-            await self.publish_version(folder_id=folder_id, version=version)
+        async with context.start(action="UploadPackageTask.create_raw") as ctx:  # type: Context
+            versions = data
+            for version in versions:
+                await self.publish_version(folder_id=folder_id, version=version, context=ctx)
 
-    async def update_raw(self, data: List[str], folder_id: str):
-
-        await self.create_raw(data=data, folder_id=folder_id)
+    async def update_raw(self, data: List[str], folder_id: str, context: Context):
+        async with context.start(action="UploadPackageTask.update_raw") as ctx:  # type: Context
+            await self.create_raw(data=data, folder_id=folder_id, context=ctx)

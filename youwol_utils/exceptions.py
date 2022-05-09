@@ -16,6 +16,22 @@ class YouWolException(HTTPException):
         return f"""{self.status_code} : {self.detail}"""
 
 
+class ServerError(YouWolException):
+    exceptionType = "ServerError"
+
+    def __init__(self,  detail: Any, **kwargs):
+        YouWolException.__init__(
+            self,
+            status_code=500,
+            detail=detail,
+            **kwargs)
+        self.exceptionType = ServerError.exceptionType
+        self.detail = detail
+
+    def __str__(self):
+        return f"""{self.status_code} : {self.detail}"""
+
+
 class PublishPackageError(YouWolException):
     exceptionType = "PublishPackageError"
 
@@ -181,12 +197,13 @@ class FolderNotFound(YouWolException):
 class ResourcesNotFoundException(YouWolException):
     exceptionType = "ResourcesNotFoundException"
 
-    def __init__(self, path: str, **kwargs):
+    def __init__(self, path: str, detail: str = "", **kwargs):
         YouWolException.__init__(
             self,
             status_code=404,
             detail={
-                "path": path
+                "path": path,
+                "detail": detail
             },
             **kwargs)
         self.path = path
@@ -253,6 +270,7 @@ class UpstreamResponseException(YouWolException):
 
 
 YouwolExceptions = [
+    ServerError,
     PipelineFlowNotFound,
     FolderNotFound,
     PipelineStepNotFound,

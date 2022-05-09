@@ -4,6 +4,29 @@ from typing import List
 from pydantic import BaseModel
 
 
+cdn_topic = "cdn"
+
+
+class CdnVersion(BaseModel):
+    version: str
+    filesCount: int
+    entryPointSize: int  # total size, in bytes
+
+
+class CdnPackage(BaseModel):
+    name: str
+    id: str
+    versions: List[CdnVersion]
+
+
+class CdnStatusResponse(BaseModel):
+    packages: List[CdnPackage]
+
+
+class CdnPackageResponse(CdnPackage):
+    pass
+
+
 class UpdateStatus(Enum):
     upToDate = 'upToDate'
     mismatch = 'mismatch'
@@ -37,9 +60,31 @@ class DownloadPackagesBody(BaseModel):
     checkUpdateStatus: bool
 
 
+class ResetCdnBody(BaseModel):
+    keepProjectPackages: bool = True
+
+
+class ResetCdnResponse(BaseModel):
+    deletedPackages: List[str]
+
+
+class HardResetDbStatus(BaseModel):
+    remainingCount: int
+    originalCount: int
+
+
+class HardResetCdnResponse(BaseModel):
+    cdnLibraries: HardResetDbStatus
+    assetEntities: HardResetDbStatus
+    assetAccess: HardResetDbStatus
+    treedbItems: HardResetDbStatus
+    treedbDeleted: HardResetDbStatus
+
+
 class DownloadedPackageResponse(BaseModel):
     packageName: str
     version: str
+    versions: List[str]
     fingerprint: str
 
 
@@ -50,7 +95,7 @@ class Event(Enum):
     updateCheckDone = 'updateCheckDone'
 
 
-class PackageEvent(BaseModel):
+class PackageEventResponse(BaseModel):
     packageName: str
     version: str
     event: Event

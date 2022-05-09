@@ -36,6 +36,29 @@ class FluxClient:
 
                 await raise_exception_from_response(resp, **kwargs)
 
+    async def upload_project(self, data, project_id: str = None, **kwargs):
+
+        url = f"{self.url_base}/projects/upload"
+        params = {'project-id': project_id} if project_id else {}
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with await session.post(url=url, data=data, params=params, **kwargs) as resp:
+                if resp.status == 200:
+                    resp = await resp.json()
+                    return resp
+
+                await raise_exception_from_response(resp, **kwargs)
+
+    async def download_zip(self, project_id: str = None, **kwargs):
+
+        url = f"{self.url_base}/projects/{project_id}/download-zip"
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with await session.get(url=url, **kwargs) as resp:
+                if resp.status == 200:
+                    resp = await resp.read()
+                    return resp
+
+                await raise_exception_from_response(resp, **kwargs)
+
     async def update_project(self, project_id, body, **kwargs):
 
         url = f"{self.url_base}/projects/{project_id}"

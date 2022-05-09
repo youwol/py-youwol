@@ -151,15 +151,21 @@ def get_ingress(host: str):
         }
 
 
+class CustomPublishDockerStepConfig(PublishDockerStepConfig):
+    python_modules_copied: List[Path] = [Path(youwol_utils.__file__).parent]
+
+
 class PipelineConfig(BaseModel):
     tags: List[str] = []
     k8sInstance: K8sInstance
     docConfig: DocStepConfig
-    dockerConfig: PublishDockerStepConfig
+    dockerConfig: CustomPublishDockerStepConfig
     helmConfig: InstallHelmStepConfig
 
 
 class CustomPublishDockerStep(PublishDockerStep):
+
+    python_modules_copied: List[Path] = [Path(youwol_utils.__file__)]
     sources: FileListing = FileListing(
         include=[f"src", 'Dockerfile'],
         ignore=["src/.virtualenv"]
@@ -168,20 +174,23 @@ class CustomPublishDockerStep(PublishDockerStep):
     run: ExplicitNone = ExplicitNone()
 
     async def execute_run(self, project: Project, flow_id: str, context: Context):
-        src_path = Path(youwol_utils.__file__).parent
-        dest_path = project.path / 'src' / 'youwol_utils'
         outputs = []
 
         async def cp_youwol_utils(ctx_enter: Context):
-            shutil.rmtree(dest_path, ignore_errors=True)
-            shutil.copytree(src_path, dest_path)
-            outputs.append(f"cp {src_path} {dest_path}")
-            await ctx_enter.info(text="successfully copied youwol_utils")
+            for module_path in self.python_modules_copied:
+                src_path = module_path
+                dest_path = project.path / 'src' / module_path.name
+                shutil.rmtree(dest_path, ignore_errors=True)
+                shutil.copytree(src_path, dest_path)
+                outputs.append(f"cp {src_path} {dest_path}")
+                await ctx_enter.info(text="successfully copied youwol_utils")
 
         async def rm_youwol_utils(ctx_exit: Context):
-            outputs.append(f"rm {dest_path}")
-            await ctx_exit.info(text="successfully removed youwol_utils")
-            shutil.rmtree(dest_path, ignore_errors=True)
+            for module_path in self.python_modules_copied:
+                dest_path = project.path / 'src' / module_path.name
+                outputs.append(f"rm {dest_path}")
+                await ctx_exit.info(text="successfully removed youwol_utils")
+                shutil.rmtree(dest_path, ignore_errors=True)
 
         async with context.start(
                 action="Publish docker image with youwol_utils copy",

@@ -8,8 +8,8 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from starlette.requests import Request
 
-from youwol.web_socket import AdminContextLogger, Log
-from youwol_utils.context import Context
+from youwol.web_socket import InMemoryReporter, Log
+from youwol_utils.context import Context, LogEntry, LogLevel
 
 router = APIRouter()
 
@@ -67,6 +67,14 @@ class LogsResponse(BaseModel):
     logs: List[Log]
 
 
+class PostLogBody(Log):
+    traceUid: str
+
+
+class PostLogsBody(BaseModel):
+    logs: List[PostLogBody]
+
+
 @router.get("/logs/", summary="return the logs")
 async def query_logs(
         request: Request,
@@ -79,11 +87,9 @@ async def query_logs(
             response=lambda: response,
             request=request
     ) as ctx:
-        logger = cast(AdminContextLogger, ctx.loggers[0])
+        logger = cast(InMemoryReporter, ctx.logs_reporters[0])
         logs = []
         for log in reversed(logger.root_node_logs):
-            if log.timestamp > from_timestamp * 1000:
-                pass
             failed = log.contextId in logger.errors
             logs.append(NodeLogResponse(**log.dict(), failed=failed))
             if len(logs) > max_count:
@@ -98,7 +104,7 @@ async def get_logs(request: Request, parent_id: str):
     async with Context.start_ep(
             request=request
     ) as ctx:
-        logger = cast(AdminContextLogger, ctx.loggers[0])
+        logger = cast(InMemoryReporter, ctx.logs_reporters[0])
         nodes_logs, leaf_logs, errors = logger.node_logs, logger.leaf_logs, logger.errors
 
         nodes: List[Log] = [NodeLogResponse(**log.dict(), failed=log.contextId in errors)
@@ -109,3 +115,33 @@ async def get_logs(request: Request, parent_id: str):
                             if log.contextId == parent_id]
 
         return LogsResponse(logs=sorted(nodes + leafs, key=lambda n: n.timestamp))
+
+
+@router.post(
+    "/logs",
+    summary="post logs"
+)
+async def post_logs(
+        request: Request,
+        body: PostLogsBody
+):
+    context = Context.from_request(request=request)
+    logger = cast(InMemoryReporter, context.logs_reporters[0])
+    for log in body.logs:
+        entry = LogEntry(
+            level=LogLevel.INFO, text=log.text, data=log.data, labels=log.labels, attributes=log.attributes,
+            context_id=log.contextId, parent_context_id=log.parentContextId, trace_uid=log.traceUid
+        )
+        await logger.log(entry=entry)
+
+
+@router.delete(
+    "/logs",
+    summary="clear logs"
+)
+async def clear_logs(
+        request: Request
+):
+    context = Context.from_request(request=request)
+    logger = cast(InMemoryReporter, context.logs_reporters[0])
+    logger.clear()

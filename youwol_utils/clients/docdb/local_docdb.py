@@ -65,11 +65,11 @@ class LocalDocDbClient:
         query_valid = any(valid_for_indexes)
 
         if not allow_filtering and not query_valid:
-            raise Exception("The query can not proceed")
+            raise RuntimeError("The query can not proceed")
 
-        where_clauses = [{"column": k, "relation": "eq", "term": partition_keys[k]}
+        where_clauses = [WhereClause(column=k, relation="eq", term=partition_keys[k])
                          for k in partition_keys.keys()] + \
-                        [{"column": k, "relation": "eq", "term": clustering_keys[k]}
+                        [WhereClause(column=k, relation="eq", term=clustering_keys[k])
                          for k in clustering_keys.keys()]
 
         query = QueryBody(
@@ -100,7 +100,7 @@ class LocalDocDbClient:
             query_body = QueryBody.parse(query_body)
 
         if len(query_body.query.ordering_clause) > 1:
-            raise Exception("Ordering emulated only for 1 ordering clause")
+            raise RuntimeError("Ordering emulated only for 1 ordering clause")
 
         data = json.loads(self.data_path.read_text())["documents"]
 
@@ -119,7 +119,7 @@ class LocalDocDbClient:
         for ordering in self.table_body.table_options.clustering_order:
             order = ordering.order
             col = ordering.name
-            sorted_result = sorted(r, key=lambda doc: doc[col])
+            sorted_result = sorted(r, key=lambda doc, c=col: doc[c])
             r = sorted_result
             if order == "DESC" or (col in query_ordering and query_ordering[col] == "DESC"):
                 r.reverse()

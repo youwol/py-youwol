@@ -22,7 +22,7 @@ from youwol.routers.projects.implementation import (
 from youwol.routers.projects.models import (
     PipelineStepStatusResponse, PipelineStatusResponse, ArtifactsResponse, ProjectStatusResponse, CdnResponse,
     CdnVersionResponse, PipelineStepEvent, Event, )
-from youwol.web_socket import UserContextLogger
+from youwol.web_socket import LogsStreamer
 from youwol_utils import decode_id
 from youwol_utils.context import Context
 from youwol_utils.utils_paths import parse_json
@@ -41,7 +41,7 @@ async def status(
 ):
     async with Context.start_ep(
             request=request,
-            with_loggers=[UserContextLogger()]
+            with_reporters=[LogsStreamer()]
     ) as ctx:  # type: Context
         response = ProjectsLoadingResults(results=await ProjectLoader.get_results(config, ctx))
         await ctx.send(response)
@@ -66,7 +66,7 @@ async def pipeline_step_status(
                 'flowId': flow_id,
                 'stepId': step_id
             },
-            with_loggers=[UserContextLogger()]
+            with_reporters=[LogsStreamer()]
     ) as ctx:
         project, step = await get_project_step(project_id=project_id, step_id=step_id, context=ctx)
         response = await get_status(project=project, flow_id=flow_id, step=step, context=ctx)
@@ -87,7 +87,7 @@ async def project_status(
             with_attributes={
                 'projectId': project_id
             },
-            with_loggers=[UserContextLogger()]
+            with_reporters=[LogsStreamer()]
     ) as ctx:
         projects = await ProjectLoader.get_projects(await ctx.get("env", YouwolEnvironment), ctx)
         project: Project = next(p for p in projects if p.id == project_id)
@@ -119,7 +119,7 @@ async def flow_status(
                 'projectId': project_id,
                 'flowId': flow_id
             },
-            with_loggers=[UserContextLogger()]
+            with_reporters=[LogsStreamer()]
     ) as ctx:
         project, flow, steps = await get_project_flow_steps(project_id=project_id, flow_id=flow_id, context=ctx)
         await ctx.info(text="project, flow & steps retried", data={"project": project, "flow": flow, "steps": steps})
@@ -147,7 +147,7 @@ async def project_artifacts(
                 'projectId': project_id,
                 'flowId': flow_id
             },
-            with_loggers=[UserContextLogger()]
+            with_reporters=[LogsStreamer()]
     ) as ctx:
         env = await ctx.get('env', YouwolEnvironment)
         paths: PathsBook = env.pathsBook
@@ -174,11 +174,20 @@ async def run_pipeline_step(
         flow_id: str,
         step_id: str
 ):
-    async def refresh_status_downstream_steps(ctx_exit):
-        """
-        Downstream steps may depend on this guy => request status on them.
-        Shortcut => request status on all the steps of the flow (not only the ones downstream)
-        """
+  
+    async def on_enter(ctx_enter):
+        env_enter = await ctx_enter.get('env', YouwolEnvironment)
+        if 'runningProjectSteps' not in env_enter.private_cache:
+            env_enter.private_cache['runningProjectSteps'] = set()
+        env_enter.private_cache['runningProjectSteps'].add(f"{project_id}#{flow_id}#{step_id}")
+        await ctx_enter.send(
+            PipelineStepEvent(projectId=project_id, flowId=flow_id, stepId=step_id, event=Event.runStarted)
+        ),
+
+    async def on_exit(ctx_exit):
+        env_exit = await ctx_exit.get('env', YouwolEnvironment)
+        if f"{project_id}#{flow_id}#{step_id}" in env_exit.private_cache['runningProjectSteps']:
+            env_exit.private_cache['runningProjectSteps'].remove(f"{project_id}#{flow_id}#{step_id}")
         async with ctx_exit.start(action="refresh_status_downstream_steps") as ctx_1:
             await ctx_1.send(
                 PipelineStepEvent(projectId=project_id, flowId=flow_id, stepId=step_id, event=Event.runDone)
@@ -190,6 +199,7 @@ async def run_pipeline_step(
             return asyncio.gather(*[
                 get_status(project=_project, flow_id=flow_id, step=_step, context=ctx_1)
                 for _step in steps
+                if f"{project_id}#{flow_id}#{_step.id}" not in env.private_cache['runningProjectSteps']
             ])
 
     async with Context.start_ep(
@@ -201,13 +211,10 @@ async def run_pipeline_step(
                 'flowId': flow_id,
                 'stepId': step_id
             },
-            on_enter=lambda ctx_enter: ctx_enter.send(
-                PipelineStepEvent(projectId=project_id, flowId=flow_id, stepId=step_id, event=Event.runStarted)
-            ),
-            on_exit=lambda ctx_exit: refresh_status_downstream_steps(ctx_exit),
-            with_loggers=[UserContextLogger()]
+            on_enter=lambda ctx_enter: on_enter(ctx_enter),
+            on_exit=lambda ctx_exit: on_exit(ctx_exit),
+            with_reporters=[LogsStreamer()]
     ) as ctx:
-
         env = await ctx.get('env', YouwolEnvironment)
         projects = await ProjectLoader.get_projects(env, ctx)
         paths: PathsBook = env.pathsBook
@@ -284,8 +291,8 @@ async def cdn_status(
     async with Context.from_request(request).start(
             action="Get local cdn status",
             with_attributes={'event': 'CdnResponsePending', 'projectId': project_id},
-            with_loggers=[UserContextLogger()]
-    ) as ctx:
+            with_reporters=[LogsStreamer()]
+            ) as ctx:
         data = parse_json(config.pathsBook.local_cdn_docdb)['documents']
         data = [d for d in data if d["library_name"] == decode_id(project_id)]
 

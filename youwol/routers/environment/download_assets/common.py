@@ -4,8 +4,8 @@ from typing import List, Callable, Awaitable, TypeVar, cast, Dict
 
 from fastapi import HTTPException
 
-from youwol.backends.assets_gateway.models import ItemsResponse
-from youwol.backends.treedb.models import PathResponse, ItemResponse, DriveResponse
+from youwol_utils.http_clients.assets_gateway import ItemsResponse
+from youwol_utils.http_clients.tree_db_backend import PathResponse, ItemResponse, DriveResponse
 from youwol.environment.clients import RemoteClients, LocalClients
 from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient

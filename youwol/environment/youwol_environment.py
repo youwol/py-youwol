@@ -12,7 +12,9 @@ from fastapi import HTTPException
 from pydantic import BaseModel
 
 import youwol
-from youwol.backends.assets_gateway.models import DefaultDriveResponse
+from youwol.routers.custom_backends import install_routers
+
+from youwol_utils.http_clients.assets_gateway import DefaultDriveResponse
 from youwol.configuration.config_from_module import configuration_from_python
 from youwol.configuration.config_from_static_file import configuration_from_json
 from youwol.configuration.configuration_handler import ConfigurationHandler
@@ -29,9 +31,10 @@ from youwol.main_args import get_main_arguments, MainArguments
 from youwol.middlewares.models_dispatch import AbstractDispatch
 from youwol.routers.custom_commands.models import Command
 from youwol.utils.utils_low_level import get_public_user_auth_token
-from youwol.web_socket import AdminContextLogger
+from youwol.web_socket import InMemoryReporter, WsDataStreamer
 from youwol_utils import retrieve_user_info
 from youwol_utils.context import Context, ContextFactory
+from youwol_utils.servers.fast_api import FastApiRouter
 from youwol_utils.utils_paths import parse_json, write_json
 
 
@@ -63,7 +66,8 @@ class YouwolEnvironment(BaseModel):
     selectedRemote: Optional[str]
 
     pathsBook: PathsBook
-
+    portsBook: Dict[str, int] = {}
+    routers: List[FastApiRouter] = []
     cache: Dict[str, Any] = {}
     private_cache: Dict[str, Any] = {}
 
@@ -140,7 +144,7 @@ class YouwolEnvironment(BaseModel):
         return DefaultDriveResponse(**default_drive)
 
     def __str__(self):
-        def str_redirctions():
+        def str_redirections():
             if len(self.customDispatches) != 0:
                 return f"""
 - list of redirections:
@@ -159,6 +163,16 @@ class YouwolEnvironment(BaseModel):
             else:
                 return "- no custom command configured"
 
+        def str_routers():
+            if self.routers:
+                return f"""
+- list of additional routers:
+{chr(10).join([f"  * {router.base_path}"
+               for router in self.routers])}
+"""
+            else:
+                return "- no custom command configured"
+
         return f"""Running with youwol: {youwol}
 Configuration loaded from '{self.pathsBook.config}'
 - user email: {self.userEmail}
@@ -166,8 +180,9 @@ Configuration loaded from '{self.pathsBook.config}'
 - paths: {self.pathsBook}
 - cdn packages count: {len(parse_json(self.pathsBook.local_cdn_docdb)['documents'])}
 - assets count: {len(parse_json(self.pathsBook.local_docdb / 'assets' / 'entities' / 'data.json')['documents'])}
-{str_redirctions()}
+{str_redirections()}
 {str_commands()}
+{str_routers()}
 {self.k8sInstance.__str__() if self.k8sInstance else "- not connected to a k8s cluster"}
 """
 
@@ -248,15 +263,17 @@ class YouwolEnvironmentFactory:
     @staticmethod
     async def trigger_on_load(config: YouwolEnvironment):
         context = ContextFactory.get_instance(
-            logger=AdminContextLogger(),
+            logs_reporter=InMemoryReporter(),
+            data_reporter=WsDataStreamer(),
             request=None
         )
-        if not config.events or not config.events.onLoad:
-            return
-        on_load_cb = config.events.onLoad(config, context)
-        data = await on_load_cb if isinstance(on_load_cb, Awaitable) else on_load_cb
+        if config.events and config.events.onLoad:
+            on_load_cb = config.events.onLoad(config, context)
+            data = await on_load_cb if isinstance(on_load_cb, Awaitable) else on_load_cb
+            await context.info(text="Applied onLoad event's callback", data=data)
 
-        await context.info(text="Applied onLoad event's callback", data=data)
+        await install_routers(config.routers, context)
+        await context.info(text="Additional routers installed")
 
 
 async def yw_config() -> YouwolEnvironment:
@@ -417,6 +434,8 @@ async def safe_load(
         availableProfiles=conf_handler.get_available_profiles(),
         openidHost=conf_handler.get_openid_host(),
         httpPort=conf_handler.get_http_port(),
+        portsBook=conf_handler.get_ports_book(),
+        routers=conf_handler.get_routers(),
         userEmail=user_email,
         selectedRemote=selected_remote,
         events=conf_handler.get_events(),

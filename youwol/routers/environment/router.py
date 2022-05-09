@@ -1,8 +1,12 @@
 import itertools
+import random
+from pathlib import Path
 from typing import List, Optional
 
 from aiohttp.client_exceptions import ClientConnectorError, ContentTypeError
+from cowpy import cow
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from starlette.requests import Request
 
@@ -11,11 +15,12 @@ from youwol.environment.models import UserInfo
 from youwol.environment.projects_loader import ProjectLoader
 from youwol.environment.youwol_environment import yw_config, YouwolEnvironment, YouwolEnvironmentFactory
 from youwol.routers.environment.models import (
-    SyncUserBody, LoginBody, RemoteGatewayInfo, SelectRemoteBody, AvailableProfiles, ProjectsLoadingResults
+    SyncUserBody, LoginBody, RemoteGatewayInfo, SelectRemoteBody, AvailableProfiles, ProjectsLoadingResults,
+    CustomDispatch, CustomDispatchesResponse
 )
 from youwol.routers.environment.upload_assets.upload import upload_asset
 from youwol.utils.utils_low_level import get_public_user_auth_token
-from youwol.web_socket import UserContextLogger
+from youwol.web_socket import LogsStreamer
 from youwol_utils import retrieve_user_info
 from youwol_utils.context import Context
 from youwol_utils.utils_paths import parse_json, write_json
@@ -62,6 +67,15 @@ async def connect_to_remote(config: YouwolEnvironment, context: Context) -> bool
             text="Failed to call healthz on assets-gateway",
             data={'host': remote_gateway_info.host, 'error': str(e)})
         return False
+
+
+@router.get("/cow-say",
+            response_class=PlainTextResponse,
+            summary="status")
+async def cow_say():
+    #  https://github.com/bmc/fortunes/
+    quotes = (Path(__file__).parent / 'fortunes.txt').read_text().split("%")
+    return cow.milk_random_cow(random.choice(quotes))
 
 
 @router.get("/configuration",
@@ -111,18 +125,16 @@ async def change_configuration_profile(
     return await status(request, env)
 
 
-@router.get("/file-content",
+@router.get("/configuration/config-file",
+            response_class=PlainTextResponse,
             summary="text content of the configuration file")
 async def file_content(
         config: YouwolEnvironment = Depends(yw_config)
 ):
-    return {
-        "content": config.pathsBook.config.read_text()
-    }
+    return config.pathsBook.config.read_text()
 
 
 @router.get("/status",
-            response_model=EnvironmentStatusResponse,
             summary="status")
 async def status(
         request: Request,
@@ -130,7 +142,7 @@ async def status(
 ):
     async with Context.start_ep(
             request=request,
-            with_loggers=[UserContextLogger()],
+            with_reporters=[LogsStreamer()],
             with_attributes={"profile": config.activeProfile or 'default'}
     ) as ctx:   # type: Context
         connected = await connect_to_remote(config=config, context=ctx)
@@ -147,9 +159,35 @@ async def status(
             remoteGatewayInfo=remote_gateway_info,
             remotesInfo=list(remotes_info)
         )
+        #  The environment is parsed in json here such that latter calls (e.g. get_results) do not modify it
+        #  Also, using 'response_model=EnvironmentStatusResponse' lead to problems of parsing some data
+        #  (e.g. RedirectDispatch)
+        http_response = response.dict()
         await ctx.send(response)
         await ctx.send(ProjectsLoadingResults(results=await ProjectLoader.get_results(config, ctx)))
-        return response
+        return http_response
+
+
+@router.get("/configuration/custom-dispatches",
+            response_model=CustomDispatchesResponse,
+            summary="list custom dispatches")
+async def custom_dispatches(
+        request: Request,
+        config: YouwolEnvironment = Depends(yw_config)
+):
+    async with Context.start_ep(
+            request=request,
+            with_reporters=[LogsStreamer()],
+    ):
+
+        dispatches = [CustomDispatch(type=d.__class__.__name__, **(await d.info()).dict())
+                      for d in config.customDispatches]
+
+        def key_fct(d):
+            return d.type
+        grouped = itertools.groupby(sorted(dispatches, key=key_fct), key=key_fct)
+        dispatches = {k: list(items) for k, items in grouped}
+        return CustomDispatchesResponse(dispatches=dispatches)
 
 
 @router.post("/login",
@@ -187,7 +225,7 @@ async def sync_user(
 ):
     async with Context.start_ep(
             request=request,
-            with_loggers=[UserContextLogger()]
+            with_reporters=[LogsStreamer()]
     ) as ctx:
 
         try:
@@ -234,6 +272,6 @@ async def upload(
             with_attributes={
                 'asset_id': asset_id
             },
-            with_loggers=[UserContextLogger()]
+            with_reporters=[LogsStreamer()]
     ) as ctx:
         return await upload_asset(asset_id=asset_id, options=None, context=ctx)

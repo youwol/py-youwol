@@ -1,8 +1,8 @@
 from dataclasses import dataclass, field
-from typing import Dict
+from typing import Dict, Callable, Awaitable, Any
 
 import aiohttp
-from aiohttp import FormData
+from aiohttp import FormData, ClientResponse
 
 from youwol_utils.exceptions import raise_exception_from_response
 
@@ -13,6 +13,16 @@ class AssetsClient:
 
     headers: Dict[str, str] = field(default_factory=lambda: {})
     connector = aiohttp.TCPConnector(verify_ssl=False)
+
+    async def healthz(self, **kwargs):
+        url = f"{self.url_base}/healthz"
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with await session.get(url=url, **kwargs) as resp:
+                if resp.status == 200:
+                    drives = await resp.json()
+                    return drives
+
+                await raise_exception_from_response(resp, **kwargs)
 
     async def create_asset(self, body, **kwargs):
 
@@ -47,6 +57,17 @@ class AssetsClient:
 
                 await raise_exception_from_response(resp, **kwargs)
 
+    async def delete_access_policy(self, asset_id: str, group_id: str, **kwargs):
+
+        url = f"{self.url_base}/assets/{asset_id}/access/{group_id}"
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with await session.delete(url=url, **kwargs) as resp:
+                if resp.status == 200:
+                    resp = await resp.json()
+                    return resp
+
+                await raise_exception_from_response(resp, **kwargs)
+
     async def post_image(self, asset_id: str, filename: str, src: bytes, **kwargs):
 
         url = f"{self.url_base}/assets/{asset_id}/images/{filename}"
@@ -73,6 +94,19 @@ class AssetsClient:
 
                 await raise_exception_from_response(resp, **kwargs)
 
+    async def get_media(self, asset_id: str, media_type: str, name: str,
+                        reader: Callable[[ClientResponse], Awaitable[Any]] = None, **kwargs):
+
+        url = f"{self.url_base}/assets/{asset_id}/{media_type}/{name}"
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with await session.get(url=url, **kwargs) as resp:
+                if resp.status == 200:
+                    if reader:
+                        return await reader(resp)
+                    return resp.read()
+
+                await raise_exception_from_response(resp, **kwargs)
+
     async def query(self, body, **kwargs):
 
         url = f"{self.url_base}/query"
@@ -94,6 +128,9 @@ class AssetsClient:
                     return resp
 
                 await raise_exception_from_response(resp, **kwargs)
+
+    async def get_asset(self, asset_id: str, **kwargs):
+        return await self.get(asset_id=asset_id, **kwargs)
 
     async def delete_asset(self, asset_id: str, **kwargs):
 

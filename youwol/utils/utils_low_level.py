@@ -7,6 +7,7 @@ import tempfile
 from importlib.machinery import SourceFileLoader
 from importlib.util import spec_from_loader
 from pathlib import Path
+import socket
 from typing import Union, Mapping, List, Type, cast, TypeVar, Optional
 
 import aiohttp
@@ -47,6 +48,8 @@ def sed_inplace(filename, pattern, repl):
 
 
 async def start_web_socket(ws: WebSocket):
+    await ws.accept()
+    await ws.send_json({})
     while True:
         try:
             _ = await ws.receive_text()
@@ -189,6 +192,13 @@ def assert_python():
         exit(1)
 
 
+def assert_py_youwol_starting_preconditions(http_port: int):
+    a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    location = ("127.0.0.1", http_port)
+    if a_socket.connect_ex(location) == 0:
+        raise ValueError(f"The port {http_port} is already bound to a process")
+
+
 async def execute_shell_cmd(cmd: str, context: Context, log_outputs=True):
 
     async with context.start(action="execute 'shell' command", with_labels=["BASH"]) as ctx:
@@ -203,7 +213,7 @@ async def execute_shell_cmd(cmd: str, context: Context, log_outputs=True):
         async with stream.merge(p.stdout, p.stderr).stream() as messages_stream:
             async for message in messages_stream:
                 outputs.append(message.decode('utf-8'))
-                log_outputs and await context.info(text=outputs[-1])
+                log_outputs and await ctx.info(text=outputs[-1])
         await p.communicate()
         return p.returncode, outputs
 

@@ -1,4 +1,5 @@
 import asyncio
+import os
 from itertools import groupby
 from typing import NamedTuple, List
 
@@ -9,8 +10,7 @@ from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.commons import Label
 from youwol.routers.environment.download_assets.common import create_asset_local
 from youwol.routers.local_cdn.models import CheckUpdateResponse, UpdateStatus, PackageVersionInfo, \
-    DownloadedPackageResponse, DownloadPackageBody, PackageEvent, Event
-from youwol.web_socket import UserContextLogger
+    DownloadedPackageResponse, DownloadPackageBody, PackageEventResponse, Event
 from youwol_utils import encode_id
 from youwol_utils.context import Context
 from youwol_utils.utils_paths import parse_json
@@ -51,18 +51,16 @@ async def check_update(
     async with context.start(
             action=f"Check update for {local_package.library_name}",
             on_enter=lambda ctx_enter: ctx_enter.send(
-                PackageEvent(packageName=name, version=version, event=Event.updateCheckStarted)
+                PackageEventResponse(packageName=name, version=version, event=Event.updateCheckStarted)
             ),
             on_exit=lambda ctx_exit: ctx_exit.send(
-                PackageEvent(packageName=name, version=version, event=Event.updateCheckDone)
+                PackageEventResponse(packageName=name, version=version, event=Event.updateCheckDone)
             ),
             with_attributes={
                 'event': 'check_update_pending',
                 'packageName': name,
                 'packageVersion': version,
-            },
-            with_loggers=[] if any([isinstance(logger, UserContextLogger) for logger in context.loggers])
-            else [UserContextLogger()]
+            }
     ) as ctx:  # type: Context
         package_id = encode_id(local_package.library_name)
 
@@ -135,7 +133,7 @@ async def download_package(
         context: Context):
     async def on_exit(ctx_exit):
         await ctx_exit.send(
-            PackageEvent(packageName=package_name, version=version, event=Event.downloadDone)
+            PackageEventResponse(packageName=package_name, version=version, event=Event.downloadDone)
         )
         if check_update_status:
             asyncio.create_task(check_update(local_package=TargetPackage.from_response(record), context=context))
@@ -145,10 +143,10 @@ async def download_package(
             with_labels=[str(Label.PACKAGE_DOWNLOADING)],
             with_attributes={
                 'packageName': package_name,
-                'packageVersion': version,
+                'packageVersion': version
             },
             on_enter=lambda ctx_enter: ctx_enter.send(
-                PackageEvent(packageName=package_name, version=version, event=Event.downloadStarted)
+                PackageEventResponse(packageName=package_name, version=version, event=Event.downloadStarted)
             ),
             on_exit=on_exit,
     ) as ctx:
@@ -169,10 +167,23 @@ async def download_package(
             context=ctx
         )
         db = parse_json(env.pathsBook.local_cdn_docdb)
-        record = next(d for d in db['documents'] if d['library_id'] == f"{package_name}#{version}")
+        versions = [d for d in db['documents'] if d['library_name'] == package_name]
+        record = next(d for d in versions if d['library_id'] == f"{package_name}#{version}")
         response = DownloadedPackageResponse(
             packageName=package_name,
             version=version,
+            versions=[d['version'] for d in versions],
             fingerprint=record['fingerprint']
         )
         await ctx.send(response)
+
+
+def get_version_info(version_data, env: YouwolEnvironment):
+    minio_path = env.pathsBook.local_cdn_storage
+    package_path = version_data["library_name"].replace("@", "")
+    version = version_data['version']
+    entry_point = version_data['bundle']
+    base_path = minio_path / 'libraries' / package_path / version
+    files_count = sum([len(files) for r, d, files in os.walk(base_path)])
+    entry_point_size = (base_path / entry_point).stat().st_size if (base_path / entry_point).exists() else '-1'
+    return {"filesCount": files_count, "entryPointSize": entry_point_size, "version": version}

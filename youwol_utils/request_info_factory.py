@@ -20,6 +20,11 @@ def url_match(request: Request, pattern: str):
         replaced.append(request.method)
     parts_target = request.url.path.split("/")
     parts_regex = regex.split("/")
+    if '**' not in parts_regex and len(parts_target) != len(parts_regex):
+        return False, None
+    if '**' in parts_regex and parts_regex.index('**') != len(parts_regex) - 1:
+        raise ValueError("'**' can only be located at the trailing part of the pattern")
+
     for i, part in enumerate(parts_target):
         if i >= len(parts_regex):
             return False, None
@@ -111,7 +116,14 @@ class CdnAppsServer(PatternRequestInfoExtractor):
     pattern = "*:/applications/**"
 
     def extract_from_pattern(self, substitutes):
-        [_, [a, b, *_]] = substitutes
+        try:
+            [_, [a, b, *_]] = substitutes
+        except ValueError:
+            # e.g., for the 'healthz' end-point
+            [_, a] = substitutes
+            return RequestInfo(message=f"application ({a})", attributes={'service': 'cdn-apps-server'},
+                               labels=[Label.APPLICATION])
+
         resource = f"{a}/{b}" if a.startswith('@') else a
         return RequestInfo(message="application", attributes={'service': 'cdn-apps-server', 'resource': resource},
                            labels=[Label.APPLICATION])
@@ -173,9 +185,11 @@ class GetCDNPackage2(PatternRequestInfoExtractor):
     pattern = 'GET:/api/cdn-backend/libraries/*/*'
 
     def extract_from_pattern(self, substitutes):
-        [name, version] = substitutes
-        return RequestInfo(message=f"{name}/{version}",
-                           attributes={'package': name, 'version': version})
+        if len(substitutes) >= 2:
+            [name, version] = substitutes
+            return RequestInfo(message=f"{name}/{version}", attributes={'package': name, 'version': version})
+        name = substitutes[0]
+        return RequestInfo(message=f"{name}", attributes={'package': name})
 
 
 class GetTreedbItem(PatternRequestInfoExtractor):

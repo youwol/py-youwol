@@ -7,12 +7,13 @@ from pydantic import BaseModel
 from starlette.websockets import WebSocket
 
 from youwol_utils import to_json, JSON
-from youwol_utils.context import WsContextLogger, ContextLogger, LogEntry, Label
+from youwol_utils.context import WsContextReporter, ContextReporter, LogEntry, Label
 
 
 @dataclass(frozen=False)
 class WebSocketsStore:
-    userChannel: Union[WebSocket, None] = None
+    logs: Union[WebSocket, None] = None
+    data: Union[WebSocket, None] = None
 
 
 def web_socket_cache():
@@ -30,7 +31,7 @@ class Log(BaseModel):
     timestamp: int
 
 
-class AdminContextLogger(ContextLogger):
+class InMemoryReporter(ContextReporter):
     max_count = 10000
 
     root_node_logs: List[Log] = []
@@ -40,7 +41,12 @@ class AdminContextLogger(ContextLogger):
     errors = set()
 
     def __init__(self):
-        super()
+        super().__init__()
+
+    def clear(self):
+        self.root_node_logs = []
+        self.node_logs = []
+        self.leaf_logs = []
 
     def resize_if_needed(self, items: List[any]):
         if len(items) > 2 * self.max_count:
@@ -48,9 +54,12 @@ class AdminContextLogger(ContextLogger):
         return items
 
     async def log(self, entry: LogEntry):
+        if str(Label.LOG) in entry.labels:
+            return
+
         try:
             data = to_json(entry.data) if isinstance(entry.data, BaseModel) else entry.data
-            _text = json.dumps(data)
+            json.dumps(data)
         except (TypeError, OverflowError):
             print("error in JSON serialization")
             return
@@ -82,6 +91,11 @@ class AdminContextLogger(ContextLogger):
         self.leaf_logs = self.resize_if_needed(self.leaf_logs)
 
 
-class UserContextLogger(WsContextLogger):
+class LogsStreamer(WsContextReporter):
     def __init__(self):
-        super().__init__(lambda: [WebSocketsStore.userChannel])
+        super().__init__(lambda: [WebSocketsStore.logs])
+
+
+class WsDataStreamer(WsContextReporter):
+    def __init__(self):
+        super().__init__(lambda: [WebSocketsStore.data])

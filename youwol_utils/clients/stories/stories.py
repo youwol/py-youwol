@@ -14,6 +14,26 @@ class StoriesClient:
     headers: Dict[str, str] = field(default_factory=lambda: {})
     connector = aiohttp.TCPConnector(verify_ssl=False)
 
+    async def healthz(self, **kwargs):
+
+        url = f"{self.url_base}/healthz"
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with await session.get(url=url, **kwargs) as resp:
+                if resp.status == 200:
+                    resp = await resp.json()
+                    return resp
+                await raise_exception_from_response(resp, **kwargs)
+
+    async def docs(self, **kwargs):
+
+        url = f"{self.url_base}/docs"
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with await session.get(url=url, **kwargs) as resp:
+                if resp.status == 200:
+                    resp = await resp.json()
+                    return resp
+                await raise_exception_from_response(resp, **kwargs)
+
     async def create_story(self, body, **kwargs):
 
         url = f"{self.url_base}/stories"
@@ -78,6 +98,28 @@ class StoriesClient:
 
                 await raise_exception_from_response(resp, **kwargs)
 
+    async def get_global_contents(self, story_id: str, **kwargs):
+
+        url = f"{self.url_base}/stories/{story_id}/global-contents"
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with await session.get(url=url, **kwargs) as resp:
+                if resp.status == 200:
+                    resp = await resp.json()
+                    return resp
+
+                await raise_exception_from_response(resp, **kwargs)
+
+    async def post_global_contents(self, story_id: str, body, **kwargs):
+
+        url = f"{self.url_base}/stories/{story_id}/global-contents"
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with await session.post(url=url, json=body, **kwargs) as resp:
+                if resp.status == 200:
+                    resp = await resp.json()
+                    return resp
+
+                await raise_exception_from_response(resp, **kwargs)
+
     async def get_children(self, story_id: str, parent_document_id: str, from_index=float, count=int, **kwargs):
         params = {
             "from-index": from_index,
@@ -114,6 +156,17 @@ class StoriesClient:
 
                 await raise_exception_from_response(resp, **kwargs)
 
+    async def get_document(self, story_id: str, document_id: str, **kwargs):
+
+        url = f"{self.url_base}/stories/{story_id}/documents/{document_id}"
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with await session.get(url=url, **kwargs) as resp:
+                if resp.status == 200:
+                    resp = await resp.json()
+                    return resp
+
+                await raise_exception_from_response(resp, **kwargs)
+
     async def create_document(self, story_id: str, body, **kwargs):
 
         url = f"{self.url_base}/stories/{story_id}/documents"
@@ -139,6 +192,17 @@ class StoriesClient:
     async def update_document(self, story_id: str, document_id: str, body, **kwargs):
 
         url = f"{self.url_base}/stories/{story_id}/documents/{document_id}"
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with await session.post(url=url, json=body, **kwargs) as resp:
+                if resp.status == 200:
+                    resp = await resp.json()
+                    return resp
+
+                await raise_exception_from_response(resp, **kwargs)
+
+    async def move_document(self, story_id: str, document_id: str, body, **kwargs):
+
+        url = f"{self.url_base}/stories/{story_id}/documents/{document_id}/move"
         async with aiohttp.ClientSession(headers=self.headers) as session:
             async with await session.post(url=url, json=body, **kwargs) as resp:
                 if resp.status == 200:

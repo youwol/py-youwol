@@ -96,6 +96,7 @@ class PipelineStepStatus(Enum):
     OK = "OK"
     KO = "KO"
     outdated = "outdated"
+    running = "running"
     none = "none"
 
 
@@ -224,6 +225,7 @@ class Family(Enum):
 
 class Target(BaseModel):
     family: Family
+    links: List[Link] = []
 
 
 class BrowserTarget(Target):

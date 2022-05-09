@@ -8,8 +8,9 @@ import zipfile
 from fnmatch import fnmatch
 from os import PathLike
 from pathlib import Path
-from typing import cast, Union, List, Set, Iterable, Tuple, Optional, Callable
+from typing import cast, Union, List, Set, Iterable, Tuple, Optional, Callable, IO
 
+import aiohttp
 import yaml
 from pydantic import BaseModel
 
@@ -219,3 +220,36 @@ def existing_path_or_default(path: Union[str, Path],
 
     final_root = Path(default_root) if default_root else Path(root_candidates[0])
     return final_root / typed_path, False
+
+
+async def get_databases_path(pyyouwol_port):
+    async with aiohttp.ClientSession() as session:
+        async with await session.get(url=f"http://localhost:{pyyouwol_port}/admin/environment/status") as resp:
+            if resp.status == 200:
+                json_resp = await resp.json()
+                return Path(json_resp['configuration']['pathsBook']['databases'])
+
+
+async def get_running_py_youwol_env(py_youwol_port):
+    async with aiohttp.ClientSession() as session:
+        async with await session.get(url=f"http://localhost:{py_youwol_port}/admin/environment/status") as resp:
+            if resp.status == 200:
+                json_resp = await resp.json()
+                return json_resp['configuration']
+
+
+def extract_zip_file(file: IO, zip_path: Union[Path, str], dir_path: Union[Path, str], delete_original=True):
+    dir_path = str(dir_path)
+    with open(zip_path, 'ab') as f:
+        for chunk in iter(lambda: file.read(10000), b''):
+            f.write(chunk)
+
+    compressed_size = zip_path.stat().st_size
+
+    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        zip_ref.extractall(dir_path)
+
+    if delete_original:
+        os.remove(zip_path)
+
+    return compressed_size

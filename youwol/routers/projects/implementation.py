@@ -7,11 +7,18 @@ from youwol.environment.paths import PathsBook
 from youwol.environment.projects_loader import ProjectLoader
 from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.projects.models import (
-    PipelineStepStatusResponse, ArtifactResponse
+    PipelineStepStatusResponse, ArtifactResponse, PipelineStepEvent, Event
 )
 from youwol_utils import to_json, ProjectNotFound, decode_id, PipelineStepNotFound, PipelineFlowNotFound
 from youwol_utils.context import Context
 from youwol_utils.utils_paths import matching_files, parse_json
+
+
+def is_step_running(project_id: str, flow_id: str, step_id: str, env: YouwolEnvironment):
+    if 'runningProjectSteps' in env.private_cache \
+            and f"{project_id}#{flow_id}#{step_id}" in env.private_cache['runningProjectSteps']:
+        return True
+    return False
 
 
 async def get_project_step(
@@ -91,10 +98,24 @@ async def get_status(
     paths: PathsBook = env.pathsBook
     async with context.start(
             action="implementation.get_status",
-            with_attributes={'projectId': project.id, 'flowId': flow_id, 'stepId': step.id}
+            with_attributes={'projectId': project.id, 'flowId': flow_id, 'stepId': step.id},
+            on_enter=lambda ctx_enter: ctx_enter.send(
+                PipelineStepEvent(projectId=project.id, flowId=flow_id, stepId=step.id, event=Event.statusCheckStarted)
+            ),
     ) as ctx:
         path = paths.artifacts_step(project_name=project.name, flow_id=flow_id, step_id=step.id)
         manifest = Manifest(**parse_json(path / 'manifest.json')) if (path / 'manifest.json').exists() else None
+
+        if is_step_running(project.id, flow_id, step.id, env):
+            return PipelineStepStatusResponse(
+                projectId=project.id,
+                flowId=flow_id,
+                stepId=step.id,
+                manifest=manifest,
+                artifactFolder=path,
+                artifacts=[],
+                status=PipelineStepStatus.running
+            )
 
         # noinspection PyBroadException
         try:

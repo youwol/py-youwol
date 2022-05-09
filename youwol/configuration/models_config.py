@@ -6,8 +6,9 @@ from pydantic import BaseModel
 
 from youwol.configuration.models_k8s import K8sCluster
 from youwol.environment.models import Events
-from youwol.middlewares.models_dispatch import AbstractDispatch
+from youwol.middlewares.models_dispatch import AbstractDispatch, RedirectDispatch
 from youwol.routers.custom_commands.models import Command
+from youwol_utils.servers.fast_api import FastApiRouter
 
 
 class PortRange(BaseModel):
@@ -40,13 +41,15 @@ class ConfigurationData(BaseModel):
     httpPort: Optional[int]
     openIdHost: Optional[str]
     user: Optional[str]
+    portsBook: Optional[Dict[str, int]]
+    routers: Optional[List[FastApiRouter]]
     projectsDirs: Optional[Union[ConfigPath, List[ConfigPath]]]
     configDir: Optional[ConfigPath]
     dataDir: Optional[ConfigPath]
     cacheDir: Optional[ConfigPath]
     serversPortsRange: Optional[PortRange]
     cdnAutoUpdate: Optional[bool]
-    dispatches: Optional[List[Union[str, Redirection, CdnOverride, AbstractDispatch]]]
+    dispatches: Optional[List[Union[str, Redirection, CdnOverride, AbstractDispatch, RedirectDispatch]]]
     defaultModulePath: Optional[ConfigPath]
     additionalPythonSrcPath: Optional[Union[ConfigPath, List[ConfigPath]]]
     events: Optional[Union[Events, str, ModuleLoading]]
