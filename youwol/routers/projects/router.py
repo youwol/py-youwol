@@ -5,7 +5,7 @@ import os
 import shutil
 from datetime import datetime
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from starlette.requests import Request
 
 from youwol.environment.models_project import Project, Manifest, PipelineStepStatus
@@ -166,13 +166,28 @@ async def project_artifacts(
         return response
 
 
+async def run_upstream_steps(request: Request, project: Project, flow_id: str, step_id: str, context: Context):
+
+    async with context.start(action="run_upstream_steps") as ctx:
+        parent_steps = project.get_direct_upstream_steps(flow_id, step_id)
+        parent_steps_ids_to_run = [statusStep.stepId
+                                   for statusStep in [await get_status(project, flow_id, parent_step, context=ctx)
+                                                      for parent_step in parent_steps]
+                                   if statusStep.status != PipelineStepStatus.OK]
+        for parent_step_id in parent_steps_ids_to_run:
+            await run_pipeline_step(request=request, project_id=project.id, flow_id=flow_id,
+                                    parent_step_id=parent_step_id, run_upstream=True)
+        # Do we need to check for KOs in previous run and raise exception ?
+
+
 @router.post("/{project_id}/flows/{flow_id}/steps/{step_id}/run",
              summary="status")
 async def run_pipeline_step(
         request: Request,
         project_id: str,
         flow_id: str,
-        step_id: str
+        step_id: str,
+        run_upstream: bool = Query(alias='run-upstream', default=False)
 ):
   
     async def on_enter(ctx_enter):
@@ -222,22 +237,9 @@ async def run_pipeline_step(
         project, step = await get_project_step(project_id, step_id, ctx)
         error_run = None
         try:
-            parent_steps = project.get_direct_upstream_steps(flow_id, step_id)
-            parent_steps_ids_to_run = [statusStep.stepId
-                                       for statusStep in [await get_status(project, flow_id, parent_step, context=ctx)
-                                                          for parent_step in parent_steps]
-                                       if statusStep.status != PipelineStepStatus.OK]
-            for parent_step_id in parent_steps_ids_to_run:
-                await run_pipeline_step(request, project_id, flow_id, parent_step_id)
-
-            # Is this really necessary ?
-            # parent_steps_ids_ko = [statusStep.stepId
-            #                        for statusStep in [await get_status(project, flow_id, parent_step, context=ctx)
-            #                                           for parent_step in parent_steps]
-            #                        if statusStep.status != PipelineStepStatus.OK]
-            #
-            # if len(parent_steps_ids_ko) > 0:
-            #     raise Exception("Some parents steps failed to run")
+            if run_upstream:
+                await run_upstream_steps(request=request, project=project, flow_id=flow_id, step_id=step_id,
+                                         context=ctx)
 
             outputs = await step.execute_run(project, flow_id, ctx)
             outputs = outputs or []
