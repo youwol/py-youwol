@@ -96,6 +96,7 @@ class PipelineStepStatus(Enum):
     OK = "OK"
     KO = "KO"
     outdated = "outdated"
+    running = "running"
     none = "none"
 
 
