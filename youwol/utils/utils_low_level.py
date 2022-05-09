@@ -7,6 +7,7 @@ import tempfile
 from importlib.machinery import SourceFileLoader
 from importlib.util import spec_from_loader
 from pathlib import Path
+import socket
 from typing import Union, Mapping, List, Type, cast, TypeVar, Optional
 
 import aiohttp
@@ -189,6 +190,13 @@ def assert_python():
         print(f"""Your version of python is not compatible with py-youwol:
         Recommended: 3.9.x""")
         exit(1)
+
+
+def assert_py_youwol_starting_preconditions(http_port: int):
+    a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    location = ("127.0.0.1", http_port)
+    if a_socket.connect_ex(location) == 0:
+        raise ValueError(f"The port {http_port} is already listening")
 
 
 async def execute_shell_cmd(cmd: str, context: Context, log_outputs=True):
