@@ -8,6 +8,9 @@ import youwol
 from youwol_utils.utils_paths import existing_path_or_default
 
 
+docdb_filename = "data.json"
+
+
 class PathsBook(BaseModel):
 
     config: Path
@@ -26,23 +29,35 @@ class PathsBook(BaseModel):
 
     @property
     def local_cdn_docdb(self) -> Path:
-        return self.local_docdb / 'cdn' / 'libraries' / 'data.json'
+        return self.local_docdb / 'cdn' / 'libraries' / docdb_filename
 
     @property
     def local_stories_docdb(self) -> Path:
-        return self.local_docdb / 'stories' / 'stories' / 'data.json'
+        return self.local_docdb / 'stories' / 'stories' / docdb_filename
 
     @property
     def local_stories_documents_docdb(self) -> Path:
-        return self.local_docdb / 'stories' / 'documents' / 'data.json'
+        return self.local_docdb / 'stories' / 'documents' / docdb_filename
 
     @property
     def local_treedb_docdb(self) -> Path:
-        return self.local_docdb / 'tree_db' / 'items' / 'data.json'
+        return self.local_docdb / 'tree_db' / 'items' / docdb_filename
+
+    @property
+    def local_treedb_items_docdb(self) -> Path:
+        return self.local_docdb / 'tree_db' / 'items' / docdb_filename
+
+    @property
+    def local_treedb_deleted_docdb(self) -> Path:
+        return self.local_docdb / 'tree_db' / 'deleted' / docdb_filename
 
     @property
     def local_assets_entities_docdb(self) -> Path:
-        return self.local_docdb / 'assets' / 'entities' / 'data.json'
+        return self.local_docdb / 'assets' / 'entities' / docdb_filename
+
+    @property
+    def local_assets_access_docdb(self) -> Path:
+        return self.local_docdb / 'assets' / 'access_policy' / docdb_filename
 
     @property
     def local_storage(self) -> Path:

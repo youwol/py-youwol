@@ -1,5 +1,6 @@
 import asyncio
 import itertools
+import shutil
 from typing import List
 
 from fastapi import APIRouter
@@ -12,11 +13,11 @@ from youwol.routers.local_cdn.implementation import get_latest_local_cdn_version
     download_packages_from_queue, get_version_info
 from youwol.routers.local_cdn.models import CheckUpdatesResponse, CheckUpdateResponse, DownloadPackagesBody, \
     ResetCdnBody, PackageEventResponse, Event, CdnStatusResponse, CdnPackage, CdnVersion, CdnPackageResponse, cdn_topic, \
-    ResetCdnResponse
+    ResetCdnResponse, HardResetCdnResponse, HardResetDbStatus
 from youwol.web_socket import LogsStreamer
 from youwol_utils import decode_id, encode_id
 from youwol_utils.context import Context
-from youwol_utils.utils_paths import parse_json
+from youwol_utils.utils_paths import parse_json, write_json
 
 router = APIRouter()
 
@@ -132,7 +133,7 @@ async def download(
              response_model=ResetCdnResponse,
              summary="reset local CDN"
              )
-async def reset(
+async def smooth_reset(
         request: Request,
         body: ResetCdnBody
 ):
@@ -165,3 +166,68 @@ async def reset(
                                             headers=ctx.headers())
         await status(request=request)
         return ResetCdnResponse(deletedPackages=[p['name'] for p in packages])
+
+
+@router.post("/hard-reset",
+             response_model=HardResetCdnResponse,
+             summary="reset local CDN"
+             )
+async def hard_reset(
+        request: Request
+):
+    async with Context.start_ep(
+            request=request,
+            action="reset CDN",
+            with_attributes={'topic': 'updatesCdn'},
+            with_reporters=[LogsStreamer()]
+    ) as ctx:  # type: Context
+        env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
+        packages = [p for p in parse_json(env.pathsBook.local_cdn_docdb)['documents']]
+        asset_ids_to_delete = [encode_id(encode_id(p["library_name"])) for p in packages]
+
+        await ctx.info(f"Found a total of {len(packages)} packages to remove",
+                       data={"packages": [p['library_name'] for p in packages]})
+        assets_entities = parse_json(env.pathsBook.local_assets_entities_docdb)['documents']
+        assets_entities_remaining = [p for p in assets_entities if p['asset_id'] not in asset_ids_to_delete]
+
+        assets_access = parse_json(env.pathsBook.local_assets_access_docdb)['documents']
+        assets_access_remaining = [p for p in assets_access if p['asset_id'] not in asset_ids_to_delete]
+
+        treedb_items = parse_json(env.pathsBook.local_treedb_items_docdb)['documents']
+        treedb_items_remaining = [p for p in treedb_items if p['related_id'] not in asset_ids_to_delete]
+
+        treedb_deleted = parse_json(env.pathsBook.local_treedb_deleted_docdb)['documents']
+        treedb_deleted_remaining = [p for p in treedb_items if p['related_id'] not in asset_ids_to_delete]
+
+        resp = HardResetCdnResponse(
+            cdnLibraries=HardResetDbStatus(
+                originalCount=len(packages),
+                remainingCount=0
+            ),
+            assetEntities=HardResetDbStatus(
+                originalCount=len(assets_entities),
+                remainingCount=len(assets_entities_remaining)
+            ),
+            assetAccess=HardResetDbStatus(
+                originalCount=len(assets_access),
+                remainingCount=len(assets_access_remaining)
+            ),
+            treedbItems=HardResetDbStatus(
+                originalCount=len(treedb_items),
+                remainingCount=len(treedb_items_remaining)
+            ),
+            treedbDeleted=HardResetDbStatus(
+                originalCount=len(treedb_deleted),
+                remainingCount=len(treedb_deleted_remaining)
+            )
+        )
+        write_json({"documents": []}, env.pathsBook.local_cdn_docdb)
+        write_json({"documents": assets_entities_remaining}, env.pathsBook.local_assets_entities_docdb)
+        write_json({"documents": assets_access_remaining}, env.pathsBook.local_assets_access_docdb)
+        write_json({"documents": treedb_items_remaining}, env.pathsBook.local_treedb_items_docdb)
+        write_json({"documents": treedb_deleted_remaining}, env.pathsBook.local_treedb_deleted_docdb)
+
+        shutil.rmtree(env.pathsBook.local_cdn_storage, ignore_errors=True)
+        await status(request=request)
+
+        return resp

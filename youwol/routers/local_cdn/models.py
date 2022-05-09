@@ -68,6 +68,19 @@ class ResetCdnResponse(BaseModel):
     deletedPackages: List[str]
 
 
+class HardResetDbStatus(BaseModel):
+    remainingCount: int
+    originalCount: int
+
+
+class HardResetCdnResponse(BaseModel):
+    cdnLibraries: HardResetDbStatus
+    assetEntities: HardResetDbStatus
+    assetAccess: HardResetDbStatus
+    treedbItems: HardResetDbStatus
+    treedbDeleted: HardResetDbStatus
+
+
 class DownloadedPackageResponse(BaseModel):
     packageName: str
     version: str
