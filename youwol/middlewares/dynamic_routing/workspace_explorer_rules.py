@@ -63,11 +63,20 @@ class GetChildrenDispatch(AbstractDispatch):
                 return_exceptions=True
                 )
             if isinstance(remote_resp, Exception):
-                return JSONResponse(local_resp)
+                await ctx.info(text="The folder is not found in remote")
             if isinstance(local_resp, Exception):
-                return JSONResponse(remote_resp)
-            local_children: ChildrenResponse = cast_response(local_resp, ChildrenResponse)
-            remote_children: ChildrenResponse = cast_response(remote_resp, ChildrenResponse)
+                await ctx.info(text="The folder is not found in local")
+
+            local_children: ChildrenResponse = cast_response(local_resp, ChildrenResponse) \
+                if not isinstance(local_resp, Exception) else ChildrenResponse(items=[], folders=[])
+
+            remote_children: ChildrenResponse = cast_response(remote_resp, ChildrenResponse) \
+                if not isinstance(remote_resp, Exception) else ChildrenResponse(items=[], folders=[])
+
+            await ctx.info(text="Got remote and local items",
+                           data={"localChildren": local_children.dict(), "remoteChildren": remote_children.dict()}
+                           )
+
             local_ids = [c.itemId for c in local_children.items] + [c.folderId for c in local_children.folders]
             remote_ids = [c.itemId for c in remote_children.items] + [c.folderId for c in remote_children.folders]
 
