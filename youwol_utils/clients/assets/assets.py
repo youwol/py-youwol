@@ -165,6 +165,17 @@ class AssetsClient:
 
                 await raise_exception_from_response(resp, **kwargs)
 
+    async def get_access_info(self, asset_id: str, **kwargs):
+
+        url = f"{self.url_base}/assets/{asset_id}/access-info"
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with await session.get(url=url, **kwargs) as resp:
+                if resp.status == 200:
+                    resp = await resp.json()
+                    return resp
+
+                await raise_exception_from_response(resp, **kwargs)
+
     async def get_records(self, body, **kwargs):
 
         url = f"{self.url_base}/records"

@@ -67,6 +67,37 @@ class User(BaseModel):
     name: str
     groups: List[Group]
 
+class OwningGroup(BaseModel):
+    name: str
+    groupId: str
+
+
+class GroupAccess(BaseModel):
+    read: ReadPolicyEnum
+    share: SharePolicyEnum
+    expiration: Union[None, str]
+
+
+class ExposingGroup(BaseModel):
+    name: str
+    groupId: str
+    access: GroupAccess
+
+
+class OwnerInfo(BaseModel):
+    exposingGroups: List[ExposingGroup]
+    defaultAccess: GroupAccess
+
+
+class ConsumerInfo(BaseModel):
+    permissions: PermissionsResp
+
+
+class AccessInfoResp(BaseModel):
+    owningGroup: OwningGroup
+    ownerInfo: Union[None, OwnerInfo]
+    consumerInfo: ConsumerInfo
+
 
 class FormData(NamedTuple):
     objectName: Union[str, Path]

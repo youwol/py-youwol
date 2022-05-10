@@ -4,6 +4,7 @@ import io
 import itertools
 import os
 import zipfile
+from datetime import datetime
 from pathlib import Path
 from typing import Tuple, Union, List, Mapping, Any, Dict
 from uuid import uuid4
@@ -18,7 +19,8 @@ from youwol_utils import (
 )
 from youwol_assets_backend.configurations import Configuration, Constants
 from youwol_utils.context import Context
-from youwol_utils.http_clients.assets_backend.models import ParsedFile, FormData, AssetResponse
+from youwol_utils.http_clients.assets_backend.models import ParsedFile, FormData, AssetResponse, GroupAccess, \
+    ReadPolicyEnumFactory, SharePolicyEnumFactory, AccessPolicyResp
 
 flatten = itertools.chain.from_iterable
 
@@ -284,3 +286,20 @@ def access_policy_record_id(
         group_id: str
 ):
     return asset_id + "_" + group_id
+
+
+def format_policy(policy: AccessPolicyResp) -> GroupAccess:
+    if policy.read not in ReadPolicyEnumFactory:
+        raise RuntimeError("Read policy not known")
+
+    if policy.share not in SharePolicyEnumFactory:
+        raise RuntimeError("Share policy not known")
+
+    expiration = None
+    if policy.read == "expiration-date":
+        deadline = policy.timestamp + policy.parameters['period']
+        expiration = str(datetime.fromtimestamp(deadline))
+
+    return GroupAccess(read=ReadPolicyEnumFactory[policy.read],
+                       expiration=expiration,
+                       share=SharePolicyEnumFactory[policy.share])

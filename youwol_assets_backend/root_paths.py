@@ -4,6 +4,7 @@ import json
 import time
 import uuid
 from pathlib import Path
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi import Query as RequestQuery
@@ -12,15 +13,17 @@ from starlette.responses import Response
 
 from youwol_utils import (
     user_info, private_group_id, to_group_id, is_child_group,
-    ancestors_group_id, QueryBody, Query, WhereClause, get_leaf_group_ids, FileData
+    ancestors_group_id, QueryBody, Query, WhereClause, get_leaf_group_ids, FileData, to_group_scope, is_authorized_write
 )
 from youwol_assets_backend.configurations import Configuration, get_configuration, Constants
 from youwol_utils.context import Context
 from youwol_utils.http_clients.assets_backend import AssetResponse, NewAssetBody, PostAssetBody, SharePolicyEnum, \
-    ReadPolicyEnum, AccessPolicyBody, AccessPolicyResp, PermissionsResp, HealthzResponse
+    ReadPolicyEnum, AccessPolicyBody, AccessPolicyResp, PermissionsResp, HealthzResponse, AccessInfoResp,\
+    ConsumerInfo, OwningGroup, OwnerInfo, ExposingGroup
 from .utils import (
     to_doc_db_id, access_policy_record_id, ensure_post_permission, format_asset,
     ensure_get_permission, to_snake_case, ensure_delete_permission, format_record_history, format_image, get_thumbnail,
+    format_policy,
 )
 
 router = APIRouter(tags=["assets-backend"])
@@ -252,6 +255,55 @@ def get_permission(write, policies):
     return PermissionsResp(write=write, read=False, share=False, expiration=None)
 
 
+async def get_permissions_implementation(
+        request: Request,
+        asset_id: str,
+        configuration: Configuration,
+        context: Context
+) -> PermissionsResp:
+
+    user = user_info(request)
+    group_ids = get_leaf_group_ids(user)
+    group_ids = list(flatten([[group_id] + ancestors_group_id(group_id) for group_id in group_ids]))
+    group_ids = list(set(group_ids))
+
+    asset = await ensure_get_permission(request=request, asset_id=asset_id, scope='r', configuration=configuration,
+                                        context=context)
+    #  watch for owner case with read access
+    if any([is_child_group(child_group_id=group_id, parent_group_id=asset['group_id'])
+            for group_id in group_ids]):
+        return PermissionsResp(write=True, read=True, share=True, expiration=None)
+
+    # watch if default policy is sufficient
+    docdb_access = configuration.doc_db_access_policy
+
+    body_default = QueryBody(
+        max_results=1,
+        query=Query(where_clause=[WhereClause(column="asset_id", relation="eq", term=asset_id),
+                                  WhereClause(column="consumer_group_id", relation="eq", term="*")])
+    )
+
+    default = await docdb_access.query(query_body=body_default, owner=Constants.public_owner, headers=context.headers())
+
+    if len(default['documents']) > 0 and default['documents'][0]['read'] == ReadPolicyEnum.authorized \
+            and default['documents'][0]['share'] == SharePolicyEnum.authorized:
+        return PermissionsResp(write=False, read=True, share=True, expiration=None)
+
+    # then gather specific policies for the all the groups the user belongs
+    bodies_specific = [QueryBody(
+        max_results=1,
+        query=Query(where_clause=[WhereClause(column="asset_id", relation="eq", term=asset_id),
+                                  WhereClause(column="consumer_group_id", relation="eq", term=group_id)])
+    ) for group_id in group_ids]
+
+    specifics = await asyncio.gather(*[docdb_access.query(query_body=body, owner=Constants.public_owner,
+                                                          headers=context.headers()) for body in bodies_specific])
+    policies = list(flatten([d["documents"] for d in specifics]))
+    permission = get_permission(False, policies)
+
+    return permission
+
+
 @router.get(
     "/assets/{asset_id}/permissions",
     response_model=PermissionsResp,
@@ -264,47 +316,60 @@ async def get_permissions(
     async with Context.start_ep(
             request=request
     ) as ctx:  # type: Context
+        return await get_permissions_implementation(request=request, asset_id=asset_id, configuration=configuration,
+                                                    context=ctx)
 
-        user = user_info(request)
-        group_ids = get_leaf_group_ids(user)
-        group_ids = list(flatten([[group_id] + ancestors_group_id(group_id) for group_id in group_ids]))
-        group_ids = list(set(group_ids))
 
-        asset = await ensure_get_permission(request=request, asset_id=asset_id, scope='r', configuration=configuration,
-                                            context=ctx)
-        #  watch for owner case with read access
-        if any([is_child_group(child_group_id=group_id, parent_group_id=asset['group_id'])
-                for group_id in group_ids]):
-            return PermissionsResp(write=True, read=True, share=True, expiration=None)
+@router.get("/assets/{asset_id}/access-info",
+            response_model=AccessInfoResp,
+            summary="get asset info w/ access")
+async def access_info(
+        request: Request,
+        asset_id: str,
+        configuration: Configuration = Depends(get_configuration)
+):
+    response = Optional[AccessInfoResp]
 
-        # watch if default policy is sufficient
+    async with Context.start_ep(
+            request=request,
+            response=lambda: response,
+            with_attributes={"asset_id": asset_id}
+    ) as ctx:
         docdb_access = configuration.doc_db_access_policy
-
         body_default = QueryBody(
             max_results=1,
-            query=Query(where_clause=[WhereClause(column="asset_id", relation="eq", term=asset_id),
-                                      WhereClause(column="consumer_group_id", relation="eq", term="*")])
+            query=Query(where_clause=[WhereClause(column="asset_id", relation="eq", term=asset_id)])
         )
 
-        default = await docdb_access.query(query_body=body_default, owner=Constants.public_owner, headers=ctx.headers())
+        policies = await docdb_access.query(query_body=body_default, owner=Constants.public_owner,
+                                            headers=ctx.headers())
 
-        if len(default['documents']) > 0 and default['documents'][0]['read'] == ReadPolicyEnum.authorized \
-                and default['documents'][0]['share'] == SharePolicyEnum.authorized:
-            return PermissionsResp(write=False, read=True, share=True, expiration=None)
+        asset, permissions = await asyncio.gather(
+            get_asset_implementation(request=request, asset_id=asset_id, configuration=configuration, context=ctx),
+            get_permissions_implementation(request=request, asset_id=asset_id, configuration=configuration, context=ctx)
+        )
+        owner_info = None
+        if is_authorized_write(request, asset.groupId):
+            groups = list({policy['consumer_group_id'] for policy in policies['documents']
+                           if policy['consumer_group_id'] != asset.groupId})
+            policies = await asyncio.gather(*[
+                get_access_policy(request=request, asset_id=asset_id, group_id=group_id, configuration=configuration)
+                for group_id in groups + ["*"]
+            ])
+            exposing_groups = [ExposingGroup(name=to_group_scope(group), groupId=group, access=format_policy(policy))
+                               for group, policy in zip(groups, policies[0:-1])]
+            default_access = format_policy(policies[-1])
+            owner_info = OwnerInfo(exposingGroups=exposing_groups, defaultAccess=default_access)
 
-        # then gather specific policies for the all the groups the user belongs
-        bodies_specific = [QueryBody(
-            max_results=1,
-            query=Query(where_clause=[WhereClause(column="asset_id", relation="eq", term=asset_id),
-                                      WhereClause(column="consumer_group_id", relation="eq", term=group_id)])
-        ) for group_id in group_ids]
+        permissions = PermissionsResp(write=permissions.write, read=permissions.read, share=permissions.share,
+                                      expiration=permissions.expiration)
 
-        specifics = await asyncio.gather(*[docdb_access.query(query_body=body, owner=Constants.public_owner,
-                                                              headers=ctx.headers()) for body in bodies_specific])
-        policies = list(flatten([d["documents"] for d in specifics]))
-        permission = get_permission(False, policies)
-
-        return permission
+        consumer_info = ConsumerInfo(permissions=permissions)
+        response = AccessInfoResp(owningGroup=OwningGroup(name=to_group_scope(asset.groupId),
+                                                          groupId=asset.groupId),
+                                  ownerInfo=owner_info,
+                                  consumerInfo=consumer_info)
+        return response
 
 
 @router.delete("/assets/{asset_id}", summary="delete an asset")
@@ -336,6 +401,16 @@ async def delete_asset(
         return {}
 
 
+async def get_asset_implementation(
+        request: Request,
+        asset_id: str,
+        configuration: Configuration,
+        context: Context) -> AssetResponse:
+    asset = await ensure_get_permission(request=request, asset_id=asset_id, scope='r', configuration=configuration,
+                                        context=context)
+    return format_asset(asset, request)
+
+
 @router.get(
     "/assets/{asset_id}",
     response_model=AssetResponse,
@@ -348,10 +423,8 @@ async def get_asset(
     async with Context.start_ep(
             request=request
     ) as ctx:  # type: Context
-
-        asset = await ensure_get_permission(request=request, asset_id=asset_id, scope='r', configuration=configuration,
-                                            context=ctx)
-        return format_asset(asset, request)
+        return await get_asset_implementation(request=request, asset_id=asset_id, configuration=configuration,
+                                              context=ctx)
 
 
 @router.put(
