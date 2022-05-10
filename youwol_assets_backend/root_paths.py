@@ -455,7 +455,9 @@ async def clear_asset_history(
         return {}
 
 
-@router.post("/assets/{asset_id}/images/{filename}", summary="add an image to asset")
+@router.post("/assets/{asset_id}/images/{filename}",
+             response_model=AssetResponse,
+             summary="add an image to asset")
 async def post_image(
         request: Request,
         asset_id: str,
@@ -504,10 +506,13 @@ async def post_image(
                                                    owner=post_file_body.owner, content_type=post_file_body.content_type,
                                                    headers=ctx.headers())
                                for post_file_body in post_file_bodies])
-        return {}
+        return await get_asset_implementation(request=request, asset_id=asset_id, configuration=configuration,
+                                              context=ctx)
 
 
-@router.delete("/assets/{asset_id}/images/{filename}", summary="remove an image")
+@router.delete("/assets/{asset_id}/images/{filename}",
+               response_model=AssetResponse,
+               summary="remove an image")
 async def remove_image(
         request: Request,
         asset_id: str,
@@ -536,7 +541,8 @@ async def remove_image(
                                             owner=Constants.public_owner, headers=ctx.headers()),
                              storage.delete(Path(asset['kind']) / asset_id / "thumbnails" / filename,
                                             owner=Constants.public_owner, headers=ctx.headers()))
-        return {}
+        return await get_asset_implementation(request=request, asset_id=asset_id, configuration=configuration,
+                                              context=ctx)
 
 
 @router.get("/assets/{asset_id}/{media_type}/{name}", summary="return a media")
