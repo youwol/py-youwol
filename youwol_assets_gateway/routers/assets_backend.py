@@ -5,8 +5,8 @@ from starlette.responses import Response
 
 from youwol_assets_gateway.configurations import Configuration, get_configuration
 from youwol_utils.context import Context
-from youwol_utils.http_clients.assets_backend import HealthzResponse, AssetResponse, NewAssetBody, PostAssetBody,\
-    AccessPolicyBody, AccessPolicyResp, PermissionsResp
+from youwol_utils.http_clients.assets_backend import HealthzResponse, AssetResponse, NewAssetBody, PostAssetBody, \
+    AccessPolicyBody, AccessPolicyResp, PermissionsResp, AccessInfoResp
 
 router = APIRouter(tags=["assets-gateway.flux-backend"])
 
@@ -163,6 +163,23 @@ async def get_permissions(
             request=request
     ) as ctx:
         return await configuration.assets_client.get_permissions(
+            asset_id=asset_id,
+            headers=ctx.headers()
+        )
+
+
+@router.get("/assets/{asset_id}/access-info",
+            response_model=AccessInfoResp,
+            summary="permissions of the user on the asset")
+async def get_permissions(
+        request: Request,
+        asset_id: str,
+        configuration: Configuration = Depends(get_configuration)
+):
+    async with Context.start_ep(
+            request=request
+    ) as ctx:
+        return await configuration.assets_client.get_access_info(
             asset_id=asset_id,
             headers=ctx.headers()
         )
