@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import APIRouter, Depends, Query
 from starlette.requests import Request
 from starlette.responses import Response
@@ -5,6 +7,7 @@ from starlette.responses import Response
 from youwol_assets_gateway.raw_stores import AssetMeta
 from youwol_assets_gateway.routers.common import assert_write_permissions_folder_id, \
     assert_read_permissions_from_raw_id, assert_write_permissions_from_raw_id, create_asset, delete_asset
+from youwol_utils import encode_id
 from youwol_utils.context import Context
 from youwol_assets_gateway.configurations import Configuration, get_configuration
 from youwol_utils.http_clients.assets_gateway import NewAssetResponse
@@ -170,4 +173,37 @@ async def get_metadata(
         return await configuration.flux_client.get_metadata(
             project_id=project_id,
             headers=ctx.headers()
+        )
+
+
+@router.post("/projects/{project_id}/duplicate",
+             summary="duplicate a project",
+             response_model=NewAssetResponse)
+async def duplicate(
+        request: Request,
+        project_id: str,
+        folder_id: str = Query(None, alias="folder-id"),
+        configuration: Configuration = Depends(get_configuration)):
+
+    async with Context.start_ep(
+            request=request
+    ) as ctx:
+        await asyncio.gather(
+            assert_read_permissions_from_raw_id(raw_id=project_id, configuration=configuration, context=ctx),
+            assert_write_permissions_folder_id(folder_id=folder_id, context=ctx)
+        )
+        response = await configuration.flux_client.duplicate(
+            project_id=project_id,
+            headers=ctx.headers()
+        )
+        asset = await configuration.assets_client.get_asset(encode_id(project_id), headers=ctx.headers())
+        metadata = {**asset, "name": f"{asset['name']} (copy)", "images": []}
+        return await create_asset(
+            kind="flux-project",
+            raw_id=response["projectId"],
+            raw_response=response,
+            folder_id=folder_id,
+            metadata=AssetMeta(**metadata),
+            context=ctx,
+            configuration=configuration
         )

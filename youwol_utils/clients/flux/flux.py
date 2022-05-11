@@ -124,3 +124,14 @@ class FluxClient:
                     return resp
 
                 await raise_exception_from_response(resp, **kwargs)
+
+    async def duplicate(self, project_id: str, **kwargs):
+
+        url = f"{self.url_base}/projects/{project_id}/duplicate"
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with await session.post(url=url, **kwargs) as resp:
+                if resp.status == 200:
+                    resp = await resp.json()
+                    return resp
+
+                await raise_exception_from_response(resp, **kwargs)
