@@ -357,7 +357,7 @@ async def access_info(
                 for group_id in groups + ["*"]
             ])
             exposing_groups = [ExposingGroup(name=to_group_scope(group), groupId=group, access=format_policy(policy))
-                               for group, policy in zip(groups, policies[0:-1])]
+                               for group, policy in zip(groups, policies[0:-1]) if group != "*"]
             default_access = format_policy(policies[-1])
             owner_info = OwnerInfo(exposingGroups=exposing_groups, defaultAccess=default_access)
 
