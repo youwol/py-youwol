@@ -45,7 +45,7 @@ class Configuration:
         return [
             FluxProjectsStore(client=self.flux_client),
             PackagesStore(client=self.cdn_client),
-            DataStore(client=self.data_client),
+            DataStore(client=self.data_client, files_client=self.files_client),
             StoriesStore(client=self.stories_client)
         ]
 

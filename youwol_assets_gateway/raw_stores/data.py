@@ -5,15 +5,17 @@ from abc import ABC
 from dataclasses import dataclass
 from typing import Union, Mapping
 
+from aiohttp import ClientResponse
 from fastapi import HTTPException
 from starlette.requests import Request
 from starlette.responses import Response
 
 from youwol_utils import (
-    user_info, get_all_individual_groups, get_group,
-    # RecordsResponse, RecordsTable, RecordsKeyspace, RecordsDocDb, RecordsStorage, RecordsBucket, to_group_id,
+    user_info, get_all_individual_groups, get_group
 )
 from youwol_utils.clients.data_api.data import DataClient
+from youwol_utils.clients.files import FilesClient
+
 from .interface import (RawStore, RawId, AssetMeta, AssetImg)
 
 mime_types_text = ["application/json", "text/html", "application/javascript", "text/plain", "text/markdown",
@@ -25,6 +27,7 @@ mime_types_images = ["image/png", "image/jpeg", "image/gif", "image/bmp", "image
 @dataclass(frozen=True)
 class DataStore(RawStore, ABC):
     client: DataClient
+    files_client: FilesClient
     path_name = 'data'
     owner = '/youwol-users'
 
@@ -111,6 +114,18 @@ class DataStore(RawStore, ABC):
     async def get_asset(self, request: Request, raw_id: str, rest_of_path: Union[str, None], headers):
 
         storage, docdb = self.client.storage, self.client.docdb
+
+        try:
+            async def reader(response: ClientResponse):
+                return Response(content=await response.read(), headers={
+                    "Content-Encoding": response.headers.get("content-encoding"),
+                    "Content-Type": response.headers.get("content-type"),
+                    "cache-control": "public, max-age=31536000"
+                })
+            return await self.files_client.get(file_id=raw_id, reader=reader, headers=headers)
+            # this is the case of a 'new' data resolved by the 'old' end point => forward to files-backend
+        except HTTPException:
+            pass
 
         file, meta = await asyncio.gather(
             storage.get_bytes(path=raw_id, owner=self.owner, headers=headers),
