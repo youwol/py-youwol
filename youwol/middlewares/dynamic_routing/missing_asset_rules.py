@@ -16,7 +16,7 @@ from youwol_utils.context import Context
 from youwol_utils.request_info_factory import url_match
 
 
-class GetRawDispatch(AbstractDispatch):
+class GetRawDispatchDeprecated(AbstractDispatch):
 
     async def apply(self,
                     request: Request,
@@ -42,7 +42,41 @@ class GetRawDispatch(AbstractDispatch):
             return resp
 
 
-class GetMetadataDispatch(AbstractDispatch):
+class GetRawDispatch(AbstractDispatch):
+
+    async def apply(self,
+                    request: Request,
+                    call_next: RequestResponseEndpoint,
+                    context: Context
+                    ) -> Optional[Response]:
+
+        patterns = [
+            ("story", "GET:/api/assets-gateway/stories-backend/stories/*"),
+            ("flux-project", "GET:/api/assets-gateway/flux-backend/projects/*"),
+            ("data", "GET:/api/assets-gateway/files-backend/files/*"),
+            ("package", "GET:/api/assets-gateway/cdn-backend/resources/*/**"),
+        ]
+        matches = [(kind, url_match(request, pattern)) for kind, pattern in patterns if pattern[0]]
+        match = next(((kind, match) for kind, match in matches if match[0]), None)
+        if not match:
+            return None
+        kind, params = match
+        raw_id = params[0]
+
+        async with context.start(action="GetRawDispatch.apply") as ctx:
+            resp = await call_next(request)
+            if resp.status_code == 404:
+                await ctx.info("Raw data can not be locally retrieved, proceed to remote platform")
+                headers = {"Authorization": request.headers.get("authorization")}
+                resp = await redirect_api_remote(request, ctx)
+                thread = await ctx.get('download_thread', AssetDownloadThread)
+                await ctx.info("~> schedule asset download")
+                thread.enqueue_asset(url=request.url.path, kind=kind, raw_id=raw_id, context=ctx, headers=headers)
+                return resp
+            return resp
+
+
+class GetMetadataDispatchDeprecated(AbstractDispatch):
 
     async def apply(self,
                     request: Request,
@@ -51,6 +85,27 @@ class GetMetadataDispatch(AbstractDispatch):
                     ) -> Optional[Response]:
 
         match, replaced = url_match(request=request, pattern='GET:/api/assets-gateway/assets/**')
+        if not match:
+            return None
+
+        async with context.start(action="GetMetadataDispatchDeprecated.apply") as ctx:
+            resp = await call_next(request)
+            if resp.status_code == 404:
+                await ctx.info("Metadata can not be locally retrieved, proceed to remote platform")
+                return await redirect_api_remote(request=request, context=ctx)
+
+            return resp
+
+
+class GetAssetDispatch(AbstractDispatch):
+
+    async def apply(self,
+                    request: Request,
+                    call_next: RequestResponseEndpoint,
+                    context: Context
+                    ) -> Optional[Response]:
+
+        match, replaced = url_match(request=request, pattern='GET:/api/assets-gateway/assets-backend/assets/**')
         if not match:
             return None
 
@@ -63,7 +118,7 @@ class GetMetadataDispatch(AbstractDispatch):
             return resp
 
 
-class PostMetadataDispatch(AbstractDispatch):
+class PostMetadataDispatchDeprecated(AbstractDispatch):
 
     async def apply(self,
                     request: Request,
@@ -105,7 +160,7 @@ class PostMetadataDispatch(AbstractDispatch):
             return resp_remote
 
 
-class CreateAssetDispatch(AbstractDispatch):
+class CreateAssetDispatchDeprecated(AbstractDispatch):
 
     async def apply(self,
                     request: Request,
@@ -118,7 +173,7 @@ class CreateAssetDispatch(AbstractDispatch):
             return None
         env = await context.get('env', YouwolEnvironment)
 
-        async with context.start(action="CreateAssetDispatch.apply") as ctx:
+        async with context.start(action="CreateAssetDispatchDeprecated.apply") as ctx:
             folder_id = replaced[-1]
             await ensure_local_path(folder_id=folder_id, env=env, context=ctx)
             resp = await call_next(request)

@@ -51,9 +51,10 @@ fastapi_app.add_middleware(
         workspace_explorer.MoveBorrowInRemoteFolderDispatch(),
         loading_graph.GetLoadingGraphDispatch(),
         missing_asset.GetRawDispatch(),
-        missing_asset.GetMetadataDispatch(),
-        missing_asset.PostMetadataDispatch(),
-        missing_asset.CreateAssetDispatch()
+        missing_asset.GetRawDispatchDeprecated(),
+        missing_asset.GetMetadataDispatchDeprecated(),
+        missing_asset.PostMetadataDispatchDeprecated(),
+        missing_asset.CreateAssetDispatchDeprecated()
     ],
     disabling_header=YouwolHeaders.py_youwol_local_only
 )
