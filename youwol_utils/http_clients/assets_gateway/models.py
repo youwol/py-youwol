@@ -54,7 +54,7 @@ class AssetWithPermissionResponse(AssetResponse):
 
 
 class NewAssetResponse(AssetResponse):
-    treeId: str
+    itemId: str
     rawResponse: Optional[Dict[str, Any]]
 
 

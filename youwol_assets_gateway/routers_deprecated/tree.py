@@ -294,7 +294,7 @@ async def get_items_by_related_id(
             with_attributes={'related_id': related_id}
     ) as ctx:
         treedb = configuration.treedb_client
-        resp = await treedb.get_items_from_related_id(related_id=related_id, headers=ctx.headers())
+        resp = await treedb.get_items_from_asset(asset_id=related_id, headers=ctx.headers())
         response = ItemsResponse(items=[to_item_resp(item) for item in resp['items']])
         return response
 

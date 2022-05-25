@@ -63,8 +63,8 @@ async def get_items_rec(
 def to_item_resp(item) -> ItemResponse:
     meta = json.loads(item['metadata'])
     return ItemResponse(name=item['name'], treeId=item['itemId'], folderId=item['folderId'], kind=item["type"],
-                        groupId=item['groupId'], driveId=item['driveId'], assetId=item["relatedId"],
-                        rawId=meta['relatedId'], borrowed=meta["borrowed"])
+                        groupId=item['groupId'], driveId=item['driveId'], assetId=item["assetId"],
+                        rawId=meta['rawId'], borrowed=meta["borrowed"])
 
 
 def to_folder_resp(folder) -> FolderResponse:
@@ -76,8 +76,8 @@ def to_asset_resp(asset, permissions: PermissionsResponse = None) -> Union[Asset
     group_id = asset['groupId'] if 'groupId' in asset else to_group_id(asset['scope'])
     if permissions:
         return AssetWithPermissionResponse(
-            **{**asset, **{"rawId": asset["relatedId"], "groupId": group_id, "permissions": permissions}})
-    return AssetResponse(**{**asset, **{"rawId": asset["relatedId"], "groupId": group_id}})
+            **{**asset, **{"groupId": group_id, "permissions": permissions}})
+    return AssetResponse(**{**asset, **{"groupId": group_id}})
 
 
 async def extract_request_data(request: Request):

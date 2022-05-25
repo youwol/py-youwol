@@ -208,7 +208,7 @@ async def put_asset_with_raw(
         asset_id = raw_id_to_asset_id(raw_id)
         body_asset = {
             "assetId": asset_id,
-            "relatedId": raw_id,
+            "rawId": raw_id,
             "kind": kind,
             "name": metadata.name if not meta_new.name else meta_new.name,
             "description": metadata.description if not meta_new.description else meta_new.description,
@@ -242,7 +242,7 @@ async def put_asset_with_raw(
 
         response = NewAssetResponse(**{
             **to_asset_resp(asset, permissions=PermissionsResponse(read=True, write=True, share=True)).dict(),
-            **{"treeId": resp_tree["itemId"]}
+            **{"itemId": resp_tree["itemId"]}
         })
         return response
 
@@ -299,7 +299,7 @@ async def update_asset(
         store = next(store for store in assets_stores if store.path_name == asset['kind'])
 
         async with ctx.start(action="get treedb items from related id") as ctx_1:
-            items_tree = await treedb_client.get_items_from_related_id(related_id=asset_id, headers=ctx_1.headers())
+            items_tree = await treedb_client.get_items_from_asset(asset_id=asset_id, headers=ctx_1.headers())
             if not items_tree['items']:
                 raise HTTPException(status_code=404, detail="tree item not found")
 
@@ -386,7 +386,7 @@ async def access_info(
         )
         owner_info = None
         if is_authorized_write(request, asset['groupId']):
-            resp = await treedb.get_items_from_related_id(related_id=asset_id, headers=ctx.headers())
+            resp = await treedb.get_items_from_asset(asset_id=asset_id, headers=ctx.headers())
             groups = list({item['groupId'] for item in resp['items'] if item['groupId'] != asset["groupId"]})
             policies = await asyncio.gather(*[
                 assets_client.get_access_policy(asset_id=asset_id, group_id=group_id, headers=ctx.headers())

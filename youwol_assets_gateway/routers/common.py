@@ -60,7 +60,7 @@ async def create_asset(
         asset_id = raw_id_to_asset_id(raw_id)
         body_asset = {
             "assetId": asset_id,
-            "relatedId": raw_id,
+            "rawId": raw_id,
             "kind": kind,
             "name": metadata.name or f"new {kind}",
             "description": metadata.description or "",
@@ -84,8 +84,8 @@ async def create_asset(
         body_tree = {
             "itemId": asset_id,
             "name": body_asset['name'],
-            "type": kind,
-            "relatedId": asset_id,
+            "kind": kind,
+            "assetId": asset_id,
             "metadata": json.dumps({"assetId": asset_id, "relatedId": raw_id, "borrowed": False, })
         }
 
@@ -95,7 +95,7 @@ async def create_asset(
 
         response = NewAssetResponse(**{
             **to_asset_resp(asset, permissions=PermissionsResponse(read=True, write=True, share=True)).dict(),
-            "treeId": resp_tree["itemId"],
+            "itemId": resp_tree["itemId"],
             "rawResponse": raw_response
         })
         return response
@@ -112,7 +112,7 @@ async def delete_asset(
     ) as ctx:
         asset_id = raw_id_to_asset_id(raw_id)
         tree_db, assets_db = configuration.treedb_client, configuration.assets_client
-        resp = await tree_db.get_items_from_related_id(related_id=asset_id, headers=ctx.headers())
+        resp = await tree_db.get_items_from_asset(asset_id=asset_id, headers=ctx.headers())
         await asyncio.gather(*[tree_db.remove_item(item_id=item['itemId'], params={'erase': 'true'},
                                                    headers=ctx.headers())
                                for item in resp['items']])
