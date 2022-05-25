@@ -140,8 +140,8 @@ class PublishCdnLocalStep(PipelineStep):
             zip_path = project.path / 'cdn.zip'
             await create_cdn_zip(zip_path=zip_path, project=project, flow_id=flow_id, files=files, context=ctx)
 
-            local_gtw = LocalClients.get_assets_gateway_client(env=env)
             local_treedb = LocalClients.get_treedb_client(env=env)
+            local_cdn = LocalClients.get_gtw_cdn_client(env=env)
             asset_id = encode_id(project.id)
             try:
                 item = await local_treedb.get_item(item_id=asset_id, headers=ctx.headers())
@@ -155,8 +155,8 @@ class PublishCdnLocalStep(PipelineStep):
                     raise e
 
             data = {'file': zip_path.read_bytes(), 'content_encoding': 'identity'}
-            resp = await local_gtw.put_asset_with_raw(kind='package', folder_id=folder_id, data=data,
-                                                      headers=ctx.headers(), timeout=60000)
+            resp = await local_cdn.publish(data=data, params={"folder-id": folder_id}, headers=ctx.headers(),
+                                           timeout=60000)
             await ctx.info(text="Asset posted in assets_gtw", data=resp)
 
             target = project.pipeline.target
@@ -164,7 +164,6 @@ class PublishCdnLocalStep(PipelineStep):
                 await publish_browser_app_metadata(package=project.name, version=project.version, target=target,
                                                    env=env, context=ctx)
 
-            local_cdn = LocalClients.get_cdn_client(env=env)
             resp = await local_cdn.get_version_info(library_id=encode_id(project.name), version=project.version,
                                                     headers=ctx.headers())
             await ctx.info(text="Package retrieved from local cdn", data=resp)
