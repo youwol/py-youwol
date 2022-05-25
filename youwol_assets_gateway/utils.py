@@ -61,10 +61,9 @@ async def get_items_rec(
 
 
 def to_item_resp(item) -> ItemResponse:
-    meta = json.loads(item['metadata'])
-    return ItemResponse(name=item['name'], treeId=item['itemId'], folderId=item['folderId'], kind=item["type"],
+    return ItemResponse(name=item['name'], treeId=item['itemId'], folderId=item['folderId'], kind=item["kind"],
                         groupId=item['groupId'], driveId=item['driveId'], assetId=item["assetId"],
-                        rawId=meta['rawId'], borrowed=meta["borrowed"])
+                        rawId=item['rawId'], borrowed=item["borrowed"])
 
 
 def to_folder_resp(folder) -> FolderResponse:

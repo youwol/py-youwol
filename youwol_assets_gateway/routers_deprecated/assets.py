@@ -102,16 +102,16 @@ async def import_treedb(
     for kind, group in itertools.groupby(all_assets, lambda asset: asset['kind']):
         store = next(store for store in assets_stores if store.path_name == kind)
         coroutines = coroutines + \
-            [store.sync_asset_metadata(request=request, raw_id=asset['relatedId'], metadata=to_metadata(asset),
+            [store.sync_asset_metadata(request=request, raw_id=asset['assetId'], metadata=to_metadata(asset),
                                        headers=headers) for asset in group]
     await asyncio.gather(*coroutines)
 
     def to_body_treedb(asset):
         return {
             "name": asset['name'],
-            "type": asset['kind'],
-            "relatedId": asset["assetId"],
-            "metadata": json.dumps({"assetId": asset["assetId"], "relatedId": asset["relatedId"], "borrowed": False})
+            "kind": asset['kind'],
+            "assetId": asset["assetId"],
+            "metadata": json.dumps({"assetId": asset["assetId"], "relatedId": asset["rawId"], "borrowed": False})
         }
 
     creates = [tree_db.create_item(folder_id=body.folderId, body=to_body_treedb(asset), headers=headers)
@@ -228,8 +228,8 @@ async def put_asset_with_raw(
 
         body_tree = {"itemId": asset_id,
                      "name": body_asset['name'],
-                     "type": kind,
-                     "relatedId": asset_id,
+                     "kind": kind,
+                     "assetId": asset_id,
                      "metadata": json.dumps({"assetId": asset_id, "relatedId": raw_id, "borrowed": False, })}
 
         async with ctx.start(action="Register new asset in tree_db", with_attributes={"folder_id": folder_id}) as ctx_1:
@@ -265,7 +265,7 @@ async def get_asset_by_tree_id(
         async with ctx.start(action="Get treedb item") as ctx_1:
             tree_item = await tree_db.get_item(item_id=tree_id, headers=ctx_1.headers())
             await ctx_1.info(text="Treedb item", data=tree_item)
-        asset_id = tree_item['relatedId']
+        asset_id = tree_item['assetId']
 
         async with ctx.start(action="Get asset") as ctx_1:
             asset = await assets_db.get(asset_id=asset_id, headers=ctx_1.headers())
@@ -298,8 +298,9 @@ async def update_asset(
 
         store = next(store for store in assets_stores if store.path_name == asset['kind'])
 
-        async with ctx.start(action="get treedb items from related id") as ctx_1:
+        async with ctx.start(action="get treedb items from asset id") as ctx_1:
             items_tree = await treedb_client.get_items_from_asset(asset_id=asset_id, headers=ctx_1.headers())
+            await ctx_1.info("Retrieved treedb items from assetId", data=items_tree)
             if not items_tree['items']:
                 raise HTTPException(status_code=404, detail="tree item not found")
 
@@ -311,7 +312,7 @@ async def update_asset(
         await asyncio.gather(
             *coroutines_tree,
             assets_client.update_asset(asset_id=asset_id, body=body, headers=ctx.headers()),
-            store.sync_asset_metadata(request=request, raw_id=asset['relatedId'], metadata=to_asset_meta(body),
+            store.sync_asset_metadata(request=request, raw_id=asset['rawId'], metadata=to_asset_meta(body),
                                       headers=ctx.headers())
         )
         return to_asset_resp(body)
