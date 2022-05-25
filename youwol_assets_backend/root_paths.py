@@ -54,11 +54,11 @@ async def create_asset(
 
         user = user_info(request)
         policy = body.defaultAccessPolicy
-        asset_id = body.assetId if body.assetId else to_doc_db_id(body.relatedId)
+        asset_id = body.assetId if body.assetId else to_doc_db_id(body.rawId)
         owning_group = body.groupId or private_group_id(user)
         doc_asset = {
             "asset_id": asset_id,
-            "related_id": body.relatedId,
+            "related_id": body.rawId,
             "group_id": owning_group,
             "name": body.name,
             "description": body.description,
@@ -77,7 +77,7 @@ async def create_asset(
         doc_access_default = {
             "record_id": access_policy_record_id(asset_id, "*"),
             "asset_id": asset_id,
-            "related_id": body.relatedId,
+            "related_id": body.rawId,
             "consumer_group_id": "*",
             "read": body.defaultAccessPolicy.read.value,
             "share": body.defaultAccessPolicy.share.value,

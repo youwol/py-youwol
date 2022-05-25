@@ -110,7 +110,7 @@ class FormData(NamedTuple):
 class AssetResponse(BaseModel):
     assetId: str
     kind: str
-    relatedId: str
+    rawId: str
     name: str
     images: List[str]
     thumbnails: List[str]
@@ -121,7 +121,7 @@ class AssetResponse(BaseModel):
 
 class NewAssetBody(BaseModel):
     assetId: Optional[str] = None
-    relatedId: str
+    rawId: str
     kind: str
     groupId: Optional[str] = None
     name: str = ''

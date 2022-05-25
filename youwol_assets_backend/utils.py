@@ -98,7 +98,7 @@ def get_raw_record_permissions(
 
 
 def format_asset(doc, _: Request):
-    return AssetResponse(assetId=doc["asset_id"], kind=doc["kind"], relatedId=doc["related_id"], name=doc["name"],
+    return AssetResponse(assetId=doc["asset_id"], kind=doc["kind"], rawId=doc["related_id"], name=doc["name"],
                          images=doc["images"], thumbnails=doc["thumbnails"], tags=doc["tags"],
                          description=doc["description"], groupId=doc["group_id"])
 
