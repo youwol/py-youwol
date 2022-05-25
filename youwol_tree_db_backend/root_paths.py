@@ -1,5 +1,6 @@
 import asyncio
 import itertools
+import json
 import uuid
 from typing import Set, Tuple, List, Coroutine, Optional, cast
 
@@ -15,11 +16,12 @@ from youwol_tree_db_backend.configurations import Configuration, get_configurati
 from youwol_utils.http_clients.tree_db_backend import (
     GroupsResponse, Group, DriveResponse, DriveBody, DrivesResponse, RenameBody,
     FolderResponse, FolderBody, ItemResponse, ItemBody, ItemsResponse, MoveResponse, MoveItemBody, EntityResponse,
-    ChildrenResponse, PurgeResponse, PathResponse,
+    ChildrenResponse, PurgeResponse, PathResponse, BorrowBody, DefaultDriveResponse,
 )
 from youwol_tree_db_backend.utils import (
-    ensure_post_permission, convert_out, ensure_get_permission, get_parent,
-    ensure_query_permission, ensure_delete_permission,
+    ensure_post_permission, ensure_get_permission, get_parent,
+    ensure_query_permission, ensure_delete_permission, doc_to_drive_response, doc_to_folder,
+    doc_to_item, item_to_doc, folder_to_doc
 )
 
 router = APIRouter(tags=["treedb-backend"])
@@ -75,14 +77,7 @@ async def create_drive(
             body=drive,
             response=lambda: response
     ) as ctx:  # type: Context
-        docdb = configuration.doc_dbs.drives_db
-        doc = {"name": drive.name,
-               "drive_id": drive.driveId or str(uuid.uuid4()),
-               "group_id": group_id,
-               "metadata": drive.metadata}
-
-        await ensure_post_permission(request=request, docdb=docdb, doc=doc, context=ctx)
-        response = DriveResponse(**convert_out(doc))
+        response = await _create_drive(group_id=group_id, drive=drive, configuration=configuration, context=ctx)
         return response
 
 
@@ -108,7 +103,7 @@ async def list_drives(
         drives = await docdb_drive.query(query_body=f"group_id={group_id}#100", owner=Constants.public_owner,
                                          headers=ctx.headers())
 
-        drives = [DriveResponse(**convert_out(d)) for d in drives["documents"]]
+        drives = [doc_to_drive_response(d) for d in drives["documents"]]
 
         response = DrivesResponse(drives=drives)
         return response
@@ -304,20 +299,8 @@ async def create_folder(
             response=lambda: response
     ) as ctx:  # type: Context
 
-        folders_db, drives_db = configuration.doc_dbs.folders_db, configuration.doc_dbs.drives_db
-        parent = await get_parent(request=request, parent_id=parent_folder_id, configuration=configuration,
-                                  context=ctx)
-
-        doc = {"folder_id": folder.folderId or str(uuid.uuid4()),
-               "name": folder.name,
-               "parent_folder_id": parent_folder_id,
-               "group_id": parent['group_id'],
-               "type": folder.type,
-               "metadata": folder.metadata,
-               "drive_id": parent['drive_id']}
-        await ensure_post_permission(request=request, docdb=folders_db, doc=doc, context=ctx)
-
-        response = FolderResponse(**convert_out(doc))
+        response = await _create_folder(parent_folder_id=parent_folder_id, folder=folder, configuration=configuration,
+                                        context=ctx)
         return response
 
 
@@ -345,7 +328,7 @@ async def update_folder(
         doc = {**doc, **{"name": body.name}}
         await ensure_post_permission(request=request, docdb=folders_db, doc=doc, context=ctx)
 
-        response = FolderResponse(**convert_out(doc))
+        response = doc_to_folder(doc)
         return response
 
 
@@ -353,7 +336,7 @@ async def _get_folder(request: Request, folder_id: str, configuration: Configura
     async with context.start(action="_get_folder") as ctx:
         doc = await ensure_get_permission(request=request, partition_keys={'folder_id': folder_id}, context=ctx,
                                           docdb=configuration.doc_dbs.folders_db)
-        return FolderResponse(**convert_out(doc))
+        return doc_to_folder(doc)
 
 
 @router.get("/folders/{folder_id}",
@@ -375,6 +358,28 @@ async def get_folder(
         return response
 
 
+async def _create_item(request: Request, folder_id: str, item: ItemBody, configuration: Configuration,
+                       context: Context):
+
+    async with context.start(action="_create_item") as ctx:
+        items_db = configuration.doc_dbs.items_db
+        parent = await get_parent(request=request, parent_id=folder_id, configuration=configuration, context=ctx)
+
+        doc = {"item_id": item.itemId or str(uuid.uuid4()),
+               "folder_id": folder_id,
+               "related_id": item.assetId,
+               "name": item.name,
+               "type": item.kind,
+               "group_id": parent["group_id"],
+               "drive_id": parent['drive_id'],
+               "metadata": json.dumps({"borrowed": item.borrowed})
+               }
+        await ensure_post_permission(request=request, docdb=items_db, doc=doc, context=ctx)
+
+        response = doc_to_item(doc)
+        return response
+
+
 @router.put("/folders/{folder_id}/items",
             summary="create an item",
             response_model=ItemResponse)
@@ -393,22 +398,7 @@ async def create_item(
             response=lambda: response
     ) as ctx:  # type: Context
 
-        items_db = configuration.doc_dbs.items_db
-        parent = await get_parent(request=request, parent_id=folder_id, configuration=configuration, context=ctx)
-
-        doc = {"item_id": item.itemId or str(uuid.uuid4()),
-               "folder_id": folder_id,
-               "related_id": item.relatedId,
-               "name": item.name,
-               "type": item.type,
-               "group_id": parent["group_id"],
-               "drive_id": parent['drive_id'],
-               "metadata": item.metadata
-               }
-        await ensure_post_permission(request=request, docdb=items_db, doc=doc, context=ctx)
-
-        response = ItemResponse(**convert_out(doc))
-        return response
+        return await _create_item(request=request, folder_id=folder_id, item=item, configuration=configuration, context=ctx)
 
 
 @router.post("/items/{item_id}",
@@ -435,7 +425,7 @@ async def update_item(
         doc = {**doc, **{"name": body.name}}
         await ensure_post_permission(request=request, docdb=items_db, doc=doc, context=ctx)
 
-        response = ItemResponse(**convert_out(doc))
+        response = doc_to_item(doc)
         return response
 
 
@@ -444,7 +434,7 @@ async def _get_item(request: Request, item_id: str, configuration: Configuration
         items_db = configuration.doc_dbs.items_db
         doc = await ensure_get_permission(request=request, partition_keys={'item_id': item_id}, docdb=items_db,
                                           context=ctx)
-        return ItemResponse(**convert_out(doc))
+        return doc_to_item(doc)
 
 
 @router.get("/items/{item_id}",
@@ -466,27 +456,27 @@ async def get_item(
         return response
 
 
-@router.get("/items/from-related/{related_id}",
+@router.get("/items/from-asset/{asset_id}",
             summary="get an item",
             response_model=ItemsResponse)
-async def get_items_by_related_id(
+async def get_items_by_asset_id(
         request: Request,
-        related_id: str,
+        asset_id: str,
         configuration: Configuration = Depends(get_configuration)
 ):
     response: Optional[ItemsResponse] = None
     async with Context.start_ep(
             request=request,
             action="get_item",
-            with_attributes={"relatedId": related_id},
+            with_attributes={"assetId": asset_id},
             response=lambda: response
     ) as ctx:  # type: Context
 
         docdb = configuration.doc_dbs.items_db
-        items = await ensure_query_permission(request=request, docdb=docdb, key="related_id", value=related_id,
+        items = await ensure_query_permission(request=request, docdb=docdb, key="related_id", value=asset_id,
                                               max_count=100, context=ctx)
 
-        response = ItemsResponse(items=[ItemResponse(**convert_out(item)) for item in items])
+        response = ItemsResponse(items=[doc_to_item(item) for item in items])
         return response
 
 
@@ -657,7 +647,7 @@ async def move(
                   "drive_id": destination.driveId}
                }
         await ensure_post_permission(request=request, docdb=items_db, doc=doc, context=ctx)
-        response = MoveResponse(foldersCount=0, items=[convert_out(doc)])
+        response = MoveResponse(foldersCount=0, items=[doc_to_item(doc)])
         return response
 
 
@@ -721,12 +711,12 @@ async def _get_entity(
             raise HTTPException(status_code=404, detail="No entities found with corresponding id")
         entity = entities[0]
         if 'item_id' in entity:
-            return EntityResponse(entityType='item', entity=ItemResponse(**convert_out(entity)))
+            return EntityResponse(entityType='item', entity=doc_to_item(entity))
 
         if 'parent_folder_id' in entity:
-            return EntityResponse(entityType='folder', entity=FolderResponse(**convert_out(entity)))
+            return EntityResponse(entityType='folder', entity=doc_to_folder(entity))
 
-        return EntityResponse(entityType='drive', entity=DriveResponse(**convert_out(entity)))
+        return EntityResponse(entityType='drive', entity=doc_to_drive_response(entity))
 
 
 @router.get("/entities/{entity_id}",
@@ -767,8 +757,8 @@ async def _children(
                                     context=ctx)
         )
 
-        return ChildrenResponse(folders=[FolderResponse(**convert_out(f)) for f in folders],
-                                items=[ItemResponse(**convert_out(f)) for f in items])
+        return ChildrenResponse(folders=[doc_to_folder(f) for f in folders],
+                                items=[doc_to_item(f) for f in items])
 
 
 @router.get("/folders/{folder_id}/children",
@@ -799,9 +789,10 @@ async def _list_deleted(
                                                   owner=Constants.public_owner,
                                                   headers=ctx.headers())
 
-        folders = [FolderResponse(**{**convert_out(f), **{"folderId": f['deleted_id']}})
+        folders = [doc_to_folder(f, {"folder_id": f['deleted_id']})
                    for f in entities["documents"] if f['kind'] == 'folder']
-        items = [ItemResponse(**{**convert_out(f), **{"itemId": f['deleted_id'], "folderId": f['parent_folder_id']}})
+
+        items = [doc_to_item(f, {"item_id": f['deleted_id'], "folder_id": f['parent_folder_id']})
                  for f in entities["documents"] if f['kind'] == 'item']
 
         response = ChildrenResponse(folders=folders, items=items)
@@ -940,9 +931,11 @@ async def purge_drive(
 
         deleted = await _list_deleted(drive_id=drive_id, configuration=configuration, context=ctx)
 
-        deletion_items = [ensure_delete_permission(request=request, docdb=items_db, doc=f.dict(), context=ctx)
+        deletion_items = [ensure_delete_permission(request=request, docdb=items_db, doc=item_to_doc(f),
+                                                   context=ctx)
                           for f in deleted.items]
-        deletion_folders = [ensure_delete_permission(request=request, docdb=folders_db, doc=f.dict(), context=ctx)
+        deletion_folders = [ensure_delete_permission(request=request, docdb=folders_db, doc=folder_to_doc(f),
+                                                     context=ctx)
                             for f in deleted.folders]
 
         skip_items = {e.itemId for e in deleted.items}
@@ -987,9 +980,10 @@ async def purge_folder(
         doc_dbs = configuration.doc_dbs
         content = await _children(request=request, folder_id=folder_id, configuration=configuration, context=ctx)
 
-        delete_items = [ensure_delete_permission(request=request, docdb=doc_dbs.items_db, doc=f.dict(), context=ctx)
+        delete_items = [ensure_delete_permission(request=request, docdb=doc_dbs.items_db, doc=item_to_doc(f),
+                                                 context=ctx)
                         for f in content.items if f.itemId not in skip_items]
-        delete_folders = [ensure_delete_permission(request=request, docdb=doc_dbs.folders_db, doc=f.dict(),
+        delete_folders = [ensure_delete_permission(request=request, docdb=doc_dbs.folders_db, doc=folder_to_doc(f),
                                                    context=ctx)
                           for f in content.folders if f.folderId not in skip_items]
 

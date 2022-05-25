@@ -46,6 +46,28 @@ class TreeDbClient:
 
                 await raise_exception_from_response(resp, **kwargs)
 
+    async def get_default_drive(self, group_id: str, headers: Dict[str, str], **kwargs):
+
+        url = f"{self.url_base}/groups/{group_id}/default-drive"
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with await session.get(url=url, headers=headers, **kwargs) as resp:
+                if resp.status == 200:
+                    drives = await resp.json()
+                    return drives
+
+                await raise_exception_from_response(resp, **kwargs)
+
+    async def get_default_user_drive(self, headers: Dict[str, str], **kwargs):
+
+        url = f"{self.url_base}/default-drive"
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with await session.get(url=url, headers=headers, **kwargs) as resp:
+                if resp.status == 200:
+                    drives = await resp.json()
+                    return drives
+
+                await raise_exception_from_response(resp, **kwargs)
+
     async def create_drive(self, group_id: str, body, headers: Dict[str, str], **kwargs):
 
         url = f"{self.url_base}/groups/{group_id}/drives"
@@ -104,6 +126,17 @@ class TreeDbClient:
     async def move(self, body, headers: Dict[str, str], **kwargs):
 
         url = f"{self.url_base}/move"
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with await session.post(url=url, json=body, headers=headers, **kwargs) as resp:
+                if resp.status == 200:
+                    folder = await resp.json()
+                    return folder
+
+                await raise_exception_from_response(resp, **kwargs)
+
+    async def borrow(self, item_id: str, body, headers: Dict[str, str], **kwargs):
+
+        url = f"{self.url_base}/items/{item_id}/borrow"
         async with aiohttp.ClientSession(headers=self.headers) as session:
             async with await session.post(url=url, json=body, headers=headers, **kwargs) as resp:
                 if resp.status == 200:
@@ -180,9 +213,9 @@ class TreeDbClient:
 
                 await raise_exception_from_response(resp, **kwargs)
 
-    async def get_items_from_related_id(self, related_id: str, headers: Dict[str, str], **kwargs):
+    async def get_items_from_asset(self, asset_id: str, headers: Dict[str, str], **kwargs):
 
-        url = f"{self.url_base}/items/from-related/{related_id}"
+        url = f"{self.url_base}/items/from-asset/{asset_id}"
         async with aiohttp.ClientSession(headers=self.headers) as session:
             async with await session.get(url=url, headers=headers, **kwargs) as resp:
                 if resp.status == 200:

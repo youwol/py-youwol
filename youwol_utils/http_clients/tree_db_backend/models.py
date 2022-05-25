@@ -51,13 +51,15 @@ class GroupsResponse(BaseModel):
 
 class ItemResponse(BaseModel):
     itemId: str
-    relatedId: str
+    assetId: str
+    rawId: str
     folderId: str
     driveId: str
     groupId: str
     name: str
-    type: str
+    kind: str
     metadata: str
+    borrowed: bool
 
 
 class FolderResponse(BaseModel):
@@ -66,7 +68,7 @@ class FolderResponse(BaseModel):
     driveId: str
     groupId: str
     name: str
-    type: str
+    kind: str
     metadata: str
 
 
@@ -75,6 +77,20 @@ class DriveResponse(BaseModel):
     groupId: str
     name: str
     metadata: str
+
+
+class DefaultDriveResponse(BaseModel):
+    driveId: str
+    driveName: str
+    downloadFolderId: str
+    downloadFolderName: str
+    homeFolderId: str
+    homeFolderName: str
+    systemFolderId: str
+    systemFolderName: str
+    systemPackagesFolderId: str
+    systemPackagesFolderName: str
+    groupId: str
 
 
 class EntityResponse(BaseModel):
@@ -125,10 +141,11 @@ class MoveResponse(BaseModel):
 
 class ItemBody(BaseModel):
     name: str
-    type: str
+    kind: str
     itemId: Optional[str] = None
-    relatedId: str = ""
-    metadata: str = ""
+    borrowed: bool = False
+    assetId: str = ""
+    metadata: str = "{}"
 
 
 class MoveItemBody(BaseModel):
@@ -140,9 +157,14 @@ class RenameBody(BaseModel):
     name: str
 
 
+class BorrowBody(BaseModel):
+    targetId: Optional[str] = None
+    destinationFolderId: str
+
+
 class FolderBody(BaseModel):
     name: str
-    type: str = ""
+    kind: str = ""
     metadata: str = ""
     folderId: Optional[str] = None
 

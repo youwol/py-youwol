@@ -1,4 +1,5 @@
 import base64
+import json
 from typing import Union, Mapping, List, Dict, Any
 
 from fastapi import HTTPException
@@ -6,9 +7,10 @@ from starlette.requests import Request
 
 from youwol_utils import (
     DocDb, get_all_individual_groups, asyncio, ensure_group_permission, user_info,
-    get_user_group_ids, log_info,
+    get_user_group_ids, log_info, decode_id,
 )
 from youwol_utils.context import Context
+from youwol_utils.http_clients.tree_db_backend import ItemResponse, FolderResponse, DriveResponse
 from .configurations import Configuration, Constants
 
 
@@ -64,44 +66,80 @@ async def get_group(
     return group
 
 
-def convert_out(d):
-    to_convert = {
-        "related_id": "relatedId",
-        "drive_id": "driveId",
-        "folder_id": "folderId",
-        "group_id": "groupId",
-        "item_id": "itemId",
-        "entity_id": "entityId",
-        "parent_folder_id": "parentFolderId",
-        "bucket_path": "bucketPath"
-    }
-    r = {}
-    for key, value in d.items():
-        if key in to_convert:
-            r[to_convert[key]] = value
-        else:
-            r[key] = value
-    return r
+def doc_to_item(doc, with_attrs=None):
+    with_attrs = with_attrs or {}
+
+    def value(key: str):
+        return doc[key] if key not in with_attrs else with_attrs[key]
+
+    metadata = json.loads(value('metadata'))
+    return ItemResponse(
+        itemId=value('item_id'),
+        assetId=value('related_id'),
+        rawId=decode_id(value('related_id')),
+        folderId=value('folder_id'),
+        driveId=value('drive_id'),
+        groupId=value('group_id'),
+        name=value('name'),
+        kind=value('type'),
+        metadata=value('metadata'),
+        borrowed=metadata['borrowed'] if 'borrowed' in metadata else False
+    )
 
 
-def convert_in(d):
-    to_convert = {
-        "relatedId": "related_id",
-        "driveId": "drive_id",
-        "folderId": "folder_id",
-        "groupId": "group_id",
-        "itemId": "item_id",
-        "entityId": "entity_id",
-        "parentFolderId": "parent_folder_id",
-        "bucketPath": "bucket_path"
+def item_to_doc(item: ItemResponse):
+
+    return {
+        "item_id": item.itemId,
+        "related_id": item.assetId,
+        "folder_id": item.folderId,
+        "drive_id": item.driveId,
+        "group_id": item.groupId,
+        "name": item.name,
+        "type": item.kind,
+        "metadata": item.metadata
     }
-    r = {}
-    for key, value in d.items():
-        if key in to_convert:
-            r[to_convert[key]] = value
-        else:
-            r[key] = value
-    return r
+
+
+def doc_to_folder(doc, with_attrs=None):
+
+    with_attrs = with_attrs or {}
+
+    def value(key: str):
+        return doc[key] if key not in with_attrs else with_attrs[key]
+
+    return FolderResponse(
+        folderId=value('folder_id'),
+        parentFolderId=value('parent_folder_id'),
+        driveId=value('drive_id'),
+        groupId=value('group_id'),
+        name=value('name'),
+        kind=value('type'),
+        metadata=value('metadata')
+    )
+
+
+def folder_to_doc(folder: FolderResponse):
+
+    return {
+        "folder_id": folder.folderId,
+        "parent_folder_id": folder.parentFolderId,
+        "drive_id": folder.driveId,
+        "group_id": folder.groupId,
+        "name": folder.name,
+        "type": folder.kind,
+        "metadata": folder.metadata
+    }
+
+
+def doc_to_drive_response(doc):
+
+    return DriveResponse(
+        driveId=doc['drive_id'],
+        groupId=doc['group_id'],
+        name=doc['name'],
+        metadata=doc['metadata']
+    )
 
 
 async def ensure_drive(
@@ -275,8 +313,6 @@ async def ensure_delete_permission(
     async with context.start(
             action="ensure_delete_permission"
     ) as ctx:  # type: Context
-        doc = convert_in(doc)
-
         ensure_group_permission(request=request, group_id=doc["group_id"])
         return await docdb.delete_document(doc=doc, owner=Constants.public_owner, headers=ctx.headers())
 
