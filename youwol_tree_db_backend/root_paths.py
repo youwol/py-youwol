@@ -43,6 +43,22 @@ async def get_groups(request: Request):
     return GroupsResponse(groups=groups)
 
 
+async def _create_drive(group_id: str, drive: DriveBody, configuration: Configuration, context: Context):
+
+    async with context.start(
+            action="_create_drive"
+    ) as ctx:  # type: Context
+        docdb = configuration.doc_dbs.drives_db
+        doc = {"name": drive.name,
+               "drive_id": drive.driveId or str(uuid.uuid4()),
+               "group_id": group_id,
+               "metadata": drive.metadata}
+
+        await ensure_post_permission(request=ctx.request, docdb=docdb, doc=doc, context=ctx)
+        response = doc_to_drive_response(doc)
+        return response
+
+
 @router.put("/groups/{group_id}/drives",
             summary="create a drive",
             response_model=DriveResponse)
@@ -137,6 +153,16 @@ async def _get_drive(request: Request, drive_id: str, configuration: Configurati
         return DriveResponse(driveId=drive_id, name=doc['name'], metadata=doc["metadata"], groupId=doc['group_id'])
 
 
+@router.get("/default-drive",
+            response_model=DefaultDriveResponse, summary="get user's default drive")
+async def get_default_user_drive(
+        request: Request,
+        configuration: Configuration = Depends(get_configuration)
+):
+    user = user_info(request)
+    return await get_default_drive(request=request, group_id=private_group_id(user), configuration=configuration)
+
+
 @router.get("/drives/{drive_id}",
             summary="get a drive",
             response_model=DriveResponse)
@@ -154,6 +180,109 @@ async def get_drive(
     ) as ctx:  # type: Context
 
         response = await _get_drive(request=request, drive_id=drive_id, configuration=configuration, context=ctx)
+        return response
+
+
+async def ensure_folder(name: str, folder_id: str, parent_folder_id: str,
+                        configuration: Configuration, context: Context):
+
+    async with context.start(
+            action='ensure folder',
+            with_attributes={"folder_id": folder_id, 'name': name}
+    ) as ctx:
+        try:
+            folder_resp = await _get_folder(request=ctx.request, folder_id=folder_id, configuration=configuration,
+                                            context=context)
+            await ctx.info("Folder already exists")
+            return folder_resp
+        except HTTPException as e_folder:
+            if e_folder.status_code != 404:
+                raise e_folder
+            await ctx.warning("Folder does not exist yet, start creation")
+            return await _create_folder(
+                parent_folder_id=parent_folder_id,
+                folder=FolderBody(name=name, folderId=folder_id),
+                configuration=configuration,
+                context=ctx
+            )
+
+
+@router.get("/groups/{group_id}/default-drive",
+            response_model=DefaultDriveResponse, summary="get group's default drive")
+async def get_default_drive(
+        request: Request,
+        group_id: str,
+        configuration: Configuration = Depends(get_configuration)
+):
+    async with Context.start_ep(
+            request=request,
+            action="get default drive",
+            with_attributes={'group_id': group_id}
+    ) as ctx:
+
+        default_drive_id = f"{group_id}_default-drive"
+        try:
+            await _get_drive(request=request, drive_id=default_drive_id, configuration=configuration, context=ctx)
+        except HTTPException as e_drive:
+            if e_drive.status_code != 404:
+                raise e_drive
+            await ctx.warning("Default drive does not exist yet, start creation")
+            await _create_drive(group_id=group_id, drive=DriveBody(name="Default drive", driveId=default_drive_id),
+                                configuration=configuration, context=ctx)
+
+        download, home, system = await asyncio.gather(
+            ensure_folder(name="Download", folder_id=f"{default_drive_id}_download",
+                          parent_folder_id=default_drive_id, configuration=configuration, context=ctx),
+            ensure_folder(name="Home", folder_id=f"{default_drive_id}_home",
+                          parent_folder_id=default_drive_id, configuration=configuration, context=ctx),
+            ensure_folder(name="System", folder_id=f"{default_drive_id}_system",
+                          parent_folder_id=default_drive_id, configuration=configuration, context=ctx)
+        )
+
+        system_packages = await ensure_folder(
+            name="Packages", folder_id=f"{default_drive_id}_system_package",
+            parent_folder_id=system.folderId, configuration=configuration, context=ctx
+        )
+
+        resp = DefaultDriveResponse(
+            groupId=group_id,
+            driveId=default_drive_id,
+            driveName="Default drive",
+            downloadFolderId=download.folderId,
+            downloadFolderName=download.name,
+            homeFolderId=home.folderId,
+            homeFolderName=home.name,
+            systemFolderId=system.folderId,
+            systemFolderName=system.name,
+            systemPackagesFolderId=system_packages.folderId,
+            systemPackagesFolderName=system_packages.name
+        )
+        await ctx.info("Response", data=resp)
+        return resp
+
+
+async def _create_folder(
+        parent_folder_id: str,
+        folder: FolderBody,
+        configuration: Configuration,
+        context: Context
+):
+    async with context.start(action="_create_folder") as ctx:  # type: Context
+
+        folders_db, drives_db = configuration.doc_dbs.folders_db, configuration.doc_dbs.drives_db
+        parent = await get_parent(request=ctx.request, parent_id=parent_folder_id, configuration=configuration,
+                                  context=ctx)
+
+        doc = {"folder_id": folder.folderId or str(uuid.uuid4()),
+               "name": folder.name,
+               "parent_folder_id": parent_folder_id,
+               "group_id": parent['group_id'],
+               "type": folder.kind,
+               "metadata": folder.metadata,
+               "drive_id": parent['drive_id']}
+        await ensure_post_permission(request=ctx.request, docdb=folders_db, doc=doc, context=ctx)
+
+        response = doc_to_folder(doc)
         return response
 
 
