@@ -1,11 +1,11 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from starlette.requests import Request
 
 from youwol_assets_gateway.configurations import Configuration, get_configuration
 from youwol_utils.context import Context
 from youwol_utils.http_clients.tree_db_backend import PurgeResponse, ChildrenResponse, EntityResponse, MoveResponse, \
     MoveItemBody, PathResponse, ItemResponse, RenameBody, ItemBody, FolderResponse, DriveResponse, DrivesResponse, \
-    DriveBody, FolderBody, ItemsResponse, HealthzResponse
+    DriveBody, FolderBody, ItemsResponse, HealthzResponse, BorrowBody, DefaultDriveResponse
 
 router = APIRouter(tags=["assets-gateway.flux-backend"])
 
@@ -95,6 +95,34 @@ async def get_drive(
             drive_id=drive_id,
             headers=ctx.headers()
         )
+
+
+@router.get("/groups/{group_id}/default-drive",
+            response_model=DefaultDriveResponse, summary="get group's default drive")
+async def get_default_drive(
+        request: Request,
+        group_id: str,
+        configuration: Configuration = Depends(get_configuration)
+):
+    async with Context.start_ep(
+            request=request
+    ) as ctx:
+        return await configuration.treedb_client.get_default_drive(
+            group_id=group_id,
+            headers=ctx.headers()
+        )
+
+
+@router.get("/default-drive",
+            response_model=DefaultDriveResponse, summary="get user's default drive")
+async def get_default_user_drive(
+        request: Request,
+        configuration: Configuration = Depends(get_configuration)
+):
+    async with Context.start_ep(
+            request=request
+    ) as ctx:
+        return await configuration.treedb_client.get_default_user_drive(headers=ctx.headers())
 
 
 @router.put("/folders/{parent_folder_id}",
@@ -207,19 +235,19 @@ async def get_item(
         )
 
 
-@router.get("/items/from-related/{related_id}",
-            summary="get an item",
+@router.get("/items/from-asset/{asset_id}",
+            summary="get an item from asset's id",
             response_model=ItemsResponse)
 async def get_items_by_related_id(
         request: Request,
-        related_id: str,
+        asset_id: str,
         configuration: Configuration = Depends(get_configuration)
 ):
     async with Context.start_ep(
             request=request
     ) as ctx:
-        return await configuration.treedb_client.get_items_from_related_id(
-            related_id=related_id,
+        return await configuration.treedb_client.get_items_from_asset(
+            asset_id=asset_id,
             headers=ctx.headers()
         )
 
@@ -270,6 +298,31 @@ async def move(
             request=request
     ) as ctx:
         return await configuration.treedb_client.move(
+            body=body.dict(),
+            headers=ctx.headers()
+        )
+
+
+@router.post("/items/{item_id}/borrow",
+             response_model=ItemResponse,
+             summary="borrow item")
+async def borrow(
+        request: Request,
+        item_id: str,
+        body: BorrowBody,
+        configuration: Configuration = Depends(get_configuration)):
+
+    async with Context.start_ep(
+            request=request
+    ) as ctx:
+        tree_db, assets_db = configuration.treedb_client, configuration.assets_client
+        tree_item = await tree_db.get_item(item_id=item_id, headers=ctx.headers())
+        permission = await assets_db.get_permissions(asset_id=tree_item['assetId'], headers=ctx.headers())
+        if not permission['share']:
+            raise HTTPException(status_code=403, detail='The resource can not be shared')
+
+        return await configuration.treedb_client.borrow(
+            item_id=item_id,
             body=body.dict(),
             headers=ctx.headers()
         )
