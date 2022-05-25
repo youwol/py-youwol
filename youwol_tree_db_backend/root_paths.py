@@ -661,6 +661,38 @@ async def move(
         return response
 
 
+@router.post("/items/{item_id}/borrow",
+             response_model=ItemResponse,
+             summary="borrow item")
+async def borrow(
+        request: Request,
+        item_id: str,
+        body: BorrowBody,
+        configuration: Configuration = Depends(get_configuration)):
+    response = Optional[ItemResponse]
+
+    async with Context.start_ep(
+            request=request,
+            action="borrow item",
+            body=body,
+            response=lambda: response,
+            with_attributes={'item_id': item_id}
+    ) as ctx:
+        item = await _get_item(request=request, item_id=item_id, configuration=configuration, context=ctx)
+
+        metadata = json.loads(item.metadata)
+        metadata['borrowed'] = True
+        item.itemId = body.targetId if body.targetId else str(uuid.uuid4())
+        item.metadata = json.dumps(metadata)
+        return await _create_item(
+            request=request,
+            folder_id=body.destinationFolderId,
+            item=ItemBody(**item.dict()),
+            configuration=configuration,
+            context=ctx
+        )
+
+
 async def _get_entity(
         request: Request,
         entity_id: str,
