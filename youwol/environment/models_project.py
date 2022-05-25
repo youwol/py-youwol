@@ -260,16 +260,28 @@ class FromAsset(Parametrization):
     parameters: Dict
 
 
+class OpenWith(Parametrization):
+    name: Optional[str]
+    match: Union[Dict, str]
+    parameters:  Union[Dict, str]
+
+
 class Execution(BaseModel):
     standalone: bool = True
     parametrized: List[Parametrization] = []
 
 
+class BrowserAppGraphics(BaseModel):
+    appIcon: Optional[Any]
+    fileIcon: Optional[Any]
+    background: Any
+
+
 class BrowserAppBundle(BrowserTarget):
     family: Family = Family.application
-    icon: Dict = {"class": "fas fa-play"}
     displayName: Optional[str] = None
     execution: Execution = Execution()
+    graphics: BrowserAppGraphics
 
 
 BrowserApp = BrowserAppBundle
