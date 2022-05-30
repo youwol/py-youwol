@@ -12,9 +12,6 @@ from fastapi import HTTPException
 from pydantic import BaseModel
 
 import youwol
-from youwol.routers.custom_backends import install_routers
-
-from youwol_utils.http_clients.assets_gateway import DefaultDriveResponse
 from youwol.configuration.config_from_module import configuration_from_python
 from youwol.configuration.config_from_static_file import configuration_from_json
 from youwol.configuration.configuration_handler import ConfigurationHandler
@@ -23,17 +20,20 @@ from youwol.configuration.configuration_validation import (
     CheckSystemFolderWritable, CheckDatabasesFolderHealthy, CheckSecretPathExist,
     CheckSecretHealthy
 )
+from youwol.configuration.defaults import default_platform_host
 from youwol.environment.clients import LocalClients
 from youwol.environment.models import RemoteGateway, UserInfo, ApiConfiguration, Events, K8sInstance
 from youwol.environment.models_project import ErrorResponse
 from youwol.environment.paths import PathsBook, ensure_config_file_exists_or_create_it
 from youwol.main_args import get_main_arguments, MainArguments
 from youwol.middlewares.models_dispatch import AbstractDispatch
+from youwol.routers.custom_backends import install_routers
 from youwol.routers.custom_commands.models import Command
 from youwol.utils.utils_low_level import get_public_user_auth_token
 from youwol.web_socket import InMemoryReporter, WsDataStreamer
 from youwol_utils import retrieve_user_info
 from youwol_utils.context import Context, ContextFactory
+from youwol_utils.http_clients.assets_gateway import DefaultDriveResponse
 from youwol_utils.servers.fast_api import FastApiRouter
 from youwol_utils.utils_paths import parse_json, write_json
 
@@ -55,6 +55,7 @@ class DeadlinedCache(BaseModel):
 class YouwolEnvironment(BaseModel):
     availableProfiles: List[str]
     httpPort: int
+    redirectBasePath: str
     openidHost: str
     events: Events
     activeProfile: Optional[str]
@@ -218,6 +219,7 @@ class YouwolEnvironmentFactory:
 
         new_conf = YouwolEnvironment(
             openidHost=conf.openidHost,
+            redirectBasePath=conf.redirectBasePath,
             userEmail=email,
             selectedRemote=remote_name,
             pathsBook=conf.pathsBook,
@@ -247,6 +249,7 @@ class YouwolEnvironmentFactory:
         conf = YouwolEnvironmentFactory.__cached_config
         new_conf = YouwolEnvironment(
             openidHost=conf.openidHost,
+            redirectBasePath=conf.redirectBasePath,
             userEmail=conf.userEmail,
             selectedRemote=conf.selectedRemote,
             pathsBook=conf.pathsBook,
@@ -432,6 +435,7 @@ async def safe_load(
     youwol_configuration = YouwolEnvironment(
         activeProfile=conf_handler.get_profile(),
         availableProfiles=conf_handler.get_available_profiles(),
+        redirectBasePath=conf_handler.get_redirect_base_path(),
         openidHost=conf_handler.get_openid_host(),
         httpPort=conf_handler.get_http_port(),
         portsBook=conf_handler.get_ports_book(),
@@ -470,17 +474,16 @@ async def first_run(conf_path, main_args):
     pwd = getpass("Your YouWol password?")
     print(f"Pass : {pwd}")
     token = None
-    default_openid_host = "gc.auth.youwol.com"
     try:
         token = await get_public_user_auth_token(username=email, pwd=pwd, client_id='public-user',
-                                                 openid_host=default_openid_host)
+                                                 openid_host=default_platform_host)
         print("token", token)
     except HTTPException as e:
         print(f"Can not retrieve authentication token:\n\tstatus code: {e.status_code}\n\tdetail:{e.detail}")
         exit(1)
     user_info = None
     try:
-        user_info = await retrieve_user_info(auth_token=token, openid_host=default_openid_host)
+        user_info = await retrieve_user_info(auth_token=token, openid_host=default_platform_host)
         print("user_info", user_info)
     except HTTPException as e:
         print(f"Can not retrieve user info:\n\tstatus code: {e.status_code}\n\tdetail:{e.detail}")

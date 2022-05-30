@@ -4,8 +4,9 @@ import zipfile
 from pathlib import Path
 from typing import Optional, List, Union, Dict
 
-from youwol.configuration.defaults import default_openid_host, default_http_port, default_path_data_dir, \
-    default_path_cache_dir, default_path_projects_dir, default_port_range_start, default_port_range_end
+from youwol.configuration.defaults import default_http_port, default_path_data_dir, \
+    default_path_cache_dir, default_path_projects_dir, default_port_range_start, default_port_range_end, \
+    default_platform_host
 from youwol.configuration.models_config import Profiles, ConfigurationData, PortRange, ModuleLoading, \
     CascadeBaseProfile, CascadeAppend, CascadeReplace, CdnOverride, Redirection, K8sCluster
 from youwol.environment.models import Events, IConfigurationCustomizer
@@ -26,7 +27,9 @@ def append_with(_parent, _appended):
 
 def replace_with(parent: ConfigurationData, replacement: ConfigurationData) -> ConfigurationData:
     return ConfigurationData(
-        httpPort=replacement.openIdHost if replacement.openIdHost else parent.httpPort,
+        httpPort=replacement.httpPort if replacement.httpPort else parent.httpPort,
+        platformHost=replacement.platformHost if replacement.platformHost else parent.platformHost,
+        redirectBasePath=replacement.redirectBasePath if replacement.redirectBasePath else parent.redirectBasePath,
         openIdHost=replacement.openIdHost if replacement.openIdHost else parent.openIdHost,
         user=replacement.user if replacement.user else parent.user,
         projectsDirs=replacement.projectsDirs if replacement.projectsDirs else parent.projectsDirs,
@@ -57,8 +60,12 @@ class ConfigurationHandler:
         else:
             self.set_profile(self.config_data.selected)
 
+    def get_redirect_base_path(self) -> str:
+        return self.effective_config_data.redirectBasePath if self.effective_config_data.redirectBasePath \
+            else f"https://{default_platform_host}/api"
+
     def get_openid_host(self) -> str:
-        return self.effective_config_data.openIdHost if self.effective_config_data.openIdHost else default_openid_host
+        return self.effective_config_data.openIdHost if self.effective_config_data.openIdHost else default_platform_host
 
     def set_profile(self, profile: str):
         if profile in self.config_data.extending_profiles.keys():
