@@ -121,7 +121,7 @@ async def create_asset_local(
         local_treedb: TreeDbClient = LocalClients.get_treedb_client(env)
         local_gtw: AssetsGatewayClient = LocalClients.get_assets_gateway_client(env)
         remote_gtw = await RemoteClients.get_assets_gateway_client(context)
-        remote_treedb = await RemoteClients.get_treedb_client(context)
+        remote_treedb = await RemoteClients.get_gtw_treedb_client(context)
         headers = ctx.headers()
         raw_data, metadata, tree_items = await asyncio.gather(
             get_raw_data(),
