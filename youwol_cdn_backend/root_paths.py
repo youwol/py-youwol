@@ -389,7 +389,7 @@ async def get_resource(
         rest_of_path: str,
         configuration: Configuration = Depends(get_configuration)
 ):
-    if rest_of_path == '':
+    if not rest_of_path:
         return await get_entry_point(request=request, library_id=library_id, version=version,
                                      configuration=configuration)
     async with Context.start_ep(
@@ -397,7 +397,7 @@ async def get_resource(
             request=request,
             with_attributes={"rest_of_path": rest_of_path}
     ) as ctx:  # type: Context
-
+        await ctx.info(f"Target resource: '{rest_of_path}'")
         _, version, max_age = await resolve_resource(library_id=library_id, input_version=version,
                                                      configuration=configuration, context=ctx)
 
