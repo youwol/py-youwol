@@ -295,9 +295,11 @@ async def ensure_query_permission(
     ) as ctx:  # type: Context
         user = user_info(request)
         allowed_groups = get_user_group_ids(user)
+        await ctx.info("Allowed groups retrieved", data={"allowed_groups": allowed_groups})
         r = await docdb.query(query_body=f"{key}={value}#{max_count}", owner=Constants.public_owner,
                               headers=ctx.headers())
 
+        await ctx.info("Unfiltered documents retrieved", data={"count": len(r)})
         return [d for d in r["documents"] if d['group_id'] in allowed_groups]
 
 
