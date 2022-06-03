@@ -56,8 +56,8 @@ class GetRawDispatch(AbstractDispatch):
             ("data", "GET:/api/assets-gateway/files-backend/files/*"),
             ("package", "GET:/api/assets-gateway/cdn-backend/resources/*/**"),
         ]
-        matches = [(kind, url_match(request, pattern)) for kind, pattern in patterns if pattern[0]]
-        match = next(((kind, match) for kind, match in matches if match[0]), None)
+        matches = [(kind, url_match(request, pattern)) for kind, pattern in patterns]
+        match = next(((kind, match[1]) for kind, match in matches if match[0]), None)
         if not match:
             return None
         kind, params = match
