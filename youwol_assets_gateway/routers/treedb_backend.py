@@ -211,6 +211,16 @@ async def update_item(
     async with Context.start_ep(
             request=request
     ) as ctx:
+        assets_client = configuration.assets_client
+        try:
+            asset = await assets_client.get_asset(asset_id=item_id, headers=ctx.headers())
+            await assets_client.update_asset(asset_id=asset['assetId'], body={"name": body.name},
+                                             headers=ctx.headers())
+
+        except HTTPException as e:
+            if e.status_code != 404:
+                raise e
+
         return await configuration.treedb_client.update_item(
             item_id=item_id,
             body=body.dict(),
