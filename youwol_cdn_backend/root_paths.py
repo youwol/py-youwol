@@ -22,7 +22,7 @@ from youwol_cdn_backend.utils import (
     extract_zip_file, to_package_id, create_tmp_folder,
     to_package_name, get_query_version, loading_graph, get_url, publish_package,
     get_query_latest, retrieve_dependency_paths, list_versions,
-    fetch_resource, resolve_resource, get_path,
+    fetch_resource, resolve_resource, get_path, resolve_explicit_version,
 )
 from youwol_cdn_backend.utils_indexing import get_version_number_str
 
@@ -67,6 +67,9 @@ async def download_library(
             request=request,
             with_labels=['Download']
     ) as ctx:  # type: Context
+        version = await resolve_explicit_version(package_name=to_package_name(library_id), input_version=version,
+                                                 configuration=configuration, context=ctx)
+
         storage = configuration.storage
         path = get_path(library_id=library_id, version=version, rest_of_path='__original.zip')
         await ctx.info("Original zip path retrieved", data={"path": path})
