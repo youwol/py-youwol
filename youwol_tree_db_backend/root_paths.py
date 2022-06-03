@@ -673,6 +673,7 @@ async def borrow(
         metadata = json.loads(item.metadata)
         metadata['borrowed'] = True
         item.itemId = body.targetId if body.targetId else str(uuid.uuid4())
+        item.borrowed = True
         item.metadata = json.dumps(metadata)
         return await _create_item(
             request=request,
