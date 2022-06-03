@@ -161,13 +161,17 @@ async def download_package(
             asset_id=asset_id,
             kind='package',
             default_owning_folder_id=default_drive.systemPackagesFolderId,
-            get_raw_data=lambda: remote_gtw.cdn_get_package(library_name=package_name,
-                                                            version=version),
+            get_raw_data=lambda _ctx: remote_gtw.cdn_get_package(
+                library_name=package_name,
+                version=version,
+                headers=_ctx.headers()
+            ),
             to_post_raw_data=lambda pack: {'file': pack},
             context=ctx
         )
         db = parse_json(env.pathsBook.local_cdn_docdb)
         versions = [d for d in db['documents'] if d['library_name'] == package_name]
+        version = version if version != "latest" else max([p["version"] for p in versions])
         record = next(d for d in versions if d['library_id'] == f"{package_name}#{version}")
         response = DownloadedPackageResponse(
             packageName=package_name,

@@ -23,7 +23,7 @@ class DownloadFluxProjectTask(DownloadTask):
         env = await self.context.get('env', YouwolEnvironment)
         local_flux: FluxClient = LocalClients.get_flux_client(env=env)
         try:
-            await local_flux.get_project(project_id=self.raw_id)
+            await local_flux.get_project(project_id=self.raw_id, headers=self.context.headers())
             return True
         except HTTPException as e:
             if e.status_code == 404:
@@ -45,8 +45,8 @@ class DownloadFluxProjectTask(DownloadTask):
             asset_id=self.asset_id,
             kind='flux-project',
             default_owning_folder_id=default_drive.downloadFolderId,
-            get_raw_data=lambda: remote_gtw.get_raw(kind='flux-project', raw_id=self.raw_id,
-                                                    content_type="application/json"),
+            get_raw_data=lambda _ctx: remote_gtw.get_raw(kind='flux-project', raw_id=self.raw_id,
+                                                         content_type="application/json", headers=_ctx.headers()),
             to_post_raw_data=to_saved_project,
             context=self.context
             )

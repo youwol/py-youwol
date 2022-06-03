@@ -110,7 +110,7 @@ async def create_asset_local(
         asset_id: str,
         kind: str,
         default_owning_folder_id,
-        get_raw_data: Callable[[], Awaitable[T]],
+        get_raw_data: Callable[[Context], Awaitable[T]],
         to_post_raw_data: Callable[[T], any],
         context: Context
         ):
@@ -124,7 +124,7 @@ async def create_asset_local(
         remote_treedb = await RemoteClients.get_gtw_treedb_client(context)
         headers = ctx.headers()
         raw_data, metadata, tree_items = await asyncio.gather(
-            get_raw_data(),
+            get_raw_data(ctx),
             remote_gtw.get_asset_metadata(asset_id=asset_id, headers=headers),
             remote_gtw.get_tree_items_by_related_id(related_id=asset_id, headers=headers),
             return_exceptions=True
