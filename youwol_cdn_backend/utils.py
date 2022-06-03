@@ -158,8 +158,9 @@ async def publish_package(file: IO, filename: str, content_encoding, configurati
                          for form in forms]
 
         async with context.start(action="Upload data in storage"):
-            await context.info(text=f"Clean minio directory {str(base_path)}")
-            await storage.delete_group(prefix=base_path, owner=Constants.owner, headers=headers)
+            prefix = f"{base_path}/"
+            await context.info(text=f"Clean minio directory {prefix}")
+            await storage.delete_group(prefix=f"{prefix}", owner=Constants.owner, headers=headers)
             await context.info(text=f"Send {len(post_requests)} files to storage")
             await asyncio.gather(*post_requests)
 
