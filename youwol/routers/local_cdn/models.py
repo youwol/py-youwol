@@ -13,14 +13,24 @@ class CdnVersion(BaseModel):
     entryPointSize: int  # total size, in bytes
 
 
+class CdnVersionLight(BaseModel):
+    version: str
+
+
 class CdnPackage(BaseModel):
     name: str
     id: str
     versions: List[CdnVersion]
 
 
+class CdnPackageLight(BaseModel):
+    name: str
+    id: str
+    versions: List[CdnVersionLight]
+
+
 class CdnStatusResponse(BaseModel):
-    packages: List[CdnPackage]
+    packages: List[CdnPackageLight]
 
 
 class CdnPackageResponse(CdnPackage):

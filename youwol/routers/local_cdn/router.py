@@ -12,8 +12,8 @@ from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.local_cdn.implementation import get_latest_local_cdn_version, check_updates_from_queue, \
     download_packages_from_queue, get_version_info
 from youwol.routers.local_cdn.models import CheckUpdatesResponse, CheckUpdateResponse, DownloadPackagesBody, \
-    ResetCdnBody, PackageEventResponse, Event, CdnStatusResponse, CdnPackage, CdnVersion, CdnPackageResponse, cdn_topic, \
-    ResetCdnResponse, HardResetCdnResponse, HardResetDbStatus
+    ResetCdnBody, PackageEventResponse, Event, CdnStatusResponse, CdnVersion, CdnPackageResponse, cdn_topic, \
+    ResetCdnResponse, HardResetCdnResponse, HardResetDbStatus, CdnVersionLight, CdnPackageLight
 from youwol.web_socket import LogsStreamer
 from youwol_utils import decode_id, encode_id
 from youwol_utils.context import Context
@@ -36,10 +36,11 @@ async def status(request: Request):
         cdn_docs = parse_json(env.pathsBook.local_cdn_docdb)["documents"]
         cdn_sorted = sorted(cdn_docs, key=lambda d: d['library_name'])
         grouped = itertools.groupby(cdn_sorted, key=lambda d: d['library_name'])
-        packages = [CdnPackage(
+
+        packages = [CdnPackageLight(
             name=name,
             id=encode_id(name),
-            versions=[CdnVersion(**get_version_info(version, env)) for version in versions]
+            versions=[CdnVersionLight(version=version_data['version']) for version_data in versions]
         ) for name, versions in grouped]
         response = CdnStatusResponse(packages=packages)
         await ctx.send(response)
