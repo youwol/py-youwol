@@ -60,10 +60,11 @@ async def package_info(request: Request, package_id: str):
         env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
         cdn_docs = parse_json(env.pathsBook.local_cdn_docdb)["documents"]
         versions = [d for d in cdn_docs if d["library_name"] == package_name]
+        versions_info = await asyncio.gather(*[get_version_info(version, env) for version in versions])
         response = CdnPackageResponse(
             name=package_name,
             id=package_id,
-            versions=[CdnVersion(**get_version_info(version, env)) for version in versions]
+            versions=[CdnVersion(**version_info) for version_info in versions_info]
         )
         await ctx.send(response)
         return response
