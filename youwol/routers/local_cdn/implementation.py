@@ -1,11 +1,10 @@
 import asyncio
-import os
 from itertools import groupby
 from typing import NamedTuple, List
 
 from fastapi import HTTPException
 
-from youwol.environment.clients import RemoteClients
+from youwol.environment.clients import RemoteClients, LocalClients
 from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.commons import Label
 from youwol.routers.environment.download_assets.common import create_asset_local
@@ -182,12 +181,17 @@ async def download_package(
         await ctx.send(response)
 
 
-def get_version_info(version_data, env: YouwolEnvironment):
-    minio_path = env.pathsBook.local_cdn_storage
-    package_path = version_data["library_name"].replace("@", "")
+async def get_version_info(version_data, env: YouwolEnvironment):
+
+    cdn = LocalClients.get_cdn_client(env)
     version = version_data['version']
     entry_point = version_data['bundle']
-    base_path = minio_path / 'libraries' / package_path / version
-    files_count = sum([len(files) for r, d, files in os.walk(base_path)])
-    entry_point_size = (base_path / entry_point).stat().st_size if (base_path / entry_point).exists() else '-1'
-    return {"filesCount": files_count, "entryPointSize": entry_point_size, "version": version}
+    folder_path = '/'.join(entry_point.split('/')[:-1])
+    folder_content, root_content = await asyncio.gather(
+        cdn.get_explorer(library_id=encode_id(version_data['library_name']), version=version, folder_path=folder_path),
+        cdn.get_explorer(library_id=encode_id(version_data['library_name']), version=version, folder_path="")
+    )
+    files_count = root_content['filesCount']
+    entry_point_size = next((file['size'] for file in folder_content['files']
+                             if file['name'] == entry_point.split('/')[-1]), None)
+    return {"filesCount": files_count, "entryPointSize": entry_point_size or -1, "version": version}
