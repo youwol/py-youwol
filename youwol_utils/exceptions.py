@@ -254,12 +254,14 @@ class InvalidInput(YouWolException):
 class UpstreamResponseException(YouWolException):
     exceptionType = "UpstreamResponseException"
 
-    def __init__(self, status: int, url: str, detail: Any, exception_type: str, **kwargs):
+    # do not change case in 'exceptionType': UpstreamResponseException needs to be
+    # 'auto-constructable' from its details
+    def __init__(self, status: int, url: str, detail: Any, exceptionType: str, **kwargs):
         super().__init__(status_code=status,
                          detail={
                              "url": url,
                              "status": status,
-                             "exceptionType": exception_type,
+                             "exceptionType": exceptionType,
                              "detail": detail,
                          },
                          **kwargs)
@@ -307,12 +309,13 @@ async def raise_exception_from_response(raw_resp: ClientResponse, **kwargs):
         if resp and "exceptionType" in resp:
             exception_type = next((e for e in YouwolExceptions if e.exceptionType == resp["exceptionType"]), None)
             if exception_type:
-                upstream_exception = exception_type(exception_type=resp["exceptionType"], **resp["detail"])
-                raise UpstreamResponseException(url=raw_resp.url.human_repr(),
-                                                status=upstream_exception.status_code,
-                                                detail=upstream_exception.detail,
-                                                exception_type=upstream_exception.exceptionType
-                                                )
+                upstream_exception0 = exception_type(**resp["detail"])
+                return UpstreamResponseException(url=raw_resp.url.human_repr(),
+                                                 status=upstream_exception0.status_code,
+                                                 detail=upstream_exception0.detail,
+                                                 exceptionType=upstream_exception0.exceptionType
+                                                 )
+
     except (ValueError, ContentTypeError):
         pass
 
@@ -322,7 +325,7 @@ async def raise_exception_from_response(raw_resp: ClientResponse, **kwargs):
     raise UpstreamResponseException(url=raw_resp.url.human_repr(),
                                     status=raw_resp.status,
                                     detail=detail,
-                                    exception_type="HTTP",
+                                    exceptionType="HTTP",
                                     **{k: v for k, v in {**kwargs, **parameters}.items()
                                        if k not in ['url', 'status', 'detail', 'exceptionType']})
 
