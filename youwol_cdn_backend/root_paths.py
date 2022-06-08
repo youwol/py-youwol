@@ -412,6 +412,19 @@ async def get_resource(
         return await fetch_resource(path=path, max_age=max_age, configuration=configuration, context=ctx)
 
 
+@router.get("/explorer/{library_id}/{version}",
+            summary="get a library",
+            response_model=ExplorerResponse)
+async def explorer_root(
+        request: Request,
+        library_id: str,
+        version: str,
+        configuration: Configuration = Depends(get_configuration)
+):
+    return await explorer(request=request, library_id=library_id, version=version, rest_of_path="",
+                          configuration=configuration)
+
+
 @router.get("/explorer/{library_id}/{version}/{rest_of_path:path}",
             summary="get a library",
             response_model=ExplorerResponse)
