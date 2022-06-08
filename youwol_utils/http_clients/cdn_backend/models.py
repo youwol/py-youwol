@@ -120,13 +120,16 @@ class FileResponse(BaseModel):
 class FolderResponse(BaseModel):
     name: str
     path: str
-    size: int
+    size: int = -1
+    filesCount: int = -1  # prior to 06/07/2022 this property was not computed during publish
 
 
 class ExplorerResponse(BaseModel):
-    size: int
-    files: List[FileResponse]
-    folders: List[FolderResponse]
+    # prior to some point, no explorer data were published the default is then returned
+    size: int = -1
+    filesCount: int = -1  # prior to 06/07/2022 this property was not computed during publish
+    files: List[FileResponse] = []
+    folders: List[FolderResponse] = []
 
 
 LIBRARIES_TABLE = TableBody(

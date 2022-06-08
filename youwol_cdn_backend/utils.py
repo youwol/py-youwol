@@ -210,16 +210,19 @@ async def publish_package(file: IO, filename: str, content_encoding, configurati
 async def create_explorer_data(dir_path: Path, root_path: Path, forms: List[FormData], context: Context)\
         -> Dict[str, ExplorerResponse]:
 
-    def compute_folders_size_rec(content: ExplorerResponse, all_data, result):
+    def compute_attributes_rec(content: ExplorerResponse, all_data, result):
 
         size_files = sum([file.size for file in content.files])
-        size_folders = [compute_folders_size_rec(all_data[folder.path], all_data, result)
-                        for folder in content.folders]
+        attributes = [compute_attributes_rec(all_data[folder.path], all_data, result)
+                      for folder in content.folders]
+        size_folders = [attr[0] for attr in attributes]
+        count_folders = [attr[1] for attr in attributes]
 
         for i, folder in enumerate(content.folders):
             folder.size = size_folders[i]
         content.size = size_files + sum(size_folders)
-        return content.size
+        content.filesCount = len(content.files) + sum(count_folders)
+        return [content.size, content.filesCount]
 
     async with context.start(action="create explorer data",
                              with_attributes={"path": str(root_path)}
@@ -235,12 +238,13 @@ async def create_explorer_data(dir_path: Path, root_path: Path, forms: List[Form
             base_path = base_path + "/" if base_path else base_path
             data[base_path.rstrip('/')] = ExplorerResponse(
                 size=-1,
+                filesCount=-1,
                 files=[FileResponse(name=f, **forms_data_dict[f"{base_path}{f}"]) for f in files],
                 folders=[FolderResponse(name=f, size=-1, path=f"{base_path}{f}") for f in folders],
             )
         data[''].files.append(FileResponse(name="__original.zip", **forms_data_dict["__original.zip"]))
         results = {}
-        compute_folders_size_rec(data[''], data, results)
+        compute_attributes_rec(data[''], data, results)
         await ctx.info('folders tree re-constructed', data={k: f"{len(d.files)} file(s)" for k, d in data.items()})
         return data
 
