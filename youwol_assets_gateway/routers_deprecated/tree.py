@@ -128,7 +128,7 @@ async def get_default_drive(
             ensure_folder(name="Desktop", folder_id=f"{default_drive_id}_desktop", parent_folder_id=default_drive_id,
                           treedb=treedb, context=ctx))
 
-        system_packages = await ensure_folder(name="Packages", folder_id=f"{default_drive_id}_system_package",
+        system_packages = await ensure_folder(name="Packages", folder_id=f"{default_drive_id}_system_packages",
                                               parent_folder_id=system['folderId'], treedb=treedb, context=ctx)
 
         resp = DefaultDriveResponse(
