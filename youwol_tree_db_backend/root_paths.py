@@ -234,9 +234,15 @@ async def get_default_drive(
                           parent_folder_id=default_drive_id, configuration=configuration, context=ctx)
         )
 
-        system_packages = await ensure_folder(
-            name="Packages", folder_id=f"{default_drive_id}_system_package",
-            parent_folder_id=system.folderId, configuration=configuration, context=ctx
+        system_packages, system_tmp = await asyncio.gather(
+            ensure_folder(
+                name="Packages", folder_id=f"{default_drive_id}_system_packages",
+                parent_folder_id=system.folderId, configuration=configuration, context=ctx
+            ),
+            ensure_folder(
+                name="Tmp", folder_id=f"{default_drive_id}_system_tmp",
+                parent_folder_id=system.folderId, configuration=configuration, context=ctx
+            )
         )
 
         resp = DefaultDriveResponse(
@@ -247,6 +253,8 @@ async def get_default_drive(
             downloadFolderName=download.name,
             homeFolderId=home.folderId,
             homeFolderName=home.name,
+            tmpFolderId=system_tmp.folderId,
+            tmpFolderName=system_tmp.name,
             systemFolderId=system.folderId,
             systemFolderName=system.name,
             systemPackagesFolderId=system_packages.folderId,
@@ -398,7 +406,8 @@ async def create_item(
             response=lambda: response
     ) as ctx:  # type: Context
 
-        return await _create_item(request=request, folder_id=folder_id, item=item, configuration=configuration, context=ctx)
+        return await _create_item(request=request, folder_id=folder_id, item=item, configuration=configuration,
+                                  context=ctx)
 
 
 @router.post("/items/{item_id}",
