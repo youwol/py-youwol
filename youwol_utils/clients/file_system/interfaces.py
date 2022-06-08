@@ -25,3 +25,6 @@ class FileSystemInterface(ABC):
     async def remove_object(self, object_name: str, **kwargs):
         raise NotImplementedError
 
+    @abstractmethod
+    async def remove_folder(self, prefix: str, raise_not_found: bool, **kwargs):
+        pass

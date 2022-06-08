@@ -1,14 +1,20 @@
 import io
 import os
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Union
+from typing import Dict, Union, cast
 
 from fastapi import HTTPException
 
-from youwol_utils import create_dir_if_needed
 from youwol_utils.clients.file_system.interfaces import FileSystemInterface
 from youwol_utils.utils_paths import write_json, parse_json
+
+
+def create_dir_if_needed(full_path: Path):
+    dir_path = full_path.parent
+    if not dir_path.exists():
+        os.makedirs(cast(os.PathLike, dir_path))
 
 
 @dataclass(frozen=True)
@@ -20,7 +26,7 @@ class LocalFileSystem(FileSystemInterface):
         return self.root_path / path
 
     async def put_object(self, object_name: str, data: io.BytesIO, length: int = -1,
-                         content_type: str = "", metadata: Dict[str, str] = None):
+                         content_type: str = "", metadata: Dict[str, str] = None, **kwargs):
 
         metadata = metadata or {}
         path = self.get_full_path(object_name)
@@ -63,8 +69,16 @@ class LocalFileSystem(FileSystemInterface):
         if path_metadata.exists():
             os.remove(path_metadata)
 
+    async def remove_folder(self, prefix: str, raise_not_found, **kwargs):
+        path = self.get_full_path(prefix)
+        if raise_not_found and not path.is_dir():
+            raise HTTPException(status_code=404, detail=f"LocalFileSystem.remove_folder: Folder '{path}' not found")
+        if not path.is_dir():
+            return
+        shutil.rmtree(path)
+
     def ensure_object_exist(self, object_name: str):
         path = self.get_full_path(object_name)
         if not path.exists():
-            raise HTTPException(status_code=404, detail=f"LocalFileSystem.remove_object: Object '{path}' not found")
+            raise HTTPException(status_code=404, detail=f"LocalFileSystem.ensure_object_exist: Object '{path}' not found")
         return path

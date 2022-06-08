@@ -5,8 +5,9 @@ from pathlib import Path
 from typing import Dict, Union
 from minio import Minio, S3Error
 from minio.commonconfig import REPLACE, CopySource
+from minio.deleteobjects import DeleteObject
 
-from youwol_utils import ResourcesNotFoundException, ServerError
+from youwol_utils.exceptions import ResourcesNotFoundException, ServerError
 from youwol_utils.clients.file_system.interfaces import FileSystemInterface
 
 
@@ -44,7 +45,7 @@ class MinioFileSystem(FileSystemInterface):
         try:
             length = data.getbuffer().nbytes if length == -1 else length
             return self.client.put_object(
-                self.bucket_name, object_name=object_name, data=data, length=length,
+                bucket_name=self.bucket_name, object_name=object_name, data=data, length=length,
                 metadata=metadata, content_type=content_type
             )
         except S3Error as e:
@@ -109,3 +110,26 @@ class MinioFileSystem(FileSystemInterface):
                 detail=f"MinioFileSystem.remove_object: {e.message}"
             )
 
+    async def remove_folder(self, prefix: str, raise_not_found: bool, **kwargs):
+        prefix = self.get_full_object_name(prefix)
+        try:
+            delete_object_list = map(
+                lambda x: DeleteObject(x.object_name),
+                self.client.list_objects(bucket_name=self.bucket_name, prefix=prefix, recursive=True),
+            )
+            if raise_not_found and not delete_object_list:
+                raise ResourcesNotFoundException(
+                    path=f"{self.bucket_name}:{prefix}",
+                    detail=f"MinioFileSystem.remove_folder"
+                )
+
+            response = self.client.remove_objects(bucket_name=self.bucket_name, delete_object_list=delete_object_list)
+            return response
+        except S3Error as e:
+            raise ServerError(
+                status_code=500,
+                detail=f"MinioFileSystem.remove_folder: {e.message}"
+            )
+
+    def get_full_object_name(self, object_name: str):
+        return f"{str(self.root_path).strip('/')}/{object_name}"
