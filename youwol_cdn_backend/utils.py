@@ -1,6 +1,7 @@
 import asyncio
 import base64
 import hashlib
+import io
 import itertools
 import json
 import os
@@ -140,7 +141,7 @@ async def publish_package(file: IO, filename: str, content_encoding, configurati
             raise PublishPackageError(f"Prerelease '{prerelease}' not in {Constants.allowed_prerelease}")
 
         base_path = Path('libraries') / library_id / version
-        storage = configuration.storage
+        file_system = configuration.file_system
 
         paths = flatten([[Path(root) / f for f in files] for root, _, files in os.walk(dir_path)])
         paths = [p for p in paths if p != zip_path]
@@ -153,16 +154,24 @@ async def publish_package(file: IO, filename: str, content_encoding, configurati
         md5_stamp = md5_from_folder(dir_path)
         await context.info(text=f"md5_stamp={md5_stamp}")
 
-        post_requests = [storage.post_object(path=form.objectName, content=form.objectData,
-                                             content_type=form.content_type, owner=Constants.owner, headers=headers)
-                         for form in forms]
-
-        async with context.start(action="Upload data in storage"):
+        async with context.start(action="Upload data in storage") as ctx:  # type: Context
             prefix = f"{base_path}/"
-            await context.info(text=f"Clean minio directory {prefix}")
-            await storage.delete_group(prefix=f"{prefix}", owner=Constants.owner, headers=headers)
-            await context.info(text=f"Send {len(post_requests)} files to storage")
-            await asyncio.gather(*post_requests)
+            async with ctx.start(action=f"Clean minio directory {prefix}") as ctx_clean:  # type: Context
+                await file_system.remove_folder(prefix=f"{prefix}", raise_not_found=False, headers=ctx_clean.headers())
+
+            async with ctx.start(action=f"Send {len(forms)} files to storage") as ctx_post:  # type: Context
+                post_requests = [file_system.put_object(
+                    object_name=str(form.objectName),
+                    data=io.BytesIO(form.objectData),
+                    content_type=form.content_type,
+                    metadata={
+                        "fileName": form.objectName.name,
+                        "contentType": form.content_type or get_content_type(filename),
+                        "contentEncoding": form.content_encoding or get_content_encoding(filename)
+                    },
+                    headers=ctx_post.headers())
+                    for form in forms]
+                await asyncio.gather(*post_requests)
 
         async with context.start(action="Create record in docdb"):
             record = format_doc_db_record(package_path=package_path, fingerprint=md5_stamp)
@@ -173,13 +182,23 @@ async def publish_package(file: IO, filename: str, content_encoding, configurati
         explorer_data = await create_explorer_data(dir_path=package_path.parent, root_path=base_path, forms=forms,
                                                    context=context)
 
-        def get_explorer_path(folder):
-            base = f"generated/explorer/{library_id}/{version}"
-            return f"{base}/{folder}/items.json" if folder and folder != '.' else f"{base}/items.json"
+        def put_explorer_object(folder, items):
 
-        await asyncio.gather(*[storage.post_json(path=get_explorer_path(folder), json=items.dict(),
-                                                 owner=Constants.owner, headers=headers)
-                               for folder, items in explorer_data.items()])
+            path_base = f"generated/explorer/{library_id}/{version}"
+            path = f"{path_base}/{folder}/items.json" if folder and folder != '.' else f"{path_base}/items.json"
+
+            return file_system.put_object(
+                object_name=path,
+                data=io.BytesIO(json.dumps(items.dict()).encode()),
+                metadata={
+                    "fileName": Path(path).name,
+                    "contentType": 'application/json',
+                    "contentEncoding": 'identity'
+                },
+                headers=headers
+            )
+
+        await asyncio.gather(*[put_explorer_object(folder, items) for folder, items in explorer_data.items()])
 
         return PublishResponse(name=package_json["name"], version=version, compressedSize=compressed_size,
                                id=to_package_id(package_json["name"]), fingerprint=md5_stamp,
@@ -399,10 +418,10 @@ async def resolve_resource(library_id: str, input_version: str, configuration: C
 
 
 async def fetch_resource(path: str, max_age: str, configuration: Configuration, context: Context):
-    content = await configuration.storage.get_bytes(
-        path=path,
-        owner=Constants.owner,
-        headers=context.headers())
+    content = await configuration.file_system.get_object(
+        object_name=path,
+        headers=context.headers()
+    )
 
     return format_response(content=content, file_id=path.split('/')[-1], max_age=max_age)
 

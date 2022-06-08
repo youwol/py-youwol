@@ -1,4 +1,6 @@
 import asyncio
+import io
+import json
 import shutil
 from typing import Optional
 
@@ -70,10 +72,10 @@ async def download_library(
         version = await resolve_explicit_version(package_name=to_package_name(library_id), input_version=version,
                                                  configuration=configuration, context=ctx)
 
-        storage = configuration.storage
+        file_system = configuration.file_system
         path = get_path(library_id=library_id, version=version, rest_of_path='__original.zip')
         await ctx.info("Original zip path retrieved", data={"path": path})
-        content = await storage.get_bytes(path=path, owner=Constants.owner, headers=ctx.headers())
+        content = await file_system.get_object(object_name=path, headers=ctx.headers())
         return Response(content, media_type='multipart/form-data')
 
 
@@ -209,7 +211,7 @@ async def delete_version(
     ) as ctx:  # type: Context
 
         doc_db = configuration.doc_db
-        storage = configuration.storage
+        file_system = configuration.file_system
         library_name = to_package_name(library_id)
 
         doc = await doc_db.get_document(
@@ -222,8 +224,9 @@ async def delete_version(
         path_folder = f"{library_name}/{version}"
 
         await asyncio.gather(
-            storage.delete_group(f"libraries/{path_folder}", owner=Constants.owner, headers=ctx.headers()),
-            storage.delete_group(f"generated/explorer/{path_folder}", owner=Constants.owner, headers=ctx.headers())
+            file_system.remove_folder(prefix=f"libraries/{path_folder}", raise_not_found=False, headers=ctx.headers()),
+            file_system.remove_folder(prefix=f"generated/explorer/{path_folder}", raise_not_found=False,
+                                      headers=ctx.headers())
         )
         return {"deletedCount": 1}
 
@@ -431,6 +434,12 @@ async def explorer(
             raise HTTPException(status_code=400, detail=f"'{library_id}' is not a valid library id")
 
         path = f"generated/explorer/{package_name.replace('@', '')}/{version}/{rest_of_path}/".replace('//', '/')
-        storage = configuration.storage
-        items = await storage.get_json(path + "items.json", owner=Constants.owner, headers=ctx.headers())
+        file_system = configuration.file_system
+        try:
+            items = await file_system.get_object(object_name=path + "items.json", headers=ctx.headers())
+        except HTTPException as e:
+            if e.status_code != 404:
+                raise e
+            return ExplorerResponse()
+        items = json.load(io.BytesIO(items))
         return ExplorerResponse(**items)

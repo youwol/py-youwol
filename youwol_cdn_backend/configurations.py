@@ -1,9 +1,10 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Union, Optional, Callable, Awaitable
+from typing import Union, Optional, Callable, Awaitable, TypeVar
 
 from youwol_utils.clients.docdb.docdb import DocDbClient as RemoteDocDb
 from youwol_utils.clients.docdb.local_docdb import LocalDocDbClient as LocalDocDb
+from youwol_utils.clients.file_system import FileSystemInterface
 from youwol_utils.clients.storage.local_storage import LocalStorageClient as LocalStorage
 from youwol_utils.clients.storage.storage import StorageClient as RemoteStorage
 from youwol_utils.http_clients.cdn_backend import LIBRARIES_TABLE
@@ -20,10 +21,13 @@ class Constants:
     schema_docdb = LIBRARIES_TABLE
 
 
+FileSystemImplementation = TypeVar('FileSystemImplementation', bound=FileSystemInterface)
+
+
 @dataclass(frozen=True)
 class Configuration:
 
-    storage: Storage
+    file_system: FileSystemImplementation
     doc_db: DocDb
     required_libs:  Optional[Path] = None
 

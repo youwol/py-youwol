@@ -30,9 +30,8 @@ from youwol_utils.http_clients.tree_db_backend import create_doc_dbs
 async def cdn_config_py_youwol():
     env = await yw_config()
     return cdn.Configuration(
-        storage=LocalStorage(
-            root_path=env.pathsBook.local_storage,
-            bucket_name=cdn.Constants.namespace
+        file_system=LocalFileSystem(
+            root_path=env.pathsBook.local_storage / cdn.Constants.namespace / 'youwol-users'
         ),
         doc_db=LocalDocDb(root_path=env.pathsBook.local_docdb,
                           keyspace_name=cdn.Constants.namespace,
