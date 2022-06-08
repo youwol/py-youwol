@@ -1,7 +1,8 @@
 import io
 from dataclasses import dataclass
+from pathlib import Path
 
-from typing import Dict
+from typing import Dict, Union
 from minio import Minio, S3Error
 from minio.commonconfig import REPLACE, CopySource
 
@@ -14,6 +15,7 @@ class MinioFileSystem(FileSystemInterface):
 
     client: Minio
     bucket_name: str
+    root_path: Union[str, Path] = ""
 
     metadata_keys = {
         'x-amz-meta-contentencoding': 'contentEncoding',
@@ -36,7 +38,9 @@ class MinioFileSystem(FileSystemInterface):
             )
 
     async def put_object(self, object_name: str, data: io.BytesIO, length: int = -1,
-                         content_type: str = "", metadata: Dict[str, str] = None):
+                         content_type: str = "", metadata: Dict[str, str] = None, **kwargs):
+
+        object_name = self.get_full_object_name(object_name)
         try:
             length = data.getbuffer().nbytes if length == -1 else length
             return self.client.put_object(
@@ -51,6 +55,7 @@ class MinioFileSystem(FileSystemInterface):
 
     async def get_info(self, object_name: str, **kwargs):
 
+        object_name = self.get_full_object_name(object_name)
         try:
             stat = self.client.stat_object(
                 self.bucket_name, object_name=object_name
@@ -66,6 +71,7 @@ class MinioFileSystem(FileSystemInterface):
 
     async def set_metadata(self, object_name: str, metadata: Dict[str, str], **kwargs):
 
+        object_name = self.get_full_object_name(object_name)
         try:
             response = self.client.copy_object(
                 bucket_name=self.bucket_name,
@@ -82,6 +88,7 @@ class MinioFileSystem(FileSystemInterface):
 
     async def get_object(self, object_name: str, **kwargs):
 
+        object_name = self.get_full_object_name(object_name)
         try:
             response = self.client.get_object(bucket_name=self.bucket_name, object_name=object_name)
             return response.read()
@@ -92,6 +99,7 @@ class MinioFileSystem(FileSystemInterface):
             )
 
     async def remove_object(self, object_name: str, **kwargs):
+        object_name = self.get_full_object_name(object_name)
         try:
             response = self.client.remove_object(bucket_name=self.bucket_name, object_name=object_name)
             return response
