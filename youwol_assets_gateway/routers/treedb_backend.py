@@ -1,7 +1,13 @@
+import asyncio
+from typing import List
+
 from fastapi import APIRouter, Depends, Query, HTTPException
 from starlette.requests import Request
 
 from youwol_assets_gateway.configurations import Configuration, get_configuration
+from .files_backend import remove_file
+from .flux_backend import delete_project
+from .stories_backend import delete_story
 from youwol_utils.context import Context
 from youwol_utils.http_clients.tree_db_backend import PurgeResponse, ChildrenResponse, EntityResponse, MoveResponse, \
     MoveItemBody, PathResponse, ItemResponse, RenameBody, ItemBody, FolderResponse, DriveResponse, DrivesResponse, \
@@ -444,18 +450,57 @@ async def delete_drive(
         )
 
 
+class AssetsGtwPurgeResponse(PurgeResponse):
+    errorsRawDeletion: List[str]
+    errorsAssetDeletion: List[str]
+
+
 @router.delete("/drives/{drive_id}/purge",
                summary="purge drive's items scheduled for deletion",
-               response_model=PurgeResponse)
+               response_model=AssetsGtwPurgeResponse)
 async def purge_drive(
         request: Request,
         drive_id: str,
         configuration: Configuration = Depends(get_configuration)
 ):
+    async def erase_flux_project(raw_id: str):
+        await delete_project(request=request, project_id=raw_id, purge=False, configuration=configuration)
+
+    async def erase_story(raw_id: str):
+        await delete_story(request=request, project_id=raw_id, purge=False, configuration=configuration)
+
+    async def erase_file(raw_id: str):
+        await remove_file(request=request, project_id=raw_id, purge=False, configuration=configuration)
+
+    factory = {
+        "flux-project": erase_flux_project,
+        "story": erase_story,
+        "data": erase_file
+    }
+    assets_db = configuration.assets_client
+
     async with Context.start_ep(
             request=request
     ) as ctx:
-        return await configuration.treedb_client.purge_drive(
+        resp = await configuration.treedb_client.purge_drive(
             drive_id=drive_id,
             headers=ctx.headers()
         )
+        errors_raw_deletion = []
+        errors_asset_deletion = []
+        for to_delete in [item for item in resp['items'] if not item['borrowed']]:
+            erase = factory[to_delete['kind']]
+            resp_raw, resp_asset = await asyncio.gather(
+                erase(raw_id=to_delete['rawId']),
+                assets_db.delete_asset(asset_id=to_delete['assetId'], headers=ctx.headers()),
+                return_exceptions=True
+            )
+            if isinstance(resp_raw, Exception):
+                await ctx.warning("Error while deleting raw part of asset", data=to_delete)
+                errors_raw_deletion.append(to_delete['rawId'])
+            if isinstance(resp_asset, Exception):
+                await ctx.warning("Error while deleting asset", data=to_delete)
+                errors_asset_deletion.append(to_delete['assetId'])
+
+        return AssetsGtwPurgeResponse(**resp, errorsRawDeletion=errors_raw_deletion,
+                                      errorsAssetDeletion=errors_asset_deletion)
