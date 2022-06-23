@@ -42,12 +42,12 @@ async def login(
     return {"access_token": f"access_token_{resp.email}"}
 
 
-@router.get("/keycloak-access-token",
-            summary="get keycloak access token of current user")
+@router.get("/access-token",
+            summary="get access token of current user")
 async def keycloak_token(
         request: Request,
         config: YouwolEnvironment = Depends(yw_config)
         ):
 
     token = await config.get_auth_token(Context.from_request(request))
-    return {"access_token": token}
+    return {"accessToken": token}
