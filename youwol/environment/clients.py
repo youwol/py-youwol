@@ -32,6 +32,22 @@ class RemoteClients:
         return TreeDbClient(url_base=f"https://{remote_host}/api/assets-gateway/treedb-backend", headers=headers)
 
     @staticmethod
+    async def get_gtw_files_client(context: Context) -> FilesClient:
+        env = await context.get('env', YouwolEnvironment)
+        remote_host = env.get_remote_info().host
+        auth_token = await env.get_auth_token(context=context)
+        headers = {"Authorization": f"Bearer {auth_token}"}
+        return FilesClient(url_base=f"https://{remote_host}/api/assets-gateway/files-backend", headers=headers)
+
+    @staticmethod
+    async def get_gtw_assets_client(context: Context) -> AssetsClient:
+        env = await context.get('env', YouwolEnvironment)
+        remote_host = env.get_remote_info().host
+        auth_token = await env.get_auth_token(context=context)
+        headers = {"Authorization": f"Bearer {auth_token}"}
+        return AssetsClient(url_base=f"https://{remote_host}/api/assets-gateway/assets-backend", headers=headers)
+
+    @staticmethod
     async def get_flux_client(context: Context) -> FluxClient:
         # <!> this method will be removed as FluxClient should not be reachable
         env = await context.get('env', YouwolEnvironment)

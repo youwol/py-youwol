@@ -29,13 +29,15 @@ class UploadDataTask(UploadTask):
             form_data.add_field(name='file', value=data, filename=asset['name'],
                                 content_type=info['metadata']['contentType'])
             form_data.add_field('rawId', self.raw_id)
+            form_data.add_field('file_id', self.raw_id)
+            form_data.add_field('file_name', asset['name'])
             return form_data
 
     async def create_raw(self, data: FormData, folder_id: str, context: Context):
 
         async with context.start(action="UploadDataTask.create_raw") as ctx:  # type: Context
-            remote_gtw = await RemoteClients.get_assets_gateway_client(context=ctx)
-            await remote_gtw.put_asset_with_raw(kind='data', folder_id=folder_id, data=data, headers=ctx.headers())
+            files_client = await RemoteClients.get_gtw_files_client(context=ctx)
+            await files_client.upload(data=data, params={"folder-id": folder_id}, headers=ctx.headers())
 
     async def update_raw(self, data: bytes, folder_id: str, context: Context):
 

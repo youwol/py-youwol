@@ -171,9 +171,9 @@ async def synchronize_metadata(asset_id: str, assets_gtw_client: AssetsGatewayCl
             form_data = FormData()
             form_data.add_field(name='file', value=value, filename=filename)
             forms.append(form_data)
-
+        remote_assets = await RemoteClients.get_gtw_assets_client(context=context)
         await asyncio.gather(
-            assets_gtw_client.update_asset(asset_id=asset_id, body=local_metadata, headers=ctx.headers()),
+            remote_assets.update_asset(asset_id=asset_id, body=local_metadata, headers=ctx.headers()),
             *[
                 assets_gtw_client.post_asset_image(asset_id=asset_id, filename=name, data=form, headers=ctx.headers())
                 for name, form in zip(filenames, forms)
