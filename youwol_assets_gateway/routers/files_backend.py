@@ -5,7 +5,7 @@ from starlette.responses import Response
 
 from youwol_assets_gateway.raw_stores import AssetMeta, AssetImg
 from youwol_assets_gateway.routers.common import assert_write_permissions_folder_id, create_asset, \
-    assert_read_permissions_from_raw_id
+    assert_read_permissions_from_raw_id, delete_asset
 
 from youwol_utils.context import Context
 from youwol_assets_gateway.configurations import Configuration, get_configuration
@@ -148,6 +148,7 @@ async def get_file(
 async def remove_file(
         request: Request,
         file_id: str,
+        purge: bool = False,
         configuration: Configuration = Depends(get_configuration)
 ):
 
@@ -159,4 +160,7 @@ async def remove_file(
             file_id=file_id,
             headers=ctx.headers()
         )
+        if purge:
+            await delete_asset(raw_id=file_id, configuration=configuration, context=ctx)
+
         return response
