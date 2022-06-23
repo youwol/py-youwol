@@ -1,5 +1,5 @@
 from aiohttp import ClientResponse
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -60,15 +60,19 @@ async def upload(
         images = [AssetImg(name=file.fileName, content=content)] \
             if file.contentType in mime_types_images else \
             []
-        return await create_asset(
-            kind="data",
-            raw_id=file.fileId,
-            raw_response=file.dict(),
-            folder_id=folder_id,
-            metadata=AssetMeta(name=file.fileName, images=images),
-            context=ctx,
-            configuration=configuration
-        )
+        parameters_base = {
+            "kind": "data",
+            "raw_id": file.fileId,
+            "raw_response": file.dict(),
+            "folder_id": folder_id,
+            "context": ctx,
+            "configuration": configuration
+        }
+        try:
+            return await create_asset(**parameters_base, metadata=AssetMeta(name=file.fileName, images=images))
+        except HTTPException:
+            # create_asset may fail because of images, e.g. some PIL decoding particular images format
+            return await create_asset(**parameters_base, metadata=AssetMeta(name=file.fileName))
 
 
 @router.get(
