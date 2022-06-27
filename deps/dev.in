@@ -3,4 +3,4 @@ pdoc3
 pytest
 pytest-cov
 pip-tools
-pip<22
+pip

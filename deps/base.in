@@ -13,6 +13,7 @@ psutil
 python-daemon
 python-multipart
 pyyaml
+pyjwt[crypto]
 uvicorn
 websockets
 semantic_version
