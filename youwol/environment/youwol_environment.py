@@ -140,7 +140,7 @@ class YouwolEnvironment(BaseModel):
         if self.private_cache.get("default-drive"):
             return self.private_cache.get("default-drive")
         env = await context.get('env', YouwolEnvironment)
-        default_drive = await LocalClients.get_assets_gateway_client(env).get_default_user_drive()
+        default_drive = await LocalClients.get_assets_gateway_client(env).get_default_user_drive(headers=context.headers())
         self.private_cache["default-drive"] = DefaultDriveResponse(**default_drive)
         return DefaultDriveResponse(**default_drive)
 
