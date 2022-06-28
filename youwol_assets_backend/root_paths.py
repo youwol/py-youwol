@@ -13,7 +13,8 @@ from starlette.responses import Response
 
 from youwol_utils import (
     user_info, private_group_id, to_group_id, is_child_group,
-    ancestors_group_id, QueryBody, Query, WhereClause, get_leaf_group_ids, FileData, to_group_scope, is_authorized_write
+    ancestors_group_id, QueryBody, Query, WhereClause, get_leaf_group_ids, FileData, to_group_scope,
+    QueryIndexException
 )
 from youwol_assets_backend.configurations import Configuration, get_configuration, Constants
 from youwol_utils.context import Context
@@ -194,6 +195,13 @@ async def get_access_policy(
         group_id: str,
         configuration: Configuration = Depends(get_configuration)
 ):
+    def query_body(for_group_id: str):
+        return QueryBody(
+            max_results=1,
+            query=Query(where_clause=[WhereClause(column="asset_id", relation="eq", term=asset_id),
+                                      WhereClause(column="consumer_group_id", relation="eq", term=for_group_id)])
+        )
+
     async with Context.start_ep(
             request=request
     ) as ctx:  # type: Context
@@ -206,20 +214,12 @@ async def get_access_policy(
                                     timestamp=None)
 
         ancestors_groups = [group_id] + ancestors_group_id(group_id)
-        bodies_specific = [QueryBody(
-            max_results=1,
-            query=Query(where_clause=[WhereClause(column="asset_id", relation="eq", term=asset_id),
-                                      WhereClause(column="consumer_group_id", relation="eq", term=group_id)])
-        ) for group_id in ancestors_groups]
+        bodies_specific = [query_body(for_group_id=for_group_id) for for_group_id in ancestors_groups]
 
         query_specific = [docdb_access.query(query_body=body, owner=Constants.public_owner, headers=ctx.headers())
                           for body in bodies_specific]
 
-        body_default = QueryBody(
-            max_results=1,
-            query=Query(where_clause=[WhereClause(column="asset_id", relation="eq", term=asset_id),
-                                      WhereClause(column="consumer_group_id", relation="eq", term="*")])
-        )
+        body_default = query_body(for_group_id="*")
 
         query_default = docdb_access.query(query_body=body_default, owner=Constants.public_owner, headers=ctx.headers())
 
