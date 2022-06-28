@@ -512,7 +512,8 @@ async def purge_drive(
     async with Context.start_ep(
             request=request
     ) as ctx:
-        resp = await configuration.treedb_client.purge_drive(
+        tree_db = configuration.treedb_client
+        resp = await tree_db.purge_drive(
             drive_id=drive_id,
             headers=ctx.headers()
         )
@@ -531,6 +532,15 @@ async def purge_drive(
             if isinstance(resp_asset, Exception):
                 await ctx.warning("Error while deleting asset", data=to_delete)
                 errors_asset_deletion.append(to_delete['assetId'])
+
+        for to_delete in [item for item in resp['items'] if item['borrowed']]:
+            related_items = await tree_db.get_items_from_asset(asset_id=to_delete['assetId'], headers=ctx.headers())
+            borrowed_items_in_group = [item for item in related_items['items']
+                                       if item['borrowed'] and item['groupId'] == to_delete['groupId']]
+            if len(borrowed_items_in_group) == 0:
+                await ctx.info(text="Remove access policy for (asset, group)", data={'toDelete': to_delete})
+                await assets_db.delete_access_policy(asset_id=to_delete['assetId'], group_id=to_delete['groupId'],
+                                                     headers=ctx.headers())
 
         return AssetsGtwPurgeResponse(**resp, errorsRawDeletion=errors_raw_deletion,
                                       errorsAssetDeletion=errors_asset_deletion)
