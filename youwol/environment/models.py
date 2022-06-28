@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from youwol.configuration.models_k8s import K8sCluster
 from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol.environment.models_project import Pipeline
+from youwol_utils.clients.oidc.oidc_config import PrivateClient, PublicClient
 from youwol_utils.context import Context
 
 
@@ -22,6 +23,10 @@ class RemoteGateway(BaseModel):
     name: str
     host: str
     metadata: Dict[str, str]
+    openidClient: Union[PublicClient, PrivateClient]
+    openidBaseUrl: str
+    adminClient: Optional[PrivateClient]
+    keycloakAdminBaseUrl: Optional[str]
 
 
 class Secret(BaseModel):

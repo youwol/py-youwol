@@ -1,14 +1,15 @@
-from youwol.environment.clients import LocalClients
-
-import youwol_cdn_backend as cdn
-import youwol_assets_gateway as assets_gtw
-import youwol_stories_backend as stories
-import youwol_cdn_apps_server as cdn_apps_server
-import youwol_tree_db_backend as tree_db
+import youwol_accounts_backend
 import youwol_assets_backend as assets_backend
-import youwol_flux_backend as flux_backend
+import youwol_assets_gateway as assets_gtw
+import youwol_cdn_apps_server as cdn_apps_server
+import youwol_cdn_backend as cdn
 import youwol_cdn_sessions_storage as cdn_sessions_storage
 import youwol_files_backend as youwol_files_backend
+import youwol_flux_backend as flux_backend
+import youwol_stories_backend as stories
+import youwol_tree_db_backend as tree_db
+from youwol.environment.clients import LocalClients
+from youwol.environment.youwol_environment import yw_config
 from youwol_stories_backend import Configuration as StoriesConfig
 from youwol_utils import CdnClient
 from youwol_utils.clients.assets.assets import AssetsClient
@@ -20,8 +21,6 @@ from youwol_utils.clients.flux.flux import FluxClient
 from youwol_utils.clients.storage.local_storage import LocalStorageClient as LocalStorage
 from youwol_utils.clients.stories.stories import StoriesClient
 from youwol_utils.clients.treedb.treedb import TreeDbClient
-
-from youwol.environment.youwol_environment import yw_config
 from youwol_utils.http_clients.assets_backend import ASSETS_TABLE, ACCESS_HISTORY, ACCESS_POLICY
 from youwol_utils.http_clients.flux_backend import PROJECTS_TABLE, COMPONENTS_TABLE
 from youwol_utils.http_clients.tree_db_backend import create_doc_dbs
@@ -94,7 +93,6 @@ async def flux_backend_config_py_youwol():
 
 
 async def assets_gtw_config_py_youwol():
-
     env = await yw_config()
     url_base = f"http://localhost:{env.httpPort}/api"
 
@@ -117,7 +115,6 @@ async def assets_gtw_config_py_youwol():
 
 
 async def stories_config_py_youwol():
-
     env = await yw_config()
     return StoriesConfig(
         storage=LocalStorage(
@@ -164,4 +161,15 @@ async def files_backend_config_py_youwol():
         file_system=LocalFileSystem(
             root_path=env.pathsBook.local_storage / bucket_name / 'youwol-users'
         ),
+    )
+
+
+async def accounts_backend_config_py_youwol():
+    config = await yw_config()
+
+    return youwol_accounts_backend.Configuration(
+        openid_base_url=config.get_remote_info().openidBaseUrl,
+        openid_client=config.get_remote_info().openidClient,
+        admin_client=config.get_remote_info().adminClient,
+        keycloak_admin_base_url=config.get_remote_info().keycloakAdminBaseUrl
     )

@@ -62,10 +62,15 @@ class ConfigurationHandler:
 
     def get_redirect_base_path(self) -> str:
         return self.effective_config_data.redirectBasePath if self.effective_config_data.redirectBasePath \
-            else f"https://{default_platform_host}/api"
+            else f"https://{self.get_platform_host()}/api"
 
     def get_openid_host(self) -> str:
-        return self.effective_config_data.openIdHost if self.effective_config_data.openIdHost else default_platform_host
+        return self.effective_config_data.openIdHost if self.effective_config_data.openIdHost \
+            else self.get_platform_host()
+
+    def get_platform_host(self) -> str:
+        return self.effective_config_data.platformHost if self.effective_config_data.platformHost \
+            else default_platform_host
 
     def set_profile(self, profile: str):
         if profile in self.config_data.extending_profiles.keys():
