@@ -216,7 +216,7 @@ class ResourcesNotFoundException(YouWolException):
 class QueryIndexException(YouWolException):
     exceptionType = "QueryIndexException"
 
-    def __init__(self, query: str, error: str, **kwargs):
+    def __init__(self, query: str, error: Any, **kwargs):
         YouWolException.__init__(
             self,
             status_code=404,
