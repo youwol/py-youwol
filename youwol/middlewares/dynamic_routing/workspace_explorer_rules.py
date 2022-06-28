@@ -48,11 +48,12 @@ class GetChildrenDispatch(AbstractDispatch):
 
             local_gtw_treedb = LocalClients.get_gtw_treedb_client(env=env)
             try:
-                await local_gtw_treedb.get_folder(folder_id=folder_id, headers=ctx.headers())
+                await local_gtw_treedb.get_entity(entity_id=folder_id, headers=ctx.headers())
             except HTTPException as e:
                 if e.status_code != 404:
                     raise e
-                await ctx.info(text="The folder is not found in local installation, proceed to download from remote")
+                await ctx.info(text="The drive/folder is not found in local installation, proceed to download from "
+                                    "remote")
                 await ensure_local_path(folder_id=folder_id, env=env, context=ctx)
 
             remote_gtw_treedb = await RemoteClients.get_gtw_treedb_client(context=ctx)
