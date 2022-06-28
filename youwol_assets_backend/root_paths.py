@@ -359,25 +359,25 @@ async def access_info(
             get_asset_implementation(request=request, asset_id=asset_id, configuration=configuration, context=ctx),
             get_permissions_implementation(request=request, asset_id=asset_id, configuration=configuration, context=ctx)
         )
-        owner_info = None
-        if is_authorized_write(request, asset.groupId):
-            groups = list({policy['consumer_group_id'] for policy in policies['documents']
-                           if policy['consumer_group_id'] != asset.groupId})
-            policies = await asyncio.gather(*[
-                get_access_policy(request=request, asset_id=asset_id, group_id=group_id, configuration=configuration)
-                for group_id in groups + ["*"]
-            ])
-            exposing_groups = [ExposingGroup(name=to_group_scope(group), groupId=group, access=format_policy(policy))
-                               for group, policy in zip(groups, policies[0:-1]) if group != "*"]
-            default_access = format_policy(policies[-1])
-            owner_info = OwnerInfo(exposingGroups=exposing_groups, defaultAccess=default_access)
+        owning_group = OwningGroup(name=to_group_scope(asset.groupId), groupId=asset.groupId)
+
+        groups = list({policy['consumer_group_id'] for policy in policies['documents']
+                       if policy['consumer_group_id'] != asset.groupId})
+        policies = await asyncio.gather(*[
+            get_access_policy(request=request, asset_id=asset_id, group_id=group_id, configuration=configuration)
+            for group_id in groups + ["*"]
+        ])
+        exposing_groups = [ExposingGroup(name=to_group_scope(group), groupId=group, access=format_policy(policy))
+                           for group, policy in zip(groups, policies[0:-1]) if group != "*"]
+        default_access = format_policy(policies[-1])
+        owner_info = OwnerInfo(exposingGroups=exposing_groups, defaultAccess=default_access)
 
         permissions = PermissionsResp(write=permissions.write, read=permissions.read, share=permissions.share,
                                       expiration=permissions.expiration)
 
         consumer_info = ConsumerInfo(permissions=permissions)
-        response = AccessInfoResp(owningGroup=OwningGroup(name=to_group_scope(asset.groupId),
-                                                          groupId=asset.groupId),
+
+        response = AccessInfoResp(owningGroup=owning_group,
                                   ownerInfo=owner_info,
                                   consumerInfo=consumer_info)
         return response
