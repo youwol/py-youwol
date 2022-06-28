@@ -340,7 +340,7 @@ async def access_info(
         configuration: Configuration = Depends(get_configuration)
 ):
     response = Optional[AccessInfoResp]
-
+    max_policies_count = 1000
     async with Context.start_ep(
             request=request,
             response=lambda: response,
@@ -348,12 +348,15 @@ async def access_info(
     ) as ctx:
         docdb_access = configuration.doc_db_access_policy
         body_default = QueryBody(
-            max_results=1,
+            max_results=max_policies_count,
             query=Query(where_clause=[WhereClause(column="asset_id", relation="eq", term=asset_id)])
         )
 
         policies = await docdb_access.query(query_body=body_default, owner=Constants.public_owner,
                                             headers=ctx.headers())
+        if len(policies['documents']) > max_policies_count:
+            raise QueryIndexException(query="access_policy, query policies by asset_id",
+                                      error=f"Maximum expected count reached {max_policies_count}")
 
         asset, permissions = await asyncio.gather(
             get_asset_implementation(request=request, asset_id=asset_id, configuration=configuration, context=ctx),
