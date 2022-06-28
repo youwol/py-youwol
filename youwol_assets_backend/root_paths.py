@@ -67,9 +67,8 @@ async def create_asset(
             "images": [],
             "thumbnails": []
         }
-
+        await ensure_post_permission(request=request, doc=doc_asset, configuration=configuration, context=ctx)
         if policy.read == ReadPolicyEnum.forbidden and policy.share == SharePolicyEnum.forbidden:
-            await ensure_post_permission(request=request, doc=doc_asset, configuration=configuration, context=ctx)
             return format_asset(doc_asset, request)
 
         docdb_access = configuration.doc_db_access_policy
@@ -85,9 +84,8 @@ async def create_asset(
             "timestamp": int(now)
         }
 
-        await asyncio.gather(
-            ensure_post_permission(request=request, doc=doc_asset, configuration=configuration, context=ctx),
-            docdb_access.create_document(doc=doc_access_default, owner=Constants.public_owner, headers=ctx.headers()))
+        await docdb_access.create_document(doc=doc_access_default, owner=Constants.public_owner, headers=ctx.headers())
+
         return format_asset(doc_asset, request)
 
 
