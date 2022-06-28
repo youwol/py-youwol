@@ -193,6 +193,7 @@ async def get_access_policy(
         request: Request,
         asset_id: str,
         group_id: str,
+        include_inherited: bool = RequestQuery(True, alias="include-inherited"),
         configuration: Configuration = Depends(get_configuration)
 ):
     def query_body(for_group_id: str):
@@ -207,6 +208,18 @@ async def get_access_policy(
     ) as ctx:  # type: Context
 
         docdb_access = configuration.doc_db_access_policy
+
+        if not include_inherited:
+            query_specific = query_body(for_group_id=group_id)
+            resp = await docdb_access.query(query_body=query_specific, owner=Constants.public_owner,
+                                            headers=ctx.headers())
+            if not resp["documents"]:
+                raise QueryIndexException(query="docdb_access@[asset_id,group_id]",
+                                          error={"reason": "no record found", "assetId": asset_id, "groupId": group_id})
+            doc = resp["documents"][0]
+            return AccessPolicyResp(read=ReadPolicyEnum[doc["read"]], parameters=json.loads(doc["parameters"]),
+                                    share=SharePolicyEnum[doc["share"]], timestamp=doc["timestamp"])
+
         asset = await ensure_get_permission(request=request, asset_id=asset_id, scope='r', configuration=configuration,
                                             context=ctx)
         if is_child_group(child_group_id=group_id, parent_group_id=asset['group_id']):
