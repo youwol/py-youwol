@@ -332,16 +332,46 @@ async def borrow(
             request=request
     ) as ctx:
         tree_db, assets_db = configuration.treedb_client, configuration.assets_client
-        tree_item = await tree_db.get_item(item_id=item_id, headers=ctx.headers())
-        permission = await assets_db.get_permissions(asset_id=tree_item['assetId'], headers=ctx.headers())
-        if not permission['share']:
+        tree_item, destination = await asyncio.gather(
+            tree_db.get_item(item_id=item_id, headers=ctx.headers()),
+            tree_db.get_entity(entity_id=body.destinationFolderId, headers=ctx.headers())
+        )
+        await ctx.info(text="[tree_item, destination] retrieved", data={
+            "tree_item": tree_item,
+            "destination": destination
+        })
+        asset, user_permission, access_policy = await asyncio.gather(
+            assets_db.get_asset(asset_id=tree_item['assetId'], headers=ctx.headers()),
+            assets_db.get_permissions(asset_id=tree_item['assetId'], headers=ctx.headers()),
+            assets_db.get_access_policy(asset_id=tree_item['assetId'], group_id=destination['entity']['groupId'],
+                                        headers=ctx.headers(), params={'include-inherited': "false"}),
+            return_exceptions=True
+        )
+        await ctx.info(text="[asset, user_permission, access_policy] retrieved", data={
+            "asset": asset,
+            "user_permission": user_permission,
+            "access_policy": access_policy if not isinstance(access_policy, BaseException) else "No policy found"
+        })
+        if not user_permission['share']:
             raise HTTPException(status_code=403, detail='The resource can not be shared')
 
-        return await configuration.treedb_client.borrow(
+        resp = await configuration.treedb_client.borrow(
             item_id=item_id,
             body=body.dict(),
             headers=ctx.headers()
         )
+        if not isinstance(access_policy, BaseException) and access_policy['read'] == "owning":
+            await ctx.info(text="Borrowing in owning group => RAS")
+
+        if not isinstance(access_policy, BaseException):
+            await ctx.info(text="Borrowing in group already included in access policy=> RAS")
+
+        if isinstance(access_policy, HTTPException) and access_policy.status_code == 404:
+            await assets_db.put_access_policy(asset_id=tree_item['assetId'],
+                                              group_id=destination['entity']['groupId'],
+                                              body={"read": "authorized", "share": "authorized"},
+                                              headers=ctx.headers())
+        return resp
 
 
 @router.get("/entities/{entity_id}",
