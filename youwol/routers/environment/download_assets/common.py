@@ -103,6 +103,24 @@ async def sync_borrowed_items(
         for p in borrowed_locations
     ])
 
+
+async def sync_access_policies(
+        asset_id: str,
+        context: Context
+):
+    async with context.start(action="Sync. access policies") as ctx:  # type: Context
+        assets_remote = await RemoteClients.get_gtw_assets_client(ctx)
+        assets_local = LocalClients.get_assets_client(await ctx.get('env', YouwolEnvironment))
+        access_info = await assets_remote.get_access_info(asset_id=asset_id, headers=ctx.headers())
+        access_info = access_info['ownerInfo']
+        await asyncio.gather(
+            assets_local.put_access_policy(asset_id=asset_id, group_id="*", body=access_info['defaultAccess']),
+            *[assets_local.put_access_policy(asset_id=asset_id, group_id=group['groupId'], body=group['access'])
+              for group in access_info['exposingGroups']]
+        )
+        print(access_info)
+
+
 T = TypeVar('T')
 
 
@@ -177,7 +195,7 @@ async def create_asset_local(
             headers=ctx.headers()
         )
         await ctx.info(text="Asset raw's data downloaded successfully")
-
+        await sync_access_policies(asset_id=asset_id, context=context)
         await sync_borrowed_items(
             asset_id=asset_id,
             borrowed_locations=borrowed_locations,
