@@ -14,6 +14,7 @@ python-daemon
 python-multipart
 pyyaml
 pyjwt[crypto]
+redis
 uvicorn
 websockets
 semantic_version

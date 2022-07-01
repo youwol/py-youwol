@@ -10,7 +10,7 @@ import uvicorn
 from youwol.configuration.configuration_validation import ConfigurationLoadingException
 from youwol.environment.youwol_environment import YouwolEnvironmentFactory, print_invite, \
     YouwolEnvironment
-from youwol.fastapi_app import download_thread, fastapi_app
+from youwol.fastapi_app import download_thread, fastapi_app, cleaner_thread
 from youwol.main_args import get_main_arguments
 from youwol.utils.utils_low_level import assert_python, shutdown_daemon_script, assert_py_youwol_starting_preconditions
 
@@ -40,6 +40,13 @@ def main():
         print(traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__))
         raise e
 
+    try:
+        cleaner_thread.go()
+    except BaseException as e:
+        print("Error while starting download thread")
+        print(traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__))
+        raise e
+
     print_invite(conf=env, shutdown_script_path=shutdown_script_path if get_main_arguments().daemonize else None)
 
     try:
@@ -59,6 +66,7 @@ def main():
         raise e
     finally:
         download_thread.join()
+        cleaner_thread.join()
         shutdown_script_path.unlink(missing_ok=True)
 
 
