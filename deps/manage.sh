@@ -82,7 +82,8 @@ Once you have a virtual environment for this project, activate it before running
   source <path_to_venv>/bin/activate
 "
 else
-  echo "[venv] ${VIRTUAL_ENV}"
+  echo "[venv]
+peth: ${VIRTUAL_ENV}"
   echo
 fi
 
@@ -96,7 +97,7 @@ echo
 case "${action}" in
 
   "upgrade")
-      export CUSTOM_COMPILE_COMMAND="${0} upgrade"
+      export CUSTOM_COMPILE_COMMAND="sh ${0} upgrade"
       echo "[action] Upgrading dependencies to their latest version"
       echo
       ch_cwd
@@ -127,7 +128,7 @@ case "${action}" in
     ;;
 
   "compile")
-      export CUSTOM_COMPILE_COMMAND="${0} compile"
+      export CUSTOM_COMPILE_COMMAND="sh ${0} compile"
       echo "[action] Compiling requirements files from deps/*.in"
       echo
       ch_cwd
