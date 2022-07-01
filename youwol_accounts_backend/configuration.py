@@ -9,13 +9,16 @@ class Configuration:
     openid_client: Union[PrivateClient, PublicClient]
     keycloak_admin_base_url: Optional[str]
     admin_client: Optional[PrivateClient]
+    jwt_cache: CacheClient
     pkce_cache: CacheClient
 
-    def __init__(self, openid_base_url: str, openid_client, keycloak_admin_base_url, admin_client, pkce_cache):
+    def __init__(self, openid_base_url: str, openid_client, keycloak_admin_base_url, admin_client, jwt_cache,
+                 pkce_cache):
         self.openid_base_url = openid_base_url
         self.openid_client = openid_client
         self.keycloak_admin_base_url = keycloak_admin_base_url
         self.admin_client = admin_client
+        self.jwt_cache = jwt_cache
         self.pkce_cache = pkce_cache
 
 

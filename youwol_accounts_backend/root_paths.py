@@ -12,6 +12,7 @@ from youwol_accounts_backend.configuration import get_configuration
 from youwol_utils import ttl
 from youwol_utils.clients.oidc.oidc_config import OidcConfig
 from youwol_utils.clients.oidc.users_management import KeycloakUsersManagement
+from youwol_utils.session_handler import SessionHandler
 
 router = APIRouter(tags=['accounts'])
 
@@ -124,6 +125,9 @@ async def authorization_flow_callback(
         redirect_uri=request.url_for('authorization_flow_callback'),
         code_verifier=(cached_state['code_verifier'])
     )
+    session_uuid = str(uuid.uuid4())
+    SessionHandler(jwt_cache=conf.jwt_cache, session_uuid=session_uuid).store(tokens)
+
     response = RedirectResponse(
         url=(cached_state['target_uri']),
         status_code=307
@@ -131,7 +135,7 @@ async def authorization_flow_callback(
     decoded_token = await oidc_provider.token_decode(tokens['id_token'])
     response.set_cookie(
         'yw_jwt',
-        tokens['access_token'],
+        session_uuid,
         secure=True,
         httponly=True,
         max_age=365 * 24 * 60 * 60

@@ -7,8 +7,10 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp
 
-from youwol_utils.clients.oidc.oidc_config import OidcConfig
+from youwol_utils import CacheClient
+from youwol_utils.clients.oidc.oidc_config import OidcConfig, OidcInfos
 from youwol_utils.context import Context, Label
+from youwol_utils.session_handler import SessionHandler
 
 
 class Middleware(BaseHTTPMiddleware):
@@ -86,21 +88,46 @@ class JwtProviderBearer(JwtProvider):
 
 class JwtProviderCookie(JwtProvider):
 
-    async def get_token(self, request: Request, context: Context) -> Optional[str]:
-        token = request.cookies.get('yw_jwt')
+    def __init__(self, jwt_cache: CacheClient, openid_infos: Union[OidcInfos, Any]):
+        self.__cache = jwt_cache
+        self.openid_infos = openid_infos
 
-        if not token:
+    async def get_token(self, request: Request, context: Context) -> Optional[str]:
+        session_uuid = request.cookies.get('yw_jwt')
+
+        if not session_uuid:
             await context.info("No cookie yw_jwt")
             return None
 
-        await context.info("Found cookie yw_jwt")
-        return token
+        session_handler = SessionHandler(jwt_cache=self.__cache, session_uuid=session_uuid)
+        cached_access_token = session_handler.get_access_token()
+
+        if not cached_access_token:
+            await context.info("No access token for found cookie")
+
+        if isinstance(self.openid_infos, OidcInfos):
+            openid_infos = self.openid_infos
+        else:
+            openid_infos = await self.openid_infos()
+
+        if await session_handler.refresh(
+                openid_base_url=openid_infos.base_uri,
+                openid_client=openid_infos.client,
+        ):
+            await context.info("Successfully refreshed tokens")
+            cached_access_token = session_handler.get_access_token()
+        else:
+            await context.info("Failed to refresh tokens")
+            return None
+
+        await context.info("Found token for cookie yw_jwt")
+        return cached_access_token
 
 
 class AuthMiddleware(BaseHTTPMiddleware):
 
     def __init__(self, app: ASGIApp,
-                 openid_base_url: Union[str, Any],
+                 openid_infos: Union[OidcInfos, Any],
                  jwt_providers: List[JwtProvider] = None,
                  predicate_public_path=lambda url: False,
                  on_missing_token=lambda url: Response(content="Unauthorized", status_code=403),
@@ -109,8 +136,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
         self.predicate_public_path = predicate_public_path
         self.jwt_providers: List[JwtProvider] = [JwtProviderBearer()] + (jwt_providers if jwt_providers else [])
         self.on_missing_token = on_missing_token
-        self.oidc_config = OidcConfig(openid_base_url) if isinstance(openid_base_url, str) else None
-        self.openid_base_url = openid_base_url
+        self.oidc_config = OidcConfig(openid_infos.base_uri) if isinstance(openid_infos, OidcInfos) else None
+        self.openid_infos = openid_infos
 
     async def dispatch(self,
                        request: Request,
@@ -157,10 +184,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
     async def get_oidc_config(self):
-        if isinstance(self.openid_base_url, str):
+        if isinstance(self.openid_infos, OidcInfos):
             return self.oidc_config
 
-        current_oidc_base_url = await self.openid_base_url()
+        current_oidc_base_url = (await self.openid_infos()).base_uri
         if self.oidc_config is None or self.oidc_config.base_url != current_oidc_base_url:
             self.oidc_config = OidcConfig(current_oidc_base_url)
         return self.oidc_config

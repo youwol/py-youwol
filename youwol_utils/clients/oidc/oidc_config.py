@@ -39,6 +39,11 @@ class OpenIdConfiguration(BaseModel):
     jwks_uri: str
 
 
+class OidcInfos(BaseModel):
+    base_uri: str
+    client: Union[PublicClient, PrivateClient]
+
+
 class OidcConfig:
     base_url: str
     _openid_configuration: Optional[OpenIdConfiguration]
@@ -212,6 +217,28 @@ class OidcForClient:
                 token = await resp.json()
                 if status != 200:
                     raise Exception(f"Failed to exchange token : {token}")
+
+        return token
+
+    async def refresh(self, refresh_token: str):
+        conf = await self._config.openid_configuration()
+
+        params = {
+            'client_id': self._client.client_id,
+            'grant_type': 'refresh_token',
+            'refresh_token': refresh_token
+        }
+
+        if self._client.type == ClientType.PRIVATE:
+            params['client_secret'] = self._client.client_secret
+
+        async with aiohttp.ClientSession() as session:
+            async with session.post(conf.token_endpoint,
+                                    data=params) as resp:
+                status = resp.status
+                token = await resp.json()
+                if status != 200:
+                    raise Exception(f"Failed to refresh token : {token}")
 
         return token
 

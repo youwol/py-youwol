@@ -8,7 +8,7 @@ import youwol.middlewares.dynamic_routing.missing_asset_rules as missing_asset
 import youwol.middlewares.dynamic_routing.workspace_explorer_rules as workspace_explorer
 from youwol.environment.auto_download_thread import AssetDownloadThread
 from youwol.environment.youwol_environment import yw_config, api_configuration
-from youwol.middlewares.auth_middleware import redirect_on_missing_token, JwtProviderConfig, get_remote_openid_base_url
+from youwol.middlewares.auth_middleware import redirect_on_missing_token, get_remote_openid_infos, JwtProviderConfig
 from youwol.middlewares.browser_caching_middleware import BrowserCachingMiddleware
 from youwol.middlewares.dynamic_routing_middleware import DynamicRoutingMiddleware
 from youwol.routers import native_backends, admin, authorization
@@ -38,12 +38,14 @@ download_thread = AssetDownloadThread(
 
 cleaner_thread = CleanerThread()
 
+jwt_cache = factory_local_cache(cleaner_thread, 'jwt_cache')
 accounts_pkce_cache = factory_local_cache(cleaner_thread, 'jwt_cache')
 ContextFactory.with_static_data = {
     "env": lambda: yw_config(),
     "download_thread": download_thread,
     "cleaner_thread": cleaner_thread,
     "accounts_pkce_cache": accounts_pkce_cache,
+    "jwt_cache": jwt_cache,
     "fastapi_app": lambda: fastapi_app
 }
 
@@ -69,9 +71,10 @@ fastapi_app.add_middleware(custom_dispatch.CustomDispatchesMiddleware)
 fastapi_app.add_middleware(BrowserCachingMiddleware)
 fastapi_app.add_middleware(
     AuthMiddleware,
-    openid_base_url=get_remote_openid_base_url,
+    openid_infos=get_remote_openid_infos,
     predicate_public_path=lambda url:
     url.path.startswith("/api/accounts/openid_rp/"),
+    # jwt_providers=[JwtProviderCookie(jwt_cache=jwt_cache, openid_infos=get_remote_openid_infos )],
     jwt_providers=[JwtProviderConfig()],
     on_missing_token=lambda url:
     redirect_on_missing_token(url)

@@ -8,6 +8,7 @@ from starlette.types import ASGIApp
 
 from youwol.environment.youwol_environment import yw_config
 from youwol.routers.authorization import get_user_info
+from youwol_utils.clients.oidc.oidc_config import OidcInfos
 from youwol_utils.context import Context, Label
 from youwol_utils.middlewares import JwtProvider
 
@@ -82,5 +83,6 @@ def redirect_on_missing_token(url):
         return Response(content="Unauthenticated", status_code=403),
 
 
-async def get_remote_openid_base_url():
-    return (await yw_config()).get_remote_info().openidBaseUrl
+async def get_remote_openid_infos() -> OidcInfos:
+    config = await yw_config()
+    return OidcInfos(base_uri=config.get_remote_info().openidBaseUrl, client=config.get_remote_info().openidClient)
