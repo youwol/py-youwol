@@ -80,3 +80,7 @@ def redirect_on_missing_token(url):
                                 status_code=307)
     else:
         return Response(content="Unauthenticated", status_code=403),
+
+
+async def get_remote_openid_base_url():
+    return (await yw_config()).get_remote_info().openidBaseUrl

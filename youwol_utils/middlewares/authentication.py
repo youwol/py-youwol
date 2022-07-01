@@ -1,4 +1,4 @@
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Union, Any
 
 from fastapi import HTTPException
 from jwt import InvalidTokenError
@@ -100,7 +100,7 @@ class JwtProviderCookie(JwtProvider):
 class AuthMiddleware(BaseHTTPMiddleware):
 
     def __init__(self, app: ASGIApp,
-                 openid_base_url: str,
+                 openid_base_url: Union[str, Any],
                  jwt_providers: List[JwtProvider] = None,
                  predicate_public_path=lambda url: False,
                  on_missing_token=lambda url: Response(content="Unauthorized", status_code=403),
@@ -109,7 +109,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
         self.predicate_public_path = predicate_public_path
         self.jwt_providers: List[JwtProvider] = [JwtProviderBearer()] + (jwt_providers if jwt_providers else [])
         self.on_missing_token = on_missing_token
-        self.oidc_config = OidcConfig(openid_base_url)
+        self.oidc_config = OidcConfig(openid_base_url) if isinstance(openid_base_url, str) else None
+        self.openid_base_url = openid_base_url
 
     async def dispatch(self,
                        request: Request,
@@ -138,7 +139,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 return self.on_missing_token(request.url)
 
             try:
-                token_data = await self.oidc_config.token_decode(token)
+                token_data = await (await self.get_oidc_config()).token_decode(token)
                 await ctx.info(text="Token successfully decoded", data=token_data)
             except InvalidTokenError as error:
                 await ctx.info(text="Invalid token", data=error)
@@ -154,3 +155,12 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
             request.state.user_info = token_data
             return await call_next(request)
+
+    async def get_oidc_config(self):
+        if isinstance(self.openid_base_url, str):
+            return self.oidc_config
+
+        current_oidc_base_url = await self.openid_base_url()
+        if self.oidc_config is None or self.oidc_config.base_url != current_oidc_base_url:
+            self.oidc_config = OidcConfig(current_oidc_base_url)
+        return self.oidc_config

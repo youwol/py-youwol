@@ -28,7 +28,7 @@ class PublicClient(BaseModel):
 
 
 class OpenIdConfiguration(BaseModel):
-    authorization_signing_alg_values_supported: List[str]
+    token_endpoint_auth_signing_alg_values_supported: List[str]
     authorization_endpoint: str
     token_endpoint: str
     end_session_endpoint: str
@@ -36,12 +36,12 @@ class OpenIdConfiguration(BaseModel):
 
 
 class OidcConfig:
-    _base_url: str
+    base_url: str
     _openid_configuration: Optional[OpenIdConfiguration]
     _jwks_client: Optional[PyJWKClient]
 
     def __init__(self, base_url: str):
-        self._base_url = base_url
+        self.base_url = base_url
         self._jwks_client = None
         self._openid_configuration = None
 
@@ -58,7 +58,7 @@ class OidcConfig:
 
     async def jwt_algos(self):
         conf = await self.openid_configuration()
-        return conf.authorization_signing_alg_values_supported
+        return conf.token_endpoint_auth_signing_alg_values_supported
 
     async def jwks_client(self):
         if self._jwks_client is None:
@@ -68,7 +68,7 @@ class OidcConfig:
 
     async def openid_configuration(self):
         if self._openid_configuration is None:
-            well_known_url = f"{self._base_url}/.well-known/openid-configuration"
+            well_known_url = f"{self.base_url}/.well-known/openid-configuration"
             async with aiohttp.ClientSession() as session:
                 async with session.get(well_known_url) as resp:
                     if resp.status != 200:
