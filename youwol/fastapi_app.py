@@ -17,7 +17,7 @@ from youwol.routers.environment.download_assets.flux_project import DownloadFlux
 from youwol.routers.environment.download_assets.package import DownloadPackageTask
 from youwol.utils.utils_low_level import start_web_socket
 from youwol.web_socket import WebSocketsStore, InMemoryReporter, WsDataStreamer
-from youwol_utils import YouWolException, youwol_exception_handler, YouwolHeaders, CleanerThread
+from youwol_utils import YouWolException, youwol_exception_handler, YouwolHeaders, CleanerThread, factory_local_cache
 from youwol_utils.context import ContextFactory
 from youwol_utils.middlewares import AuthMiddleware
 from youwol_utils.middlewares.root_middleware import RootMiddleware
@@ -38,9 +38,12 @@ download_thread = AssetDownloadThread(
 
 cleaner_thread = CleanerThread()
 
+accounts_pkce_cache = factory_local_cache(cleaner_thread, 'jwt_cache')
 ContextFactory.with_static_data = {
     "env": lambda: yw_config(),
     "download_thread": download_thread,
+    "cleaner_thread": cleaner_thread,
+    "accounts_pkce_cache": accounts_pkce_cache,
     "fastapi_app": lambda: fastapi_app
 }
 

@@ -55,6 +55,7 @@ class KeycloakUsersManagement(UsersManagement):
         self._token = tokens['access_token']
 
         user = {
+            'username': username,
             'email': username,
             'emailVerified': True,
             'enabled': True,

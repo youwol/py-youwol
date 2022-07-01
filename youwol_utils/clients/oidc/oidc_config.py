@@ -1,3 +1,7 @@
+import base64
+import hashlib
+import random
+import string
 import urllib
 import uuid
 from enum import Enum
@@ -80,6 +84,11 @@ class OidcConfig:
         return self._openid_configuration
 
 
+def random_code_verifier():
+    choices = string.ascii_letters + string.digits + "-._~"
+    return ''.join((random.choice(choices) for x in range(128)))
+
+
 class OidcForClient:
 
     def __init__(self, config: OidcConfig, client: PrivateClient):
@@ -105,15 +114,21 @@ class OidcForClient:
         if login_hint:
             params['login_hint'] = login_hint
 
-        return url.replace_query_params(**params)
+        code_verifier = random_code_verifier()
+        code_challenge = hashlib.sha256(code_verifier.encode('ascii')).digest()
+        params['code_challenge'] = base64.urlsafe_b64encode(code_challenge).decode('ascii').replace('=', '')
+        params['code_challenge_method'] = 'S256'
 
-    async def auth_flow_handle_cb(self, code: str, redirect_uri: str):
+        return url.replace_query_params(**params), code_verifier
+
+    async def auth_flow_handle_cb(self, code: str, redirect_uri: str, code_verifier: str):
         conf = await self._config.openid_configuration()
         params = {
             'code': code,
             'grant_type': 'authorization_code',
             'client_id': self._client.client_id,
-            'redirect_uri': redirect_uri
+            'redirect_uri': redirect_uri,
+            'code_verifier': code_verifier
         }
 
         if self._client.type == ClientType.PRIVATE:
@@ -174,8 +189,7 @@ class OidcForClient:
 
         return token
 
-    async def token_exchange(self, requested_subject: str, subject_token: str, check_role: Optional[str] =
-    "impersonate"):
+    async def token_exchange(self, requested_subject: str, subject_token: str):
 
         conf = await self._config.openid_configuration()
 

@@ -1,15 +1,22 @@
 from typing import Union, Optional, Callable, Awaitable
 
-from pydantic import BaseModel
-
+from youwol_utils.clients.cache import CacheClient
 from youwol_utils.clients.oidc.oidc_config import PrivateClient, PublicClient
 
 
-class Configuration(BaseModel):
+class Configuration:
     openid_base_url: str
-    openid_client: Union[PrivateClient,PublicClient]
+    openid_client: Union[PrivateClient, PublicClient]
     keycloak_admin_base_url: Optional[str]
     admin_client: Optional[PrivateClient]
+    pkce_cache: CacheClient
+
+    def __init__(self, openid_base_url: str, openid_client, keycloak_admin_base_url, admin_client, pkce_cache):
+        self.openid_base_url = openid_base_url
+        self.openid_client = openid_client
+        self.keycloak_admin_base_url = keycloak_admin_base_url
+        self.admin_client = admin_client
+        self.pkce_cache = pkce_cache
 
 
 class Dependencies:
