@@ -70,13 +70,13 @@ class JwtProviderConfig(JwtProvider):
 
 def redirect_on_missing_token(url):
     if url.path.startswith('/applications'):
-        target_path = urllib.parse.quote(str(url.path))
+        target_uri = urllib.parse.quote(str(url.path))
         login_flow = 'auto'
         if str(url.query).find('login_flow=temp') >= 0:
             login_flow = 'temp'
         if str(url.query).find('login_flow=user') >= 0:
             login_flow = 'user'
-        return RedirectResponse(f"/api/accounts/openid_rp/login?target_path={target_path}&flow={login_flow}",
+        return RedirectResponse(f"/api/accounts/openid_rp/login?target_uri={target_uri}&flow={login_flow}",
                                 status_code=307)
     else:
         return Response(content="Unauthenticated", status_code=403),
