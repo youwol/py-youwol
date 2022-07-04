@@ -175,8 +175,17 @@ async def login_as_temp_user(target_path: str = '/', conf: Configuration = Depen
     client = OidcConfig(conf.openid_base_url).for_client(conf.openid_client)
     tokens = await client.direct_flow(user_name, password)
 
+    session_uuid = str(uuid.uuid4())
+    SessionHandler(jwt_cache=conf.jwt_cache, session_uuid=session_uuid).store(tokens)
+
     response = RedirectResponse(url=target_path, status_code=307)
-    response.set_cookie('yw_jwt', tokens['access_token'], secure=True, httponly=True, max_age=tokens['expires_in'])
+    response.set_cookie(
+        'yw_jwt',
+        session_uuid,
+        secure=True,
+        httponly=True,
+        max_age=tokens['expires_in']
+    )
     return response
 
 
@@ -267,6 +276,15 @@ async def impersonate(
     client = OidcConfig(conf.openid_base_url).for_client(conf.openid_client)
     tokens = await client.token_exchange(user_id, yw_jwt)
 
+    session_uuid = str(uuid.uuid4())
+    SessionHandler(jwt_cache=conf.jwt_cache, session_uuid=session_uuid).store(tokens)
+
     response = RedirectResponse(url="/", status_code=307)
-    response.set_cookie('yw_jwt', tokens['access_token'], secure=True, httponly=True, max_age=tokens['expires_in'])
+    response.set_cookie(
+        'yw_jwt',
+        session_uuid,
+        secure=True,
+        httponly=True,
+        max_age=tokens['expires_in']
+    )
     return response
