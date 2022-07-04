@@ -4,7 +4,6 @@ import random
 import string
 import urllib
 import uuid
-from enum import Enum
 from typing import List, Union
 from typing import Optional
 
@@ -15,19 +14,12 @@ from pydantic import BaseModel
 from starlette.datastructures import URL
 
 
-class ClientType(Enum):
-    PUBLIC = 0
-    PRIVATE = 1
-
-
 class PrivateClient(BaseModel):
-    type = ClientType.PRIVATE
     client_id: str
     client_secret: str
 
 
 class PublicClient(BaseModel):
-    type = ClientType.PUBLIC
     client_id: str
 
 
@@ -39,9 +31,12 @@ class OpenIdConfiguration(BaseModel):
     jwks_uri: str
 
 
+Client = Union[PrivateClient, PublicClient]
+
+
 class OidcInfos(BaseModel):
     base_uri: str
-    client: Union[PublicClient, PrivateClient]
+    client: Client
 
 
 class OidcConfig:
@@ -54,7 +49,7 @@ class OidcConfig:
         self._jwks_client = None
         self._openid_configuration = None
 
-    def for_client(self, client: Union[PublicClient, PrivateClient]) -> "OidcForClient":
+    def for_client(self, client: Client) -> "OidcForClient":
         return OidcForClient(self, client)
 
     async def token_decode(self, token: str):
@@ -96,7 +91,7 @@ def random_code_verifier():
 
 class OidcForClient:
 
-    def __init__(self, config: OidcConfig, client: PrivateClient):
+    def __init__(self, config: OidcConfig, client: Client):
         self._config = config
         self._client = client
 
@@ -113,7 +108,7 @@ class OidcForClient:
             'response_mode': 'query'
         }
 
-        if self._client.type == ClientType.PRIVATE:
+        if isinstance(self._client, PrivateClient):
             params['client_secret'] = self._client.client_secret
 
         if login_hint:
@@ -136,7 +131,7 @@ class OidcForClient:
             'code_verifier': code_verifier
         }
 
-        if self._client.type == ClientType.PRIVATE:
+        if isinstance(self._client, PrivateClient):
             params['client_secret'] = self._client.client_secret
 
         async with aiohttp.ClientSession() as session:
@@ -151,7 +146,7 @@ class OidcForClient:
         return token
 
     async def client_credentials_flow(self):
-        if self._client.type != ClientType.PRIVATE:
+        if isinstance(self._client, PublicClient):
             raise Exception(f"Client {self._client.client_id} is public !")
         conf = await self._config.openid_configuration()
         params = {
@@ -180,7 +175,7 @@ class OidcForClient:
             'client_id': self._client.client_id,
         }
 
-        if self._client.type == ClientType.PRIVATE:
+        if isinstance(self._client, PrivateClient):
             params['client_secret'] = self._client.client_secret
 
         async with aiohttp.ClientSession() as session:
@@ -206,7 +201,7 @@ class OidcForClient:
             'requested_subject': requested_subject
         }
 
-        if self._client.type == ClientType.PRIVATE:
+        if isinstance(self._client, PrivateClient):
             params['client_secret'] = self._client.client_secret
 
         async with aiohttp.ClientSession() as session:
@@ -229,7 +224,7 @@ class OidcForClient:
             'refresh_token': refresh_token
         }
 
-        if self._client.type == ClientType.PRIVATE:
+        if isinstance(self._client, PrivateClient):
             params['client_secret'] = self._client.client_secret
 
         async with aiohttp.ClientSession() as session:
