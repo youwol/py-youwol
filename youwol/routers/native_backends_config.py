@@ -89,7 +89,8 @@ async def flux_backend_config_py_youwol():
             keyspace_name=flux_backend.Constants.namespace,
             table_body=COMPONENTS_TABLE
         ),
-        assets_gtw_client=LocalClients.get_assets_gateway_client(env=env)
+        assets_gtw_client=LocalClients.get_assets_gateway_client(env=env),
+        cdn_client=LocalClients.get_cdn_client(env=env)
     )
 
 

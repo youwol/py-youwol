@@ -59,3 +59,11 @@ class RecordsStorage(BaseModel):
 class RecordsResponse(BaseModel):
     docdb: RecordsDocDb
     storage: RecordsStorage
+
+
+class PublishApplicationBody(BaseModel):
+    name: str
+    title: str
+    version: str
+
+

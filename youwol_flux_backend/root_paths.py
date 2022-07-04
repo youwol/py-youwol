@@ -1,5 +1,6 @@
 import base64
 import itertools
+import json
 import os
 import io
 import tempfile
@@ -15,8 +16,10 @@ from youwol_utils import (
     Request, user_info, get_all_individual_groups, to_group_id,
     asyncio, check_permission_or_raise, RecordsResponse, GetRecordsBody,
     RecordsTable, RecordsKeyspace, RecordsBucket, RecordsDocDb, RecordsStorage, get_group, Query, QueryBody,
+    PublishApplicationBody,
 )
 from youwol_utils.context import Context
+from youwol_utils.http_clients.cdn_backend import PublishResponse
 from youwol_utils.utils_paths import write_json
 from .configurations import Configuration, get_configuration, Constants
 from youwol_utils.http_clients.flux_backend import (
@@ -396,6 +399,50 @@ async def delete_component(
                                                   headers=ctx.headers()))
 
         return {"status": "deleted", "componentId": component_id}
+
+
+@router.post("/projects/{project_id}/publish-application",
+             response_model=PublishResponse,
+             summary="retrieve records definition")
+async def publish_application(
+        request: Request,
+        project_id: str,
+        body: PublishApplicationBody,
+        configuration: Configuration = Depends(get_configuration)
+):
+    """
+    Process to update 'bundle_app_template' from flux-runner:
+    -  copy all files from 'flux-runner/dist' in it
+    -  in index.html:
+        -  replace the "<title>...</title>" by "<title>${title}</title>"
+        -  replace "<base href='...' />" by "<base href='/applications/${name}/0.0.1/' />"
+    -  in on-load_ts...js:
+        -  replace "loadProjectById(projectId)" by "loadProjectByUrl('project.json')"
+    """
+    async with Context.start_ep(
+            request=request
+    ) as ctx:  # type: Context
+        base_path = Path(__file__).parent / 'bundle_app_template'
+        project = await retrieve_project(project_id=project_id, owner=Constants.default_owner,
+                                         storage=configuration.storage, headers=ctx.headers())
+        zip_path = Path(__file__).parent / 'application.zip'
+        zip_file = zipfile.ZipFile(zip_path, 'w')
+        for file in base_path.iterdir():
+            if file.is_file():
+                content = file.read_text()
+                content = content.replace("${title}", body.title).replace("${name}", body.name)
+                zip_file.writestr(file.name, content)
+
+        zip_file.writestr('/package.json', json.dumps({
+            "name": body.name,
+            "version": body.version,
+            "main": "index.html"
+        }))
+        zip_file.writestr('/project.json', json.dumps(project.dict()))
+
+        zip_file.close()
+        data = {'file': zip_path.read_bytes(), 'content_encoding': 'identity'}
+        return await configuration.cdn_client.publish(data=data, headers=ctx.headers())
 
 
 def group_scope_to_id(scope: str) -> str:

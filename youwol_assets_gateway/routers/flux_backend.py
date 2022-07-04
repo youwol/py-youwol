@@ -7,7 +7,7 @@ from starlette.responses import Response
 from youwol_assets_gateway.raw_stores import AssetMeta
 from youwol_assets_gateway.routers.common import assert_write_permissions_folder_id, \
     assert_read_permissions_from_raw_id, assert_write_permissions_from_raw_id, create_asset, delete_asset
-from youwol_utils import encode_id
+from youwol_utils import encode_id, PublishApplicationBody
 from youwol_utils.context import Context
 from youwol_assets_gateway.configurations import Configuration, get_configuration
 from youwol_utils.http_clients.assets_gateway import NewAssetResponse
@@ -204,6 +204,36 @@ async def duplicate(
             raw_response=response,
             folder_id=folder_id,
             metadata=AssetMeta(**metadata),
+            context=ctx,
+            configuration=configuration
+        )
+
+
+@router.post("/projects/{project_id}/publish-application",
+             response_model=NewAssetResponse,
+             summary="retrieve records definition")
+async def publish_application(
+        request: Request,
+        project_id: str,
+        body: PublishApplicationBody,
+        folder_id: str = Query(None, alias="folder-id"),
+        configuration: Configuration = Depends(get_configuration)
+):
+    async with Context.start_ep(
+            request=request
+    ) as ctx:
+        await assert_write_permissions_from_raw_id(raw_id=project_id, configuration=configuration, context=ctx)
+        package = await configuration.flux_client.publish_application(
+            project_id=project_id,
+            body=body.dict(),
+            headers=ctx.headers()
+        )
+        return await create_asset(
+            kind="package",
+            raw_id=package["id"],
+            raw_response=package,
+            folder_id=folder_id,
+            metadata=AssetMeta(name=body.name),
             context=ctx,
             configuration=configuration
         )
