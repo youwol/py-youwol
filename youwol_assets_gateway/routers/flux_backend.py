@@ -7,11 +7,12 @@ from starlette.responses import Response
 from youwol_assets_gateway.raw_stores import AssetMeta
 from youwol_assets_gateway.routers.common import assert_write_permissions_folder_id, \
     assert_read_permissions_from_raw_id, assert_write_permissions_from_raw_id, create_asset, delete_asset
-from youwol_utils import encode_id, PublishApplicationBody
+from youwol_utils import encode_id
 from youwol_utils.context import Context
 from youwol_assets_gateway.configurations import Configuration, get_configuration
 from youwol_utils.http_clients.assets_gateway import NewAssetResponse
-from youwol_utils.http_clients.flux_backend import Project, NewProject, EditMetadata, ProjectSnippet
+from youwol_utils.http_clients.flux_backend import Project, NewProject, EditMetadata, ProjectSnippet, \
+    PublishApplicationBody
 
 router = APIRouter(tags=["assets-gateway.flux-backend"])
 
