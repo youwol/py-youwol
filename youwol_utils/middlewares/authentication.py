@@ -1,10 +1,11 @@
+import urllib
 from typing import List, Tuple, Optional, Union, Any
 
 from fastapi import HTTPException
 from jwt import InvalidTokenError
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint, DispatchFunction
 from starlette.requests import Request
-from starlette.responses import Response
+from starlette.responses import Response, RedirectResponse
 from starlette.types import ASGIApp
 
 from youwol_utils import CacheClient
@@ -191,3 +192,14 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if self.oidc_config is None or self.oidc_config.base_url != current_oidc_base_url:
             self.oidc_config = OidcConfig(current_oidc_base_url)
         return self.oidc_config
+
+
+def redirect_to_login(url):
+    target_uri = urllib.parse.quote(str(url))
+    login_flow = 'auto'
+    if str(url.query).find('login_flow=user') >= 0:
+        login_flow = 'user'
+    if str(url.query).find('login_flow=temp') >= 0:
+        login_flow = 'temp'
+    return RedirectResponse(f"/api/accounts/openid_rp/login?target_uri={target_uri}&flow={login_flow}",
+                            status_code=307)

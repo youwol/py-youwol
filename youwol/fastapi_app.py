@@ -8,7 +8,7 @@ import youwol.middlewares.dynamic_routing.missing_asset_rules as missing_asset
 import youwol.middlewares.dynamic_routing.workspace_explorer_rules as workspace_explorer
 from youwol.environment.auto_download_thread import AssetDownloadThread
 from youwol.environment.youwol_environment import yw_config, api_configuration
-from youwol.middlewares.auth_middleware import redirect_on_missing_token, get_remote_openid_infos, JwtProviderConfig
+from youwol.middlewares.auth_middleware import get_remote_openid_infos, JwtProviderConfig
 from youwol.middlewares.browser_caching_middleware import BrowserCachingMiddleware
 from youwol.middlewares.dynamic_routing_middleware import DynamicRoutingMiddleware
 from youwol.routers import native_backends, admin, authorization
@@ -74,10 +74,11 @@ fastapi_app.add_middleware(
     openid_infos=get_remote_openid_infos,
     predicate_public_path=lambda url:
     url.path.startswith("/api/accounts/openid_rp/"),
-    # jwt_providers=[JwtProviderCookie(jwt_cache=jwt_cache, openid_infos=get_remote_openid_infos )],
     jwt_providers=[JwtProviderConfig()],
-    on_missing_token=lambda url:
-    redirect_on_missing_token(url)
+    # jwt_providers=[JwtProviderCookie(jwt_cache=jwt_cache, openid_infos=get_remote_openid_infos)],
+    # on_missing_token=lambda url:
+    # redirect_to_login(url) if url.path.startswith('/applications') \
+    #     else Response(content="Unauthenticated", status_code=403)
 )
 
 fastapi_app.add_middleware(

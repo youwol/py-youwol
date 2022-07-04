@@ -1,9 +1,8 @@
-import urllib
 from typing import Optional
 
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint, DispatchFunction
 from starlette.requests import Request
-from starlette.responses import Response, RedirectResponse
+from starlette.responses import Response
 from starlette.types import ASGIApp
 
 from youwol.environment.youwol_environment import yw_config
@@ -67,20 +66,6 @@ class JwtProviderConfig(JwtProvider):
     async def get_token(self, request: Request, context: Context) -> Optional[str]:
         config = await yw_config()
         return await config.get_auth_token(context=context)
-
-
-def redirect_on_missing_token(url):
-    if url.path.startswith('/applications'):
-        target_uri = urllib.parse.quote(str(url.path))
-        login_flow = 'auto'
-        if str(url.query).find('login_flow=temp') >= 0:
-            login_flow = 'temp'
-        if str(url.query).find('login_flow=user') >= 0:
-            login_flow = 'user'
-        return RedirectResponse(f"/api/accounts/openid_rp/login?target_uri={target_uri}&flow={login_flow}",
-                                status_code=307)
-    else:
-        return Response(content="Unauthenticated", status_code=403),
 
 
 async def get_remote_openid_infos() -> OidcInfos:
