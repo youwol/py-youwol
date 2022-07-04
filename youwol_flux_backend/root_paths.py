@@ -16,7 +16,6 @@ from youwol_utils import (
     Request, user_info, get_all_individual_groups, to_group_id,
     asyncio, check_permission_or_raise, RecordsResponse, GetRecordsBody,
     RecordsTable, RecordsKeyspace, RecordsBucket, RecordsDocDb, RecordsStorage, get_group, Query, QueryBody,
-    PublishApplicationBody,
 )
 from youwol_utils.context import Context
 from youwol_utils.http_clients.cdn_backend import PublishResponse
@@ -24,7 +23,7 @@ from youwol_utils.utils_paths import write_json
 from .configurations import Configuration, get_configuration, Constants
 from youwol_utils.http_clients.flux_backend import (
     Projects, ProjectSnippet, Project, NewProjectResponse, NewProject,
-    BuilderRendering, RunnerRendering, Requirements, LoadingGraph, EditMetadata, Component,
+    BuilderRendering, RunnerRendering, Requirements, LoadingGraph, EditMetadata, Component, PublishApplicationBody,
 )
 from .utils import (
     extract_zip_file, retrieve_project, update_project,
@@ -425,24 +424,32 @@ async def publish_application(
         base_path = Path(__file__).parent / 'bundle_app_template'
         project = await retrieve_project(project_id=project_id, owner=Constants.default_owner,
                                          storage=configuration.storage, headers=ctx.headers())
-        zip_path = Path(__file__).parent / 'application.zip'
-        zip_file = zipfile.ZipFile(zip_path, 'w')
-        for file in base_path.iterdir():
-            if file.is_file():
-                content = file.read_text()
-                content = content.replace("${title}", body.title).replace("${name}", body.name)
-                zip_file.writestr(file.name, content)
+        project.builderRendering = BuilderRendering(modulesView=[], connectionsView=[])
 
-        zip_file.writestr('/package.json', json.dumps({
-            "name": body.name,
-            "version": body.version,
-            "main": "index.html"
-        }))
-        zip_file.writestr('/project.json', json.dumps(project.dict()))
+        mem_zip = io.BytesIO()
+        with zipfile.ZipFile(mem_zip, 'w') as zip_file:
+            for file in base_path.iterdir():
+                if file.is_file():
+                    content = file.read_text()
+                    content = content.replace("${title}", body.displayName).replace("${name}", body.name)
+                    zip_file.writestr(file.name, content)
 
-        zip_file.close()
-        data = {'file': zip_path.read_bytes(), 'content_encoding': 'identity'}
-        return await configuration.cdn_client.publish(data=data, headers=ctx.headers())
+            zip_file.writestr('/package.json', json.dumps({
+                "name": body.name,
+                "version": body.version,
+                "main": "index.html"
+            }))
+            zip_file.writestr('/project.json', json.dumps(project.dict()))
+            metadata = {
+                "family": "application",
+                "displayName": body.displayName,
+                "execution": body.execution.dict(),
+                "graphics": body.graphics.dict()
+            }
+            zip_file.writestr('/.yw_metadata.json', json.dumps(metadata))
+
+            data = {'file': mem_zip.getvalue(), 'content_encoding': 'identity'}
+            return await configuration.cdn_client.publish(data=data, headers=ctx.headers())
 
 
 def group_scope_to_id(scope: str) -> str:
