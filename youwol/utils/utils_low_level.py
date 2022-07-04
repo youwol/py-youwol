@@ -2,12 +2,12 @@ import asyncio
 import importlib
 import re
 import shutil
+import socket
 import sys
 import tempfile
 from importlib.machinery import SourceFileLoader
 from importlib.util import spec_from_loader
 from pathlib import Path
-import socket
 from typing import Union, Mapping, List, Type, cast, TypeVar, Optional
 
 import aiohttp
@@ -18,6 +18,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
+from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol_utils import log_info, assert_response
 from youwol_utils.context import Context
 
@@ -82,10 +83,12 @@ async def redirect_api_remote(request: Request, context: Context):
         # headers = {k: v for k, v in request.headers.items()}
         # headers = {"Authorization": request.headers.get("authorization")}
 
+        env = await context.get("env", YouwolEnvironment)
+        redirect_base_path = env.redirectBasePath
         return await redirect_request(
             incoming_request=request,
             origin_base_path="/api",
-            destination_base_path="https://gc.platform.youwol.com/api",
+            destination_base_path=redirect_base_path,
             headers=ctx.headers(),
         )
 
