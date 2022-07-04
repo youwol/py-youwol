@@ -105,20 +105,20 @@ class JwtProviderCookie(JwtProvider):
         if not cached_access_token:
             await context.info("No access token for found cookie")
 
-        if isinstance(self.openid_infos, OidcInfos):
-            openid_infos = self.openid_infos
-        else:
-            openid_infos = await self.openid_infos()
+            if isinstance(self.openid_infos, OidcInfos):
+                openid_infos = self.openid_infos
+            else:
+                openid_infos = await self.openid_infos()
 
-        if await session_handler.refresh(
-                openid_base_url=openid_infos.base_uri,
-                openid_client=openid_infos.client,
-        ):
-            await context.info("Successfully refreshed tokens")
-            cached_access_token = session_handler.get_access_token()
-        else:
-            await context.info("Failed to refresh tokens")
-            return None
+            if await session_handler.refresh(
+                    openid_base_url=openid_infos.base_uri,
+                    openid_client=openid_infos.client,
+            ):
+                await context.info("Successfully refreshed tokens")
+                cached_access_token = session_handler.get_access_token()
+            else:
+                await context.info("Failed to refresh tokens")
+                return None
 
         await context.info("Found token for cookie yw_jwt")
         return cached_access_token
