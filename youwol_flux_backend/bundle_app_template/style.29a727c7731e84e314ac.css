@@ -1,0 +1,22 @@
+
+.flux-builder-only{
+    display:none !important
+}
+.flux-element.flux-builder-only{
+    display:none !important
+}
+
+#notifications-container{
+    position: absolute;
+    width: 300px;
+    top:0px;
+    margin:10px;
+    max-height:98vh;
+    overflow-y: auto;
+    font-size: small;
+    z-index:100;
+    background-color: rgba(54,55,55,0.7);
+}
+
+
+/*# sourceMappingURL=style.29a727c7731e84e314ac.css.map*/

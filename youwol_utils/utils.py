@@ -2,7 +2,6 @@ import asyncio
 import base64
 import itertools
 import json
-import os
 from enum import Enum
 from pathlib import Path, PosixPath
 from typing import Union, List, cast, Mapping, Callable, Iterable, Any, NamedTuple
@@ -12,9 +11,8 @@ from fastapi import HTTPException
 from pydantic import BaseModel
 from starlette.requests import Request
 
-from youwol_utils import JSON, to_group_scope, to_group_id
+from youwol_utils import JSON, to_group_id
 from youwol_utils.clients.types import DocDb
-from youwol_utils.exceptions import raise_exception_from_response
 
 flatten = itertools.chain.from_iterable
 
@@ -60,18 +58,10 @@ def is_authorized_write(request: Request, group_id):
     if group_id not in group_ids:
         return False
 
-    permissions = {
-        '/youwol-users': ['greinisch@youwol.com']
-        }
-    scope = to_group_scope(group_id)
-    if scope in permissions:
-        return user['preferred_username'] in permissions[scope]
-
     return True
 
 
 def get_all_individual_groups(groups: List[str]) -> List[Union[str, None]]:
-
     def get_combinations(elements: List[str]):
         result = []
         for i in range(1, len(elements)):
@@ -85,80 +75,23 @@ def get_all_individual_groups(groups: List[str]) -> List[Union[str, None]]:
 
 
 def get_user_group_ids(user) -> List[Union[str, None]]:
-
     group_ids = [to_group_id(g) for g in get_all_individual_groups(user["memberof"]) if g is not None]
     return [private_group_id(user)] + group_ids
 
 
 def get_leaf_group_ids(user) -> List[Union[str, None]]:
-
     group_ids = [to_group_id(g) for g in user["memberof"] if g is not None]
     return [private_group_id(user)] + group_ids
 
 
 def ensure_group_permission(request: Request, group_id: str):
-
     user = user_info(request)
     allowed_groups = get_user_group_ids(user)
     if group_id not in allowed_groups:
         raise HTTPException(status_code=401, detail=f"User can not get/post resource")
 
 
-def full_local_fake_user(request):
-    user_name = request.headers.get('user-name', "fake_account@youwol.com")
-    ta_name = "test account"
-    if user_name == "public":
-        return {
-            "sub": to_group_id(user_name), "email_verified": True, "name": "public account",
-            "preferred_username": "public account", "email": "public-account@youwol.com",
-            "memberof": [
-                "/youwol-users"
-                ],
-            }
-    if user_name == "test":
-        return {
-            "sub": to_group_id(user_name), "email_verified": True, "name": ta_name,
-            "preferred_username": ta_name, "email": "test-account@youwol.com",
-            "memberof": ["/youwol-users/postman-tester/subchildtest1",
-                         "/youwol-users/postman-tester/subchildtest2",
-                         "/youwol-users/youwol-devs",
-                         ],
-        }
-    return {
-        "sub": "82bcba26-65d7-4072-afc4-a28bb58611c4",
-        "email_verified": True,
-        "name": ta_name,
-        "preferred_username": user_name,
-        "memberof": [
-            "/youwol-users/postman-tester/subchildtest1",
-            "/youwol-users/postman-tester/subchildtest2",
-            "/youwol-users/youwol-devs",
-            "/youwol-users/arche"
-        ],
-        "email": user_name,
-    }
-
-
-async def get_access_token(client_id: str, client_secret: str, client_scope: str, openid_host: str):
-
-    body = {
-        "client_id": client_id,
-        "grant_type": "client_credentials",
-        "client_secret": client_secret,
-        "scope": client_scope
-        }
-    url = f"https://{openid_host}/auth/realms/youwol/protocol/openid-connect/token"
-    headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-
-    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
-        async with await session.post(url, data=body, headers=headers) as resp:
-            if resp.status == 200:
-                return await resp.json()
-            await raise_exception_from_response(resp)
-
-
 async def get_youwol_environment(port: int = 2000):
-
     url = f"http://localhost:{port}/admin/environment/configuration"
     async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
         async with await session.post(url=url) as resp:
@@ -169,31 +102,11 @@ async def get_youwol_environment(port: int = 2000):
 
 
 async def reload_youwol_environment(port: int):
-
     url = f"http://localhost:{port}/admin/environment/configuration"
     async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
         async with await session.post(url=url) as resp:
             if resp.status != 200:
                 raise HTTPException(status_code=resp.status, detail=await resp.read())
-
-
-async def get_headers_auth_admin_from_env():
-    client_id = os.getenv("AUTH_CLIENT_ID")
-    client_secret = os.getenv("AUTH_CLIENT_SECRET")
-    client_scope = os.getenv("AUTH_CLIENT_SCOPE")
-    openid_host = os.getenv("AUTH_HOST")
-    resp = await get_access_token(client_id=client_id, client_secret=client_secret, client_scope=client_scope,
-                                  openid_host=openid_host)
-    access_token = resp['access_token']
-    return {"Authorization": f"Bearer {access_token}"}
-
-
-async def get_headers_auth_admin_from_secrets_file(file_path: Path, url_cluster: str, openid_host: str):
-
-    secret = json.loads(file_path.read_text())[url_cluster]
-    resp = await get_access_token(secret["clientId"], secret["clientSecret"], secret["scope"], openid_host=openid_host)
-    access_token = resp['access_token']
-    return {"Authorization": f"Bearer {access_token}"}
 
 
 def generate_headers_downstream(incoming_headers):
@@ -219,7 +132,6 @@ def chunks(lst, n):
 
 async def get_group(primary_key: str, primary_value: Union[str, float, int, bool], groups: List[str], doc_db: DocDb,
                     headers: Mapping[str, str]):
-
     requests = [doc_db.query(query_body=f"{primary_key}={primary_value}#1", owner=group, headers=headers)
                 for group in groups]
     responses = await asyncio.gather(*requests)
@@ -228,7 +140,6 @@ async def get_group(primary_key: str, primary_value: Union[str, float, int, bool
 
 
 def check_permission_or_raise(target_group: Union[str, None], allowed_groups: List[Union[None, str]]):
-
     if not target_group:
         return
     compatible_groups = [g for g in allowed_groups if target_group in g]
@@ -263,7 +174,6 @@ def get_content_type(file_name: Union[str, Path]):
 
 
 def get_content_encoding(file_name: Union[str, Path]):
-
     extension = Path(file_name).name.split('.')[-1]
     if extension == "br":
         return "br"
@@ -274,7 +184,6 @@ def get_content_encoding(file_name: Union[str, Path]):
 
 
 async def retrieve_user_info(auth_token: str, openid_host: str):
-
     headers = {"authorization": f"Bearer {auth_token}"}
     url = f"https://{openid_host}/auth/realms/youwol/protocol/openid-connect/userinfo"
 
@@ -287,7 +196,6 @@ async def retrieve_user_info(auth_token: str, openid_host: str):
 
 
 async def get_myself_auth_token(secret_path: Path, openid_host):
-
     secret = json.loads(open(str(secret_path)).read())
     form = aiohttp.FormData()
     form.add_field("username", secret["myself"]["username"])
@@ -304,7 +212,6 @@ async def get_myself_auth_token(secret_path: Path, openid_host):
 
 
 def exception_message(error: Exception):
-
     if isinstance(error, HTTPException):
         return error.detail
 
@@ -322,7 +229,6 @@ def encode_id(raw_id) -> str:
 
 
 def to_json(obj: BaseModel) -> JSON:
-
     def to_serializable(v):
         if isinstance(v, Path):
             return str(v)

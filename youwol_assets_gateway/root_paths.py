@@ -3,15 +3,15 @@ from typing import Optional
 from fastapi import APIRouter, Depends
 from starlette.requests import Request
 
+from youwol_assets_gateway.configurations import get_configuration
+from youwol_assets_gateway.routers import stories_backend, cdn_backend, files_backend, flux_backend, treedb_backend, \
+    assets_backend
+from youwol_assets_gateway.routers_deprecated import tree, assets, raw, cdn, misc
 from youwol_utils import (
     User, user_info, get_all_individual_groups, Group, private_group_id, to_group_id,
     GroupsResponse,
 )
 from youwol_utils.context import Context
-from youwol_assets_gateway.configurations import get_configuration
-from youwol_assets_gateway.routers_deprecated import tree, assets, raw, cdn, misc
-from youwol_assets_gateway.routers import stories_backend, cdn_backend, files_backend, flux_backend, treedb_backend, \
-    assets_backend
 
 router = APIRouter(tags=["assets-gateway"])
 
@@ -102,8 +102,8 @@ async def get_user_info(request: Request):
         groups = get_all_individual_groups(user["memberof"])
         groups = [Group(id=private_group_id(user), path="private")] + \
                  [Group(id=str(to_group_id(g)), path=g) for g in groups if g]
-
-        response = User(name=user['preferred_username'], groups=groups)
+        name = user['name'] if 'name' in user else 'temporary user'
+        response = User(name=name, groups=groups)
         return response
 
 

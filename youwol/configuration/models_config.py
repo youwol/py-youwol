@@ -39,6 +39,8 @@ class Redirection(BaseModel):
 
 class ConfigurationData(BaseModel):
     httpPort: Optional[int]
+    platformHost: Optional[str]
+    redirectBasePath: Optional[str]
     openIdHost: Optional[str]
     user: Optional[str]
     portsBook: Optional[Dict[str, int]]

@@ -6,7 +6,7 @@ from typing import List, Optional, Union
 import kubernetes as k8s
 import psutil
 import yaml
-from kubernetes.client import V1Namespace, V1Service, ExtensionsV1beta1Api, ExtensionsV1beta1Ingress
+from kubernetes.client import V1Namespace, V1Service
 from kubernetes_asyncio import config as k8s_async_config
 from kubernetes_asyncio.client.api_client import ApiClient
 from psutil import process_iter
@@ -24,7 +24,7 @@ async def k8s_access_token():
     await k8s_async_config.load_kube_config()
     async with ApiClient() as api:
         api_key = api.configuration.api_key
-    return api_key['authorization'].strip('Bearer').strip()
+    return api_key['BearerToken'].strip('Bearer').strip()
 
 
 async def k8s_namespaces() -> List[str]:
@@ -117,12 +117,6 @@ async def k8s_port_forward(namespace: str, service_name: str, target_port: Optio
     kill_k8s_proxy(local_port)
     subprocess.Popen(cmd, shell=True)
     await context.info(f"Port forward {namespace}#{service_name} using local port {local_port}")
-
-
-async def k8s_get_ingress(namespace: str, name: str) -> Optional[ExtensionsV1beta1Ingress]:
-    ingresses = ExtensionsV1beta1Api().list_namespaced_ingress(namespace=namespace)
-    ingress = next((i for i in ingresses.items if i.metadata.name == name), None)
-    return ingress
 
 
 async def ensure_k8s_proxy_running(k8s_cluster: K8sCluster) -> Optional[K8sInstanceInfo]:

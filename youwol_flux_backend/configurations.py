@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Union, Type, Callable, Awaitable, Optional, Dict
 
-from youwol_utils import Storage, DocDb
+from youwol_utils import Storage, DocDb, CdnClient
 
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from youwol_utils.middlewares import Middleware
@@ -51,6 +51,7 @@ class Configuration:
     doc_db: DocDb
     doc_db_component: DocDb
     assets_gtw_client: AssetsGatewayClient
+    cdn_client: CdnClient
     admin_headers: Optional[Dict[str, str]] = None
 
 

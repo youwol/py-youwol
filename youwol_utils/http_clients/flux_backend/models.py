@@ -208,6 +208,30 @@ class PostAdaptorBody(BaseModel):
     configuration: dict
 
 
+class OpenWithDescription(BaseModel):
+    match: Union[dict, str]
+    parametrized: Union[dict, str]
+
+
+class GraphicsDescription(BaseModel):
+    appIcon: dict
+    fileIcon: dict
+    background: dict
+
+
+class ExecutionDescription(BaseModel):
+    standalone: bool
+    parametrized: List[OpenWithDescription]
+
+
+class PublishApplicationBody(BaseModel):
+    name: str
+    displayName: str
+    version: str
+    execution: ExecutionDescription
+    graphics: GraphicsDescription
+
+
 PROJECTS_TABLE = TableBody(
     name='projects',
     version="0.0",
