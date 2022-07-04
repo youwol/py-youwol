@@ -24,7 +24,7 @@ async def k8s_access_token():
     await k8s_async_config.load_kube_config()
     async with ApiClient() as api:
         api_key = api.configuration.api_key
-    return api_key['authorization'].strip('Bearer').strip()
+    return api_key['BearerToken'].strip('Bearer').strip()
 
 
 async def k8s_namespaces() -> List[str]:
@@ -117,7 +117,6 @@ async def k8s_port_forward(namespace: str, service_name: str, target_port: Optio
     kill_k8s_proxy(local_port)
     subprocess.Popen(cmd, shell=True)
     await context.info(f"Port forward {namespace}#{service_name} using local port {local_port}")
-
 
 
 async def ensure_k8s_proxy_running(k8s_cluster: K8sCluster) -> Optional[K8sInstanceInfo]:
