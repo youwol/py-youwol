@@ -448,8 +448,8 @@ async def publish_application(
             }
             zip_file.writestr('/.yw_metadata.json', json.dumps(metadata))
 
-            data = {'file': mem_zip.getvalue(), 'content_encoding': 'identity'}
-            return await configuration.cdn_client.publish(data=data, headers=ctx.headers())
+        data = {'file': mem_zip.getvalue(), 'content_encoding': 'identity'}
+        return await configuration.cdn_client.publish(data=data, headers=ctx.headers())
 
 
 def group_scope_to_id(scope: str) -> str:
