@@ -21,6 +21,7 @@ from youwol.configuration.configuration_validation import (
     CheckSecretHealthy
 )
 from youwol.configuration.defaults import default_platform_host
+from youwol.configuration.models_config import JwtSource
 from youwol.environment.clients import LocalClients
 from youwol.environment.models import RemoteGateway, UserInfo, ApiConfiguration, Events, K8sInstance
 from youwol.environment.models_project import ErrorResponse
@@ -55,6 +56,7 @@ class DeadlinedCache(BaseModel):
 class YouwolEnvironment(BaseModel):
     availableProfiles: List[str]
     httpPort: int
+    jwtSource: JwtSource
     redirectBasePath: str
     openidHost: str
     events: Events
@@ -219,6 +221,7 @@ class YouwolEnvironmentFactory:
 
         new_conf = YouwolEnvironment(
             openidHost=conf.openidHost,
+            jwtSource=conf.jwtSource,
             redirectBasePath=conf.redirectBasePath,
             userEmail=email,
             selectedRemote=remote_name,
@@ -249,6 +252,7 @@ class YouwolEnvironmentFactory:
         conf = YouwolEnvironmentFactory.__cached_config
         new_conf = YouwolEnvironment(
             openidHost=conf.openidHost,
+            jwtSource=conf.jwtSource,
             redirectBasePath=conf.redirectBasePath,
             userEmail=conf.userEmail,
             selectedRemote=conf.selectedRemote,
@@ -434,6 +438,7 @@ async def safe_load(
 
     youwol_configuration = YouwolEnvironment(
         activeProfile=conf_handler.get_profile(),
+        jwtSource=conf_handler.get_jwt_source(),
         availableProfiles=conf_handler.get_available_profiles(),
         redirectBasePath=conf_handler.get_redirect_base_path(),
         openidHost=conf_handler.get_openid_host(),

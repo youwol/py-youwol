@@ -6,9 +6,9 @@ from typing import Optional, List, Union, Dict
 
 from youwol.configuration.defaults import default_http_port, default_path_data_dir, \
     default_path_cache_dir, default_path_projects_dir, default_port_range_start, default_port_range_end, \
-    default_platform_host
+    default_platform_host, default_jwt_source
 from youwol.configuration.models_config import Profiles, ConfigurationData, PortRange, ModuleLoading, \
-    CascadeBaseProfile, CascadeAppend, CascadeReplace, CdnOverride, Redirection, K8sCluster
+    CascadeBaseProfile, CascadeAppend, CascadeReplace, CdnOverride, Redirection, K8sCluster, JwtSource
 from youwol.environment.models import Events, IConfigurationCustomizer
 from youwol.environment.paths import app_dirs
 from youwol.main_args import get_main_arguments
@@ -28,6 +28,7 @@ def append_with(_parent, _appended):
 def replace_with(parent: ConfigurationData, replacement: ConfigurationData) -> ConfigurationData:
     return ConfigurationData(
         httpPort=replacement.httpPort if replacement.httpPort else parent.httpPort,
+        jwtSource=replacement.jwtSource if replacement.jwtSource else parent.jwtSource,
         platformHost=replacement.platformHost if replacement.platformHost else parent.platformHost,
         redirectBasePath=replacement.redirectBasePath if replacement.redirectBasePath else parent.redirectBasePath,
         openIdHost=replacement.openIdHost if replacement.openIdHost else parent.openIdHost,
@@ -59,6 +60,10 @@ class ConfigurationHandler:
             self.set_profile(profile)
         else:
             self.set_profile(self.config_data.selected)
+
+    def get_jwt_source(self) -> JwtSource:
+        return self.effective_config_data.jwtSource if self.effective_config_data.jwtSource \
+            else default_jwt_source
 
     def get_redirect_base_path(self) -> str:
         return self.effective_config_data.redirectBasePath if self.effective_config_data.redirectBasePath \

@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends, WebSocket
 from starlette.requests import Request
-from starlette.responses import RedirectResponse
+from starlette.responses import RedirectResponse, Response
 
 import youwol.middlewares.custom_dispatch_middleware as custom_dispatch
 import youwol.middlewares.dynamic_routing.loading_graph_rules as loading_graph
@@ -19,7 +19,7 @@ from youwol.utils.utils_low_level import start_web_socket
 from youwol.web_socket import WebSocketsStore, InMemoryReporter, WsDataStreamer
 from youwol_utils import YouWolException, youwol_exception_handler, YouwolHeaders, CleanerThread, factory_local_cache
 from youwol_utils.context import ContextFactory
-from youwol_utils.middlewares import AuthMiddleware
+from youwol_utils.middlewares import AuthMiddleware, redirect_to_login
 from youwol_utils.middlewares.root_middleware import RootMiddleware
 
 fastapi_app = FastAPI(
@@ -74,11 +74,10 @@ fastapi_app.add_middleware(
     openid_infos=get_remote_openid_infos,
     predicate_public_path=lambda url:
     url.path.startswith("/api/accounts/openid_rp/"),
-    jwt_providers=[JwtProviderConfig()],
-    # jwt_providers=[JwtProviderCookie(jwt_cache=jwt_cache, openid_infos=get_remote_openid_infos)],
-    # on_missing_token=lambda url:
-    # redirect_to_login(url) if url.path.startswith('/applications') \
-    #     else Response(content="Unauthenticated", status_code=403)
+    jwt_providers=[JwtProviderConfig(jwt_cache=jwt_cache)],
+    on_missing_token=lambda url:
+    redirect_to_login(url) if url.path.startswith('/applications') \
+        else Response(content="Unauthenticated", status_code=403)
 )
 
 fastapi_app.add_middleware(
