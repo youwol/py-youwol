@@ -1,62 +1,95 @@
 import uuid
-from typing import Union, Optional, List
+from typing import Optional, List, Any
 
 from fastapi import APIRouter, Depends
 from fastapi.params import Cookie
 from pydantic import BaseModel
 from starlette.requests import Request
-from starlette.responses import RedirectResponse, Response
+from starlette.responses import RedirectResponse, Response, JSONResponse
 
 from youwol_accounts_backend import Configuration
 from youwol_accounts_backend.configuration import get_configuration
-from youwol_utils import ttl
+from youwol_utils import ttl, private_group_id, to_group_id, get_all_individual_groups
 from youwol_utils.clients.oidc.oidc_config import OidcConfig
 from youwol_utils.clients.oidc.users_management import KeycloakUsersManagement
 from youwol_utils.session_handler import SessionHandler
+
+ONE_YEAR_IN_SECONDS = 365 * 24 * 60 * 60
+FIVE_MINUTES_IN_SECONDS = 5 * 60
 
 router = APIRouter(tags=['accounts'])
 
 
 @router.get('/healthz')
 async def root():
-    return Response(status_code=200, content='{"status":"accounts backend ok"}')
+    return JSONResponse(status_code=200, content={"status": "accounts backend ok"})
 
 
-class AccountDetailsUserInfo(BaseModel):
-    sub: str
-    temp: bool = False
+class SessionDetailsUserGroup(BaseModel):
+    id: str
+    path: str
+
+
+class SessionDetailsUserInfo(BaseModel):
     name: str = "temporary user"
-    memberof: List[str]
+    temp: bool = False
+    groups: List[SessionDetailsUserGroup]
 
 
-class AccountDetails(BaseModel):
-    userInfo: AccountDetailsUserInfo
-    login_hint: Optional[str]
+class SessionDetails(BaseModel):
+    userInfo: SessionDetailsUserInfo
+    remembered: bool
 
 
-@router.get('/current', response_model=AccountDetails)
-async def get_account_details(
+class SessionImpersonationDetails(SessionDetails):
+    realUserInfo: SessionDetailsUserInfo
+
+
+def user_info_from_json(json: Any):
+    return SessionDetailsUserInfo(
+        name=json['name'] if 'name' in json else 'temporary user',
+        temp=json['temp'] if 'temp' in json else False,
+        groups=[SessionDetailsUserGroup(id=private_group_id(json), path="private")] +
+               [SessionDetailsUserGroup(id=str(to_group_id(g)), path=g)
+                for g in get_all_individual_groups(json["memberof"]) if g]
+    )
+
+
+@router.get('/session', response_model=SessionDetails)
+async def get_session_details(
         request: Request,
-        yw_login_hint: Union[str, None] = Cookie(default=None)
+        yw_jwt_t: Optional[str] = Cookie(default=None),
+        yw_login_hint: Optional[str] = Cookie(default=None),
+        conf: Configuration = Depends(get_configuration)
 ):
     """
         Return the details of the current session, as determined by AuthMiddleware
         Also indicate the login_hint, if any.
 
     :param request:
+    :param yw_jwt_t:
     :param yw_login_hint:
+    :param conf:
     :return:
     """
-    details = AccountDetails(userInfo=AccountDetailsUserInfo.parse_obj(request.state.user_info),
-                             login_hint=yw_login_hint)
-    return details
+
+    user_info = user_info_from_json(request.state.user_info)
+
+    if yw_jwt_t:
+        real_session = SessionHandler(jwt_cache=conf.jwt_cache, session_uuid=yw_jwt_t)
+        real_user_info = user_info_from_json(real_session.get_access_token())
+        return SessionImpersonationDetails(userInfo=user_info,
+                                           realUserInfo=real_user_info,
+                                           remembered=yw_login_hint is not None)
+    else:
+        return SessionDetails(userInfo=user_info, remembered=yw_login_hint is not None)
 
 
 @router.get('/openid_rp/auth')
 async def authorization_flow(
         request: Request,
         target_uri: str,
-        yw_login_hint: Union[str, None] = Cookie(default=None),
+        yw_login_hint: Optional[str] = Cookie(default=None),
         conf: Configuration = Depends(get_configuration)
 ):
     """
@@ -86,7 +119,8 @@ async def authorization_flow(
         redirect_uri=redirect_uri,
         login_hint=login_hint
     )
-    conf.pkce_cache.set(state_uuid, {'target_uri': target_uri, 'code_verifier': code_verifier}, expire=ttl(5 * 60))
+    conf.pkce_cache.set(state_uuid, {'target_uri': target_uri, 'code_verifier': code_verifier},
+                        expire=ttl(FIVE_MINUTES_IN_SECONDS))
 
     return RedirectResponse(url, status_code=307)
 
@@ -96,6 +130,7 @@ async def authorization_flow_callback(
         request: Request,
         state: str,
         code: str,
+        yw_jwt: str = Cookie(default=None),
         conf: Configuration = Depends(get_configuration)
 ):
     """
@@ -107,6 +142,7 @@ async def authorization_flow_callback(
         Redirect to the target_uri passed to authorization_flow(request, target_uri) − this target_uri is passed
         around in base64 and is in the param state.
 
+    :param yw_jwt:
     :param request:
     :param state:
     :param code:
@@ -115,43 +151,51 @@ async def authorization_flow_callback(
     """
     cached_state = conf.pkce_cache.get(state)
     if cached_state is None:
-        return Response(status_code=400, content="Invalid state")
+        return JSONResponse(status_code=400, content={"invalid param": "Invalid state"})
 
     oidc_provider = OidcConfig(conf.openid_base_url)
-
     client = oidc_provider.for_client(conf.openid_client)
     tokens = await client.auth_flow_handle_cb(
         code=code,
         redirect_uri=request.url_for('authorization_flow_callback'),
         code_verifier=(cached_state['code_verifier'])
     )
-    session_uuid = str(uuid.uuid4())
-    SessionHandler(jwt_cache=conf.jwt_cache, session_uuid=session_uuid).store(tokens)
+    session = SessionHandler(
+        jwt_cache=conf.jwt_cache,
+        session_uuid=(yw_jwt if yw_jwt else str(uuid.uuid4()))
+    )
+    session.store(tokens)
+
+    decoded_token = await oidc_provider.token_decode(tokens['id_token'])
+    username = decoded_token['upn']
 
     response = RedirectResponse(
         url=(cached_state['target_uri']),
         status_code=307
     )
-    decoded_token = await oidc_provider.token_decode(tokens['id_token'])
     response.set_cookie(
         'yw_jwt',
-        session_uuid,
+        session.get_uuid(),
         secure=True,
         httponly=True,
-        max_age=365 * 24 * 60 * 60
+        max_age=session.get_remaining_time()
     )
     response.set_cookie(
         'yw_login_hint',
-        f"user:{decoded_token['email']}",
+        f"user:{username}",
         secure=True,
         httponly=True,
-        expires=365 * 24 * 60 * 60
+        expires=ONE_YEAR_IN_SECONDS
     )
     return response
 
 
 @router.get('/openid_rp/temp_user')
-async def login_as_temp_user(target_path: str = '/', conf: Configuration = Depends(get_configuration)):
+async def login_as_temp_user(
+        target_path: str = '/',
+        yw_jwt: str = Cookie(default=None),
+        conf: Configuration = Depends(get_configuration)
+):
     """
         Create a temporary user and get an access token for it.
         Could be call directly or by /openid_rp/login endpoint
@@ -159,12 +203,14 @@ async def login_as_temp_user(target_path: str = '/', conf: Configuration = Depen
         Save access token in cookie.
         Redirect to target_path (can be relative to this endpoint URI)
 
+    :param yw_jwt:
     :param target_path:
     :param conf:
     :return:
     """
     if conf.admin_client is None:
-        Response(status_code=403, content="No administration right")
+        return JSONResponse(status_code=403, content={"forbidden": "No administration right on the server side"})
+
     client_admin = OidcConfig(conf.openid_base_url).for_client(conf.admin_client)
 
     users_management = KeycloakUsersManagement(conf.keycloak_admin_base_url, client_admin)
@@ -175,24 +221,27 @@ async def login_as_temp_user(target_path: str = '/', conf: Configuration = Depen
     client = OidcConfig(conf.openid_base_url).for_client(conf.openid_client)
     tokens = await client.direct_flow(user_name, password)
 
-    session_uuid = str(uuid.uuid4())
-    SessionHandler(jwt_cache=conf.jwt_cache, session_uuid=session_uuid).store(tokens)
+    session_uuid = yw_jwt if yw_jwt else str(uuid.uuid4())
+    session = SessionHandler(jwt_cache=conf.jwt_cache, session_uuid=session_uuid)
+    session.store(tokens)
 
     response = RedirectResponse(url=target_path, status_code=307)
     response.set_cookie(
         'yw_jwt',
-        session_uuid,
+        session.get_uuid(),
         secure=True,
         httponly=True,
-        max_age=tokens['expires_in']
+        max_age=session.get_remaining_time()
     )
     return response
 
 
-@router.get('/logout')
+@router.get('/openid_rp/logout')
 async def logout(
         target_uri: Optional[str],
         forget_me: bool = False,
+        yw_jwt: Optional[str] = Cookie(default=None),
+        yw_jwt_t: Optional[str] = Cookie(default=None),
         conf: Configuration = Depends(get_configuration)
 ):
     """
@@ -204,6 +253,8 @@ async def logout(
         Optionally delete yw_login_hint, if forget_me param is true
         Redirect to Identity Provider for logout, which will ultimately redirect to target_uri.
 
+    :param yw_jwt_t:
+    :param yw_jwt:
     :param target_uri:
     :param forget_me:
     :param conf:
@@ -211,10 +262,20 @@ async def logout(
     """
     client = OidcConfig(conf.openid_base_url).for_client(conf.openid_client)
     url = await client.logout_url(target_uri)
+
+    session = SessionHandler(jwt_cache=conf.jwt_cache, session_uuid=yw_jwt)
+    session.delete()
+
+    if yw_jwt_t:
+        real_session = SessionHandler(jwt_cache=conf.jwt_cache, session_uuid=yw_jwt_t)
+        real_session.delete()
+
     response = RedirectResponse(url=url, status_code=307)
     response.set_cookie('yw_jwt', 'DELETED', secure=True, httponly=True, expires=0)
     if forget_me:
         response.set_cookie('yw_login_hint', 'DELETED', secure=True, httponly=True, expires=0)
+    if yw_jwt_t:
+        response.set_cookie('yw_jwt_t', 'DELETED', secure=True, httponly=True, expires=0)
     return response
 
 
@@ -223,7 +284,8 @@ async def login(
         request: Request,
         target_uri: str,
         flow: str = 'auto',
-        yw_login_hint: Union[str, None] = Cookie(default=None),
+        yw_jwt: Optional[str] = Cookie(default=None),
+        yw_login_hint: Optional[str] = Cookie(default=None),
         conf: Configuration = Depends(get_configuration)
 ):
     """
@@ -238,6 +300,7 @@ async def login(
                 cookie yw_login_hint => /openid_rp/auth
                 no cookie yw_login_hint => /openid_rp/temp_user
 
+    :param yw_jwt:
     :param request:
     :param target_uri:
     :param flow:
@@ -252,13 +315,19 @@ async def login(
         return await authorization_flow(request, target_uri, yw_login_hint, conf)
 
     if flow == 'temp':
-        return await login_as_temp_user(target_uri, conf)
+        return await login_as_temp_user(target_uri, yw_jwt, conf)
 
 
-@router.get('/{user_id}/impersonate')
+class ImpersonationDetails(BaseModel):
+    userId: str
+    hidden: bool = False
+
+
+@router.put('/impersonation')
 async def impersonate(
-        user_id: str,
+        details: ImpersonationDetails,
         yw_jwt: Optional[str] = Cookie(default=None),
+        yw_jwt_t: Any = Cookie(default=None),
         conf: Configuration = Depends(get_configuration)
 ):
     """
@@ -268,23 +337,77 @@ async def impersonate(
         Save access token in cookie.
         Redirect to the root path.
 
-    :param user_id:
+    :param yw_jwt_t:
+    :param details:
     :param yw_jwt:
     :param conf:
     :return:
     """
+
+    if conf.admin_client is None:
+        return JSONResponse(status_code=403, content={"forbidden": "no administration right on the server side"})
+
+    if yw_jwt_t:
+        return JSONResponse(status_code=400, content={"invalid request": "Already impersonating"})
+
+    real_session = SessionHandler(jwt_cache=conf.jwt_cache, session_uuid=yw_jwt)
+
     client = OidcConfig(conf.openid_base_url).for_client(conf.openid_client)
-    tokens = await client.token_exchange(user_id, yw_jwt)
+    tokens = await client.token_exchange(details.userId, real_session.get_access_token())
 
-    session_uuid = str(uuid.uuid4())
-    SessionHandler(jwt_cache=conf.jwt_cache, session_uuid=session_uuid).store(tokens)
+    session_uuid = yw_jwt if details.hidden else str(uuid.uuid4())
+    session = SessionHandler(conf.jwt_cache, session_uuid=session_uuid)
+    session.store(tokens)
+    if details.hidden:
+        real_session.delete()
 
-    response = RedirectResponse(url="/", status_code=307)
+    response = Response(status_code=201)
     response.set_cookie(
         'yw_jwt',
-        session_uuid,
+        session.get_uuid(),
         secure=True,
         httponly=True,
-        max_age=tokens['expires_in']
+        max_age=session.get_remaining_time()
+    )
+    if not details.hidden:
+        response.set_cookie(
+            'yw_jwt_t',
+            real_session.get_uuid(),
+            secure=True,
+            httponly=True,
+            max_age=real_session.get_remaining_time()
+        )
+    return response
+
+
+@router.delete('/impersonation')
+async def stop_impersonation(
+        yw_jwt: Optional[str] = Cookie(default=None),
+        yw_jwt_t: Optional[str] = Cookie(default=None),
+        conf: Configuration = Depends(get_configuration)
+):
+    if conf.admin_client is None:
+        return JSONResponse(status_code=403, content={"forbidden": "no administration right on the server side"})
+
+    if yw_jwt_t is None:
+        return JSONResponse(status_code=400, content={"invalid request": "Not impersonating"})
+
+    real_session = SessionHandler(jwt_cache=conf.jwt_cache, session_uuid=yw_jwt_t)
+    SessionHandler(jwt_cache=conf.jwt_cache, session_uuid=yw_jwt).delete()
+
+    response = Response(status_code=204)
+    response.set_cookie(
+        'yw_jwt',
+        yw_jwt_t,
+        secure=True,
+        httponly=True,
+        max_age=real_session.get_remaining_time()
+    )
+    response.set_cookie(
+        'yw_jwt_t',
+        'DELETED',
+        secure=True,
+        httponly=True,
+        expires=0
     )
     return response
