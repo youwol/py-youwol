@@ -2,7 +2,6 @@ import base64
 import hashlib
 import random
 import string
-import urllib
 import uuid
 from typing import List, Union
 from typing import Optional
@@ -104,7 +103,7 @@ class OidcForClient:
             'state': state,
             'scope': 'openid',
             'nonce': str(uuid.uuid4()),
-            'redirect_uri': urllib.parse.quote(redirect_uri, safe=':/'),
+            'redirect_uri': redirect_uri,
             'response_mode': 'query'
         }
 
@@ -240,4 +239,4 @@ class OidcForClient:
     async def logout_url(self, redirect_uri: str):
         conf = await self._config.openid_configuration()
         url = URL(conf.end_session_endpoint)
-        return url.replace_query_params(redirect_uri=urllib.parse.quote(redirect_uri, safe=':/'))
+        return url.replace_query_params(redirect_uri=redirect_uri)
