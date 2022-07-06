@@ -192,7 +192,7 @@ async def authorization_flow_callback(
 
 @router.get('/openid_rp/temp_user')
 async def login_as_temp_user(
-        target_path: str = '/',
+        target_uri: str = '/',
         yw_jwt: str = Cookie(default=None),
         conf: Configuration = Depends(get_configuration)
 ):
@@ -204,7 +204,7 @@ async def login_as_temp_user(
         Redirect to target_path (can be relative to this endpoint URI)
 
     :param yw_jwt:
-    :param target_path:
+    :param target_uri:
     :param conf:
     :return:
     """
@@ -225,7 +225,7 @@ async def login_as_temp_user(
     session = SessionHandler(jwt_cache=conf.jwt_cache, session_uuid=session_uuid)
     session.store(tokens)
 
-    response = RedirectResponse(url=target_path, status_code=307)
+    response = RedirectResponse(url=target_uri, status_code=307)
     response.set_cookie(
         'yw_jwt',
         session.get_uuid(),
@@ -238,7 +238,7 @@ async def login_as_temp_user(
 
 @router.get('/openid_rp/logout')
 async def logout(
-        target_uri: Optional[str],
+        target_uri: str,
         forget_me: bool = False,
         yw_jwt: Optional[str] = Cookie(default=None),
         yw_jwt_t: Optional[str] = Cookie(default=None),
