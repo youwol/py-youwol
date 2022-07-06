@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from starlette.requests import Request
 
 from youwol_utils import JSON, to_group_id
+from youwol_utils.clients.oidc.oidc_config import OidcInfos, OidcConfig
 from youwol_utils.clients.types import DocDb
 
 flatten = itertools.chain.from_iterable
@@ -261,3 +262,8 @@ def to_json(obj: BaseModel) -> JSON:
 
     to_json_rec(base)
     return base
+
+
+async def get_authorization_header(openid_infos: OidcInfos):
+    tokens = await OidcConfig(openid_infos.base_uri).for_client(openid_infos.client).client_credentials_flow()
+    return {'Authorization': f"Bearer {tokens['access_token']}"}
