@@ -1,8 +1,9 @@
 from dataclasses import dataclass
+from typing import Optional
 
 import redis
 
-from youwol_utils.clients.cache import CacheClient
+from youwol_utils.clients.cache import CacheClient, ttl
 
 
 @dataclass(frozen=False)
@@ -23,3 +24,14 @@ class RedisCacheClient(CacheClient):
 
     def _impl_set_expire_at(self, name: str, value: str, unix_timestamp: int):
         self.cache.set(name, value, exat=unix_timestamp)
+
+    def _impl_delete(self, key: str):
+        self.cache.delete(key)
+
+    def _impl_get_ttl(self, key: str) -> Optional[ttl]:
+        exp = self.cache.ttl(key)
+        if exp == '-1':
+            return None
+        if exp == '-2':
+            raise Exception("Key not found")
+        return ttl(exp)

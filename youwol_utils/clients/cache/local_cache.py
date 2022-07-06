@@ -1,11 +1,11 @@
 import sys
 import time
 from threading import Thread, Event
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel
 
-from youwol_utils.clients.cache import CacheClient
+from youwol_utils.clients.cache import CacheClient, ttl
 
 
 class CacheEntry(BaseModel):
@@ -31,6 +31,16 @@ class LocalCacheClient(CacheClient):
 
     def _impl_set_expire_at(self, key: str, value: str, unix_timestamp: int):
         self._cache[key] = CacheEntry(value=value, expire_at=unix_timestamp)
+
+    def _impl_delete(self, key: str):
+        self._cache.pop(key, None)
+
+    def _impl_get_ttl(self, key: str) -> Optional[ttl]:
+        expire_at = self._cache[key].expire_at
+        if expire_at == sys.maxsize:
+            return None
+        else:
+            return ttl(int(expire_at - int(time.time())))
 
     def clear_expired(self):
         for key in [key for key, entry in self._cache.items() if entry.expire_at < int(time.time())]:

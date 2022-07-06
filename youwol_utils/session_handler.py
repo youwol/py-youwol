@@ -24,6 +24,16 @@ class SessionHandler:
             ttl(tokens['refresh_expires_in'])
         )
 
+    def get_uuid(self):
+        return self.__session_uuid
+
+    def get_remaining_time(self):
+        return self.__jwt_cache.get_ttl(f"{self.__session_uuid}_refresh_token")
+
+    def delete(self):
+        self.__jwt_cache.delete(f"{self.__session_uuid}_access_token")
+        self.__jwt_cache.delete(f"{self.__session_uuid}_refresh_token")
+
     def get_access_token(self):
         cached_item = self.__jwt_cache.get(f"{self.__session_uuid}_access_token")
         if cached_item:
