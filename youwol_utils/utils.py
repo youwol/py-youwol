@@ -1,12 +1,12 @@
 import asyncio
 import base64
-import itertools
 import json
 from enum import Enum
 from pathlib import Path, PosixPath
 from typing import Union, List, cast, Mapping, Callable, Iterable, Any, NamedTuple
 
 import aiohttp
+import itertools
 from fastapi import HTTPException
 from pydantic import BaseModel
 from starlette.requests import Request
@@ -238,7 +238,7 @@ def to_json(obj: BaseModel) -> JSON:
         if isinstance(v, Callable):
             return {}
         if isinstance(v, Enum):
-            return v.name
+            return v.value
         if isinstance(v, Iterable) and not isinstance(v, list) and not isinstance(v, str):
             v = list(v)
         return v
