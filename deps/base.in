@@ -8,6 +8,7 @@ cowpy
 fastapi
 kubernetes
 kubernetes-asyncio
+minio
 Pillow
 psutil
 python-daemon

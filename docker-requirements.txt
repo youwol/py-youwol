@@ -179,6 +179,7 @@ certifi==2022.6.15 \
     # via
     #   kubernetes
     #   kubernetes-asyncio
+    #   minio
     #   requests
 cffi==1.15.0 \
     --hash=sha256:00c878c90cb53ccfaae6b8bc18ad05d2036553e6d9d1d9dbcf323bbe83854ca3 \
@@ -376,6 +377,10 @@ lockfile==0.12.2 \
     --hash=sha256:6aed02de03cba24efabcd600b30540140634fc06cfa603822d508d5361e9f799 \
     --hash=sha256:6c3cb24f344923d30b2785d5ad75182c8ea7ac1b6171b08657258ec7429d50fa
     # via python-daemon
+minio==7.1.9 \
+    --hash=sha256:a711f3e6961ef083c161cee79f42a01d73369fc9111ccf76a74fb8d58b41d00a \
+    --hash=sha256:f87ef2adf55e9beeb2216b41bbe1c8837fd1276e6bac2921f785f74e1b4e4a06
+    # via -r deps/base.in
 multidict==6.0.2 \
     --hash=sha256:0327292e745a880459ef71be14e709aaea2f783f3537588fb4ed09b6c01bca60 \
     --hash=sha256:041b81a5f6b38244b34dc18c7b6aba91f9cdaf854d9a39e5ff0b58e2b5773b9c \
@@ -682,6 +687,7 @@ urllib3==1.26.9 \
     # via
     #   kubernetes
     #   kubernetes-asyncio
+    #   minio
     #   requests
 uvicorn==0.18.2 \
     --hash=sha256:c19a057deb1c5bb060946e2e5c262fc01590c6529c0af2c3d9ce941e89bc30e0 \
