@@ -1,10 +1,13 @@
 from typing import Optional
 
 import aiohttp
+import time
 from pydantic import BaseModel
 from starlette.datastructures import URL
 
 from youwol_utils.clients.oidc.oidc_config import OidcForClient
+
+TWELVE_HOURS = 12 * 60 * 60
 
 
 class User(BaseModel):
@@ -86,3 +89,61 @@ class KeycloakUsersManagement(UsersManagement):
                 if resp.status != 204:
                     content = await resp.read()
                     raise Exception(f"Failed to delete user {user_id} : {content}")
+
+    async def register_user(self, sub, email, target_uri, client_id):
+        tokens = await self._client.client_credentials_flow()
+        self._token = tokens['access_token']
+
+        user = {
+            'username': email,
+            'email': email,
+            'emailVerified': False,
+            'enabled': True,
+            'attributes': {
+                'temporary_user': True,
+                'registration_pending': int(time.time()) + TWELVE_HOURS
+            },
+            'groups': ['youwol-users'],
+        }
+
+        async with aiohttp.ClientSession(headers={'Authorization': f"Bearer {self._token}"}) as session:
+            async with session.put(f"{self._realm_url}/users/{sub}", json=user) as resp:
+                status = resp.status
+                message = await resp.content.read()
+                if status != 204:
+                    raise Exception(f"Failed to register user : {message}")
+
+        actions = [
+            'UPDATE_PROFILE',
+            'UPDATE_PASSWORD'
+        ]
+
+        url = URL(f"{self._realm_url}/users/{sub}/execute-actions-email")
+        params = {
+            'client_id': client_id,
+            'redirect_uri': target_uri,
+            'lifespan': TWELVE_HOURS
+        }
+        url = url.replace_query_params(**params)
+        async with aiohttp.ClientSession(headers={'Authorization': f"Bearer {self._token}"}) as session:
+            async with session.put(str(url), json=actions) as resp:
+                status = resp.status
+                message = await resp.content.read()
+                if status != 204:
+                    raise Exception(f"Failed to setup actions : {message}")
+
+    async def finalize_user(self, sub):
+        tokens = await self._client.client_credentials_flow()
+        self._token = tokens['access_token']
+
+        user = {
+            'attributes': {
+            },
+        }
+
+        async with aiohttp.ClientSession(headers={'Authorization': f"Bearer {self._token}"}) as session:
+            async with session.put(f"{self._realm_url}/users/{sub}", json=user) as resp:
+                status = resp.status
+                message = await resp.content.read()
+                if status != 204:
+                    raise Exception(f"Failed to finalize user : {message}")

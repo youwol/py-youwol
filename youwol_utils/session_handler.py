@@ -23,6 +23,18 @@ class SessionHandler:
             {'v': tokens['refresh_token']},
             ttl(tokens['refresh_expires_in'])
         )
+        self.__jwt_cache.set(
+            f"{self.__session_uuid}_id_token",
+            {'v': tokens['id_token']},
+            ttl(tokens['refresh_expires_in'])
+        )
+
+    def get_id_token(self):
+        cached_item = self.__jwt_cache.get(f"{self.__session_uuid}_id_token")
+        if cached_item:
+            return cached_item['v']
+        else:
+            return None
 
     def get_uuid(self):
         return self.__session_uuid
@@ -33,6 +45,7 @@ class SessionHandler:
     def delete(self):
         self.__jwt_cache.delete(f"{self.__session_uuid}_access_token")
         self.__jwt_cache.delete(f"{self.__session_uuid}_refresh_token")
+        self.__jwt_cache.delete(f"{self.__session_uuid}_id_token")
 
     def get_access_token(self):
         cached_item = self.__jwt_cache.get(f"{self.__session_uuid}_access_token")
