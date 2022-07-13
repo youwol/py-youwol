@@ -2,6 +2,7 @@ from typing import Any, List, Dict
 
 from aiohttp import ClientResponse, ContentTypeError
 from fastapi import HTTPException, Request
+from pydantic import BaseModel
 from starlette.responses import JSONResponse
 
 
@@ -88,6 +89,33 @@ class IndirectPackagesNotFound(YouWolException):
 
     def __str__(self):
         return f"""Packages not found. Context: {self.context}; paths: {self.paths}"""
+
+
+class DependencyErrorData(BaseModel):
+    key: str
+    path: List[str]
+    detail: str
+
+
+class DependenciesError(YouWolException):
+    exceptionType = "DependenciesError"
+    errors: List[DependencyErrorData]
+
+    def __init__(self, context: str, errors: List[DependencyErrorData], **kwargs):
+        YouWolException.__init__(
+            self,
+            status_code=404,
+            detail={
+                "context": context,
+                "detail": [e.dict() for e in errors]
+            },
+            **kwargs)
+        self.exceptionType = DependenciesError.exceptionType
+        self.errors = errors
+        self.context = context
+
+    def __str__(self):
+        return f"""Dependencies not found. Context: {self.context}; errors: {[e.dict() for e in self.errors]}"""
 
 
 class CircularDependencies(YouWolException):
@@ -280,6 +308,7 @@ YouwolExceptions = [
     PublishPackageError,
     PackagesNotFound,
     IndirectPackagesNotFound,
+    DependenciesError,
     CircularDependencies,
     ResourcesNotFoundException,
     QueryIndexException,

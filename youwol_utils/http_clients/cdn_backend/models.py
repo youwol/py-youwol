@@ -108,7 +108,12 @@ class LibVersionsBody(BaseModel):
 
 class LibraryQuery(BaseModel):
     name: str
-    version: str
+    queriedVersion: str
+
+
+class LibraryResolved(Library):
+    dependencies: List[LibraryQuery]
+    bundle: str
 
 
 class LoadingGraphBody(BaseModel):

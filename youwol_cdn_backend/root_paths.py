@@ -2,31 +2,31 @@ import asyncio
 import io
 import json
 import shutil
-from typing import Optional
+from typing import Optional, Union
 
 from fastapi import UploadFile, File, HTTPException, Form, APIRouter, Depends
 from starlette.requests import Request
 from starlette.responses import Response
 
-from youwol_utils import (
-    flatten, PackagesNotFound, IndirectPackagesNotFound,
-)
+from youwol_cdn_backend.loading_graph_implementation import resolve_dependencies_recursive, loading_graph, get_major
+from youwol_utils import PackagesNotFound
 from youwol_utils.clients.docdb.models import WhereClause, QueryBody, Query
 from youwol_utils.context import Context
 from youwol_utils.http_clients.cdn_backend import (
     PublishResponse, ListVersionsResponse, PublishLibrariesResponse,
     LoadingGraphResponseV1, LoadingGraphBody, Library,
-    ExplorerResponse, DeleteLibraryResponse, LibraryQuery
+    ExplorerResponse, DeleteLibraryResponse, LibraryQuery, LibraryResolved
 )
 from youwol_cdn_backend.configurations import Configuration, Constants, get_configuration
 from youwol_cdn_backend.resources_initialization import synchronize
 from youwol_cdn_backend.utils import (
     extract_zip_file, to_package_id, create_tmp_folder,
-    to_package_name, loading_graph, get_url, publish_package,
-    retrieve_dependency_paths, list_versions,
-    fetch_resource, resolve_resource, get_path, resolve_explicit_version,
+    to_package_name, get_url, publish_package,
+    list_versions,
+    fetch_resource, resolve_resource, get_path, resolve_explicit_version
 )
-from youwol_cdn_backend.utils_indexing import get_version_number_str, get_version_number
+
+from youwol_cdn_backend.utils_indexing import get_version_number_str
 
 router = APIRouter(tags=["cdn-backend"])
 
@@ -231,36 +231,6 @@ async def delete_version(
         return {"deletedCount": 1}
 
 
-async def get_resolved_version(lib_query: LibraryQuery, configuration: Configuration, context: Context):
-
-    async with context.start(action="get_resolved_version") as ctx:  # type: Context
-        try:
-            versions_resp = await list_versions(name=lib_query.name, context=ctx, max_results=1000,
-                                                configuration=configuration)
-        except BaseException as e:
-            await ctx.error(
-                text=f"While resolving versions of package {lib_query.name}",
-                data={"lib_query": lib_query.dict()})
-            raise e
-        if lib_query.version == 'latest':
-            await ctx.info(f"Retrieved version (from latest) of {lib_query.name} : {versions_resp.versions[0]}")
-            return LibraryQuery(name=lib_query.name, version=versions_resp.versions[0])
-        target_major = get_major(lib_query.version)
-        from_version_number = get_version_number(f"{target_major}.0.0")
-        to_version_number = get_version_number(f"{target_major+1}.0.0")
-        version = next(v for v in versions_resp.versions
-                       if from_version_number <= get_version_number(v) < to_version_number)
-
-        await ctx.info(f"Retrieved version (from target major) of {lib_query.name} : {version}")
-        return LibraryQuery(name=lib_query.name, version=version)
-
-
-def get_major(version: str):
-    if version[0] in ['~', '^']:
-        version = version[1:]
-    return int(version.split('.')[0])
-
-
 @router.post("/queries/loading-graph",
              summary="describes the loading graph of provided libraries",
              response_model=LoadingGraphResponseV1)
@@ -269,124 +239,56 @@ async def resolve_loading_tree(
         body: LoadingGraphBody,
         configuration: Configuration = Depends(get_configuration)
 ):
-    response: Optional[LoadingGraphResponseV1] = None
-    # This is for backward compatibility when single lib version download were assumed
-    if isinstance(body.libraries, dict):
-        body.libraries = [LibraryQuery(name=name, version=version) for name, version in body.libraries.items()]
+    def get_key(lib: Union[Library, LibraryQuery]):
+        if isinstance(body.libraries, dict):
+            # This turn on single versioning resolution as used in deprecated version of body
+            # (using dict for body.libraries)
+            return lib.name
+        return f"{lib.name}#{get_major(lib.version)}" \
+            if isinstance(lib, Library) \
+            else f"{lib.name}#{get_major(lib.queriedVersion)}"
 
     async with Context.start_ep(
             request=request,
-            response=lambda: response,
             body=body
     ) as ctx:  # type: Context
 
-        doc_db = configuration.doc_db
-        await ctx.info(text=f"Start resolving loading graph: {body.libraries}")
+        await ctx.info(text=f"Start resolving loading graph", data=body)
+        root_name = "!!root!!"
+        # This is for backward compatibility when single lib version download were assumed
+        dependencies = [LibraryQuery(name=name, queriedVersion=version) for name, version in body.libraries.items()] \
+            if isinstance(body.libraries, dict) \
+            else body.libraries
 
-        versions_resp = await asyncio.gather(*[
-            get_resolved_version(lib_query=lib, context=ctx, configuration=configuration)
-            for lib in body.libraries
-        ], return_exceptions=True)
-
-        if any(isinstance(v, Exception) for v in versions_resp):
-            packages_error = [f"{lib.name}#{lib.version}"
-                              for e, lib in zip(versions_resp, body.libraries)
-                              if isinstance(e, Exception)]
-            await ctx.error(
-                text=f"While resolving versions: some packages are not found in the CDN ",
-                data={"missingPackages": packages_error})
-            raise PackagesNotFound(
-                context="Failed to retrieve the latest version of package(s)",
-                packages=packages_error)
-
-        explicit_versions = versions_resp  # {**libraries, **latest_versions}
-
-        await ctx.info(
-            text="First pass of versioning resolution achieved",
-            data={"explicit_versions": explicit_versions},
+        resolved_libraries = await resolve_dependencies_recursive(
+            known_libraries=[LibraryResolved(
+                namespace="", id="", type="", fingerprint="", bundle="",
+                name=root_name,
+                version="1.0.0-does-not-matter",
+                dependencies=dependencies
+            )],
+            get_key=get_key,
+            using=body.using,
+            versions_cache={},
+            configuration=configuration,
+            context=ctx
         )
 
-        queries = [doc_db.get_document(partition_keys={"library_name": lib.name},
-                                       clustering_keys={"version_number": get_version_number_str(lib.version)},
-                                       owner=Constants.owner, headers=ctx.headers())
-                   for lib in explicit_versions]
+        resolved_libraries = [lib for lib in resolved_libraries if lib.name != root_name]
+        items_dict = {get_key(d): [to_package_id(d.name), get_url(d)] for d in resolved_libraries}
+        graph = await loading_graph(
+            downloaded=[],
+            remaining=resolved_libraries,
+            items_dict=items_dict,
+            get_key=get_key,
+            context=ctx)
 
-        dependencies = await asyncio.gather(*queries, return_exceptions=True)
-
-        if any(isinstance(v, Exception) for v in dependencies):
-            packages_error = [f"{lib.name}#{lib.version}" for e, lib in zip(dependencies, explicit_versions)
-                              if isinstance(e, Exception)]
-            await ctx.error(
-                text=f"While fetching explicit version: some packages are not found in the CDN ",
-                data={"missingPackages": packages_error})
-
-            raise PackagesNotFound(context="Failed to retrieved explicit version of package(s)",
-                                   packages=packages_error)
-
-        dependencies_dict = {f"{d['library_name']}#{get_major(d['version'])}": d for d in dependencies}
-
-        await ctx.info(
-            text="First pass resolution done",
-            data={"resolvedDependencies": dependencies_dict},
+        response = LoadingGraphResponseV1(
+            graphType="sequential-v1",
+            lock=[Library(**lib.dict()) for lib in resolved_libraries],
+            definition=graph
         )
-
-        async def add_missing_dependencies():
-            """ It maybe the case where some dependencies are missing in the provided body,
-            here we fetch using 'body.using' or the latest version of them"""
-
-            flatten_dependencies = [LibraryQuery(name=p.split('#')[0], version=p.split('#')[1])
-                                    for package in dependencies_dict.values()
-                                    for p in package['dependencies']]
-            missing = [d for d in flatten_dependencies
-                       if f"{d.name}#{get_major(d.version)}" not in dependencies_dict]
-
-            if not missing:
-                return dependencies_dict
-
-            await ctx.info(text="Start another loop to fetch missing dependencies",
-                           data={"missing": missing, "retrieved": list(dependencies_dict.keys())})
-
-            def get_dependency(dependency):
-                #  if dependency in body.using:
-                #    return get_query_version(configuration.doc_db, dependency, body.using[dependency], ctx.headers())
-                #  return get_query_latest(configuration.doc_db, dependency, ctx.headers())
-                return get_resolved_version(lib_query=dependency, configuration=configuration, context=ctx)
-
-            versions = await asyncio.gather(
-                *[get_dependency(dependency) for dependency in missing],
-                return_exceptions=True
-            )
-            if any(len(v["documents"]) == 0 for v in versions):
-                not_found = [f"{lib.name}#{body.using.get(lib.name, 'latest')}" for v, lib in zip(versions, missing)
-                             if len(v["documents"]) == 0]
-                names = [n.split("#")[0] for n in not_found]
-                paths = {name: retrieve_dependency_paths(dependencies_dict, name) for name in names}
-                await ctx.error(
-                    text="Some packages are not found in the CDN ",
-                    data={"notFound": not_found},
-                )
-                raise IndirectPackagesNotFound(
-                    context="Failed to retrieve a version of indirect dependencies",
-                    paths=paths
-                )
-
-            versions = list(flatten([d['documents'] for d in versions]))
-            for version in versions:
-                key = f"{version['library_name']}#{get_major(version['version'])}"
-                dependencies_dict[key] = version
-
-            return await add_missing_dependencies()
-
-        await add_missing_dependencies()
-        items_dict = {d["library_name"]: [to_package_id(d["library_name"]), get_url(d)]
-                      for d in dependencies_dict.values()}
-        r = loading_graph([], dependencies_dict.values(), items_dict)
-
-        lock = [Library(name=d["library_name"], version=d["version"], namespace=d["namespace"],
-                        id=to_package_id(d["library_name"]), type=d["type"], fingerprint=d["fingerprint"])
-                for d in dependencies_dict.values()]
-
-        response = LoadingGraphResponseV1(graphType="sequential-v1", lock=lock, definition=r)
+        await ctx.info("Loading graph resolved", data=response)
         return response
 
 

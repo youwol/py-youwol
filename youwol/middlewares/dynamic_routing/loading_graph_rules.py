@@ -10,7 +10,7 @@ from starlette.responses import Response, JSONResponse
 from youwol.environment.youwol_environment import yw_config
 from youwol.middlewares.models_dispatch import AbstractDispatch
 from youwol_cdn_backend import resolve_loading_tree, Dependencies
-from youwol_utils import PackagesNotFound, IndirectPackagesNotFound
+from youwol_utils import DependenciesError
 from youwol_utils.context import Context
 from youwol_utils.http_clients.cdn_backend import LoadingGraphBody
 
@@ -39,7 +39,7 @@ class GetLoadingGraphDispatch(AbstractDispatch):
             try:
                 resp = await resolve_loading_tree(request, body, cdn_conf)
                 return JSONResponse(resp.dict())
-            except (PackagesNotFound, IndirectPackagesNotFound) as e:
+            except DependenciesError as e:
                 await ctx.warning(
                     text="Loading tree can not be resolved locally, proceed to remote platform",
                     data=e.detail
