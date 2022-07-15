@@ -109,9 +109,9 @@ class KeycloakUsersManagement(UsersManagement):
         async with aiohttp.ClientSession(headers={'Authorization': f"Bearer {self._token}"}) as session:
             async with session.put(f"{self._realm_url}/users/{sub}", json=user) as resp:
                 status = resp.status
-                message = await resp.content.read()
                 if status != 204:
-                    raise Exception(f"Failed to register user : {message}")
+                    message = await resp.json()
+                    raise Exception(f"Failed to register user : {message['errorMessage']}")
 
         actions = [
             'UPDATE_PROFILE',

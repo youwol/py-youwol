@@ -40,12 +40,15 @@ async def register_from_temp_user(
 
     client_admin = OidcConfig(conf.openid_base_url).for_client(conf.admin_client)
     users_management = KeycloakUsersManagement(conf.keycloak_admin_base_url, client_admin)
-    await users_management.register_user(
-        sub=(request.state.user_info['sub']),
-        email=details.email,
-        client_id=conf.openid_client.client_id,
-        target_uri=str(redirect_uri)
-    )
+    try:
+        await users_management.register_user(
+            sub=(request.state.user_info['sub']),
+            email=details.email,
+            client_id=conf.openid_client.client_id,
+            target_uri=str(redirect_uri)
+        )
+    except Exception as e:
+        return JSONResponse(status_code=400, content={"message": str(e.args[0])})
 
     client = OidcConfig(conf.openid_base_url).for_client(conf.openid_client)
     session.store(await client.refresh(session.get_refresh_token()))
@@ -67,7 +70,7 @@ async def registration_finalizer(
     oidc_config = OidcConfig(conf.openid_base_url)
     client_admin = oidc_config.for_client(conf.admin_client)
     users_management = KeycloakUsersManagement(conf.keycloak_admin_base_url, client_admin)
-    token_data = await oidc_config.token_decode(session.get_access_token())
+    token_data = await oidc_config.token_decode(session.get_id_token())
     await users_management.finalize_user(sub=token_data['sub'])
 
     client = oidc_config.for_client(conf.openid_client)
