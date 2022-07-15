@@ -1,15 +1,17 @@
-import urllib
 from typing import Optional
 
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint, DispatchFunction
 from starlette.requests import Request
-from starlette.responses import Response, RedirectResponse
+from starlette.responses import Response
 from starlette.types import ASGIApp
 
+from youwol.configuration.models_config import JwtSource
 from youwol.environment.youwol_environment import yw_config
 from youwol.routers.authorization import get_user_info
+from youwol_utils import CacheClient
+from youwol_utils.clients.oidc.oidc_config import OidcInfos
 from youwol_utils.context import Context, Label
-from youwol_utils.middlewares import JwtProvider
+from youwol_utils.middlewares import JwtProvider, JwtProviderCookie
 
 
 class AuthMiddleware(BaseHTTPMiddleware):
@@ -63,24 +65,23 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
 class JwtProviderConfig(JwtProvider):
 
+    def __init__(self, jwt_cache: CacheClient):
+        self.__jwt_cache = jwt_cache
+
     async def get_token(self, request: Request, context: Context) -> Optional[str]:
         config = await yw_config()
-        return await config.get_auth_token(context=context)
+        if config.jwtSource == JwtSource.CONFIG:
+            return await config.get_auth_token(context=context)
+        elif config.jwtSource == JwtSource.COOKIE:
+            return await JwtProviderCookie(
+                jwt_cache=self.__jwt_cache,
+                openid_infos=OidcInfos(
+                    base_uri=config.get_remote_info().openidBaseUrl,
+                    client=config.get_remote_info().openidClient
+                )
+            ).get_token(request, context)
 
 
-def redirect_on_missing_token(url):
-    if url.path.startswith('/applications'):
-        target_uri = urllib.parse.quote(str(url.path))
-        login_flow = 'auto'
-        if str(url.query).find('login_flow=temp') >= 0:
-            login_flow = 'temp'
-        if str(url.query).find('login_flow=user') >= 0:
-            login_flow = 'user'
-        return RedirectResponse(f"/api/accounts/openid_rp/login?target_uri={target_uri}&flow={login_flow}",
-                                status_code=307)
-    else:
-        return Response(content="Unauthenticated", status_code=403),
-
-
-async def get_remote_openid_base_url():
-    return (await yw_config()).get_remote_info().openidBaseUrl
+async def get_remote_openid_infos() -> OidcInfos:
+    config = await yw_config()
+    return OidcInfos(base_uri=config.get_remote_info().openidBaseUrl, client=config.get_remote_info().openidClient)

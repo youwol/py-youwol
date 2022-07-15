@@ -37,8 +37,14 @@ class Redirection(BaseModel):
     to_url: str
 
 
+class JwtSource(str, Enum):
+    COOKIE = 'cookie'
+    CONFIG = 'config'
+
+
 class ConfigurationData(BaseModel):
     httpPort: Optional[int]
+    jwtSource: Optional[JwtSource]
     platformHost: Optional[str]
     redirectBasePath: Optional[str]
     openIdHost: Optional[str]

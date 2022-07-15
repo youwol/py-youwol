@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends, WebSocket
 from starlette.requests import Request
-from starlette.responses import RedirectResponse
+from starlette.responses import RedirectResponse, Response
 
 import youwol.middlewares.custom_dispatch_middleware as custom_dispatch
 import youwol.middlewares.dynamic_routing.loading_graph_rules as loading_graph
@@ -8,7 +8,7 @@ import youwol.middlewares.dynamic_routing.missing_asset_rules as missing_asset
 import youwol.middlewares.dynamic_routing.workspace_explorer_rules as workspace_explorer
 from youwol.environment.auto_download_thread import AssetDownloadThread
 from youwol.environment.youwol_environment import yw_config, api_configuration
-from youwol.middlewares.auth_middleware import redirect_on_missing_token, JwtProviderConfig, get_remote_openid_base_url
+from youwol.middlewares.auth_middleware import get_remote_openid_infos, JwtProviderConfig
 from youwol.middlewares.browser_caching_middleware import BrowserCachingMiddleware
 from youwol.middlewares.dynamic_routing_middleware import DynamicRoutingMiddleware
 from youwol.routers import native_backends, admin, authorization
@@ -17,9 +17,9 @@ from youwol.routers.environment.download_assets.flux_project import DownloadFlux
 from youwol.routers.environment.download_assets.package import DownloadPackageTask
 from youwol.utils.utils_low_level import start_web_socket
 from youwol.web_socket import WebSocketsStore, InMemoryReporter, WsDataStreamer
-from youwol_utils import YouWolException, youwol_exception_handler, YouwolHeaders
+from youwol_utils import YouWolException, youwol_exception_handler, YouwolHeaders, CleanerThread, factory_local_cache
 from youwol_utils.context import ContextFactory
-from youwol_utils.middlewares import AuthMiddleware
+from youwol_utils.middlewares import AuthMiddleware, redirect_to_login
 from youwol_utils.middlewares.root_middleware import RootMiddleware
 
 fastapi_app = FastAPI(
@@ -36,9 +36,16 @@ download_thread = AssetDownloadThread(
     worker_count=4
 )
 
+cleaner_thread = CleanerThread()
+
+jwt_cache = factory_local_cache(cleaner_thread, 'jwt_cache')
+accounts_pkce_cache = factory_local_cache(cleaner_thread, 'jwt_cache')
 ContextFactory.with_static_data = {
     "env": lambda: yw_config(),
     "download_thread": download_thread,
+    "cleaner_thread": cleaner_thread,
+    "accounts_pkce_cache": accounts_pkce_cache,
+    "jwt_cache": jwt_cache,
     "fastapi_app": lambda: fastapi_app
 }
 
@@ -64,12 +71,13 @@ fastapi_app.add_middleware(custom_dispatch.CustomDispatchesMiddleware)
 fastapi_app.add_middleware(BrowserCachingMiddleware)
 fastapi_app.add_middleware(
     AuthMiddleware,
-    openid_base_url=get_remote_openid_base_url,
+    openid_infos=get_remote_openid_infos,
     predicate_public_path=lambda url:
     url.path.startswith("/api/accounts/openid_rp/"),
-    jwt_providers=[JwtProviderConfig()],
+    jwt_providers=[JwtProviderConfig(jwt_cache=jwt_cache)],
     on_missing_token=lambda url:
-    redirect_on_missing_token(url)
+    redirect_to_login(url) if url.path.startswith('/applications') \
+        else Response(content="Unauthenticated", status_code=403)
 )
 
 fastapi_app.add_middleware(

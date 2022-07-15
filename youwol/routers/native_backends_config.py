@@ -11,7 +11,7 @@ import youwol_tree_db_backend as tree_db
 from youwol.environment.clients import LocalClients
 from youwol.environment.youwol_environment import yw_config
 from youwol_stories_backend import Configuration as StoriesConfig
-from youwol_utils import CdnClient
+from youwol_utils import CdnClient, CacheClient
 from youwol_utils.clients.assets.assets import AssetsClient
 from youwol_utils.clients.data_api.data import DataClient
 from youwol_utils.clients.docdb.local_docdb import LocalDocDbClient as LocalDocDb, LocalDocDbClient
@@ -21,6 +21,7 @@ from youwol_utils.clients.flux.flux import FluxClient
 from youwol_utils.clients.storage.local_storage import LocalStorageClient as LocalStorage
 from youwol_utils.clients.stories.stories import StoriesClient
 from youwol_utils.clients.treedb.treedb import TreeDbClient
+from youwol_utils.context import ContextFactory
 from youwol_utils.http_clients.assets_backend import ASSETS_TABLE, ACCESS_HISTORY, ACCESS_POLICY
 from youwol_utils.http_clients.flux_backend import PROJECTS_TABLE, COMPONENTS_TABLE
 from youwol_utils.http_clients.tree_db_backend import create_doc_dbs
@@ -167,10 +168,13 @@ async def files_backend_config_py_youwol():
 
 async def accounts_backend_config_py_youwol():
     config = await yw_config()
-
+    pkce_cache: CacheClient = ContextFactory.with_static_data['accounts_pkce_cache']
+    jwt_cache: CacheClient = ContextFactory.with_static_data['jwt_cache']
     return youwol_accounts_backend.Configuration(
         openid_base_url=config.get_remote_info().openidBaseUrl,
         openid_client=config.get_remote_info().openidClient,
         admin_client=config.get_remote_info().adminClient,
-        keycloak_admin_base_url=config.get_remote_info().keycloakAdminBaseUrl
+        keycloak_admin_base_url=config.get_remote_info().keycloakAdminBaseUrl,
+        jwt_cache=jwt_cache,
+        pkce_cache=pkce_cache
     )

@@ -1,20 +1,15 @@
 from dataclasses import dataclass
 from typing import Union, Callable, Type, Awaitable, Dict, Optional
 
-from youwol_utils import (
-    CacheClient, LocalCacheClient, LocalDocDbClient,
-    LocalStorageClient, DocDbClient, StorageClient
-)
+from youwol_utils import LocalDocDbClient, LocalStorageClient, DocDbClient, StorageClient
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
-
-from youwol_utils.middlewares import Middleware
-from youwol_utils.middlewares.authentication_local import AuthLocalMiddleware
 from youwol_utils.http_clients.stories_backend import DOCUMENTS_TABLE, STORIES_TABLE, DOCUMENTS_TABLE_BY_ID, Content, \
     GlobalContent
+from youwol_utils.middlewares import Middleware
+from youwol_utils.middlewares.authentication_local import AuthLocalMiddleware
 
 DocDb = Union[DocDbClient, LocalDocDbClient]
 Storage = Union[StorageClient, LocalStorageClient]
-Cache = Union[CacheClient, LocalCacheClient]
 AuthMiddleware = Union[Type[Middleware], Type[AuthLocalMiddleware]]
 
 
