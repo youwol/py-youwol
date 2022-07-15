@@ -39,7 +39,7 @@ download_thread = AssetDownloadThread(
 cleaner_thread = CleanerThread()
 
 jwt_cache = factory_local_cache(cleaner_thread, 'jwt_cache')
-accounts_pkce_cache = factory_local_cache(cleaner_thread, 'jwt_cache')
+accounts_pkce_cache = factory_local_cache(cleaner_thread, 'pkce_cache')
 ContextFactory.with_static_data = {
     "env": lambda: yw_config(),
     "download_thread": download_thread,

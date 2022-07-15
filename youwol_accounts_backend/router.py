@@ -1,6 +1,6 @@
 from typing import Union, Callable, Awaitable
 
-from youwol_accounts_backend import Configuration, Dependencies
+from youwol_accounts_backend.configuration import Dependencies, Configuration
 
 
 def get_router(configuration: Union[
@@ -8,7 +8,7 @@ def get_router(configuration: Union[
     Callable[[], Union[
         Configuration,
         Awaitable[Configuration]
-        ]
+    ]
     ]
 ]):
     Dependencies.get_configuration = configuration if callable(configuration) else lambda: configuration
