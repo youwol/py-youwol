@@ -198,8 +198,8 @@ class DocStep(PipelineStep):
     id = 'doc'
     run: str = "yarn doc"
     sources: FileListing = FileListing(
-        include=[Paths.lib_folder, "src/index.ts"],
-        ignore=[Paths.auto_generated_file]
+        include=["src"],
+        ignore=[Paths.auto_generated_file, "**/.*/*", "src/tests"]
         )
 
     artifacts: List[Artifact] = [
