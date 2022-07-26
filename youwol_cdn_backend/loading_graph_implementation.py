@@ -7,7 +7,7 @@ from fastapi import HTTPException
 from youwol_cdn_backend.utils import Configuration, get_version_number_str, Constants, list_versions, \
     to_package_id
 from youwol_cdn_backend.utils_indexing import get_version_number
-from youwol_utils import CircularDependencies, DependenciesError, DependencyErrorData
+from youwol_utils import CircularDependencies, DependenciesError
 from youwol_utils.context import Context
 from youwol_utils.http_clients.cdn_backend import LibraryResolved, LibraryQuery
 
@@ -65,7 +65,7 @@ async def loading_graph(
 
         if len(new_remaining) == len(remaining):
             dependencies_dict = {get_key(d): d.dependencies for d in remaining}
-            not_founds = {pack: [dependencies_dict[pack][i] for i, found in enumerate(founds) if not found]
+            not_founds = {pack: [dependencies_dict[pack][i].dict() for i, found in enumerate(founds) if not found]
                           for pack, founds in dependencies.items()}
             await ctx.error(text="Can not resolve dependency(ies)",
                             data={"newRemaining": new_remaining, "oldRemaining": remaining})
@@ -145,8 +145,15 @@ async def resolve_dependencies_recursive(
 ):
 
     async with context.start(action="resolve_dependencies_recursive") as ctx:  # type: Context
-        """ It maybe the case where some dependencies are missing in the provided body,
-        here we fetch using 'body.using' or the latest version of them"""
+        if using.keys():
+            async with ctx.start(
+                    action='hijack versions using provided specific version'
+            ) as ctx_hijack:  # type: Context
+                for lib in known_libraries:
+                    for dependency in lib.dependencies:
+                        if dependency.name in using.keys():
+                            await ctx_hijack.info(f"Use specified version of library {dependency.name}")
+                            dependency.version = using[dependency.name]
 
         inputs_flat_dependencies = [dependency for lib in known_libraries for dependency in lib.dependencies]
         await ctx.info(text="Start another layer to fetch missing dependencies",

@@ -117,7 +117,12 @@ class LibraryResolved(Library):
 
 
 class LoadingGraphBody(BaseModel):
-    libraries: Union[Dict[str, str], List[LibraryQuery]]
+    libraries: Union[List[LibraryQuery], Dict[str, str]]
+    using: Dict[str, str] = {}
+
+
+class LoadingGraphBodyV1(BaseModel):
+    libraries: List[LibraryQuery]
     using: Dict[str, str] = {}
 
 
