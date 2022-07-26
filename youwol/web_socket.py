@@ -1,4 +1,3 @@
-import json
 import time
 from dataclasses import dataclass
 from typing import Union, Dict, List, Optional
@@ -57,12 +56,7 @@ class InMemoryReporter(ContextReporter):
         if str(Label.LOG) in entry.labels:
             return
 
-        try:
-            data = to_json(entry.data) if isinstance(entry.data, BaseModel) else entry.data
-            json.dumps(data)
-        except (TypeError, OverflowError):
-            print("error in JSON serialization")
-            return
+        data = to_json(entry.data)
 
         message = {
             "level": entry.level.name,
