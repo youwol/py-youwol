@@ -1,5 +1,4 @@
 import functools
-import glob
 import sys
 import traceback
 from enum import Enum
@@ -351,12 +350,15 @@ class Project(BaseModel):
                 artifacts_id = [a.id for s in steps for a in s.artifacts]
                 await ctx.error(text=f"Can not find artifact '{artifact_id}' in given flow '{flow_id}'",
                                 data={"artifacts_id": artifacts_id})
-        folder = env.pathsBook.artifact(project_name=self.name, flow_id=flow_id, step_id=step.id,
-                                        artifact_id=artifact_id)
-
-        if not folder.exists() or not folder.is_dir():
-            return []
-        return [Path(p) for p in glob.glob(str(folder) + '/**/*', recursive=True) if Path(p).is_file()]
+            folder = env.pathsBook.artifact(project_name=self.name, flow_id=flow_id, step_id=step.id,
+                                            artifact_id=artifact_id)
+            await ctx.info(text=f"Target folder: {folder}")
+            if not folder.exists() or not folder.is_dir():
+                await ctx.error(text=f"Target folder does not exist")
+                return []
+            files = [Path(p) for p in folder.glob('**/*') if Path(p).is_file()]
+            await ctx.info(text=f"Retrieved {len(files)} files", data={"files[0:100]": files[0:100]})
+            return files
 
     def get_flow_steps(
             self,
