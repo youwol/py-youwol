@@ -339,12 +339,17 @@ class Project(BaseModel):
 
     async def get_artifact_files(self, flow_id: str, artifact_id: str, context: Context) -> List[Path]:
 
-        env = await context.get('env', YouwolEnvironment)
-        steps = self.get_flow_steps(flow_id=flow_id)
-        step = next((s for s in steps if artifact_id in [a.id for a in s.artifacts]), None)
-        if not step:
-            artifacts_id = [a.id for s in steps for a in s.artifacts]
-            await context.error(text=f"Can not find artifact '{artifact_id}' in given flow '{flow_id}'",
+        async with context.start(
+                action="get_artifact_files",
+                with_attributes={"artifact": artifact_id}
+        ) as ctx:  # type: Context
+            env = await context.get('env', YouwolEnvironment)
+            steps = self.get_flow_steps(flow_id=flow_id)
+            step = next((s for s in steps if artifact_id in [a.id for a in s.artifacts]), None)
+            await ctx.info(text="Step retrieved", data={"step": step})
+            if not step:
+                artifacts_id = [a.id for s in steps for a in s.artifacts]
+                await ctx.error(text=f"Can not find artifact '{artifact_id}' in given flow '{flow_id}'",
                                 data={"artifacts_id": artifacts_id})
         folder = env.pathsBook.artifact(project_name=self.name, flow_id=flow_id, step_id=step.id,
                                         artifact_id=artifact_id)
