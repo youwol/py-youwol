@@ -254,10 +254,15 @@ class TestStep(PipelineStep):
     )
 
 
+class PublishConfig(BaseModel):
+    packagedArtifacts: List[str] = ['dist', 'docs', 'test-coverage']
+
+
 class PipelineConfig(BaseModel):
     target: BrowserTarget = BrowserLibBundle()
     with_tags: List[str] = []
     testConfig: TestStepConfig = TestStepConfig()
+    publishConfig: PublishConfig = PublishConfig()
 
 
 async def pipeline(config: PipelineConfig, context: Context):
@@ -278,7 +283,7 @@ async def pipeline(config: PipelineConfig, context: Context):
                 BuildStep(id="build-prod", run="yarn build:prod"),
                 DocStep(),
                 TestStep(id="test", run="yarn test-coverage", artifacts=config.testConfig.artifacts),
-                PublishCdnLocalStep(packagedArtifacts=['dist', 'docs', 'test-coverage']),
+                PublishCdnLocalStep(packagedArtifacts=config.publishConfig.packagedArtifacts),
                 PublishCdnRemoteStep()
             ],
             flows=[
