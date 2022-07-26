@@ -193,12 +193,16 @@ class PipelineStep(BaseModel):
 
     async def get_fingerprint(self, project: 'Project', flow_id: FlowId, context: Context):
 
-        files = await self.get_sources(project=project, flow_id=flow_id, context=context)
-        if files is None:
-            return None, []
-        await context.info(text='got file listing', data={"files": [str(f) for f in files]})
-        checksum = files_check_sum(files)
-        return checksum, files
+        async with context.start(action="get_fingerprint") as ctx:
+            files = await self.get_sources(project=project, flow_id=flow_id, context=context)
+            if files is None:
+                return None, []
+            files = list(files)
+            if len(files) > 1000:
+                await ctx.warning(text=f"Retrieved large number of source code files ({len(files)})")
+            await ctx.info(text='got file listing', data={f"files ({len(files)})": [str(f) for f in files[0:1000]]})
+            checksum = files_check_sum(files)
+            return checksum, files
 
     @staticmethod
     async def __execute_run_cmd(project: 'Project', run_cmd: str, context: Context):
