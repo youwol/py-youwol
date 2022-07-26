@@ -99,23 +99,27 @@ class DependencyErrorData(BaseModel):
 
 class DependenciesError(YouWolException):
     exceptionType = "DependenciesError"
-    errors: List[DependencyErrorData]
 
-    def __init__(self, context: str, errors: List[DependencyErrorData], **kwargs):
+    def __init__(self, context: str, errors: List[Dict[str, Any]], **kwargs):
+        """
+
+        :param context: context of the error
+        :param errors: An error as a dict like {'key':str, 'paths': List[str], 'detail': str}
+        :param kwargs: forwarding arguments to YouWolException
+        """
         YouWolException.__init__(
             self,
             status_code=404,
             detail={
                 "context": context,
-                "detail": [e.dict() for e in errors]
+                "errors": [e for e in errors]
             },
             **kwargs)
         self.exceptionType = DependenciesError.exceptionType
-        self.errors = errors
         self.context = context
 
     def __str__(self):
-        return f"""Dependencies not found. Context: {self.context}; errors: {[e.dict() for e in self.errors]}"""
+        return f"""Dependencies not found. Error: {self.detail}"""
 
 
 class CircularDependencies(YouWolException):
