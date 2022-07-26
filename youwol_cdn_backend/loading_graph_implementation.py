@@ -117,22 +117,22 @@ async def resolve_version(
                              with_attributes={'library': get_key(dependency)}) as ctx:  # type: Context
         if dependency.name in using:
             await ctx.info(text=f"Use specified fixed version {using[dependency.name]}")
-            return LibraryQuery(name=dependency.name, queriedVersion=using[dependency.name])
+            return LibraryQuery(name=dependency.name, version=using[dependency.name])
 
         versions = await list_all_versions_with_cache(library=dependency, versions_cache=versions_cache,
                                                       context=ctx, configuration=configuration)
 
-        if dependency.queriedVersion in ["latest", "x", "*"]:
+        if dependency.version in ["latest", "x", "*"]:
             await ctx.info(text=f"Use latest version {versions[0]}")
-            return LibraryQuery(name=dependency.name, queriedVersion=versions[0])
+            return LibraryQuery(name=dependency.name, version=versions[0])
 
-        target_major = get_major(dependency.queriedVersion)
+        target_major = get_major(dependency.version)
         from_version_number = get_version_number(f"{target_major}.0.0")
         to_version_number = get_version_number(f"{target_major+1}.0.0")
         version = next(v for v in versions
                        if from_version_number <= get_version_number(v) < to_version_number)
         await ctx.info(text=f"Use latest compatible version of {target_major} : {version}")
-        return LibraryQuery(name=dependency.name, queriedVersion=version)
+        return LibraryQuery(name=dependency.name, version=version)
 
 
 async def resolve_dependencies_recursive(
@@ -189,6 +189,8 @@ async def resolve_dependencies_recursive(
                   for dependency in missing_dependencies],
                 return_exceptions=True
             )
+            await ctx_dependencies.info(text="Resolved dependencies",
+                                        data={"dependencies": list(resolved_dependencies)})
 
         await raise_errors(
             errors=[resp for resp in resolved_dependencies
@@ -215,35 +217,35 @@ async def get_data(
         -> LibraryResolved:
 
     async with context.start(action="get_data",
-                             with_attributes={'lib': f'{lib_query.name}#{lib_query.queriedVersion}'}) \
+                             with_attributes={'lib': f'{lib_query.name}#{lib_query.version}'}) \
             as ctx:  # type: Context
-        await ctx.info(f"Retrieved data of {lib_query.name} version {lib_query.queriedVersion}")
+        await ctx.info(f"Retrieved data of {lib_query.name} version {lib_query.version}")
         doc_db = configuration.doc_db
         try:
             data = await doc_db.get_document(
                 partition_keys={"library_name": lib_query.name},
-                clustering_keys={"version_number": get_version_number_str(lib_query.queriedVersion)},
+                clustering_keys={"version_number": get_version_number_str(lib_query.version)},
                 owner=Constants.owner, headers=ctx.headers()
             )
             metadata = LibraryResolved(
                 name=lib_query.name,
-                version=lib_query.queriedVersion,
+                version=lib_query.version,
                 fingerprint=data['fingerprint'],
                 namespace=data['namespace'],
                 type=data['type'],
                 id=to_package_id(lib_query.name),
                 bundle=data['bundle'],
-                dependencies=[LibraryQuery(name=d.split('#')[0], queriedVersion=d.split('#')[1])
+                dependencies=[LibraryQuery(name=d.split('#')[0], version=d.split('#')[1])
                               for d in data['dependencies']]
             )
         except HTTPException as e:
             if e.status_code != 404:
                 raise LibraryException(
                     library=lib_query,
-                    detail=f"{lib_query.name}: error while resolving version {lib_query.queriedVersion}"
+                    detail=f"{lib_query.name}: error while resolving version {lib_query.version}"
                 )
             raise LibraryNotFound(library=lib_query,
-                                  detail=f"{lib_query.name}: version {lib_query.queriedVersion} not found")
+                                  detail=f"{lib_query.name}: version {lib_query.version} not found")
 
         return metadata
 
@@ -261,11 +263,11 @@ async def raise_errors(
         get_key=get_key,
         from_package=get_key(error.library),
     ) for error in errors]
-    formatted_errors = [DependencyErrorData(
-        key=get_key(error.library),
-        path=path,
-        detail=""
-    ) for error, path in zip(errors, paths)]
+    formatted_errors = [{
+        "key": get_key(error.library),
+        "paths": path,
+        "detail": ""
+    } for error, path in zip(errors, paths)]
     await context.error(
         text="Errors while retrieving dependencies",
         data={"paths": paths},

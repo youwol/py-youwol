@@ -108,7 +108,7 @@ class LibVersionsBody(BaseModel):
 
 class LibraryQuery(BaseModel):
     name: str
-    queriedVersion: str
+    version: str
 
 
 class LibraryResolved(Library):

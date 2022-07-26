@@ -244,9 +244,7 @@ async def resolve_loading_tree(
             # This turn on single versioning resolution as used in deprecated version of body
             # (using dict for body.libraries)
             return lib.name
-        return f"{lib.name}#{get_major(lib.version)}" \
-            if isinstance(lib, Library) \
-            else f"{lib.name}#{get_major(lib.queriedVersion)}"
+        return f"{lib.name}#{get_major(lib.version)}"
 
     async with Context.start_ep(
             request=request,
@@ -256,7 +254,7 @@ async def resolve_loading_tree(
         await ctx.info(text=f"Start resolving loading graph", data=body)
         root_name = "!!root!!"
         # This is for backward compatibility when single lib version download were assumed
-        dependencies = [LibraryQuery(name=name, queriedVersion=version) for name, version in body.libraries.items()] \
+        dependencies = [LibraryQuery(name=name, version=version) for name, version in body.libraries.items()] \
             if isinstance(body.libraries, dict) \
             else body.libraries
 
