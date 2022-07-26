@@ -3,7 +3,7 @@ import base64
 import json
 from enum import Enum
 from pathlib import Path, PosixPath
-from typing import Union, List, cast, Mapping, Callable, Iterable, Any, NamedTuple
+from typing import Union, List, cast, Mapping, Callable, Iterable, Any, NamedTuple, Dict
 
 import aiohttp
 import itertools
@@ -229,39 +229,52 @@ def encode_id(raw_id) -> str:
     return base64.urlsafe_b64encode(b).decode()
 
 
-def to_json(obj: BaseModel) -> JSON:
-    def to_serializable(v):
-        if isinstance(v, Path):
-            return str(v)
-        if isinstance(v, PosixPath):
-            return str(v)
-        if isinstance(v, Callable):
-            return {}
-        if isinstance(v, Enum):
-            return v.value
-        if isinstance(v, Iterable) and not isinstance(v, list) and not isinstance(v, str):
-            v = list(v)
-        return v
+def to_serializable_json_leaf(v):
+    if isinstance(v, Path):
+        return str(v)
+    if isinstance(v, PosixPath):
+        return str(v)
+    if isinstance(v, Callable):
+        return {}
+    if isinstance(v, Enum):
+        return v.value
+    if isinstance(v, Iterable) and not isinstance(v, list) and not isinstance(v, str):
+        v = list(v)
+    return v
 
-    base = obj.dict()
 
-    def to_json_rec(_obj: Any):
+def is_json_leaf(v):
+    return not isinstance(v, dict) and not isinstance(v, list) and not isinstance(v, BaseModel)
 
-        if isinstance(_obj, dict):
-            for k, v in _obj.items():
-                if not isinstance(v, dict) and not isinstance(v, list):
-                    _obj[k] = to_serializable(v)
-                if isinstance(v, dict):
-                    to_json_rec(v)
-                if isinstance(v, list):
-                    for i, e in enumerate(v):
-                        if not isinstance(e, dict) and not isinstance(e, list):
-                            _obj[k][i] = to_serializable(e)
-                        else:
-                            to_json_rec(e)
 
-    to_json_rec(base)
-    return base
+def to_json_rec(_obj: Union[Dict[str, Any], List[Any]]):
+    result = {}
+
+    def process_value(value):
+        if is_json_leaf(value):
+            return to_serializable_json_leaf(value)
+        elif isinstance(k, BaseModel):
+            return to_json_rec(value.dict())
+        else:
+            return to_json_rec(value)
+
+    if isinstance(_obj, dict):
+        result = {}
+        for k, v in _obj.items():
+            result[k] = process_value(v)
+
+    if isinstance(_obj, list):
+        result = []
+        for k in _obj:
+            result.append(process_value(k))
+
+    return result
+
+
+def to_json(obj: Union[BaseModel, Dict[str, Any]]) -> JSON:
+
+    base = obj.dict() if isinstance(obj, BaseModel) else obj
+    return to_json_rec(base)
 
 
 async def get_authorization_header(openid_infos: OidcInfos):
