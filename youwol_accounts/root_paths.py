@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from youwol_accounts_backend.configuration import get_configuration, Configuration
+from youwol_accounts.configuration import get_configuration, Configuration
 from youwol_utils import private_group_id, to_group_id, get_all_individual_groups
 from youwol_utils.session_handler import SessionHandler
 

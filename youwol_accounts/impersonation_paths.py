@@ -6,8 +6,8 @@ from fastapi.params import Cookie
 from pydantic import BaseModel
 from starlette.responses import Response, JSONResponse
 
-from youwol_accounts_backend.configuration import Configuration, get_configuration
-from youwol_accounts_backend.root_paths import router
+from youwol_accounts.configuration import Configuration, get_configuration
+from youwol_accounts.root_paths import router
 from youwol_utils.clients.oidc.oidc_config import OidcConfig
 from youwol_utils.session_handler import SessionHandler
 
