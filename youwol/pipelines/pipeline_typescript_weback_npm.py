@@ -51,35 +51,49 @@ class SyncFromDownstreamStep(PipelineStep):
     @staticmethod
     async def get_input_data(project: Project, flow_id: str, context: Context) -> Mapping[str, InputDataDependency]:
 
-        env = await context.get('env', YouwolEnvironment)
-        paths_book: PathsBook = env.pathsBook
+        async with context.start(action="get_input_data") as ctx:  # type: Context
 
-        project_step = [(d, next((s for s in d.get_flow_steps(flow_id=flow_id) if isinstance(s, BuildStep)), None))
-                        for d in await project.get_dependencies(recursive=True,
-                                                                projects=await ProjectLoader.get_projects(env, context),
-                                                                context=context
-                                                                )
-                        ]
+            env = await ctx.get('env', YouwolEnvironment)
+            all_projects = await ProjectLoader.get_projects(env, ctx)
+            dependencies = await project.get_dependencies(recursive=True,
+                                                          projects=await ProjectLoader.get_projects(env, ctx),
+                                                          context=ctx
+                                                          )
+            await ctx.info("Dependencies in workspace retrieved", data={
+                "dependencies": [d.name for d in dependencies],
+                "projectsInWorkspace": [p.name for p in all_projects]
+            })
+            paths_book: PathsBook = env.pathsBook
 
-        def is_succeeded(p: Project, s: BuildStep):
-            manifest = p.get_manifest(flow_id=flow_id, step=s, env=env)
-            return manifest.succeeded if manifest else False
+            project_step = [(d, next((s for s in d.get_flow_steps(flow_id=flow_id) if isinstance(s, BuildStep)), None))
+                            for d in dependencies
+                            ]
 
-        dependencies = [(project, step) for project, step in project_step
-                        if step is not None and is_succeeded(project, step)]
+            def is_succeeded(p: Project, s: BuildStep):
+                manifest = p.get_manifest(flow_id=flow_id, step=s, env=env)
+                return manifest.succeeded if manifest else False
 
-        dist_folders = {project.name: paths_book.artifact(project.name, flow_id, step.id, step.artifacts[0].id)
-                        for project, step in dependencies}
-        dist_files = {name: list_files(folder) for name, folder in dist_folders.items()}
-        src_files = {p.name: list_files(p.path / 'src') for p, s in dependencies}
-        return {project.name: InputDataDependency(
-            project=project,
-            dist_folder=dist_folders[project.name],
-            src_folder=project.path / 'src',
-            dist_files=dist_files[project.name],
-            src_files=src_files[project.name],
-            checksum=files_check_sum(dist_files[project.name] + src_files[project.name]))
-            for project, step in dependencies}
+            dependencies = [(project, step) for project, step in project_step
+                            if step is not None and is_succeeded(project, step)]
+
+            await ctx.info("Succeeded built dependencies in workspace retrieved", data={
+                "dependencies": [{"projectName": d[0].name, "stepId":d[1].id} for d in dependencies]
+            })
+
+            dist_folders = {project.name: paths_book.artifact(project.name, flow_id, step.id, step.artifacts[0].id)
+                            for project, step in dependencies}
+            await ctx.info("Source of 'dist' folders retrieved", data=dist_folders)
+
+            dist_files = {name: list_files(folder) for name, folder in dist_folders.items()}
+            src_files = {p.name: list_files(p.path / 'src') for p, s in dependencies}
+            return {project.name: InputDataDependency(
+                project=project,
+                dist_folder=dist_folders[project.name],
+                src_folder=project.path / 'src',
+                dist_files=dist_files[project.name],
+                src_files=src_files[project.name],
+                checksum=files_check_sum(dist_files[project.name] + src_files[project.name]))
+                for project, step in dependencies}
 
     async def get_status(self, project: Project, flow_id: str,
                          last_manifest: Optional[Manifest], context: Context) -> PipelineStepStatus:
@@ -91,7 +105,7 @@ class SyncFromDownstreamStep(PipelineStep):
                 return PipelineStepStatus.KO
 
             await ctx.info(text='previous manifest', data=to_json(last_manifest))
-            data = await SyncFromDownstreamStep.get_input_data(project=project, flow_id=flow_id, context=context)
+            data = await SyncFromDownstreamStep.get_input_data(project=project, flow_id=flow_id, context=ctx)
             prev_checksums = last_manifest.cmdOutputs['checksums']
             ok = len(data.keys()) == len(prev_checksums.keys())\
                 and all(k in prev_checksums and prev_checksums[k] == v.checksum for k, v in data.items())
@@ -198,8 +212,8 @@ class DocStep(PipelineStep):
     id = 'doc'
     run: str = "yarn doc"
     sources: FileListing = FileListing(
-        include=[Paths.lib_folder, "src/index.ts"],
-        ignore=[Paths.auto_generated_file]
+        include=["src"],
+        ignore=[Paths.auto_generated_file, "**/.*/*", "src/tests"]
         )
 
     artifacts: List[Artifact] = [
@@ -254,10 +268,15 @@ class TestStep(PipelineStep):
     )
 
 
+class PublishConfig(BaseModel):
+    packagedArtifacts: List[str] = ['dist', 'docs', 'test-coverage']
+
+
 class PipelineConfig(BaseModel):
     target: BrowserTarget = BrowserLibBundle()
     with_tags: List[str] = []
     testConfig: TestStepConfig = TestStepConfig()
+    publishConfig: PublishConfig = PublishConfig()
 
 
 async def pipeline(config: PipelineConfig, context: Context):
@@ -278,7 +297,7 @@ async def pipeline(config: PipelineConfig, context: Context):
                 BuildStep(id="build-prod", run="yarn build:prod"),
                 DocStep(),
                 TestStep(id="test", run="yarn test-coverage", artifacts=config.testConfig.artifacts),
-                PublishCdnLocalStep(packagedArtifacts=['dist', 'docs', 'test-coverage']),
+                PublishCdnLocalStep(packagedArtifacts=config.publishConfig.packagedArtifacts),
                 PublishCdnRemoteStep()
             ],
             flows=[

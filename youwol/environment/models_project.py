@@ -1,5 +1,4 @@
 import functools
-import glob
 import sys
 import traceback
 from enum import Enum
@@ -193,12 +192,16 @@ class PipelineStep(BaseModel):
 
     async def get_fingerprint(self, project: 'Project', flow_id: FlowId, context: Context):
 
-        files = await self.get_sources(project=project, flow_id=flow_id, context=context)
-        if files is None:
-            return None, []
-        await context.info(text='got file listing', data={"files": [str(f) for f in files]})
-        checksum = files_check_sum(files)
-        return checksum, files
+        async with context.start(action="get_fingerprint") as ctx:
+            files = await self.get_sources(project=project, flow_id=flow_id, context=context)
+            if files is None:
+                return None, []
+            files = list(files)
+            if len(files) > 1000:
+                await ctx.warning(text=f"Retrieved large number of source code files ({len(files)})")
+            await ctx.info(text='got file listing', data={f"files ({len(files)})": [str(f) for f in files[0:1000]]})
+            checksum = files_check_sum(files)
+            return checksum, files
 
     @staticmethod
     async def __execute_run_cmd(project: 'Project', run_cmd: str, context: Context):
@@ -335,19 +338,27 @@ class Project(BaseModel):
 
     async def get_artifact_files(self, flow_id: str, artifact_id: str, context: Context) -> List[Path]:
 
-        env = await context.get('env', YouwolEnvironment)
-        steps = self.get_flow_steps(flow_id=flow_id)
-        step = next((s for s in steps if artifact_id in [a.id for a in s.artifacts]), None)
-        if not step:
-            artifacts_id = [a.id for s in steps for a in s.artifacts]
-            await context.error(text=f"Can not find artifact '{artifact_id}' in given flow '{flow_id}'",
+        async with context.start(
+                action="get_artifact_files",
+                with_attributes={"artifact": artifact_id}
+        ) as ctx:  # type: Context
+            env = await context.get('env', YouwolEnvironment)
+            steps = self.get_flow_steps(flow_id=flow_id)
+            step = next((s for s in steps if artifact_id in [a.id for a in s.artifacts]), None)
+            await ctx.info(text="Step retrieved", data={"step": step})
+            if not step:
+                artifacts_id = [a.id for s in steps for a in s.artifacts]
+                await ctx.error(text=f"Can not find artifact '{artifact_id}' in given flow '{flow_id}'",
                                 data={"artifacts_id": artifacts_id})
-        folder = env.pathsBook.artifact(project_name=self.name, flow_id=flow_id, step_id=step.id,
-                                        artifact_id=artifact_id)
-
-        if not folder.exists() or not folder.is_dir():
-            return []
-        return [Path(p) for p in glob.glob(str(folder) + '/**/*', recursive=True) if Path(p).is_file()]
+            folder = env.pathsBook.artifact(project_name=self.name, flow_id=flow_id, step_id=step.id,
+                                            artifact_id=artifact_id)
+            await ctx.info(text=f"Target folder: {folder}")
+            if not folder.exists() or not folder.is_dir():
+                await ctx.error(text=f"Target folder does not exist")
+                return []
+            files = [Path(p) for p in folder.glob('**/*') if Path(p).is_file()]
+            await ctx.info(text=f"Retrieved {len(files)} files", data={"files[0:100]": files[0:100]})
+            return files
 
     def get_flow_steps(
             self,

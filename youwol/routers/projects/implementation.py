@@ -184,7 +184,7 @@ async def create_artifact(
             )
 
         paths: PathsBook = env.pathsBook
-        await ctx.info(text='got files listing', data={"files": [str(f) for f in files]})
+        await ctx.info(text=f'files retrieved ({len(files)})', data={"files": [str(f) for f in files]})
         destination_folder = paths.artifact(project_name=project.name, flow_id=flow_id, step_id=step.id,
                                             artifact_id=artifact.id)
 
@@ -193,4 +193,4 @@ async def create_artifact(
             os.makedirs(os.path.dirname(destination_path), exist_ok=True)
             shutil.copy(src=f, dst=destination_path)
 
-        await ctx.info(text="Zip file created", data={'path': str(destination_path)})
+        await ctx.info(text="Artifact created", data={'destination_folder': str(destination_folder)})

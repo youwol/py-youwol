@@ -151,7 +151,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         ) as ctx:
 
             if self.predicate_public_path(request.url):
-                await ctx.info(text="public path", data=request.url)
+                await ctx.info(text="public path", data=str(request.url))
                 return await call_next(request)
 
             token = None

@@ -1,15 +1,15 @@
 import os
 import time
 from pathlib import Path
-from typing import List, cast, Optional
+from typing import List, cast, Optional, Dict
 
 from fastapi import APIRouter, Query
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from starlette.requests import Request
 
-from youwol.web_socket import InMemoryReporter, Log
-from youwol_utils.context import Context, LogEntry, LogLevel
+from youwol_utils import JSON
+from youwol_utils.context import Context, LogEntry, LogLevel, InMemoryReporter
 
 router = APIRouter()
 
@@ -55,6 +55,26 @@ class QueryRootLogsBody(BaseModel):
     maxCount: int
 
 
+class Log(BaseModel):
+    """
+    BaseModel conversion of LogEntry from youwol_utils
+    """
+    level: str
+    attributes: Dict[str, str]
+    labels: List[str]
+    text: str
+    data: Optional[JSON]
+    contextId: str
+    parentContextId: Optional[str]
+    timestamp: float
+
+    @staticmethod
+    def from_log_entry(log_entry: LogEntry):
+        return Log(level=log_entry.level.name, attributes=log_entry.attributes, labels=log_entry.labels,
+                   text=log_entry.text, data=log_entry.data, contextId=log_entry.context_id,
+                   parentContextId=log_entry.parent_context_id, timestamp=log_entry.timestamp)
+
+
 class LeafLogResponse(Log):
     pass
 
@@ -90,8 +110,8 @@ async def query_logs(
         logger = cast(InMemoryReporter, ctx.logs_reporters[0])
         logs = []
         for log in reversed(logger.root_node_logs):
-            failed = log.contextId in logger.errors
-            logs.append(NodeLogResponse(**log.dict(), failed=failed))
+            failed = log.context_id in logger.errors
+            logs.append(NodeLogResponse(**Log.from_log_entry(log).dict(), failed=failed))
             if len(logs) > max_count:
                 break
         response = LogsResponse(logs=logs)
@@ -107,12 +127,12 @@ async def get_logs(request: Request, parent_id: str):
         logger = cast(InMemoryReporter, ctx.logs_reporters[0])
         nodes_logs, leaf_logs, errors = logger.node_logs, logger.leaf_logs, logger.errors
 
-        nodes: List[Log] = [NodeLogResponse(**log.dict(), failed=log.contextId in errors)
+        nodes: List[Log] = [NodeLogResponse(**Log.from_log_entry(log).dict(), failed=log.context_id in errors)
                             for log in nodes_logs
-                            if log.parentContextId == parent_id]
-        leafs: List[Log] = [LeafLogResponse(**log.dict())
+                            if log.parent_context_id == parent_id]
+        leafs: List[Log] = [LeafLogResponse(**Log.from_log_entry(log).dict())
                             for log in leaf_logs
-                            if log.contextId == parent_id]
+                            if log.context_id == parent_id]
 
         return LogsResponse(logs=sorted(nodes + leafs, key=lambda n: n.timestamp))
 
@@ -130,7 +150,8 @@ async def post_logs(
     for log in body.logs:
         entry = LogEntry(
             level=LogLevel.INFO, text=log.text, data=log.data, labels=log.labels, attributes=log.attributes,
-            context_id=log.contextId, parent_context_id=log.parentContextId, trace_uid=log.traceUid
+            context_id=log.contextId, parent_context_id=log.parentContextId, trace_uid=log.traceUid,
+            timestamp=log.timestamp
         )
         await logger.log(entry=entry)
 

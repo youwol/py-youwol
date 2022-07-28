@@ -172,6 +172,7 @@ class OidcForClient:
             'username': username,
             'password': password,
             'client_id': self._client.client_id,
+            'scope': 'openid'
         }
 
         if isinstance(self._client, PrivateClient):
@@ -220,7 +221,8 @@ class OidcForClient:
         params = {
             'client_id': self._client.client_id,
             'grant_type': 'refresh_token',
-            'refresh_token': refresh_token
+            'refresh_token': refresh_token,
+            'scope': 'openid'
         }
 
         if isinstance(self._client, PrivateClient):
@@ -230,11 +232,11 @@ class OidcForClient:
             async with session.post(conf.token_endpoint,
                                     data=params) as resp:
                 status = resp.status
-                token = await resp.json()
+                tokens = await resp.json()
                 if status != 200:
-                    raise Exception(f"Failed to refresh token : {token}")
+                    raise Exception(f"Failed to refresh token : {tokens}")
 
-        return token
+        return tokens
 
     async def logout_url(self, redirect_uri: str):
         conf = await self._config.openid_configuration()

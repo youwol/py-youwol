@@ -20,6 +20,11 @@ from starlette.websockets import WebSocket
 from youwol_utils import JSON, to_json, YouwolHeaders, generate_headers_downstream
 
 
+#  Can also be a JSON referencing BaseModel(s), etc
+#  At the end 'JsonLike' is anything that can be used in the function 'to_json'
+JsonLike = Union[JSON, BaseModel]
+
+
 class LogLevel(Enum):
     DEBUG = "DEBUG"
     INFO = "INFO"
@@ -56,12 +61,13 @@ T = TypeVar('T')
 class LogEntry(NamedTuple):
     level: LogLevel
     text: str
-    data: Any
+    data: JSON
     labels: List[str]
     attributes: Dict[str, str]
     context_id: str
     parent_context_id: str
     trace_uid: Union[str, None]
+    timestamp: float
 
 
 DataType = Union[T, Callable[[], T], Callable[[], Awaitable[T]]]
@@ -80,7 +86,7 @@ def format_message(entry: LogEntry):
         "attributes": entry.attributes,
         "labels": [label for label in entry.labels],
         "text": entry.text,
-        "data": to_json(entry.data) if isinstance(entry.data, BaseModel) else entry.data,
+        "data": entry.data,
         "contextId": entry.context_id,
         "parentContextId": entry.parent_context_id
     }
@@ -217,7 +223,12 @@ class Context(NamedTuple):
         )
 
     async def log(self, level: LogLevel, text: str, labels: List[StringLike] = None,
-                  data: Union[JSON, BaseModel] = None):
+                  data: JsonLike = None):
+
+        if not self.data_reporters and not self.logs_reporters:
+            return
+
+        json_data = to_json(data)
         label_level = {
             LogLevel.DATA: Label.DATA,
             LogLevel.WARNING: Label.LOG_WARNING,
@@ -230,12 +241,13 @@ class Context(NamedTuple):
         entry = LogEntry(
             level=level,
             text=text,
-            data=data,
+            data=json_data,
             labels=labels,
             attributes=self.with_attributes,
             context_id=self.uid,
             parent_context_id=self.parent_uid,
-            trace_uid=self.trace_uid
+            trace_uid=self.trace_uid,
+            timestamp=time.time() * 1e6
         )
         if level == LogLevel.DATA:
             await asyncio.gather(*[logger.log(entry) for logger in self.data_reporters])
@@ -247,19 +259,19 @@ class Context(NamedTuple):
         await self.log(level=LogLevel.DATA, text=f"Send data '{data.__class__.__name__}'",
                        labels=[data.__class__.__name__, *labels], data=data)
 
-    async def debug(self, text: str, labels: List[StringLike] = None, data: Union[JSON, BaseModel] = None):
+    async def debug(self, text: str, labels: List[StringLike] = None, data: JsonLike = None):
         await self.log(level=LogLevel.DEBUG, text=text, labels=labels, data=data)
 
-    async def info(self, text: str, labels: List[StringLike] = None, data: Union[JSON, BaseModel] = None):
+    async def info(self, text: str, labels: List[StringLike] = None, data: JsonLike = None):
         await self.log(level=LogLevel.INFO, text=text, labels=labels, data=data)
 
-    async def warning(self, text: str, labels: List[StringLike] = None, data: Union[JSON, BaseModel] = None):
+    async def warning(self, text: str, labels: List[StringLike] = None, data: JsonLike = None):
         await self.log(level=LogLevel.WARNING, text=text, labels=labels, data=data)
 
-    async def error(self, text: str, labels: List[StringLike] = None, data: Union[JSON, BaseModel] = None):
+    async def error(self, text: str, labels: List[StringLike] = None, data: JsonLike = None):
         await self.log(level=LogLevel.ERROR, text=text, labels=labels, data=data)
 
-    async def failed(self, text: str, labels: List[StringLike] = None, data: Union[JSON, BaseModel] = None):
+    async def failed(self, text: str, labels: List[StringLike] = None, data: JsonLike = None):
         labels = labels or []
         await self.log(level=LogLevel.ERROR, text=text, labels=[Label.FAILED, *labels], data=data)
 
@@ -338,10 +350,9 @@ class DeployedContextReporter(ContextReporter):
             "logging.googleapis.com/spanId": entry.context_id,
             "logging.googleapis.com/trace": entry.trace_uid
         }
-        data = to_json(entry.data) if isinstance(entry.data, BaseModel) else entry.data
 
         try:
-            print(json.dumps({**base, "data": data}))
+            print(json.dumps({**base, "data": entry.data}))
         except TypeError:
             print(json.dumps({**base, "message": f"{base['message']} (FAILED PARSING DATA IN JSON)"}))
 
@@ -392,3 +403,45 @@ class PyYouwolContextReporter(ContextReporter):
             async with await session.post(url=url, json=body):
                 # nothing to do
                 pass
+
+
+class InMemoryReporter(ContextReporter):
+    max_count = 10000
+
+    root_node_logs: List[LogEntry] = []
+    node_logs: List[LogEntry] = []
+    leaf_logs: List[LogEntry] = []
+
+    errors = set()
+
+    def __init__(self):
+        super().__init__()
+
+    def clear(self):
+        self.root_node_logs = []
+        self.node_logs = []
+        self.leaf_logs = []
+
+    def resize_if_needed(self, items: List[any]):
+        if len(items) > 2 * self.max_count:
+            return items[len(items) - self.max_count:]
+        return items
+
+    async def log(self, entry: LogEntry):
+        if str(Label.LOG) in entry.labels:
+            return
+
+        if str(Label.STARTED) in entry.labels and entry.parent_context_id == 'root':
+            self.root_node_logs.append(entry)
+
+        if str(Label.STARTED) in entry.labels and entry.parent_context_id != 'root':
+            self.node_logs.append(entry)
+
+        if str(Label.STARTED) not in entry.labels:
+            self.leaf_logs.append(entry)
+
+        if str(Label.FAILED) in entry.labels:
+            self.errors.add(entry.context_id)
+
+        self.root_node_logs = self.resize_if_needed(self.root_node_logs)
+        self.leaf_logs = self.resize_if_needed(self.leaf_logs)
