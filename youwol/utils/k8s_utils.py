@@ -3,11 +3,10 @@ from pathlib import Path
 from signal import SIGTERM
 from typing import List, Optional, Union
 
-import kubernetes as k8s
 import psutil
 import yaml
 from kubernetes.client import V1Namespace, V1Service
-from kubernetes_asyncio import config as k8s_async_config
+from kubernetes_asyncio import config as k8s_config, client as k8s_client
 from kubernetes_asyncio.client.api_client import ApiClient
 from psutil import process_iter
 from urllib3.exceptions import NewConnectionError, ConnectTimeoutError, MaxRetryError
@@ -21,7 +20,7 @@ from youwol_utils.utils_paths import parse_yaml
 
 
 async def k8s_access_token():
-    await k8s_async_config.load_kube_config()
+    await k8s_config.load_kube_config()
     async with ApiClient() as api:
         api_key = api.configuration.api_key
     return api_key['BearerToken'].strip('Bearer').strip()
@@ -30,7 +29,7 @@ async def k8s_access_token():
 async def k8s_namespaces() -> List[str]:
 
     async with ApiClient() as api:
-        v1 = k8s.client.CoreV1Api(api)
+        v1 = k8s_client.CoreV1Api(api)
         namespaces = await v1.list_namespace()
         names = [n.metadata.name for n in namespaces.items]
         return names
@@ -39,16 +38,17 @@ async def k8s_namespaces() -> List[str]:
 async def k8s_secrets(namespace: str) -> List[str]:
 
     async with ApiClient() as api:
-        v1 = k8s.client.CoreV1Api(api)
+        v1 = k8s_client.CoreV1Api(api)
         secrets = await v1.list_namespaced_secret(namespace)
         names = [n.metadata.name for n in secrets.items]
         return names
 
 
-def k8s_create_secret(namespace: str, file_path: Path):
+async def k8s_create_secret(namespace: str, file_path: Path):
     with open(file_path) as f:
         data = yaml.safe_load(f)
-        k8s.client.CoreV1Api().create_namespaced_secret(namespace=namespace, body=data)
+        async with ApiClient() as api:
+            k8s_client.CoreV1Api(api).create_namespaced_secret(namespace=namespace, body=data)
 
 
 async def k8s_create_secrets_if_needed(namespace: str, secrets: List[Path], context: Context = None):
@@ -57,20 +57,20 @@ async def k8s_create_secrets_if_needed(namespace: str, secrets: List[Path], cont
     needed = [(n, s) for n, s in zip(names, secrets) if n not in existing]
     for name, secret in needed:
         context and context.info(f"Create secret {name} in namespace {namespace}")
-        k8s_create_secret(namespace=namespace, file_path=secret)
+        await k8s_create_secret(namespace=namespace, file_path=secret)
 
 
 async def k8s_create_namespace(name: str):
 
     async with ApiClient() as api:
-        v1 = k8s.client.CoreV1Api(api)
+        v1 = k8s_client.CoreV1Api(api)
         await v1.create_namespace(body=V1Namespace(metadata=dict(name=name)))
 
 
 async def k8s_get_service(namespace: str, name: str) -> Optional[V1Service]:
 
     async with ApiClient() as api:
-        v1 = k8s.client.CoreV1Api(api)
+        v1 = k8s_client.CoreV1Api(api)
         services = await v1.list_namespaced_service(namespace)
         service = next((s for s in services.items if s.metadata.name == name), None)
         return service
@@ -158,7 +158,7 @@ async def start_k8s_proxy(
         context_name: str,
         proxy_port: int
 ):
-    k8s.config.load_kube_config(
+    await k8s_config.load_kube_config(
         config_file=str(config_file),
         context=context_name
     )
@@ -176,7 +176,8 @@ async def get_api_gateway_ip() -> Optional[str]:
 async def get_cluster_info():
 
     try:
-        nodes = k8s.client.CoreV1Api().list_node(_request_timeout=2)
-        return [n.status.to_dict() for n in nodes.items]
+        async with ApiClient() as api:
+            nodes = await k8s_client.CoreV1Api(api).list_node(_request_timeout=2)
+            return [n.status.to_dict() for n in nodes.items]
     except (NewConnectionError, ConnectTimeoutError, MaxRetryError):
         return None
