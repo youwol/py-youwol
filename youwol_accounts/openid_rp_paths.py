@@ -6,8 +6,8 @@ from fastapi.params import Cookie
 from starlette.requests import Request
 from starlette.responses import RedirectResponse, JSONResponse
 
-from youwol_accounts_backend.configuration import get_configuration, Configuration
-from youwol_accounts_backend.root_paths import router
+from youwol_accounts.configuration import get_configuration, Configuration
+from youwol_accounts.root_paths import router
 from youwol_utils import ttl
 from youwol_utils.clients.oidc.oidc_config import OidcConfig
 from youwol_utils.clients.oidc.users_management import KeycloakUsersManagement

@@ -6,8 +6,8 @@ from starlette.datastructures import URL
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response, RedirectResponse
 
-from youwol_accounts_backend.configuration import Configuration, get_configuration
-from youwol_accounts_backend.root_paths import router
+from youwol_accounts.configuration import Configuration, get_configuration
+from youwol_accounts.root_paths import router
 from youwol_utils.clients.oidc.oidc_config import OidcConfig
 from youwol_utils.clients.oidc.users_management import KeycloakUsersManagement
 from youwol_utils.session_handler import SessionHandler
