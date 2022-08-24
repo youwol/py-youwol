@@ -1,4 +1,4 @@
-import youwol_accounts_backend
+import youwol_accounts
 import youwol_assets_backend as assets_backend
 import youwol_assets_gateway as assets_gtw
 import youwol_cdn_apps_server as cdn_apps_server
@@ -170,7 +170,7 @@ async def accounts_backend_config_py_youwol():
     config = await yw_config()
     pkce_cache: CacheClient = ContextFactory.with_static_data['accounts_pkce_cache']
     jwt_cache: CacheClient = ContextFactory.with_static_data['jwt_cache']
-    return youwol_accounts_backend.Configuration(
+    return youwol_accounts.Configuration(
         openid_base_url=config.get_remote_info().openidBaseUrl,
         openid_client=config.get_remote_info().openidClient,
         admin_client=config.get_remote_info().adminClient,
