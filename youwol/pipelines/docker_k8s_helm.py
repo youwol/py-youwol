@@ -39,8 +39,10 @@ class PublishDockerStep(PipelineStep):
         docker_url = self.dockerRepo.imageUrlBuilder(project, context)
 
         image_version = self.get_image_version(project, context)
-        return f"docker build -t {docker_url}:" \
-               f"{image_version} . " \
+        return f"docker build -t {project.name} ." \
+               f" && docker tag {project.name}:latest {docker_url}:latest" \
+               f" && docker tag {project.name}:latest {docker_url}:{image_version}" \
+               f" && docker push {docker_url}:latest" \
                f" && docker push {docker_url}:{image_version}"
 
 
