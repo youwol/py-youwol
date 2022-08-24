@@ -11,7 +11,7 @@ from youwol.environment.models_project import Manifest, PipelineStepStatus, Link
     SourcesFctImplicit, Pipeline, PipelineStep, FileListing, \
     Artifact, Project, RunImplicit, MicroService, ExplicitNone
 from youwol.exceptions import CommandException
-from youwol.pipelines.docker_k8s_helm import get_helm_version, InstallHelmStep, InstallHelmStepConfig, \
+from youwol.pipelines.docker_k8s_helm import get_helm_app_version, InstallHelmStep, InstallHelmStepConfig, \
     PublishDockerStep, PublishDockerStepConfig
 from youwol.pipelines.publish_cdn import PublishCdnRemoteStep, PublishCdnLocalStep
 from youwol.utils.utils_low_level import execute_shell_cmd
@@ -218,7 +218,7 @@ async def pipeline(
             target=MicroService(),
             tags=['python', 'microservice', 'fastapi'],
             projectName=lambda path: Path(path).name,
-            projectVersion=lambda path: get_helm_version(path),
+            projectVersion=lambda path: get_helm_app_version(path),
             dependencies=lambda project, _ctx: get_dependencies(project),
             steps=[
                 PreconditionChecksStep(),
