@@ -7,7 +7,7 @@ import json
 import os
 from pathlib import Path
 from typing import IO, Optional, Dict
-from typing import Union, List, Mapping
+from typing import Union, List
 from uuid import uuid4
 
 import brotli
@@ -15,13 +15,14 @@ from fastapi import HTTPException
 from starlette.responses import Response
 
 import semantic_version
+
 from youwol_utils import generate_headers_downstream, QueryBody, files_check_sum, shutil, \
-    CircularDependencies, PublishPackageError, get_content_type
+    PublishPackageError, get_content_type
 from youwol_utils.clients.docdb.models import Query, WhereClause, OrderingClause, SelectClause
 from youwol_utils.context import Context
 from youwol_cdn_backend.configurations import Constants, Configuration
 from youwol_utils.http_clients.cdn_backend import FormData, PublishResponse, FileResponse, \
-    FolderResponse, ExplorerResponse, ListVersionsResponse, Release
+    FolderResponse, ExplorerResponse, ListVersionsResponse, Release, LibraryResolved
 from youwol_cdn_backend.utils_indexing import format_doc_db_record, get_version_number_str
 from youwol_utils.utils_paths import extract_zip_file
 
@@ -49,26 +50,6 @@ def get_filename(d):
     if d["bundle_min"] != "":
         return d["bundle_min"]
     return d["bundle"]
-
-
-def loading_graph(downloaded, deque, items_dict):
-    dependencies = {d["library_name"]: [d2.split("#")[0] in downloaded for d2 in d["dependencies"]]
-                    for d in deque}
-    to_add = [name for name, dependencies_here in dependencies.items() if all(dependencies_here)]
-    new_deque = [p for p in deque if p["library_name"] not in to_add]
-
-    if len(new_deque) == 0:
-        return [[items_dict[a] for a in to_add]]
-
-    if len(new_deque) == len(deque):
-        dependencies_dict = {d["library_name"]: d["dependencies"] for d in deque}
-        not_founds = {pack: [dependencies_dict[pack][i] for i, found in enumerate(founds) if not found]
-                      for pack, founds in dependencies.items()}
-        print("Can not resolve dependency(ies)", new_deque, deque)
-        raise CircularDependencies(context="Loading graph resolution stuck",
-                                   packages=not_founds)
-
-    return [[items_dict[a] for a in to_add]] + loading_graph(downloaded + [r for r in to_add], new_deque, items_dict)
 
 
 async def prepare_files_to_post(base_path: Path, package_path: Path, zip_path: Path, paths: List[Path],
@@ -343,20 +324,8 @@ def to_package_name(library_id: str) -> str:
         raise HTTPException(status_code=400, detail=f"'{library_id}' is not a valid library id")
 
 
-def get_url(document: Mapping[str, str]) -> str:
-    return to_package_id(document['library_name']) + "/" + document['version'] + "/" + get_filename(document)
-
-
-def retrieve_dependency_paths(dependencies_dict, from_package: str, suffix: str = None) -> List[str]:
-    parents = [name for name, data in dependencies_dict.items()
-               if any([dep_id.split("#")[0] == from_package for dep_id in data['dependencies']])]
-    if not parents:
-        return [f"{from_package} > {suffix}"]
-    paths = [retrieve_dependency_paths(dependencies_dict, parent,
-                                       f"{from_package} > {suffix}" if suffix else from_package)
-             for parent in parents]
-    paths = list(itertools.chain.from_iterable(paths))
-    return paths
+def get_url(lib: LibraryResolved) -> str:
+    return to_package_id(lib.name) + "/" + lib.version + "/" + lib.bundle
 
 
 async def list_versions(
@@ -433,3 +402,4 @@ async def fetch_resource(path: str, max_age: str, configuration: Configuration, 
 def get_path(library_id: str, version: str, rest_of_path: str):
     name = to_package_name(library_id)
     return f"libraries/{name.replace('@', '')}/{version}/{rest_of_path}"
+

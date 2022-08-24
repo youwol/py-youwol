@@ -106,8 +106,23 @@ class LibVersionsBody(BaseModel):
     name: str
 
 
+class LibraryQuery(BaseModel):
+    name: str
+    version: str
+
+
+class LibraryResolved(Library):
+    dependencies: List[LibraryQuery]
+    bundle: str
+
+
 class LoadingGraphBody(BaseModel):
-    libraries: Dict[str, str]
+    libraries: Union[List[LibraryQuery], Dict[str, str]]
+    using: Dict[str, str] = {}
+
+
+class LoadingGraphBodyV1(BaseModel):
+    libraries: List[LibraryQuery]
     using: Dict[str, str] = {}
 
 

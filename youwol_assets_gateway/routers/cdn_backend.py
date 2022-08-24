@@ -145,7 +145,6 @@ async def delete_version(
              summary="describes the loading graph of provided libraries",
              response_model=LoadingGraphResponseV1)
 async def resolve_loading_tree(
-
         request: Request,
         body: LoadingGraphBody,
         configuration: Configuration = Depends(get_configuration)
@@ -154,7 +153,7 @@ async def resolve_loading_tree(
             request=request
     ) as ctx:
         return await configuration.cdn_client.query_loading_graph(
-            body=body,
+            body=body.dict(),
             headers=ctx.headers()
         )
 
