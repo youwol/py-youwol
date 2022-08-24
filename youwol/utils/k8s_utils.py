@@ -5,8 +5,8 @@ from typing import List, Optional, Union
 
 import psutil
 import yaml
-from kubernetes.client import V1Namespace, V1Service
 from kubernetes_asyncio import config as k8s_config, client as k8s_client
+from kubernetes_asyncio.client import V1Namespace, V1Service
 from kubernetes_asyncio.client.api_client import ApiClient
 from psutil import process_iter
 from urllib3.exceptions import NewConnectionError, ConnectTimeoutError, MaxRetryError
