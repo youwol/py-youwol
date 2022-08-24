@@ -3,7 +3,7 @@ import itertools
 from pathlib import Path
 from typing import List
 
-from pydantic.main import BaseModel
+from pydantic import BaseModel
 
 from youwol.utils.helm_utils import helm_install, helm_upgrade, helm_list, helm_uninstall
 from youwol.utils.k8s_utils import k8s_create_secrets_if_needed
