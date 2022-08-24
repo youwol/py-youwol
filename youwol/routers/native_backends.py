@@ -3,7 +3,7 @@ from typing import List
 
 from fastapi import APIRouter
 
-import youwol_accounts_backend as accounts_backend
+import youwol_accounts as accounts_backend
 import youwol_assets_backend as assets_backend
 import youwol_assets_gateway as assets_gtw
 import youwol_cdn_apps_server as cdn_apps_server
