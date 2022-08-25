@@ -44,6 +44,17 @@ async def helm_list(namespace: Optional[str], selector: Optional[Selector], cont
     return [to_resource(line) for line in outputs[1:] if line]
 
 
+async def helm_dry_run(release_name: str, namespace: str, values_file: Path, chart_folder: Path,
+                       args="", context: Context = None):
+
+    async with context.start(action="helm_dry_run") as ctx:  # type: Context
+        cmd = f"helm upgrade --dry-run --install {release_name} --create-namespace --namespace {namespace} " + \
+              f" --values {str(values_file)} {str(chart_folder)} {args}"
+        return_code, outputs = await execute_shell_cmd(cmd, ctx)
+
+    return return_code, cmd, outputs
+
+
 async def helm_install(release_name: str, namespace: str, values_file: Path, chart_folder: Path,
                        timeout=120, args="", context: Context = None):
     return await helm_install_or_upgrade(release_name=release_name, namespace=namespace, values_file=values_file,
