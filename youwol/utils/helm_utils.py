@@ -46,21 +46,15 @@ async def helm_list(namespace: Optional[str], selector: Optional[Selector], cont
 
 async def helm_install(release_name: str, namespace: str, values_file: Path, chart_folder: Path,
                        timeout=120, args="", context: Context = None):
-    cmd = f"helm install {release_name} --create-namespace --namespace {namespace} --values {str(values_file)} " +\
-          f"--atomic --timeout {timeout}s {str(chart_folder)} {args}"
-
-    return_code, outputs = await execute_shell_cmd(cmd, context)
-    return return_code, cmd, outputs
+    return await helm_install_or_upgrade(release_name=release_name, namespace=namespace, values_file=values_file,
+                                         chart_folder=chart_folder, timeout=timeout, args=args, context=context)
 
 
 async def helm_upgrade(release_name: str, namespace: str, values_file: Path, chart_folder: Path, timeout=120, args="",
                        context: Context = None):
-    cmd = f"helm upgrade {release_name} --namespace {namespace} --values {str(values_file)} " +\
-          f"--atomic --timeout {timeout}s {str(chart_folder)}  {args}"
 
-    context and await context.info(text=cmd)
-    return_code, outputs = await execute_shell_cmd(cmd, context)
-    return return_code, cmd, outputs
+    return await helm_install_or_upgrade(release_name=release_name, namespace=namespace, values_file=values_file,
+                                         chart_folder=chart_folder, timeout=timeout, args=args, context=context)
 
 
 async def helm_uninstall(release_name: str, namespace: str, context: Context = None):
@@ -70,9 +64,11 @@ async def helm_uninstall(release_name: str, namespace: str, context: Context = N
 
 
 async def helm_install_or_upgrade(release_name: str, namespace: str, values_file: Path, chart_folder: Path,
-                                  timeout: int, context: Context):
-    _, outputs = await helm_list(namespace=namespace, selector=None, context=context)
-    if release_name in [r.name for r in outputs]:
-        await helm_upgrade(release_name, namespace, values_file, chart_folder, timeout)
-    else:
-        await helm_install(release_name, namespace, values_file, chart_folder, timeout)
+                                  timeout=120, args="", context: Context = None):
+
+    async with context.start(action="helm_install_or_upgrade") as ctx:  # type: Context
+        cmd = f"helm upgrade --install {release_name} --create-namespace --namespace {namespace} " + \
+              f"--values {str(values_file)} --atomic --timeout {timeout}s {str(chart_folder)} {args}"
+        return_code, outputs = await execute_shell_cmd(cmd, ctx)
+
+    return return_code, cmd, outputs
