@@ -13,11 +13,6 @@ class DockerRepo(BaseModel):
     imageUrlBuilder: Callable[[Project, Context], str]
 
 
-class OpenIdConnect(BaseModel):
-    host: str  # gc.auth.youwol.com
-    authSecret: Path
-
-
 class Docker(BaseModel):
     repositories: List[DockerRepo]
 
@@ -29,8 +24,6 @@ class K8sCluster(BaseModel):
     configFile: Path
     contextName: str
     proxyPort: int
-    host: str
-    openIdConnect: OpenIdConnect
     docker: Docker
 
     def __str__(self):
@@ -38,5 +31,4 @@ class K8sCluster(BaseModel):
 - config file: {self.configFile}
 - context name: {self.contextName}
 - proxy port: {self.proxyPort}
-- host: {self.host}
 """
