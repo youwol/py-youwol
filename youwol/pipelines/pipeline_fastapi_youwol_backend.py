@@ -12,7 +12,7 @@ from youwol.environment.models_project import Manifest, PipelineStepStatus, Link
     Artifact, Project, RunImplicit, MicroService, ExplicitNone
 from youwol.exceptions import CommandException
 from youwol.pipelines.docker_k8s_helm import get_helm_app_version, InstallHelmStep, InstallHelmStepConfig, \
-    PublishDockerStep, PublishDockerStepConfig
+    PublishDockerStep, PublishDockerStepConfig, InstallDryRunHelmStep
 from youwol.pipelines.publish_cdn import PublishCdnRemoteStep, PublishCdnLocalStep
 from youwol.utils.utils_low_level import execute_shell_cmd
 from youwol_utils.context import Context
@@ -152,7 +152,7 @@ def get_ingress(host: str):
 
 
 class CustomPublishDockerStepConfig(PublishDockerStepConfig):
-    python_modules_copied: List[Path] = [Path(youwol_utils.__file__).parent]
+    python_modules_copied: List[Path] = []
 
 
 class PipelineConfig(BaseModel):
@@ -209,10 +209,17 @@ async def pipeline(
         config: PipelineConfig,
         context: Context
 ):
+    def add_dry_values(p,c):
+        base = config.helmConfig.overridingHelmValues(p, c) if config.helmConfig.overridingHelmValues else {}
+        return {**base, "platformDomain": "platform.example.com"}
+
     async with context.start(action="pipeline") as ctx:
         await ctx.info(text="Instantiate pipeline", data=config)
 
         docker_fields = {k: v for k, v in config.dockerConfig.dict().items() if v is not None}
+
+        dry_run_config = InstallHelmStepConfig(**config.helmConfig.dict())
+        dry_run_config.overridingHelmValues = add_dry_values
 
         return Pipeline(
             target=MicroService(),
@@ -230,6 +237,9 @@ async def pipeline(
                 PublishCdnLocalStep(packagedArtifacts=['docs', 'test-coverage']),
                 PublishCdnRemoteStep(),
                 CustomPublishDockerStep(**docker_fields),
+                InstallDryRunHelmStep(
+                    config=dry_run_config
+                ),
                 InstallHelmStep(
                     config=config.helmConfig
                 )
@@ -238,7 +248,8 @@ async def pipeline(
                 Flow(
                     name="prod",
                     dag=[
-                        "checks > init > unit-test > integration-test > publish-docker > install-helm > api-test ",
+                        "checks > init > unit-test > integration-test > publish-docker "
+                        "> dry-run-helm > install-helm > api-test ",
                         "init > doc ",
                         "unit-test > publish-local > publish-remote"
                     ]

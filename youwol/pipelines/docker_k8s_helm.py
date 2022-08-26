@@ -66,7 +66,7 @@ def get_chart_explorer(chart_folder: Path):
 
 
 class InstallHelmStepConfig(BaseModel):
-    namespace: str = "default"
+    namespace: str
     overridingHelmValues: Callable[[Project, Context], dict] = None
     secrets: List[Path] = []
     id: str = "helm"
@@ -80,12 +80,29 @@ class InstallHelmStep(PipelineStep):
 
     run: ExplicitNone = ExplicitNone()
 
+    async def get_helm_package(self, project: Project, context: Context):
+
+        with_values = self.config.overridingHelmValues(project, context) if self.config.overridingHelmValues else {}
+        chart_path = project.path / "chart"
+
+        helm_package = HelmPackage(
+            name=project.name,
+            namespace=self.config.namespace,
+            chart_folder=chart_path,
+            with_values=with_values,
+            values_filename='values.yaml',
+            secrets=self.config.secrets,
+            chart_explorer=get_chart_explorer(chart_path)
+        )
+        await context.send(data=helm_package)
+        return helm_package
+
     async def execute_run(self, project: Project, flow_id: FlowId, context: Context):
 
         outputs = []
         await context.info(text="")
         async with context.start(
-                action="HelmStep.execute_run",
+                action="InstallHelmStep.execute_run",
                 with_attributes={
                     "namespace": self.config.namespace
                 }) as ctx:
@@ -95,23 +112,11 @@ class InstallHelmStep(PipelineStep):
                 outputs.append("Can not connect to k8s proxy")
                 raise CommandException(command="Deploy helm chart", outputs=outputs)
 
-            with_values = self.config.overridingHelmValues(project, ctx) if self.config.overridingHelmValues else {}
-            chart_path = project.path / "chart"
+            helm_package = await self.get_helm_package(project=project, context=ctx)
 
-            helm_package = HelmPackage(
-                name=project.name,
-                namespace=self.config.namespace,
-                chart_folder=chart_path,
-                with_values=with_values,
-                values_filename='values.yaml',
-                secrets=self.config.secrets,
-                chart_explorer=get_chart_explorer(chart_path)
-            )
-
-            await ctx.send(data=helm_package)
             installed = await helm_package.is_installed(context=ctx)
 
-            if installed and '-next' in project.version:
+            if installed and '-wip' in project.version:
                 outputs.append("Mutable version used, proceed to chart uninstall")
                 await helm_package.uninstall(context=ctx)
                 installed = False
@@ -131,5 +136,30 @@ class InstallHelmStep(PipelineStep):
                 outputs = outputs + [cmd] + outputs_bash
                 if return_code > 0:
                     raise CommandException(command="deploy helm chart", outputs=outputs)
+
+        return outputs
+
+
+class InstallDryRunHelmStep(InstallHelmStep):
+    id = 'dry-run-helm'
+    config: InstallHelmStepConfig
+
+    run: ExplicitNone = ExplicitNone()
+
+    async def execute_run(self, project: Project, flow_id: FlowId, context: Context):
+
+        outputs = []
+        await context.info(text="")
+        async with context.start(
+                action="InstallDryRunHelmStep.execute_run",
+                with_attributes={
+                    "namespace": self.config.namespace
+                }) as ctx:
+
+            helm_package = await self.get_helm_package(project=project,
+                                                       context=ctx)
+
+            return_code, cmd, outputs_bash = await helm_package.dry_run(context=ctx)
+            outputs = outputs + [cmd] + outputs_bash
 
         return outputs

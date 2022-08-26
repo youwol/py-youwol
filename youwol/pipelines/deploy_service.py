@@ -5,7 +5,7 @@ from typing import List
 
 from pydantic import BaseModel
 
-from youwol.utils.helm_utils import helm_install, helm_upgrade, helm_list, helm_uninstall
+from youwol.utils.helm_utils import helm_install, helm_upgrade, helm_list, helm_uninstall, helm_dry_run
 from youwol.utils.k8s_utils import k8s_create_secrets_if_needed
 from youwol_utils import to_json
 from youwol_utils.context import Context
@@ -35,6 +35,20 @@ class HelmPackage(K8sPackage):
 
     async def before_cmd(self, context: Context):
         await k8s_create_secrets_if_needed(namespace=self.namespace, secrets=self.secrets, context=context)
+
+    async def dry_run(self, context: Context):
+
+        async with context.start(action='dry run install helm package') as ctx:
+
+            keys = HelmPackage.flatten_schema_values(self.with_values)
+            args = functools.reduce(lambda acc, e: acc + f"--set {e[1:]} ", keys, "")
+            return await helm_dry_run(
+                release_name=self.name,
+                namespace=self.namespace,
+                values_file=self.chart_folder / self.values_filename,
+                chart_folder=Path(self.chart_folder),
+                args=args,
+                context=ctx)
 
     async def install(self, context: Context):
 
