@@ -3,10 +3,12 @@ import itertools
 from typing import List, Callable, Union, Dict, Tuple
 
 from fastapi import HTTPException
+from pydantic import BaseModel
+from semantic_version import Version, NpmSpec
 
 from youwol_cdn_backend.utils import Configuration, get_version_number_str, Constants, list_versions, \
     to_package_id
-from youwol_cdn_backend.utils_indexing import get_version_number
+
 from youwol_utils import CircularDependencies, DependenciesError
 from youwol_utils.context import Context
 from youwol_utils.http_clients.cdn_backend import LibraryResolved, LibraryQuery
@@ -44,19 +46,18 @@ async def loading_graph(
         downloaded: List[LibKey],
         remaining: List[LibraryResolved],
         items_dict: Dict[LibKey, Tuple[str, str]],
-        get_key: Callable[[Union[LibraryResolved, LibraryQuery]], LibKey],
         context: Context
 ):
     async with context.start(action="loading_graph") as ctx:  # type: Context
-        dependencies = {get_key(d): [get_key(dependency) in downloaded for dependency in d.dependencies]
+        dependencies = {d.apiKey: [dependency.apiKey in downloaded for dependency in d.dependencies]
                         for d in remaining}
         await ctx.info(text="Requested libraries", data=dependencies)
         fulfilled_libs = [key for key, dependencies_available in dependencies.items() if all(dependencies_available)]
         await ctx.info(text="Library to download", data={'fulfilledLibs': fulfilled_libs})
-        new_remaining = [p for p in remaining if get_key(p) not in fulfilled_libs]
+        new_remaining = [p for p in remaining if p.apiKey not in fulfilled_libs]
 
         await ctx.info(text="New remaining dependencies",
-                       data={'new_remaining': [get_key(lib) for lib in new_remaining]})
+                       data={'new_remaining': [lib.apiKey for lib in new_remaining]})
 
         if not new_remaining:
             response = [[items_dict[a] for a in fulfilled_libs]]
@@ -64,7 +65,7 @@ async def loading_graph(
             return response
 
         if len(new_remaining) == len(remaining):
-            dependencies_dict = {get_key(d): d.dependencies for d in remaining}
+            dependencies_dict = {d.apiKey: d.dependencies for d in remaining}
             not_founds = {pack: [dependencies_dict[pack][i].dict() for i, found in enumerate(founds) if not found]
                           for pack, founds in dependencies.items()}
             await ctx.error(text="Can not resolve dependency(ies)",
@@ -75,7 +76,6 @@ async def loading_graph(
             downloaded=downloaded + [r for r in fulfilled_libs],
             remaining=new_remaining,
             items_dict=items_dict,
-            get_key=get_key,
             context=ctx
         )
         response = [[items_dict[a] for a in fulfilled_libs]] + next_round
@@ -104,40 +104,47 @@ async def list_all_versions_with_cache(
     return versions_cache[library.name]
 
 
+class ApiVersion(BaseModel):
+    name: str
+    version: str
+    apiKey: str
+
+
+def get_api_key(name: str, version: Union[str, Version]):
+    parsed = version if isinstance(version, Version) else Version(version)
+    api_key = parsed.major if parsed.major != 0 else f"0.{parsed.minor}"
+    return f"{name}#{api_key}"
+
+
 async def resolve_version(
         dependency: LibraryQuery,
         using: Dict[str, str],
-        get_key: Callable[[Union[LibraryResolved, LibraryQuery]], str],
         versions_cache: Dict[str, List[str]],
         configuration: Configuration,
         context: Context
-) -> LibraryQuery:
+) -> ApiVersion:
 
     async with context.start(action="resolve_version",
-                             with_attributes={'library': get_key(dependency)}) as ctx:  # type: Context
-        if dependency.name in using:
-            await ctx.info(text=f"Use specified fixed version {using[dependency.name]}")
-            return LibraryQuery(name=dependency.name, version=using[dependency.name])
-
+                             with_attributes={'library': dependency.name}) as ctx:  # type: Context
+        version = using[dependency.name] if dependency.name in using else dependency.version
+        version_spec = version.replace('x', '*').replace('latest', '*')
+        name = dependency.name
         versions = await list_all_versions_with_cache(library=dependency, versions_cache=versions_cache,
-                                                      context=ctx, configuration=configuration)
-
-        if dependency.version in ["latest", "x", "*"]:
-            await ctx.info(text=f"Use latest version {versions[0]}")
-            return LibraryQuery(name=dependency.name, version=versions[0])
-
-        target_major = get_major(dependency.version)
-        from_version_number = get_version_number(f"{target_major}.0.0")
-        to_version_number = get_version_number(f"{target_major+1}.0.0")
-        version = next(v for v in versions
-                       if from_version_number <= get_version_number(v) < to_version_number)
-        await ctx.info(text=f"Use latest compatible version of {target_major} : {version}")
-        return LibraryQuery(name=dependency.name, version=version)
+                                                      configuration=configuration, context=ctx)
+        await ctx.info(f"Got {len(versions)} versions")
+        selector = NpmSpec(version_spec)
+        version = next(selector.filter(Version(v.replace('-wip', '')) for v in versions), None)
+        if str(version) not in versions:
+            version = Version(f"{version}-wip")
+        await ctx.info(f"Version resolved to {version}")
+        await ctx.info(text=f"Use latest compatible version of {name}#{dependency.version} : {version}")
+        api_key = get_api_key(name, version)
+        dependency.apiKey = api_key
+        return ApiVersion(name=dependency.name, version=str(version), apiKey=api_key)
 
 
 async def resolve_dependencies_recursive(
         known_libraries: List[LibraryResolved],
-        get_key: Callable[[Union[LibraryResolved, LibraryQuery]], str],
         using: Dict[str, str],
         versions_cache: Dict[str, List[str]],
         configuration: Configuration,
@@ -158,13 +165,15 @@ async def resolve_dependencies_recursive(
         inputs_flat_dependencies = [dependency for lib in known_libraries for dependency in lib.dependencies]
         await ctx.info(text="Start another layer to fetch missing dependencies",
                        data={"raw dependencies": inputs_flat_dependencies})
-
-        inputs_flat_dependencies = await remove_duplicates(libraries=inputs_flat_dependencies, get_key=get_key,
-                                                           context=ctx)
+        # there is an optimization to implement:
+        #   among the 'inputs_flat_dependencies' some are the same (same name, same requested version)
+        #   we should not need to resolve these multiple times.
+        #   Be careful: 'resolve_version' mutates the dependency (set 'apiKey') -> this should be eliminated
+        # However, it is mostly OK because the call to 'list_version' is cached by libraries' name
         async with ctx.start(action='resolve versions') as ctx_latest:  # type: Context
             flat_dependencies = await asyncio.gather(
-                *[resolve_version(dependency, get_key=get_key, configuration=configuration,
-                                  using=using, versions_cache=versions_cache, context=ctx_latest)
+                *[resolve_version(dependency, configuration=configuration, using=using, versions_cache=versions_cache,
+                                  context=ctx_latest)
                   for dependency in inputs_flat_dependencies],
                 return_exceptions=True
             )
@@ -174,14 +183,15 @@ async def resolve_dependencies_recursive(
             errors=[resp for resp in flat_dependencies
                     if isinstance(resp, LibraryNotFound) or isinstance(resp, LibraryException)],
             known_libraries=known_libraries,
-            get_key=get_key,
             context=ctx
         )
         # it maybe the case that 'latest' resolution yield to duplicates
-        flat_dependencies = await remove_duplicates(libraries=flat_dependencies, get_key=get_key, context=ctx)
+        flat_dependencies = await remove_duplicates(libraries=flat_dependencies,
+                                                    get_key=lambda l: l.apiKey,
+                                                    context=ctx)
 
-        resolved_keys = [get_key(lib) for lib in known_libraries]
-        missing_dependencies = [d for d in flat_dependencies if get_key(d) not in resolved_keys]
+        resolved_keys = [get_api_key(lib.name, lib.version) for lib in known_libraries]
+        missing_dependencies = [d for d in flat_dependencies if d.apiKey not in resolved_keys]
 
         await ctx.info(text="Prepared dependencies",
                        data={"missing": missing_dependencies, "already retrieved": known_libraries})
@@ -192,7 +202,7 @@ async def resolve_dependencies_recursive(
 
         async with ctx.start(action="query dependencies data") as ctx_dependencies:  # type: Context
             resolved_dependencies = await asyncio.gather(
-                *[get_data(lib_query=dependency, configuration=configuration, context=ctx_dependencies)
+                *[get_data(name=dependency.name, version=dependency.version, configuration=configuration, context=ctx_dependencies)
                   for dependency in missing_dependencies],
                 return_exceptions=True
             )
@@ -203,13 +213,11 @@ async def resolve_dependencies_recursive(
             errors=[resp for resp in resolved_dependencies
                     if isinstance(resp, LibraryNotFound) or isinstance(resp, LibraryException)],
             known_libraries=known_libraries,
-            get_key=get_key,
             context=ctx
         )
 
         return await resolve_dependencies_recursive(
             known_libraries=[*known_libraries, *resolved_dependencies],
-            get_key=get_key,
             using=using,
             configuration=configuration,
             versions_cache=versions_cache,
@@ -218,29 +226,31 @@ async def resolve_dependencies_recursive(
 
 
 async def get_data(
-        lib_query: LibraryQuery,
+        name: str,
+        version: str,
         configuration: Configuration,
         context: Context) \
         -> LibraryResolved:
 
     async with context.start(action="get_data",
-                             with_attributes={'lib': f'{lib_query.name}#{lib_query.version}'}) \
+                             with_attributes={'lib': f'{name}#{version}'}) \
             as ctx:  # type: Context
-        await ctx.info(f"Retrieved data of {lib_query.name} version {lib_query.version}")
+        await ctx.info(f"Retrieved data of {name} version {version}")
         doc_db = configuration.doc_db
         try:
             data = await doc_db.get_document(
-                partition_keys={"library_name": lib_query.name},
-                clustering_keys={"version_number": get_version_number_str(lib_query.version)},
+                partition_keys={"library_name": name},
+                clustering_keys={"version_number": get_version_number_str(version)},
                 owner=Constants.owner, headers=ctx.headers()
             )
             metadata = LibraryResolved(
-                name=lib_query.name,
-                version=lib_query.version,
+                name=name,
+                version=version,
+                apiKey=get_api_key(name, version),
                 fingerprint=data['fingerprint'],
                 namespace=data['namespace'],
                 type=data['type'],
-                id=to_package_id(lib_query.name),
+                id=to_package_id(name),
                 bundle=data['bundle'],
                 dependencies=[LibraryQuery(name=d.split('#')[0], version=d.split('#')[1])
                               for d in data['dependencies']]
@@ -248,11 +258,11 @@ async def get_data(
         except HTTPException as e:
             if e.status_code != 404:
                 raise LibraryException(
-                    library=lib_query,
-                    detail=f"{lib_query.name}: error while resolving version {lib_query.version}"
+                    library=LibraryQuery(name=name, version=version),
+                    detail=f"{name}: error while resolving version {version}"
                 )
-            raise LibraryNotFound(library=lib_query,
-                                  detail=f"{lib_query.name}: version {lib_query.version} not found")
+            raise LibraryNotFound(library=LibraryQuery(name=name, version=version),
+                                  detail=f"{name}: version {version} not found")
 
         return metadata
 
@@ -306,7 +316,7 @@ def retrieve_dependency_paths(
 
 async def remove_duplicates(
         libraries: List[LibraryQuery],
-        get_key: Callable[[Union[LibraryQuery, LibraryResolved]], str],
+        get_key: Callable[[LibraryQuery], str],
         context: Context
 ) -> List[LibraryQuery]:
 

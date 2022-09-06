@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, NamedTuple, Union, Dict, Any
+from typing import List, NamedTuple, Union, Dict, Any, Optional
 
 from pydantic import BaseModel
 
@@ -109,11 +109,13 @@ class LibVersionsBody(BaseModel):
 class LibraryQuery(BaseModel):
     name: str
     version: str
+    apiKey: Optional[str]
 
 
 class LibraryResolved(Library):
     dependencies: List[LibraryQuery]
     bundle: str
+    apiKey: str
 
 
 class LoadingGraphBody(BaseModel):

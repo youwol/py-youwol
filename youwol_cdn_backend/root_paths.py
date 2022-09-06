@@ -2,13 +2,15 @@ import asyncio
 import io
 import json
 import shutil
-from typing import Optional, Union
+from typing import Optional, Dict, List
 
 from fastapi import UploadFile, File, HTTPException, Form, APIRouter, Depends
 from starlette.requests import Request
 from starlette.responses import Response
 
-from youwol_cdn_backend.loading_graph_implementation import resolve_dependencies_recursive, loading_graph, get_major
+from youwol_cdn_backend.loading_graph_implementation import resolve_dependencies_recursive, loading_graph, get_major, \
+    get_api_key
+
 from youwol_utils import PackagesNotFound
 from youwol_utils.clients.docdb.models import WhereClause, QueryBody, Query
 from youwol_utils.context import Context
@@ -239,12 +241,7 @@ async def resolve_loading_tree(
         body: LoadingGraphBody,
         configuration: Configuration = Depends(get_configuration)
 ):
-    def get_key(lib: Union[Library, LibraryQuery]):
-        if isinstance(body.libraries, dict):
-            # This turn on single versioning resolution as used in deprecated version of body
-            # (using dict for body.libraries)
-            return lib.name
-        return f"{lib.name}#{get_major(lib.version)}"
+    versions_cache: Dict[str, List[str]] = {}
 
     async with Context.start_ep(
             request=request,
@@ -260,25 +257,24 @@ async def resolve_loading_tree(
 
         resolved_libraries = await resolve_dependencies_recursive(
             known_libraries=[LibraryResolved(
-                namespace="", id="", type="", fingerprint="", bundle="",
+                namespace="", id="", type="", apiKey=get_api_key(root_name, "1.0.0-does-not-matter"),
+                fingerprint="", bundle="",
                 name=root_name,
                 version="1.0.0-does-not-matter",
                 dependencies=dependencies
             )],
-            get_key=get_key,
             using=body.using,
-            versions_cache={},
+            versions_cache=versions_cache,
             configuration=configuration,
             context=ctx
         )
 
         resolved_libraries = [lib for lib in resolved_libraries if lib.name != root_name]
-        items_dict = {get_key(d): [to_package_id(d.name), get_url(d)] for d in resolved_libraries}
+        items_dict = {get_api_key(d.name, d.version): [to_package_id(d.name), get_url(d)] for d in resolved_libraries}
         graph = await loading_graph(
             downloaded=[],
             remaining=resolved_libraries,
             items_dict=items_dict,
-            get_key=get_key,
             context=ctx)
 
         response = LoadingGraphResponseV1(
