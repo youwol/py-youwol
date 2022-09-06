@@ -1,3 +1,4 @@
+import glob
 import json
 import shutil
 import subprocess
@@ -108,6 +109,7 @@ def generate_package_json(working_path: Path, input_template: Template):
     package_json = parse_json(Path(__file__).parent / 'templates' / 'package.json')
     values = {
         "name": input_template.name,
+        "version": input_template.version,
         "description": input_template.shortDescription,
         "author": input_template.author,
         "homepage": f"https://github.com/{input_template.name.replace('@', '')}#README.md",
@@ -178,15 +180,18 @@ def generate_webpack_config(working_path: Path, input_template: Template):
     }
 
     def get_api_version(query):
-        clauses = list(semantic_version.SimpleSpec(query).clause.clauses)
-        mini = clauses[0].target.major
-        return mini
+        spec = semantic_version.NpmSpec(query)
+        min_version = next((clause for clause in spec.clause.clauses if clause.operator == '>='), None)
+        mini = min_version.target
+        if mini.major == 0:
+            return f"0{mini.minor}"
+        return f'{mini.major}'
 
     filename = working_path / 'webpack.config.js'
     shutil.copyfile(Path(__file__).parent / 'templates' / 'webpack.config.lib.js', filename)
     v = semantic_version.Version(input_template.version)
 
-    api_version = v.major
+    api_version = f'{v.major}' if v.major > 0 else f'0{v.minor}'
     externals: Dict[str, Union[str, JSON]] = {}
     all_runtime = {
         **input_template.dependencies.runTime.load,
@@ -202,10 +207,12 @@ def generate_webpack_config(working_path: Path, input_template: Template):
         symbol_name = name if name not in variants else variants[name]
         externals[name] = f"{symbol_name}_APIv{dep_api_version}"
 
-    for sub_module in imports_from_sub_modules:
-        parts = sub_module.split('/')
-        symbol_name = externals[parts[0]]
-        externals[sub_module] = {
+    for import_path, sub_module in imports_from_sub_modules.items():
+        parts = sub_module['path'].split('/')
+        symbol_name = externals[sub_module['package']]
+        externals[import_path] = {
+            "commonjs": import_path,
+            "commonjs2": import_path,
             "root": [symbol_name, *[p for p in parts[1:]]]
         }
     sed_inplace(filename, 'const apiVersion = ""', f'const apiVersion = "{api_version}"')
@@ -214,13 +221,22 @@ def generate_webpack_config(working_path: Path, input_template: Template):
 
 def get_imports_from_submodules(input_template: Template, all_runtime_deps: Dict[str, str]):
 
-    lines = subprocess.check_output(f"""grep -Hrn "from '" {str(input_template.path / "src" / "lib")}""",
-                                    shell=True,
-                                    text=True).split('\n')
-    imports_from = [line.split("from '")[-1] for line in lines]
-    imports_from_dependencies = {f for f in imports_from if any(dep for dep in all_runtime_deps.keys()
-                                                                if f.startswith(dep))}
-    imports_from_sub_modules = {f for f in imports_from_dependencies if '/' in f}
+    def clean_import_name(name):
+        return name.replace('\'', '').replace(';', '').replace('"', '').replace('\n', '')
+
+    files = [f for f in glob.glob(str(input_template.path / "src" / "lib") + "**/*.ts", recursive=True)]
+
+    lines = []
+    for file in files:
+        with open(file, 'r') as fp:
+            lines = lines + [line for line in fp.readlines() if 'from \'' in line or 'from "' in line]
+
+    imports_from = [clean_import_name(line.split("from ")[-1]) for line in lines]
+    packages_imports_from = {line for line in imports_from if line and line[0] != '.'}
+    imports_from_dependencies = {clean_import_name(f): next((dep for dep in all_runtime_deps.keys() if dep in f), None)
+                                 for f in packages_imports_from}
+    imports_from_sub_modules = {k: {"package": v, "path": k.split(v)[1]}
+                                for k, v in imports_from_dependencies.items() if k != v}
     return imports_from_sub_modules
 
 
