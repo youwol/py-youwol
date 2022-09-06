@@ -17,7 +17,7 @@ from starlette.responses import Response
 import semantic_version
 
 from youwol_utils import generate_headers_downstream, QueryBody, files_check_sum, shutil, \
-    PublishPackageError, get_content_type
+    PublishPackageError, get_content_type, QueryIndexException
 from youwol_utils.clients.docdb.models import Query, WhereClause, OrderingClause, SelectClause
 from youwol_utils.context import Context
 from youwol_cdn_backend.configurations import Constants, Configuration
@@ -365,11 +365,26 @@ async def list_versions(
 
 async def resolve_explicit_version(package_name: str, input_version: str, configuration: Configuration,
                                    context: Context):
-    if input_version == 'latest':
+    latest_symbols = ["latest", "x", "*"]
+    parts = input_version.split('.')
+
+    if input_version in latest_symbols:
         await context.info(text="retrieve latest version")
         versions_resp = await list_versions(name=package_name, context=context, max_results=1,
                                             configuration=configuration)
         return versions_resp.versions[0]
+
+    if len(parts) > 1 and parts[1] in latest_symbols:
+        major = input_version.split('.')[0]
+        versions_resp = await list_versions(name=package_name, context=context, max_results=1000,
+                                            configuration=configuration)
+        version = next((v for v in versions_resp.versions if v.split('.')[0] == major), None)
+        if not version:
+            raise QueryIndexException(
+                query=f"requesting version {input_version} for {package_name}",
+                error=f'No matching entries found')
+        return version
+
     return input_version
 
 
