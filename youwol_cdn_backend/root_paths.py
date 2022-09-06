@@ -8,8 +8,8 @@ from fastapi import UploadFile, File, HTTPException, Form, APIRouter, Depends
 from starlette.requests import Request
 from starlette.responses import Response
 
-from youwol_cdn_backend.loading_graph_implementation import resolve_dependencies_recursive, loading_graph, get_major, \
-    get_api_key
+from youwol_cdn_backend.loading_graph_implementation import resolve_dependencies_recursive, loading_graph, \
+    get_full_exported_symbol, ResolvedQuery, LibName, ExportedKey, QueryKey, get_api_key, get_exported_symbol
 
 from youwol_utils import PackagesNotFound
 from youwol_utils.clients.docdb.models import WhereClause, QueryBody, Query
@@ -161,7 +161,10 @@ async def get_version_info(
                 owner=Constants.owner,
                 headers=ctx.headers())
             return Library(name=d["library_name"], version=d["version"], namespace=d["namespace"],
-                           id=to_package_id(d["library_name"]), type=d["type"], fingerprint=d["fingerprint"])
+                           id=to_package_id(d["library_name"]), type=d["type"], fingerprint=d["fingerprint"],
+                           exportedSymbol=get_exported_symbol(d["library_name"]),
+                           apiKey=get_api_key(d['version'])
+                           )
         except HTTPException as e:
             if e.status_code == 404:
                 raise PackagesNotFound(
@@ -241,8 +244,9 @@ async def resolve_loading_tree(
         body: LoadingGraphBody,
         configuration: Configuration = Depends(get_configuration)
 ):
-    versions_cache: Dict[str, List[str]] = {}
-
+    versions_cache: Dict[LibName, List[str]] = {}
+    full_data_cache: Dict[ExportedKey, LibraryResolved] = {}
+    resolutions_cache:  Dict[QueryKey, ResolvedQuery] = {}
     async with Context.start_ep(
             request=request,
             body=body
@@ -256,8 +260,10 @@ async def resolve_loading_tree(
             else body.libraries
 
         resolved_libraries = await resolve_dependencies_recursive(
-            known_libraries=[LibraryResolved(
-                namespace="", id="", type="", apiKey=get_api_key(root_name, "1.0.0-does-not-matter"),
+            from_libraries=[LibraryResolved(
+                namespace="", id="", type="",
+                exportedSymbol=root_name,
+                apiKey=get_api_key("1.0.0-does-not-matter"),
                 fingerprint="", bundle="",
                 name=root_name,
                 version="1.0.0-does-not-matter",
@@ -265,16 +271,20 @@ async def resolve_loading_tree(
             )],
             using=body.using,
             versions_cache=versions_cache,
+            resolutions_cache=resolutions_cache,
+            full_data_cache=full_data_cache,
             configuration=configuration,
             context=ctx
         )
 
         resolved_libraries = [lib for lib in resolved_libraries if lib.name != root_name]
-        items_dict = {get_api_key(d.name, d.version): [to_package_id(d.name), get_url(d)] for d in resolved_libraries}
+        items_dict = {get_full_exported_symbol(d.name, d.version): [to_package_id(d.name), get_url(d)]
+                      for d in resolved_libraries}
+
         graph = await loading_graph(
-            downloaded=[],
             remaining=resolved_libraries,
             items_dict=items_dict,
+            resolutions_dict=resolutions_cache,
             context=ctx)
 
         response = LoadingGraphResponseV1(

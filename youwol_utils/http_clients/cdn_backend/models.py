@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, NamedTuple, Union, Dict, Any, Optional
+from typing import List, NamedTuple, Union, Dict, Any
 
 from pydantic import BaseModel
 
@@ -80,6 +80,8 @@ class Library(BaseModel):
     namespace: str
     type: str
     fingerprint: str
+    exportedSymbol: str
+    apiKey: str
 
 
 class LoadingGraphResponseV1(BaseModel):
@@ -109,13 +111,16 @@ class LibVersionsBody(BaseModel):
 class LibraryQuery(BaseModel):
     name: str
     version: str
-    apiKey: Optional[str]
 
 
 class LibraryResolved(Library):
     dependencies: List[LibraryQuery]
     bundle: str
+    exportedSymbol: str
     apiKey: str
+
+    def full_exported_symbol(self):
+        return f"{self.exportedSymbol}_APIv{self.apiKey}"
 
 
 class LoadingGraphBody(BaseModel):
