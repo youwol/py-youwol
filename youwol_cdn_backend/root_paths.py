@@ -9,7 +9,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from youwol_cdn_backend.loading_graph_implementation import resolve_dependencies_recursive, loading_graph, \
-    get_full_exported_symbol, ResolvedQuery, LibName, ExportedKey, QueryKey, get_api_key, get_exported_symbol
+    get_full_exported_symbol, ResolvedQuery, LibName, ExportedKey, QueryKey, get_api_key
 
 from youwol_utils import PackagesNotFound
 from youwol_utils.clients.docdb.models import WhereClause, QueryBody, Query
@@ -17,7 +17,7 @@ from youwol_utils.context import Context
 from youwol_utils.http_clients.cdn_backend import (
     PublishResponse, ListVersionsResponse, PublishLibrariesResponse,
     LoadingGraphResponseV1, LoadingGraphBody, Library,
-    ExplorerResponse, DeleteLibraryResponse, LibraryQuery, LibraryResolved
+    ExplorerResponse, DeleteLibraryResponse, LibraryQuery, LibraryResolved, get_exported_symbol
 )
 from youwol_cdn_backend.configurations import Configuration, Constants, get_configuration
 from youwol_cdn_backend.resources_initialization import synchronize
@@ -288,7 +288,7 @@ async def resolve_loading_tree(
             context=ctx)
 
         response = LoadingGraphResponseV1(
-            graphType="sequential-v1",
+            graphType="sequential-v2",
             lock=[Library(**lib.dict()) for lib in resolved_libraries],
             definition=graph
         )

@@ -11,25 +11,11 @@ from youwol_cdn_backend.utils import Configuration, get_version_number_str, Cons
 
 from youwol_utils import CircularDependencies, DependenciesError
 from youwol_utils.context import Context
-from youwol_utils.http_clients.cdn_backend import LibraryResolved, LibraryQuery
+from youwol_utils.http_clients.cdn_backend import LibraryResolved, LibraryQuery, exportedSymbols, get_api_key
 
 ExportedKey = str
 QueryKey = str
 LibName = str
-
-exportedSymbols = {
-    'lodash': '_',
-    'three': 'THREE',
-    'typescript': 'ts',
-    'three-trackballcontrols': 'TrackballControls',
-    'codemirror': 'CodeMirror',
-    'highlight.js': 'hljs',
-    '@pyodide/pyodide': 'loadPyodide',
-    'plotly.js': 'Plotly',
-    'jquery': '$',
-    'popper.js': 'Popper',
-    'reflect-metadata': 'Reflect',
-}
 
 
 class ResolvedQuery(BaseModel):
@@ -72,15 +58,6 @@ class LibraryNotFound(HTTPException):
 
 def get_query_key(lib: LibraryQuery) -> str:
     return f"{lib.name}#{lib.version}"
-
-
-def get_api_key(version: Union[str, Version]):
-    parsed = version if isinstance(version, Version) else Version(version)
-    return parsed.major if parsed.major != 0 else f"0{parsed.minor}"
-
-
-def get_exported_symbol(name: str):
-    return exportedSymbols[name] if name in exportedSymbols else name
 
 
 def get_full_exported_symbol(name: str, version: Union[str, Version]):
