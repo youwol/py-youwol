@@ -11,6 +11,7 @@ from youwol.environment.models_project import Manifest, PipelineStepStatus, Link
 from youwol.environment.paths import PathsBook
 from youwol.environment.projects_loader import ProjectLoader
 from youwol.environment.youwol_environment import YouwolEnvironment
+from youwol.pipelines.pipeline_typescript_weback_npm.common import InitStep
 from youwol.pipelines.publish_cdn import PublishCdnLocalStep, PublishCdnRemoteStep
 from youwol_utils import files_check_sum
 from youwol_utils import to_json
@@ -170,25 +171,13 @@ class PreconditionChecksStep(PipelineStep):
         return PipelineStepStatus.OK
 
 
-class InitStep(PipelineStep):
-    id: str = 'init'
-    run: str = 'yarn'
-
-    async def get_status(self, project: Project, flow_id: str,
-                         last_manifest: Optional[Manifest], context: Context) -> PipelineStepStatus:
-
-        if (project.path / 'node_modules').exists():
-            return PipelineStepStatus.OK
-        return PipelineStepStatus.none
-
-
 class BuildStep(PipelineStep):
     id: str
     run: str
     sources: FileListing = FileListing(
         include=[Paths.package_json_file, "webpack.config.js", Paths.lib_folder, "src/app",
                  "src/index.ts", "src/tests"],
-        ignore=[Paths.auto_generated_file, "**/.*/*"]
+        ignore=[Paths.auto_generated_file, "**/.*/*", '.template/**']
     )
 
     artifacts: List[Artifact] = [
@@ -196,7 +185,7 @@ class BuildStep(PipelineStep):
             id='dist',
             files=FileListing(
                 include=[Paths.package_json_file, "dist"],
-                ignore=["dist/docs"]
+                ignore=["dist/docs", '.template/**']
             ),
             links=[
                 Link(

@@ -6,4 +6,4 @@ junit.xml
 cdn.zip
 __pycache__
 *.iml
-.templates
+.template
