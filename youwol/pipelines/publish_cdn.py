@@ -27,17 +27,18 @@ async def create_cdn_zip(
         files: Iterable[Path],
         context: Context
         ):
-    async with context.start(action="create_cdn_zip") as ctx: # type: Context
+    async with context.start(action="create_cdn_zip") as ctx:  # type: Context
         env = await context.get('env', YouwolEnvironment)
         paths: PathsBook = env.pathsBook
         artifacts_flow_path = paths.artifacts_flow(project_name=project.name, flow_id=flow_id)
         zip_files = [(f, '/'.join(f.relative_to(artifacts_flow_path).parts[2:])) for f in files]
-        await context.info(text="create CDN zip: files recovered",
-                           data={'files': [f"{name} -> {str(path)}" for path, name in zip_files]})
+        await ctx.info(text="create CDN zip: files recovered",
+                       data={'files': [f"{name} -> {str(path)}" for path, name in zip_files]})
 
         yw_metadata = to_json(project.pipeline.target)
-        await context.info(text="Append target metadata", data=yw_metadata)
-        create_zip_file(path=zip_path, files_to_zip=zip_files, with_data=[('.yw_metadata.json', json.dumps(yw_metadata))])
+        await ctx.info(text="Append target metadata", data=yw_metadata)
+        create_zip_file(path=zip_path, files_to_zip=zip_files,
+                        with_data=[('.yw_metadata.json', json.dumps(yw_metadata))])
 
 
 async def publish_browser_app_metadata(package: str, version: str, target: BrowserApp, env: YouwolEnvironment,
