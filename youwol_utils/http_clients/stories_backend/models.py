@@ -99,6 +99,8 @@ class Library(BaseModel):
     id: str
     namespace: str
     type: str
+    apiKey: str
+    exportedSymbol: str
 
 
 Url = str

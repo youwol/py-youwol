@@ -12,6 +12,7 @@ from fastapi import UploadFile, HTTPException
 from youwol_utils import JSON, DocDb, Storage, base64, log_info
 from youwol_flux_backend.backward_compatibility import convert_project_to_current_version
 from youwol_flux_backend.configurations import Configuration, Constants
+from youwol_utils.http_clients.cdn_backend import patch_loading_graph
 from youwol_utils.http_clients.flux_backend import (
     Workflow, BuilderRendering, RunnerRendering, Project, Component, Requirements, DeprecatedData
 )
@@ -123,6 +124,8 @@ async def retrieve_project(
     deprecated_data = {}
     if 'rootLayerTree' in workflow:
         deprecated_data = DeprecatedData(rootLayerTree=workflow['rootLayerTree'])
+    if requirements['loadingGraph']['graphType'] != 'sequential-v2':
+        patch_loading_graph(requirements['loadingGraph'])
 
     project = Project(name=description["name"],
                       schemaVersion=description["schemaVersion"] if "schemaVersion" in description else "0",
