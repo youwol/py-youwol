@@ -310,6 +310,7 @@ class Project(BaseModel):
     pipeline: Pipeline
     path: Path
     name: str
+    publishName: str
     id: str  # base64 encoded Project.name
     version: str
 
