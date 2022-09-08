@@ -6,6 +6,7 @@ from fastapi import HTTPException
 from youwol_utils import log_info, StorageClient, QueryIndexException, DocDbClient
 from youwol_utils.context import Context
 from youwol_stories_backend.configurations import Configuration, Constants
+from youwol_utils.http_clients.cdn_backend import patch_loading_graph
 from youwol_utils.http_clients.stories_backend import GetDocumentResp, Requirements
 
 zip_data_filename = "data.json"
@@ -82,6 +83,8 @@ async def get_requirements(story_id: str, storage: StorageClient, context: Conte
             owner=Constants.default_owner,
             headers=context.headers()
         )
+        if req_json['loadingGraph']['graphType'] != 'sequential-v2':
+            patch_loading_graph(req_json['loadingGraph'])
         return Requirements(**req_json)
     except HTTPException as e:
         if e.status_code != 404:

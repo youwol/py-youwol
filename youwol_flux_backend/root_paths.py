@@ -103,7 +103,7 @@ async def new_project(
         builder_rendering = BuilderRendering(modulesView=[], connectionsView=[], descriptionsBoxes=[])
         runner_rendering = RunnerRendering(layout="", style="")
         requirements = Requirements(fluxPacks=[], fluxComponents=[], libraries={},
-                                    loadingGraph=LoadingGraph(graphType="sequential-v1", lock=[], definition=[[]])
+                                    loadingGraph=LoadingGraph(graphType="sequential-v2", lock=[], definition=[[]])
                                     )
 
         project = Project(name=project_body.name, schemaVersion=Constants.current_schema_version,

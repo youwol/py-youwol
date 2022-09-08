@@ -111,6 +111,8 @@ class Library(BaseModel):
     name: str
     version: str
     id: str
+    apiKey: str
+    exportedSymbol: str
 
 
 class LoadingGraph(BaseModel):

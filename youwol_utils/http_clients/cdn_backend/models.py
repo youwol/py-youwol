@@ -2,9 +2,51 @@ from pathlib import Path
 from typing import List, NamedTuple, Union, Dict, Any
 
 from pydantic import BaseModel
+from semantic_version import Version
 
-from youwol_utils import TableBody
+from youwol_utils import TableBody, JSON
 from youwol_utils.clients.docdb.models import Column, TableOptions, OrderingClause
+
+
+def get_api_key(version: Union[str, Version]):
+    parsed = version if isinstance(version, Version) else Version(version)
+    if parsed.major != 0:
+        return f"{parsed.major}"
+    if parsed.minor != 0:
+        return f"0{parsed.minor}"
+    return f"00{parsed.patch}"
+
+
+def get_exported_symbol(name: str):
+    return exportedSymbols[name] if name in exportedSymbols else name
+
+
+def patch_loading_graph(loading_graph: JSON):
+
+    if loading_graph['graphType'] == 'sequential-v1':
+        #  add missing apiKey & exportedSymbol in 'lock' attribute
+        for lock in loading_graph['lock']:
+            lock['apiKey'] = get_api_key(lock['version'])
+            lock['exportedSymbol'] = get_exported_symbol(lock['name'])
+        loading_graph['graphType'] = 'sequential-v2'
+
+
+exportedSymbols = {
+    'lodash': '_',
+    'three': 'THREE',
+    'typescript': 'ts',
+    'three-trackballcontrols': 'TrackballControls',
+    'codemirror': 'CodeMirror',
+    'highlight.js': 'hljs',
+    '@pyodide/pyodide': 'loadPyodide',
+    'plotly.js': 'Plotly',
+    'plotly.js-gl2d-dist': 'Plotly',
+    'jquery': '$',
+    'popper.js': 'Popper',
+    'reflect-metadata': 'Reflect',
+    'js-beautify': 'js_beautify',
+    'mathjax': 'Mathjax'
+}
 
 
 class FormData(NamedTuple):
@@ -80,6 +122,8 @@ class Library(BaseModel):
     namespace: str
     type: str
     fingerprint: str
+    exportedSymbol: str
+    apiKey: str
 
 
 class LoadingGraphResponseV1(BaseModel):
@@ -114,6 +158,11 @@ class LibraryQuery(BaseModel):
 class LibraryResolved(Library):
     dependencies: List[LibraryQuery]
     bundle: str
+    exportedSymbol: str
+    apiKey: str
+
+    def full_exported_symbol(self):
+        return f"{self.exportedSymbol}_APIv{self.apiKey}"
 
 
 class LoadingGraphBody(BaseModel):
