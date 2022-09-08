@@ -104,6 +104,11 @@ class PublishCdnLocalStep(PipelineStep):
                 if e.status_code == 404:
                     return PipelineStepStatus.none
                 raise e
+
+            if not last_manifest.succeeded:
+                await ctx.info(text="The step has failed on the previous run")
+                return PipelineStepStatus.KO
+
             files = await self.packaged_files(project, flow_id, context)
             src_files_fingerprint = files_check_sum(files)
             if last_manifest.fingerprint == local_info['fingerprint'] and \
