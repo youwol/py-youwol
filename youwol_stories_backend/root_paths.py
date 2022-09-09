@@ -1,4 +1,5 @@
 import asyncio
+import functools
 import io
 import itertools
 import math
@@ -24,6 +25,7 @@ from youwol_utils.http_clients.stories_backend import (
     StoryResp, PutStoryBody, GetDocumentResp, GetChildrenResp, PutDocumentBody, DeleteResp,
     PostContentBody, PostDocumentBody, PostStoryBody, GetContentResp, PostPluginBody, PostPluginResponse, Requirements,
     LoadingGraphResponse, GetGlobalContentResp, PostGlobalContentBody, MoveDocumentResp, MoveDocumentBody,
+    UpgradePluginsResponse, UpgradePluginsBody,
 )
 from youwol_stories_backend.utils import (
     query_document, position_start,
@@ -677,6 +679,51 @@ async def add_plugin(
         return PostPluginResponse(
             packageName=body.packageName,
             version=next(lib.version for lib in new_requirements.loadingGraph.lock if lib.name == body.packageName),
+            requirements=new_requirements
+        )
+
+
+@router.post(
+    "/stories/{story_id}/plugins/upgrade",
+    response_model=UpgradePluginsResponse,
+    summary="update a document")
+async def upgrade_plugins(
+        request: Request,
+        story_id: str,
+        body: UpgradePluginsBody,
+        configuration: Configuration = Depends(get_configuration)
+):
+
+    async with Context.start_ep(
+            request=request,
+            with_labels=['plugin']
+    ) as ctx:  # type: Context
+        await ctx.info("request's body", data={"body": body})
+        storage = configuration.storage
+        requirements = await get_requirements(story_id=story_id, storage=storage, context=ctx)
+        await ctx.info("Initial requirements", data=requirements)
+        if not requirements.plugins:
+            return
+        body = {
+            "libraries": functools.reduce(lambda acc, e: {**acc, e: "x"}, requirements.plugins, {})
+        }
+        assets_gtw = configuration.assets_gtw_client
+        loading_graph = await assets_gtw.cdn_loading_graph(body=body, headers=ctx.headers())
+
+        new_requirements = Requirements(
+            plugins=[*requirements.plugins],
+            loadingGraph=LoadingGraphResponse(**loading_graph)
+        )
+        upgraded_plugins = [lib for lib in new_requirements.loadingGraph.lock if lib.name in requirements.plugins]
+        upgraded_plugins = functools.reduce(lambda acc, e: {**acc, e.name: e.version}, upgraded_plugins, {})
+        await storage.post_json(
+            path=get_document_path(story_id=story_id, document_id="requirements"),
+            json=new_requirements.dict(),
+            owner=Constants.default_owner,
+            headers=ctx.headers()
+        )
+        return UpgradePluginsResponse(
+            pluginsUpgraded=upgraded_plugins,
             requirements=new_requirements
         )
 

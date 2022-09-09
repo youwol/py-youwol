@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 from pydantic import BaseModel
 
@@ -122,6 +122,15 @@ class PostPluginResponse(BaseModel):
     packageName: str
     version: str
     requirements: Requirements
+
+
+class UpgradePluginsResponse(BaseModel):
+    pluginsUpgraded: Dict[str, str]
+    requirements: Requirements
+
+
+class UpgradePluginsBody(BaseModel):
+    pass
 
 
 class StoryResp(BaseModel):

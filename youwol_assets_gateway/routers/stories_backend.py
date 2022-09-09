@@ -11,7 +11,8 @@ from youwol_assets_gateway.configurations import Configuration, get_configuratio
 from youwol_utils.http_clients.assets_gateway import NewAssetResponse
 from youwol_utils.http_clients.stories_backend import StoryResp, GetGlobalContentResp, PostGlobalContentBody, \
     MoveDocumentResp, MoveDocumentBody, GetDocumentResp, PostDocumentBody, PutDocumentBody, GetChildrenResp, \
-    PostStoryBody, GetContentResp, PostContentBody, DeleteResp, PutStoryBody, PostPluginBody, PostPluginResponse
+    PostStoryBody, GetContentResp, PostContentBody, DeleteResp, PutStoryBody, PostPluginBody, PostPluginResponse, \
+    UpgradePluginsResponse, UpgradePluginsBody
 
 router = APIRouter(tags=["assets-gateway.stories-backend"])
 
@@ -352,3 +353,22 @@ async def add_plugin(
         await assert_write_permissions_from_raw_id(raw_id=story_id, configuration=configuration, context=ctx)
         return await configuration.stories_client.add_plugin(story_id=story_id, body=body.dict(),
                                                              headers=ctx.headers())
+
+
+@router.post(
+    "/stories/{story_id}/plugins/upgrade",
+    response_model=UpgradePluginsResponse,
+    summary="update a document")
+async def add_plugin(
+        request: Request,
+        story_id: str,
+        body: UpgradePluginsBody,
+        configuration: Configuration = Depends(get_configuration)
+):
+    async with Context.start_ep(
+            request=request
+    ) as ctx:
+        await assert_write_permissions_from_raw_id(raw_id=story_id, configuration=configuration, context=ctx)
+        return await configuration.stories_client.upgrade_plugins(story_id=story_id, body=body.dict(),
+                                                                  headers=ctx.headers())
+
