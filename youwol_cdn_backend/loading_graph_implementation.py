@@ -100,7 +100,8 @@ async def loading_graph(
         if len(new_remaining) == len(remaining):
             names_dict = {d.full_exported_symbol(): f"{d.name}#{d.version}" for d in remaining}
             dependencies_dict = {d.full_exported_symbol(): d.dependencies for d in remaining}
-            not_founds = {names_dict[pack]: [dependencies_dict[pack][i].dict() for i, found in enumerate(founds) if not found]
+            not_founds = {names_dict[pack]: [dependencies_dict[pack][i].dict() for i, found in enumerate(founds)
+                                             if not found]
                           for pack, founds in dependencies.items()}
             await ctx.error(text="Can not resolve dependency(ies)",
                             data={"newRemaining": new_remaining, "oldRemaining": remaining})
@@ -196,7 +197,8 @@ async def resolve_dependencies_recursive(
         )
         await ctx.info(text="Required dependencies' versions resolved", data={"resolved_versions": resolved_versions})
 
-        missing_data_versions = {lib.exportedSymbol: lib for lib in resolved_versions if lib.exportedSymbol not in full_data_cache}
+        missing_data_versions = {lib.exportedSymbol: lib for lib in resolved_versions
+                                 if lib.exportedSymbol not in full_data_cache}
 
         if not missing_data_versions:
             await ctx.info(text="No more dependencies to resolve :)")
