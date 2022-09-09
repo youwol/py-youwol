@@ -18,7 +18,7 @@ from youwol_utils import (
     RecordsTable, RecordsKeyspace, RecordsBucket, RecordsDocDb, RecordsStorage, get_group, Query, QueryBody,
 )
 from youwol_utils.context import Context
-from youwol_utils.http_clients.cdn_backend import PublishResponse
+from youwol_utils.http_clients.cdn_backend import PublishResponse, patch_loading_graph
 from youwol_utils.utils_paths import write_json
 from .configurations import Configuration, get_configuration, Constants
 from youwol_utils.http_clients.flux_backend import (
@@ -256,6 +256,9 @@ async def post_metadata(
             storage.get_json(path="projects/{}/description.json".format(project_id), owner=owner,
                              headers=ctx.headers())
         )
+        if actual_requirements['loadingGraph']['graphType'] != 'sequential-v2':
+            patch_loading_graph(actual_requirements['loadingGraph'])
+
         actual_requirements = Requirements(**actual_requirements)
         await ctx.info("Requirements and workflow retrieved", data={"requirements": actual_requirements})
         new_requirements = None
