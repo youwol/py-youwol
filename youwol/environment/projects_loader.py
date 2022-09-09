@@ -154,6 +154,7 @@ async def get_project(project_path: Path,
         return Project(
             name=name,
             id=encode_id(name),
+            publishName=name.split('~')[0],
             version=pipeline.projectVersion(project_path),
             pipeline=pipeline,
             path=project_path

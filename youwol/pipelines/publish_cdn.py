@@ -95,7 +95,7 @@ class PublishCdnLocalStep(PipelineStep):
 
             try:
                 local_info = await local_cdn.get_version_info(
-                    library_id=encode_id(project.name),
+                    library_id=encode_id(project.publishName),
                     version=project.version,
                     headers=ctx.headers()
                 )
@@ -168,10 +168,10 @@ class PublishCdnLocalStep(PipelineStep):
 
             target = project.pipeline.target
             if isinstance(target, BrowserApp):
-                await publish_browser_app_metadata(package=project.name, version=project.version, target=target,
+                await publish_browser_app_metadata(package=project.publishName, version=project.version, target=target,
                                                    env=env, context=ctx)
 
-            resp = await local_cdn.get_version_info(library_id=encode_id(project.name), version=project.version,
+            resp = await local_cdn.get_version_info(library_id=encode_id(project.publishName), version=project.version,
                                                     headers=ctx.headers())
             await ctx.info(text="Package retrieved from local cdn", data=resp)
             resp['srcFilesFingerprint'] = files_check_sum(files)
@@ -201,9 +201,9 @@ class PublishCdnRemoteStep(PipelineStep):
             remote_gtw = await RemoteClients.get_assets_gateway_client(context=context)
 
             local_info, remote_info = await asyncio.gather(
-                local_cdn.get_version_info(library_id=encode_id(project.name), version=project.version,
+                local_cdn.get_version_info(library_id=encode_id(project.publishName), version=project.version,
                                            headers=ctx.headers()),
-                remote_gtw.cdn_get_package(library_name=project.name, version=project.version, metadata=True,
+                remote_gtw.cdn_get_package(library_name=project.publishName, version=project.version, metadata=True,
                                            headers=ctx.headers()),
                 return_exceptions=True
             )
@@ -240,11 +240,12 @@ class PublishCdnRemoteStep(PipelineStep):
         ) as ctx:
             env = await context.get('env', YouwolEnvironment)
             options = UploadPackageOptions(versions=[project.version])
-            await upload_asset(asset_id=encode_id(project.id), options=options, context=ctx)
+            package_id = encode_id(project.publishName)
+            await upload_asset(asset_id=encode_id(package_id), options=options, context=ctx)
             # # No ideal solution to get back the fingerprint here:
             # # (i) this one is brittle if the source code of the CDN is not the same between local vs remote
             local_cdn = LocalClients.get_cdn_client(env=env)
-            resp = await local_cdn.get_version_info(library_id=encode_id(project.name), version=project.version,
+            resp = await local_cdn.get_version_info(library_id=encode_id(project.publishName), version=project.version,
                                                     headers=ctx.headers())
             # # (ii) this one is brittle in terms of eventual consistency
             # # resp = await remote_gtw.cdn_get_package(library_name=project.name, version=project.version,
