@@ -12,7 +12,7 @@ from youwol.middlewares.models_dispatch import AbstractDispatch
 from youwol_cdn_backend import resolve_loading_tree, Dependencies
 from youwol_utils import DependenciesError
 from youwol_utils.context import Context
-from youwol_utils.http_clients.cdn_backend import LoadingGraphBody
+from youwol_utils.http_clients.cdn_backend import LoadingGraphBody, patch_loading_graph
 
 
 class GetLoadingGraphDispatch(AbstractDispatch):
@@ -54,4 +54,10 @@ class GetLoadingGraphDispatch(AbstractDispatch):
                         content = await resp.read()
                         if not resp.ok:
                             await ctx.error(text="Loading tree has not been resolved in remote neither")
-                        return Response(status_code=resp.status, content=content, headers=headers_resp)
+                        #  This is a patch to keep until new version of cdn-backend is deployed
+                        graph = json.loads(content)
+                        if graph['graphType'] != 'sequential-v2':
+                            patch_loading_graph(graph)
+                        patched_content = json.dumps(graph)
+                        headers_resp['Content-Length'] = f"{len(patched_content)}"
+                        return Response(status_code=resp.status, content=patched_content, headers=headers_resp)
