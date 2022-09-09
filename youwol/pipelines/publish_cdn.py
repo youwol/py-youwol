@@ -149,7 +149,8 @@ class PublishCdnLocalStep(PipelineStep):
 
             local_treedb = LocalClients.get_treedb_client(env=env)
             local_cdn = LocalClients.get_gtw_cdn_client(env=env)
-            asset_id = encode_id(project.id)
+            package_id = encode_id(project.publishName)
+            asset_id = encode_id(package_id)
             try:
                 item = await local_treedb.get_item(item_id=asset_id, headers=ctx.headers())
                 folder_id = item['folderId']
