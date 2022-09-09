@@ -53,25 +53,6 @@ async def ensure_permission(
             raise HTTPException(status_code=401, detail=f"Unauthorized to access {library_name}")
 
 
-@router.post("/queries/loading-graph",
-             summary="describes the loading graph of provided libraries",
-             response_model=LoadingGraphResponseV1)
-async def resolve_loading_tree(
-        request: Request,
-        body: LoadingGraphBody,
-        configuration: Configuration = Depends(get_configuration)
-):
-    response = Optional[LoadingGraphResponseV1]
-    async with Context.start_ep(
-            action='resolve loading tree',
-            request=request,
-            body=body,
-            response=lambda: response
-    ) as ctx:
-        response = await configuration.cdn_client.query_loading_graph(body=body.dict(), headers=ctx.headers())
-        return response
-
-
 async def delete_version_generic(
         request: Request,
         library_name: str,

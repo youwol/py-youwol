@@ -23,7 +23,7 @@ class GetLoadingGraphDispatch(AbstractDispatch):
                     context: Context
                     ) -> Optional[Response]:
 
-        if '/api/assets-gateway/cdn/queries/loading-graph' not in request.url.path:
+        if '/api/assets-gateway/cdn-backend/queries/loading-graph' not in request.url.path:
             return None
 
         async with context.start(action="GetLoadingGraphDispatch.apply") as ctx:

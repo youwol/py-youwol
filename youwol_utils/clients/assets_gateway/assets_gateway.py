@@ -322,7 +322,7 @@ class AssetsGatewayClient:
 
     async def cdn_loading_graph(self, body, **kwargs):
 
-        url = f"{self.url_base}/cdn/queries/loading-graph"
+        url = f"{self.url_base}/cdn-backend/queries/loading-graph"
 
         async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
             async with await session.post(url, json=body, **kwargs) as resp:
