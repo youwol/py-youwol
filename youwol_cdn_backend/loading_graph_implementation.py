@@ -149,9 +149,13 @@ async def resolve_version(
 
     async with context.start(action="resolve_version",
                              with_attributes={'library': dependency.name}) as ctx:  # type: Context
-        version = using[dependency.name] if dependency.name in using else dependency.version
-        version_spec = version.replace('x', '*').replace('latest', '*')
         name = dependency.name
+        version = using[dependency.name] if dependency.name in using else dependency.version
+        base = version.split('-')[0].replace('x', '*').replace('latest', '*')
+        pre_release = '-'.join(version.split('-')[1:])
+        version_spec = base if len(version.split('-')) == 1 else f"{base}-{pre_release}"
+        selector = NpmSpec(version_spec)
+        fixed = not any([c in base for c in ['>', '<', '*', '^', '~']])
         try:
             versions = await list_all_versions_with_cache(library=dependency, versions_cache=versions_cache,
                                                           configuration=configuration, context=ctx)
@@ -160,16 +164,24 @@ async def resolve_version(
                 raise LibraryNotFound(library=dependency)
             raise LibraryException(library=dependency)
 
-        await ctx.info(f"Got {len(versions)} versions")
-        selector = NpmSpec(version_spec)
-        version = next(selector.filter(Version(v.replace('-wip', '')) for v in versions), None)
+        if fixed:
+            version = next((v for v in versions if v == version), None)
+        else:
+            await ctx.info(f"Got {len(versions)} versions")
+            version = next(selector.filter(Version(v.replace('-wip', '')) for v in versions), None)
+
         if not version:
             raise LibraryNotFound(library=dependency)
 
-        if str(version) not in versions:
-            version = Version(f"{version}-wip")
+        if not fixed:
+            if str(version) not in versions and f"{version}-wip" in versions:
+                await ctx.info(f"{version} not available => use {version}-wip")
+                version = Version(f"{version}-wip")
+            elif str(version) not in versions and f"{version}-wip" not in versions:
+                raise LibraryNotFound(library=dependency)
+            await ctx.info(text=f"Use latest compatible version of {name}#{dependency.version} : {version}")
+
         await ctx.info(f"Version resolved to {version}")
-        await ctx.info(text=f"Use latest compatible version of {name}#{dependency.version} : {version}")
         api_key = get_full_exported_symbol(name, version)
         return ResolvedQuery(name=dependency.name, query=dependency.version, version=str(version),
                              exportedSymbol=api_key, parent=dependency.parent)
