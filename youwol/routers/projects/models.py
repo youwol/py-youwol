@@ -1,6 +1,6 @@
 from enum import Enum
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 from pydantic import BaseModel
 
@@ -83,3 +83,12 @@ class PipelineStepEvent(BaseModel):
     flowId: str
     stepId: str
     event: Event
+
+
+class CreateProjectFromTemplateBody(BaseModel):
+    type: str
+    parameters: Dict[str, str]
+
+
+class CreateProjectFromTemplateResponse(Project):
+    pass

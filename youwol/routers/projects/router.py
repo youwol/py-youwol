@@ -11,7 +11,7 @@ from starlette.requests import Request
 from youwol.environment.models_project import Project, Manifest, PipelineStepStatus
 from youwol.environment.paths import PathsBook
 from youwol.environment.projects_loader import ProjectLoader
-from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
+from youwol.environment.youwol_environment import yw_config, YouwolEnvironment, YouwolEnvironmentFactory
 from youwol.exceptions import CommandException
 from youwol.routers.commons import Label
 from youwol.routers.environment.models import ProjectsLoadingResults
@@ -21,7 +21,7 @@ from youwol.routers.projects.implementation import (
 )
 from youwol.routers.projects.models import (
     PipelineStepStatusResponse, PipelineStatusResponse, ArtifactsResponse, ProjectStatusResponse, CdnResponse,
-    CdnVersionResponse, PipelineStepEvent, Event, )
+    CdnVersionResponse, PipelineStepEvent, Event, CreateProjectFromTemplateBody, CreateProjectFromTemplateResponse)
 from youwol.web_socket import LogsStreamer
 from youwol_utils import decode_id
 from youwol_utils.context import Context
@@ -320,3 +320,32 @@ async def cdn_status(
         )
         await ctx.send(response)
         return response
+
+
+@router.put("/create-from-template",
+             response_model=CreateProjectFromTemplateResponse,
+             summary="status")
+async def new_project_from_template(
+        request: Request,
+        body: CreateProjectFromTemplateBody,
+        config: YouwolEnvironment = Depends(yw_config)
+):
+    async with Context.from_request(request).start(
+            action="new_project_from_template",
+            with_attributes={
+                'type': body.type
+            },
+            with_reporters=[LogsStreamer()]
+    ) as ctx:
+        template = next((template for template in config.projectTemplates if template.type == body.type), None)
+        if not template:
+            raise RuntimeError(f"Can not find a template of type {body.type}")
+
+        await ctx.info(text="Found template generator", data=template)
+        name, project_folder = await template.generator(template.folder, body.parameters, ctx)
+
+        config = await YouwolEnvironmentFactory.reload()
+        await status(request=request, config=config)
+        projects = await ProjectLoader.get_projects(await ctx.get("env", YouwolEnvironment), ctx)
+        project = next((p for p in projects if p.name == name), None)
+        return project
