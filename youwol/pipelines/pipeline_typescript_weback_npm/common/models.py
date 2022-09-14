@@ -55,7 +55,7 @@ class Template(BaseModel):
     Attributes:
 
     - path : :class:`Path` The path of the project's folder
-    - type : :class:`ModuleTypeInput`  Type of the package (library or application)
+    - type : :class:`PackageType`  Type of the package (library or application)
     - version : :class:`str` Version of the package
     - name : :class:`str` Name of the package
     - exportedSymbol : :class:`str` Name of the exposed symbol of the library.
@@ -65,6 +65,7 @@ class Template(BaseModel):
     - userGuide : :class:`Optional[Union[bool, str]]`  optional link to a user guide using standard URL
     - dependencies : :class:`Dependencies` Dependencies of the package
     - testConfig : :class:`Optional[str]` An url to the test config used by py-youwol for tests, if need be
+    - devServer : :class:`Optional[DevServer]` Dev. server configuration (relevant only for PackageType.Application)
     """
     path: Path
     type: PackageType
