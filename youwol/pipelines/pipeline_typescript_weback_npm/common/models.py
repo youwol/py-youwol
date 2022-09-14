@@ -44,6 +44,10 @@ class Dependencies(BaseModel):
     devTime: Dict[str, str] = {}
 
 
+class DevServer(BaseModel):
+    port: int
+
+
 class Template(BaseModel):
     """
     This class gather required data to properly set-up skeleton of the various configuration files
@@ -64,11 +68,12 @@ class Template(BaseModel):
     """
     path: Path
     type: PackageType
-    version: str
-    name: str
+    version: Optional[str]
+    name: Optional[str]
     exportedSymbol: Optional[str] = None
-    shortDescription: str = ""
-    author: str
+    shortDescription: Optional[str] = ""
+    author: Optional[str]
     userGuide: bool = False
     dependencies: Dependencies = Dependencies()
     testConfig: Optional[str]
+    devServer: Optional[DevServer]

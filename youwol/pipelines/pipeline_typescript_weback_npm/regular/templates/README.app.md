@@ -7,6 +7,8 @@ This library is part of the hybrid cloud/local ecosystem
 
 ## Links
 
+{{runningApp}}
+
 {{userGuide}}
 
 {{developerDocumentation}}
@@ -50,6 +52,19 @@ Coverage can be evaluated using:
 ```shell
 yarn test-coverage
 ```
+
+---
+
+To start the 'dev-server':
+
+- add `CdnOverride(packageName="{{name}}", port={{devServer.port}})` in your
+  [YouWol configuration file](https://l.youwol.com/doc/py-youwol/configuration)
+  (in the `dispatches` list).
+- start [py-youwol](https://l.youwol.com/doc/py-youwol)
+- then execute `yarn start`
+
+The application can be accessed [here](http://localhost:2000/applications/{{name}}/latest) (providing py-youwol
+running using the default port `2000`).
 
 ---
 

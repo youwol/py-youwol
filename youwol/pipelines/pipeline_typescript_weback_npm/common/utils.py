@@ -1,12 +1,13 @@
+import functools
 import glob
-import json
 import shutil
 from pathlib import Path
 from typing import Dict, List, Union
 
+import pyparsing
 import semantic_version
 
-from youwol.pipelines.pipeline_typescript_weback_npm.common import Template
+from youwol.pipelines.pipeline_typescript_weback_npm.common import Template, PackageType
 from youwol.utils.utils_low_level import sed_inplace
 from youwol_cdn_backend import get_api_key
 from youwol_cdn_backend.loading_graph_implementation import exportedSymbols
@@ -29,20 +30,22 @@ def copy_files_folders(working_path: Path, base_template_path: Path,
 def generate_package_json(source: Path, working_path: Path, input_template: Template):
 
     package_json = parse_json(source)
+    package_json_app = parse_json(source.parent / 'package.app.json')
     values = {
         "name": input_template.name,
         "version": input_template.version,
         "description": input_template.shortDescription,
         "author": input_template.author,
         "homepage": f"https://github.com/{input_template.name.replace('@', '')}#README.md",
-        "main": f"dist/{input_template.name}.js",
+        "main": f"dist/{input_template.name}.js" if input_template.type == PackageType.Library else "dist/index.html",
         "dependencies": {
             **input_template.dependencies.runTime.load,
             **input_template.dependencies.runTime.differed
         },
         "devDependencies": {
             **input_template.dependencies.devTime,
-            **package_json['devDependencies']
+            **package_json['devDependencies'],
+            ** ({} if input_template.type == PackageType.Library else package_json_app['devDependencies'])
         },
         "youwol": {
             "cdnDependencies": {name: version for name, version in input_template.dependencies.runTime.load.items()
@@ -50,20 +53,30 @@ def generate_package_json(source: Path, working_path: Path, input_template: Temp
                                 }
         }
     }
+    if input_template.type == PackageType.Application:
+        package_json['scripts'] = {**package_json['scripts'], **package_json_app['scripts']}
+
     write_json({**package_json, **values}, working_path / 'package.json')
+    with open(working_path / 'package.json', 'a') as file:
+        file.write('\n')
 
 
 def get_imports_from_submodules(input_template: Template, all_runtime_deps: Dict[str, str]):
 
+    src_folder = "lib" if input_template.type == PackageType.Library else "app"
+    base_path = input_template.path / "src" / src_folder
     def clean_import_name(name):
         return name.replace('\'', '').replace(';', '').replace('"', '').replace('\n', '')
 
-    files = [f for f in glob.glob(str(input_template.path / "src" / "lib" / '**' / '*.ts'), recursive=True)]
+    files = [f for f in glob.glob(str(base_path / '**' / '*.ts'), recursive=True)]
 
     lines = []
     for file in files:
         with open(file, 'r') as fp:
-            lines = lines + [line for line in fp.readlines() if 'from \'' in line or 'from "' in line]
+            content = fp.read()
+            content = pyparsing.cppStyleComment.suppress().transformString(content)
+
+            lines = lines + [line for line in content.split('\n') if 'from \'' in line or 'from "' in line]
 
     imports_from = [clean_import_name(line.split("from ")[-1]) for line in lines]
     packages_imports_from = {line for line in imports_from if line and line[0] != '.'}
@@ -75,26 +88,24 @@ def get_imports_from_submodules(input_template: Template, all_runtime_deps: Dict
     dandling_imports = {f for f in packages_imports_from
                         if not next((dep for dep in all_runtime_deps.keys() if f.startswith(dep)), None)}
     if dandling_imports:
-        print(f"ERROR: some packages' import are not listed in run-time dependencies: {dandling_imports}")
-        exit(1)
+        print(f"Warning: some packages' import are not listed in run-time dependencies: {dandling_imports}")
 
-    imports_from_sub_modules = {k: {"package": v, "path": k.split(v)[1]}
+    imports_from_sub_modules = {k: {"package": v, "path": k.split(v)[1] if v else None}
                                 for k, v in imports_from_dependencies.items() if k != v}
     return imports_from_sub_modules
 
 
-def generate_webpack_config(source: Path, working_path: Path, input_template: Template):
+def get_api_version(query):
+    spec = semantic_version.NpmSpec(query)
+    min_version = next((clause for clause in spec.clause.clauses if clause.operator in ['>=', '==']), None)
+    return get_api_key(min_version.target)
 
-    def get_api_version(query):
-        spec = semantic_version.NpmSpec(query)
-        min_version = next((clause for clause in spec.clause.clauses if clause.operator in ['>=', '==']), None)
-        return get_api_key(min_version.target)
 
-    filename = working_path / 'webpack.config.js'
-    shutil.copyfile(source, filename)
-    v = semantic_version.Version(input_template.version)
-    api_version = get_api_key(v)
+def get_externals(input_template: Template):
+
     externals: Dict[str, Union[str, JSON]] = {}
+    exported_symbols: Dict[str, JSON] = {}
+
     all_runtime = {
         **input_template.dependencies.runTime.load,
         **input_template.dependencies.runTime.differed
@@ -107,15 +118,38 @@ def generate_webpack_config(source: Path, working_path: Path, input_template: Te
 
     for name, dep_api_version in externals_api_version.items():
         symbol_name = name if name not in exportedSymbols else exportedSymbols[name]
-        externals[name] = f"{symbol_name}_APIv{dep_api_version}"
+        exported_symbols[name] = {"apiKey": dep_api_version, "exportedSymbol": symbol_name}
+        if input_template.type == PackageType.Library:
+            externals[name] = {
+                "commonjs": name,
+                "commonjs2": name,
+                "root":  f"{symbol_name}_APIv{dep_api_version}"
+            }
+        else:
+            externals[name] = f"window['{symbol_name}_APIv{dep_api_version}']"
 
     for import_path, sub_module in imports_from_sub_modules.items():
+        if not sub_module['package'] or import_path in input_template.dependencies.runTime.includedInBundle:
+            continue
         parts = sub_module['path'].split('/')
-        symbol_name = externals[sub_module['package']]
-        externals[import_path] = {
-            "commonjs": import_path,
-            "commonjs2": import_path,
-            "root": [symbol_name, *[p for p in parts[1:]]]
-        }
-    sed_inplace(filename, 'const apiVersion = ""', f'const apiVersion = "{api_version}"')
-    sed_inplace(filename, 'const externals = {}', f'const externals = {json.dumps(externals,indent=4)}')
+        if input_template.type == PackageType.Library:
+            symbol_name = externals[sub_module['package']]['root']
+            externals[import_path] = {
+                "commonjs": import_path,
+                "commonjs2": import_path,
+                "root": [symbol_name, *[p for p in parts[1:]]]
+            }
+        else:
+            symbol_name = externals[sub_module['package']]
+            path = functools.reduce(lambda acc, e: f"{acc}['{e}']", [symbol_name] + parts[1:])
+            externals[import_path] = path
+    return externals, exported_symbols
+
+
+def generate_webpack_config(source: Path, working_path: Path, input_template: Template):
+
+    filename = working_path / 'webpack.config.ts'
+    shutil.copyfile(source, filename)
+
+    if input_template.type == PackageType.Application:
+        sed_inplace(filename, '"{{devServer.port}}"', str(input_template.devServer.port))
