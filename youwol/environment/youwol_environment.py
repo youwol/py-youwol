@@ -21,7 +21,7 @@ from youwol.configuration.configuration_validation import (
     CheckSecretHealthy
 )
 from youwol.configuration.defaults import default_platform_host
-from youwol.configuration.models_config import JwtSource
+from youwol.configuration.models_config import JwtSource, ProjectTemplate
 from youwol.environment.clients import LocalClients
 from youwol.environment.models import RemoteGateway, UserInfo, ApiConfiguration, Events, K8sInstance
 from youwol.environment.models_project import ErrorResponse
@@ -63,6 +63,8 @@ class YouwolEnvironment(BaseModel):
     activeProfile: Optional[str]
     cdnAutomaticUpdate: bool
     customDispatches: List[AbstractDispatch]
+
+    projectTemplates: List[ProjectTemplate]
     commands: Dict[str, Command]
 
     userEmail: Optional[str]
@@ -231,6 +233,7 @@ class YouwolEnvironmentFactory:
             availableProfiles=conf.availableProfiles,
             commands=conf.commands,
             customDispatches=conf.customDispatches,
+            projectTemplates=conf.projectTemplates,
             cdnAutomaticUpdate=conf.cdnAutomaticUpdate,
             events=conf.events
         )
@@ -263,6 +266,7 @@ class YouwolEnvironmentFactory:
             commands=conf.commands,
             customDispatches=conf.customDispatches,
             cdnAutomaticUpdate=conf.cdnAutomaticUpdate,
+            projectTemplates=conf.projectTemplates,
             events=conf.events
         )
         YouwolEnvironmentFactory.__cached_config = new_conf
@@ -452,7 +456,8 @@ async def safe_load(
         pathsBook=paths_book,
         commands=conf_handler.get_commands(),
         customDispatches=conf_handler.get_dispatches(),
-        k8sInstance=k8s_instance
+        k8sInstance=k8s_instance,
+        projectTemplates=conf_handler.get_project_templates()
     )
     return await conf_handler.customize(youwol_configuration)
 

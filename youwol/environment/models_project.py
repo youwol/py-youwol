@@ -417,3 +417,12 @@ class Project(BaseModel):
         if not manifest_path.exists():
             return None
         return Manifest(**parse_json(manifest_path))
+
+
+class ProjectTemplate(BaseModel):
+    icon: Any
+    type: str
+    folder: Union[str, Path]
+    parameters: Dict[str, str]
+    generator: Callable[[Path, Dict[str, str], Context], Awaitable[str, Path]]
+
