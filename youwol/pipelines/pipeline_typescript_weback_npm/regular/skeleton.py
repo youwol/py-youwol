@@ -2,12 +2,14 @@ import json
 import shutil
 from base64 import b64encode
 from pathlib import Path
+from typing import Dict
 
-from youwol.pipelines.pipeline_typescript_weback_npm import get_externals
+from youwol.environment.models_project import ProjectTemplate
+from youwol.pipelines.pipeline_typescript_weback_npm import get_externals, DevServer
 from youwol.pipelines.pipeline_typescript_weback_npm.common import Template, generate_package_json, \
     copy_files_folders, generate_webpack_config, PackageType, Dependencies, RunTimeDeps
 from youwol.utils.utils_low_level import sed_inplace
-from youwol_utils import parse_json
+from youwol_utils.context import Context
 from youwol_utils.http_clients.cdn_backend import get_api_key
 
 #  Expose here for backward compatibility
@@ -22,17 +24,7 @@ auto_generated_filename = 'auto-generated.ts'
 def generate_template(input_template: Template):
 
     working_path = input_template.path / '.template'
-    package_json = parse_json(input_template.path / 'package.json')
     externals, exported_symbols = get_externals(input_template=input_template)
-
-    if not input_template.name:
-        input_template.name = package_json['name']
-    if not input_template.version:
-        input_template.version = package_json['version']
-    if not input_template.shortDescription:
-        input_template.shortDescription = package_json.get('description', "")
-    if not input_template.author:
-        input_template.shortDescription = package_json.get('author', "")
 
     if working_path.is_dir():
         shutil.rmtree(path=working_path)
@@ -43,7 +35,16 @@ def generate_template(input_template: Template):
         base_template_path=base_template_path,
         files=['.gitignore', '.npmignore', '.prettierignore', 'jest.config.js', 'LICENSE', 'tsconfig.json',
                'typedoc.js'],
-        folders=['.yw_pipeline'])
+        folders=[])
+
+    (working_path / '.yw_pipeline').mkdir()
+    if input_template.type == PackageType.Library:
+        shutil.copyfile(src=base_template_path / '.yw_pipeline' / 'yw_pipeline.lib.txt',
+                        dst=working_path / '.yw_pipeline' / 'yw_pipeline.py')
+    else:
+        shutil.copyfile(src=base_template_path / '.yw_pipeline' / 'yw_pipeline.app.txt',
+                        dst=working_path / '.yw_pipeline' / 'yw_pipeline.py')
+        sed_inplace(working_path / '.yw_pipeline' / 'yw_pipeline.py', "{{name}}", input_template.name)
 
     src_target = 'src.app' if input_template.type == PackageType.Application else 'src.lib'
 
@@ -136,3 +137,89 @@ def generate_test_files(working_path: Path):
     f = open(working_path / 'src' / 'tests' / 'fake.test.ts', 'w')
     f.write("// @ts-ignore \ntest('fake test waiting for better', () => expect(true).toBeTruthy())")
     f.close()
+
+
+imTsSrc = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAA81BMVEVVVaowd8cxeMYyeMcweMYxeMYxd8YxeMYweMYxd8YxeMZCg8tMis5AgsoyecaYvOPW5PSOteBjmdTG2e/4+v3////x9vudv+SxzOqlxOZ7qNr9/f7H2vCQtuDI2/Dr8vnn7/iGsN04fcjf6vaPteB6qNrF2e9dldJDhMtZktGDrt3s8/q60uxak9Fyo9j6/P7D2O5Tjs9hmNPX5fT2+f1uoNczecZwodfS4fI5fciev+RBg8pGhsxqndZYkdHw9fucvuRhl9O91O39/v9FhcyxzOlIh8zT4vP+/v/y9/s1e8dLic1Ehctgl9NxothqntZVj9BaXTTcAAAACnRSTlMDet97eeHe4N148PDkcQAAAAFiS0dEFeXY+aMAAAAHdElNRQflBQwNDQC1Hf1HAAAA6klEQVQ4y2NgYGTiwgmYGBkYmLnwAhYGVvwK2Bi4CIBRBTRXwM3Dy4esgF8ADgS5uISERURFRcXEkRRIiMKBJJeUNIQlg6RAVk5OTl5UVAFIKSqJiYoqq6iqqAmjuUECpBsI1IGaeUAMDRwKNIEKtLD5AqZASRuoQkcXtwIuPX2QEw0McSrgMjIGqTAxxamAy8zcAhQQljgVcHHxWQFVqGNXYG0NIm2ACmyxK7CzdxDicXQSFXV2waEAFuiuOBzp5u4BkvZ08AIpYEco8NbVdYOwfHz9/ANA0lwcDIz40wsnAwMnnuzPxskAAFAwOIumrED4AAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDIxLTA1LTEyVDEzOjEzOjAwKzAwOjAwL0SI0wAAACV0RVh0ZGF0ZTptb2RpZnkAMjAyMS0wNS0xMlQxMzoxMzowMCswMDowMF4ZMG8AAAAASUVORK5CYII="
+
+
+def lib_ts_webpack_template(folder: Path):
+
+    return ProjectTemplate(
+        icon={"tag": 'img', "src": imTsSrc },
+        type='ts+webpack library',
+        folder=folder,
+        parameters={"name": "provide the name of the library here"},
+        generator=lambda _folder, params, context:
+        generate_ts_webpack_project(folder, params, PackageType.Library, context)
+    )
+
+
+def app_ts_webpack_template(folder: Path):
+
+    return ProjectTemplate(
+        icon={"tag": 'img', "src": imTsSrc },
+        type='ts+webpack app.',
+        folder=folder,
+        parameters={"name": "provide the name of the application here", "dev-server's port": "5000"},
+        generator=lambda _folder, params, context:
+        generate_ts_webpack_project(folder, params, PackageType.Application, context)
+    )
+
+
+async def generate_ts_webpack_project(folder: Path, parameters: Dict[str, str], package_type: PackageType,
+                                      context: Context):
+
+    async with context.start("Generate ts webpack project"):
+
+        if 'name' not in parameters:
+            raise RuntimeError(f"Expect 'name' in parameters")
+        name = parameters['name']
+        project_folder = folder / name
+
+        if not folder.exists():
+            raise RuntimeError(f"Folder {folder} does not exist")
+
+        if project_folder.exists():
+            raise RuntimeError(f"Folder {folder} already exist")
+
+        project_folder.mkdir()
+        load_deps = {
+            "@youwol/cdn-client": "^1.0.2",
+            "@youwol/flux-view": "^1.0.3",
+            "rxjs": "^6.5.5",
+        }
+        template = Template(
+            path=project_folder,
+            type=PackageType.Library if package_type == PackageType.Library else PackageType.Application,
+            name=name,
+            version="0.1.0-wip",
+            dependencies=Dependencies(
+                runTime=RunTimeDeps(
+                    load=load_deps
+                )
+            ),
+            userGuide=True
+        )
+        if package_type == PackageType.Application:
+            template.devServer = DevServer(port=int(parameters["dev-server's port"]))
+
+        generate_template(template)
+        shutil.copytree(
+            src=project_folder / '.template',
+            dst=project_folder,
+            dirs_exist_ok=True
+        )
+        src_template = Path(__file__).parent / 'templates' / 'template.lib.txt' \
+            if package_type == PackageType.Library \
+            else Path(__file__).parent / 'templates' / 'template.app.txt'
+
+        shutil.copyfile(
+            src=src_template,
+            dst=project_folder / 'template.py'
+        )
+        for pattern, repl in [
+            ["loadDependencies", json.dumps(load_deps)],
+            ["devServerPort", parameters["dev-server's port"] if "dev-server's port" in parameters else ""]
+        ]:
+            sed_inplace(project_folder / 'template.py', "{{"+pattern+"}}", repl)
+        return name, project_folder
