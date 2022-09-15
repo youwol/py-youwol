@@ -16,6 +16,7 @@ class Label(Enum):
     RUN_PIPELINE_STEP = "RUN_PIPELINE_STEP"
     PIPELINE_STEP_STATUS_PENDING = "PIPELINE_STEP_STATUS_PENDING"
     PIPELINE_STEP_RUNNING = "PIPELINE_STEP_RUNNING"
+    PROJECT_CREATING = "PROJECT_CREATING"
 
 
 async def ensure_path(path_item: PathResponse, assets_gateway_client: AssetsGatewayClient, context: Context):

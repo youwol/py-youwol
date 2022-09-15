@@ -333,8 +333,9 @@ async def new_project_from_template(
     async with Context.from_request(request).start(
             action="new_project_from_template",
             with_attributes={
-                'type': body.type
+                'templateType': body.type
             },
+            with_labels=[f"{Label.PROJECT_CREATING}"],
             with_reporters=[LogsStreamer()]
     ) as ctx:
         template = next((template for template in config.projectTemplates if template.type == body.type), None)
