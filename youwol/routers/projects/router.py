@@ -346,7 +346,9 @@ async def new_project_from_template(
         name, project_folder = await template.generator(template.folder, body.parameters, ctx)
 
         config = await YouwolEnvironmentFactory.reload()
-        await status(request=request, config=config)
+        response = ProjectsLoadingResults(results=await ProjectLoader.get_results(config, ctx))
+        await ctx.send(response)
+
         projects = await ProjectLoader.get_projects(await ctx.get("env", YouwolEnvironment), ctx)
         project = next((p for p in projects if p.name == name), None)
         return project
