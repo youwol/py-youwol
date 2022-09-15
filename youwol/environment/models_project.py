@@ -3,7 +3,7 @@ import sys
 import traceback
 from enum import Enum
 from pathlib import Path
-from typing import List, Union, Set, Dict, Any, Callable, Awaitable, Iterable, cast, Optional
+from typing import List, Union, Set, Dict, Any, Callable, Awaitable, Iterable, cast, Optional, Tuple
 
 from pydantic import BaseModel
 
@@ -424,5 +424,5 @@ class ProjectTemplate(BaseModel):
     type: str
     folder: Union[str, Path]
     parameters: Dict[str, str]
-    generator: Callable[[Path, Dict[str, str], Context], Awaitable[str, Path]]
+    generator: Callable[[Path, Dict[str, str], Context], Awaitable[Tuple[str, Path]]]
 
