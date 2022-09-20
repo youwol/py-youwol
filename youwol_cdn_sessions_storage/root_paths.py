@@ -73,6 +73,47 @@ async def post_data_with_namespace(
                                    configuration=configuration)
 
 
+async def delete_data_generic(
+        request: Request,
+        package: str,
+        name: str,
+        namespace: str = None,
+        configuration: Configuration = Depends(get_configuration)
+):
+    async with Context.start_ep(
+            request=request,
+            with_attributes={"name": name, "package": package}
+    ) as ctx:
+        await configuration.storage.delete(
+            path=get_path(request=request, package=package, name=name, namespace=namespace),
+            owner=Constants.default_owner,
+            headers=ctx.headers()
+        )
+        return {}
+
+
+@router.delete("/applications/{package}/{name}")
+async def delete_data_no_namespace(
+        request: Request,
+        package: str,
+        name: str,
+        configuration: Configuration = Depends(get_configuration)
+):
+    return await delete_data_generic(request=request, package=package, name=name, configuration=configuration)
+
+
+@router.delete("/applications/{namespace}/{package}/{name}")
+async def delete_data_with_namespace(
+        request: Request,
+        namespace: str,
+        package: str,
+        name: str,
+        configuration: Configuration = Depends(get_configuration)
+):
+    return await delete_data_generic(request=request, namespace=namespace, package=package, name=name,
+                                     configuration=configuration)
+
+
 async def get_data_generic(
         request: Request,
         package: str,
