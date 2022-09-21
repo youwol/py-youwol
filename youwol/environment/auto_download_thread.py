@@ -49,13 +49,14 @@ async def process_download_asset(
                 on_exit=queue.task_done()
         ) as ctx:  # types: Context
 
-            env = await ctx.get("env", YouwolEnvironment)
+            env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
             if "packages_downloaded_ids" not in env.private_cache:
                 env.private_cache["packages_downloaded_ids"] = set()
 
             try:
                 asset_id = encode_id(raw_id)
-                remote_gtw_client = await RemoteClients.get_assets_gateway_client(context=ctx)
+                remote_gtw_client = await RemoteClients.get_assets_gateway_client(remote_host=env.selectedRemote,
+                                                                                  context=ctx)
                 asset = await remote_gtw_client.get_asset_metadata(asset_id=asset_id, headers=headers)
             except Exception as e:
                 await on_error("The asset of corresponding rawId is not found in remote", e, ctx)

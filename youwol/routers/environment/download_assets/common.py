@@ -109,7 +109,9 @@ async def sync_access_policies(
         context: Context
 ):
     async with context.start(action="Sync. access policies") as ctx:  # type: Context
-        assets_remote = await RemoteClients.get_gtw_assets_client(ctx)
+        env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
+        assets_gtw = await RemoteClients.get_assets_gateway_client(remote_host=env.selectedRemote, context=ctx)
+        assets_remote = assets_gtw.get_assets_backend_router()
         assets_local = LocalClients.get_assets_client(await ctx.get('env', YouwolEnvironment))
         access_info = await assets_remote.get_access_info(asset_id=asset_id, headers=ctx.headers())
         access_info = access_info['ownerInfo']
@@ -138,8 +140,8 @@ async def create_asset_local(
             ) as ctx:
         local_treedb: TreeDbClient = LocalClients.get_treedb_client(env)
         local_gtw: AssetsGatewayClient = LocalClients.get_assets_gateway_client(env)
-        remote_gtw = await RemoteClients.get_assets_gateway_client(context)
-        remote_treedb = await RemoteClients.get_gtw_treedb_client(context)
+        remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=env.selectedRemote, context=context)
+        remote_treedb = remote_gtw.get_treedb_backend_router()
         headers = ctx.headers()
         raw_data, metadata, tree_items = await asyncio.gather(
             get_raw_data(ctx),

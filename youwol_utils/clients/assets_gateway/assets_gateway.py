@@ -3,6 +3,11 @@ from typing import Dict, Any, Optional
 
 import aiohttp
 
+from youwol_utils.clients.assets.assets import AssetsClient
+from youwol_utils.clients.files import FilesClient
+from youwol_utils.clients.flux.flux import FluxClient
+from youwol_utils.clients.stories.stories import StoriesClient
+from youwol_utils.clients.treedb.treedb import TreeDbClient
 from youwol_utils.exceptions import raise_exception_from_response
 
 
@@ -16,6 +21,21 @@ class AssetsGatewayClient:
     @staticmethod
     def get_aiohttp_connector():
         return aiohttp.TCPConnector(verify_ssl=False)
+
+    def get_assets_backend_router(self) -> AssetsClient:
+        return AssetsClient(url_base=f"{self.url_base}/assets-backend", headers=self.headers)
+
+    def get_treedb_backend_router(self) -> TreeDbClient:
+        return TreeDbClient(url_base=f"{self.url_base}/treedb-backend", headers=self.headers)
+
+    def get_files_backend_router(self) -> FilesClient:
+        return FilesClient(url_base=f"{self.url_base}/files-backend", headers=self.headers)
+
+    def get_flux_backend_router(self) -> FluxClient:
+        return FluxClient(url_base=f"{self.url_base}/flux-backend", headers=self.headers)
+
+    def get_stories_backend_router(self) -> StoriesClient:
+        return StoriesClient(url_base=f"{self.url_base}/stories-backend", headers=self.headers)
 
     async def healthz(self, **kwargs):
         url = f"{self.url_base}/healthz"

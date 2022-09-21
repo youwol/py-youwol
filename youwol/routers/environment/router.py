@@ -43,8 +43,8 @@ async def connect_to_remote(config: YouwolEnvironment, context: Context) -> bool
         return False
 
     try:
-        await config.get_auth_token(context)
-        client = await RemoteClients.get_assets_gateway_client(context)
+        await config.get_auth_token(context=context)
+        client = await RemoteClients.get_assets_gateway_client(remote_host=config.selectedRemote, context=context)
         await client.healthz()
         return True
     except HTTPException as e:
@@ -262,7 +262,8 @@ async def sync_user(
              summary="upload an asset")
 async def upload(
         request: Request,
-        asset_id: str
+        asset_id: str,
+        config: YouwolEnvironment = Depends(yw_config)
 ):
     async with Context.start_ep(
             request=request,
@@ -271,4 +272,4 @@ async def upload(
             },
             with_reporters=[LogsStreamer()]
     ) as ctx:
-        return await upload_asset(asset_id=asset_id, options=None, context=ctx)
+        return await upload_asset(remote_host=config.selectedRemote, asset_id=asset_id, options=None, context=ctx)
