@@ -7,11 +7,15 @@ from typing import Dict, List, Union
 import pyparsing
 import semantic_version
 
+from youwol.configuration.models_k8s import YouWolCDN
+from youwol.environment.youwol_environment import YouwolEnvironment
+from youwol.pipelines import PublishCdnRemoteStep
 from youwol.pipelines.pipeline_typescript_weback_npm.common import Template, PackageType
 from youwol.utils.utils_low_level import sed_inplace
 from youwol_cdn_backend import get_api_key
 from youwol_cdn_backend.loading_graph_implementation import exportedSymbols
 from youwol_utils import parse_json, write_json, JSON
+from youwol_utils.context import Context
 
 
 def copy_files_folders(working_path: Path, base_template_path: Path,
@@ -65,6 +69,7 @@ def get_imports_from_submodules(input_template: Template, all_runtime_deps: Dict
 
     src_folder = "lib" if input_template.type == PackageType.Library else "app"
     base_path = input_template.path / "src" / src_folder
+
     def clean_import_name(name):
         return name.replace('\'', '').replace(';', '').replace('"', '').replace('\n', '')
 
@@ -153,3 +158,15 @@ def generate_webpack_config(source: Path, working_path: Path, input_template: Te
 
     if input_template.type == PackageType.Application:
         sed_inplace(filename, '"{{devServer.port}}"', str(input_template.devServer.port))
+
+
+async def create_sub_pipelines_publish(start_step: str, context: Context):
+
+    env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
+    cdn_targets = next(deployment for deployment in env.deployments if isinstance(deployment, YouWolCDN))
+
+    publish_remote_steps = [PublishCdnRemoteStep(id=f'publish_remote_{cdn_target.name}',
+                                                 cdnTarget=cdn_target)
+                            for cdn_target in cdn_targets.targets]
+    dags = [f'{start_step} > publish_remote_{cdn_target.name}' for cdn_target in cdn_targets.targets]
+    return publish_remote_steps, dags
