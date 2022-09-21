@@ -80,7 +80,3 @@ async def local_path(tree_item: dict, context: Context):
     treedb = LocalClients.get_treedb_client(env=env)
     return await treedb.get_path(item_id=tree_item['treeId'], headers=context.headers())
 
-
-async def remote_path(tree_item: dict, context: Context):
-    treedb = await RemoteClients.get_gtw_treedb_client(context)
-    return await treedb.get_path(item_id=tree_item['treeId'], headers=context.headers())

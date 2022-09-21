@@ -49,5 +49,5 @@ async def keycloak_token(
         config: YouwolEnvironment = Depends(yw_config)
         ):
 
-    token = await config.get_auth_token(Context.from_request(request))
+    token = await config.get_auth_token(context=Context.from_request(request))
     return {"accessToken": token}

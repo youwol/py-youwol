@@ -323,8 +323,8 @@ async def cdn_status(
 
 
 @router.put("/create-from-template",
-             response_model=CreateProjectFromTemplateResponse,
-             summary="status")
+            response_model=CreateProjectFromTemplateResponse,
+            summary="status")
 async def new_project_from_template(
         request: Request,
         body: CreateProjectFromTemplateBody,

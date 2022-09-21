@@ -76,7 +76,7 @@ fastapi_app.add_middleware(
     url.path.startswith("/api/accounts/openid_rp/"),
     jwt_providers=[JwtProviderConfig(jwt_cache=jwt_cache)],
     on_missing_token=lambda url:
-    redirect_to_login(url) if url.path.startswith('/applications') \
+    redirect_to_login(url) if url.path.startswith('/applications')
         else Response(content="Unauthenticated", status_code=403)
 )
 

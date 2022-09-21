@@ -3,7 +3,6 @@ import os
 import traceback
 from pathlib import Path
 
-import daemon
 import lockfile
 import uvicorn
 
@@ -51,6 +50,9 @@ def main():
 
     try:
         if get_main_arguments().daemonize:
+            # noinspection PyPackageRequirements
+            # Installing daemon fails on Windows -> not in requirements
+            import daemon
             # noinspection PyUnresolvedReferences
             with daemon.DaemonContext(pidfile=lockfile.FileLock("py-youwol")):
                 shutdown_script_path.write_text(shutdown_daemon_script(pid=os.getpid()))

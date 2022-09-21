@@ -67,6 +67,7 @@ class User(BaseModel):
     name: str
     groups: List[Group]
 
+
 class OwningGroup(BaseModel):
     name: str
     groupId: str
