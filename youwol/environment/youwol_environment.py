@@ -22,6 +22,7 @@ from youwol.configuration.configuration_validation import (
 )
 from youwol.configuration.defaults import default_platform_host
 from youwol.configuration.models_config import JwtSource, ProjectTemplate
+from youwol.configuration.models_k8s import Deployment
 from youwol.environment.clients import LocalClients
 from youwol.environment.models import RemoteGateway, UserInfo, ApiConfiguration, Events, K8sInstance
 from youwol.environment.models_project import ErrorResponse
@@ -79,6 +80,7 @@ class YouwolEnvironment(BaseModel):
     tokensCache: List[DeadlinedCache] = []
 
     k8sInstance: Optional[K8sInstance]
+    deployments: Optional[List[Deployment]]
 
     def reset_cache(self):
         self.cache = {}
@@ -98,22 +100,22 @@ class YouwolEnvironment(BaseModel):
         users = list(parse_json(self.pathsBook.usersInfo)['users'].keys())
         return users
 
-    def get_remote_info(self) -> Optional[RemoteGateway]:
+    def get_remote_info(self, remote_host: str = None) -> Optional[RemoteGateway]:
 
         info = parse_json(self.pathsBook.remotesInfo)['remotes']
-
-        if self.selectedRemote in info:
-            data = info[self.selectedRemote]
+        selected = remote_host or self.selectedRemote
+        if selected in info:
+            data = info[selected]
             return RemoteGateway(**data)
 
         return None
 
-    async def get_auth_token(self, context: Context, use_cache=True):
+    async def get_auth_token(self, context: Context, remote_host: str = None, use_cache=True):
         username = self.userEmail
-        remote = self.get_remote_info()
+        remote = self.get_remote_info(remote_host)
         dependencies = {"username": username, "host": remote.host, "type": "auth_token"}
         cached_token = next((c for c in self.tokensCache if c.is_valid(dependencies)), None)
-        if use_cache and cached_token:
+        if use_cache and cached_token and not remote_host:
             return cached_token.value
 
         secrets = parse_json(self.pathsBook.secrets)
@@ -126,7 +128,7 @@ class YouwolEnvironment(BaseModel):
                 username=username,
                 pwd=pwd,
                 client_id=remote.metadata['keycloakClientId'],
-                openid_host=self.openidHost
+                openid_host=remote.host
             )
         except Exception as e:
             raise RuntimeError(f"Can not authorize from email/pwd provided in " +
@@ -144,7 +146,10 @@ class YouwolEnvironment(BaseModel):
         if self.private_cache.get("default-drive"):
             return self.private_cache.get("default-drive")
         env = await context.get('env', YouwolEnvironment)
-        default_drive = await LocalClients.get_assets_gateway_client(env).get_default_user_drive(headers=context.headers())
+        default_drive = await LocalClients\
+            .get_assets_gateway_client(env)\
+            .get_default_user_drive(headers=context.headers())
+
         self.private_cache["default-drive"] = DefaultDriveResponse(**default_drive)
         return DefaultDriveResponse(**default_drive)
 
@@ -440,6 +445,7 @@ async def safe_load(
     else:
         k8s_instance = None
 
+    deployments = conf_handler.get_deployments()
     youwol_configuration = YouwolEnvironment(
         activeProfile=conf_handler.get_profile(),
         jwtSource=conf_handler.get_jwt_source(),
@@ -457,6 +463,7 @@ async def safe_load(
         commands=conf_handler.get_commands(),
         customDispatches=conf_handler.get_dispatches(),
         k8sInstance=k8s_instance,
+        deployments=deployments,
         projectTemplates=conf_handler.get_project_templates()
     )
     return await conf_handler.customize(youwol_configuration)

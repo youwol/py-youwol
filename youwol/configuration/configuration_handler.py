@@ -9,6 +9,8 @@ from youwol.configuration.defaults import default_http_port, default_path_data_d
     default_platform_host, default_jwt_source
 from youwol.configuration.models_config import Profiles, ConfigurationData, PortRange, ModuleLoading, \
     CascadeBaseProfile, CascadeAppend, CascadeReplace, CdnOverride, Redirection, K8sCluster, JwtSource
+from youwol.configuration.models_k8s import Deployment
+
 from youwol.environment.models import Events, IConfigurationCustomizer
 from youwol.environment.models_project import ProjectTemplate
 from youwol.environment.paths import app_dirs
@@ -249,6 +251,9 @@ class ConfigurationHandler:
 
     def get_k8s_cluster(self) -> K8sCluster:
         return self.effective_config_data.k8sCluster
+
+    def get_deployments(self) -> List[Deployment]:
+        return self.effective_config_data.deployments
 
     def get_ports_book(self) -> Dict[str, int]:
         return self.effective_config_data.portsBook or {}

@@ -7,14 +7,23 @@ from youwol.environment.models_project import Project
 from youwol_utils.context import Context
 
 
-class DockerRepo(BaseModel):
+class DeploymentTarget(BaseModel):
+    name: str
+
+
+class Deployment(BaseModel):
+    targets: List[DeploymentTarget]
+
+
+class DockerRepo(DeploymentTarget):
     name: str
     pullSecret: Path
     imageUrlBuilder: Callable[[Project, Context], str]
 
 
-class Docker(BaseModel):
-    repositories: List[DockerRepo]
+class Docker(Deployment):
+    repositories: List[DockerRepo] = []
+    targets: List[DeploymentTarget] = []
 
     def get_repo(self, repo_name: str):
         return next(repo for repo in self.repositories if repo.name == repo_name)
@@ -32,3 +41,24 @@ class K8sCluster(BaseModel):
 - context name: {self.contextName}
 - proxy port: {self.proxyPort}
 """
+
+
+class K8sTarget(DeploymentTarget):
+    name: str
+    context: str
+
+
+class K8s(Deployment):
+    configFile: Path
+    targets: List[K8sTarget]
+    proxyPort: int
+
+
+class YwPlatformTarget(DeploymentTarget):
+    name: str
+    host: str
+
+
+class YouWolCDN(Deployment):
+    targets: List[YwPlatformTarget]
+
