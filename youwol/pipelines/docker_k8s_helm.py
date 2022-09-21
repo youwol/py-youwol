@@ -10,6 +10,7 @@ from youwol.environment.models_project import PipelineStep, Project, ExplicitNon
 from youwol.exceptions import CommandException
 from youwol.pipelines.deploy_service import HelmPackage
 from youwol.utils.k8s_utils import get_cluster_info
+from youwol.utils.utils_low_level import execute_shell_cmd
 from youwol_utils.context import Context
 from youwol_utils.utils_paths import parse_yaml
 
@@ -30,6 +31,26 @@ class PublishDockerStep(PipelineStep):
     )
 
     run: RunImplicit = lambda self, p, flow, ctx: self.docker_build_command(self.config, p, ctx)
+
+    async def get_status(self, project: Project, flow_id: str,
+                         last_manifest: Optional[Manifest], context: Context) -> PipelineStepStatus:
+
+        fingerprint, _ = await self.get_fingerprint(project=project, flow_id=flow_id, context=context)
+        if last_manifest.fingerprint != fingerprint:
+            await context.info(text="Source code outdated", data={'actual fp': fingerprint,
+                                                                  'saved fp': last_manifest.fingerprint})
+            return PipelineStepStatus.outdated
+
+        docker_url = self.dockerRepo.imageUrlBuilder(project, context)
+        return_code, outputs = await execute_shell_cmd(
+            cmd=f"docker manifest inspect {docker_url}:{project.version}",
+            context=context
+        )
+        if len(outputs) == 1:
+            await context.info(text="Images not published yet")
+            return PipelineStepStatus.outdated
+
+        return PipelineStepStatus.OK
 
     def get_image_version(self, project: Project, context: Context) -> str:
         if isinstance(self.imageVersion, str):
