@@ -7,6 +7,7 @@ from youwol_utils.context import Context
 
 @dataclass
 class UploadTask(ABC):
+    remote_host: str
     raw_id: str
     asset_id: str
     options: Optional[Any] = None

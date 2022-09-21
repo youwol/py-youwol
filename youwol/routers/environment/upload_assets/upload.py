@@ -142,7 +142,8 @@ async def synchronize_metadata(asset_id: str, assets_gtw_client: AssetsGatewayCl
 
         local_metadata, remote_metadata = await asyncio.gather(
             local_assets_gtw.get_asset_metadata(asset_id=asset_id, headers=ctx.headers()),
-            assets_gtw_client.get_asset_metadata(asset_id=asset_id, headers=ctx.headers())
+            assets_gtw_client.get_asset_metadata(asset_id=asset_id, headers=ctx.headers()),
+            return_exceptions=True
         )
         missing_images_urls = [p for p in local_metadata['images'] if p not in remote_metadata['images']]
         full_urls = [f"http://localhost:{env.httpPort}{url}" for url in missing_images_urls]
@@ -171,7 +172,7 @@ async def synchronize_metadata(asset_id: str, assets_gtw_client: AssetsGatewayCl
             form_data = FormData()
             form_data.add_field(name='file', value=value, filename=filename)
             forms.append(form_data)
-        remote_assets = await RemoteClients.get_gtw_assets_client(context=context)
+        remote_assets = assets_gtw_client.get_assets_backend_router()
         await asyncio.gather(
             remote_assets.update_asset(asset_id=asset_id, body=local_metadata, headers=ctx.headers()),
             *[
@@ -182,6 +183,7 @@ async def synchronize_metadata(asset_id: str, assets_gtw_client: AssetsGatewayCl
 
 
 async def upload_asset(
+        remote_host: str,
         asset_id: str,
         options: Optional[Any],
         context: Context
@@ -225,6 +227,7 @@ async def upload_asset(
         tree_item = cast(Dict, tree_item)
 
         factory: UploadTask = upload_factories[asset['kind']](
+            remote_host=remote_host,
             raw_id=raw_id,
             asset_id=asset_id,
             options=options
@@ -244,14 +247,18 @@ async def upload_asset(
             data={"path_item": path_item, "raw data": local_data}
         )
 
-        assets_gtw_client = await RemoteClients.get_assets_gateway_client(context=ctx)
+        assets_gtw_client = await RemoteClients.get_assets_gateway_client(remote_host=remote_host, context=ctx)
 
         await ensure_path(path_item=PathResponse(**path_item), assets_gateway_client=assets_gtw_client, context=ctx)
         try:
-            await assets_gtw_client.get_asset_metadata(asset_id=asset_id, headers=ctx.headers())
-            await assets_gtw_client.get_tree_item(tree_item['itemId'], headers=ctx.headers())
+            remote_asset = await assets_gtw_client.get_asset_metadata(asset_id=asset_id, headers=ctx.headers())
+            remote_tree_item = await assets_gtw_client.get_tree_item(tree_item['itemId'], headers=ctx.headers())
             await ctx.info(
-                text="Asset already found in deployed environment"
+                text="Asset already found in deployed environment",
+                data={
+                    "asset": remote_asset,
+                    "treeItem": remote_tree_item
+                }
             )
             await factory.update_raw(data=local_data, folder_id=tree_item['folderId'], context=ctx)
         except HTTPException as e:
