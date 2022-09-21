@@ -3,17 +3,19 @@ from pathlib import Path
 from typing import List, Optional, Set, Callable
 
 import pkg_resources
+import yaml
 from pydantic import BaseModel
 
 import youwol_utils
+from youwol.configuration.models_k8s import K8s
 from youwol.environment.models import K8sInstance
 from youwol.environment.models_project import Manifest, PipelineStepStatus, Link, Flow, \
     SourcesFctImplicit, Pipeline, PipelineStep, FileListing, \
     Artifact, Project, RunImplicit, MicroService, ExplicitNone
+from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.exceptions import CommandException
 from youwol.pipelines.docker_k8s_helm import get_helm_app_version, InstallHelmStep, InstallHelmStepConfig, \
     PublishDockerStep, PublishDockerStepConfig, InstallDryRunHelmStep
-from youwol.pipelines.publish_cdn import PublishCdnRemoteStep, PublishCdnLocalStep
 from youwol.utils.utils_low_level import execute_shell_cmd
 from youwol_utils.context import Context
 
@@ -37,17 +39,68 @@ class PreconditionChecksStep(PipelineStep):
         return PipelineStepStatus.OK
 
 
-class InitStep(PipelineStep):
-    id: str = 'init'
-    run: str = 'python3.9 -m venv ./src/.virtualenv '\
-               '&& . ./src/.virtualenv/bin/activate ' \
-               '&& pip install -r requirements.txt'
+class PullStep(PipelineStep):
+    id: str = 'pull'
+    run: str = 'git pull'
 
     async def get_status(self, project: Project, flow_id: str,
                          last_manifest: Optional[Manifest], context: Context) -> PipelineStepStatus:
-        if (project.path / 'src' / '.virtualenv').exists():
-            return PipelineStepStatus.OK
-        return PipelineStepStatus.none
+
+        return_code, outputs = await execute_shell_cmd(
+            cmd=f"(cd {project.path} && git log HEAD..origin/master --oneline)",
+            context=context)
+        if return_code != 0:
+            return PipelineStepStatus.KO
+        return PipelineStepStatus.OK if not outputs else PipelineStepStatus.outdated
+
+
+class NewBranchStep(PipelineStep):
+    id: str = 'new-branch'
+    run: RunImplicit = \
+        lambda self, project, flow_id, ctx: f'git checkout -b feature/{project.version}'
+
+    async def get_status(self, project: Project, flow_id: str,
+                         last_manifest: Optional[Manifest], context: Context) -> PipelineStepStatus:
+
+        return_code, outputs = await execute_shell_cmd(
+            cmd=f"(cd {project.path} && git branch --show-current)",
+            context=context)
+        if return_code != 0 or len(outputs) != 1:
+            await context.info("Error while retrieving current branch name")
+            return PipelineStepStatus.KO
+
+        return PipelineStepStatus.OK if f'feature/{project.version}' in outputs[0] else PipelineStepStatus.outdated
+
+
+class UpdatePyYouwolStep(PipelineStep):
+
+    id: str = 'sync-pyYw'
+    run: str = 'git submodule update --init ./py-youwol && git submodule update --remote ./py-youwol'
+
+    async def get_status(self, project: Project, flow_id: str,
+                         last_manifest: Optional[Manifest], context: Context) -> PipelineStepStatus:
+
+        return_code, outputs = await execute_shell_cmd(
+            cmd=f"(cd {project.path}/py-youwol && git log HEAD..origin/master --oneline)",
+            context=context)
+        if return_code != 0:
+            return PipelineStepStatus.KO
+        return PipelineStepStatus.OK if not outputs else PipelineStepStatus.outdated
+
+
+class SyncHelmDeps(PipelineStep):
+
+    id: str = 'sync-helm-deps'
+    run: str = 'helm dependency update ./chart'
+
+    async def get_status(self, project: Project, flow_id: str,
+                         last_manifest: Optional[Manifest], context: Context) -> PipelineStepStatus:
+
+        with open(project.path / 'chart' / 'Chart.yaml') as f:
+            data = yaml.load(f, Loader=yaml.FullLoader)
+            expected_charts = [f"{d['name']}-{d['version']}.tgz" for d in data['dependencies']]
+            all_here = all([(project.path / 'chart' / 'charts' / c).exists() for c in expected_charts])
+            return PipelineStepStatus.OK if all_here else PipelineStepStatus.outdated
 
 
 def to_module_name(dir_name: str):
@@ -209,17 +262,29 @@ async def pipeline(
         config: PipelineConfig,
         context: Context
 ):
-    def add_dry_values(p,c):
+    def add_dry_values(p, c):
         base = config.helmConfig.overridingHelmValues(p, c) if config.helmConfig.overridingHelmValues else {}
-        return {**base, "platformDomain": "platform.example.com"}
+        return {
+            **base,
+            "platformDomain": "platform.dev.example.com",
+            "clusterVersion": "v1"
+        }
 
     async with context.start(action="pipeline") as ctx:
         await ctx.info(text="Instantiate pipeline", data=config)
 
         docker_fields = {k: v for k, v in config.dockerConfig.dict().items() if v is not None}
-
+        env: YouwolEnvironment = await ctx.get('env', YouwolEnvironment)
         dry_run_config = InstallHelmStepConfig(**config.helmConfig.dict())
         dry_run_config.overridingHelmValues = add_dry_values
+        k8s = next(deployment for deployment in env.deployments if isinstance(deployment, K8s))
+
+        install_helm_steps = [InstallHelmStep(id=f'install-helm_{k8sTarget.name}',
+                                              config=config.helmConfig,
+                                              k8sContext=k8sTarget.context)
+                              for k8sTarget in k8s.targets]
+
+        dags = [f'dry-run-helm > install-helm_{k8sTarget.name}' for k8sTarget in k8s.targets]
 
         return Pipeline(
             target=MicroService(),
@@ -229,29 +294,24 @@ async def pipeline(
             dependencies=lambda project, _ctx: get_dependencies(project),
             steps=[
                 PreconditionChecksStep(),
-                InitStep(),
-                DocStep(config=config.docConfig),
-                UnitTestStep(),
-                ApiTestStep(),
-                IntegrationTestStep(),
-                PublishCdnLocalStep(packagedArtifacts=['docs', 'test-coverage']),
-                PublishCdnRemoteStep(),
+                PullStep(),
+                NewBranchStep(),
+                UpdatePyYouwolStep(),
                 CustomPublishDockerStep(**docker_fields),
+                SyncHelmDeps(),
                 InstallDryRunHelmStep(
                     config=dry_run_config
                 ),
-                InstallHelmStep(
-                    config=config.helmConfig
-                )
+                *install_helm_steps
             ],
             flows=[
                 Flow(
                     name="prod",
                     dag=[
-                        "checks > init > unit-test > integration-test > publish-docker "
-                        "> dry-run-helm > install-helm > api-test ",
-                        "init > doc ",
-                        "unit-test > publish-local > publish-remote"
+                        "checks > pull > new-branch > dry-run-helm",
+                        "pull > sync-pyYw > publish-docker > dry-run-helm",
+                        "pull > sync-helm-deps > dry-run-helm",
+                        *dags
                     ]
                 )
             ]
