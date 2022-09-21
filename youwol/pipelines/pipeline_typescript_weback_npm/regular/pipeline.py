@@ -115,7 +115,7 @@ class SyncFromDownstreamStep(PipelineStep):
                 return PipelineStepStatus.outdated
 
             # Any of the inner dependencies code in node_modules should be checked to make sure
-            # no 'external' tool (e.g doing 'yarn') changed the node_module files
+            # no 'external' tool (e.g. doing 'yarn') changed the node_module files
             prev_node_module_checksums = last_manifest.cmdOutputs.get('nodeModuleChecksums', {})
             node_module_checksums: Mapping[str, str] = {
                 name: SyncFromDownstreamStep.node_module_checksum(project=project, name=name)
