@@ -75,7 +75,7 @@ class OidcConfig:
             async with aiohttp.ClientSession() as session:
                 async with session.get(well_known_url) as resp:
                     if resp.status != 200:
-                        raise Exception(f"Cannot fetch OpenId configuration at well-known URL '{well_known_url}'")
+                        raise RuntimeError(f"Cannot fetch OpenId configuration at well-known URL '{well_known_url}'")
                     else:
                         json = await resp.json()
             self._openid_configuration = OpenIdConfiguration.parse_obj(json)
@@ -85,7 +85,7 @@ class OidcConfig:
 
 def random_code_verifier():
     choices = string.ascii_letters + string.digits + "-._~"
-    return ''.join((random.choice(choices) for x in range(128)))
+    return ''.join((random.choice(choices) for _ in range(128)))
 
 
 class OidcForClient:
@@ -140,13 +140,13 @@ class OidcForClient:
                 status = resp.status
                 token = await resp.json()
                 if status != 200:
-                    raise Exception(f"Failed to get token : {token}")
+                    raise RuntimeError(f"Failed to get token : {token}")
 
         return token
 
     async def client_credentials_flow(self):
         if isinstance(self._client, PublicClient):
-            raise Exception(f"Client {self._client.client_id} is public !")
+            raise RuntimeError(f"Client {self._client.client_id} is public !")
         conf = await self._config.openid_configuration()
         params = {
             'grant_type': 'client_credentials',
@@ -160,7 +160,7 @@ class OidcForClient:
                 status = resp.status
                 tokens = await resp.json()
                 if status != 200:
-                    raise Exception(f"Failed to get token : {tokens}")
+                    raise RuntimeError(f"Failed to get token : {tokens}")
 
         return tokens
 
@@ -185,7 +185,7 @@ class OidcForClient:
                 status = resp.status
                 token = await resp.json()
                 if status != 200:
-                    raise Exception(f"Failed to get token : {token}")
+                    raise RuntimeError(f"Failed to get token : {token}")
 
         return token
 
@@ -211,7 +211,7 @@ class OidcForClient:
                 status = resp.status
                 token = await resp.json()
                 if status != 200:
-                    raise Exception(f"Failed to exchange token : {token}")
+                    raise RuntimeError(f"Failed to exchange token : {token}")
 
         return token
 
@@ -234,7 +234,7 @@ class OidcForClient:
                 status = resp.status
                 tokens = await resp.json()
                 if status != 200:
-                    raise Exception(f"Failed to refresh token : {tokens}")
+                    raise RuntimeError(f"Failed to refresh token : {tokens}")
 
         return tokens
 
