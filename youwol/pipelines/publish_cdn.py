@@ -6,6 +6,7 @@ from typing import Optional, cast, Mapping, List, Iterable
 
 from fastapi import HTTPException
 
+from youwol.configuration.models_k8s import YwPlatformTarget
 from youwol_utils.http_clients.assets_gateway import DefaultDriveResponse
 from youwol.environment.clients import LocalClients, RemoteClients
 from youwol.environment.models_project import (
@@ -185,21 +186,29 @@ class PublishCdnLocalStep(PipelineStep):
 class PublishCdnRemoteStep(PipelineStep):
 
     id = 'publish-remote'
-
+    cdnTarget: YwPlatformTarget
     run: ExplicitNone = ExplicitNone()
 
     async def get_status(self, project: Project, flow_id: str, last_manifest: Optional[Manifest], context: Context) \
             -> PipelineStepStatus:
 
+        env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
+        auth_token = await env.get_auth_token(remote_host=self.cdnTarget.host, context=context)
+
         async with context.start(
-                action="PublishCdnRemoteStep.get_status"
+                action="PublishCdnRemoteStep.get_status",
+                with_headers={
+                    "Authorization": f"Bearer {auth_token}",
+                    "tmp-header": 'working'
+                }
         ) as ctx:
             if last_manifest and not last_manifest.succeeded:
                 return PipelineStepStatus.KO
 
             env = await context.get('env', YouwolEnvironment)
             local_cdn = LocalClients.get_cdn_client(env=env)
-            remote_gtw = await RemoteClients.get_assets_gateway_client(context=context)
+            remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=self.cdnTarget.host,
+                                                                       context=context)
 
             local_info, remote_info = await asyncio.gather(
                 local_cdn.get_version_info(library_id=encode_id(project.publishName), version=project.version,
@@ -236,13 +245,19 @@ class PublishCdnRemoteStep(PipelineStep):
 
     async def execute_run(self, project: Project, flow_id: str, context: Context):
 
+        env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
+        auth_token = await env.get_auth_token(remote_host=self.cdnTarget.host, context=context)
         async with context.start(
-                action="PublishCdnRemoteStep.execute_run"
+                action="PublishCdnRemoteStep.execute_run",
+                with_headers={
+                    "Authorization": f"Bearer {auth_token}",
+                    "tmp-header": 'working'
+                }
         ) as ctx:
-            env = await context.get('env', YouwolEnvironment)
             options = UploadPackageOptions(versions=[project.version])
             package_id = encode_id(project.publishName)
-            await upload_asset(asset_id=encode_id(package_id), options=options, context=ctx)
+            await upload_asset(remote_host=self.cdnTarget.host, asset_id=encode_id(package_id), options=options,
+                               context=ctx)
             # # No ideal solution to get back the fingerprint here:
             # # (i) this one is brittle if the source code of the CDN is not the same between local vs remote
             local_cdn = LocalClients.get_cdn_client(env=env)
