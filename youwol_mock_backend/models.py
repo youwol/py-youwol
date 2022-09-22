@@ -34,6 +34,7 @@ class Request(BaseModel):
 
 
 class Handler(BaseModel):
+    public: bool = False
     method: str = "GET"
     response: Response = Response()
     historySize: int = 10

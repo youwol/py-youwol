@@ -6,17 +6,37 @@ from typing import Dict, List
 
 from .models import Handler, status_200_OK, status_204_NoContent, Request, Body
 
-router = APIRouter(tags=['fake'])
+router = APIRouter(tags=['nock'])
 
 handlers: Dict[str, Handler] = dict()
 
 
-def ref(method: str, handler_id: str):
-    return f"{method}:{handler_id}"
+def ref(method: str, handler_id: str, public: bool):
+    return f"{method}:{handler_id}{(':public' if public else '')}"
+
+
+@router.get("/healthz")
+async def healthz():
+    return JSONResponse(status_code=200, content={"status": "mock backend ok"})
+
+
+@router.put("/admin/pub/{handler_id}")
+async def setup_handler_public(handler: Handler, handler_id: str):
+    return await setup_handler(handler, handler_id, True)
+
+
+@router.get("/admin/pub/{handler_id}/{method}")
+async def get_handler_public(handler_id: str, method: str):
+    return await get_handler(handler_id, method, True)
+
+
+@router.delete("/admin/pub/{handler_id}/{method}")
+async def remove_handler_public(handler_id: str, method: str):
+    return await remove_handler(handler_id, method, True)
 
 
 @router.put("/admin/{handler_id}")
-async def setup_handler(handler: Handler, handler_id: str):
+async def setup_handler(handler: Handler, handler_id: str, public=False):
     if handler.response.status is None:
         if handler.response.body is None:
             handler.response.status = status_204_NoContent
@@ -24,28 +44,43 @@ async def setup_handler(handler: Handler, handler_id: str):
             handler.response.status = status_200_OK
 
     method = handler.method
-    handlers[ref(method, handler_id)] = handler
+    handlers[ref(method, handler_id, public)] = handler
     return handler
 
 
-@router.get("/healthz")
-async def healthz():
-    return JSONResponse(status_code=200, content={"status": "fake backend ok"})
-
-
 @router.get("/admin/{handler_id}/{method}")
-async def get_handler(handler_id: str, method: str):
-    handler = handlers.get(ref(method, handler_id))
+async def get_handler(handler_id: str, method: str, public=False):
+    handler = handlers.get(ref(method, handler_id, public))
     return handler if handler is not None else FastAPI_Response(status_code=status.HTTP_404_NOT_FOUND)
 
 
 @router.delete("/admin/{handler_id}/{method}")
-async def remove_handler(handler_id: str, method: str):
-    if handlers.get(ref(method, handler_id)) is None:
+async def remove_handler(handler_id: str, method: str, public=False):
+    if handlers.get(ref(method, handler_id, public)) is None:
         return FastAPI_Response(status_code=status.HTTP_202_ACCEPTED)
 
-    handlers.pop(ref(method, handler_id))
+    handlers.pop(ref(method, handler_id, public))
     return FastAPI_Response(status_code=status.HTTP_404_NOT_FOUND)
+
+
+@router.get("/pub/{handler_id}")
+async def handle_public_get(handler_id: str, request: FastAPI_Request):
+    return await handle_public("GET", handler_id, request)
+
+
+@router.put("/pub/{handler_id}")
+async def handle_public_put(handler_id: str, request: FastAPI_Request):
+    return await handle_public("PUT", handler_id, request)
+
+
+@router.post("/pub/{handler_id}")
+async def handle_public_post(handler_id: str, request: FastAPI_Request):
+    return await handle_public("POST", handler_id, request)
+
+
+@router.delete("/pub/{handler_id}")
+async def handle_public_delete(handler_id: str, request: FastAPI_Request):
+    return await handle_public("DELETE", handler_id, request)
 
 
 @router.get("/{handler_id}")
@@ -68,8 +103,12 @@ async def handle_delete(handler_id: str, request: FastAPI_Request):
     return await handle("DELETE", handler_id, request)
 
 
-async def handle(method: str, handler_id: str, req: FastAPI_Request):
-    handler = handlers.get(ref(method, handler_id))
+async def handle_public(method: str, handler_id: str, req: FastAPI_Request):
+    return await handle(method, handler_id, req, public=True)
+
+
+async def handle(method: str, handler_id: str, req: FastAPI_Request, public=False):
+    handler = handlers.get(ref(method, handler_id, public))
 
     if handler is None:
         return FastAPI_Response(status_code=status.HTTP_404_NOT_FOUND)
