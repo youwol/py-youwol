@@ -30,8 +30,9 @@ set -e
 # Uncomment next line to trace commands execution
 # set -x
 
-# Either 'compile' or 'upgrade'
+# Either 'compile', 'upgrade' or 'upgrade'
 action="$1"
+package="$2"
 
 out_dev="dev-requirements.txt"
 out_docker="docker-requirements.txt"
@@ -43,8 +44,8 @@ help_message() {
 Python requirements files management.
 
 Available actions :
-  * compile : generate requirements files from deps/*.in
-  * upgrade : update packages in existing requirements files
+  * compile             : generate requirements files from deps/*.in
+  * upgrade [<package>] : upgrade all packages or only specified package in existing requirements files
 
 See sources in ${0} for details."
 }
@@ -71,6 +72,108 @@ ch_cwd() {
   echo "[project_dir] '$(pwd)'"
 }
 
+do_compile() {
+      export CUSTOM_COMPILE_COMMAND="sh ${0} compile"
+      echo "[action] Compiling requirements files from deps/*.in"
+      echo
+      ch_cwd
+
+      echo "[compile] '${out_dev}'"
+      pip-compile \
+          --allow-unsafe \
+          --generate-hashes \
+          deps/base.in deps/dev.in \
+          --output-file="${out_dev}"
+      echo "[compile] '${out_docker}'"
+      pip-compile \
+          --allow-unsafe \
+          --generate-hashes \
+          deps/base.in \
+          --output-file="${out_docker}"
+      echo "[compile] '${out_no_hashes}'"
+      pip-compile \
+          --allow-unsafe \
+          deps/base.in deps/dev.in \
+          --output-file="${out_no_hashes}"
+
+      echo
+      echo "Requirements files updated."
+      echo "You should run pip-sync now :"
+      echo
+      echo "  pip-sync dev-requirements.txt"
+      echo
+}
+
+do_upgrade_all() {
+      export CUSTOM_COMPILE_COMMAND="sh ${0} compile"
+      echo "[action] Upgrading all dependencies to their latest version"
+      echo
+      ch_cwd
+
+      echo "[upgrade] '${out_dev}'"
+      pip-compile \
+          --upgrade \
+          --allow-unsafe \
+          --generate-hashes \
+           deps/base.in deps/dev.in \
+          --output-file="${out_dev}"
+      echo "[upgrade] '${out_docker}'"
+      pip-compile \
+          --upgrade \
+          --allow-unsafe \
+          --generate-hashes \
+           deps/base.in \
+          --output-file="${out_docker}"
+      echo "[upgrade] '${out_no_hashes}'"
+      pip-compile \
+          --upgrade \
+          --allow-unsafe \
+           deps/base.in deps/dev.in \
+          --output-file="${out_no_hashes}"
+
+      echo
+      echo "Dependencies upgraded and requirements files updated."
+      echo "You should run pip-sync now :"
+      echo
+      echo "    pip-sync dev-requirements.txt"
+      echo
+}
+
+do_upgrade_package() {
+      package="$1"
+      export CUSTOM_COMPILE_COMMAND="sh ${0} compile"
+      echo "[action] Upgrading '${package}'"
+      echo
+      ch_cwd
+
+      echo "[upgrade package '${package}'] '${out_dev}'"
+      pip-compile \
+          --upgrade-package "${package}" \
+          --allow-unsafe \
+          --generate-hashes \
+           deps/base.in deps/dev.in \
+          --output-file="${out_dev}"
+      echo "[upgrade package '${package}'] '${out_docker}'"
+      pip-compile \
+          --upgrade-package "${package}" \
+          --allow-unsafe \
+          --generate-hashes \
+           deps/base.in \
+          --output-file="${out_docker}"
+      echo "[upgrade package '${package}'] '${out_no_hashes}'"
+      pip-compile \
+          --upgrade-package "${package}" \
+          --allow-unsafe \
+           deps/base.in deps/dev.in \
+          --output-file="${out_no_hashes}"
+
+      echo
+      echo "Package '${package}' upgraded and requirements files updated."
+      echo "You should run pip-sync now :"
+      echo
+      echo "    pip-sync dev-requirements.txt"
+      echo
+}
 
 if [ -z "${VIRTUAL_ENV}" ] ; then
   failure "Virtual environment not activated. If you have not already create it, do it now with :
@@ -97,64 +200,16 @@ echo
 case "${action}" in
 
   "upgrade")
-      export CUSTOM_COMPILE_COMMAND="sh ${0} upgrade"
-      echo "[action] Upgrading dependencies to their latest version"
-      echo
-      ch_cwd
-
-      echo "[upgrade] '${out_dev}'"
-      pip-compile \
-          --upgrade \
-          deps/base.in deps/dev.in \
-          --output-file="${out_dev}"
-      echo "[upgrade] '${out_docker}'"
-      pip-compile \
-          --upgrade \
-          deps/base.in \
-          --output-file="${out_docker}"
-      echo "[upgrade] '${out_no_hashes}'"
-      pip-compile \
-          --upgrade \
-          deps/base.in deps/dev.in \
-          --output-file="${out_no_hashes}"
-
-      echo
-      echo "Dependencies upgraded and requirements files updated."
-      echo "You should run pip-sync now :"
-      echo
-      echo "    pip-sync dev-requirements.txt"
-      echo
+      if [ -n "${package}" ]; then
+        do_upgrade_package "${package}"
+      else
+        do_upgrade_all
+      fi
       exit 0
     ;;
 
   "compile")
-      export CUSTOM_COMPILE_COMMAND="sh ${0} compile"
-      echo "[action] Compiling requirements files from deps/*.in"
-      echo
-      ch_cwd
-
-      echo "[compile] '${out_dev}'"
-      pip-compile \
-          --allow-unsafe \
-          --generate-hashes \
-          deps/base.in deps/dev.in \
-          --output-file="${out_dev}"
-      echo "[compile] '${out_docker}'"
-      pip-compile \
-          --allow-unsafe \
-          --generate-hashes \
-          deps/base.in \
-          --output-file="${out_docker}"
-      echo "[compile] '${out_no_hashes}'"
-      pip-compile \
-          --allow-unsafe \
-          deps/base.in deps/dev.in \
-          --output-file="${out_no_hashes}"
-
-      echo "
-Requirements files updated. You should run pip-sync now :
-  pip-sync dev-requirements.txt
-"
+      do_compile
       exit 0
     ;;
 
