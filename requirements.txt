@@ -70,7 +70,7 @@ kubernetes-asyncio==23.6.0
     # via -r deps/base.in
 lockfile==0.12.2
     # via python-daemon
-mako==1.2.0
+mako==1.2.2
     # via pdoc3
 markdown==3.3.7
     # via pdoc3
