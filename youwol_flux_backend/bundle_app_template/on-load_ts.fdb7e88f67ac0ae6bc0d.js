@@ -1,3 +1,4 @@
+"use strict";
 (self["webpackChunk"] = self["webpackChunk"] || []).push([
   ["on-load_ts"],
   {
@@ -10,12 +11,11 @@
         __webpack_exports__,
         __webpack_require__
       ) => {
-        "use strict";
         __webpack_require__.r(__webpack_exports__);
         /* harmony export */ __webpack_require__.d(__webpack_exports__, {
+          /* harmony export */ Notifier: () => /* binding */ Notifier,
           /* harmony export */ plugNotifications: () =>
             /* binding */ plugNotifications,
-          /* harmony export */ Notifier: () => /* binding */ Notifier,
           /* harmony export */
         });
         /* harmony import */ var _youwol_flux_core__WEBPACK_IMPORTED_MODULE_0__ =
@@ -208,7 +208,6 @@
         __webpack_exports__,
         __webpack_require__
       ) => {
-        "use strict";
         __webpack_require__.r(__webpack_exports__);
         /* harmony import */ var _youwol_flux_core__WEBPACK_IMPORTED_MODULE_0__ =
           __webpack_require__(/*! @youwol/flux-core */ "@youwol/flux-core");
@@ -258,17 +257,7 @@
             )
               .pipe(
                 (0, rxjs_operators__WEBPACK_IMPORTED_MODULE_2__.map)(
-                  ({ project }) => {
-                    let wf = project.workflow;
-                    [...wf.plugins, ...wf.modules].forEach(
-                      (m) =>
-                        (0,
-                        _youwol_flux_core__WEBPACK_IMPORTED_MODULE_0__.instanceOfSideEffects)(
-                          m
-                        ) && m.apply()
-                    );
-                    return project;
-                  }
+                  ({ project }) => applySideEffects(project)
                 )
               )
               .subscribe((project) => this.project$.next(project));
@@ -286,26 +275,27 @@
             )
               .pipe(
                 (0, rxjs_operators__WEBPACK_IMPORTED_MODULE_2__.map)(
-                  ({ project }) => {
-                    let wf = project.workflow;
-                    [...wf.plugins, ...wf.modules].forEach(
-                      (m) =>
-                        (0,
-                        _youwol_flux_core__WEBPACK_IMPORTED_MODULE_0__.instanceOfSideEffects)(
-                          m
-                        ) && m.apply()
-                    );
-                    return project;
-                  }
+                  ({ project }) => applySideEffects(project)
                 )
               )
               .subscribe((project) => this.project$.next(project));
           }
         }
+        function applySideEffects(project) {
+          const wf = project.workflow;
+          [...wf.plugins, ...wf.modules].forEach(
+            (m) =>
+              (0,
+              _youwol_flux_core__WEBPACK_IMPORTED_MODULE_0__.instanceOfSideEffects)(
+                m
+              ) && m.apply()
+          );
+          return project;
+        }
         function run(state) {
           state.project$.subscribe((project) => {
             loadingScreen.done();
-            let rootComponent = project.workflow.modules.find(
+            const rootComponent = project.workflow.modules.find(
               (mdle) =>
                 mdle.moduleId ==
                 _youwol_flux_core__WEBPACK_IMPORTED_MODULE_0__.Component
@@ -316,15 +306,15 @@
               asString: true,
             });
             document.head.append(style);
-            let contentDiv = document.getElementById("content");
+            const contentDiv = document.getElementById("content");
             contentDiv.appendChild(rootComponent.getOuterHTML());
             (0, _youwol_flux_core__WEBPACK_IMPORTED_MODULE_0__.renderTemplate)(
               contentDiv,
               [rootComponent]
             );
             applyHackRemoveDefaultStyles();
-            let allSubscriptions = new Map();
-            let allModules = [
+            const allSubscriptions = new Map();
+            const allModules = [
               ...project.workflow.modules,
               ...project.workflow.plugins,
             ];
@@ -336,13 +326,12 @@
             );
           });
         }
-        let projectId = new URLSearchParams(window.location.search).get("id");
-        let state = new ApplicationState();
-        state.loadProjectByUrl("project.json");
+        const appState = new ApplicationState();
+        appState.loadProjectByUrl("project.json");
         (0, _notifier__WEBPACK_IMPORTED_MODULE_3__.plugNotifications)(
-          state.environment
+          appState.environment
         );
-        run(state);
+        run(appState);
         function applyHackRemoveDefaultStyles() {
           /**
            * When defining ModuleFlux with views it is possible to associated default style.
@@ -351,7 +340,7 @@
            * Need to find a better way to associated default styles.
            * For modules replicated afterward, this hack is not working.
            */
-          let fluxElements = document.querySelectorAll(".flux-element");
+          const fluxElements = document.querySelectorAll(".flux-element");
           Array.from(fluxElements).forEach((element) => {
             element.style.removeProperty("height");
             element.style.removeProperty("width");
@@ -362,4 +351,4 @@
       },
   },
 ]);
-//# sourceMappingURL=on-load_ts.6ab40c6918bc60d90711.js.map
+//# sourceMappingURL=on-load_ts.fdb7e88f67ac0ae6bc0d.js.map
