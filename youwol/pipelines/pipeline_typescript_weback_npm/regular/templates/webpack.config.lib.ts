@@ -9,9 +9,7 @@ const DESTINATION = path.resolve(__dirname, 'dist')
 
 const webpackConfig: webpack.Configuration = {
     context: ROOT,
-    entry: {
-        main: './index.ts',
-    },
+    entry:  setup.entries,
     plugins: [
         new BundleAnalyzerPlugin({
             analyzerMode: 'static',
@@ -24,8 +22,9 @@ const webpackConfig: webpack.Configuration = {
         publicPath: `/api/assets-gateway/raw/package/${setup.assetId}/${setup.version}/dist/`,
         libraryTarget: 'umd',
         umdNamedDefine: true,
-        library: `${setup.name}_APIv${setup.apiVersion}`,
-        filename: setup.name + '.js',
+        library: `[name]_APIv${setup.apiVersion}`,
+        devtoolNamespace: `${setup.name}_APIv${setup.apiVersion}`,
+        filename: '[name].js',
         globalObject: `(typeof self !== 'undefined' ? self : this)`,
     },
     resolve: {

@@ -19,16 +19,13 @@ class RunTimeDeps(BaseModel):
 
     Attributes:
 
-    - load : :class:`Dict[str, str]`   Dependencies required at run time to load the package
-    - differed : :class:`Dict[str, str]`  Additional dependencies required at some points after load
-    - includedInBundle : :class:`List[str]` The dependencies to encapsulates in the package's bundle.
+    - **external** : :class:`Dict[str, str]`  The dependencies not included in bundles.
+    - **includedInBundle** : :class:`Dict[str, str]` The dependencies included in the bundles.
 
-    Note: All dependencies listed in 'load' or 'differed' and not available in YouWol ecosystem must be included in
-    'includedInBundle'.
+    Note: All dependencies listed in 'external' must be available in YouWol ecosystem.
     """
-    load: Dict[str, str] = {}
-    differed: Dict[str, str] = {}
-    includedInBundle: List[str] = []
+    externals: Dict[str, str] = {}
+    includedInBundle: Dict[str, str] = {}
 
 
 class Dependencies(BaseModel):
@@ -37,15 +34,78 @@ class Dependencies(BaseModel):
 
     Attributes:
 
-    - runTime : :class:`RunTimeDeps` Dependencies required at run time
-    - devTime : :class:`Dict[str, str]`  Additional dependencies required only during development cycles
+    - **runTime** : :class:`RunTimeDeps` Dependencies required at run time
+    - **devTime** : :class:`Dict[str, str]`  Additional dependencies required only during development cycles
     """
     runTime: RunTimeDeps = RunTimeDeps()
     devTime: Dict[str, str] = {}
 
 
 class DevServer(BaseModel):
+    """
+    Description of the DevServer in case of application.
+
+    Attributes:
+
+    - **port** : :class:`int` dev-server's port
+    """
     port: int
+
+
+class MainModule(BaseModel):
+    """
+       This class defines the main bundle of the package
+
+    Attributes:
+
+    - **entryFile** : :class:`str` file entry point relative to the 'src' folder
+    - **loadDependencies** : :class:`List[str]` the dependencies required to load the module.
+    """
+    entryFile: str
+    loadDependencies: List[str]
+
+
+class AuxiliaryModule(MainModule):
+    """
+    Description of an auxiliary module of the package.
+    Secondary entry are usually used to eventually load additional features of the package latter on after the
+    initial load.
+
+    Attributes:
+
+    - **name** : :class:`str` name to reference the entry (referenced when using 'setup.installEntry(name)')
+        It will be used to generate filename of the bundle & exported symbol.
+        E.g. for a package with exported symbol 'my-package', and a secondary entry point with name 'case-1',
+        the exported symbol for the module 'case-1' will be 'my-package/case-1', the bundle will be located at
+        'dist/my-package/case-1.js'.
+    """
+    name: str
+
+
+class MainModule(BaseModel):
+    """
+       This class defines the main bundle of the package
+
+    Attributes:
+
+    - **entryFile** : :class:`str` file entry point relative to the 'src' folder
+    - **loadDependencies** : :class:`List[str]` the dependencies required to load the module.
+    """
+    entryFile: str
+    loadDependencies: List[str]
+
+
+class Bundles(BaseModel):
+    """
+    This class defines the bundles built by webpack
+
+    Attributes:
+
+    - **mainModule** : :class:`MainModule` The main module.
+    - **auxiliaryModules** : :class:`List[AuxiliaryModule]` Auxiliaries modules of the package (lazy-loading).
+    """
+    mainModule: MainModule
+    auxiliaryModules: List[AuxiliaryModule] = []
 
 
 class Template(BaseModel):
@@ -54,18 +114,19 @@ class Template(BaseModel):
 
     Attributes:
 
-    - path : :class:`Path` The path of the project's folder
-    - type : :class:`PackageType`  Type of the package (library or application)
-    - version : :class:`str` Version of the package
-    - name : :class:`str` Name of the package
-    - exportedSymbol : :class:`str` Name of the exposed symbol of the library.
+    - **path** : :class:`Path` The path of the project's folder
+    - **type** : :class:`PackageType`  Type of the package (library or application)
+    - **version** : :class:`str` Version of the package
+    - **name** : :class:`str` Name of the package
+    - **exportedSymbol** : :class:`str` Name of the exposed symbol of the library.
         If no requirements it is better to keep it empty (the name is used if not provided)
-    - shortDescription : :class:`str` Short description of the package
-    - author : :class:`str`  Main author of the package
-    - userGuide : :class:`Optional[Union[bool, str]]`  optional link to a user guide using standard URL
-    - dependencies : :class:`Dependencies` Dependencies of the package
-    - testConfig : :class:`Optional[str]` An url to the test config used by py-youwol for tests, if need be
-    - devServer : :class:`Optional[DevServer]` Dev. server configuration (relevant only for PackageType.Application)
+    - **shortDescription** : :class:`str` Short description of the package
+    - **author** : :class:`str`  Main author of the package
+    - **userGuide** : :class:`Optional[Union[bool, str]]`  optional link to a user guide using standard URL
+    - **dependencies** : :class:`Dependencies` Dependencies of the package
+    - **auxiliaryModules** : :class:`List[SecondaryEntry]` Auxiliaries modules of the package (lazy-loading).
+    - **testConfig** : :class:`Optional[str]` An url to the test config used by py-youwol for tests, if need be
+    - **devServer** : :class:`Optional[DevServer]` Dev. server configuration (relevant only for PackageType.Application)
     """
     path: Path
     type: PackageType
@@ -76,5 +137,6 @@ class Template(BaseModel):
     author: Optional[str]
     userGuide: bool = False
     dependencies: Dependencies = Dependencies()
+    bundles: Bundles
     testConfig: Optional[str]
     devServer: Optional[DevServer]
