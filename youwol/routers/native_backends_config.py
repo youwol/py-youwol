@@ -6,6 +6,7 @@ import youwol_cdn_backend as cdn
 import youwol_cdn_sessions_storage as cdn_sessions_storage
 import youwol_files_backend as youwol_files_backend
 import youwol_flux_backend as flux_backend
+import youwol_mock_backend as mock_backend
 import youwol_stories_backend as stories
 import youwol_tree_db_backend as tree_db
 from youwol.environment.clients import LocalClients
@@ -178,3 +179,8 @@ async def accounts_backend_config_py_youwol():
         jwt_cache=jwt_cache,
         pkce_cache=pkce_cache
     )
+
+
+async def mock_backend_config_py_youwol():
+    config = await yw_config()
+    return mock_backend.Configuration()

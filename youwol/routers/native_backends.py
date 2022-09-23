@@ -1,7 +1,6 @@
 from dataclasses import dataclass
-from typing import List
-
 from fastapi import APIRouter
+from typing import List
 
 import youwol_accounts as accounts_backend
 import youwol_assets_backend as assets_backend
@@ -11,12 +10,13 @@ import youwol_cdn_backend as cdn_backend
 import youwol_cdn_sessions_storage as cdn_sessions_storage
 import youwol_files_backend as files_backend
 import youwol_flux_backend as flux_backend
+import youwol_mock_backend as mock_backend
 import youwol_stories_backend as stories_backend
 import youwol_tree_db_backend as tree_db_backend
 from youwol.routers.native_backends_config import assets_gtw_config_py_youwol, stories_config_py_youwol, \
     cdn_config_py_youwol, cdn_apps_server_config_py_youwol, tree_db_config_py_youwol, assets_backend_config_py_youwol, \
     flux_backend_config_py_youwol, cdn_session_storage_config_py_youwol, files_backend_config_py_youwol, \
-    accounts_backend_config_py_youwol
+    accounts_backend_config_py_youwol, mock_backend_config_py_youwol
 
 router = APIRouter()
 
@@ -78,6 +78,11 @@ backends = [
         prefix="/api/accounts",
         tags=["accounts"],
         router=accounts_backend.get_router(accounts_backend_config_py_youwol)
+    ),
+    BackendPlugin(
+        prefix="/api/fake",
+        tags=["fake"],
+        router=mock_backend.get_router(mock_backend_config_py_youwol)
     )
 ]
 
