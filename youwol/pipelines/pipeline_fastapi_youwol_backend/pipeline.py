@@ -249,7 +249,7 @@ async def pipeline(
                 PullStep(),
                 NewBranchStep(),
                 UpdatePyYouwolStep(),
-                PublishDockerStep(dockerRepo=docker_repo),
+                PublishDockerStep(imageVersion=lambda p, _: p.version, dockerRepo=docker_repo),
                 SyncHelmDeps(),
                 InstallDryRunHelmStep(
                     config=dry_run_config
