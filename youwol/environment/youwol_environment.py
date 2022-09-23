@@ -24,7 +24,7 @@ from youwol.configuration.defaults import default_platform_host
 from youwol.configuration.models_config import JwtSource, ProjectTemplate
 from youwol.configuration.models_k8s import PipelinesSourceInfo
 from youwol.environment.clients import LocalClients
-from youwol.environment.models import RemoteGateway, UserInfo, ApiConfiguration, Events, K8sInstance
+from youwol.environment.models import RemoteGateway, UserInfo, ApiConfiguration, Events
 from youwol.environment.models_project import ErrorResponse
 from youwol.environment.paths import PathsBook, ensure_config_file_exists_or_create_it
 from youwol.main_args import get_main_arguments, MainArguments
@@ -79,7 +79,6 @@ class YouwolEnvironment(BaseModel):
 
     tokensCache: List[DeadlinedCache] = []
 
-    k8sInstance: Optional[K8sInstance]
     pipelinesSourceInfo: Optional[PipelinesSourceInfo]
 
     def reset_cache(self):
@@ -193,7 +192,6 @@ Configuration loaded from '{self.pathsBook.config}'
 {str_redirections()}
 {str_commands()}
 {str_routers()}
-{self.k8sInstance.__str__() if self.k8sInstance else "- not connected to a k8s cluster"}
 """
 
 
@@ -437,14 +435,6 @@ async def safe_load(
         remotes_info=paths_book.remotesInfo,
         context=context)
 
-    k8s_cluster = conf_handler.get_k8s_cluster()
-    if k8s_cluster:
-        # This dynamic import prevent 'paying the price' of k8s load-time/imports error/... if actually not needed
-        from youwol.utils.k8s_utils import ensure_k8s_proxy_running
-        k8s_instance = K8sInstance(**k8s_cluster.dict(), instanceInfo=await ensure_k8s_proxy_running(k8s_cluster))
-    else:
-        k8s_instance = None
-
     youwol_configuration = YouwolEnvironment(
         activeProfile=conf_handler.get_profile(),
         jwtSource=conf_handler.get_jwt_source(),
@@ -461,7 +451,6 @@ async def safe_load(
         pathsBook=paths_book,
         commands=conf_handler.get_commands(),
         customDispatches=conf_handler.get_dispatches(),
-        k8sInstance=k8s_instance,
         projectTemplates=conf_handler.get_project_templates(),
         pipelinesSourceInfo=conf_handler.get_pipelines_source_info()
     )

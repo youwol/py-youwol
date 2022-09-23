@@ -8,7 +8,7 @@ from youwol.configuration.defaults import default_http_port, default_path_data_d
     default_path_cache_dir, default_path_projects_dir, default_port_range_start, default_port_range_end, \
     default_platform_host, default_jwt_source
 from youwol.configuration.models_config import Profiles, ConfigurationData, PortRange, ModuleLoading, \
-    CascadeBaseProfile, CascadeAppend, CascadeReplace, CdnOverride, Redirection, K8sCluster, JwtSource
+    CascadeBaseProfile, CascadeAppend, CascadeReplace, CdnOverride, Redirection, JwtSource
 from youwol.configuration.models_k8s import PipelinesSourceInfo
 
 from youwol.environment.models import Events, IConfigurationCustomizer
@@ -251,9 +251,6 @@ class ConfigurationHandler:
 
         return [ensure_dir_exists(path=path, root_candidates=path_user_lib)
                 for path in paths]
-
-    def get_k8s_cluster(self) -> K8sCluster:
-        return self.effective_config_data.k8sCluster
 
     def get_pipelines_source_info(self) -> PipelinesSourceInfo:
         return self.effective_config_data.pipelinesSourceInfo
