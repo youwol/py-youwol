@@ -23,7 +23,7 @@ class Resource(BaseModel):
 
 async def helm_list(namespace: Optional[str], kube_context: str, selector: Optional[Selector],
                     context: Optional[Context]):
-    cmd = f"helm list --kube_context {kube_context}"
+    cmd = f"helm list --kube-context {kube_context}"
     if namespace:
         cmd += f" --namespace {namespace}"
     if selector and selector.name:
@@ -72,7 +72,7 @@ async def helm_upgrade(release_name: str, kube_context: str, namespace: str, val
 
 
 async def helm_uninstall(release_name: str, kube_context: str,  namespace: str, context: Context = None):
-    cmd = f"helm uninstall --namespace {namespace} --kube_context {kube_context} {release_name}"
+    cmd = f"helm uninstall --namespace {namespace} --kube-context {kube_context} {release_name}"
     context and await context.info(text=cmd)
     await execute_shell_cmd(cmd, context)
 
@@ -82,7 +82,7 @@ async def helm_install_or_upgrade(release_name: str, namespace: str, values_file
 
     async with context.start(action="helm_install_or_upgrade") as ctx:  # type: Context
         cmd = f"helm upgrade --install {release_name} --create-namespace --namespace {namespace} " + \
-              f"--kube_context {kube_context} --values {str(values_file)} --atomic " \
+              f"--kube-context {kube_context} --values {str(values_file)} --atomic " \
               f"--timeout {timeout}s {str(chart_folder)} {args}"
         return_code, outputs = await execute_shell_cmd(cmd, ctx)
 
