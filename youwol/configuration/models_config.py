@@ -4,7 +4,7 @@ from typing import List, Union, Optional, Dict
 
 from pydantic import BaseModel
 
-from youwol.configuration.models_k8s import K8sCluster, Deployment
+from youwol.configuration.models_k8s import K8sCluster, PipelinesSourceInfo
 from youwol.environment.models import Events
 from youwol.environment.models_project import ProjectTemplate
 from youwol.middlewares.models_dispatch import AbstractDispatch, RedirectDispatch
@@ -66,7 +66,7 @@ class ConfigurationData(BaseModel):
     customCommands: List[Union[str, Command, ModuleLoading]] = []
     customize: Optional[Union[str, ModuleLoading]]
     k8sCluster: Optional[K8sCluster]
-    deployments: Optional[List[Deployment]]
+    pipelinesSourceInfo: PipelinesSourceInfo
 
 
 class CascadeBaseProfile(Enum):

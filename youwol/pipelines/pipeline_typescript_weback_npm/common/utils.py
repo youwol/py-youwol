@@ -7,7 +7,7 @@ from typing import Dict, List, Union
 import pyparsing
 import semantic_version
 
-from youwol.configuration.models_k8s import YouWolCDN
+from youwol.configuration.models_k8s import YwCdnPackagesPublish
 from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.pipelines import PublishCdnRemoteStep
 from youwol.pipelines.pipeline_typescript_weback_npm.common import Template, PackageType
@@ -162,7 +162,8 @@ def generate_webpack_config(source: Path, working_path: Path, input_template: Te
 async def create_sub_pipelines_publish(start_step: str, context: Context):
 
     env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
-    cdn_targets = next(deployment for deployment in env.deployments if isinstance(deployment, YouWolCDN))
+    cdn_targets = next(uploadTarget for uploadTarget in env.pipelinesSourceInfo.uploadTargets
+                       if isinstance(uploadTarget, YwCdnPackagesPublish))
 
     publish_remote_steps = [PublishCdnRemoteStep(id=f'publish_remote_{cdn_target.name}',
                                                  cdnTarget=cdn_target)

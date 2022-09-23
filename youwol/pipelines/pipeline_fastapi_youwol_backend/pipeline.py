@@ -7,7 +7,7 @@ import yaml
 from pydantic import BaseModel
 
 import youwol_utils
-from youwol.configuration.models_k8s import K8s
+from youwol.configuration.models_k8s import HelmChartsInstall
 from youwol.environment.models import K8sInstance
 from youwol.environment.models_project import Manifest, PipelineStepStatus, Link, Flow, \
     SourcesFctImplicit, Pipeline, PipelineStep, FileListing, \
@@ -277,7 +277,8 @@ async def pipeline(
         env: YouwolEnvironment = await ctx.get('env', YouwolEnvironment)
         dry_run_config = InstallHelmStepConfig(**config.helmConfig.dict())
         dry_run_config.overridingHelmValues = add_dry_values
-        k8s = next(deployment for deployment in env.deployments if isinstance(deployment, K8s))
+        k8s = next(deployment for deployment in env.pipelinesSourceInfo.uploadTargets
+                   if isinstance(deployment, HelmChartsInstall))
 
         install_helm_steps = [InstallHelmStep(id=f'install-helm_{k8sTarget.name}',
                                               config=config.helmConfig,

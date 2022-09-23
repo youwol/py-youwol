@@ -41,7 +41,7 @@ class PublishDockerStep(PipelineStep):
                                                                   'saved fp': last_manifest.fingerprint})
             return PipelineStepStatus.outdated
 
-        docker_url = self.dockerRepo.imageUrlBuilder(project, context)
+        docker_url = self.dockerRepo.get_project_url(project, context)
         return_code, outputs = await execute_shell_cmd(
             cmd=f"docker manifest inspect {docker_url}:{project.version}",
             context=context
@@ -58,7 +58,7 @@ class PublishDockerStep(PipelineStep):
         return self.imageVersion(project, context)
 
     def docker_build_command(self, project: Project, context: Context):
-        docker_url = self.dockerRepo.imageUrlBuilder(project, context)
+        docker_url = self.dockerRepo.get_project_url(project, context)
 
         image_version = self.get_image_version(project, context)
         return f"docker build -t {project.name} ." \

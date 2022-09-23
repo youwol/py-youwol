@@ -9,7 +9,7 @@ from youwol.configuration.defaults import default_http_port, default_path_data_d
     default_platform_host, default_jwt_source
 from youwol.configuration.models_config import Profiles, ConfigurationData, PortRange, ModuleLoading, \
     CascadeBaseProfile, CascadeAppend, CascadeReplace, CdnOverride, Redirection, K8sCluster, JwtSource
-from youwol.configuration.models_k8s import Deployment
+from youwol.configuration.models_k8s import PipelinesSourceInfo
 
 from youwol.environment.models import Events, IConfigurationCustomizer
 from youwol.environment.models_project import ProjectTemplate
@@ -47,6 +47,9 @@ def replace_with(parent: ConfigurationData, replacement: ConfigurationData) -> C
         events=replacement.events if replacement.events else parent.events,
         customCommands=replacement.customCommands if replacement.customCommands else parent.customCommands,
         customize=replacement.customize if replacement.customize else parent.customize,
+        pipelinesSourceInfo=replacement.pipelinesSourceInfo
+        if replacement.pipelinesSourceInfo
+        else parent.pipelinesSourceInfo
     )
 
 
@@ -252,8 +255,8 @@ class ConfigurationHandler:
     def get_k8s_cluster(self) -> K8sCluster:
         return self.effective_config_data.k8sCluster
 
-    def get_deployments(self) -> List[Deployment]:
-        return self.effective_config_data.deployments
+    def get_pipelines_source_info(self) -> PipelinesSourceInfo:
+        return self.effective_config_data.pipelinesSourceInfo
 
     def get_ports_book(self) -> Dict[str, int]:
         return self.effective_config_data.portsBook or {}

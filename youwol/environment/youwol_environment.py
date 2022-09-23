@@ -22,7 +22,7 @@ from youwol.configuration.configuration_validation import (
 )
 from youwol.configuration.defaults import default_platform_host
 from youwol.configuration.models_config import JwtSource, ProjectTemplate
-from youwol.configuration.models_k8s import Deployment
+from youwol.configuration.models_k8s import PipelinesSourceInfo
 from youwol.environment.clients import LocalClients
 from youwol.environment.models import RemoteGateway, UserInfo, ApiConfiguration, Events, K8sInstance
 from youwol.environment.models_project import ErrorResponse
@@ -80,7 +80,7 @@ class YouwolEnvironment(BaseModel):
     tokensCache: List[DeadlinedCache] = []
 
     k8sInstance: Optional[K8sInstance]
-    deployments: Optional[List[Deployment]]
+    pipelinesSourceInfo: Optional[PipelinesSourceInfo]
 
     def reset_cache(self):
         self.cache = {}
@@ -445,7 +445,6 @@ async def safe_load(
     else:
         k8s_instance = None
 
-    deployments = conf_handler.get_deployments()
     youwol_configuration = YouwolEnvironment(
         activeProfile=conf_handler.get_profile(),
         jwtSource=conf_handler.get_jwt_source(),
@@ -463,8 +462,8 @@ async def safe_load(
         commands=conf_handler.get_commands(),
         customDispatches=conf_handler.get_dispatches(),
         k8sInstance=k8s_instance,
-        deployments=deployments,
-        projectTemplates=conf_handler.get_project_templates()
+        projectTemplates=conf_handler.get_project_templates(),
+        pipelinesSourceInfo=conf_handler.get_pipelines_source_info()
     )
     return await conf_handler.customize(youwol_configuration)
 
