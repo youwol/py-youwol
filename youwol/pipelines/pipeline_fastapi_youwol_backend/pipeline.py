@@ -1,4 +1,3 @@
-import shutil
 from pathlib import Path
 from typing import List, Optional, Set, Callable
 
@@ -11,9 +10,8 @@ from youwol.configuration.models_k8s import HelmChartsInstall
 from youwol.environment.models import K8sInstance
 from youwol.environment.models_project import Manifest, PipelineStepStatus, Link, Flow, \
     SourcesFctImplicit, Pipeline, PipelineStep, FileListing, \
-    Artifact, Project, RunImplicit, MicroService, ExplicitNone
+    Artifact, Project, RunImplicit, MicroService
 from youwol.environment.youwol_environment import YouwolEnvironment
-from youwol.exceptions import CommandException
 from youwol.pipelines.docker_k8s_helm import get_helm_app_version, InstallHelmStep, InstallHelmStepConfig, \
     PublishDockerStep, PublishDockerStepConfig, InstallDryRunHelmStep
 from youwol.utils.utils_low_level import execute_shell_cmd
@@ -204,58 +202,11 @@ def get_ingress(host: str):
         }
 
 
-class CustomPublishDockerStepConfig(PublishDockerStepConfig):
-    python_modules_copied: List[Path] = []
-
-
 class PipelineConfig(BaseModel):
     tags: List[str] = []
-    k8sInstance: K8sInstance
     docConfig: DocStepConfig
-    dockerConfig: CustomPublishDockerStepConfig
+    dockerConfig: PublishDockerStepConfig
     helmConfig: InstallHelmStepConfig
-
-
-class CustomPublishDockerStep(PublishDockerStep):
-
-    python_modules_copied: List[Path] = [Path(youwol_utils.__file__)]
-    sources: FileListing = FileListing(
-        include=[f"src", 'Dockerfile'],
-        ignore=["src/.virtualenv"]
-    )
-
-    run: ExplicitNone = ExplicitNone()
-
-    async def execute_run(self, project: Project, flow_id: str, context: Context):
-        outputs = []
-
-        async def cp_youwol_utils(ctx_enter: Context):
-            for module_path in self.python_modules_copied:
-                src_path = module_path
-                dest_path = project.path / 'src' / module_path.name
-                shutil.rmtree(dest_path, ignore_errors=True)
-                shutil.copytree(src_path, dest_path)
-                outputs.append(f"cp {src_path} {dest_path}")
-                await ctx_enter.info(text="successfully copied youwol_utils")
-
-        async def rm_youwol_utils(ctx_exit: Context):
-            for module_path in self.python_modules_copied:
-                dest_path = project.path / 'src' / module_path.name
-                outputs.append(f"rm {dest_path}")
-                await ctx_exit.info(text="successfully removed youwol_utils")
-                shutil.rmtree(dest_path, ignore_errors=True)
-
-        async with context.start(
-                action="Publish docker image with youwol_utils copy",
-                on_enter=cp_youwol_utils,
-                on_exit=rm_youwol_utils
-        ) as ctx:  # type: Context
-            cmd = self.docker_build_command(project, context)
-            return_code, cmd_outputs = await execute_shell_cmd(cmd=f"( cd {project.path} && {cmd})", context=ctx)
-            outputs = outputs + cmd_outputs
-            if return_code > 0:
-                raise CommandException(command=cmd, outputs=outputs)
-            return outputs
 
 
 async def pipeline(
