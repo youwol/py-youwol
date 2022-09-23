@@ -43,7 +43,8 @@ async def folder_content(
             files=[],
             folders=[]
         )
-    items = os.listdir(path)
+    # if 'List[str]' not provided => items result in 'Union[List[str], List[bytes]]'...?
+    items: List[str] = os.listdir(path)
     return FolderContentResp(
         files=[item for item in items if os.path.isfile(path / item)],
         folders=[item for item in items if os.path.isdir(path / item)]

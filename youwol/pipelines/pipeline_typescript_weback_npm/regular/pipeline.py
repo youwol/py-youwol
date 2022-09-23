@@ -11,8 +11,9 @@ from youwol.environment.models_project import Manifest, PipelineStepStatus, Link
 from youwol.environment.paths import PathsBook
 from youwol.environment.projects_loader import ProjectLoader
 from youwol.environment.youwol_environment import YouwolEnvironment
+from youwol.pipelines.pipeline_typescript_weback_npm import create_sub_pipelines_publish
 from youwol.pipelines.pipeline_typescript_weback_npm.common import InitStep
-from youwol.pipelines.publish_cdn import PublishCdnLocalStep, PublishCdnRemoteStep
+from youwol.pipelines.publish_cdn import PublishCdnLocalStep
 from youwol_utils import files_check_sum
 from youwol_utils import to_json
 from youwol_utils.context import Context
@@ -115,7 +116,7 @@ class SyncFromDownstreamStep(PipelineStep):
                 return PipelineStepStatus.outdated
 
             # Any of the inner dependencies code in node_modules should be checked to make sure
-            # no 'external' tool (e.g doing 'yarn') changed the node_module files
+            # no 'external' tool (e.g. doing 'yarn') changed the node_module files
             prev_node_module_checksums = last_manifest.cmdOutputs.get('nodeModuleChecksums', {})
             node_module_checksums: Mapping[str, str] = {
                 name: SyncFromDownstreamStep.node_module_checksum(project=project, name=name)
@@ -272,6 +273,9 @@ async def pipeline(config: PipelineConfig, context: Context):
 
     async with context.start(action="pipeline") as ctx:
         await ctx.info(text="Instantiate pipeline", data=config)
+
+        publish_remote_steps, dags = await create_sub_pipelines_publish(start_step="publish-local", context=ctx)
+
         return Pipeline(
             target=config.target,
             tags=["typescript", "webpack", "npm"] + config.with_tags,
@@ -287,14 +291,15 @@ async def pipeline(config: PipelineConfig, context: Context):
                 DocStep(),
                 TestStep(id="test", run="yarn test-coverage", artifacts=config.testConfig.artifacts),
                 PublishCdnLocalStep(packagedArtifacts=config.publishConfig.packagedArtifacts),
-                PublishCdnRemoteStep()
+                *publish_remote_steps
             ],
             flows=[
                 Flow(
                     name="prod",
                     dag=[
-                        "checks > init > sync-deps > build-prod > test > publish-local > publish-remote ",
-                        "build-prod > doc > publish-local"
+                        "checks > init > sync-deps > build-prod > test > publish-local",
+                        "build-prod > doc > publish-local",
+                        *dags
                     ]
                 ),
                 Flow(

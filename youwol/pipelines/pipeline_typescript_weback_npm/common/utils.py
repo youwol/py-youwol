@@ -7,11 +7,14 @@ from typing import Dict, List, Union
 import pyparsing
 import semantic_version
 
+from youwol.environment.youwol_environment import YouwolEnvironment
+from youwol.pipelines import PublishCdnRemoteStep, PackagesPublishYwCdn
 from youwol.pipelines.pipeline_typescript_weback_npm.common import Template, PackageType
 from youwol.utils.utils_low_level import sed_inplace
 from youwol_cdn_backend import get_api_key
 from youwol_cdn_backend.loading_graph_implementation import exportedSymbols
 from youwol_utils import parse_json, write_json, JSON
+from youwol_utils.context import Context
 
 
 def copy_files_folders(working_path: Path, base_template_path: Path,
@@ -31,6 +34,8 @@ def generate_package_json(source: Path, working_path: Path, input_template: Temp
 
     package_json = parse_json(source)
     package_json_app = parse_json(source.parent / 'package.app.json')
+    load_main_externals = {k: v for k, v in input_template.dependencies.runTime.externals.items()
+                           if k in input_template.bundles.mainModule.loadDependencies}
     values = {
         "name": input_template.name,
         "version": input_template.version,
@@ -39,8 +44,8 @@ def generate_package_json(source: Path, working_path: Path, input_template: Temp
         "homepage": f"https://github.com/{input_template.name.replace('@', '')}#README.md",
         "main": f"dist/{input_template.name}.js" if input_template.type == PackageType.Library else "dist/index.html",
         "dependencies": {
-            **input_template.dependencies.runTime.load,
-            **input_template.dependencies.runTime.differed
+            **input_template.dependencies.runTime.externals,
+            **input_template.dependencies.runTime.includedInBundle
         },
         "devDependencies": {
             **input_template.dependencies.devTime,
@@ -48,9 +53,7 @@ def generate_package_json(source: Path, working_path: Path, input_template: Temp
             ** ({} if input_template.type == PackageType.Library else package_json_app['devDependencies'])
         },
         "youwol": {
-            "cdnDependencies": {name: version for name, version in input_template.dependencies.runTime.load.items()
-                                if name not in input_template.dependencies.runTime.includedInBundle
-                                }
+            "cdnDependencies": load_main_externals
         }
     }
     if input_template.type == PackageType.Application:
@@ -65,6 +68,7 @@ def get_imports_from_submodules(input_template: Template, all_runtime_deps: Dict
 
     src_folder = "lib" if input_template.type == PackageType.Library else "app"
     base_path = input_template.path / "src" / src_folder
+
     def clean_import_name(name):
         return name.replace('\'', '').replace(';', '').replace('"', '').replace('\n', '')
 
@@ -106,12 +110,11 @@ def get_externals(input_template: Template):
     externals: Dict[str, Union[str, JSON]] = {}
     exported_symbols: Dict[str, JSON] = {}
 
-    all_runtime = {
-        **input_template.dependencies.runTime.load,
-        **input_template.dependencies.runTime.differed
-    }
-    externals_runtime = {k: v for k, v in all_runtime.items()
-                         if k not in input_template.dependencies.runTime.includedInBundle}
+    all_runtime = {**input_template.dependencies.runTime.externals,
+                   **input_template.dependencies.runTime.includedInBundle}
+
+    externals_runtime = input_template.dependencies.runTime.externals
+
     externals_api_version = {k: get_api_version(v) for k, v in externals_runtime.items()}
 
     imports_from_sub_modules = get_imports_from_submodules(input_template=input_template, all_runtime_deps=all_runtime)
@@ -153,3 +156,16 @@ def generate_webpack_config(source: Path, working_path: Path, input_template: Te
 
     if input_template.type == PackageType.Application:
         sed_inplace(filename, '"{{devServer.port}}"', str(input_template.devServer.port))
+
+
+async def create_sub_pipelines_publish(start_step: str, context: Context):
+
+    env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
+    cdn_targets = next(uploadTarget for uploadTarget in env.pipelinesSourceInfo.uploadTargets
+                       if isinstance(uploadTarget, PackagesPublishYwCdn))
+
+    publish_remote_steps = [PublishCdnRemoteStep(id=f'publish_remote_{cdn_target.name}',
+                                                 cdnTarget=cdn_target)
+                            for cdn_target in cdn_targets.targets]
+    dags = [f'{start_step} > publish_remote_{cdn_target.name}' for cdn_target in cdn_targets.targets]
+    return publish_remote_steps, dags

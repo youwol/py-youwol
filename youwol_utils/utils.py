@@ -1,6 +1,7 @@
 import asyncio
 import base64
 import json
+from datetime import datetime
 from enum import Enum
 from pathlib import Path, PosixPath
 from typing import Union, List, cast, Mapping, Callable, Iterable, Any, NamedTuple, Dict
@@ -240,6 +241,8 @@ def to_serializable_json_leaf(v):
         return v.value
     if isinstance(v, Iterable) and not isinstance(v, list) and not isinstance(v, str):
         v = list(v)
+    if isinstance(v, datetime):
+        return str(v)
     return v
 
 

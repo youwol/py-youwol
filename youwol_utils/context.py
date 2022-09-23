@@ -129,6 +129,7 @@ class Context(NamedTuple):
     with_data: Dict[str, DataType] = {}
     with_attributes: JSON = {}
     with_labels: List[str] = []
+    with_headers: Dict[str, str] = {}
 
     @staticmethod
     def from_request(request: Request):
@@ -139,6 +140,7 @@ class Context(NamedTuple):
                     action: str,
                     with_labels: List[StringLike] = None,
                     with_attributes: JSON = None,
+                    with_headers: Dict[str, str] = None,
                     on_enter: 'CallableBlock' = None,
                     on_exit: 'CallableBlock' = None,
                     on_exception: 'CallableBlockException' = None,
@@ -155,7 +157,9 @@ class Context(NamedTuple):
                       trace_uid=self.trace_uid,
                       with_data=self.with_data,
                       with_labels=[*self.with_labels, *with_labels],
-                      with_attributes={**self.with_attributes, **with_attributes})
+                      with_attributes={**self.with_attributes, **with_attributes},
+                      with_headers={**self.with_headers, **(with_headers or {})}
+                      )
 
         try:
             # When middleware are calling 'next' this seems the only way to pass information
@@ -290,7 +294,8 @@ class Context(NamedTuple):
         return {
             **headers,
             YouwolHeaders.correlation_id: self.uid,
-            YouwolHeaders.trace_id: self.trace_uid
+            YouwolHeaders.trace_id: self.trace_uid,
+            **self.with_headers
         }
 
     @staticmethod

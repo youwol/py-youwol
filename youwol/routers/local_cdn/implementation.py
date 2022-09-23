@@ -42,7 +42,8 @@ async def check_update(
         local_package: TargetPackage,
         context: Context):
 
-    remote_gtw_client = await RemoteClients.get_assets_gateway_client(context=context)
+    env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
+    remote_gtw_client = await RemoteClients.get_assets_gateway_client(remote_host=env.selectedRemote, context=context)
     headers = {
         "authorization": context.request.headers.get("authorization")
     }
@@ -150,7 +151,7 @@ async def download_package(
             on_exit=on_exit,
     ) as ctx:
         env = await context.get('env', YouwolEnvironment)
-        remote_gtw = await RemoteClients.get_assets_gateway_client(context=ctx)
+        remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=env.selectedRemote, context=ctx)
         default_drive = await env.get_default_drive(context=ctx)
         asset_id = encode_id(encode_id(package_name))
 

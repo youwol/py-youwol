@@ -30,7 +30,8 @@ class DownloadDataTask(DownloadTask):
     async def create_local_asset(self):
 
         env = await self.context.get('env', YouwolEnvironment)
-        remote_gtw = await RemoteClients.get_assets_gateway_client(context=self.context)
+        remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=env.selected_remote,
+                                                                   context=self.context)
         default_drive = await env.get_default_drive(context=self.context)
 
         await create_asset_local(

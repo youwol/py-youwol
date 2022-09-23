@@ -20,94 +20,213 @@ __webpack_require__.r(__webpack_exports__);
   \*****************/
 /***/ ((module, __webpack_exports__, __webpack_require__) => {
 
-__webpack_require__.a(module, async (__webpack_handle_async_dependencies__) => {
+__webpack_require__.a(module, async (__webpack_handle_async_dependencies__, __webpack_async_result__) => { try {
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _youwol_cdn_client__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @youwol/cdn-client */ "@youwol/cdn-client");
-/* harmony import */ var _youwol_cdn_client__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_youwol_cdn_client__WEBPACK_IMPORTED_MODULE_0__);
-// Following import is to include style.css in the dist directory (using MiniCssExtractPlugin)
-// (index.html is handled by HtmlWebpackPlugin)
-
+/* harmony import */ var _auto_generated__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../auto-generated */ "../auto-generated.ts");
+/* harmony import */ var _youwol_cdn_client__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @youwol/cdn-client */ "@youwol/cdn-client");
+/* harmony import */ var _youwol_cdn_client__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_youwol_cdn_client__WEBPACK_IMPORTED_MODULE_1__);
 __webpack_require__(/*! ./style.css */ "./style.css");
-let cdn = window['@youwol/cdn-client'];
-var loadingScreen = new cdn.LoadingScreenView({
+
+
+const loadingScreen = new _youwol_cdn_client__WEBPACK_IMPORTED_MODULE_1__.LoadingScreenView({
     container: document.body,
-    mode: 'svg',
 });
 loadingScreen.render();
 // this variable will be used in the on-load.ts to continue displaying dependencies fetching
 window['fluRunnerLoadingScreen'] = loadingScreen;
-await Promise.all([
-    (0,_youwol_cdn_client__WEBPACK_IMPORTED_MODULE_0__.fetchStyleSheets)([
-        'bootstrap#4.4.1~bootstrap.min.css',
-        'fontawesome#5.12.1~css/all.min.css',
-        '@youwol/fv-widgets#0.0.3~dist/assets/styles/style.youwol.css',
-    ]),
-    (0,_youwol_cdn_client__WEBPACK_IMPORTED_MODULE_0__.fetchBundles)({
-        lodash: '4.17.15',
-        grapes: '0.16.2',
-        '@youwol/flux-core': 'latest',
-        '@youwol/flux-view': 'latest',
-        rxjs: '6.5.5',
-    }, window, (event) => {
-        loadingScreen.next(event);
-    }).catch((error) => {
-        loadingScreen.error(error);
-    }),
-]);
+await _auto_generated__WEBPACK_IMPORTED_MODULE_0__.setup.installMainModule({
+    cdnClient: _youwol_cdn_client__WEBPACK_IMPORTED_MODULE_1__,
+    installParameters: {
+        css: [
+            'bootstrap#4.4.1~bootstrap.min.css',
+            'fontawesome#5.12.1~css/all.min.css',
+            '@youwol/fv-widgets#0.0.3~dist/assets/styles/style.youwol.css',
+        ],
+        onEvent: (event) => {
+            loadingScreen.next(event);
+        },
+    },
+});
 await __webpack_require__.e(/*! import() */ "on-load_ts").then(__webpack_require__.bind(__webpack_require__, /*! ./on-load */ "./on-load.ts"));
 
-__webpack_handle_async_dependencies__();
-}, 1);
+__webpack_async_result__();
+} catch(e) { __webpack_async_result__(e); } }, 1);
 
 /***/ }),
 
-/***/ "rxjs":
-/*!***********************!*\
-  !*** external "rxjs" ***!
-  \***********************/
-/***/ ((module) => {
+/***/ "../auto-generated.ts":
+/*!****************************!*\
+  !*** ../auto-generated.ts ***!
+  \****************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
-module.exports = rxjs;
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "setup": () => (/* binding */ setup)
+/* harmony export */ });
+const runTimeDependencies = {
+    "externals": {
+        "@youwol/flux-view": "^1.0.3",
+        "lodash": "^4.17.15",
+        "@youwol/cdn-client": "^1.0.2",
+        "@youwol/flux-core": "^0.2.1",
+        "rxjs": "^6.5.5"
+    },
+    "includedInBundle": {}
+};
+const externals = {
+    "@youwol/flux-view": "window['@youwol/flux-view_APIv1']",
+    "lodash": "window['__APIv4']",
+    "@youwol/cdn-client": "window['@youwol/cdn-client_APIv1']",
+    "@youwol/flux-core": "window['@youwol/flux-core_APIv02']",
+    "rxjs": "window['rxjs_APIv6']",
+    "rxjs/operators": "window['rxjs_APIv6']['operators']"
+};
+const exportedSymbols = {
+    "@youwol/flux-view": {
+        "apiKey": "1",
+        "exportedSymbol": "@youwol/flux-view"
+    },
+    "lodash": {
+        "apiKey": "4",
+        "exportedSymbol": "_"
+    },
+    "@youwol/cdn-client": {
+        "apiKey": "1",
+        "exportedSymbol": "@youwol/cdn-client"
+    },
+    "@youwol/flux-core": {
+        "apiKey": "02",
+        "exportedSymbol": "@youwol/flux-core"
+    },
+    "rxjs": {
+        "apiKey": "6",
+        "exportedSymbol": "rxjs"
+    }
+};
+// eslint-disable-next-line @typescript-eslint/ban-types -- allow to allow no secondary entries
+const mainEntry = {
+    "entryFile": "index.html",
+    "loadDependencies": [
+        "@youwol/flux-view",
+        "lodash",
+        "@youwol/cdn-client",
+        "@youwol/flux-core",
+        "rxjs"
+    ]
+};
+// eslint-disable-next-line @typescript-eslint/ban-types -- allow to allow no secondary entries
+const secondaryEntries = {};
+const entries = {
+    '@youwol/flux-runner': 'index.html',
+    ...Object.values(secondaryEntries).reduce((acc, e) => ({ ...acc, [`@youwol/flux-runner/${e.name}`]: e.entryFile }), {})
+};
+const setup = {
+    name: '@youwol/flux-runner',
+    assetId: 'QHlvdXdvbC9mbHV4LXJ1bm5lcg==',
+    version: '0.1.1-wip',
+    shortDescription: "Flux runner application",
+    developerDocumentation: 'https://platform.youwol.com/applications/@youwol/cdn-explorer/latest?package=@youwol/flux-runner',
+    npmPackage: 'https://www.npmjs.com/package/@youwol/flux-runner',
+    sourceGithub: 'https://github.com/youwol/flux-runner',
+    userGuide: 'https://l.youwol.com/doc/@youwol/flux-runner',
+    apiVersion: '01',
+    runTimeDependencies,
+    externals,
+    exportedSymbols,
+    entries,
+    getDependencySymbolExported: (module) => {
+        return `${exportedSymbols[module].exportedSymbol}_APIv${exportedSymbols[module].apiKey}`;
+    },
+    installMainModule: ({ cdnClient, installParameters }) => {
+        const parameters = installParameters || {};
+        const scripts = parameters.scripts || [];
+        const modules = [
+            ...(parameters.modules || []),
+            ...mainEntry['loadDependencies'].map(d => `${d}#${runTimeDependencies.externals[d]}`)
+        ];
+        return cdnClient.install({
+            ...parameters,
+            modules,
+            scripts,
+        }).then(() => {
+            return window[`@youwol/flux-runner_APIv01`];
+        });
+    },
+    installAuxiliaryModule: ({ name, cdnClient, installParameters }) => {
+        const entry = secondaryEntries[name];
+        const parameters = installParameters || {};
+        const scripts = [
+            ...(parameters.scripts || []),
+            `@youwol/flux-runner#0.1.1-wip~dist/@youwol/flux-runner/${entry.name}.js`
+        ];
+        const modules = [
+            ...(parameters.modules || []),
+            ...entry.loadDependencies.map(d => `${d}#${runTimeDependencies.externals[d]}`)
+        ];
+        if (!entry) {
+            throw Error(`Can not find the secondary entry '${name}'. Referenced in template.py?`);
+        }
+        return cdnClient.install({
+            ...parameters,
+            modules,
+            scripts,
+        }).then(() => {
+            return window[`@youwol/flux-runner/${entry.name}_APIv01`];
+        });
+    }
+};
+
 
 /***/ }),
 
 /***/ "@youwol/cdn-client":
-/*!***********************************************!*\
-  !*** external "window['@youwol/cdn-client']" ***!
-  \***********************************************/
+/*!*****************************************************!*\
+  !*** external "window['@youwol/cdn-client_APIv1']" ***!
+  \*****************************************************/
 /***/ ((module) => {
 
-module.exports = window['@youwol/cdn-client'];
+module.exports = window['@youwol/cdn-client_APIv1'];
 
 /***/ }),
 
 /***/ "@youwol/flux-core":
-/*!**********************************************!*\
-  !*** external "window['@youwol/flux-core']" ***!
-  \**********************************************/
+/*!*****************************************************!*\
+  !*** external "window['@youwol/flux-core_APIv02']" ***!
+  \*****************************************************/
 /***/ ((module) => {
 
-module.exports = window['@youwol/flux-core'];
+module.exports = window['@youwol/flux-core_APIv02'];
 
 /***/ }),
 
 /***/ "@youwol/flux-view":
-/*!**********************************************!*\
-  !*** external "window['@youwol/flux-view']" ***!
-  \**********************************************/
+/*!****************************************************!*\
+  !*** external "window['@youwol/flux-view_APIv1']" ***!
+  \****************************************************/
 /***/ ((module) => {
 
-module.exports = window['@youwol/flux-view'];
+module.exports = window['@youwol/flux-view_APIv1'];
+
+/***/ }),
+
+/***/ "rxjs":
+/*!***************************************!*\
+  !*** external "window['rxjs_APIv6']" ***!
+  \***************************************/
+/***/ ((module) => {
+
+module.exports = window['rxjs_APIv6'];
 
 /***/ }),
 
 /***/ "rxjs/operators":
-/*!**********************************************!*\
-  !*** external "window['rxjs']['operators']" ***!
-  \**********************************************/
+/*!****************************************************!*\
+  !*** external "window['rxjs_APIv6']['operators']" ***!
+  \****************************************************/
 /***/ ((module) => {
 
-module.exports = window['rxjs']['operators'];
+module.exports = window['rxjs_APIv6']['operators'];
 
 /***/ })
 
@@ -143,71 +262,70 @@ module.exports = window['rxjs']['operators'];
 /************************************************************************/
 /******/ 	/* webpack/runtime/async module */
 /******/ 	(() => {
-/******/ 		var webpackThen = typeof Symbol === "function" ? Symbol("webpack then") : "__webpack_then__";
+/******/ 		var webpackQueues = typeof Symbol === "function" ? Symbol("webpack queues") : "__webpack_queues__";
 /******/ 		var webpackExports = typeof Symbol === "function" ? Symbol("webpack exports") : "__webpack_exports__";
-/******/ 		var completeQueue = (queue) => {
-/******/ 			if(queue) {
+/******/ 		var webpackError = typeof Symbol === "function" ? Symbol("webpack error") : "__webpack_error__";
+/******/ 		var resolveQueue = (queue) => {
+/******/ 			if(queue && !queue.d) {
+/******/ 				queue.d = 1;
 /******/ 				queue.forEach((fn) => (fn.r--));
 /******/ 				queue.forEach((fn) => (fn.r-- ? fn.r++ : fn()));
 /******/ 			}
 /******/ 		}
-/******/ 		var completeFunction = (fn) => (!--fn.r && fn());
-/******/ 		var queueFunction = (queue, fn) => (queue ? queue.push(fn) : completeFunction(fn));
 /******/ 		var wrapDeps = (deps) => (deps.map((dep) => {
 /******/ 			if(dep !== null && typeof dep === "object") {
-/******/ 				if(dep[webpackThen]) return dep;
+/******/ 				if(dep[webpackQueues]) return dep;
 /******/ 				if(dep.then) {
 /******/ 					var queue = [];
+/******/ 					queue.d = 0;
 /******/ 					dep.then((r) => {
 /******/ 						obj[webpackExports] = r;
-/******/ 						completeQueue(queue);
-/******/ 						queue = 0;
+/******/ 						resolveQueue(queue);
+/******/ 					}, (e) => {
+/******/ 						obj[webpackError] = e;
+/******/ 						resolveQueue(queue);
 /******/ 					});
-/******/ 					var obj = { [webpackThen]: (fn, reject) => (queueFunction(queue, fn), dep.catch(reject)) };
+/******/ 					var obj = {};
+/******/ 					obj[webpackQueues] = (fn) => (fn(queue));
 /******/ 					return obj;
 /******/ 				}
 /******/ 			}
-/******/ 			return { [webpackThen]: (fn) => (completeFunction(fn)), [webpackExports]: dep };
+/******/ 			var ret = {};
+/******/ 			ret[webpackQueues] = x => {};
+/******/ 			ret[webpackExports] = dep;
+/******/ 			return ret;
 /******/ 		}));
 /******/ 		__webpack_require__.a = (module, body, hasAwait) => {
-/******/ 			var queue = hasAwait && [];
+/******/ 			var queue;
+/******/ 			hasAwait && ((queue = []).d = 1);
+/******/ 			var depQueues = new Set();
 /******/ 			var exports = module.exports;
 /******/ 			var currentDeps;
 /******/ 			var outerResolve;
 /******/ 			var reject;
-/******/ 			var isEvaluating = true;
-/******/ 			var nested = false;
-/******/ 			var whenAll = (deps, onResolve, onReject) => {
-/******/ 				if (nested) return;
-/******/ 				nested = true;
-/******/ 				onResolve.r += deps.length;
-/******/ 				deps.map((dep, i) => (dep[webpackThen](onResolve, onReject)));
-/******/ 				nested = false;
-/******/ 			};
 /******/ 			var promise = new Promise((resolve, rej) => {
 /******/ 				reject = rej;
-/******/ 				outerResolve = () => (resolve(exports), completeQueue(queue), queue = 0);
+/******/ 				outerResolve = resolve;
 /******/ 			});
 /******/ 			promise[webpackExports] = exports;
-/******/ 			promise[webpackThen] = (fn, rejectFn) => {
-/******/ 				if (isEvaluating) { return completeFunction(fn); }
-/******/ 				if (currentDeps) whenAll(currentDeps, fn, rejectFn);
-/******/ 				queueFunction(queue, fn);
-/******/ 				promise.catch(rejectFn);
-/******/ 			};
+/******/ 			promise[webpackQueues] = (fn) => (queue && fn(queue), depQueues.forEach(fn), promise["catch"](x => {}));
 /******/ 			module.exports = promise;
 /******/ 			body((deps) => {
-/******/ 				if(!deps) return outerResolve();
 /******/ 				currentDeps = wrapDeps(deps);
-/******/ 				var fn, result;
-/******/ 				var promise = new Promise((resolve, reject) => {
-/******/ 					fn = () => (resolve(result = currentDeps.map((d) => (d[webpackExports]))));
+/******/ 				var fn;
+/******/ 				var getResult = () => (currentDeps.map((d) => {
+/******/ 					if(d[webpackError]) throw d[webpackError];
+/******/ 					return d[webpackExports];
+/******/ 				}))
+/******/ 				var promise = new Promise((resolve) => {
+/******/ 					fn = () => (resolve(getResult));
 /******/ 					fn.r = 0;
-/******/ 					whenAll(currentDeps, fn, reject);
+/******/ 					var fnQueue = (q) => (q !== queue && !depQueues.has(q) && (depQueues.add(q), q && !q.d && (fn.r++, q.push(fn))));
+/******/ 					currentDeps.map((dep) => (dep[webpackQueues](fnQueue)));
 /******/ 				});
-/******/ 				return fn.r ? promise : result;
-/******/ 			}).then(outerResolve, reject);
-/******/ 			isEvaluating = false;
+/******/ 				return fn.r ? promise : getResult();
+/******/ 			}, (err) => ((err ? reject(promise[webpackError] = err) : outerResolve(exports)), resolveQueue(queue)));
+/******/ 			queue && (queue.d = 0);
 /******/ 		};
 /******/ 	})();
 /******/ 	
@@ -253,7 +371,7 @@ module.exports = window['rxjs']['operators'];
 /******/ 		// This function allow to reference async chunks
 /******/ 		__webpack_require__.u = (chunkId) => {
 /******/ 			// return url for filenames based on template
-/******/ 			return "" + chunkId + "." + "6ab40c6918bc60d90711" + ".js";
+/******/ 			return "" + chunkId + "." + "fdb7e88f67ac0ae6bc0d" + ".js";
 /******/ 		};
 /******/ 	})();
 /******/ 	
@@ -262,7 +380,7 @@ module.exports = window['rxjs']['operators'];
 /******/ 		// This function allow to reference all chunks
 /******/ 		__webpack_require__.miniCssF = (chunkId) => {
 /******/ 			// return url for filenames based on template
-/******/ 			return undefined;
+/******/ 			return "style." + "29a727c7731e84e314ac" + ".css";
 /******/ 		};
 /******/ 	})();
 /******/ 	
@@ -426,19 +544,21 @@ module.exports = window['rxjs']['operators'];
 /******/ 			// add "moreModules" to the modules object,
 /******/ 			// then flag all "chunkIds" as loaded and fire callback
 /******/ 			var moduleId, chunkId, i = 0;
-/******/ 			for(moduleId in moreModules) {
-/******/ 				if(__webpack_require__.o(moreModules, moduleId)) {
-/******/ 					__webpack_require__.m[moduleId] = moreModules[moduleId];
+/******/ 			if(chunkIds.some((id) => (installedChunks[id] !== 0))) {
+/******/ 				for(moduleId in moreModules) {
+/******/ 					if(__webpack_require__.o(moreModules, moduleId)) {
+/******/ 						__webpack_require__.m[moduleId] = moreModules[moduleId];
+/******/ 					}
 /******/ 				}
+/******/ 				if(runtime) var result = runtime(__webpack_require__);
 /******/ 			}
-/******/ 			if(runtime) runtime(__webpack_require__);
 /******/ 			if(parentChunkLoadingFunction) parentChunkLoadingFunction(data);
 /******/ 			for(;i < chunkIds.length; i++) {
 /******/ 				chunkId = chunkIds[i];
 /******/ 				if(__webpack_require__.o(installedChunks, chunkId) && installedChunks[chunkId]) {
 /******/ 					installedChunks[chunkId][0]();
 /******/ 				}
-/******/ 				installedChunks[chunkIds[i]] = 0;
+/******/ 				installedChunks[chunkId] = 0;
 /******/ 			}
 /******/ 		
 /******/ 		}
@@ -457,4 +577,4 @@ module.exports = window['rxjs']['operators'];
 /******/ 	
 /******/ })()
 ;
-//# sourceMappingURL=main.e1ce2ddc9b8f6ddf6a4d.js.map
+//# sourceMappingURL=main.4dd266971cc92c3a3cc3.js.map

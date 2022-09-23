@@ -80,5 +80,6 @@ class LocalFileSystem(FileSystemInterface):
     def ensure_object_exist(self, object_name: str):
         path = self.get_full_path(object_name)
         if not path.exists():
-            raise HTTPException(status_code=404, detail=f"LocalFileSystem.ensure_object_exist: Object '{path}' not found")
+            raise HTTPException(status_code=404,
+                                detail=f"LocalFileSystem.ensure_object_exist: Object '{path}' not found")
         return path

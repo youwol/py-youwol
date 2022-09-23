@@ -5,9 +5,7 @@
 #    sh deps/manage.sh compile
 #
 aiohttp==3.8.1
-    # via
-    #   -r deps/base.in
-    #   kubernetes-asyncio
+    # via -r deps/base.in
 aiosignal==1.2.0
     # via aiohttp
 aiostream==0.4.4
@@ -27,9 +25,7 @@ attrs==21.4.0
 brotli==1.0.9
     # via -r deps/base.in
 certifi==2022.6.15
-    # via
-    #   kubernetes-asyncio
-    #   minio
+    # via minio
 cffi==1.15.0
     # via cryptography
 charset-normalizer==2.0.12
@@ -66,8 +62,6 @@ importlib-metadata==4.12.0
     # via markdown
 iniconfig==1.1.1
     # via pytest
-kubernetes-asyncio==23.6.0
-    # via -r deps/base.in
 lockfile==0.12.2
     # via python-daemon
 mako==1.2.2
@@ -116,23 +110,16 @@ pytest-cov==3.0.0
     # via -r deps/dev.in
 python-daemon==2.3.0
     # via -r deps/base.in
-python-dateutil==2.8.2
-    # via kubernetes-asyncio
 python-multipart==0.0.5
     # via -r deps/base.in
 pyyaml==6.0
-    # via
-    #   -r deps/base.in
-    #   kubernetes-asyncio
+    # via -r deps/base.in
 redis==4.3.4
     # via -r deps/base.in
 semantic-version==2.10.0
     # via -r deps/base.in
 six==1.16.0
-    # via
-    #   kubernetes-asyncio
-    #   python-dateutil
-    #   python-multipart
+    # via python-multipart
 sniffio==1.2.0
     # via anyio
 starlette==0.19.1
@@ -147,9 +134,7 @@ typing-extensions==4.2.0
     #   pydantic
     #   starlette
 urllib3==1.26.9
-    # via
-    #   kubernetes-asyncio
-    #   minio
+    # via minio
 uvicorn==0.18.2
     # via -r deps/base.in
 websockets==10.3
@@ -170,6 +155,5 @@ pip==22.2.2
     #   pip-tools
 setuptools==62.6.0
     # via
-    #   kubernetes-asyncio
     #   pip-tools
     #   python-daemon

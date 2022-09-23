@@ -8,9 +8,9 @@ from youwol.configuration.defaults import default_http_port, default_path_data_d
     default_path_cache_dir, default_path_projects_dir, default_port_range_start, default_port_range_end, \
     default_platform_host, default_jwt_source
 from youwol.configuration.models_config import Profiles, ConfigurationData, PortRange, ModuleLoading, \
-    CascadeBaseProfile, CascadeAppend, CascadeReplace, CdnOverride, Redirection, K8sCluster, JwtSource
+    CascadeBaseProfile, CascadeAppend, CascadeReplace, CdnOverride, Redirection, JwtSource, PipelinesSourceInfo
+
 from youwol.environment.models import Events, IConfigurationCustomizer
-from youwol.environment.models_project import ProjectTemplate
 from youwol.environment.paths import app_dirs
 from youwol.main_args import get_main_arguments
 from youwol.middlewares.models_dispatch import CdnOverrideDispatch, RedirectDispatch, AbstractDispatch
@@ -45,6 +45,9 @@ def replace_with(parent: ConfigurationData, replacement: ConfigurationData) -> C
         events=replacement.events if replacement.events else parent.events,
         customCommands=replacement.customCommands if replacement.customCommands else parent.customCommands,
         customize=replacement.customize if replacement.customize else parent.customize,
+        pipelinesSourceInfo=replacement.pipelinesSourceInfo
+        if replacement.pipelinesSourceInfo
+        else parent.pipelinesSourceInfo
     )
 
 
@@ -247,17 +250,14 @@ class ConfigurationHandler:
         return [ensure_dir_exists(path=path, root_candidates=path_user_lib)
                 for path in paths]
 
-    def get_k8s_cluster(self) -> K8sCluster:
-        return self.effective_config_data.k8sCluster
+    def get_pipelines_source_info(self) -> PipelinesSourceInfo:
+        return self.effective_config_data.pipelinesSourceInfo
 
     def get_ports_book(self) -> Dict[str, int]:
         return self.effective_config_data.portsBook or {}
 
     def get_routers(self) -> List[FastApiRouter]:
         return self.effective_config_data.routers or []
-
-    def get_project_templates(self) -> List[ProjectTemplate]:
-        return self.effective_config_data.projectTemplates
 
 
 def ensure_loading_source_exists(arg: Union[str, ModuleLoading],

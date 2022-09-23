@@ -14,9 +14,11 @@ def generate_template(input_template: Template):
 
     input_template.dependencies = Dependencies(
         runTime=RunTimeDeps(
-            load={**input_template.dependencies.runTime.load, input_template.name: input_template.version},
-            differed=input_template.dependencies.runTime.differed,
-            includedInBundle=[*input_template.dependencies.runTime.includedInBundle, input_template.name]
+            externals={},
+            includedInBundle={
+                **input_template.dependencies.runTime.includedInBundle,
+                input_template.name: input_template.version
+            }
         ),
         devTime=input_template.dependencies.devTime
     )

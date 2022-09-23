@@ -77,9 +77,7 @@ aiohttp==3.8.1 \
     --hash=sha256:f5315a2eb0239185af1bddb1abf472d877fede3cc8d143c6cddad37678293237 \
     --hash=sha256:fa0ffcace9b3aa34d205d8130f7873fcfefcb6a4dd3dd705b0dab69af6712642 \
     --hash=sha256:fc5471e1a54de15ef71c1bc6ebe80d4dc681ea600e68bfd1cbce40427f0b7578
-    # via
-    #   -r deps/base.in
-    #   kubernetes-asyncio
+    # via -r deps/base.in
 aiosignal==1.2.0 \
     --hash=sha256:26e62109036cd181df6e6ad646f91f0dcfd05fe16d0cb924138ff2ab75d64e3a \
     --hash=sha256:78ed67db6c7b7ced4f98e495e572106d5c432a93e1ddd1bf475e1dc05f5b7df2
@@ -174,9 +172,7 @@ brotli==1.0.9 \
 certifi==2022.6.15 \
     --hash=sha256:84c85a9078b11105f04f3036a9482ae10e4621616db313fe045dd24743a0820d \
     --hash=sha256:fe86415d55e84719d75f8b69414f6438ac3547d2078ab91b67e779ef69378412
-    # via
-    #   kubernetes-asyncio
-    #   minio
+    # via minio
 cffi==1.15.0 \
     --hash=sha256:00c878c90cb53ccfaae6b8bc18ad05d2036553e6d9d1d9dbcf323bbe83854ca3 \
     --hash=sha256:0104fb5ae2391d46a4cb082abdd5c69ea4eab79d8d44eaaf79f1b1fd806ee4c2 \
@@ -407,10 +403,6 @@ iniconfig==1.1.1 \
     --hash=sha256:011e24c64b7f47f6ebd835bb12a743f2fbe9a26d4cecaa7f53bc4f35ee9da8b3 \
     --hash=sha256:bc3af051d7d14b2ee5ef9969666def0cd1a000e121eaea580d4a313df4b37f32
     # via pytest
-kubernetes-asyncio==23.6.0 \
-    --hash=sha256:4e6736e46ce4d07d9a33738f9e013e7e9d5c61a8d5b6d44c793480a6608c39a2 \
-    --hash=sha256:68c6a18c2ca3a5515b59cc43aec6fcd5832afe3a513b70636ac772948b46695e
-    # via -r deps/base.in
 lockfile==0.12.2 \
     --hash=sha256:6aed02de03cba24efabcd600b30540140634fc06cfa603822d508d5361e9f799 \
     --hash=sha256:6c3cb24f344923d30b2785d5ad75182c8ea7ac1b6171b08657258ec7429d50fa
@@ -695,10 +687,6 @@ python-daemon==2.3.0 \
     --hash=sha256:191c7b67b8f7aac58849abf54e19fe1957ef7290c914210455673028ad454989 \
     --hash=sha256:bda993f1623b1197699716d68d983bb580043cf2b8a66a01274d9b8297b0aeaf
     # via -r deps/base.in
-python-dateutil==2.8.2 \
-    --hash=sha256:0123cacc1627ae19ddf3c27a5de5bd67ee4586fbdd6440d9748f8abb483d3e86 \
-    --hash=sha256:961d03dc3453ebbc59dbdea9e4e11c5651520a876d0f4db161e8674aae935da9
-    # via kubernetes-asyncio
 python-multipart==0.0.5 \
     --hash=sha256:f7bb5f611fc600d15fa47b3974c8aa16e93724513b49b5f95c81e6624c83fa43
     # via -r deps/base.in
@@ -736,9 +724,7 @@ pyyaml==6.0 \
     --hash=sha256:daf496c58a8c52083df09b80c860005194014c3698698d1a57cbcfa182142a3a \
     --hash=sha256:e61ceaab6f49fb8bdfaa0f92c4b57bcfbea54c09277b1b4f7ac376bfb7a7c174 \
     --hash=sha256:f84fbc98b019fef2ee9a1cb3ce93e3187a6df0b2538a651bfb890254ba9f90b5
-    # via
-    #   -r deps/base.in
-    #   kubernetes-asyncio
+    # via -r deps/base.in
 redis==4.3.4 \
     --hash=sha256:a52d5694c9eb4292770084fa8c863f79367ca19884b329ab574d5cb2036b3e54 \
     --hash=sha256:ddf27071df4adf3821c4f2ca59d67525c3a82e5f268bed97b813cb4fabf87880
@@ -750,10 +736,7 @@ semantic-version==2.10.0 \
 six==1.16.0 \
     --hash=sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926 \
     --hash=sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254
-    # via
-    #   kubernetes-asyncio
-    #   python-dateutil
-    #   python-multipart
+    # via python-multipart
 sniffio==1.2.0 \
     --hash=sha256:471b71698eac1c2112a40ce2752bb2f4a4814c22a54a3eed3676bc0f5ca9f663 \
     --hash=sha256:c4666eecec1d3f50960c6bdf61ab7bc350648da6c126e3cf6898d8cd4ddcd3de
@@ -778,9 +761,7 @@ typing-extensions==4.2.0 \
 urllib3==1.26.9 \
     --hash=sha256:44ece4d53fb1706f667c9bd1c648f5469a2ec925fcf3a776667042d645472c14 \
     --hash=sha256:aabaf16477806a5e1dd19aa41f8c2b7950dd3c746362d7e3223dbe6de6ac448e
-    # via
-    #   kubernetes-asyncio
-    #   minio
+    # via minio
 uvicorn==0.18.2 \
     --hash=sha256:c19a057deb1c5bb060946e2e5c262fc01590c6529c0af2c3d9ce941e89bc30e0 \
     --hash=sha256:cade07c403c397f9fe275492a48c1b869efd175d5d8a692df649e6e7e2ed8f4e
@@ -995,6 +976,5 @@ setuptools==62.6.0 \
     --hash=sha256:990a4f7861b31532871ab72331e755b5f14efbe52d336ea7f6118144dd478741 \
     --hash=sha256:c1848f654aea2e3526d17fc3ce6aeaa5e7e24e66e645b5be2171f3f6b4e5a178
     # via
-    #   kubernetes-asyncio
     #   pip-tools
     #   python-daemon

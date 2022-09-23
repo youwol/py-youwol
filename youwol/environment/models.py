@@ -5,7 +5,6 @@ from typing import List, Dict, Callable, Optional, Union, Any, Awaitable
 
 from pydantic import BaseModel
 
-from youwol.configuration.models_k8s import K8sCluster
 from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol.environment.models_project import Pipeline
 from youwol_utils.clients.oidc.oidc_config import PrivateClient, PublicClient
@@ -85,13 +84,4 @@ class K8sInstanceInfo(BaseModel):
 - dashboard: {self.k8s_api_proxy}{main}
 - access_token: {self.access_token}
 - {len(self.nodes)} nodes: {nodes_info}
-"""
-
-
-class K8sInstance(K8sCluster):
-    instanceInfo: K8sInstanceInfo
-
-    def __str__(self):
-        return f"""{super().__str__()}
-{self.instanceInfo.__str__()}
 """

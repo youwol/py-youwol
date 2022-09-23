@@ -56,7 +56,8 @@ class GetChildrenDispatch(AbstractDispatch):
                                     "remote")
                 await ensure_local_path(folder_id=folder_id, env=env, context=ctx)
 
-            remote_gtw_treedb = await RemoteClients.get_gtw_treedb_client(context=ctx)
+            assets_gtw = await RemoteClients.get_assets_gateway_client(remote_host=env.selectedRemote, context=context)
+            remote_gtw_treedb = assets_gtw.get_treedb_backend_router()
 
             local_resp, remote_resp = await asyncio.gather(
                 local_gtw_treedb.get_children(folder_id=folder_id, headers=ctx.headers()),
@@ -128,7 +129,7 @@ class GetPermissionsDispatch(AbstractDispatch):
 
             env = await ctx.get('env', YouwolEnvironment)
             local_gtw = LocalClients.get_assets_gateway_client(env=env)
-            remote_gtw = await RemoteClients.get_assets_gateway_client(context=ctx)
+            remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=env.selectedRemote, context=ctx)
             item_id = request.url.path.split('/api/assets-gateway/tree/')[1].split('/')[0]
 
             local_resp, remote_resp = await asyncio.gather(
@@ -164,7 +165,7 @@ class GetItemDispatch(AbstractDispatch):
         async with context.start(action="GetItemDispatch.apply") as ctx:
             env = await ctx.get('env', YouwolEnvironment)
             local_gtw = LocalClients.get_assets_gateway_client(env=env)
-            remote_gtw = await RemoteClients.get_assets_gateway_client(context=ctx)
+            remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=env.selectedRemote, context=ctx)
             item_id = request.url.path.split('/api/assets-gateway/tree/items/')[1]
 
             local_resp, remote_resp = await asyncio.gather(
