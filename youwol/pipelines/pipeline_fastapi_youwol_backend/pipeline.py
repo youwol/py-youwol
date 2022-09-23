@@ -233,7 +233,7 @@ async def pipeline(
 
         install_helm_steps = [InstallHelmStep(id=f'install-helm_{k8sTarget.name}',
                                               config=config.helmConfig,
-                                              k8sContext=k8sTarget.context)
+                                              k8sTarget=k8sTarget)
                               for k8sTarget in k8s.targets]
 
         dags = [f'dry-run-helm > install-helm_{k8sTarget.name}' for k8sTarget in k8s.targets]
@@ -270,7 +270,7 @@ async def pipeline(
         )
 
 
-async def get_backend_apps_yw_config(name: str, context: Context):
+async def get_backend_apps_yw_pipeline(name: str, context: Context):
     async with context.start(
             action=f"Youwol backend {name} pipeline creation",
             with_attributes={'project': name}

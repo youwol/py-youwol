@@ -1,15 +1,14 @@
 import os
 from pathlib import Path
-from typing import Callable, Union, List, Optional
+from typing import Callable, Union, List, Optional, NamedTuple
 
 from pydantic import BaseModel
-from kubernetes_asyncio import config as k8s_config
-from youwol.configuration.models_k8s import DockerRepo
+
+from youwol.configuration.models_config import UploadTarget, UploadTargets
 from youwol.environment.models_project import PipelineStep, Project, ExplicitNone, FlowId, RunImplicit, Manifest, \
     PipelineStepStatus, FileListing
 from youwol.exceptions import CommandException
 from youwol.pipelines.deploy_service import HelmPackage
-from youwol.utils.k8s_utils import get_cluster_info
 from youwol.utils.utils_low_level import execute_shell_cmd
 from youwol_utils.context import Context
 from youwol_utils.utils_paths import parse_yaml
@@ -149,76 +148,21 @@ class InstallHelmStep(PipelineStep):
     isRunning: bool = False
     id = 'install-helm'
     config: InstallHelmStepConfig
-    k8sContext: str
+    k8sTarget: K8sClusterTarget
     run: ExplicitNone = ExplicitNone()
 
-    async def get_helm_package(self, project: Project, context: Context):
-
-        helm_package = get_helm_package(config=self.config, project=project, context=context)
-        await context.send(data=helm_package)
-        return helm_package
-
     async def execute_run(self, project: Project, flow_id: FlowId, context: Context):
-        global install_helm_running
-        if install_helm_running:
-            raise CommandException(command="Deploy helm chart",
-                                   outputs=["Helm is already installing a chart, this step can not be parallelize"])
-        outputs = []
-
-        def on_enter(_: Context):
-            global install_helm_running
-            install_helm_running = True
-
-        def on_exit(_):
-            global install_helm_running
-            install_helm_running = False
 
         async with context.start(
                 action="InstallHelmStep.execute_run",
-                on_enter=on_enter,
-                on_exit=on_exit,
                 with_attributes={
                     "namespace": self.config.namespace
                 }) as ctx:
-            await k8s_config.load_kube_config(context=self.k8sContext)
-            stream = os.popen(f"kubectl config use-context {self.k8sContext}")
-
-            k8s_info = await get_cluster_info()
-            if not k8s_info:
-                outputs.append("Can not connect to k8s proxy")
-                raise CommandException(command="Deploy helm chart", outputs=outputs)
-            await ctx.info(
-                text="k8s_info",
-                data={
-                    "k8s context": stream.read(),
-                    "k8s info": k8s_info
-                }
-            )
-
-            helm_package = await self.get_helm_package(project=project, context=ctx)
-
-            installed = await helm_package.is_installed(context=ctx)
-
-            if installed and '-wip' in project.version:
-                outputs.append("Mutable version used, proceed to chart uninstall")
-                await helm_package.uninstall(context=ctx)
-                installed = False
-
-            if installed:
-                outputs.append(f"Helm chart already installed, proceed to chart upgrade")
-                await ctx.info(text=f"Start helm chart install")
-                return_code, cmd, outputs_bash = await helm_package.upgrade(context=ctx)
-                outputs = outputs + [cmd] + outputs_bash
-                if return_code > 0:
-                    raise CommandException(command="deploy helm chart", outputs=outputs)
-
-            if not installed:
-                outputs.append(f"Helm chart not already installed, start helm chart install")
-                await ctx.info(text=f"Start helm chart install")
-                return_code, cmd, outputs_bash = await helm_package.install(context=ctx)
-                outputs = outputs + [cmd] + outputs_bash
-                if return_code > 0:
-                    raise CommandException(command="deploy helm chart", outputs=outputs)
+            helm_package = get_helm_package(project=project, config=self.config, context=ctx)
+            exit_code, cmd, outputs = await helm_package.install_or_upgrade(kube_context=self.k8sTarget.context,
+                                                                            context=context)
+            if exit_code != 0:
+                raise CommandException(command=cmd, outputs=outputs)
 
         return outputs
 
@@ -230,15 +174,16 @@ class InstallHelmStep(PipelineStep):
                 with_attributes={
                     "namespace": self.config.namespace
                 }) as ctx:
-
-            stream = os.popen(f"( kubectl config use-context {self.k8sContext} "
-                              f"&& helm get manifest {project.name} -n {self.config.namespace})")
-            outputs = stream.read()
+            exit_code, outputs = await execute_shell_cmd(
+                cmd=f"helm get manifest {project.name} -n {self.config.namespace} "
+                    f"--kube-context {self.k8sTarget.context}",
+                context=ctx
+            )
             await ctx.info("retrieved helm manifest", data={"lines": outputs})
-            version_output = next(output for output in outputs.split('\n') if 'app.kubernetes.io/version:' in output)
+            version_output = next(output for output in outputs if 'app.kubernetes.io/version:' in output)
             version = version_output.split('app.kubernetes.io/version: "')[1][0:-1]
             await ctx.info(f"found deployed chart @version {version}")
-            return PipelineStepStatus.OK if version == project.version else PipelineStepStatus.outdated
+            return PipelineStepStatus.OK if version == project.version else PipelineStepStatus.none
 
 
 class InstallDryRunHelmStep(PipelineStep):
