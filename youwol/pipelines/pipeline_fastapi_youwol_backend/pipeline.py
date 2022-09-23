@@ -5,9 +5,7 @@ import pkg_resources
 import yaml
 from pydantic import BaseModel
 
-import youwol_utils
-from youwol.configuration.models_k8s import HelmChartsInstall
-from youwol.environment.models import K8sInstance
+from youwol.configuration.models_k8s import HelmChartsInstall, DockerImagesPush
 from youwol.environment.models_project import Manifest, PipelineStepStatus, Link, Flow, \
     SourcesFctImplicit, Pipeline, PipelineStep, FileListing, \
     Artifact, Project, RunImplicit, MicroService
@@ -252,7 +250,7 @@ async def pipeline(
                 PullStep(),
                 NewBranchStep(),
                 UpdatePyYouwolStep(),
-                CustomPublishDockerStep(**docker_fields),
+                PublishDockerStep(dockerRepo=docker_repo),
                 SyncHelmDeps(),
                 InstallDryRunHelmStep(
                     config=dry_run_config
@@ -271,3 +269,25 @@ async def pipeline(
                 )
             ]
         )
+
+
+async def get_backend_apps_yw_config(name: str, context: Context):
+    async with context.start(
+            action=f"Youwol backend {name} pipeline creation",
+            with_attributes={'project': name}
+    ) as ctx:  # type: Context
+
+        config = PipelineConfig(
+            tags=[name],
+            dockerConfig=PublishDockerStepConfig(
+                repoName="gitlab-docker-repo"
+            ),
+            docConfig=DocStepConfig(),
+            helmConfig=InstallHelmStepConfig(
+                namespace="apps"
+            )
+        )
+        await ctx.info(text='Pipeline config', data=config)
+        result = await pipeline(config, ctx)
+        await ctx.info(text='Pipeline', data=result)
+        return result
