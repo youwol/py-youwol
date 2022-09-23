@@ -17,9 +17,11 @@ class Deployment(BaseModel):
 
 class DockerRepo(DeploymentTarget):
     name: str
-    pullSecret: Path
-    imageUrlBuilder: Callable[[Project, Context], str]
+    imageUrlBuilder: Optional[Callable[[Project, Context], str]]
+    host: str
 
+    def get_project_url(self, project: Project, context: Context):
+        return self.imageUrlBuilder(project, context) if self.imageUrlBuilder else f"{self.host}/{project.name}"
 
 class Docker(Deployment):
     repositories: List[DockerRepo] = []
