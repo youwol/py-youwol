@@ -25,11 +25,10 @@ class DockerRepo(UploadTarget):
 
 
 class DockerImagesPush(UploadTargets):
-    repositories: List[DockerRepo] = []
     targets: List[DockerRepo] = []
 
     def get_repo(self, repo_name: str):
-        return next(repo for repo in self.repositories if repo.name == repo_name)
+        return next(repo for repo in self.targets if repo.name == repo_name)
 
 
 class K8sCluster(BaseModel):
