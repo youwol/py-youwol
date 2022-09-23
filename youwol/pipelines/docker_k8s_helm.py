@@ -93,8 +93,8 @@ class InstallHelmStepConfig(BaseModel):
     overridingHelmValues: Callable[[Project, Context], dict] = None
     secrets: List[Path] = []
     id: str = "helm"
-    chartPath: Callable[[Project, Context], dict]
-    valuesPath: Callable[[Project, Context], dict]
+    chartPath: Callable[[Project, Context], dict] = lambda project, _ctx: project.path / 'chart'
+    valuesPath: Callable[[Project, Context], dict] = lambda project, _ctx: project.path / 'chart' / 'values.yaml'
 
 
 def get_helm_package(config: InstallHelmStepConfig, project: Project, context: Context):
