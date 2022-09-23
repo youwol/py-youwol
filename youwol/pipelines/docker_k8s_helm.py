@@ -50,7 +50,7 @@ class PublishDockerStep(PipelineStep):
         include=[f"src", 'Dockerfile']
     )
 
-    run: RunImplicit = lambda self, p, flow, ctx: self.docker_build_command(self.config, p, ctx)
+    run: RunImplicit = lambda self, p, flow, ctx: self.docker_build_command(p, ctx)
 
     async def get_status(self, project: Project, flow_id: str,
                          last_manifest: Optional[Manifest], context: Context) -> PipelineStepStatus:
@@ -181,7 +181,7 @@ class InstallHelmStep(PipelineStep):
             )
             await ctx.info("retrieved helm manifest", data={"lines": outputs})
             version_output = next(output for output in outputs if 'app.kubernetes.io/version:' in output)
-            version = version_output.split('app.kubernetes.io/version: "')[1][0:-1]
+            version = version_output.split('app.kubernetes.io/version: "')[1][0:-2]
             await ctx.info(f"found deployed chart @version {version}")
             return PipelineStepStatus.OK if version == project.version else PipelineStepStatus.none
 
