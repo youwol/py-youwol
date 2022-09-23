@@ -15,11 +15,31 @@ from youwol_utils.context import Context
 from youwol_utils.utils_paths import parse_yaml
 
 
+class FileNames(NamedTuple):
+    helm_values_yaml = 'values.yaml'
+
+
 class PublishDockerStepConfig(BaseModel):
     repoName: str
     imageVersion: Union[str, Callable[[Project, Context], str]] = \
         lambda project, _ctx: get_helm_app_version(project.path)
     sources: FileListing = None
+
+
+class DockerRepo(UploadTarget):
+    name: str
+    imageUrlBuilder: Optional[Callable[[Project, Context], str]]
+    host: str
+
+    def get_project_url(self, project: Project, context: Context):
+        return self.imageUrlBuilder(project, context) if self.imageUrlBuilder else f"{self.host}/{project.name}"
+
+
+class DockerImagesPush(UploadTargets):
+    targets: List[DockerRepo] = []
+
+    def get_repo(self, repo_name: str):
+        return next(repo for repo in self.targets if repo.name == repo_name)
 
 
 class PublishDockerStep(PipelineStep):
@@ -93,8 +113,10 @@ class InstallHelmStepConfig(BaseModel):
     overridingHelmValues: Callable[[Project, Context], dict] = None
     secrets: List[Path] = []
     id: str = "helm"
-    chartPath: Callable[[Project, Context], dict] = lambda project, _ctx: project.path / 'chart'
-    valuesPath: Callable[[Project, Context], dict] = lambda project, _ctx: project.path / 'chart' / 'values.yaml'
+    chartPath: Callable[[Project, Context], dict] = \
+        lambda project, _ctx: project.path / 'chart'
+    valuesPath: Callable[[Project, Context], dict] = \
+        lambda project, _ctx: project.path / 'chart' / FileNames.helm_values_yaml
 
 
 def get_helm_package(config: InstallHelmStepConfig, project: Project, context: Context):
@@ -102,19 +124,25 @@ def get_helm_package(config: InstallHelmStepConfig, project: Project, context: C
     with_values = config.overridingHelmValues(project, context) if config.overridingHelmValues else {}
     chart_path = project.path / "chart"
 
-    helm_package = HelmPackage(
+    return HelmPackage(
         name=project.name,
         namespace=config.namespace,
         chart_folder=chart_path,
         with_values=with_values,
-        values_filename='values.yaml',
+        values_filename=FileNames.helm_values_yaml,
         secrets=config.secrets,
         chart_explorer=get_chart_explorer(chart_path)
     )
-    return helm_package
 
 
-install_helm_running = False
+class K8sClusterTarget(UploadTarget):
+    name: str
+    context: str
+
+
+class HelmChartsInstall(UploadTargets):
+    k8sConfigFile: Optional[Path]
+    targets: List[K8sClusterTarget]
 
 
 class InstallHelmStep(PipelineStep):

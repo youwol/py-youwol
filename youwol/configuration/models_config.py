@@ -4,7 +4,6 @@ from typing import List, Union, Optional, Dict
 
 from pydantic import BaseModel
 
-from youwol.configuration.models_k8s import K8sCluster, PipelinesSourceInfo
 from youwol.environment.models import Events
 from youwol.environment.models_project import ProjectTemplate
 from youwol.middlewares.models_dispatch import AbstractDispatch, RedirectDispatch
@@ -43,6 +42,19 @@ class JwtSource(str, Enum):
     CONFIG = 'config'
 
 
+class UploadTarget(BaseModel):
+    name: str
+
+
+class UploadTargets(BaseModel):
+    targets: List[UploadTarget]
+
+
+class PipelinesSourceInfo(BaseModel):
+    uploadTargets: List[UploadTargets] = []
+    projectTemplates: List[ProjectTemplate] = []
+
+
 class ConfigurationData(BaseModel):
     httpPort: Optional[int]
     jwtSource: Optional[JwtSource]
@@ -53,7 +65,6 @@ class ConfigurationData(BaseModel):
     portsBook: Optional[Dict[str, int]]
     routers: Optional[List[FastApiRouter]]
     projectsDirs: Optional[Union[ConfigPath, List[ConfigPath]]]
-    projectTemplates: Optional[List[ProjectTemplate]]
     configDir: Optional[ConfigPath]
     dataDir: Optional[ConfigPath]
     cacheDir: Optional[ConfigPath]
@@ -65,7 +76,6 @@ class ConfigurationData(BaseModel):
     events: Optional[Union[Events, str, ModuleLoading]]
     customCommands: List[Union[str, Command, ModuleLoading]] = []
     customize: Optional[Union[str, ModuleLoading]]
-    k8sCluster: Optional[K8sCluster]
     pipelinesSourceInfo: PipelinesSourceInfo
 
 

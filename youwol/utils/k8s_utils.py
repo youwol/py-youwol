@@ -11,8 +11,6 @@ from kubernetes_asyncio.client.api_client import ApiClient
 from psutil import process_iter
 from urllib3.exceptions import NewConnectionError, ConnectTimeoutError, MaxRetryError
 
-from youwol.configuration.models_config import K8sCluster
-from youwol.environment.models import K8sNodeInfo, K8sInstanceInfo
 from youwol.exceptions import CommandException
 from youwol.utils.utils_low_level import execute_shell_cmd
 from youwol_utils.context import Context
@@ -117,40 +115,6 @@ async def k8s_port_forward(namespace: str, service_name: str, target_port: Optio
     kill_k8s_proxy(local_port)
     subprocess.Popen(cmd, shell=True)
     await context.info(f"Port forward {namespace}#{service_name} using local port {local_port}")
-
-
-async def ensure_k8s_proxy_running(k8s_cluster: K8sCluster) -> Optional[K8sInstanceInfo]:
-
-    access_token = await k8s_access_token()
-    cluster_info = await get_cluster_info()
-    if cluster_info is None:
-        print("K8s API proxy not running, start proxying server")
-        await start_k8s_proxy(
-            config_file=k8s_cluster.configFile,
-            context_name=k8s_cluster.contextName,
-            proxy_port=k8s_cluster.proxyPort
-        )
-    nodes = await get_cluster_info()
-
-    def to_node_info(resp):
-        return K8sNodeInfo(
-            cpu=resp['capacity']['cpu'],
-            memory=resp['capacity']['memory'],
-            architecture=resp['node_info']['architecture'],
-            kernelVersion=resp['node_info']['kernel_version'],
-            operating_system=resp['node_info']['operating_system'],
-            os_image=resp['node_info']['os_image']
-        )
-
-    if nodes is None:
-        print("Unable to start k8s proxy")
-        return None
-
-    return K8sInstanceInfo(
-        access_token=access_token,
-        k8s_api_proxy=f"http://localhost:{k8s_cluster.proxyPort}",
-        nodes=[to_node_info(node) for node in nodes]
-    )
 
 
 async def start_k8s_proxy(

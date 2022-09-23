@@ -4,6 +4,11 @@ from typing import Dict, List, Optional
 
 from pydantic import BaseModel
 
+from youwol.configuration.models_config import UploadTarget, UploadTargets
+from youwol.environment.models_project import Project
+from youwol.utils.utils_low_level import execute_shell_cmd
+from youwol_utils.context import Context
+
 
 class PackageType(Enum):
     """
@@ -140,3 +145,26 @@ class Template(BaseModel):
     bundles: Bundles
     testConfig: Optional[str]
     devServer: Optional[DevServer]
+
+
+class NpmRepo(UploadTarget):
+    name: str
+
+    async def publish(self, project: Project, context: Context):
+        raise NotImplementedError()
+
+
+class PublicNpmRepo(NpmRepo):
+    name: str
+
+    async def publish(self, project: Project, context: Context):
+        await execute_shell_cmd(f"(cd {project.path} && yarn publish --access public)", context=context)
+
+
+class PackagesPublishNpm(UploadTargets):
+    targets: List[NpmRepo]
+
+    async def publish(self, target_name: str, project: Project, context: Context):
+        target = next(t for t in self.targets if t.name == target_name)
+        await target.publish(project, context)
+

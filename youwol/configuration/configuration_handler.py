@@ -8,11 +8,9 @@ from youwol.configuration.defaults import default_http_port, default_path_data_d
     default_path_cache_dir, default_path_projects_dir, default_port_range_start, default_port_range_end, \
     default_platform_host, default_jwt_source
 from youwol.configuration.models_config import Profiles, ConfigurationData, PortRange, ModuleLoading, \
-    CascadeBaseProfile, CascadeAppend, CascadeReplace, CdnOverride, Redirection, JwtSource
-from youwol.configuration.models_k8s import PipelinesSourceInfo
+    CascadeBaseProfile, CascadeAppend, CascadeReplace, CdnOverride, Redirection, JwtSource, PipelinesSourceInfo
 
 from youwol.environment.models import Events, IConfigurationCustomizer
-from youwol.environment.models_project import ProjectTemplate
 from youwol.environment.paths import app_dirs
 from youwol.main_args import get_main_arguments
 from youwol.middlewares.models_dispatch import CdnOverrideDispatch, RedirectDispatch, AbstractDispatch
@@ -260,9 +258,6 @@ class ConfigurationHandler:
 
     def get_routers(self) -> List[FastApiRouter]:
         return self.effective_config_data.routers or []
-
-    def get_project_templates(self) -> List[ProjectTemplate]:
-        return self.effective_config_data.projectTemplates
 
 
 def ensure_loading_source_exists(arg: Union[str, ModuleLoading],

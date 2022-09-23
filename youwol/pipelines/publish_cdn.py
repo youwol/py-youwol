@@ -6,7 +6,7 @@ from typing import Optional, cast, Mapping, List, Iterable
 
 from fastapi import HTTPException
 
-from youwol.configuration.models_k8s import YwPlatformTarget
+from youwol.configuration.models_config import UploadTarget, UploadTargets
 from youwol_utils.http_clients.assets_gateway import DefaultDriveResponse
 from youwol.environment.clients import LocalClients, RemoteClients
 from youwol.environment.models_project import (
@@ -181,6 +181,15 @@ class PublishCdnLocalStep(PipelineStep):
             resp['srcBasePath'] = str(base_path)
             resp['srcFiles'] = [str(f.relative_to(base_path)) for f in files]
             return resp
+
+
+class YwPlatformTarget(UploadTarget):
+    name: str
+    host: str
+
+
+class PackagesPublishYwCdn(UploadTargets):
+    targets: List[YwPlatformTarget]
 
 
 class PublishCdnRemoteStep(PipelineStep):
