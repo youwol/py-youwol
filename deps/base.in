@@ -6,7 +6,6 @@ Brotli
 colorama
 cowpy
 fastapi
-kubernetes-asyncio
 minio
 Pillow
 psutil
