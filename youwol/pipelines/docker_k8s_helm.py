@@ -16,8 +16,9 @@ from youwol_utils.utils_paths import parse_yaml
 
 
 class PublishDockerStepConfig(BaseModel):
-    dockerRepo: DockerRepo
-    imageVersion: Union[str, Callable[[Project, Context], str]] = None
+    repoName: str
+    imageVersion: Union[str, Callable[[Project, Context], str]] = \
+        lambda project, _ctx: get_helm_app_version(project.path)
     sources: FileListing = None
 
 

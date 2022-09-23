@@ -224,8 +224,11 @@ async def pipeline(
     async with context.start(action="pipeline") as ctx:
         await ctx.info(text="Instantiate pipeline", data=config)
 
-        docker_fields = {k: v for k, v in config.dockerConfig.dict().items() if v is not None}
         env: YouwolEnvironment = await ctx.get('env', YouwolEnvironment)
+
+        docker = next(d for d in env.pipelinesSourceInfo.uploadTargets if isinstance(d, DockerImagesPush))
+        docker_repo = docker.get_repo(config.dockerConfig.repoName)
+
         dry_run_config = InstallHelmStepConfig(**config.helmConfig.dict())
         dry_run_config.overridingHelmValues = add_dry_values
         k8s = next(deployment for deployment in env.pipelinesSourceInfo.uploadTargets
