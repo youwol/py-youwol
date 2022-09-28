@@ -169,8 +169,12 @@ class PipelineStep(BaseModel):
     async def get_status(self, project: 'Project', flow_id: str, last_manifest: Optional[Manifest], context: Context) \
             -> PipelineStepStatus:
 
-        if last_manifest is None:
-            await context.info(text="No manifest found => status is none")
+        env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
+        artifacts = [env.pathsBook.artifact(project_name=project.name, flow_id=flow_id, step_id=self.id,
+                                            artifact_id=artifact.id)
+                     for artifact in self.artifacts]
+
+        if any(not path.exists() for path in artifacts):
             return PipelineStepStatus.none
 
         await context.info(text="Manifest retrieved", data=last_manifest)
@@ -183,7 +187,7 @@ class PipelineStep(BaseModel):
                                                             'saved fp': last_manifest.fingerprint})
             return PipelineStepStatus.outdated
 
-        return PipelineStepStatus.OK if last_manifest.succeeded else PipelineStepStatus.KO
+        return PipelineStepStatus.OK
 
     run: Union[str, RunImplicit, ExplicitNone]
 
