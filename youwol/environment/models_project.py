@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol.environment.paths import PathsBook
 from youwol.exceptions import CommandException
-from youwol.utils.utils_low_level import execute_shell_cmd
+from youwol.utils.utils_low_level import execute_shell_cmd, JSON
 from youwol_utils import files_check_sum
 from youwol_utils.context import Context
 from youwol_utils.utils_paths import matching_files, parse_json
@@ -133,12 +133,24 @@ SourcesFctExplicit = Callable[
 ]
 
 
+class CommandPipelineStep(BaseModel):
+    name: str
+    do_get: Optional[Callable[['Project', str, Context], Union[Awaitable[JSON], JSON]]] = None
+    do_post: Optional[Callable[['Project', str, JSON, Context], Union[Awaitable[JSON], JSON]]] = None
+    do_put: Optional[Callable[['Project', str, JSON, Context], Union[Awaitable[JSON], JSON]]] = None
+    do_delete: Optional[Callable[['Project', str, Context], Union[Awaitable[JSON], JSON]]] = None
+
+
 class PipelineStep(BaseModel):
     id: str = ""
 
     artifacts: List[Artifact] = []
 
     sources: Union[FileListing, SourcesFctImplicit, SourcesFctExplicit] = None
+
+    view: Optional[Path]
+
+    http_commands: List[CommandPipelineStep] = []
 
     async def get_sources(self, project: 'Project', flow_id: FlowId, context: Context) -> Optional[Iterable[Path]]:
 
