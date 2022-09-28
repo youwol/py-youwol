@@ -4,9 +4,11 @@ import itertools
 import os
 import shutil
 from datetime import datetime
+from typing import Mapping, Any
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from starlette.requests import Request
+from starlette.responses import FileResponse, JSONResponse
 
 from youwol.environment.models_project import Project, Manifest, PipelineStepStatus
 from youwol.environment.paths import PathsBook
@@ -17,14 +19,17 @@ from youwol.routers.commons import Label
 from youwol.routers.environment.models import ProjectsLoadingResults
 from youwol.routers.projects.dependencies import resolve_project_dependencies
 from youwol.routers.projects.implementation import (
-    create_artifacts, get_status, get_project_step, get_project_flow_steps, format_artifact_response
+    create_artifacts, get_status, get_project_step, get_project_flow_steps, format_artifact_response,
+    get_project_configuration
 )
 from youwol.routers.projects.models import (
     PipelineStepStatusResponse, PipelineStatusResponse, ArtifactsResponse, ProjectStatusResponse, CdnResponse,
-    CdnVersionResponse, PipelineStepEvent, Event, CreateProjectFromTemplateBody, CreateProjectFromTemplateResponse)
+    CdnVersionResponse, PipelineStepEvent, Event, CreateProjectFromTemplateBody, CreateProjectFromTemplateResponse,
+    UpdateConfigurationResponse)
 from youwol.web_socket import LogsStreamer
 from youwol_utils import decode_id
 from youwol_utils.context import Context
+
 from youwol_utils.utils_paths import parse_json
 from youwol_utils.utils_paths import write_json
 
@@ -178,6 +183,50 @@ async def run_upstream_steps(request: Request, project: Project, flow_id: str, s
             await run_pipeline_step(request=request, project_id=project.id, flow_id=flow_id,
                                     parent_step_id=parent_step_id, run_upstream=True)
         # Do we need to check for KOs in previous run and raise exception ?
+
+
+@router.get("/{project_id}/flows/{flow_id}/steps/{step_id}/configuration",
+            summary="status")
+async def get_configuration(
+        request: Request,
+        project_id: str,
+        flow_id: str,
+        step_id: str,
+        env: YouwolEnvironment = Depends(yw_config)
+):
+    async with Context.from_request(request).start(
+            action="get_configuration"
+    ) as ctx:
+        return JSONResponse(content=await get_project_configuration(
+            project_id=project_id,
+            flow_id=flow_id,
+            step_id=step_id,
+            context=ctx
+        ))
+
+
+@router.post("/{project_id}/flows/{flow_id}/steps/{step_id}/configuration",
+             response_model=UpdateConfigurationResponse,
+             summary="status")
+async def update_configuration(
+        request: Request,
+        project_id: str,
+        flow_id: str,
+        step_id: str,
+        body: Mapping[str, Any],
+        env: YouwolEnvironment = Depends(yw_config)
+):
+
+    async with Context.from_request(request).start(
+            action="update_configuration"
+    ) as ctx:
+        project, _ = await get_project_step(project_id, step_id, ctx)
+        base_path = env.pathsBook.artifacts_flow(project_name=project.name, flow_id=flow_id)
+        path = base_path / 'configurations.json'
+        content = parse_json(path=path) if path.exists() else {}
+        content[step_id] = body
+        write_json(data=content, path=path)
+        return UpdateConfigurationResponse(path=path, configuration=body)
 
 
 @router.post("/{project_id}/flows/{flow_id}/steps/{step_id}/run",
@@ -353,3 +402,43 @@ async def new_project_from_template(
         projects = await ProjectLoader.get_projects(await ctx.get("env", YouwolEnvironment), ctx)
         project = next((p for p in projects if p.name == name), None)
         return project
+
+
+@router.get("/{project_id}/flows/{flow_id}/steps/{step_id}/view",
+            summary="view of a pipeline step")
+async def pipeline_step_view(
+        request: Request,
+        project_id: str,
+        step_id: str,
+):
+    async with Context.from_request(request).start(
+            action="new_project_from_template"
+    ) as ctx:
+        project, step = await get_project_step(project_id, step_id, ctx)
+        if not step.view:
+            raise HTTPException(status_code=404, detail="The step has no view definition associated")
+        if step.view:
+            return FileResponse(path=step.view, media_type='text/javascript', filename=step.view.name,
+                                headers={'cache-control': 'no-cache'})
+
+
+@router.get("/{project_id}/flows/{flow_id}/steps/{step_id}/commands/{command_id}",
+            summary="view of a pipeline step")
+async def do_cmd_get_pipeline_step(
+        request: Request,
+        project_id: str,
+        flow_id: str,
+        step_id: str,
+        command_id: str,
+):
+    async with Context.from_request(request).start(
+            action="do_cmd_get_pipeline_step"
+    ) as ctx:
+        project, step = await get_project_step(project_id, step_id, ctx)
+        command = next((c for c in step.http_commands if c.name == command_id), None)
+
+        if not command:
+            raise HTTPException(status_code=404, detail=f"The step has no command '{command_id}'")
+
+        return await command.do_get(project, flow_id, ctx)
+

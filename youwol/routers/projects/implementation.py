@@ -21,6 +21,18 @@ def is_step_running(project_id: str, flow_id: str, step_id: str, env: YouwolEnvi
     return False
 
 
+async def get_project_configuration(project_id: str, flow_id: str, step_id: str, context: Context):
+
+    project, _ = await get_project_step(project_id, step_id, context)
+    env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
+    base_path = env.pathsBook.artifacts_flow(project_name=project.name, flow_id=flow_id)
+
+    path = base_path / 'configurations.json'
+    if not path.exists():
+        return {}
+    return parse_json(path=path).get(step_id, {})
+
+
 async def get_project_step(
         project_id: str,
         step_id: str,

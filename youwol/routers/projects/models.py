@@ -1,6 +1,6 @@
 from enum import Enum
 from pathlib import Path
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any, Mapping
 
 from pydantic import BaseModel
 
@@ -92,3 +92,8 @@ class CreateProjectFromTemplateBody(BaseModel):
 
 class CreateProjectFromTemplateResponse(Project):
     pass
+
+
+class UpdateConfigurationResponse(BaseModel):
+    path: Path
+    configuration: Mapping[str, Any]
