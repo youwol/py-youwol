@@ -260,6 +260,7 @@ async def generate_ts_webpack_project(folder: Path, parameters: Dict[str, str], 
         )
         for pattern, repl in [
             ["loadDependencies", json.dumps(load_deps)],
+            ["loadDependenciesName", json.dumps(list(load_deps.keys()))],
             ["devServerPort", parameters[Keys.dev_server_port] if Keys.dev_server_port in parameters else ""]
         ]:
             sed_inplace(project_folder / 'template.py', "{{"+pattern+"}}", repl)

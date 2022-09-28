@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 from youwol.configuration.models_config import UploadTarget, UploadTargets
 from youwol.environment.models_project import Project
+from youwol.exceptions import CommandException
 from youwol.utils.utils_low_level import execute_shell_cmd
 from youwol_utils.context import Context
 
@@ -158,7 +159,12 @@ class PublicNpmRepo(NpmRepo):
     name: str
 
     async def publish(self, project: Project, context: Context):
-        await execute_shell_cmd(f"(cd {project.path} && yarn publish --access public)", context=context)
+        cmd = f"(cd {project.path} && yarn publish --access public)"
+        exit_code, outputs = await execute_shell_cmd(f"(cd {project.path} && yarn publish --access public)",
+                                                     context=context)
+        if exit_code != 0:
+            raise CommandException(command=cmd, outputs=outputs)
+        return outputs
 
 
 class PackagesPublishNpm(UploadTargets):

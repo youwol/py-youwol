@@ -64,7 +64,7 @@ async def publish_browser_app_metadata(package: str, version: str, target: Brows
 
 class PublishCdnLocalStep(PipelineStep):
 
-    id = 'publish-local'
+    id = 'cdn-local'
 
     packagedArtifacts: List[str]
 
@@ -105,10 +105,6 @@ class PublishCdnLocalStep(PipelineStep):
                 if e.status_code == 404:
                     return PipelineStepStatus.none
                 raise e
-
-            if not last_manifest.succeeded:
-                await ctx.info(text="The step has failed on the previous run")
-                return PipelineStepStatus.KO
 
             files = await self.packaged_files(project, flow_id, context)
             src_files_fingerprint = files_check_sum(files)
@@ -194,7 +190,7 @@ class PackagesPublishYwCdn(UploadTargets):
 
 class PublishCdnRemoteStep(PipelineStep):
 
-    id = 'publish-remote'
+    id = 'cdn-remote'
     cdnTarget: YwPlatformTarget
     run: ExplicitNone = ExplicitNone()
 
@@ -208,11 +204,8 @@ class PublishCdnRemoteStep(PipelineStep):
                 action="PublishCdnRemoteStep.get_status",
                 with_headers={
                     "Authorization": f"Bearer {auth_token}",
-                    "tmp-header": 'working'
                 }
         ) as ctx:
-            if last_manifest and not last_manifest.succeeded:
-                return PipelineStepStatus.KO
 
             env = await context.get('env', YouwolEnvironment)
             local_cdn = LocalClients.get_cdn_client(env=env)
