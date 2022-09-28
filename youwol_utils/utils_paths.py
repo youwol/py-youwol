@@ -71,7 +71,6 @@ def matching_files(
         include=list(flatten([fix_pattern(p) for p in patterns.include])),
         ignore=list(flatten([fix_pattern(p) for p in patterns.ignore]))
         )
-    patterns_folder_include = [p for p in patterns.include if '*' in p]
     patterns_folder_ignore = [p for p in patterns.ignore if '*' in p]
 
     def is_selected(filepath: Path):
@@ -80,15 +79,9 @@ def matching_files(
         return any(fnmatch(str(filepath), pattern) for pattern in patterns.include)
 
     def to_skip_branch(path: Path):
-        if str(path) == ".":
-            return False
         if any(fnmatch(str(path), pattern) for pattern in patterns_folder_ignore):
             return True
-        if any(fnmatch(str(path), pattern)for pattern in patterns_folder_include):
-            return False
-        if any(pattern.startswith(str(path)) for pattern in patterns_folder_include):
-            return False
-        return True
+        return False
 
     selected = []
     patterns_folder_ignore = [p for p in patterns.ignore if '*' in p]
