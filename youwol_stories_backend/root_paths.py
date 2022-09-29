@@ -205,7 +205,20 @@ async def put_story(
                 owner=Constants.default_owner,
                 headers=ctx.headers()
             ),
-            create_default_global_contents(story_id=story_id, configuration=configuration, context=ctx)
+            create_default_global_contents(story_id=story_id, configuration=configuration, context=ctx),
+            storage.post_json(
+                path=get_document_path(story_id=story_id, document_id="requirements"),
+                json={
+                    "plugins": [],
+                    "loadingGraph": {
+                        "graphType": "sequential-v2",
+                        "lock": [],
+                        "definition": []
+                    }
+                },
+                owner=Constants.default_owner,
+                headers=ctx.headers()
+            )
         )
         return StoryResp(
             storyId=story_id,
