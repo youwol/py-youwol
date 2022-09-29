@@ -130,6 +130,7 @@ class Requirements(BaseModel):
 
 class NewProject(BaseModel):
     name: str
+    projectId: Optional[str]
     description: str
 
 
