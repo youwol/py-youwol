@@ -76,7 +76,7 @@ class ConfigurationData(BaseModel):
     events: Optional[Union[Events, str, ModuleLoading]]
     customCommands: List[Union[str, Command, ModuleLoading]] = []
     customize: Optional[Union[str, ModuleLoading]]
-    pipelinesSourceInfo: PipelinesSourceInfo
+    pipelinesSourceInfo: PipelinesSourceInfo = PipelinesSourceInfo()
 
 
 class CascadeBaseProfile(Enum):
