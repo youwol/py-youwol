@@ -169,6 +169,9 @@ class PipelineStep(BaseModel):
     async def get_status(self, project: 'Project', flow_id: str, last_manifest: Optional[Manifest], context: Context) \
             -> PipelineStepStatus:
 
+        if not last_manifest:
+            return PipelineStepStatus.none
+
         env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
         artifacts = [env.pathsBook.artifact(project_name=project.name, flow_id=flow_id, step_id=self.id,
                                             artifact_id=artifact.id)
