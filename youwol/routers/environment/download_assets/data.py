@@ -16,7 +16,7 @@ class DownloadDataTask(DownloadTask):
         return self.raw_id
 
     async def is_local_up_to_date(self):
-        env = await self.context.get('env', YouwolEnvironment)
+        env: YouwolEnvironment = await self.context.get('env', YouwolEnvironment)
         local_assets: AssetsClient = LocalClients.get_assets_client(env=env)
         try:
             await local_assets.get(asset_id=self.asset_id, headers=self.context.headers())
@@ -29,8 +29,8 @@ class DownloadDataTask(DownloadTask):
 
     async def create_local_asset(self):
 
-        env = await self.context.get('env', YouwolEnvironment)
-        remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=env.selected_remote,
+        env: YouwolEnvironment = await self.context.get('env', YouwolEnvironment)
+        remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=env.selectedRemote,
                                                                    context=self.context)
         default_drive = await env.get_default_drive(context=self.context)
 
