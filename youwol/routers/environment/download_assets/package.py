@@ -21,7 +21,7 @@ class DownloadPackageTask(DownloadTask):
         return self.package_name+"/"+self.version
 
     async def is_local_up_to_date(self):
-        env = await self.context.get('env', YouwolEnvironment)
+        env: YouwolEnvironment = await self.context.get('env', YouwolEnvironment)
         local_cdn: CdnClient = LocalClients.get_cdn_client(env=env)
         headers = self.context.headers()
         try:
