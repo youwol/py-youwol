@@ -9,7 +9,7 @@ class BuildStep(PipelineStep):
     run: str
     sources: FileListing = FileListing(
         include=[Paths.package_json_file, "webpack.config.js", Paths.lib_folder, "src/app",
-                 "src/index.ts", "src/tests", "**/package.json"],
+                 "src/index.ts", "src/tests", "yarn.lock"],
         ignore=[Paths.auto_generated_file, "**/.*/*", '.template/**']
     )
 
