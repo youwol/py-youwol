@@ -98,7 +98,7 @@ async def new_project(
             request=request
     ) as ctx:  # type: Context
 
-        project_id = str(uuid.uuid4())
+        project_id = project_body.projectId or str(uuid.uuid4())
         workflow = workflow_new_project
         builder_rendering = BuilderRendering(modulesView=[], connectionsView=[], descriptionsBoxes=[])
         runner_rendering = RunnerRendering(layout="", style="")
