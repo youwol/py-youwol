@@ -163,16 +163,16 @@ def generate_webpack_config(source: Path, working_path: Path, input_template: Te
 async def create_sub_pipelines_publish(start_step: str, context: Context):
 
     env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
-    cdn_targets = next(uploadTarget for uploadTarget in env.pipelinesSourceInfo.uploadTargets
-                       if isinstance(uploadTarget, PackagesPublishYwCdn))
+    cdn_targets = next((uploadTarget for uploadTarget in env.pipelinesSourceInfo.uploadTargets
+                       if isinstance(uploadTarget, PackagesPublishYwCdn)), PackagesPublishYwCdn(targets=[]))
 
     publish_cdn_steps: List[PipelineStep] = [PublishCdnRemoteStep(id=f'cdn_{cdn_target.name}',
                                                                   cdnTarget=cdn_target)
                                              for cdn_target in cdn_targets.targets]
     dags_cdn = [f'{start_step} > cdn_{cdn_target.name}' for cdn_target in cdn_targets.targets]
 
-    npm_targets = next(uploadTarget for uploadTarget in env.pipelinesSourceInfo.uploadTargets
-                       if isinstance(uploadTarget, PackagesPublishNpm))
+    npm_targets = next((uploadTarget for uploadTarget in env.pipelinesSourceInfo.uploadTargets
+                       if isinstance(uploadTarget, PackagesPublishNpm)), PackagesPublishNpm(targets=[]))
     publish_npm_steps: List[PipelineStep] = [PublishNpmStep(id=f'npm_{npm_target.name}', npm_target=npm_target)
                                              for npm_target in npm_targets.targets]
 
