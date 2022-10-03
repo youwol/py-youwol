@@ -1,6 +1,6 @@
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 from pydantic import BaseModel
 
@@ -138,6 +138,7 @@ class Template(BaseModel):
     type: PackageType
     version: Optional[str]
     name: Optional[str]
+    inPackageJson: Optional[Any]
     exportedSymbol: Optional[str] = None
     shortDescription: Optional[str] = ""
     author: Optional[str]
