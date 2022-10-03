@@ -37,5 +37,5 @@ class TestStep(PipelineStep):
 
     sources: FileListing = FileListing(
         include=[Paths.package_json_file, Paths.lib_folder, "src/tests"],
-        ignore=[Paths.auto_generated_file, "**/.*/*"]
+        ignore=[Paths.auto_generated_file, "**/.*/*", "node_modules", "**/node_modules"]
     )
