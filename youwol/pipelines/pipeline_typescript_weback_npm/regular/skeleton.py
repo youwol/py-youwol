@@ -217,7 +217,7 @@ async def generate_ts_webpack_project(folder: Path, parameters: Dict[str, str], 
         if project_folder.exists():
             raise RuntimeError(f"Folder {folder} already exist")
 
-        project_folder.mkdir()
+        project_folder.mkdir(parents=True)
         load_deps = {
             "@youwol/cdn-client": "^1.0.2",
             "@youwol/flux-view": "^1.0.3",
