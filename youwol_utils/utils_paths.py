@@ -69,9 +69,9 @@ def matching_files(
     patterns = FileListing(include=[p for p in patterns], ignore=[]) if isinstance(patterns, list) else patterns
     patterns = FileListing(
         include=list(flatten([fix_pattern(p) for p in patterns.include])),
-        ignore=list(flatten([fix_pattern(p) for p in patterns.ignore]))
+        ignore=patterns.ignore
         )
-    patterns_folder_ignore = [p for p in patterns.ignore if '*' in p]
+    patterns_folder_ignore = patterns.ignore
 
     def is_selected(filepath: Path):
         if any(fnmatch(str(filepath), pattern) for pattern in patterns.ignore):
@@ -79,18 +79,16 @@ def matching_files(
         return any(fnmatch(str(filepath), pattern) for pattern in patterns.include)
 
     def to_skip_branch(path: Path):
-        if any(fnmatch(str(path), pattern) for pattern in patterns_folder_ignore):
-            return True
-        return False
+        return any(fnmatch(str(path), pattern) for pattern in patterns_folder_ignore)
 
     selected = []
-    patterns_folder_ignore = [p for p in patterns.ignore if '*' in p]
     for root, dirs, files in os.walk(folder):
-        root = Path(root).relative_to(folder)
-        if to_skip_branch(root):
+        root_path = Path(root)
+        relative_root_path = root_path.relative_to(folder)
+        if to_skip_branch(relative_root_path):
             dirs[:] = []
             continue
-        selected = selected + [folder / root / f for f in files if is_selected(root / f)]
+        selected = selected + [root_path / f for f in files if is_selected(relative_root_path / f)]
 
     return selected
 
