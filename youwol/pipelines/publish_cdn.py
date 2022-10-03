@@ -95,9 +95,8 @@ class PublishCdnLocalStep(PipelineStep):
                 return PipelineStepStatus.none
 
             try:
-                local_info = await local_cdn.get_version_info(
+                local_lib_info = await local_cdn.get_library_info(
                     library_id=encode_id(project.publishName),
-                    version=project.version,
                     headers=ctx.headers()
                 )
             except HTTPException as e:
@@ -106,17 +105,25 @@ class PublishCdnLocalStep(PipelineStep):
                     return PipelineStepStatus.none
                 raise e
 
+            if project.version not in local_lib_info['versions']:
+                return PipelineStepStatus.none
+
+            local_version_info = await local_cdn.get_version_info(
+                library_id=encode_id(project.publishName),
+                version=project.version,
+                headers=ctx.headers()
+            )
             files = await self.packaged_files(project, flow_id, context)
             src_files_fingerprint = files_check_sum(files)
-            if last_manifest.fingerprint == local_info['fingerprint'] and \
+            if last_manifest.fingerprint == local_version_info['fingerprint'] and \
                     last_manifest.cmdOutputs['srcFilesFingerprint'] == src_files_fingerprint:
                 return PipelineStepStatus.OK
 
-            if last_manifest.fingerprint != local_info['fingerprint']:
+            if last_manifest.fingerprint != local_version_info['fingerprint']:
                 await context.info(
                     text="Mismatch between cdn-backend fingerprint and saved manifest's fingerprint",
                     data={
-                        'cdn-backend fingerprint': local_info['fingerprint'],
+                        'cdn-backend fingerprint': local_version_info['fingerprint'],
                         "saved manifest's fingerprint": last_manifest.fingerprint
                     }
                 )
