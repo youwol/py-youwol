@@ -24,7 +24,7 @@ template = Template(
     ),
     bundles=Bundles(
           mainModule=MainModule(
-              entryFile='lib/index.ts',
+              entryFile='./index.ts',
               loadDependencies={{loadDependenciesName}}
           )
         ),
