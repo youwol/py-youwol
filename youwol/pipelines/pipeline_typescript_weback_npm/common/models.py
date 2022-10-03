@@ -98,7 +98,7 @@ class MainModule(BaseModel):
     - **loadDependencies** : :class:`List[str]` the dependencies required to load the module.
     """
     entryFile: str
-    loadDependencies: List[str]
+    loadDependencies: List[str] = []
 
 
 class Bundles(BaseModel):
