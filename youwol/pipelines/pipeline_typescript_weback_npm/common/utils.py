@@ -68,7 +68,8 @@ def generate_package_json(source: Path, working_path: Path, input_template: Temp
     if input_template.type == PackageType.Application:
         package_json['scripts'] = {**package_json['scripts'], **package_json_app['scripts']}
 
-    write_json({**package_json, **values, **(input_template.inPackageJson or {})}, working_path / FileNames.package_json)
+    write_json({**package_json, **values, **(input_template.inPackageJson or {})},
+               working_path / FileNames.package_json)
     with open(working_path / FileNames.package_json, 'a') as file:
         file.write('\n')
 

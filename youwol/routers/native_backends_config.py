@@ -182,5 +182,5 @@ async def accounts_backend_config_py_youwol():
 
 
 async def mock_backend_config_py_youwol():
-    config = await yw_config()
+    await yw_config()
     return mock_backend.Configuration()

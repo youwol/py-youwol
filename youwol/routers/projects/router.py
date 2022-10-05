@@ -191,8 +191,7 @@ async def get_configuration(
         request: Request,
         project_id: str,
         flow_id: str,
-        step_id: str,
-        env: YouwolEnvironment = Depends(yw_config)
+        step_id: str
 ):
     async with Context.from_request(request).start(
             action="get_configuration"

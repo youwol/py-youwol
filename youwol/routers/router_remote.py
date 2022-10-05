@@ -19,7 +19,7 @@ async def get(request: Request):
 
 
 @router.post("/{rest_of_path:path}",
-            summary="return file content")
+             summary="return file content")
 async def post(request: Request):
 
     async with Context.start_ep(
@@ -39,7 +39,7 @@ async def put(request: Request):
 
 
 @router.delete("/{rest_of_path:path}",
-            summary="return file content")
+               summary="return file content")
 async def delete(request: Request):
 
     async with Context.start_ep(
