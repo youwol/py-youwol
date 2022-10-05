@@ -16,6 +16,8 @@ from starlette.responses import Response
 
 import semantic_version
 
+from youwol.exceptions import CommandException
+from youwol.utils.utils_low_level import execute_shell_cmd
 from youwol_utils import generate_headers_downstream, QueryBody, files_check_sum, shutil, \
     PublishPackageError, get_content_type, QueryIndexException
 from youwol_utils.clients.docdb.models import Query, WhereClause, OrderingClause, SelectClause
@@ -55,13 +57,22 @@ def get_filename(d):
 async def prepare_files_to_post(base_path: Path, package_path: Path, zip_path: Path, paths: List[Path],
                                 need_compression, context: Context):
     async with context.start(action=f"Preparation of {len(paths) + 1} files to download in minio",
-                             with_labels=["filesPreparation"]):
-        form_original = format_download_form(zip_path, base_path, package_path.parent, need_compression,
-                                             '__original.zip')
-        forms = [
-            format_download_form(path, base_path, package_path.parent, need_compression, None)
+                             with_labels=["filesPreparation"]) as ctx:
+        return_code, outputs = await execute_shell_cmd(cmd="brotli --version", context=context)
+        use_os_brotli = return_code == 0
+        await context.info(
+            f"Brotli compression using OS brotli: {use_os_brotli}", data={"outputs": outputs}
+        )
+
+        form_original = await format_download_form(file_path=zip_path, base_path=base_path,
+                                                   dir_path=package_path.parent, use_os_brotli=use_os_brotli,
+                                                   compress=need_compression, rename='__original.zip', context=ctx
+                                                   )
+        forms = await asyncio.gather(*[
+            format_download_form(file_path=path, base_path=base_path, dir_path=package_path.parent,
+                                 use_os_brotli=use_os_brotli, compress=need_compression, rename=None, context=ctx)
             for path in paths
-        ]
+        ])
         await context.info(
             "Forms data prepared",
             data={"forms": [{"name": str(f.objectName), "size": f.objectSize, "encoding": f.content_encoding}
@@ -69,13 +80,20 @@ async def prepare_files_to_post(base_path: Path, package_path: Path, zip_path: P
         return list(forms) + [form_original]
 
 
-def format_download_form(file_path: Path, base_path: Path, dir_path: Path, compress: bool, rename: Optional[str]) \
+async def format_download_form(file_path: Path, base_path: Path, dir_path: Path, compress: bool, use_os_brotli: bool,
+                               rename: Optional[str], context: Context) \
         -> FormData:
 
     if compress and get_content_encoding(file_path) == "br":
-        compressed = brotli.compress(file_path.read_bytes())
-        with file_path.open("wb") as f:
-            f.write(compressed)
+        if not use_os_brotli:
+            compressed = brotli.compress(file_path.read_bytes())
+            with file_path.open("wb") as f:
+                f.write(compressed)
+        else:
+            cmd = f"brotli {file_path} -o {file_path} -f"
+            return_code, outputs = await execute_shell_cmd(cmd=cmd, context=context)
+            if return_code > 0:
+                raise CommandException(command=cmd, outputs=outputs)
 
     data = open(str(file_path), 'rb').read()
     path_bucket = base_path / file_path.relative_to(dir_path) if not rename else base_path / rename
