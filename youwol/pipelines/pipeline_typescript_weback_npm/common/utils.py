@@ -2,7 +2,7 @@ import functools
 import glob
 import shutil
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Dict, List, Union, NamedTuple
 
 import pyparsing
 import semantic_version
@@ -17,6 +17,10 @@ from youwol_cdn_backend import get_api_key
 from youwol_cdn_backend.loading_graph_implementation import exportedSymbols
 from youwol_utils import parse_json, write_json, JSON
 from youwol_utils.context import Context
+
+
+class FileNames(NamedTuple):
+    package_json = "package.json"
 
 
 def copy_files_folders(working_path: Path, base_template_path: Path,
@@ -38,7 +42,7 @@ def generate_package_json(source: Path, working_path: Path, input_template: Temp
 
     package_json_app = parse_json(source.parent / 'package.app.json') \
         if input_template.type == PackageType.Application \
-        else parse_json(source.parent / 'package.json')
+        else parse_json(source.parent / FileNames.package_json)
     load_main_externals = {k: v for k, v in input_template.dependencies.runTime.externals.items()
                            if k in input_template.bundles.mainModule.loadDependencies}
     values = {
@@ -64,8 +68,8 @@ def generate_package_json(source: Path, working_path: Path, input_template: Temp
     if input_template.type == PackageType.Application:
         package_json['scripts'] = {**package_json['scripts'], **package_json_app['scripts']}
 
-    write_json({**package_json, **values, **(input_template.inPackageJson or {})}, working_path / 'package.json')
-    with open(working_path / 'package.json', 'a') as file:
+    write_json({**package_json, **values, **(input_template.inPackageJson or {})}, working_path / FileNames.package_json)
+    with open(working_path / FileNames.package_json, 'a') as file:
         file.write('\n')
 
 
@@ -163,22 +167,36 @@ def generate_webpack_config(source: Path, working_path: Path, input_template: Te
         sed_inplace(filename, '"{{devServer.port}}"', str(input_template.devServer.port))
 
 
-async def create_sub_pipelines_publish(start_step: str, context: Context):
+async def create_sub_pipelines_publish_cdn(start_step: str, context: Context):
 
     env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
     cdn_targets = next((uploadTarget for uploadTarget in env.pipelinesSourceInfo.uploadTargets
-                       if isinstance(uploadTarget, PackagesPublishYwCdn)), PackagesPublishYwCdn(targets=[]))
+                        if isinstance(uploadTarget, PackagesPublishYwCdn)), PackagesPublishYwCdn(targets=[]))
 
     publish_cdn_steps: List[PipelineStep] = [PublishCdnRemoteStep(id=f'cdn_{cdn_target.name}',
                                                                   cdnTarget=cdn_target)
                                              for cdn_target in cdn_targets.targets]
     dags_cdn = [f'{start_step} > cdn_{cdn_target.name}' for cdn_target in cdn_targets.targets]
 
+    return publish_cdn_steps, dags_cdn
+
+
+async def create_sub_pipelines_publish_npm(start_step: str, context: Context):
+
+    env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
     npm_targets = next((uploadTarget for uploadTarget in env.pipelinesSourceInfo.uploadTargets
-                       if isinstance(uploadTarget, PackagesPublishNpm)), PackagesPublishNpm(targets=[]))
+                        if isinstance(uploadTarget, PackagesPublishNpm)), PackagesPublishNpm(targets=[]))
     publish_npm_steps: List[PipelineStep] = [PublishNpmStep(id=f'npm_{npm_target.name}', npm_target=npm_target)
                                              for npm_target in npm_targets.targets]
 
     dags_npm = [f'{start_step} > npm_{npm_target.name}' for npm_target in npm_targets.targets]
+
+    return publish_npm_steps, dags_npm
+
+
+async def create_sub_pipelines_publish(start_step: str, context: Context):
+
+    publish_cdn_steps, dags_cdn = await create_sub_pipelines_publish_cdn(start_step=start_step, context=context)
+    publish_npm_steps, dags_npm = await create_sub_pipelines_publish_npm(start_step=start_step, context=context)
 
     return publish_cdn_steps + publish_npm_steps, dags_cdn + dags_npm
