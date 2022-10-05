@@ -77,7 +77,7 @@ class YouwolEnvironment(BaseModel):
 
     tokensCache: List[DeadlinedCache] = []
 
-    pipelinesSourceInfo: Optional[PipelinesSourceInfo]
+    pipelinesSourceInfo: Optional[PipelinesSourceInfo] = PipelinesSourceInfo()
 
     def reset_cache(self):
         self.cache = {}
