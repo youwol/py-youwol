@@ -1,4 +1,3 @@
-import asyncio
 import importlib
 import re
 import shutil
@@ -12,7 +11,6 @@ from typing import Union, Mapping, List, Type, cast, TypeVar, Optional
 
 import aiohttp
 from aiohttp import ClientSession, TCPConnector
-from aiostream import stream
 from fastapi import HTTPException
 from starlette.requests import Request
 from starlette.responses import Response
@@ -200,25 +198,6 @@ def assert_py_youwol_starting_preconditions(http_port: int):
     location = ("127.0.0.1", http_port)
     if a_socket.connect_ex(location) == 0:
         raise ValueError(f"The port {http_port} is already bound to a process")
-
-
-async def execute_shell_cmd(cmd: str, context: Context, log_outputs=True):
-
-    async with context.start(action="execute 'shell' command", with_labels=["BASH"]) as ctx:
-        await ctx.info(text=cmd)
-        p = await asyncio.create_subprocess_shell(
-            cmd=cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-            shell=True
-        )
-        outputs = []
-        async with stream.merge(p.stdout, p.stderr).stream() as messages_stream:
-            async for message in messages_stream:
-                outputs.append(message.decode('utf-8'))
-                log_outputs and await ctx.info(text=outputs[-1])
-        await p.communicate()
-        return p.returncode, outputs
 
 
 def shutdown_daemon_script(pid: int) -> str:

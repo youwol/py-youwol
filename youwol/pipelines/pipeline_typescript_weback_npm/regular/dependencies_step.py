@@ -10,13 +10,11 @@ from youwol.environment.models_project import Manifest, PipelineStepStatus, Expl
 from youwol.environment.paths import PathsBook
 from youwol.environment.projects_loader import ProjectLoader
 from youwol.environment.youwol_environment import YouwolEnvironment
-from youwol.exceptions import CommandException
 from youwol.pipelines.pipeline_typescript_weback_npm.regular.common import Paths
 from youwol.pipelines.pipeline_typescript_weback_npm.regular.build_step import BuildStep
 from youwol.pipelines.pipeline_typescript_weback_npm.regular.models import InputDataDependency
 from youwol.routers.projects.implementation import get_project_configuration
-from youwol.utils.utils_low_level import execute_shell_cmd
-from youwol_utils import files_check_sum
+from youwol_utils import files_check_sum, execute_shell_cmd, CommandException
 from youwol_utils import to_json
 from youwol_utils.context import Context
 from youwol_utils.utils_paths import copy_tree, list_files

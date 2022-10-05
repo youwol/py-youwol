@@ -17,8 +17,8 @@ from pydantic import BaseModel
 from starlette.requests import Request
 from starlette.websockets import WebSocket
 
-from youwol_utils import JSON, to_json, YouwolHeaders, generate_headers_downstream
-
+from youwol_utils.types import JSON
+from youwol_utils.utils import to_json, generate_headers_downstream, YouwolHeaders
 
 #  Can also be a JSON referencing BaseModel(s), etc
 #  At the end 'JsonLike' is anything that can be used in the function 'to_json'

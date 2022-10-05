@@ -1,11 +1,4 @@
-from typing import List, Any
-
-
-class CommandException(Exception):
-    def __init__(self, command: str, outputs: List[str]):
-        self.command = command
-        self.outputs = outputs
-        super().__init__(f"{self.command} failed")
+from typing import Any
 
 
 class ActionException(Exception):

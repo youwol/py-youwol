@@ -7,9 +7,8 @@ from pydantic import BaseModel
 from youwol.configuration.models_config import UploadTarget, UploadTargets
 from youwol.environment.models_project import PipelineStep, Project, ExplicitNone, FlowId, RunImplicit, Manifest, \
     PipelineStepStatus, FileListing
-from youwol.exceptions import CommandException
 from youwol.pipelines.deploy_service import HelmPackage
-from youwol.utils.utils_low_level import execute_shell_cmd
+from youwol_utils import execute_shell_cmd, CommandException
 from youwol_utils.context import Context
 from youwol_utils.utils_paths import parse_yaml
 
@@ -22,7 +21,7 @@ class PublishDockerStepConfig(BaseModel):
     repoName: str
     imageVersion: Union[str, Callable[[Project, Context], str]] = \
         lambda project, _ctx: get_helm_app_version(project.path)
-    sources: FileListing = None
+    sources: Optional[FileListing] = None
 
 
 class DockerRepo(UploadTarget):

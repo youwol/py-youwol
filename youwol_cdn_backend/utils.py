@@ -16,8 +16,7 @@ from starlette.responses import Response
 
 import semantic_version
 
-from youwol.exceptions import CommandException
-from youwol.utils.utils_low_level import execute_shell_cmd
+from youwol_utils import execute_shell_cmd, CommandException
 from youwol_utils import generate_headers_downstream, QueryBody, files_check_sum, shutil, \
     PublishPackageError, get_content_type, QueryIndexException
 from youwol_utils.clients.docdb.models import Query, WhereClause, OrderingClause, SelectClause

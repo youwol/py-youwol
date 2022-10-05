@@ -12,7 +12,8 @@ from fastapi import HTTPException
 from pydantic import BaseModel
 from starlette.requests import Request
 
-from youwol_utils import JSON, to_group_id
+from youwol_utils.types import JSON
+from youwol_utils.clients.utils import to_group_id
 from youwol_utils.clients.oidc.oidc_config import OidcInfos, OidcConfig
 from youwol_utils.clients.types import DocDb
 

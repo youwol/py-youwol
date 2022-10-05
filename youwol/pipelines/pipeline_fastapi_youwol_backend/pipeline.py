@@ -11,7 +11,7 @@ from youwol.environment.models_project import Manifest, PipelineStepStatus, Link
 from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.pipelines.docker_k8s_helm import get_helm_app_version, InstallHelmStep, InstallHelmStepConfig, \
     PublishDockerStep, PublishDockerStepConfig, InstallDryRunHelmStep, DockerImagesPush, HelmChartsInstall
-from youwol.utils.utils_low_level import execute_shell_cmd
+from youwol_utils import execute_shell_cmd
 from youwol_utils.context import Context
 
 

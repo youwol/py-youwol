@@ -5,9 +5,8 @@ from typing import Optional
 
 
 from youwol.environment.models_project import PipelineStep, Project, Manifest, PipelineStepStatus, FlowId
-from youwol.exceptions import CommandException
+from youwol_utils import execute_shell_cmd, CommandException
 from youwol.pipelines.pipeline_typescript_weback_npm.common import NpmRepo
-from youwol.utils.utils_low_level import execute_shell_cmd
 from youwol_utils.context import Context
 
 

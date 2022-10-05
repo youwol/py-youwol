@@ -14,7 +14,7 @@ from youwol.environment.models_project import Project, Manifest, PipelineStepSta
 from youwol.environment.paths import PathsBook
 from youwol.environment.projects_loader import ProjectLoader
 from youwol.environment.youwol_environment import yw_config, YouwolEnvironment, YouwolEnvironmentFactory
-from youwol.exceptions import CommandException
+from youwol_utils import CommandException
 from youwol.routers.commons import Label
 from youwol.routers.environment.models import ProjectsLoadingResults
 from youwol.routers.projects.dependencies import resolve_project_dependencies
