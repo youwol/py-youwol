@@ -35,7 +35,10 @@ def copy_files_folders(working_path: Path, base_template_path: Path,
 def generate_package_json(source: Path, working_path: Path, input_template: Template):
 
     package_json = parse_json(source)
-    package_json_app = parse_json(source.parent / 'package.app.json')
+
+    package_json_app = parse_json(source.parent / 'package.app.json') \
+        if input_template.type == PackageType.Application \
+        else parse_json(source.parent / 'package.json')
     load_main_externals = {k: v for k, v in input_template.dependencies.runTime.externals.items()
                            if k in input_template.bundles.mainModule.loadDependencies}
     values = {
