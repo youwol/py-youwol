@@ -5,6 +5,7 @@ appdirs
 Brotli
 colorama
 cowpy
+deepdiff
 fastapi
 minio
 Pillow

@@ -42,6 +42,8 @@ cowpy==1.1.5
     # via -r deps/base.in
 cryptography==37.0.2
     # via pyjwt
+deepdiff==5.8.1
+    # via -r deps/base.in
 deprecated==1.2.13
     # via redis
 docutils==0.18.1
@@ -76,6 +78,8 @@ multidict==6.0.2
     # via
     #   aiohttp
     #   yarl
+ordered-set==4.1.0
+    # via deepdiff
 packaging==21.3
     # via
     #   pytest

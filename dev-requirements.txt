@@ -310,6 +310,10 @@ cryptography==37.0.2 \
     --hash=sha256:f224ad253cc9cea7568f49077007d2263efa57396a2f2f78114066fd54b5c68e \
     --hash=sha256:f8ec91983e638a9bcd75b39f1396e5c0dc2330cbd9ce4accefe68717e6779e0a
     # via pyjwt
+deepdiff==5.8.1 \
+    --hash=sha256:8d4eb2c4e6cbc80b811266419cb71dd95a157094a3947ccf937a94d44943c7b8 \
+    --hash=sha256:e9aea49733f34fab9a0897038d8f26f9d94a97db1790f1b814cced89e9e0d2b7
+    # via -r deps/base.in
 deprecated==1.2.13 \
     --hash=sha256:43ac5335da90c31c24ba028af536a91d41d53f9e6901ddb021bcc572ce44e38d \
     --hash=sha256:64756e3e14c8c5eea9795d93c524551432a0be75629f8f29e67ab8caf076c76d
@@ -524,6 +528,10 @@ multidict==6.0.2 \
     # via
     #   aiohttp
     #   yarl
+ordered-set==4.1.0 \
+    --hash=sha256:046e1132c71fcf3330438a539928932caf51ddbc582496833e23de611de14562 \
+    --hash=sha256:694a8e44c87657c59292ede72891eb91d34131f6531463aab3009191c77364a8
+    # via deepdiff
 packaging==21.3 \
     --hash=sha256:dd47c42927d89ab911e606518907cc2d3a1f38bbd026385970643f9c5b8ecfeb \
     --hash=sha256:ef103e05f519cdc783ae24ea4e2e0f508a9c99b2d4969652eed6a2e1ea5bd522
