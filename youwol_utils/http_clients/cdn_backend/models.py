@@ -45,7 +45,9 @@ exportedSymbols = {
     'popper.js': 'Popper',
     'reflect-metadata': 'Reflect',
     'js-beautify': 'js_beautify',
-    'mathjax': 'Mathjax'
+    'mathjax': 'Mathjax',
+    '@pyodide/scikit-learn': 'sklearn',
+    '@pyodide/python-dateutil': 'dateutil'
 }
 
 
