@@ -90,7 +90,7 @@ async def format_download_form(file_path: Path, base_path: Path, dir_path: Path,
             with file_path.open("wb") as f:
                 f.write(compressed)
         else:
-            cmd = f"brotli {file_path} -o {file_path} -f"
+            cmd = f"brotli {file_path} && mv {file_path}.br {file_path}"
             return_code, outputs = await execute_shell_cmd(cmd=cmd, context=context)
             if return_code > 0:
                 raise CommandException(command=cmd, outputs=outputs)
