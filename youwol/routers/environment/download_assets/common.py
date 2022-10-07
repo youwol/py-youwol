@@ -120,7 +120,6 @@ async def sync_access_policies(
             *[assets_local.put_access_policy(asset_id=asset_id, group_id=group['groupId'], body=group['access'])
               for group in access_info['exposingGroups']]
         )
-        print(access_info)
 
 
 T = TypeVar('T')
