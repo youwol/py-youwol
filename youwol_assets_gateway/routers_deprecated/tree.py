@@ -113,7 +113,7 @@ async def get_default_drive(
         except YouWolException as e:
             if e.status_code != 404:
                 raise e
-            ctx.warning("Default drive does not exist yet, start creation")
+            await ctx.warning("Default drive does not exist yet, start creation")
             await treedb.create_drive(group_id=group_id,
                                       body={"name": "Default drive", "driveId": default_drive_id},
                                       headers=headers)
