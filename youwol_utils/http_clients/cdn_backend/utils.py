@@ -1,8 +1,10 @@
+from pathlib import Path
 from typing import Iterable
 
 from semantic_version import NpmSpec, Version
+from youwol_utils.utils_paths import write_json
 
-from youwol_utils import Context
+from youwol_utils.context import Context
 
 
 async def resolve_version(
@@ -26,3 +28,10 @@ async def resolve_version(
 
         await ctx.info(text=f"Use latest compatible version of {name}#{version} : {version}")
         return str(version)
+
+
+def create_local_scylla_db_docs_file_if_needed(expected_path: Path):
+    if not expected_path.exists():
+        expected_path.parent.mkdir(parents=True, exist_ok=True)
+        write_json(data={"documents": []}, path=expected_path)
+    return expected_path
