@@ -41,6 +41,10 @@ Result = Union[Project, Failure]
 
 class ProjectLoader:
 
+    # This attribute is not none when a promise of projects' result has been started but not yet finished
+    # It allows to not fetch projects at the same time
+    projects_promise: Optional[Awaitable[List[Result]]] = None
+
     @staticmethod
     async def get_projects(env: YouwolEnvironment, context: Context) -> List[Project]:
         return [result
@@ -49,14 +53,29 @@ class ProjectLoader:
 
     @staticmethod
     async def get_results(env: YouwolEnvironment, context: Context) -> List[Result]:
-        if "ProjectLoader" not in env.private_cache:
-            env.private_cache["ProjectLoader"] = \
-                await load_projects(projects_dirs=env.pathsBook.projects,
-                                    additional_python_scr_paths=env.pathsBook.additionalPythonScrPaths,
-                                    env=env,
-                                    context=context)
+        if "ProjectLoader" in env.private_cache:
+            return env.private_cache["ProjectLoader"]
 
-        return env.private_cache["ProjectLoader"]
+        if not ProjectLoader.projects_promise:
+            ProjectLoader.projects_promise = load_projects(
+                projects_dirs=env.pathsBook.projects,
+                additional_python_scr_paths=env.pathsBook.additionalPythonScrPaths,
+                env=env,
+                context=context)
+            projects = await ProjectLoader.projects_promise
+            env.private_cache["ProjectLoader"] = projects
+            ProjectLoader.projects_promise = None
+        else:
+            projects = None
+            for _ in range(10):
+                await asyncio.sleep(0.2)
+                if env.private_cache.get("ProjectLoader", None):
+                    projects = env.private_cache.get("ProjectLoader")
+                    break
+            if not projects:
+                raise RuntimeError("Resolution of already started projects took too long")
+
+        return projects
 
 
 async def load_projects(projects_dirs: List[Path],
