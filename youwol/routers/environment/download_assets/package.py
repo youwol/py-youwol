@@ -14,7 +14,11 @@ from youwol_utils import CdnClient, decode_id, encode_id, Context
 class DownloadPackageTask(DownloadTask):
 
     def __post_init__(self):
-        self.version = self.url.split('/api/assets-gateway/raw/')[1].split('/')[2]
+        if "/api/assets-gateway/raw/" in self.url:
+            self.version = self.url.split('/api/assets-gateway/raw/')[1].split('/')[2]
+        if "/api/assets-gateway/cdn-backend/resources/" in self.url:
+            self.version = self.url.split("/api/assets-gateway/cdn-backend/resources/")[1].split('/')[1]
+
         self.package_name = decode_id(self.raw_id)
 
     def download_id(self):
