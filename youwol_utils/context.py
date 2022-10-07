@@ -142,6 +142,7 @@ class Context(NamedTuple):
                     muted_http_errors: Set[int] = None,
                     with_labels: List[StringLike] = None,
                     with_attributes: JSON = None,
+                    with_data: Dict[str, DataType] = None,
                     with_headers: Dict[str, str] = None,
                     on_enter: 'CallableBlock' = None,
                     on_exit: 'CallableBlock' = None,
@@ -150,6 +151,7 @@ class Context(NamedTuple):
                     ) -> AsyncContextManager[Context]:
         with_attributes = with_attributes or {}
         with_labels = with_labels or []
+        with_data = with_data or {}
         logs_reporters = self.logs_reporters if with_reporters is None else self.logs_reporters + with_reporters
         muted_http_errors = self.muted_http_errors.union(muted_http_errors or set())
         self.request and YouwolHeaders.patch_request_mute_http_headers(
@@ -165,6 +167,7 @@ class Context(NamedTuple):
                       muted_http_errors=self.muted_http_errors.union(muted_http_errors or set()),
                       with_labels=[*self.with_labels, *with_labels],
                       with_attributes={**self.with_attributes, **with_attributes},
+                      with_data={**self.with_data, **with_data},
                       with_headers={**self.with_headers, **(with_headers or {})}
                       )
 
