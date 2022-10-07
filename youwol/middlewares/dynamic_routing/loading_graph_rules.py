@@ -26,7 +26,7 @@ class GetLoadingGraphDispatch(AbstractDispatch):
         if '/api/assets-gateway/cdn-backend/queries/loading-graph' not in request.url.path:
             return None
 
-        async with context.start(action="GetLoadingGraphDispatch.apply") as ctx:
+        async with context.start(action="GetLoadingGraphDispatch.apply", muted_http_errors={404}) as ctx:
 
             body_raw = await request.body()
 

@@ -58,9 +58,7 @@ fastapi_app.add_middleware(
         workspace_explorer.MoveBorrowInRemoteFolderDispatch(),
         loading_graph.GetLoadingGraphDispatch(),
         missing_asset.GetRawDispatch(),
-        missing_asset.GetAssetDispatch(),
-        missing_asset.GetRawDispatchDeprecated(),
-        missing_asset.GetMetadataDispatchDeprecated(),
+        missing_asset.ForwardOnlyDispatch(),
         missing_asset.PostMetadataDispatchDeprecated(),
         missing_asset.CreateAssetDispatchDeprecated()
     ],
