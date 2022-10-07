@@ -10,9 +10,6 @@ from fastapi import HTTPException
 from starlette.requests import Request
 from starlette.responses import Response
 
-from youwol_utils import (
-    user_info, get_all_individual_groups, get_group
-)
 from youwol_utils.clients.data_api.data import DataClient
 from youwol_utils.clients.files import FilesClient
 
@@ -62,9 +59,7 @@ class DataStore(RawStore, ABC):
     async def sync_asset_metadata(self, request: Request, raw_id: str, metadata: AssetMeta, headers):
 
         docdb = self.client.docdb
-        user = user_info(request)
-        groups = get_all_individual_groups(user["memberof"])
-        owner = await get_group("file_id", raw_id, groups, docdb, headers)
+        owner = "/youwol-user"
         doc = await docdb.get_document(partition_keys={"file_id": raw_id}, clustering_keys={},
                                        owner=owner, headers=headers)
 

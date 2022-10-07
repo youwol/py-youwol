@@ -1,10 +1,9 @@
-import asyncio
 import base64
 import json
 from datetime import datetime
 from enum import Enum
 from pathlib import Path, PosixPath
-from typing import Union, List, cast, Mapping, Callable, Iterable, Any, NamedTuple, Dict, Set
+from typing import Union, List, cast, Callable, Iterable, Any, NamedTuple, Dict, Set
 
 import aiohttp
 import itertools
@@ -15,7 +14,6 @@ from starlette.requests import Request
 from youwol_utils.types import JSON
 from youwol_utils.clients.utils import to_group_id
 from youwol_utils.clients.oidc.oidc_config import OidcInfos, OidcConfig
-from youwol_utils.clients.types import DocDb
 
 flatten = itertools.chain.from_iterable
 
@@ -141,15 +139,6 @@ def chunks(lst, n):
     """Yield successive n-sized chunks from lst."""
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
-
-
-async def get_group(primary_key: str, primary_value: Union[str, float, int, bool], groups: List[str], doc_db: DocDb,
-                    headers: Mapping[str, str]):
-    requests = [doc_db.query(query_body=f"{primary_key}={primary_value}#1", owner=group, headers=headers)
-                for group in groups]
-    responses = await asyncio.gather(*requests)
-    group = next((g for i, g in enumerate(groups) if responses[i]["documents"]), None)
-    return group
 
 
 def check_permission_or_raise(target_group: Union[str, None], allowed_groups: List[Union[None, str]]):
