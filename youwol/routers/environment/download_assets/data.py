@@ -6,6 +6,7 @@ from youwol.environment.clients import RemoteClients, LocalClients
 from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.environment.download_assets.common import create_asset_local
 from youwol.routers.environment.download_assets.models import DownloadTask
+from youwol_utils import Context
 from youwol_utils.clients.assets.assets import AssetsClient
 
 
@@ -15,11 +16,11 @@ class DownloadDataTask(DownloadTask):
     def download_id(self):
         return self.raw_id
 
-    async def is_local_up_to_date(self):
-        env: YouwolEnvironment = await self.context.get('env', YouwolEnvironment)
+    async def is_local_up_to_date(self, context: Context):
+        env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
         local_assets: AssetsClient = LocalClients.get_assets_client(env=env)
         try:
-            await local_assets.get(asset_id=self.asset_id, headers=self.context.headers())
+            await local_assets.get(asset_id=self.asset_id, headers=context.headers())
             return True
         except HTTPException as e:
             if e.status_code == 404:
@@ -27,12 +28,12 @@ class DownloadDataTask(DownloadTask):
             else:
                 raise e
 
-    async def create_local_asset(self):
+    async def create_local_asset(self, context: Context):
 
-        env: YouwolEnvironment = await self.context.get('env', YouwolEnvironment)
+        env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
         remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=env.selectedRemote,
-                                                                   context=self.context)
-        default_drive = await env.get_default_drive(context=self.context)
+                                                                   context=context)
+        default_drive = await env.get_default_drive(context=context)
 
         await create_asset_local(
             asset_id=self.asset_id,
@@ -40,5 +41,5 @@ class DownloadDataTask(DownloadTask):
             default_owning_folder_id=default_drive.downloadFolderId,
             get_raw_data=lambda _ctx: remote_gtw.get_raw(kind='data', raw_id=self.raw_id, headers=_ctx.headers()),
             to_post_raw_data=lambda data: {"file": data, "rawId": self.raw_id},
-            context=self.context
+            context=context
             )

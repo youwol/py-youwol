@@ -7,7 +7,7 @@ from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.commons import Label
 from youwol.routers.environment.download_assets.models import DownloadTask
 from youwol.routers.local_cdn.implementation import download_package
-from youwol_utils import CdnClient, decode_id, encode_id
+from youwol_utils import CdnClient, decode_id, encode_id, Context
 
 
 @dataclass
@@ -20,10 +20,10 @@ class DownloadPackageTask(DownloadTask):
     def download_id(self):
         return self.package_name+"/"+self.version
 
-    async def is_local_up_to_date(self):
-        env: YouwolEnvironment = await self.context.get('env', YouwolEnvironment)
+    async def is_local_up_to_date(self, context: Context):
+        env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
         local_cdn: CdnClient = LocalClients.get_cdn_client(env=env)
-        headers = self.context.headers()
+        headers = context.headers()
         try:
             await local_cdn.get_version_info(
                 library_id=encode_id(self.package_name),
@@ -36,9 +36,9 @@ class DownloadPackageTask(DownloadTask):
                 return False
             raise e
 
-    async def create_local_asset(self):
+    async def create_local_asset(self, context: Context):
 
-        async with self.context.start(
+        async with context.start(
                 action=f"DownloadPackageTask.create_local_asset {self.package_name}#{self.version}",
                 with_labels=[str(Label.PACKAGE_DOWNLOADING)],
                 with_attributes={

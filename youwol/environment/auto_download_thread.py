@@ -5,9 +5,10 @@ from threading import Thread
 from typing import Dict, Any
 
 from pydantic import BaseModel
+from tqdm import tqdm
 
-from youwol.environment.clients import RemoteClients
 from youwol.environment.youwol_environment import YouwolEnvironment
+from youwol.routers.environment.download_assets.models import DownloadTask
 from youwol.web_socket import LogsStreamer
 from youwol_utils import encode_id
 from youwol_utils.context import Context
@@ -26,11 +27,15 @@ class DownloadEvent(BaseModel):
     type: DownloadEventType
 
 
+def downloading_pbar(env: YouwolEnvironment):
+    return f"Downloading [{','.join(env.cache_downloaded_ids)}]"
+
+
 async def process_download_asset(
         queue: asyncio.Queue,
-        factories: Dict[str, Any]
+        factories: Dict[str, Any],
+        pbar: tqdm
         ):
-
     async def on_error(text, _error, _ctx):
         await _ctx.error(
             text=text,
@@ -42,58 +47,57 @@ async def process_download_asset(
             type=DownloadEventType.failed
         ))
     while True:
+
         url, kind, raw_id, context, headers = await queue.get()
+
+        env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
+        asset_id = encode_id(raw_id)
+        process_id = str(uuid.uuid4())
+        task: DownloadTask = factories[kind](
+            process_id=process_id, raw_id=raw_id, asset_id=asset_id, url=url
+        )
+
+        download_id = task.download_id()
+        if download_id in env.cache_downloaded_ids:
+            await context.info(text="Asset already in download queue")
+            continue
+
+        up_to_date = await task.is_local_up_to_date(context=context)
+        if up_to_date:
+            await context.info(text="Asset up to date")
+            continue
+
+        pbar.total = pbar.total + 1
         async with context.start(
                 action=f"Proceed download task",
                 with_attributes={"kind": kind, "rawId": raw_id},
                 on_exit=queue.task_done()
         ) as ctx:  # types: Context
 
-            env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
-            if "packages_downloaded_ids" not in env.private_cache:
-                env.private_cache["packages_downloaded_ids"] = set()
-
+            env.cache_downloaded_ids.add(download_id)
+            # log_info(f"Start asset install of kind {kind}: {download_id}")
+            pbar.set_description(downloading_pbar(env), refresh=True)
             try:
-                asset_id = encode_id(raw_id)
-                remote_gtw_client = await RemoteClients.get_assets_gateway_client(remote_host=env.selectedRemote,
-                                                                                  context=ctx)
-                asset = await remote_gtw_client.get_asset_metadata(asset_id=asset_id, headers=headers)
+                await ctx.send(DownloadEvent(
+                    kind=kind,
+                    rawId=raw_id,
+                    type=DownloadEventType.started
+                ))
+                await task.create_local_asset(context=context)
+                await ctx.send(DownloadEvent(
+                    kind=kind,
+                    rawId=raw_id,
+                    type=DownloadEventType.succeeded
+                ))
+                pbar.update(1)
+                # log_info(f"Done asset install of kind {kind}: {download_id}")
+
             except Exception as e:
-                await on_error("The asset of corresponding rawId is not found in remote", e, ctx)
-                return
-
-            process_id = str(uuid.uuid4())
-
-            task = factories[asset['kind']](
-                process_id=process_id, raw_id=raw_id, asset_id=asset_id, url=url, context=ctx
-            )
-            download_id = task.download_id()
-            downloaded_ids = env.private_cache["packages_downloaded_ids"]
-            up_to_date = await task.is_local_up_to_date()
-            if up_to_date:
-                await ctx.info(text="Asset up to date")
-
-            if download_id in downloaded_ids:
-                await ctx.info(text="Asset already in download queue")
-
-            if download_id not in downloaded_ids and not up_to_date:
-                downloaded_ids.add(download_id)
-                try:
-                    await ctx.send(DownloadEvent(
-                        kind=asset['kind'],
-                        rawId=raw_id,
-                        type=DownloadEventType.started
-                    ))
-                    await task.create_local_asset()
-                    await ctx.send(DownloadEvent(
-                        kind=asset['kind'],
-                        rawId=raw_id,
-                        type=DownloadEventType.succeeded
-                    ))
-                except Exception as e:
-                    await on_error("Error while installing the asset in local",  e, ctx)
-                finally:
-                    downloaded_ids.remove(download_id)
+                await on_error("Error while installing the asset in local",  e, ctx)
+                raise e
+            finally:
+                download_id in env.cache_downloaded_ids and env.cache_downloaded_ids.remove(download_id)
+                pbar.set_description(downloading_pbar(env), refresh=True)
 
 
 class AssetDownloadThread(Thread):
@@ -115,10 +119,12 @@ class AssetDownloadThread(Thread):
     def go(self):
         super().start()
         tasks = []
+        pbar = tqdm(total=0, colour="green")
         for _ in range(self.worker_count):
             coroutine = process_download_asset(
                 queue=self.download_queue,
-                factories=self.factories
+                factories=self.factories,
+                pbar=pbar
             )
             task = self.event_loop.create_task(coroutine)
             tasks.append(task)
