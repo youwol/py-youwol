@@ -3,9 +3,9 @@ from typing import List, NamedTuple, Union, Dict, Any
 
 from pydantic import BaseModel
 from semantic_version import Version
+from youwol_utils.types import JSON
 
-from youwol_utils import TableBody, JSON
-from youwol_utils.clients.docdb.models import Column, TableOptions, OrderingClause
+from youwol_utils.clients.docdb.models import Column, TableOptions, OrderingClause, TableBody
 
 
 def get_api_key(version: Union[str, Version]):
