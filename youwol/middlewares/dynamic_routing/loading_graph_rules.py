@@ -54,6 +54,7 @@ class GetLoadingGraphDispatch(AbstractDispatch):
                         content = await resp.read()
                         if not resp.ok:
                             await ctx.error(text="Loading tree has not been resolved in remote neither")
+                            return Response(status_code=resp.status, content=content, headers=headers_resp)
                         #  This is a patch to keep until new version of cdn-backend is deployed
                         graph = json.loads(content)
                         if graph['graphType'] != 'sequential-v2':
