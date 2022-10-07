@@ -18,9 +18,9 @@ def web_socket_cache():
 
 class LogsStreamer(WsContextReporter):
     def __init__(self):
-        super().__init__(lambda: [WebSocketsStore.logs])
+        super().__init__(lambda: [WebSocketsStore.logs], mute_exceptions=True)
 
 
 class WsDataStreamer(WsContextReporter):
     def __init__(self):
-        super().__init__(lambda: [WebSocketsStore.data])
+        super().__init__(lambda: [WebSocketsStore.data], mute_exceptions=False)
