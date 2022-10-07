@@ -25,7 +25,7 @@ class YouwolHeaders(NamedTuple):
     py_youwol_local_only = 'py-youwol-local-only'
     correlation_id = 'x-correlation-id'
     trace_id = 'x-trace-id'
-
+    muted_http_errors = "muted_http_errors"
     @staticmethod
     def get_correlation_id(request: Request):
         return request.headers.get(YouwolHeaders.correlation_id, None)
@@ -37,6 +37,16 @@ class YouwolHeaders(NamedTuple):
     @staticmethod
     def get_py_youwol_local_only(request: Request):
         return request.headers.get(YouwolHeaders.py_youwol_local_only, None)
+
+    @staticmethod
+    def get_muted_http_errors(request: Request) -> Set[int]:
+        raw_header = request.headers.get(YouwolHeaders.muted_http_errors, None)
+        return set() if not raw_header else {int(s) for s in raw_header.split(',')}
+
+    @staticmethod
+    def patch_request_mute_http_headers(request: Request, status_muted: Set[int]):
+        header = YouwolHeaders.muted_http_errors.encode(), ','.join(str(s) for s in status_muted).encode()
+        request.headers.__dict__["_list"].append(header)
 
 
 def find_platform_path():
