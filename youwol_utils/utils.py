@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 from enum import Enum
 from pathlib import Path, PosixPath
-from typing import Union, List, cast, Mapping, Callable, Iterable, Any, NamedTuple, Dict
+from typing import Union, List, cast, Mapping, Callable, Iterable, Any, NamedTuple, Dict, Set
 
 import aiohttp
 import itertools
