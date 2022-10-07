@@ -29,6 +29,7 @@ from youwol_cdn_backend.utils import (
 )
 
 from youwol_cdn_backend.utils_indexing import get_version_number_str
+from youwol_utils.http_clients.cdn_backend.utils import resolve_version
 
 router = APIRouter(tags=["cdn-backend"])
 
@@ -147,10 +148,13 @@ async def get_version_info(
             with_attributes={"library_id": library_id, "version": version}
     ) as ctx:  # type: Context
         library_name = to_package_name(library_id)
-        if version == 'latest':
-            versions_resp = await list_versions(name=library_name, max_results=1, context=ctx,
+        try:
+            get_version_number_str(version)
+        except ValueError:
+            versions_resp = await list_versions(name=library_name, context=ctx, max_results=1000,
                                                 configuration=configuration)
-            version = versions_resp.versions[0]
+            version = await resolve_version(name=library_name, version=version, versions=versions_resp.versions,
+                                            context=ctx)
 
         doc_db = configuration.doc_db
 
