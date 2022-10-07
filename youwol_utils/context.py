@@ -94,8 +94,9 @@ def format_message(entry: LogEntry):
 
 class WsContextReporter(ContextReporter):
 
-    def __init__(self, websockets_getter: Callable[[], List[WebSocket]]):
+    def __init__(self, websockets_getter: Callable[[], List[WebSocket]], mute_exceptions: bool = False):
         self.websockets_getter = websockets_getter
+        self.mute_exceptions = mute_exceptions
 
     async def log(self, entry: LogEntry):
         message = format_message(entry)
@@ -104,12 +105,10 @@ class WsContextReporter(ContextReporter):
         async def dispatch():
             try:
                 text = json.dumps(message)
-                exceptions = await asyncio.gather(*[ws.send_text(text) for ws in websockets if ws],
-                                                  return_exceptions=True)
-                if any([isinstance(e, Exception) for e in exceptions]):
-                    print("Error in ws.send")
+                await asyncio.gather(*[ws.send_text(text) for ws in websockets if ws],
+                                     return_exceptions=self.mute_exceptions)
             except (TypeError, OverflowError):
-                print("Error in JSON serialization")
+                print(f"Error in JSON serialization ({__file__})")
 
         await dispatch()
 
