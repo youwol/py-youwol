@@ -15,7 +15,7 @@ from youwol_utils.context import Context
 from youwol_utils.http_clients.cdn_backend import LoadingGraphBody, patch_loading_graph
 
 
-class GetLoadingGraphDispatch(AbstractDispatch):
+class GetLoadingGraph(AbstractDispatch):
 
     async def apply(self,
                     request: Request,

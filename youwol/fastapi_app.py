@@ -3,14 +3,12 @@ from starlette.requests import Request
 from starlette.responses import RedirectResponse, Response
 
 import youwol.middlewares.custom_dispatch_middleware as custom_dispatch
-import youwol.middlewares.dynamic_routing.loading_graph_rules as loading_graph
-import youwol.middlewares.dynamic_routing.missing_asset_rules as missing_asset
-import youwol.middlewares.dynamic_routing.workspace_explorer_rules as workspace_explorer
+import youwol.middlewares.local_cloud_hybridizers as local_cloud_hybridizer
 from youwol.environment.auto_download_thread import AssetDownloadThread
 from youwol.environment.youwol_environment import yw_config, api_configuration
 from youwol.middlewares.auth_middleware import get_remote_openid_infos, JwtProviderConfig
 from youwol.middlewares.browser_caching_middleware import BrowserCachingMiddleware
-from youwol.middlewares.dynamic_routing_middleware import DynamicRoutingMiddleware
+from youwol.middlewares.hybridizer_middleware import LocalCloudHybridizerMiddleware
 from youwol.routers import native_backends, admin, authorization
 from youwol.routers.environment.download_assets.data import DownloadDataTask
 from youwol.routers.environment.download_assets.flux_project import DownloadFluxProjectTask
@@ -50,17 +48,17 @@ ContextFactory.with_static_data = {
 }
 
 fastapi_app.add_middleware(
-    DynamicRoutingMiddleware,
+    LocalCloudHybridizerMiddleware,
     dynamic_dispatch_rules=[
-        workspace_explorer.GetChildrenDispatch(),
-        workspace_explorer.GetPermissionsDispatch(),
-        workspace_explorer.GetItemDispatch(),
-        workspace_explorer.MoveBorrowInRemoteFolderDispatch(),
-        loading_graph.GetLoadingGraphDispatch(),
-        missing_asset.GetRawDispatch(),
-        missing_asset.ForwardOnlyDispatch(),
-        missing_asset.PostMetadataDispatchDeprecated(),
-        missing_asset.CreateAssetDispatchDeprecated()
+        local_cloud_hybridizer.workspace_explorer_rules.GetChildrenDispatch(),
+        local_cloud_hybridizer.workspace_explorer_rules.GetPermissionsDispatch(),
+        local_cloud_hybridizer.workspace_explorer_rules.GetItemDispatch(),
+        local_cloud_hybridizer.workspace_explorer_rules.MoveBorrowInRemoteFolderDispatch(),
+        local_cloud_hybridizer.loading_graph_rules.GetLoadingGraph(),
+        local_cloud_hybridizer.download_rules.Download(),
+        local_cloud_hybridizer.forward_only_rules.ForwardOnly(),
+        local_cloud_hybridizer.deprecated_rules.PostMetadataDeprecated(),
+        local_cloud_hybridizer.deprecated_rules.CreateAssetDeprecated()
     ],
     disabling_header=YouwolHeaders.py_youwol_local_only
 )

@@ -10,7 +10,7 @@ from youwol_utils import YouWolException, youwol_exception_handler
 from youwol_utils.context import Context, Label
 
 
-class DynamicRoutingMiddleware(BaseHTTPMiddleware):
+class LocalCloudHybridizerMiddleware(BaseHTTPMiddleware):
 
     def __init__(self, app: ASGIApp,
                  dynamic_dispatch_rules: List[AbstractDispatch],
@@ -25,7 +25,7 @@ class DynamicRoutingMiddleware(BaseHTTPMiddleware):
             ) -> Response:
 
         async with Context.from_request(request).start(
-                action="attempt dynamic dispatches",
+                action="attempt hybrid local/cloud dispatches",
                 with_labels=[Label.MIDDLEWARE]
         ) as ctx:
             if request.headers.get(self.disabling_header, "false") == "true":

@@ -43,7 +43,7 @@ class GetChildrenDispatch(AbstractDispatch):
         if not folder_id:
             return None
         await context.info(text="GetChildrenDispatch matching incoming request")
-        async with context.start(action="GetChildrenDispatch.apply") as ctx:
+        async with context.start(action="GetChildrenDispatch.apply", muted_http_errors={404}) as ctx:
             env = await context.get('env', YouwolEnvironment)
 
             local_gtw_treedb = LocalClients.get_gtw_treedb_client(env=env)
@@ -125,7 +125,7 @@ class GetPermissionsDispatch(AbstractDispatch):
         if not await GetPermissionsDispatch.is_matching(request=request):
             return None
 
-        async with context.start(action="GetPermissionsDispatch.apply") as ctx:
+        async with context.start(action="GetPermissionsDispatch.apply", muted_http_errors={404}) as ctx:
 
             env = await ctx.get('env', YouwolEnvironment)
             local_gtw = LocalClients.get_assets_gateway_client(env=env)
@@ -162,7 +162,7 @@ class GetItemDispatch(AbstractDispatch):
         if not await GetItemDispatch.is_matching(request=request):
             return None
 
-        async with context.start(action="GetItemDispatch.apply") as ctx:
+        async with context.start(action="GetItemDispatch.apply", muted_http_errors={404}) as ctx:
             env = await ctx.get('env', YouwolEnvironment)
             local_gtw = LocalClients.get_assets_gateway_client(env=env)
             remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=env.selectedRemote, context=ctx)
@@ -193,7 +193,7 @@ class MoveBorrowInRemoteFolderDispatch(AbstractDispatch):
         if not match or replaced[-1] not in ['move', 'borrow']:
             return None
 
-        async with context.start(action="MoveBorrowInRemoteFolderDispatch.apply") as ctx:
+        async with context.start(action="MoveBorrowInRemoteFolderDispatch.apply", muted_http_errors={404}) as ctx:
             body = await request.json()
             folder_id = body["destinationFolderId"]
             await ensure_local_path(folder_id=folder_id, env=env, context=ctx)
