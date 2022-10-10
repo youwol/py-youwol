@@ -15,6 +15,7 @@ python-multipart
 pyyaml
 pyjwt[crypto]
 redis
+tqdm
 uvicorn
 websockets
 semantic_version

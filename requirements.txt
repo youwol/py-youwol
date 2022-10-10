@@ -133,6 +133,8 @@ tomli==2.0.1
     #   coverage
     #   pep517
     #   pytest
+tqdm==4.64.1
+    # via -r deps/base.in
 typing-extensions==4.2.0
     # via
     #   pydantic
