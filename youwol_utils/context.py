@@ -206,6 +206,7 @@ class Context(NamedTuple):
     def start_ep(
             request: Request,
             action: str = None,
+            muted_http_errors: Set[int] = None,
             with_labels: List[StringLike] = None,
             with_attributes: JSON = None,
             body: BaseModel = None,
@@ -219,6 +220,7 @@ class Context(NamedTuple):
         with_labels = with_labels or []
         with_attributes = with_attributes or {}
 
+        muted_http_errors = YouwolHeaders.get_muted_http_errors(request=request).union(muted_http_errors or set())
         async def on_exit_fct(ctx):
             await ctx.info('Response', data=response()) if response else None
             on_exit and await on_exit(ctx)
@@ -229,7 +231,7 @@ class Context(NamedTuple):
 
         return context.start(
             action=action,
-            muted_http_errors=YouwolHeaders.get_muted_http_errors(request=request),
+            muted_http_errors=muted_http_errors,
             with_labels=[Label.END_POINT, *with_labels],
             with_attributes={"method": request.method, **with_attributes},
             with_reporters=with_reporters,
