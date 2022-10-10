@@ -83,7 +83,7 @@ async def process_download_asset(
                     rawId=raw_id,
                     type=DownloadEventType.started
                 ))
-                await task.create_local_asset(context=context)
+                await task.create_local_asset(context=ctx)
                 await ctx.send(DownloadEvent(
                     kind=kind,
                     rawId=raw_id,
