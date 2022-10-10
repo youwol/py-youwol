@@ -212,7 +212,8 @@ async def get_default_drive(
     async with Context.start_ep(
             request=request,
             action="get default drive",
-            with_attributes={'group_id': group_id}
+            with_attributes={'group_id': group_id},
+            muted_http_errors={404}
     ) as ctx:
 
         default_drive_id = f"{group_id}_default-drive"
