@@ -57,7 +57,9 @@ class PathsBook(BaseModel):
 
     @property
     def local_assets_access_docdb(self) -> Path:
-        return create_local_scylla_db_docs_file_if_needed(self.local_docdb / 'assets' / 'access_policy' / docdb_filename)
+        return create_local_scylla_db_docs_file_if_needed(
+            self.local_docdb / 'assets' / 'access_policy' / docdb_filename
+        )
 
     @property
     def local_storage(self) -> Path:
