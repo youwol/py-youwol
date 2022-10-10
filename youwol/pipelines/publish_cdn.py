@@ -16,7 +16,7 @@ from youwol.environment.paths import PathsBook
 from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.environment.upload_assets.package import UploadPackageOptions
 from youwol.routers.environment.upload_assets.upload import upload_asset
-from youwol_utils import encode_id, files_check_sum, to_json
+from youwol_utils import encode_id, files_check_sum, to_json, YouwolHeaders
 from youwol_utils.context import Context
 from youwol_utils.utils_paths import create_zip_file
 
@@ -156,7 +156,9 @@ class PublishCdnLocalStep(PipelineStep):
             package_id = encode_id(project.publishName)
             asset_id = encode_id(package_id)
             try:
-                item = await local_treedb.get_item(item_id=asset_id, headers=ctx.headers())
+                item = await local_treedb.get_item(
+                    item_id=asset_id,
+                    headers={**ctx.headers(), YouwolHeaders.muted_http_errors: "404"})
                 folder_id = item['folderId']
             except HTTPException as e:
                 if e.status_code == 404:
