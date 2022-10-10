@@ -27,8 +27,11 @@ class DownloadEvent(BaseModel):
     type: DownloadEventType
 
 
+CACHE_DOWNLOADING_KEY = "download-thread#downloading_ids"
+
+
 def downloading_pbar(env: YouwolEnvironment):
-    return f"Downloading [{','.join(env.cache_downloaded_ids)}]"
+    return f"Downloading [{','.join(env.private_cache[CACHE_DOWNLOADING_KEY])}]"
 
 
 async def process_download_asset(
@@ -47,7 +50,6 @@ async def process_download_asset(
             type=DownloadEventType.failed
         ))
     while True:
-
         url, kind, raw_id, context, headers = await queue.get()
 
         env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
@@ -56,9 +58,12 @@ async def process_download_asset(
         task: DownloadTask = factories[kind](
             process_id=process_id, raw_id=raw_id, asset_id=asset_id, url=url
         )
+        if CACHE_DOWNLOADING_KEY not in env.private_cache:
+            env.private_cache[CACHE_DOWNLOADING_KEY] = set()
+        cache_downloaded_ids = env.private_cache[CACHE_DOWNLOADING_KEY]
 
         download_id = task.download_id()
-        if download_id in env.cache_downloaded_ids:
+        if download_id in cache_downloaded_ids:
             await context.info(text="Asset already in download queue")
             continue
 
@@ -74,7 +79,7 @@ async def process_download_asset(
                 on_exit=queue.task_done()
         ) as ctx:  # types: Context
 
-            env.cache_downloaded_ids.add(download_id)
+            cache_downloaded_ids.add(download_id)
             # log_info(f"Start asset install of kind {kind}: {download_id}")
             pbar.set_description(downloading_pbar(env), refresh=True)
             try:
@@ -96,7 +101,7 @@ async def process_download_asset(
                 await on_error("Error while installing the asset in local",  e, ctx)
                 raise e
             finally:
-                download_id in env.cache_downloaded_ids and env.cache_downloaded_ids.remove(download_id)
+                download_id in cache_downloaded_ids and cache_downloaded_ids.remove(download_id)
                 pbar.set_description(downloading_pbar(env), refresh=True)
 
 
