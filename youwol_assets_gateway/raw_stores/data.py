@@ -59,7 +59,7 @@ class DataStore(RawStore, ABC):
     async def sync_asset_metadata(self, request: Request, raw_id: str, metadata: AssetMeta, headers):
 
         docdb = self.client.docdb
-        owner = "/youwol-user"
+        owner = "/youwol-users"
         doc = await docdb.get_document(partition_keys={"file_id": raw_id}, clustering_keys={},
                                        owner=owner, headers=headers)
 
