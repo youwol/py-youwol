@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import asyncio
 import os
 from pathlib import Path
-from typing import List, Union
+from typing import List, Union, Optional, Awaitable
 
 from pydantic import BaseModel
 
@@ -12,6 +13,7 @@ from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.utils.utils_low_level import get_object_from_module
 from youwol_utils import encode_id
 from youwol_utils.context import Context
+from youwol_utils.utils_paths import FileListing, matching_files
 
 PROJECT_PIPELINE_DIRECTORY = '.yw_pipeline'
 
@@ -58,7 +60,6 @@ class ProjectLoader:
 
         if not ProjectLoader.projects_promise:
             ProjectLoader.projects_promise = load_projects(
-                projects_dirs=env.pathsBook.projects,
                 additional_python_scr_paths=env.pathsBook.additionalPythonScrPaths,
                 env=env,
                 context=context)
@@ -78,8 +79,7 @@ class ProjectLoader:
         return projects
 
 
-async def load_projects(projects_dirs: List[Path],
-                        additional_python_scr_paths: List[Path],
+async def load_projects(additional_python_scr_paths: List[Path],
                         env: YouwolEnvironment,
                         context: Context
                         ) -> List[Result]:
@@ -87,8 +87,9 @@ async def load_projects(projects_dirs: List[Path],
     async with context.start(
             action="load_projects"
     ) as ctx:   # type: Context
-
-        results_dirs = get_projects_dirs_candidates(projects_dirs)
+        projects = env.projects
+        project_folders = projects.finder(env, context) if projects.finder else default_projects_finder(env)
+        results_dirs = get_projects_dirs_candidates(project_folders)
         candidates_dirs = [
             candidate_dirs
             for candidate_dirs in results_dirs
@@ -123,11 +124,12 @@ async def load_projects(projects_dirs: List[Path],
 
 
 def get_projects_dirs_candidates(projects_dirs: List[Path]) -> List[Union[Path, Failure]]:
-    result = []
-    for projects_dir in projects_dirs:
-        result.extend(get_projects_dir_candidate(projects_dir))
 
-    return result
+    def is_project(maybe_path: Path):
+        test_path = maybe_path / PROJECT_PIPELINE_DIRECTORY / 'yw_pipeline.py'
+        return maybe_path if test_path.exists() else FailureNoPipeline(path=str(maybe_path))
+
+    return [is_project(p) for p in projects_dirs]
 
 
 def get_projects_dir_candidate(projects_dir) -> List[Union[Path, Failure]]:
@@ -178,3 +180,34 @@ async def get_project(project_path: Path,
             pipeline=pipeline,
             path=project_path
         )
+
+
+def default_projects_finder(env: YouwolEnvironment):
+
+    return auto_detect_projects(
+        env=env,
+        root_folder=env.pathsBook.config.parent,
+        ignore=["**/dist", '**/py-youwol']
+    )
+
+
+def auto_detect_projects(env: YouwolEnvironment, root_folder: Path, ignore: List[str] = None):
+
+    database_ignore = None
+    system_ignore = None
+    try:
+        database_ignore = env.pathsBook.databases.relative_to(root_folder)
+    except ValueError:
+        pass
+    try:
+        system_ignore = env.pathsBook.system.relative_to(root_folder)
+    except ValueError:
+        pass
+
+    ignore = (ignore or []) + [str(path) for path in [database_ignore, system_ignore] if path]
+    file_listing = FileListing(
+        include=["**/.yw_pipeline/yw_pipeline.py"],
+        ignore=["**/node_modules", "**/.template", "**/.git"] + ignore
+    )
+    yw_pipelines = matching_files(root_folder, file_listing)
+    return [p.parent.parent for p in yw_pipelines]

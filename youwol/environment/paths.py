@@ -16,7 +16,6 @@ class PathsBook(BaseModel):
     config: Path
     system: Path
     databases: Path
-    projects: List[Path]
     additionalPythonScrPaths: List[Path]
     usersInfo: Path
     remotesInfo: Path
@@ -129,8 +128,6 @@ class PathsBook(BaseModel):
  * config file: {self.config}
  * databases directory: {self.databases}
  * system directory: {self.system}
- * projects directories:
-{chr(10).join([f"  * {path}" for path in self.projects])} 
  * additional Python source directories:
 {chr(10).join([f"  * {path}" for path in self.additionalPythonScrPaths])}"""
 

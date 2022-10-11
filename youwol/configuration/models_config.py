@@ -1,13 +1,15 @@
 from enum import Enum
 from pathlib import Path
-from typing import List, Union, Optional, Dict
+from typing import List, Union, Optional, Dict, Callable, Awaitable
 
 from pydantic import BaseModel
 
+from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol.environment.models import Events
 from youwol.environment.models_project import ProjectTemplate
 from youwol.middlewares.models_dispatch import AbstractDispatch, RedirectDispatch
 from youwol.routers.custom_commands.models import Command
+from youwol_utils import Context
 from youwol_utils.servers.fast_api import FastApiRouter
 
 
@@ -50,9 +52,13 @@ class UploadTargets(BaseModel):
     targets: List[UploadTarget]
 
 
-class PipelinesSourceInfo(BaseModel):
+class Projects(BaseModel):
+    finder: Union[
+        Callable[[YouwolEnvironment, Context], List[ConfigPath]],
+        Callable[[YouwolEnvironment, Context], Awaitable[List[ConfigPath]]]
+    ] = None
+    templates: List[ProjectTemplate] = []
     uploadTargets: List[UploadTargets] = []
-    projectTemplates: List[ProjectTemplate] = []
 
 
 class ConfigurationData(BaseModel):
@@ -64,7 +70,7 @@ class ConfigurationData(BaseModel):
     user: Optional[str]
     portsBook: Optional[Dict[str, int]]
     routers: Optional[List[FastApiRouter]]
-    projectsDirs: Optional[Union[ConfigPath, List[ConfigPath]]]
+    projects: Optional[Projects]
     configDir: Optional[ConfigPath]
     dataDir: Optional[ConfigPath]
     cacheDir: Optional[ConfigPath]
@@ -76,7 +82,6 @@ class ConfigurationData(BaseModel):
     events: Optional[Union[Events, str, ModuleLoading]]
     customCommands: List[Union[str, Command, ModuleLoading]] = []
     customize: Optional[Union[str, ModuleLoading]]
-    pipelinesSourceInfo: PipelinesSourceInfo = PipelinesSourceInfo()
 
 
 class CascadeBaseProfile(Enum):

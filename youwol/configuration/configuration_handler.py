@@ -5,10 +5,10 @@ from pathlib import Path
 from typing import Optional, List, Union, Dict
 
 from youwol.configuration.defaults import default_http_port, default_path_data_dir, \
-    default_path_cache_dir, default_path_projects_dir, default_port_range_start, default_port_range_end, \
+    default_path_cache_dir, default_port_range_start, default_port_range_end, \
     default_platform_host, default_jwt_source
 from youwol.configuration.models_config import Profiles, ConfigurationData, PortRange, ModuleLoading, \
-    CascadeBaseProfile, CascadeAppend, CascadeReplace, CdnOverride, Redirection, JwtSource, PipelinesSourceInfo
+    CascadeBaseProfile, CascadeAppend, CascadeReplace, CdnOverride, Redirection, JwtSource, Projects
 
 from youwol.environment.models import Events, IConfigurationCustomizer
 from youwol.environment.paths import app_dirs
@@ -34,7 +34,7 @@ def replace_with(parent: ConfigurationData, replacement: ConfigurationData) -> C
         redirectBasePath=replacement.redirectBasePath if replacement.redirectBasePath else parent.redirectBasePath,
         openIdHost=replacement.openIdHost if replacement.openIdHost else parent.openIdHost,
         user=replacement.user if replacement.user else parent.user,
-        projectsDirs=replacement.projectsDirs if replacement.projectsDirs else parent.projectsDirs,
+        projects=replacement.projects if replacement.projects else parent.projects,
         configDir=replacement.configDir if replacement.configDir else parent.configDir,
         dataDir=replacement.dataDir if replacement.dataDir else parent.dataDir,
         cacheDir=replacement.cacheDir if replacement.cacheDir else parent.cacheDir,
@@ -44,10 +44,7 @@ def replace_with(parent: ConfigurationData, replacement: ConfigurationData) -> C
         defaultModulePath=replacement.defaultModulePath if replacement.defaultModulePath else parent.defaultModulePath,
         events=replacement.events if replacement.events else parent.events,
         customCommands=replacement.customCommands if replacement.customCommands else parent.customCommands,
-        customize=replacement.customize if replacement.customize else parent.customize,
-        pipelinesSourceInfo=replacement.pipelinesSourceInfo
-        if replacement.pipelinesSourceInfo
-        else parent.pipelinesSourceInfo
+        customize=replacement.customize if replacement.customize else parent.customize
     )
 
 
@@ -129,14 +126,8 @@ class ConfigurationHandler:
         path = self.effective_config_data.cacheDir if self.effective_config_data.cacheDir else default_path_cache_dir
         return ensure_dir_exists(path, root_candidates=app_dirs.user_cache_dir)
 
-    def get_projects_dirs(self) -> List[Path]:
-        path = self.effective_config_data.projectsDirs \
-            if self.effective_config_data.projectsDirs else default_path_projects_dir
-        if isinstance(path, str) or isinstance(path, Path):
-            return [ensure_dir_exists(path, root_candidates=Path().home())]
-        else:
-            return [ensure_dir_exists(path_str, root_candidates=Path().home())
-                    for path_str in self.effective_config_data.projectsDirs]
+    def get_projects(self) -> Projects:
+        return self.effective_config_data.projects or Projects()
 
     def get_dispatches(self) -> List[AbstractDispatch]:
         if not self.effective_config_data.dispatches:
@@ -249,9 +240,6 @@ class ConfigurationHandler:
 
         return [ensure_dir_exists(path=path, root_candidates=path_user_lib)
                 for path in paths]
-
-    def get_pipelines_source_info(self) -> PipelinesSourceInfo:
-        return self.effective_config_data.pipelinesSourceInfo
 
     def get_ports_book(self) -> Dict[str, int]:
         return self.effective_config_data.portsBook or {}
