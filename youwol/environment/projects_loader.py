@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import asyncio
+import itertools
 import os
 from pathlib import Path
-from typing import List, Union, Optional, Awaitable
+from typing import List, Union, Optional, Awaitable, Iterable
 
 from pydantic import BaseModel
 
+from youwol.configuration.defaults import default_path_projects_dir
 from youwol.environment.models import IPipelineFactory
 from youwol.environment.models_project import Project
 from youwol.environment.youwol_environment import YouwolEnvironment
@@ -88,7 +90,10 @@ async def load_projects(additional_python_scr_paths: List[Path],
             action="load_projects"
     ) as ctx:   # type: Context
         projects = env.projects
-        project_folders = projects.finder(env, context) if projects.finder else default_projects_finder(env)
+        project_folders = projects.finder(env, ctx) \
+            if callable(projects.finder) \
+            else default_projects_finder(env=env, root_folders=projects.finder)
+
         results_dirs = get_projects_dirs_candidates(project_folders)
         candidates_dirs = [
             candidate_dirs
@@ -123,7 +128,7 @@ async def load_projects(additional_python_scr_paths: List[Path],
         return results
 
 
-def get_projects_dirs_candidates(projects_dirs: List[Path]) -> List[Union[Path, Failure]]:
+def get_projects_dirs_candidates(projects_dirs: Iterable[Path]) -> List[Union[Path, Failure]]:
 
     def is_project(maybe_path: Path):
         test_path = maybe_path / PROJECT_PIPELINE_DIRECTORY / 'yw_pipeline.py'
@@ -182,13 +187,17 @@ async def get_project(project_path: Path,
         )
 
 
-def default_projects_finder(env: YouwolEnvironment):
+def default_projects_finder(env: YouwolEnvironment, root_folders: Union[None, Path, List[Path]] = None):
 
-    return auto_detect_projects(
-        env=env,
-        root_folder=env.pathsBook.config.parent,
-        ignore=["**/dist", '**/py-youwol']
-    )
+    if not root_folders:
+        (Path.home() / default_path_projects_dir).mkdir(exist_ok=True)
+
+    root_folders = [Path.home() / default_path_projects_dir] if not root_folders else root_folders
+    root_folders = root_folders if isinstance(root_folders, List) else [root_folders]
+    results = [auto_detect_projects(env=env, root_folder=root_folder, ignore=["**/dist", '**/py-youwol'])
+               for root_folder in root_folders]
+
+    return itertools.chain.from_iterable(results)
 
 
 def auto_detect_projects(env: YouwolEnvironment, root_folder: Path, ignore: List[str] = None):

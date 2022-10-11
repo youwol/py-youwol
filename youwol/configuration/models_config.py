@@ -54,8 +54,11 @@ class UploadTargets(BaseModel):
 
 class Projects(BaseModel):
     finder: Union[
+        ConfigPath,
+        List[ConfigPath],
         Callable[[YouwolEnvironment, Context], List[ConfigPath]],
-        Callable[[YouwolEnvironment, Context], Awaitable[List[ConfigPath]]]
+        Callable[[YouwolEnvironment, Context], Awaitable[List[ConfigPath]]],
+        ModuleLoading
     ] = None
     templates: List[ProjectTemplate] = []
     uploadTargets: List[UploadTargets] = []
