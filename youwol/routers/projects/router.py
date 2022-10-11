@@ -386,7 +386,7 @@ async def new_project_from_template(
             with_labels=[f"{Label.PROJECT_CREATING}"],
             with_reporters=[LogsStreamer()]
     ) as ctx:
-        template = next((template for template in config.pipelinesSourceInfo.projectTemplates
+        template = next((template for template in config.projects.templates
                          if template.type == body.type), None)
         if not template:
             raise RuntimeError(f"Can not find a template of type {body.type}")
@@ -440,4 +440,3 @@ async def do_cmd_get_pipeline_step(
             raise HTTPException(status_code=404, detail=f"The step has no command '{command_id}'")
 
         return await command.do_get(project, flow_id, ctx)
-
