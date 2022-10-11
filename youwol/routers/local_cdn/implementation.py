@@ -12,6 +12,7 @@ from youwol.routers.local_cdn.models import CheckUpdateResponse, UpdateStatus, P
     DownloadedPackageResponse, DownloadPackageBody, PackageEventResponse, Event
 from youwol_utils import encode_id
 from youwol_utils.context import Context
+from youwol_utils.http_clients.cdn_backend.utils import resolve_version
 from youwol_utils.utils_paths import parse_json
 
 
@@ -170,13 +171,14 @@ async def download_package(
             context=ctx
         )
         db = parse_json(env.pathsBook.local_cdn_docdb)
-        versions = [d for d in db['documents'] if d['library_name'] == package_name]
-        version = version if version != "latest" else max([p["version"] for p in versions])
-        record = next(d for d in versions if d['library_id'] == f"{package_name}#{version}")
+        all_packages = [d for d in db['documents'] if d['library_name'] == package_name]
+        versions = [d['version'] for d in all_packages]
+        version = await resolve_version(name=package_name, version=version, versions=versions, context=ctx)
+        record = next(d for d in all_packages if d['library_id'] == f"{package_name}#{version}")
         response = DownloadedPackageResponse(
             packageName=package_name,
             version=version,
-            versions=[d['version'] for d in versions],
+            versions=versions,
             fingerprint=record['fingerprint']
         )
         await ctx.send(response)

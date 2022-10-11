@@ -1,4 +1,3 @@
-import functools
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import List, Dict, Callable, Optional, Union, Any, Awaitable
@@ -56,32 +55,3 @@ class IConfigurationCustomizer(ABC):
     async def customize(self, _youwol_configuration: YouwolEnvironment) -> YouwolEnvironment:
         return NotImplemented
 
-
-class K8sNodeInfo(BaseModel):
-    cpu: str
-    memory: str
-    architecture: str
-    kernelVersion: str
-    operating_system: str
-    os_image: str
-
-    def __str__(self):
-        return f"""
-cpu: {self.cpu}, memory: {self.memory}, architecture: {self.architecture}, 'os': {self.operating_system}"""
-
-
-class K8sInstanceInfo(BaseModel):
-    access_token: str
-    nodes: List[K8sNodeInfo]
-    # api_gateway_ip: Optional[str]
-    k8s_api_proxy: str
-
-    def __str__(self):
-        nodes_info = functools.reduce(lambda acc, e: acc + e, [n.__str__() for n in self.nodes], "")
-        main = "/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/#/pod?namespace=_all"
-        return f"""k8s instance info:
-- API proxy url: {self.k8s_api_proxy}
-- dashboard: {self.k8s_api_proxy}{main}
-- access_token: {self.access_token}
-- {len(self.nodes)} nodes: {nodes_info}
-"""

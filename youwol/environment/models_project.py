@@ -39,42 +39,6 @@ class Check(BaseModel):
     status: Union[bool, ErrorResponse, None] = None
 
 
-class FormalParameterEnum(Enum):
-    STRING = 'STRING'
-    ENUM = 'ENUM'
-
-
-class FormalParameter(BaseModel):
-    name: str
-    value: Any
-    description: str = ""
-    meta: Dict[str, Any]
-
-
-def parameter_enum(name: str, value: str, description: str, values: List[str]):
-    return FormalParameter(
-        name=name,
-        value=value,
-        description=description,
-        meta={"type": 'ENUM', 'values': values}
-    )
-
-
-class ConfigParameters(BaseModel):
-    parameters: Dict[str, FormalParameter]
-
-    def get_values(self) -> Dict[str, Any]:
-        return {pid: p.value for pid, p in self.parameters.items()}
-
-    def with_updates(self, new_values: Dict[str, Any]) -> 'ConfigParameters':
-        def new_param(pid: str, p: FormalParameter):
-            return FormalParameter(name=p.name, description=p.description, meta=p.meta,
-                                   value=new_values[pid] if pid in new_values else p.value)
-
-        new_params = {pid: new_param(pid, p) for pid, p in self.parameters.items()}
-        return ConfigParameters(parameters=new_params)
-
-
 class FileListing(BaseModel):
     include: List[str]
     ignore: List[str] = []
@@ -444,4 +408,3 @@ class ProjectTemplate(BaseModel):
     folder: Union[str, Path]
     parameters: Dict[str, str]
     generator: Callable[[Path, Dict[str, str], Context], Awaitable[Tuple[str, Path]]]
-

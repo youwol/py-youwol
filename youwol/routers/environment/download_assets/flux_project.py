@@ -9,6 +9,7 @@ from youwol.routers.environment.download_assets.common import (
     create_asset_local
 )
 from youwol.routers.environment.download_assets.models import DownloadTask
+from youwol_utils import Context
 from youwol_utils.clients.flux.flux import FluxClient
 
 
@@ -18,12 +19,12 @@ class DownloadFluxProjectTask(DownloadTask):
     def download_id(self):
         return self.raw_id
 
-    async def is_local_up_to_date(self):
+    async def is_local_up_to_date(self, context: Context):
 
-        env: YouwolEnvironment = await self.context.get('env', YouwolEnvironment)
+        env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
         local_flux: FluxClient = LocalClients.get_flux_client(env=env)
         try:
-            await local_flux.get_project(project_id=self.raw_id, headers=self.context.headers())
+            await local_flux.get_project(project_id=self.raw_id, headers=context.headers())
             return True
         except HTTPException as e:
             if e.status_code == 404:
@@ -31,16 +32,16 @@ class DownloadFluxProjectTask(DownloadTask):
             else:
                 raise e
 
-    async def create_local_asset(self):
+    async def create_local_asset(self, context: Context):
 
         def to_saved_project(retrieved):
             retrieved['projectId'] = self.raw_id
             return json.dumps(retrieved).encode()
 
-        env: YouwolEnvironment = await self.context.get('env', YouwolEnvironment)
+        env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
 
-        remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=env.selectedRemote, context=self.context)
-        default_drive = await env.get_default_drive(context=self.context)
+        remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=env.selectedRemote, context=context)
+        default_drive = await env.get_default_drive(context=context)
         await create_asset_local(
             asset_id=self.asset_id,
             kind='flux-project',
@@ -48,5 +49,5 @@ class DownloadFluxProjectTask(DownloadTask):
             get_raw_data=lambda _ctx: remote_gtw.get_raw(kind='flux-project', raw_id=self.raw_id,
                                                          content_type="application/json", headers=_ctx.headers()),
             to_post_raw_data=to_saved_project,
-            context=self.context
+            context=context
             )

@@ -15,7 +15,7 @@ from starlette.responses import StreamingResponse
 from youwol_utils import (
     Request, user_info, get_all_individual_groups, to_group_id,
     asyncio, check_permission_or_raise, RecordsResponse, GetRecordsBody,
-    RecordsTable, RecordsKeyspace, RecordsBucket, RecordsDocDb, RecordsStorage, get_group, Query, QueryBody,
+    RecordsTable, RecordsKeyspace, RecordsBucket, RecordsDocDb, RecordsStorage, Query, QueryBody,
 )
 from youwol_utils.context import Context
 from youwol_utils.http_clients.cdn_backend import PublishResponse, patch_loading_graph
@@ -217,8 +217,7 @@ async def delete_project(
     ) as ctx:  # type: Context
         doc_db = configuration.doc_db
         user = user_info(request)
-        groups = get_all_individual_groups(user["memberof"])
-        group = await get_group("project_id", project_id, groups, doc_db, ctx.headers())
+        group = Constants.default_owner
 
         if group == -1:
             raise HTTPException(status_code=404, detail="delete_project: project not found")

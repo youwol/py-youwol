@@ -15,7 +15,7 @@ from youwol_utils.context import Context
 from youwol_utils.http_clients.cdn_backend import LoadingGraphBody, patch_loading_graph
 
 
-class GetLoadingGraphDispatch(AbstractDispatch):
+class GetLoadingGraph(AbstractDispatch):
 
     async def apply(self,
                     request: Request,
@@ -26,7 +26,7 @@ class GetLoadingGraphDispatch(AbstractDispatch):
         if '/api/assets-gateway/cdn-backend/queries/loading-graph' not in request.url.path:
             return None
 
-        async with context.start(action="GetLoadingGraphDispatch.apply") as ctx:
+        async with context.start(action="GetLoadingGraphDispatch.apply", muted_http_errors={404}) as ctx:
 
             body_raw = await request.body()
 
@@ -54,6 +54,7 @@ class GetLoadingGraphDispatch(AbstractDispatch):
                         content = await resp.read()
                         if not resp.ok:
                             await ctx.error(text="Loading tree has not been resolved in remote neither")
+                            return Response(status_code=resp.status, content=content, headers=headers_resp)
                         #  This is a patch to keep until new version of cdn-backend is deployed
                         graph = json.loads(content)
                         if graph['graphType'] != 'sequential-v2':

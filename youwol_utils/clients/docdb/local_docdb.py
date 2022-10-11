@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Mapping, Union, Dict, List
 
 from fastapi import HTTPException
+from youwol_utils.http_clients.cdn_backend.utils import create_local_scylla_db_docs_file_if_needed
 
 from youwol_utils.clients.docdb.models import TableBody, QueryBody, WhereClause, Query, SecondaryIndex
 from youwol_utils.clients.utils import get_default_owner
@@ -28,7 +29,7 @@ class LocalDocDbClient:
 
     @property
     def data_path(self):
-        return self.base_path / "data.json"
+        return create_local_scylla_db_docs_file_if_needed(self.base_path / "data.json")
 
     @property
     def metadata_path(self):

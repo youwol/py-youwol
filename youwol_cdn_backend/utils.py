@@ -232,13 +232,13 @@ async def create_explorer_data(dir_path: Path, root_path: Path, forms: List[Form
         } for form in forms}
 
         for root, folders, files in os.walk(dir_path):
-            base_path = f"{Path(root).relative_to(dir_path)}".lstrip('./')
-            base_path = base_path + "/" if base_path else base_path
+            base_path = f"{Path(root).relative_to(dir_path)}"
+            base_path = base_path + "/" if base_path != "." else ""
             data[base_path.rstrip('/')] = ExplorerResponse(
                 size=-1,
                 filesCount=-1,
                 files=[FileResponse(name=f, **forms_data_dict[f"{base_path}{f}"]) for f in files],
-                folders=[FolderResponse(name=f, size=-1, path=f"{base_path}{f}") for f in folders],
+                folders=[FolderResponse(name=f, size=-1, path=f"{base_path.replace('./', '')}{f}") for f in folders],
             )
         data[''].files.append(FileResponse(name="__original.zip", **forms_data_dict["__original.zip"]))
         results = {}

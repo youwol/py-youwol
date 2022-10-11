@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 from youwol_utils.context import Context
@@ -10,4 +10,15 @@ class DownloadTask(ABC):
     raw_id: str
     asset_id: str
     url: str
-    context: Context
+
+    @abstractmethod
+    async def is_local_up_to_date(self, context: Context):
+        pass
+
+    @abstractmethod
+    async def create_local_asset(self, context: Context):
+        pass
+
+    @abstractmethod
+    async def download_id(self):
+        pass

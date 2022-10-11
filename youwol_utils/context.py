@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from contextlib import asynccontextmanager
 from enum import Enum
 from typing import Union, NamedTuple, Callable, Awaitable, Optional, List, TypeVar, Dict, cast, Any, \
-    AsyncContextManager
+    AsyncContextManager, Set
 
 import aiohttp
 from fastapi import HTTPException
@@ -94,8 +94,9 @@ def format_message(entry: LogEntry):
 
 class WsContextReporter(ContextReporter):
 
-    def __init__(self, websockets_getter: Callable[[], List[WebSocket]]):
+    def __init__(self, websockets_getter: Callable[[], List[WebSocket]], mute_exceptions: bool = False):
         self.websockets_getter = websockets_getter
+        self.mute_exceptions = mute_exceptions
 
     async def log(self, entry: LogEntry):
         message = format_message(entry)
@@ -104,12 +105,10 @@ class WsContextReporter(ContextReporter):
         async def dispatch():
             try:
                 text = json.dumps(message)
-                exceptions = await asyncio.gather(*[ws.send_text(text) for ws in websockets if ws],
-                                                  return_exceptions=True)
-                if any([isinstance(e, Exception) for e in exceptions]):
-                    print("Error in ws.send")
+                await asyncio.gather(*[ws.send_text(text) for ws in websockets if ws],
+                                     return_exceptions=self.mute_exceptions)
             except (TypeError, OverflowError):
-                print("Error in JSON serialization")
+                print(f"Error in JSON serialization ({__file__})")
 
         await dispatch()
 
@@ -125,6 +124,7 @@ class Context(NamedTuple):
     uid: Union[str, None] = 'root'
     parent_uid: Union[str, None] = None
     trace_uid: Union[str, None] = None
+    muted_http_errors: Set[int] = set()
 
     with_data: Dict[str, DataType] = {}
     with_attributes: JSON = {}
@@ -138,8 +138,10 @@ class Context(NamedTuple):
     @asynccontextmanager
     async def start(self,
                     action: str,
+                    muted_http_errors: Set[int] = None,
                     with_labels: List[StringLike] = None,
                     with_attributes: JSON = None,
+                    with_data: Dict[str, DataType] = None,
                     with_headers: Dict[str, str] = None,
                     on_enter: 'CallableBlock' = None,
                     on_exit: 'CallableBlock' = None,
@@ -148,16 +150,23 @@ class Context(NamedTuple):
                     ) -> AsyncContextManager[Context]:
         with_attributes = with_attributes or {}
         with_labels = with_labels or []
+        with_data = with_data or {}
         logs_reporters = self.logs_reporters if with_reporters is None else self.logs_reporters + with_reporters
+        muted_http_errors = self.muted_http_errors.union(muted_http_errors or set())
+        self.request and YouwolHeaders.patch_request_mute_http_headers(
+            request=self.request,
+            status_muted=muted_http_errors
+        )
         ctx = Context(logs_reporters=logs_reporters,
                       data_reporters=self.data_reporters,
                       uid=str(uuid.uuid4()),
                       request=self.request,
                       parent_uid=self.uid,
                       trace_uid=self.trace_uid,
-                      with_data=self.with_data,
+                      muted_http_errors=self.muted_http_errors.union(muted_http_errors or set()),
                       with_labels=[*self.with_labels, *with_labels],
                       with_attributes={**self.with_attributes, **with_attributes},
+                      with_data={**self.with_data, **with_data},
                       with_headers={**self.with_headers, **(with_headers or {})}
                       )
 
@@ -182,7 +191,8 @@ class Context(NamedTuple):
             )
             await Context.__execute_block(ctx, on_exception, e)
             await Context.__execute_block(ctx, on_exit)
-            traceback.print_exc()
+            if not(isinstance(e, HTTPException) and e.status_code in self.muted_http_errors):
+                traceback.print_exc()
             if self.request.state:
                 self.request.state.context = self
             raise e
@@ -196,6 +206,7 @@ class Context(NamedTuple):
     def start_ep(
             request: Request,
             action: str = None,
+            muted_http_errors: Set[int] = None,
             with_labels: List[StringLike] = None,
             with_attributes: JSON = None,
             body: BaseModel = None,
@@ -209,6 +220,7 @@ class Context(NamedTuple):
         with_labels = with_labels or []
         with_attributes = with_attributes or {}
 
+        muted_http_errors = YouwolHeaders.get_muted_http_errors(request=request).union(muted_http_errors or set())
         async def on_exit_fct(ctx):
             await ctx.info('Response', data=response()) if response else None
             on_exit and await on_exit(ctx)
@@ -219,6 +231,7 @@ class Context(NamedTuple):
 
         return context.start(
             action=action,
+            muted_http_errors=muted_http_errors,
             with_labels=[Label.END_POINT, *with_labels],
             with_attributes={"method": request.method, **with_attributes},
             with_reporters=with_reporters,
@@ -295,6 +308,7 @@ class Context(NamedTuple):
             **headers,
             YouwolHeaders.correlation_id: self.uid,
             YouwolHeaders.trace_id: self.trace_uid,
+            YouwolHeaders.muted_http_errors: ','.join(str(s) for s in self.muted_http_errors),
             **self.with_headers
         }
 

@@ -172,8 +172,6 @@ async def post_storage_by_chunk(
         headers: Dict[str, str]
 ):
     for i, chunk in enumerate(chunks(forms, count)):
-        progress = 100 * i / (len(forms) / count)
-        print(f"post files chunk, progress: {progress}")
         await asyncio.gather(*[storage.post_file(form=form, headers=headers) for form in chunk])
 
 

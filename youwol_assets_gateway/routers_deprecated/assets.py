@@ -296,6 +296,7 @@ async def update_asset(
         async with ctx.start(action="get asset") as ctx_1:
             asset = await assets_client.get(asset_id=asset_id, headers=ctx_1.headers())
 
+        await ctx.info(text="Successfully retrieved asset", data={"asset": asset})
         store = next(store for store in assets_stores if store.path_name == asset['kind'])
 
         async with ctx.start(action="get treedb items from asset id") as ctx_1:
