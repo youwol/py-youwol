@@ -2,16 +2,17 @@ import os
 import shutil
 import zipfile
 from pathlib import Path
-from typing import Optional, List, Union, Dict
+from typing import Optional, List, Union, Dict, Callable
 
+from youwol import environment
 from youwol.configuration.defaults import default_http_port, default_path_data_dir, \
     default_path_cache_dir, default_port_range_start, default_port_range_end, \
     default_platform_host, default_jwt_source
 from youwol.configuration.models_config import Profiles, ConfigurationData, PortRange, ModuleLoading, \
-    CascadeBaseProfile, CascadeAppend, CascadeReplace, CdnOverride, Redirection, JwtSource, Projects
-
-from youwol.environment.models import Events, IConfigurationCustomizer
+    CascadeBaseProfile, CascadeAppend, CascadeReplace, CdnOverride, Redirection, JwtSource
+from youwol.environment.models import Events, IConfigurationCustomizer, Projects
 from youwol.environment.paths import app_dirs
+from youwol.environment.projects_loader import default_projects_finder
 from youwol.main_args import get_main_arguments
 from youwol.middlewares.models_dispatch import CdnOverrideDispatch, RedirectDispatch, AbstractDispatch
 from youwol.routers.custom_commands.models import Command
@@ -127,7 +128,41 @@ class ConfigurationHandler:
         return ensure_dir_exists(path, root_candidates=app_dirs.user_cache_dir)
 
     def get_projects(self) -> Projects:
-        return self.effective_config_data.projects or Projects()
+        if self.effective_config_data.projects is None:
+            return Projects()
+
+        projects = self.effective_config_data.projects
+        finder = None
+
+        if isinstance(projects.finder, ModuleLoading):
+            # finder is ModuleLoading
+            config_loading = ensure_loading_source_exists(self.effective_config_data.events,
+                                                          self.get_default_module_path(),
+                                                          self.get_data_dir())
+
+            finder = get_object_from_module(module_absolute_path=config_loading.path,
+                                            object_or_class_name=config_loading.name,
+                                            object_type=Callable,
+                                            additional_src_absolute_paths=self.get_additional_python_src_paths())
+
+        elif callable(projects.finder):
+            # finder is Callable[[YouwolEnvironment, Context], List[ConfigPath]]
+            # or Callable[[YouwolEnvironment, Context], Awaitable[List[ConfigPath]]]
+            finder = projects.finder
+        elif isinstance(projects.finder, str) \
+                or isinstance(projects.finder, Path) \
+                or isinstance(projects.finder, List):
+            # finder is List[ConfigPath]
+            def default_finder(env, _ctx):
+                default_projects_finder(env=env, root_folders=projects.finder)
+
+            finder = default_finder
+
+        return environment.models.Projects(
+            finder=finder,
+            templates=projects.templates,
+            uploadTargets=projects.uploadTargets
+        )
 
     def get_dispatches(self) -> List[AbstractDispatch]:
         if not self.effective_config_data.dispatches:

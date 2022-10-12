@@ -1,15 +1,14 @@
 import json
 import os
 import shutil
-from datetime import datetime
-from getpass import getpass
-from pathlib import Path
-from typing import Dict, Any, Union, Optional, Awaitable, List
-
 from colorama import Fore, Style
 from cowpy import cow
+from datetime import datetime
 from fastapi import HTTPException
+from getpass import getpass
+from pathlib import Path
 from pydantic import BaseModel
+from typing import Dict, Any, Union, Optional, Awaitable, List
 
 import youwol
 from youwol.configuration.config_from_module import configuration_from_python
@@ -21,9 +20,9 @@ from youwol.configuration.configuration_validation import (
     CheckSecretHealthy
 )
 from youwol.configuration.defaults import default_platform_host
-from youwol.configuration.models_config import JwtSource, Projects
+from youwol.configuration.models_config import JwtSource
 from youwol.environment.clients import LocalClients
-from youwol.environment.models import RemoteGateway, UserInfo, ApiConfiguration, Events
+from youwol.environment.models import RemoteGateway, UserInfo, ApiConfiguration, Events, Projects
 from youwol.environment.models_project import ErrorResponse
 from youwol.environment.paths import PathsBook, ensure_config_file_exists_or_create_it
 from youwol.main_args import get_main_arguments, MainArguments

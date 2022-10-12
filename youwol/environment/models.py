@@ -1,11 +1,12 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from pydantic import BaseModel
 from typing import List, Dict, Callable, Optional, Union, Any, Awaitable
 
-from pydantic import BaseModel
-
+from youwol.configuration.models_config import ConfigPath, UploadTargets
 from youwol.environment.forward_declaration import YouwolEnvironment
-from youwol.environment.models_project import Pipeline
+from youwol.environment.models_project import Pipeline, ProjectTemplate
+from youwol.environment.projects_loader import default_projects_finder
 from youwol_utils.clients.oidc.oidc_config import PrivateClient, PublicClient
 from youwol_utils.context import Context
 
@@ -55,3 +56,11 @@ class IConfigurationCustomizer(ABC):
     async def customize(self, _youwol_configuration: YouwolEnvironment) -> YouwolEnvironment:
         return NotImplemented
 
+
+class Projects(BaseModel):
+    finder: Callable[
+        [YouwolEnvironment, Context],
+        Awaitable[List[ConfigPath]]
+    ] = lambda env, _ctx: default_projects_finder(env=env)
+    templates: List[ProjectTemplate] = []
+    uploadTargets: List[UploadTargets] = []

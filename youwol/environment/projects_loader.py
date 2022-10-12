@@ -4,9 +4,8 @@ import asyncio
 import itertools
 import os
 from pathlib import Path
-from typing import List, Union, Optional, Awaitable, Iterable
-
 from pydantic import BaseModel
+from typing import List, Union, Optional, Awaitable, Iterable
 
 from youwol.configuration.defaults import default_path_projects_dir
 from youwol.environment.models import IPipelineFactory
@@ -44,7 +43,6 @@ Result = Union[Project, Failure]
 
 
 class ProjectLoader:
-
     # This attribute is not none when a promise of projects' result has been started but not yet finished
     # It allows to not fetch projects at the same time
     projects_promise: Optional[Awaitable[List[Result]]] = None
@@ -85,14 +83,11 @@ async def load_projects(additional_python_scr_paths: List[Path],
                         env: YouwolEnvironment,
                         context: Context
                         ) -> List[Result]:
-
     async with context.start(
             action="load_projects"
-    ) as ctx:   # type: Context
+    ) as ctx:  # type: Context
         projects = env.projects
-        project_folders = projects.finder(env, ctx) \
-            if callable(projects.finder) \
-            else default_projects_finder(env=env, root_folders=projects.finder)
+        project_folders = await projects.finder(env, ctx)
 
         results_dirs = get_projects_dirs_candidates(project_folders)
         candidates_dirs = [
@@ -129,7 +124,6 @@ async def load_projects(additional_python_scr_paths: List[Path],
 
 
 def get_projects_dirs_candidates(projects_dirs: Iterable[Path]) -> List[Union[Path, Failure]]:
-
     def is_project(maybe_path: Path):
         test_path = maybe_path / PROJECT_PIPELINE_DIRECTORY / 'yw_pipeline.py'
         return maybe_path if test_path.exists() else FailureNoPipeline(path=str(maybe_path))
@@ -164,7 +158,6 @@ async def get_project(project_path: Path,
                       additional_python_src_paths: List[Path],
                       env: YouwolEnvironment,
                       context: Context) -> Project:
-
     async with context.start(
             action="get_project",
             with_attributes={"folderName": project_path.name}
@@ -187,8 +180,7 @@ async def get_project(project_path: Path,
         )
 
 
-def default_projects_finder(env: YouwolEnvironment, root_folders: Union[None, Path, List[Path]] = None):
-
+def default_projects_finder(env: YouwolEnvironment, root_folders: Union[None, str, Path, List[str], List[Path]] = None):
     if not root_folders:
         (Path.home() / default_path_projects_dir).mkdir(exist_ok=True)
 
@@ -200,10 +192,10 @@ def default_projects_finder(env: YouwolEnvironment, root_folders: Union[None, Pa
     return itertools.chain.from_iterable(results)
 
 
-def auto_detect_projects(env: YouwolEnvironment, root_folder: Path, ignore: List[str] = None):
-
+def auto_detect_projects(env: YouwolEnvironment, root_folder: Union[Path, str], ignore: List[str] = None):
     database_ignore = None
     system_ignore = None
+    root_folder = Path(root_folder)
     try:
         database_ignore = env.pathsBook.databases.relative_to(root_folder)
     except ValueError:
