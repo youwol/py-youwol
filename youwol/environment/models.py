@@ -6,7 +6,7 @@ from typing import List, Dict, Callable, Optional, Union, Any, Awaitable
 from youwol.configuration.models_config import ConfigPath, UploadTargets
 from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol.environment.models_project import Pipeline, ProjectTemplate
-from youwol.environment.projects_loader import default_projects_finder
+from youwol.environment.utils import default_projects_finder
 from youwol_utils.clients.oidc.oidc_config import PrivateClient, PublicClient
 from youwol_utils.context import Context
 

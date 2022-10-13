@@ -12,7 +12,7 @@ from youwol.configuration.models_config import Profiles, ConfigurationData, Port
     CascadeBaseProfile, CascadeAppend, CascadeReplace, CdnOverride, Redirection, JwtSource
 from youwol.environment.models import Events, IConfigurationCustomizer, Projects
 from youwol.environment.paths import app_dirs
-from youwol.environment.projects_loader import default_projects_finder
+from youwol.environment.utils import default_projects_finder
 from youwol.main_args import get_main_arguments
 from youwol.middlewares.models_dispatch import CdnOverrideDispatch, RedirectDispatch, AbstractDispatch
 from youwol.routers.custom_commands.models import Command
