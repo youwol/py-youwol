@@ -1,16 +1,19 @@
 from enum import Enum
 from pathlib import Path
-from typing import List, Union, Optional, Dict, Callable, Awaitable
+from typing import List, Union, Optional, Dict, Callable, Awaitable, Any
 
 from pydantic import BaseModel
 
 from youwol.environment.forward_declaration import YouwolEnvironment
-from youwol.environment.models import Events
 from youwol.environment.models_project import ProjectTemplate
 from youwol.middlewares.models_dispatch import AbstractDispatch, RedirectDispatch
 from youwol.routers.custom_commands.models import Command
 from youwol_utils import Context
 from youwol_utils.servers.fast_api import FastApiRouter
+
+
+class Events(BaseModel):
+    onLoad: Callable[[YouwolEnvironment, Context], Optional[Union[Any, Awaitable[Any]]]] = None
 
 
 class PortRange(BaseModel):

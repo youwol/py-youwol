@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pydantic import BaseModel
-from typing import List, Dict, Callable, Optional, Union, Any, Awaitable
+from typing import List, Dict, Callable, Optional, Union, Awaitable
 
 from youwol.configuration.models_config import ConfigPath, UploadTargets
 from youwol.environment.forward_declaration import YouwolEnvironment
@@ -45,9 +45,6 @@ class IPipelineFactory(ABC):
     async def get(self, env: YouwolEnvironment, context: Context) -> Pipeline:
         return NotImplemented
 
-
-class Events(BaseModel):
-    onLoad: Callable[[YouwolEnvironment, Context], Optional[Union[Any, Awaitable[Any]]]] = None
 
 
 class IConfigurationCustomizer(ABC):

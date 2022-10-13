@@ -9,8 +9,8 @@ from youwol.configuration.defaults import default_http_port, default_path_data_d
     default_path_cache_dir, default_port_range_start, default_port_range_end, \
     default_platform_host, default_jwt_source
 from youwol.configuration.models_config import Profiles, ConfigurationData, PortRange, ModuleLoading, \
-    CascadeBaseProfile, CascadeAppend, CascadeReplace, CdnOverride, Redirection, JwtSource
-from youwol.environment.models import Events, IConfigurationCustomizer, Projects
+    CascadeBaseProfile, CascadeAppend, CascadeReplace, CdnOverride, Redirection, JwtSource, Events
+from youwol.environment.models import IConfigurationCustomizer, Projects
 from youwol.environment.paths import app_dirs
 from youwol.environment.utils import default_projects_finder
 from youwol.main_args import get_main_arguments

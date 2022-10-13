@@ -20,9 +20,9 @@ from youwol.configuration.configuration_validation import (
     CheckSecretHealthy
 )
 from youwol.configuration.defaults import default_platform_host
-from youwol.configuration.models_config import JwtSource
+from youwol.configuration.models_config import JwtSource, Events
 from youwol.environment.clients import LocalClients
-from youwol.environment.models import RemoteGateway, UserInfo, ApiConfiguration, Events, Projects
+from youwol.environment.models import RemoteGateway, UserInfo, ApiConfiguration, Projects
 from youwol.environment.models_project import ErrorResponse
 from youwol.environment.paths import PathsBook, ensure_config_file_exists_or_create_it
 from youwol.main_args import get_main_arguments, MainArguments
