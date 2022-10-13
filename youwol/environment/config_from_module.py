@@ -90,11 +90,11 @@ class Configuration(ConfigurationData):
                           cascading: Union[CascadeAppend, CascadeReplace, CascadeBaseProfile]
                           = CascadeBaseProfile.REPLACE) -> Configuration:
         if self._cascading is not None:
-            raise Exception("Calling Configuration#extending_profile(…) on anything but base profile is forbidden")
+            raise RuntimeError("Calling Configuration#extending_profile(…) on anything but base profile is forbidden")
         if name == 'default':
-            raise Exception("Profile name 'default' is reserved")
+            raise RuntimeError("Profile name 'default' is reserved")
         if name in self._extending_profiles:
-            raise Exception(f"There is already a profile named '{name}'")
+            raise RuntimeError(f"There is already a profile named '{name}'")
         conf._cascading = cascading
         self._extending_profiles[name] = conf
         return self
@@ -108,7 +108,7 @@ class Configuration(ConfigurationData):
 
     def selected(self, name: str) -> Configuration:
         if self._cascading is not None:
-            raise Exception("Calling Configuration#selected(…) on anything but base profile is forbidden")
+            raise RuntimeError("Calling Configuration#selected(…) on anything but base profile is forbidden")
 
         self._selected = name
         return self
