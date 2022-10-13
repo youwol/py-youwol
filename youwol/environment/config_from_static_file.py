@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Optional, Dict
 
-from youwol.configuration.configuration_handler import ConfigurationHandler
+from youwol.environment.configuration_handler import ConfigurationHandler
 from youwol.configuration.models_config import Profiles, ConfigurationData, Cascade, CascadeBaseProfile, \
     ExtendingProfile
 from youwol.environment.paths import app_dirs

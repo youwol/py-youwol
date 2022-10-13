@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Optional, Awaitable, Dict, Union
 
-from youwol.configuration.configuration_handler import ConfigurationHandler
+from youwol.environment.configuration_handler import ConfigurationHandler
 from youwol.configuration.configuration_validation import CheckValidConfigurationFunction, ConfigurationLoadingStatus, \
     ConfigurationLoadingException
 from youwol.configuration.models_config import Profiles, ConfigurationData, \

@@ -11,9 +11,9 @@ from pydantic import BaseModel
 from typing import Dict, Any, Union, Optional, Awaitable, List
 
 import youwol
-from youwol.configuration.config_from_module import configuration_from_python
-from youwol.configuration.config_from_static_file import configuration_from_json
-from youwol.configuration.configuration_handler import ConfigurationHandler
+from youwol.environment.config_from_module import configuration_from_python
+from youwol.environment.config_from_static_file import configuration_from_json
+from youwol.environment.configuration_handler import ConfigurationHandler
 from youwol.configuration.configuration_validation import (
     ConfigurationLoadingStatus, ConfigurationLoadingException,
     CheckSystemFolderWritable, CheckDatabasesFolderHealthy, CheckSecretPathExist,
