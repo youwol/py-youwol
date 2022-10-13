@@ -97,7 +97,7 @@ class PublishCdnLocalStep(PipelineStep):
             try:
                 local_lib_info = await local_cdn.get_library_info(
                     library_id=encode_id(project.publishName),
-                    headers=ctx.headers()
+                    headers={YouwolHeaders.muted_http_errors: "404"}
                 )
             except HTTPException as e:
                 await ctx.info(text="The package has not been published yet in the local cdn")

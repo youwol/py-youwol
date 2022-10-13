@@ -1,29 +1,28 @@
 import json
 import os
 import shutil
-from datetime import datetime
-from getpass import getpass
-from pathlib import Path
-from typing import Dict, Any, Union, Optional, Awaitable, List
-
 from colorama import Fore, Style
 from cowpy import cow
+from datetime import datetime
 from fastapi import HTTPException
+from getpass import getpass
+from pathlib import Path
 from pydantic import BaseModel
+from typing import Dict, Any, Union, Optional, Awaitable, List
 
 import youwol
-from youwol.configuration.config_from_module import configuration_from_python
-from youwol.configuration.config_from_static_file import configuration_from_json
-from youwol.configuration.configuration_handler import ConfigurationHandler
+from youwol.environment.config_from_module import configuration_from_python
+from youwol.environment.config_from_static_file import configuration_from_json
+from youwol.environment.configuration_handler import ConfigurationHandler
 from youwol.configuration.configuration_validation import (
     ConfigurationLoadingStatus, ConfigurationLoadingException,
     CheckSystemFolderWritable, CheckDatabasesFolderHealthy, CheckSecretPathExist,
     CheckSecretHealthy
 )
 from youwol.configuration.defaults import default_platform_host
-from youwol.configuration.models_config import JwtSource, PipelinesSourceInfo
+from youwol.configuration.models_config import JwtSource, Events
 from youwol.environment.clients import LocalClients
-from youwol.environment.models import RemoteGateway, UserInfo, ApiConfiguration, Events
+from youwol.environment.models import RemoteGateway, UserInfo, ApiConfiguration, Projects
 from youwol.environment.models_project import ErrorResponse
 from youwol.environment.paths import PathsBook, ensure_config_file_exists_or_create_it
 from youwol.main_args import get_main_arguments, MainArguments
@@ -64,6 +63,7 @@ class YouwolEnvironment(BaseModel):
     cdnAutomaticUpdate: bool
     customDispatches: List[AbstractDispatch]
 
+    projects: Projects
     commands: Dict[str, Command]
 
     userEmail: Optional[str]
@@ -76,8 +76,6 @@ class YouwolEnvironment(BaseModel):
     private_cache: Dict[str, Any] = {}
 
     tokensCache: List[DeadlinedCache] = []
-
-    pipelinesSourceInfo: Optional[PipelinesSourceInfo] = PipelinesSourceInfo()
 
     def reset_cache(self):
         self.cache = {}
@@ -186,7 +184,7 @@ Configuration loaded from '{self.pathsBook.config}'
 - active profile: {self.activeProfile if self.activeProfile else "Default profile"}
 - paths: {self.pathsBook}
 - cdn packages count: {len(parse_json(self.pathsBook.local_cdn_docdb)['documents'])}
-- assets count: {len(parse_json(self.pathsBook.local_docdb / 'assets' / 'entities' / 'data.json')['documents'])}
+- assets count: {len(parse_json(self.pathsBook.local_assets_entities_docdb)['documents'])}
 {str_redirections()}
 {str_commands()}
 {str_routers()}
@@ -231,10 +229,10 @@ class YouwolEnvironmentFactory:
             pathsBook=conf.pathsBook,
             httpPort=conf.httpPort,
             cache={},
+            projects=conf.projects,
             availableProfiles=conf.availableProfiles,
             commands=conf.commands,
             customDispatches=conf.customDispatches,
-            pipelinesSourceInfo=conf.pipelinesSourceInfo,
             cdnAutomaticUpdate=conf.cdnAutomaticUpdate,
             events=conf.events
         )
@@ -263,11 +261,11 @@ class YouwolEnvironmentFactory:
             pathsBook=conf.pathsBook,
             httpPort=conf.httpPort,
             cache={},
+            projects=conf.projects,
             availableProfiles=conf.availableProfiles,
             commands=conf.commands,
             customDispatches=conf.customDispatches,
             cdnAutomaticUpdate=conf.cdnAutomaticUpdate,
-            pipelinesSourceInfo=conf.pipelinesSourceInfo,
             events=conf.events
         )
         YouwolEnvironmentFactory.__cached_config = new_conf
@@ -382,7 +380,6 @@ async def safe_load(
         secrets=Path(conf_handler.get_config_dir() / Path("secrets.json")),
         usersInfo=Path(conf_handler.get_config_dir() / Path("users-info.json")),
         remotesInfo=Path(conf_handler.get_config_dir() / Path("remotes-info.json")),
-        projects=conf_handler.get_projects_dirs(),
         additionalPythonScrPaths=conf_handler.get_additional_python_src_paths()
     )
 
@@ -447,9 +444,9 @@ async def safe_load(
         events=conf_handler.get_events(),
         cdnAutomaticUpdate=conf_handler.get_cdn_auto_update(),
         pathsBook=paths_book,
+        projects=conf_handler.get_projects(),
         commands=conf_handler.get_commands(),
         customDispatches=conf_handler.get_dispatches(),
-        pipelinesSourceInfo=conf_handler.get_pipelines_source_info()
     )
     return await conf_handler.customize(youwol_configuration)
 

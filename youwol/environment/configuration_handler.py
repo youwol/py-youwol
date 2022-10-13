@@ -1,21 +1,25 @@
+import inspect
 import os
 import shutil
 import zipfile
 from pathlib import Path
-from typing import Optional, List, Union, Dict
+from typing import Optional, List, Union, Dict, Callable, cast
 
+from youwol import environment
 from youwol.configuration.defaults import default_http_port, default_path_data_dir, \
-    default_path_cache_dir, default_path_projects_dir, default_port_range_start, default_port_range_end, \
+    default_path_cache_dir, default_port_range_start, default_port_range_end, \
     default_platform_host, default_jwt_source
 from youwol.configuration.models_config import Profiles, ConfigurationData, PortRange, ModuleLoading, \
-    CascadeBaseProfile, CascadeAppend, CascadeReplace, CdnOverride, Redirection, JwtSource, PipelinesSourceInfo
-
-from youwol.environment.models import Events, IConfigurationCustomizer
+    CascadeBaseProfile, CascadeAppend, CascadeReplace, CdnOverride, Redirection, JwtSource, Events, ConfigPath
+from youwol.environment.forward_declaration import YouwolEnvironment
+from youwol.environment.models import IConfigurationCustomizer, Projects
 from youwol.environment.paths import app_dirs
+from youwol.environment.utils import default_projects_finder
 from youwol.main_args import get_main_arguments
 from youwol.middlewares.models_dispatch import CdnOverrideDispatch, RedirectDispatch, AbstractDispatch
 from youwol.routers.custom_commands.models import Command
 from youwol.utils.utils_low_level import get_object_from_module
+from youwol_utils import Context
 from youwol_utils.servers.fast_api import FastApiRouter
 from youwol_utils.utils_paths import PathException, ensure_dir_exists
 
@@ -34,7 +38,7 @@ def replace_with(parent: ConfigurationData, replacement: ConfigurationData) -> C
         redirectBasePath=replacement.redirectBasePath if replacement.redirectBasePath else parent.redirectBasePath,
         openIdHost=replacement.openIdHost if replacement.openIdHost else parent.openIdHost,
         user=replacement.user if replacement.user else parent.user,
-        projectsDirs=replacement.projectsDirs if replacement.projectsDirs else parent.projectsDirs,
+        projects=replacement.projects if replacement.projects else parent.projects,
         configDir=replacement.configDir if replacement.configDir else parent.configDir,
         dataDir=replacement.dataDir if replacement.dataDir else parent.dataDir,
         cacheDir=replacement.cacheDir if replacement.cacheDir else parent.cacheDir,
@@ -44,10 +48,7 @@ def replace_with(parent: ConfigurationData, replacement: ConfigurationData) -> C
         defaultModulePath=replacement.defaultModulePath if replacement.defaultModulePath else parent.defaultModulePath,
         events=replacement.events if replacement.events else parent.events,
         customCommands=replacement.customCommands if replacement.customCommands else parent.customCommands,
-        customize=replacement.customize if replacement.customize else parent.customize,
-        pipelinesSourceInfo=replacement.pipelinesSourceInfo
-        if replacement.pipelinesSourceInfo
-        else parent.pipelinesSourceInfo
+        customize=replacement.customize if replacement.customize else parent.customize
     )
 
 
@@ -129,14 +130,48 @@ class ConfigurationHandler:
         path = self.effective_config_data.cacheDir if self.effective_config_data.cacheDir else default_path_cache_dir
         return ensure_dir_exists(path, root_candidates=app_dirs.user_cache_dir)
 
-    def get_projects_dirs(self) -> List[Path]:
-        path = self.effective_config_data.projectsDirs \
-            if self.effective_config_data.projectsDirs else default_path_projects_dir
-        if isinstance(path, str) or isinstance(path, Path):
-            return [ensure_dir_exists(path, root_candidates=Path().home())]
-        else:
-            return [ensure_dir_exists(path_str, root_candidates=Path().home())
-                    for path_str in self.effective_config_data.projectsDirs]
+    def get_projects(self) -> Projects:
+        if self.effective_config_data.projects is None:
+            return Projects()
+
+        projects = self.effective_config_data.projects
+        finder = None
+
+        if isinstance(projects.finder, ModuleLoading):
+            # finder is ModuleLoading
+            config_loading = ensure_loading_source_exists(self.effective_config_data.events,
+                                                          self.get_default_module_path(),
+                                                          self.get_data_dir())
+
+            finder = get_object_from_module(module_absolute_path=config_loading.path,
+                                            object_or_class_name=config_loading.name,
+                                            object_type=Callable,
+                                            additional_src_absolute_paths=self.get_additional_python_src_paths())
+
+        elif callable(projects.finder):
+            # finder is Callable[[YouwolEnvironment, Context], List[ConfigPath]]
+            # or Callable[[YouwolEnvironment, Context], Awaitable[List[ConfigPath]]]
+            is_coroutine = inspect.iscoroutinefunction(projects.finder)
+
+            async def await_finder(env, ctx):
+                #  if no cast => python complains about typing w/ ModuleLoading accepting only keyword arguments
+                return cast(Callable[[YouwolEnvironment, Context], List[ConfigPath]], projects.finder)(env, ctx)
+
+            finder = projects.finder if is_coroutine else await_finder
+        elif isinstance(projects.finder, str) \
+                or isinstance(projects.finder, Path) \
+                or isinstance(projects.finder, List):
+            # finder is List[ConfigPath]
+            def default_finder(env, _ctx):
+                default_projects_finder(env=env, root_folders=projects.finder)
+
+            finder = default_finder
+
+        return environment.models.Projects(
+            finder=finder,
+            templates=projects.templates,
+            uploadTargets=projects.uploadTargets
+        )
 
     def get_dispatches(self) -> List[AbstractDispatch]:
         if not self.effective_config_data.dispatches:
@@ -249,9 +284,6 @@ class ConfigurationHandler:
 
         return [ensure_dir_exists(path=path, root_candidates=path_user_lib)
                 for path in paths]
-
-    def get_pipelines_source_info(self) -> PipelinesSourceInfo:
-        return self.effective_config_data.pipelinesSourceInfo
 
     def get_ports_book(self) -> Dict[str, int]:
         return self.effective_config_data.portsBook or {}

@@ -16,6 +16,8 @@ from youwol_utils.context import Context
 
 
 def get_dependencies(project: Project) -> Set[str]:
+    if not (project.path / 'requirements.txt').exists():
+        return set()
     with (project.path / 'requirements.txt').open() as requirements_txt:
         install_requires = [
             str(requirement)
@@ -223,12 +225,12 @@ async def pipeline(
 
         env: YouwolEnvironment = await ctx.get('env', YouwolEnvironment)
 
-        docker = next(d for d in env.pipelinesSourceInfo.uploadTargets if isinstance(d, DockerImagesPush))
+        docker = next(d for d in env.projects.uploadTargets if isinstance(d, DockerImagesPush))
         docker_repo = docker.get_repo(config.dockerConfig.repoName)
 
         dry_run_config = InstallHelmStepConfig(**config.helmConfig.dict())
         dry_run_config.overridingHelmValues = add_dry_values
-        k8s = next(deployment for deployment in env.pipelinesSourceInfo.uploadTargets
+        k8s = next(deployment for deployment in env.projects.uploadTargets
                    if isinstance(deployment, HelmChartsInstall))
 
         install_helm_steps = [InstallHelmStep(id=f'install-helm_{k8sTarget.name}',

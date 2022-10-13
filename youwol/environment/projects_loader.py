@@ -1,14 +1,14 @@
 from __future__ import annotations
 
+import asyncio
 import os
 from pathlib import Path
-from typing import List, Union
-
 from pydantic import BaseModel
+from typing import List, Union, Optional, Awaitable, Iterable
 
+from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol.environment.models import IPipelineFactory
 from youwol.environment.models_project import Project
-from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.utils.utils_low_level import get_object_from_module
 from youwol_utils import encode_id
 from youwol_utils.context import Context
@@ -40,7 +40,6 @@ Result = Union[Project, Failure]
 
 
 class ProjectLoader:
-
     # This attribute is not none when a promise of projects' result has been started but not yet finished
     # It allows to not fetch projects at the same time
     projects_promise: Optional[Awaitable[List[Result]]] = None
@@ -58,7 +57,6 @@ class ProjectLoader:
 
         if not ProjectLoader.projects_promise:
             ProjectLoader.projects_promise = load_projects(
-                projects_dirs=env.pathsBook.projects,
                 additional_python_scr_paths=env.pathsBook.additionalPythonScrPaths,
                 env=env,
                 context=context)
@@ -78,17 +76,17 @@ class ProjectLoader:
         return projects
 
 
-async def load_projects(projects_dirs: List[Path],
-                        additional_python_scr_paths: List[Path],
+async def load_projects(additional_python_scr_paths: List[Path],
                         env: YouwolEnvironment,
                         context: Context
                         ) -> List[Result]:
-
     async with context.start(
             action="load_projects"
-    ) as ctx:   # type: Context
+    ) as ctx:  # type: Context
+        projects = env.projects
+        project_folders = await projects.finder(env, ctx)
 
-        results_dirs = get_projects_dirs_candidates(projects_dirs)
+        results_dirs = get_projects_dirs_candidates(project_folders)
         candidates_dirs = [
             candidate_dirs
             for candidate_dirs in results_dirs
@@ -122,12 +120,12 @@ async def load_projects(projects_dirs: List[Path],
         return results
 
 
-def get_projects_dirs_candidates(projects_dirs: List[Path]) -> List[Union[Path, Failure]]:
-    result = []
-    for projects_dir in projects_dirs:
-        result.extend(get_projects_dir_candidate(projects_dir))
+def get_projects_dirs_candidates(projects_dirs: Iterable[Path]) -> List[Union[Path, Failure]]:
+    def is_project(maybe_path: Path):
+        test_path = maybe_path / PROJECT_PIPELINE_DIRECTORY / 'yw_pipeline.py'
+        return maybe_path if test_path.exists() else FailureNoPipeline(path=str(maybe_path))
 
-    return result
+    return [is_project(p) for p in projects_dirs]
 
 
 def get_projects_dir_candidate(projects_dir) -> List[Union[Path, Failure]]:
@@ -157,7 +155,6 @@ async def get_project(project_path: Path,
                       additional_python_src_paths: List[Path],
                       env: YouwolEnvironment,
                       context: Context) -> Project:
-
     async with context.start(
             action="get_project",
             with_attributes={"folderName": project_path.name}
@@ -178,3 +175,4 @@ async def get_project(project_path: Path,
             pipeline=pipeline,
             path=project_path
         )
+
