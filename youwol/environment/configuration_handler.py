@@ -1,15 +1,17 @@
+import inspect
 import os
 import shutil
 import zipfile
 from pathlib import Path
-from typing import Optional, List, Union, Dict, Callable
+from typing import Optional, List, Union, Dict, Callable, cast
 
 from youwol import environment
 from youwol.configuration.defaults import default_http_port, default_path_data_dir, \
     default_path_cache_dir, default_port_range_start, default_port_range_end, \
     default_platform_host, default_jwt_source
 from youwol.configuration.models_config import Profiles, ConfigurationData, PortRange, ModuleLoading, \
-    CascadeBaseProfile, CascadeAppend, CascadeReplace, CdnOverride, Redirection, JwtSource, Events
+    CascadeBaseProfile, CascadeAppend, CascadeReplace, CdnOverride, Redirection, JwtSource, Events, ConfigPath
+from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol.environment.models import IConfigurationCustomizer, Projects
 from youwol.environment.paths import app_dirs
 from youwol.environment.utils import default_projects_finder
@@ -17,6 +19,7 @@ from youwol.main_args import get_main_arguments
 from youwol.middlewares.models_dispatch import CdnOverrideDispatch, RedirectDispatch, AbstractDispatch
 from youwol.routers.custom_commands.models import Command
 from youwol.utils.utils_low_level import get_object_from_module
+from youwol_utils import Context
 from youwol_utils.servers.fast_api import FastApiRouter
 from youwol_utils.utils_paths import PathException, ensure_dir_exists
 
@@ -148,7 +151,13 @@ class ConfigurationHandler:
         elif callable(projects.finder):
             # finder is Callable[[YouwolEnvironment, Context], List[ConfigPath]]
             # or Callable[[YouwolEnvironment, Context], Awaitable[List[ConfigPath]]]
-            finder = projects.finder
+            is_coroutine = inspect.iscoroutinefunction(projects.finder)
+
+            async def await_finder(env, ctx):
+                #  if no cast => python complains about typing w/ ModuleLoading accepting only keyword arguments
+                return cast(Callable[[YouwolEnvironment, Context], List[ConfigPath]], projects.finder)(env, ctx)
+
+            finder = projects.finder if is_coroutine else await_finder
         elif isinstance(projects.finder, str) \
                 or isinstance(projects.finder, Path) \
                 or isinstance(projects.finder, List):
