@@ -21,6 +21,7 @@ flatten = itertools.chain.from_iterable
 class YouwolHeaders(NamedTuple):
     #  About tracing & headers: https://www.w3.org/TR/trace-context/
     py_youwol_local_only = 'py-youwol-local-only'
+    youwol_origin = 'youwol-origin'
     correlation_id = 'x-correlation-id'
     trace_id = 'x-trace-id'
     muted_http_errors = "muted_http_errors"
