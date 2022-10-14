@@ -10,9 +10,8 @@ from youwol.middlewares.auth_middleware import get_remote_openid_infos, JwtProvi
 from youwol.middlewares.browser_caching_middleware import BrowserCachingMiddleware
 from youwol.middlewares.hybridizer_middleware import LocalCloudHybridizerMiddleware
 from youwol.routers import native_backends, admin, authorization
-from youwol.routers.environment.download_assets.data import DownloadDataTask
-from youwol.routers.environment.download_assets.flux_project import DownloadFluxProjectTask
-from youwol.routers.environment.download_assets.package import DownloadPackageTask
+from youwol.routers.environment.download_assets import DownloadDataTask, DownloadFluxProjectTask, DownloadPackageTask, \
+    DownloadStoryTask
 from youwol.utils.utils_low_level import start_web_socket
 from youwol.web_socket import WebSocketsStore, WsDataStreamer
 from youwol_utils import YouWolException, youwol_exception_handler, YouwolHeaders, CleanerThread, factory_local_cache
@@ -29,7 +28,8 @@ download_thread = AssetDownloadThread(
     factories={
         "package": DownloadPackageTask,
         "flux-project": DownloadFluxProjectTask,
-        "data": DownloadDataTask
+        "data": DownloadDataTask,
+        "story": DownloadStoryTask
     },
     worker_count=4
 )
