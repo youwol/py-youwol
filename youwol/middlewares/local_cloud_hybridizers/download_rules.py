@@ -19,9 +19,9 @@ class Download(AbstractDispatch):
                     ) -> Optional[Response]:
 
         patterns = [
-            ("story", "GET:/api/assets-gateway/stories-backend/stories/*"),
-            ("flux-project", "GET:/api/assets-gateway/flux-backend/projects/*"),
-            ("data", "GET:/api/assets-gateway/files-backend/files/*"),
+            ("story", "GET:/api/assets-gateway/stories-backend/stories/*/**"),
+            ("flux-project", "GET:/api/assets-gateway/flux-backend/projects/*/**"),
+            ("data", "GET:/api/assets-gateway/files-backend/files/*/**"),
             ("package", "GET:/api/assets-gateway/cdn-backend/resources/*/**"),
             # This is a deprecated end point
             ("package", "GET:/api/assets-gateway/raw/package/*/**"),
@@ -31,8 +31,8 @@ class Download(AbstractDispatch):
         if not match:
             return None
         kind, params = match
-        raw_id = params[0]
-
+        raw_id = params[0][0] if len(params[0]) == 2 else params[0]
+        env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
         async with context.start(
                 action="Download.apply",
                 muted_http_errors={404}
