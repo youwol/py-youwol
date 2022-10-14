@@ -25,6 +25,7 @@ from youwol_cdn_backend.configurations import Constants, Configuration
 from youwol_utils.http_clients.cdn_backend import FormData, PublishResponse, FileResponse, \
     FolderResponse, ExplorerResponse, ListVersionsResponse, Release, LibraryResolved
 from youwol_cdn_backend.utils_indexing import format_doc_db_record, get_version_number_str
+from youwol_utils.http_clients.cdn_backend.utils import is_fixed_version, resolve_version
 from youwol_utils.utils_paths import extract_zip_file
 
 flatten = itertools.chain.from_iterable
@@ -382,44 +383,38 @@ async def list_versions(
 
 async def resolve_explicit_version(package_name: str, input_version: str, configuration: Configuration,
                                    context: Context):
-    latest_symbols = ["latest", "x", "*"]
-    parts = input_version.split('.')
+    if is_fixed_version(input_version):
+        return input_version
 
-    if input_version in latest_symbols:
-        await context.info(text="retrieve latest version")
-        versions_resp = await list_versions(name=package_name, context=context, max_results=1,
-                                            configuration=configuration)
-        return versions_resp.versions[0]
+    versions_resp = await list_versions(name=package_name, max_results=1000, context=context,
+                                        configuration=configuration)
+    version = await resolve_version(name=package_name, version=input_version, versions=versions_resp.versions,
+                                    context=context)
+    if not version:
+        raise QueryIndexException(
+            query=f"requesting version {input_version} for {package_name}",
+            error=f'No matching entries found')
 
-    if len(parts) > 1 and parts[1] in latest_symbols:
-        major = input_version.split('.')[0]
-        versions_resp = await list_versions(name=package_name, context=context, max_results=1000,
-                                            configuration=configuration)
-        version = next((v for v in versions_resp.versions if v.split('.')[0] == major), None)
-        if not version:
-            raise QueryIndexException(
-                query=f"requesting version {input_version} for {package_name}",
-                error=f'No matching entries found')
-        return version
-
-    return input_version
+    return version
 
 
 async def resolve_caching_max_age(version: str, context: Context):
-    if "-wip" in version:
-        await context.info("'-wip' suffix => max_age set to 0")
+    if "-wip" in version or not is_fixed_version(version=version):
+        await context.info("WIP or semantic versioning query => max_age set to 0")
         return "0"
     return "31536000"
 
 
 async def resolve_resource(library_id: str, input_version: str, configuration: Configuration,
                            context: Context):
-
     package_name = to_package_name(library_id)
+    if is_fixed_version(input_version):
+        max_age = await resolve_caching_max_age(version=input_version, context=context)
+        return package_name, input_version, max_age
+
     version = await resolve_explicit_version(package_name=package_name, input_version=input_version,
                                              configuration=configuration, context=context)
-    max_age = await resolve_caching_max_age(version=version, context=context)
-    return package_name, version, max_age
+    return package_name, version, 0
 
 
 async def fetch_resource(path: str, max_age: str, configuration: Configuration, context: Context):
@@ -434,4 +429,3 @@ async def fetch_resource(path: str, max_age: str, configuration: Configuration, 
 def get_path(library_id: str, version: str, rest_of_path: str):
     name = to_package_name(library_id)
     return f"libraries/{name.replace('@', '')}/{version}/{rest_of_path}"
-
