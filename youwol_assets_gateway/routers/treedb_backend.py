@@ -497,10 +497,10 @@ async def purge_drive(
         await delete_project(request=request, project_id=raw_id, purge=False, configuration=configuration)
 
     async def erase_story(raw_id: str):
-        await delete_story(request=request, project_id=raw_id, purge=False, configuration=configuration)
+        await delete_story(request=request, story_id=raw_id, purge=False, configuration=configuration)
 
     async def erase_file(raw_id: str):
-        await remove_file(request=request, project_id=raw_id, purge=False, configuration=configuration)
+        await remove_file(request=request, file_id=raw_id, purge=False, configuration=configuration)
 
     factory = {
         "flux-project": erase_flux_project,
