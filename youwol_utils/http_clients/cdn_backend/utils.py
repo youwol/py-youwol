@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Optional
 
 from semantic_version import NpmSpec, Version
 from youwol_utils.utils_paths import write_json
@@ -7,21 +7,32 @@ from youwol_utils.utils_paths import write_json
 from youwol_utils.context import Context
 
 
+def is_fixed_version(version: str):
+    base = version.split('-')[0].replace('x', '*').replace('latest', '*')
+    fixed = not any([c in base for c in ['>', '<', '*', '^', '~']])
+    return fixed
+
+
 async def resolve_version(
         name: str,
         version: str,
         versions: Iterable[str],
         context: Context
-) -> str:
+) -> Optional[str]:
 
     async with context.start(action="resolve_version",
                              with_attributes={'library': name}) as ctx:  # type: Context
 
         base = version.split('-')[0].replace('x', '*').replace('latest', '*')
+        if is_fixed_version(version):
+            return version
+
         pre_release = '-'.join(version.split('-')[1:])
         version_spec = base if len(version.split('-')) == 1 else f"{base}-{pre_release}"
         selector = NpmSpec(version_spec)
         version = next(selector.filter(Version(v.replace('-wip', '')) for v in versions), None)
+        if not version:
+            return None
         if str(version) not in versions and f"{version}-wip" in versions:
             await ctx.info(f"{version} not available => use {version}-wip")
             version = Version(f"{version}-wip")
