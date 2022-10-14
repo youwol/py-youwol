@@ -1,6 +1,8 @@
+from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.middlewares.models_dispatch import AbstractDispatch
 
 from youwol.utils.utils_low_level import redirect_api_remote
+from youwol_utils import YouwolHeaders
 from youwol_utils.request_info_factory import url_match
 from youwol_utils.context import Context
 from typing import Optional
@@ -27,10 +29,14 @@ class ForwardOnly(AbstractDispatch):
         if not match:
             return None
 
+        env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
         async with context.start(action="ForwardOnlyDispatch.apply", muted_http_errors={404}) as ctx:
             resp = await call_next(request)
             if resp.status_code == 404:
                 await ctx.info("Forward request to remote as it can not proceed locally ")
-                return await redirect_api_remote(request=request, context=ctx)
+                resp = await redirect_api_remote(request=request, context=ctx)
+                resp.headers[YouwolHeaders.youwol_origin] = env.selectedRemote
+                return resp
 
+            resp.headers[YouwolHeaders.youwol_origin] = request.url.hostname
             return resp

@@ -7,10 +7,11 @@ from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response, JSONResponse
 
+from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol.environment.youwol_environment import yw_config
 from youwol.middlewares.models_dispatch import AbstractDispatch
 from youwol_cdn_backend import resolve_loading_tree, Dependencies
-from youwol_utils import DependenciesError
+from youwol_utils import DependenciesError, YouwolHeaders
 from youwol_utils.context import Context
 from youwol_utils.http_clients.cdn_backend import LoadingGraphBody, patch_loading_graph
 
@@ -36,9 +37,11 @@ class GetLoadingGraph(AbstractDispatch):
                 yw_config(),
                 Dependencies.get_configuration()
                 )
+
+            env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
             try:
                 resp = await resolve_loading_tree(request, body, cdn_conf)
-                return JSONResponse(resp.dict())
+                return JSONResponse(resp.dict(), headers={YouwolHeaders.youwol_origin: request.url.hostname})
             except DependenciesError as e:
                 await ctx.warning(
                     text="Loading tree can not be resolved locally, proceed to remote platform",
@@ -51,6 +54,7 @@ class GetLoadingGraph(AbstractDispatch):
                         auto_decompress=False) as session:
                     async with await session.post(url=url, json=body.dict(), headers=ctx.headers()) as resp:
                         headers_resp = {k: v for k, v in resp.headers.items()}
+                        headers_resp[YouwolHeaders.youwol_origin] = env.selectedReomte
                         content = await resp.read()
                         if not resp.ok:
                             await ctx.error(text="Loading tree has not been resolved in remote neither")
