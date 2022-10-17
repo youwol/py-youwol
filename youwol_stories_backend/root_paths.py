@@ -31,7 +31,7 @@ from youwol_stories_backend.utils import (
     query_document, position_start,
     position_next, position_format, format_document_resp, get_requirements, get_document_path,
     query_story, zip_data_filename, zip_requirements_filename, create_global_contents_if_needed,
-    create_default_global_contents,
+    create_default_global_contents, zip_global_content_filename,
 )
 
 router = APIRouter(tags=["stories-backend"])
@@ -88,6 +88,8 @@ async def publish_story(
             await ctx.info(f"Story contents recovered", data=contents)
             requirements = parse_json(dir_path / zip_requirements_filename)
             await ctx.info(f"Story requirements recovered", data=requirements)
+            global_content = parse_json(dir_path / zip_global_content_filename)
+            await ctx.info(f"Global contents recovered", data=requirements)
             await asyncio.gather(
                 doc_db_stories.create_document(doc=story, owner=owner, headers=ctx.headers()),
                 *[doc_db_docs.create_document(doc=doc, owner=owner, headers=ctx.headers())
@@ -98,6 +100,9 @@ async def publish_story(
                   for doc in documents],
                 storage.post_json(path=get_document_path(story_id=story_id, document_id='requirements'),
                                   json=requirements,
+                                  owner=owner, headers=ctx.headers()),
+                storage.post_json(path=get_document_path(story_id=story_id, document_id='global-contents'),
+                                  json=global_content,
                                   owner=owner, headers=ctx.headers())
             )
             return StoryResp(
@@ -135,6 +140,11 @@ async def download_zip(
                                         headers=ctx.headers())
         await ctx.info(text="Children documents retrieved", data={"count": len(documents)})
         requirements = await get_requirements(story_id=story_id, storage=storage, context=ctx)
+        global_content = await storage.get_json(
+            path=get_document_path(story_id=story_id, document_id="global-contents"),
+            owner=Constants.default_owner,
+            headers=ctx.headers()
+        )
         data = {
             "story": story,
             "documents": [root_doc, *documents]
@@ -143,13 +153,15 @@ async def download_zip(
             base_path = Path(tmp_folder)
             write_json(data=data, path=base_path / zip_data_filename)
             write_json(data=requirements.dict(), path=base_path / zip_requirements_filename)
+            write_json(data=global_content, path=base_path / zip_global_content_filename)
             for doc in data['documents']:
                 storage_path = get_document_path(story_id=story_id, document_id=doc["content_id"])
                 content = await storage.get_json(path=storage_path, owner=owner, headers=ctx.headers())
                 write_json(content,  base_path / f"{doc['content_id']}.json")
 
             zipper = zipfile.ZipFile(base_path / 'story.zip', 'w', zipfile.ZIP_DEFLATED)
-            all_files = ['data.json', 'requirements.json'] + [f"{doc['content_id']}.json" for doc in data['documents']]
+            all_files = ['data.json', zip_requirements_filename, zip_global_content_filename] \
+                + [f"{doc['content_id']}.json" for doc in data['documents']]
             for filename in all_files:
                 zipper.write(base_path / filename, arcname=filename)
             zipper.close()

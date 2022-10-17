@@ -11,6 +11,7 @@ from youwol_utils.http_clients.stories_backend import GetDocumentResp, Requireme
 
 zip_data_filename = "data.json"
 zip_requirements_filename = "requirements.json"
+zip_global_content_filename = "global-contents.json"
 
 
 async def init_resources(config: Configuration):
