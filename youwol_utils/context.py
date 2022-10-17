@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from dataclasses import dataclass
 import json
 import time
 import traceback
@@ -328,7 +329,8 @@ CallableBlock = Callable[[Context], Union[Awaitable, None]]
 CallableBlockException = Callable[[Exception, Context], Union[Awaitable, None]]
 
 
-class ContextFactory(NamedTuple):
+@dataclass
+class ContextFactory:
     with_static_data: Optional[Dict[str, DataType]] = None
 
     @staticmethod
@@ -338,7 +340,7 @@ class ContextFactory(NamedTuple):
             data_reporter: ContextReporter,
             **kwargs
     ) -> Context:
-        static_data = ContextFactory.with_static_data
+        static_data = ContextFactory.with_static_data or {}
         with_data = kwargs if not static_data else {**static_data, **kwargs}
 
         return Context(request=request,
