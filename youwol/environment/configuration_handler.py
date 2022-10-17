@@ -162,8 +162,8 @@ class ConfigurationHandler:
                 or isinstance(projects.finder, Path) \
                 or isinstance(projects.finder, List):
             # finder is List[ConfigPath]
-            def default_finder(env, _ctx):
-                default_projects_finder(env=env, root_folders=projects.finder)
+            async def default_finder(env, _ctx):
+                return default_projects_finder(env=env, root_folders=projects.finder)
 
             finder = default_finder
 
