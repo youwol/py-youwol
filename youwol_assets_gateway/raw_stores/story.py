@@ -16,24 +16,12 @@ class StoriesStore(RawStore):
     async def create_asset(self, request: Request, metadata: AssetMeta, rest_of_path: str, headers) -> \
             (RawId, AssetMeta):
 
-        if rest_of_path == "publish":
-            form = await request.form()
-            form = {
-                'file': await form.get('file').read(),
-                'content_encoding': form.get('content_encoding', 'identity')
-            }
-            resp = await self.client.publish_story(data=form, headers=headers)
-            return resp['storyId'], AssetMeta(name=resp['title'])
-
-        body = await request.body()
-        body = json.loads(body.decode('utf8')) if body else None
-
-        if body is None:
-            body = {
-                "title": metadata.name
-            }
-
-        resp = await self.client.create_story(body=body, headers=headers)
+        form = await request.form()
+        form = {
+            'file': await form.get('file').read(),
+            'content_encoding': form.get('content_encoding', 'identity')
+        }
+        resp = await self.client.publish_story(data=form, headers=headers)
         return resp['storyId'], AssetMeta(name=resp['title'])
 
     async def sync_asset_metadata(self, request: Request, raw_id: str, metadata: AssetMeta, headers):
