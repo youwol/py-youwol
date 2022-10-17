@@ -7,8 +7,7 @@ from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response, JSONResponse
 
-from youwol.environment.forward_declaration import YouwolEnvironment
-from youwol.environment.youwol_environment import yw_config
+from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
 from youwol.middlewares.models_dispatch import AbstractDispatch
 from youwol_cdn_backend import resolve_loading_tree, Dependencies
 from youwol_utils import DependenciesError, YouwolHeaders
@@ -54,7 +53,7 @@ class GetLoadingGraph(AbstractDispatch):
                         auto_decompress=False) as session:
                     async with await session.post(url=url, json=body.dict(), headers=ctx.headers()) as resp:
                         headers_resp = {k: v for k, v in resp.headers.items()}
-                        headers_resp[YouwolHeaders.youwol_origin] = env.selectedReomte
+                        headers_resp[YouwolHeaders.youwol_origin] = env.selectedRemote
                         content = await resp.read()
                         if not resp.ok:
                             await ctx.error(text="Loading tree has not been resolved in remote neither")
