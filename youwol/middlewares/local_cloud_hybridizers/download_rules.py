@@ -25,8 +25,9 @@ class Download(AbstractDispatch):
             ("flux-project", "GET:/api/assets-gateway/flux-backend/projects/*/**"),
             ("data", "GET:/api/assets-gateway/files-backend/files/*/**"),
             ("package", "GET:/api/assets-gateway/cdn-backend/resources/*/**"),
-            # This is a deprecated end point
+            # This is a deprecated end points
             ("package", "GET:/api/assets-gateway/raw/package/*/**"),
+            ("flux-project", "GET:/api/assets-gateway/raw/flux-project/*/**"),
         ]
         matches = [(kind, url_match(request, pattern)) for kind, pattern in patterns]
         match = next(((kind, match[1]) for kind, match in matches if match[0]), None)
