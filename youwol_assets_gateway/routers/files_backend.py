@@ -1,3 +1,5 @@
+from typing import Union
+
 from aiohttp import ClientResponse
 from fastapi import APIRouter, Depends, Query, HTTPException
 from starlette.requests import Request
@@ -6,6 +8,7 @@ from starlette.responses import Response
 from youwol_assets_gateway.raw_stores import AssetMeta, AssetImg
 from youwol_assets_gateway.routers.common import assert_write_permissions_folder_id, create_asset, \
     assert_read_permissions_from_raw_id, delete_asset
+from youwol_assets_gateway.utils import raw_id_to_asset_id
 
 from youwol_utils.context import Context
 from youwol_assets_gateway.configurations import Configuration, get_configuration
@@ -30,7 +33,7 @@ async def healthz(request: Request, configuration: Configuration = Depends(get_c
 
 @router.post(
     "/files",
-    response_model=NewAssetResponse,
+    response_model=Union[NewAssetResponse, PostFileResponse],
     summary="create a new file"
 )
 async def upload(
@@ -39,7 +42,8 @@ async def upload(
         configuration: Configuration = Depends(get_configuration)
 ):
     async with Context.start_ep(
-            request=request
+            request=request,
+            muted_http_errors={404}
     ) as ctx:  # type: Context
         form = await request.form()
         content = await form.get('file').read()
@@ -57,6 +61,15 @@ async def upload(
                 headers=ctx.headers()
             )
         )
+        try:
+            await configuration.assets_client.get(asset_id=raw_id_to_asset_id(file.fileId), headers=ctx.headers())
+            return file
+        except HTTPException as e:
+            if e.status_code != 404:
+                raise e
+        if not folder_id:
+            raise ValueError("When uploading a new file, parent folder's id should be supplied.")
+
         images = [AssetImg(name=file.fileName, content=content)] \
             if file.contentType in mime_types_images else \
             []
