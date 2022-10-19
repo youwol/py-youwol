@@ -34,6 +34,8 @@ click==8.1.3
     #   uvicorn
 colorama==0.4.5
     # via -r deps/base.in
+coverage==6.5.0
+    # via -r deps/dev.in
 cowpy==1.1.5
     # via -r deps/base.in
 cryptography==37.0.2
