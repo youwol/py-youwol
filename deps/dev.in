@@ -1,6 +1,4 @@
 # Dev dependencies
 pdoc3
-pytest
-pytest-cov
 pip-tools
 pip

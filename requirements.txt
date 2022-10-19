@@ -19,9 +19,7 @@ async-timeout==4.0.2
     #   aiohttp
     #   redis
 attrs==21.4.0
-    # via
-    #   aiohttp
-    #   pytest
+    # via aiohttp
 brotli==1.0.9
     # via -r deps/base.in
 certifi==2022.6.15
@@ -36,8 +34,6 @@ click==8.1.3
     #   uvicorn
 colorama==0.4.5
     # via -r deps/base.in
-coverage[toml]==6.4.1
-    # via pytest-cov
 cowpy==1.1.5
     # via -r deps/base.in
 cryptography==37.0.2
@@ -62,8 +58,6 @@ idna==3.3
     #   yarl
 importlib-metadata==4.12.0
     # via markdown
-iniconfig==1.1.1
-    # via pytest
 lockfile==0.12.2
     # via python-daemon
 mako==1.2.2
@@ -81,9 +75,7 @@ multidict==6.0.2
 ordered-set==4.1.0
     # via deepdiff
 packaging==21.3
-    # via
-    #   pytest
-    #   redis
+    # via redis
 pdoc3==0.10.0
     # via -r deps/dev.in
 pep517==0.12.0
@@ -92,12 +84,8 @@ pillow==9.1.1
     # via -r deps/base.in
 pip-tools==6.6.2
     # via -r deps/dev.in
-pluggy==1.0.0
-    # via pytest
 psutil==5.9.1
     # via -r deps/base.in
-py==1.11.0
-    # via pytest
 pycparser==2.21
     # via cffi
 pydantic==1.9.1
@@ -106,12 +94,6 @@ pyjwt[crypto]==2.4.0
     # via -r deps/base.in
 pyparsing==3.0.9
     # via packaging
-pytest==7.1.2
-    # via
-    #   -r deps/dev.in
-    #   pytest-cov
-pytest-cov==3.0.0
-    # via -r deps/dev.in
 python-daemon==2.3.0
     # via -r deps/base.in
 python-multipart==0.0.5
@@ -129,10 +111,7 @@ sniffio==1.2.0
 starlette==0.19.1
     # via fastapi
 tomli==2.0.1
-    # via
-    #   coverage
-    #   pep517
-    #   pytest
+    # via pep517
 tqdm==4.64.1
     # via -r deps/base.in
 typing-extensions==4.2.0
