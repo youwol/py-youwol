@@ -1,3 +1,6 @@
+coverage.*
+*.coverage
+/htmlcoc/
 youwol_data/**/*
 !youwol_data/yw_config.py
 !youwol_data/databases.zip
