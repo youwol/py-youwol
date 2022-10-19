@@ -155,7 +155,7 @@ zipp==3.8.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==22.2.2
+pip==22.3
     # via
     #   -r deps/dev.in
     #   pip-tools
