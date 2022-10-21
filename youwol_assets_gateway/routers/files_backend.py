@@ -8,11 +8,11 @@ from starlette.responses import Response
 from youwol_assets_gateway.raw_stores import AssetMeta, AssetImg
 from youwol_assets_gateway.routers.common import assert_write_permissions_folder_id, create_asset, \
     assert_read_permissions_from_raw_id, delete_asset
-from youwol_assets_gateway.utils import raw_id_to_asset_id
+from youwol_assets_gateway.utils import raw_id_to_asset_id, to_asset_resp
 
 from youwol_utils.context import Context
 from youwol_assets_gateway.configurations import Configuration, get_configuration
-from youwol_utils.http_clients.assets_gateway import NewAssetResponse
+from youwol_utils.http_clients.assets_gateway import NewAssetResponse, PermissionsResponse
 from youwol_utils.http_clients.files_backend import GetInfoResponse, PostFileResponse, PostMetadataBody
 
 router = APIRouter(tags=["assets-gateway.files-backend"])
@@ -33,7 +33,7 @@ async def healthz(request: Request, configuration: Configuration = Depends(get_c
 
 @router.post(
     "/files",
-    response_model=Union[NewAssetResponse, PostFileResponse],
+    response_model=NewAssetResponse,
     summary="create a new file"
 )
 async def upload(
@@ -62,8 +62,14 @@ async def upload(
             )
         )
         try:
-            await configuration.assets_client.get(asset_id=raw_id_to_asset_id(file.fileId), headers=ctx.headers())
-            return file
+            asset = await configuration.assets_client.get(asset_id=raw_id_to_asset_id(file.fileId),
+                                                          headers=ctx.headers())
+            response = NewAssetResponse(**{
+                **to_asset_resp(asset, permissions=PermissionsResponse(read=True, write=True, share=True)).dict(),
+                "itemId": asset["assetId"],
+                "rawResponse": file
+            })
+            return response
         except HTTPException as e:
             if e.status_code != 404:
                 raise e
