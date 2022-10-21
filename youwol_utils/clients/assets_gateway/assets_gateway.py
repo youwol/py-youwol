@@ -3,6 +3,7 @@ from typing import Dict, Any, Optional
 
 import aiohttp
 
+from youwol_utils import CdnClient
 from youwol_utils.clients.assets.assets import AssetsClient
 from youwol_utils.clients.files import FilesClient
 from youwol_utils.clients.flux.flux import FluxClient
@@ -36,6 +37,9 @@ class AssetsGatewayClient:
 
     def get_stories_backend_router(self) -> StoriesClient:
         return StoriesClient(url_base=f"{self.url_base}/stories-backend", headers=self.headers)
+
+    def get_cdn_backend_router(self) -> CdnClient:
+        return CdnClient(url_base=f"{self.url_base}/cdn-backend", headers=self.headers)
 
     async def healthz(self, **kwargs):
         url = f"{self.url_base}/healthz"
