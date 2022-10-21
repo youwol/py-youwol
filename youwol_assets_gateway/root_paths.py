@@ -6,7 +6,7 @@ from starlette.requests import Request
 from youwol_assets_gateway.configurations import get_configuration
 from youwol_assets_gateway.routers import stories_backend, cdn_backend, files_backend, flux_backend, treedb_backend, \
     assets_backend
-from youwol_assets_gateway.routers_deprecated import tree, assets, raw, cdn, misc
+from youwol_assets_gateway.routers_deprecated import tree, assets, raw, misc
 from youwol_utils import (
     User, user_info, get_all_individual_groups, Group, private_group_id, to_group_id,
     GroupsResponse,
@@ -30,12 +30,6 @@ router.include_router(
 router.include_router(
     raw.router,
     prefix="/raw",
-    dependencies=[Depends(get_configuration)]
-)
-
-router.include_router(
-    cdn.router,
-    prefix="/cdn",
     dependencies=[Depends(get_configuration)]
 )
 

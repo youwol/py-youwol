@@ -1,11 +1,9 @@
-from typing import Union
-
 from aiohttp import ClientResponse
 from fastapi import APIRouter, Depends, Query, HTTPException
 from starlette.requests import Request
 from starlette.responses import Response
 
-from youwol_assets_gateway.raw_stores import AssetMeta, AssetImg
+from youwol_assets_gateway.utils import AssetMeta, AssetImg
 from youwol_assets_gateway.routers.common import assert_write_permissions_folder_id, create_asset, \
     assert_read_permissions_from_raw_id, delete_asset
 from youwol_assets_gateway.utils import raw_id_to_asset_id, to_asset_resp

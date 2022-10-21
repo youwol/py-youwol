@@ -4,8 +4,7 @@ from typing import Dict
 
 from fastapi import HTTPException
 from youwol_assets_gateway.configurations import Configuration
-from youwol_assets_gateway.raw_stores import AssetMeta
-from youwol_assets_gateway.utils import raw_id_to_asset_id, to_asset_resp
+from youwol_assets_gateway.utils import raw_id_to_asset_id, to_asset_resp, AssetMeta
 from youwol_utils.context import Context
 from youwol_utils.http_clients.assets_gateway import NewAssetResponse, PermissionsResponse
 

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query
 from starlette.requests import Request
 from starlette.responses import Response
 
-from youwol_assets_gateway.raw_stores import AssetMeta
+from youwol_assets_gateway.utils import AssetMeta
 from youwol_assets_gateway.routers.common import assert_write_permissions_folder_id, \
     assert_read_permissions_from_raw_id, assert_write_permissions_from_raw_id, create_asset, delete_asset
 from youwol_utils import encode_id
