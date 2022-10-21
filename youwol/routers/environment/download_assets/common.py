@@ -1,6 +1,6 @@
 import asyncio
 import json
-from typing import List, Callable, Awaitable, TypeVar, cast, Dict
+from typing import List, Callable, Awaitable, TypeVar, cast, Dict, Optional
 
 from fastapi import HTTPException
 
@@ -130,7 +130,7 @@ async def create_asset_local(
         kind: str,
         default_owning_folder_id,
         get_raw_data: Callable[[Context], Awaitable[T]],
-        to_post_raw_data: Callable[[T], any],
+        post_raw_data: Optional[Callable[[str, T, Context], Awaitable[None]]],
         context: Context
         ):
     env = await context.get("env", YouwolEnvironment)
@@ -188,13 +188,8 @@ async def create_asset_local(
         await ctx.info(text="Owning folder retrieved", data={
             "owning_folder_id": owning_folder_id
         })
+        await post_raw_data(owning_folder_id, raw_data, ctx)
 
-        await local_gtw.put_asset_with_raw(
-            kind=kind,
-            folder_id=owning_folder_id,
-            data=to_post_raw_data(raw_data),
-            headers=ctx.headers()
-        )
         await ctx.info(text="Asset raw's data downloaded successfully")
         await sync_access_policies(asset_id=asset_id, context=context)
         await sync_borrowed_items(

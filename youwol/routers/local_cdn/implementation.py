@@ -2,6 +2,7 @@ import asyncio
 from itertools import groupby
 from typing import NamedTuple, List
 
+from aiohttp import FormData
 from fastapi import HTTPException
 
 from youwol.environment.clients import RemoteClients, LocalClients
@@ -150,30 +151,48 @@ async def download_package(
                 PackageEventResponse(packageName=package_name, version=version, event=Event.downloadStarted)
             ),
             on_exit=on_exit,
-    ) as ctx:
+    ) as ctx_download:
         env = await context.get('env', YouwolEnvironment)
-        remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=env.selectedRemote, context=ctx)
-        default_drive = await env.get_default_drive(context=ctx)
+        remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=env.selectedRemote, context=ctx_download)
+        default_drive = await env.get_default_drive(context=ctx_download)
         asset_id = encode_id(encode_id(package_name))
 
-        await ctx.info(text=f"asset_id: {asset_id} queued for download")
+        await ctx_download.info(text=f"asset_id: {asset_id} queued for download")
+
+        async def get_raw_data(ctx_raw: Context):
+            library_id = encode_id(package_name)
+            resp = await remote_gtw.get_cdn_backend_router().download_library(
+                library_id=library_id,
+                version=version,
+                headers=ctx_raw.headers()
+            )
+            return resp
+
+        async def post_raw_data(folder_id: str, raw_data, ctx: Context):
+            form_data = FormData()
+            form_data.add_field(name='file', value=raw_data)
+
+            resp = await LocalClients \
+                .get_assets_gateway_client(env=env) \
+                .get_cdn_backend_router() \
+                .publish(data=form_data,
+                         params={'folder-id': folder_id},
+                         headers=ctx.headers()
+                         )
+            return resp
 
         await create_asset_local(
             asset_id=asset_id,
             kind='package',
             default_owning_folder_id=default_drive.systemPackagesFolderId,
-            get_raw_data=lambda _ctx: remote_gtw.cdn_get_package(
-                library_name=package_name,
-                version=version,
-                headers=_ctx.headers()
-            ),
-            to_post_raw_data=lambda pack: {'file': pack},
-            context=ctx
+            get_raw_data=get_raw_data,
+            post_raw_data=post_raw_data,
+            context=ctx_download
         )
         db = parse_json(env.pathsBook.local_cdn_docdb)
         all_packages = [d for d in db['documents'] if d['library_name'] == package_name]
         versions = [d['version'] for d in all_packages]
-        version = await resolve_version(name=package_name, version=version, versions=versions, context=ctx)
+        version = await resolve_version(name=package_name, version=version, versions=versions, context=ctx_download)
         record = next(d for d in all_packages if d['library_id'] == f"{package_name}#{version}")
         response = DownloadedPackageResponse(
             packageName=package_name,
@@ -181,7 +200,7 @@ async def download_package(
             versions=versions,
             fingerprint=record['fingerprint']
         )
-        await ctx.send(response)
+        await ctx_download.send(response)
 
 
 async def get_version_info(version_data, env: YouwolEnvironment):

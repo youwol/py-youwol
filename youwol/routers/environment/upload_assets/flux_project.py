@@ -14,9 +14,8 @@ class UploadFluxProjectTask(UploadTask):
     async def get_raw(self, context: Context) -> JSON:
         async with context.start(action="UploadFluxProjectTask.get_raw") as ctx:  # type: Context
             env = await context.get('env', YouwolEnvironment)
-            asset_gtw = LocalClients.get_assets_gateway_client(env=env)
-            data = await asset_gtw.get_raw(kind='flux-project', raw_id=self.raw_id, content_type='application/json',
-                                           headers=ctx.headers())
+            flux_client = LocalClients.get_assets_gateway_client(env=env).get_flux_backend_router()
+            data = await flux_client.get_project(project_id=self.raw_id, headers=ctx.headers())
             return data
 
     async def create_raw(self, data: JSON, folder_id: str, context: Context):
