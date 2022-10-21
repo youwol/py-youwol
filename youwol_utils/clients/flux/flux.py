@@ -39,9 +39,12 @@ class FluxClient:
     async def upload_project(self, data, project_id: str = None, **kwargs):
 
         url = f"{self.url_base}/projects/upload"
-        params = {'project-id': project_id} if project_id else {}
+        params = kwargs['params'] if 'params' in kwargs else {}
+        params = {**params, 'project-id': project_id} if project_id else params
+        kwargs['params'] = params
+
         async with aiohttp.ClientSession(headers=self.headers) as session:
-            async with await session.post(url=url, data=data, params=params, **kwargs) as resp:
+            async with await session.post(url=url, data=data, **kwargs) as resp:
                 if resp.status == 200:
                     resp = await resp.json()
                     return resp
