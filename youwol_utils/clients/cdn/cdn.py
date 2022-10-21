@@ -1,9 +1,10 @@
 import hashlib
 from dataclasses import field, dataclass
 from pathlib import Path
-from typing import Dict, Union, List, Iterable
+from typing import Dict, Union, List, Iterable, Callable, Awaitable, Any
 
 import aiohttp
+from aiohttp import ClientResponse
 
 from youwol_utils.exceptions import raise_exception_from_response
 
@@ -181,15 +182,19 @@ class CdnClient:
 
         return await self.get_resource(library_id=library_id, version=version, rest_of_path='', **kwargs)
 
-    async def get_resource(self, library_id: str, version: str, rest_of_path: str, **kwargs):
+    async def get_resource(self, library_id: str, version: str, rest_of_path: str, auto_decompress=True,
+                           reader: Callable[[ClientResponse], Awaitable[Any]] = None, **kwargs):
 
         url = f"{self.url_base}/resources/{library_id}/{version}/{rest_of_path}" \
             if rest_of_path else \
             f"{self.url_base}/resources/{library_id}/{version}"
 
-        async with aiohttp.ClientSession(headers=self.headers) as session:
+        async with aiohttp.ClientSession(headers=self.headers, auto_decompress=auto_decompress) as session:
             async with await session.get(url, **kwargs) as resp:
                 if resp.status == 200:
+                    if reader:
+                        return await reader(resp)
+
                     if resp.content_type in ['text/html']:
                         return await resp.text()
                     if resp.content_type in ['application/json']:
