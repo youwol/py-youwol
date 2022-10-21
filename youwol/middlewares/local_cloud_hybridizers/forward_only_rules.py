@@ -22,7 +22,8 @@ class ForwardOnly(AbstractDispatch):
         patterns = [
             'GET:/api/assets-gateway/assets/**',
             'GET:/api/assets-gateway/cdn-backend/libraries/**',
-            'GET:/api/assets-gateway/assets-backend/assets/**'
+            'GET:/api/assets-gateway/assets-backend/assets/**',
+            'GET:/api/assets-gateway/treedb-backend/items/**',
         ]
         matches = [url_match(request, pattern) for pattern in patterns]
         match = next((match for match in matches if match[0]), None)
