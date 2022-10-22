@@ -12,6 +12,9 @@ router = APIRouter(tags=["assets-gateway.misc"])
             summary="return available emojis",
             )
 async def list_emojis(category):
+    """
+    We need to move this end-point somewhere else
+    """
     icons = {
         "smileys_people": icons_smileys_people,
         "animals": icons_animals,
