@@ -100,8 +100,9 @@ async def create_borrowed_item(borrowed_tree_id: str, item: Mapping[str, any], a
     ) as ctx:  # type: Context
 
         tree_id = item["item_id"]
+        treedb_backend = assets_gtw_client.get_treedb_backend_router()
         try:
-            await assets_gtw_client.get_tree_item(item_id=tree_id, headers=ctx.headers())
+            await treedb_backend.get_item(item_id=tree_id, headers=ctx.headers())
             return
         except HTTPException as e:
             if e.status_code != 404:
@@ -119,13 +120,13 @@ async def create_borrowed_item(borrowed_tree_id: str, item: Mapping[str, any], a
             if len(path_item.folders) > 0:
                 parent_id = path_item.folders[0].folderId
 
-        await assets_gtw_client.borrow_tree_item(tree_id=borrowed_tree_id,
-                                                 body={
-                                                     "itemId": tree_id,
-                                                     "destinationFolderId": parent_id
-                                                 },
-                                                 headers=ctx.headers()
-                                                 )
+        await treedb_backend.borrow(item_id=borrowed_tree_id,
+                                    body={
+                                         "itemId": tree_id,
+                                         "destinationFolderId": parent_id
+                                     },
+                                    headers=ctx.headers()
+                                    )
         await ctx.info(text="Borrowed item created")
 
 

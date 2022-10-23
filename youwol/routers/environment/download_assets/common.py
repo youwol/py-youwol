@@ -95,9 +95,9 @@ async def sync_borrowed_items(
     await asyncio.gather(*[ensure_local_path(p, local_treedb, context) for p in borrowed_locations])
 
     await asyncio.gather(*[
-        local_gtw.borrow_tree_item(
-            asset_id,
-            {'itemId': p.item.itemId, 'destinationFolderId': p.folders[-1].folderId},
+        local_gtw.get_treedb_backend_router().borrow(
+            item_id=asset_id,
+            body={'targetId': p.item.itemId, 'destinationFolderId': p.folders[-1].folderId},
             headers=context.headers()
         )
         for p in borrowed_locations

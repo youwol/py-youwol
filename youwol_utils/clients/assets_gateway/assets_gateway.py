@@ -148,25 +148,6 @@ class AssetsGatewayClient:
                     return await resp.json()
                 await raise_exception_from_response(resp)
 
-    async def move_tree_item(self, tree_id: str, body, **kwargs):
-
-        url = f"{self.url_base}/tree/{tree_id}/move"
-
-        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
-            async with await session.post(url=url, json=body, **kwargs) as resp:
-                if resp.status == 200:
-                    return await resp.json()
-                await raise_exception_from_response(resp)
-
-    async def borrow_tree_item(self, tree_id: str, body, **kwargs):
-
-        url = f"{self.url_base}/tree/{tree_id}/borrow"
-
-        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
-            async with await session.post(url=url, json=body, **kwargs) as resp:
-                if resp.status == 200:
-                    return await resp.json()
-                await raise_exception_from_response(resp)
 
     async def get_tree_folder(self, folder_id: str, **kwargs):
 

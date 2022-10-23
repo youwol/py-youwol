@@ -10,7 +10,6 @@ from youwol_utils.http_clients.assets_gateway import (
 )
 from youwol_assets_gateway.utils import to_asset_resp, format_policy
 import asyncio
-import json
 from typing import Optional
 
 from fastapi import APIRouter, Depends
@@ -19,7 +18,6 @@ from starlette.requests import Request
 from youwol_utils import HTTPException
 from youwol_utils.context import Context
 from youwol_assets_gateway.configurations import Configuration, get_configuration
-from youwol_utils.http_clients.assets_gateway import ItemResponse, BorrowBody
 
 router = APIRouter(tags=["assets-gateway.deprecated"])
 
@@ -218,48 +216,4 @@ async def access_info(
         consumer_info = ConsumerInfo(permissions=permissions)
         response = AccessInfo(owningGroup=OwningGroup(name=to_group_scope(asset['groupId']), groupId=asset['groupId']),
                               ownerInfo=owner_info, consumerInfo=consumer_info)
-        return response
-
-
-@router.post("/tree/{tree_id}/borrow",
-             response_model=ItemResponse,
-             summary="borrow item")
-async def borrow(
-        request: Request,
-        tree_id: str,
-        body: BorrowBody,
-        configuration: Configuration = Depends(get_configuration)):
-    """
-    Need to find out from where it is called in py-youwol.
-    The same end-point is in PUT: routers/treedb-backend/items/{tree_id}/borrow
-    """
-    response = Optional[ItemResponse]
-
-    async with Context.start_ep(
-            request=request,
-            action="borrow folder or item",
-            body=body,
-            response=lambda: response,
-            with_attributes={'tree_id': tree_id}
-    ) as ctx:
-        headers = ctx.headers()
-        tree_db, assets_db = configuration.treedb_client, configuration.assets_client
-
-        tree_item, asset, entity = await asyncio.gather(
-            tree_db.get_item(item_id=tree_id, headers=headers),
-            get_asset_by_tree_id(request=request, configuration=configuration, tree_id=tree_id),
-            tree_db.get_entity(entity_id=body.destinationFolderId, include_items=False, headers=headers)
-        )
-
-        permission = await assets_db.get_permissions(asset_id=asset.assetId, headers=headers)
-        if not permission['share']:
-            raise HTTPException(status_code=403, detail='The resource can not be shared')
-        metadata = json.loads(tree_item['metadata'])
-        metadata['borrowed'] = True
-        tree_item['itemId'] = body.itemId
-        tree_item['metadata'] = json.dumps(metadata)
-        post_resp = await tree_db.create_item(folder_id=body.destinationFolderId, body=tree_item, headers=headers)
-        response = ItemResponse(treeId=post_resp['itemId'], folderId=post_resp['folderId'],
-                                driveId=post_resp['driveId'], rawId=asset.rawId, assetId=asset.assetId,
-                                groupId=entity['entity']['groupId'], name=asset.name, kind=asset.kind, borrowed=True)
         return response
