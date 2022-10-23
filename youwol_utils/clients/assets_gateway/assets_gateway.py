@@ -73,20 +73,6 @@ class AssetsGatewayClient:
                     return await resp.json()
                 await raise_exception_from_response(resp)
 
-    async def get_raw(self, kind: str, raw_id: str, content_type=None, **kwargs):
-
-        url = f"{self.url_base}/raw/{kind}/{raw_id}"
-
-        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
-            async with await session.get(url=url,  **kwargs) as resp:
-                if resp.status == 200:
-                    if content_type == "application/json":
-                        return await resp.json()
-                    if content_type == "text/html":
-                        return await resp.text()
-                    return await resp.read()
-                await raise_exception_from_response(resp)
-
     async def get_raw_metadata(self, kind: str, raw_id: str, rest_of_path: str = None, **kwargs):
 
         url = f"{self.url_base}/raw/{kind}/metadata/{raw_id}"
@@ -108,26 +94,6 @@ class AssetsGatewayClient:
                     return await resp.json()
                 await raise_exception_from_response(resp)
 
-    async def delete_tree_item(self, item_id: str, **kwargs):
-
-        url = f"{self.url_base}/tree/items/{item_id}"
-
-        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
-            async with await session.delete(url=url, **kwargs) as resp:
-                if resp.status == 200:
-                    return await resp.json()
-                await raise_exception_from_response(resp)
-
-    async def delete_tree_folder(self, folder_id: str, **kwargs):
-
-        url = f"{self.url_base}/tree/folders/{folder_id}"
-
-        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
-            async with await session.delete(url=url, **kwargs) as resp:
-                if resp.status == 200:
-                    return await resp.json()
-                await raise_exception_from_response(resp)
-
     async def get_tree_items_by_related_id(self, related_id: str, **kwargs):
 
         url = f"{self.url_base}/tree/items/from-related/{related_id}"
@@ -144,94 +110,6 @@ class AssetsGatewayClient:
 
         async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
             async with await session.get(url=url, **kwargs) as resp:
-                if resp.status == 200:
-                    return await resp.json()
-                await raise_exception_from_response(resp)
-
-
-    async def get_tree_folder(self, folder_id: str, **kwargs):
-
-        url = f"{self.url_base}/tree/folders/{folder_id}"
-
-        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
-            async with await session.get(url=url, **kwargs) as resp:
-                if resp.status == 200:
-                    return await resp.json()
-                await raise_exception_from_response(resp)
-
-    async def get_tree_folder_children(self, folder_id: str, **kwargs):
-
-        url = f"{self.url_base}/tree/folders/{folder_id}/children"
-
-        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
-            async with await session.get(url=url, **kwargs) as resp:
-                if resp.status == 200:
-                    return await resp.json()
-                await raise_exception_from_response(resp)
-
-    async def create_folder(self, parent_folder_id: str, body, **kwargs):
-
-        url = f"{self.url_base}/tree/folders/{parent_folder_id}"
-
-        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
-            async with await session.put(url=url, json=body, **kwargs) as resp:
-                if resp.status == 200:
-                    return await resp.json()
-                await raise_exception_from_response(resp)
-
-    async def get_tree_drive(self, drive_id: str, **kwargs):
-
-        url = f"{self.url_base}/tree/drives/{drive_id}"
-
-        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
-            async with await session.get(url=url, **kwargs) as resp:
-                if resp.status == 200:
-                    return await resp.json()
-                await raise_exception_from_response(resp)
-
-    async def create_drive(self, group_id: str, body, **kwargs):
-
-        url = f"{self.url_base}/tree/groups/{group_id}/drives"
-        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
-            async with await session.put(url=url, json=body, **kwargs) as resp:
-                if resp.status == 200:
-                    return await resp.json()
-                await raise_exception_from_response(resp)
-
-    async def get_default_user_drive(self, **kwargs):
-
-        url = f"{self.url_base}/tree/default-drive"
-        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
-            async with await session.get(url=url, **kwargs) as resp:
-                if resp.status == 200:
-                    return await resp.json()
-                await raise_exception_from_response(resp)
-
-    async def purge_drive(self, drive_id: str, **kwargs):
-
-        url = f"{self.url_base}/tree/drives/{drive_id}/purge"
-        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
-            async with await session.delete(url=url, **kwargs) as resp:
-                if resp.status == 200:
-                    return await resp.json()
-                await raise_exception_from_response(resp)
-
-    async def get_groups(self, **kwargs):
-
-        url = f"{self.url_base}/groups"
-
-        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
-            async with await session.get(url=url, **kwargs) as resp:
-                if resp.status == 200:
-                    return await resp.json()
-                await raise_exception_from_response(resp)
-
-    async def get_drives(self, group_id: str,  **kwargs):
-
-        url = f"{self.url_base}/tree/groups/{group_id}/drives"
-
-        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
-            async with await session.get(url=url,  **kwargs) as resp:
                 if resp.status == 200:
                     return await resp.json()
                 await raise_exception_from_response(resp)
@@ -280,26 +158,6 @@ class AssetsGatewayClient:
 
         async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
             async with await session.post(url=url, data=data, **kwargs) as resp:
-                if resp.status == 200:
-                    return await resp.json()
-                await raise_exception_from_response(resp)
-
-    async def remove_asset_image(self, asset_id: str, filename: str, **kwargs):
-
-        url = f"{self.url_base}/assets/{asset_id}/images/{filename}"
-
-        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
-            async with await session.delete(url=url, **kwargs) as resp:
-                if resp.status == 200:
-                    return await resp.json()
-                await raise_exception_from_response(resp)
-
-    async def cdn_delete_version(self, library_name: str, version: str, **kwargs):
-
-        url = f"{self.url_base}/cdn/libraries/{library_name}/{version}"
-
-        async with aiohttp.ClientSession(connector=self.get_aiohttp_connector(), headers=self.headers) as session:
-            async with await session.delete(url, **kwargs) as resp:
                 if resp.status == 200:
                     return await resp.json()
                 await raise_exception_from_response(resp)
