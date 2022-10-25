@@ -5,26 +5,25 @@ import io
 import itertools
 import json
 import os
+import tempfile
 from pathlib import Path
 from typing import IO, Optional, Dict
 from typing import Union, List
-from uuid import uuid4
 
 import brotli
+import semantic_version
 from fastapi import HTTPException
 from starlette.responses import Response
 
-import semantic_version
-
+from youwol_cdn_backend.configurations import Constants, Configuration
+from youwol_cdn_backend.utils_indexing import format_doc_db_record, get_version_number_str
 from youwol_utils import execute_shell_cmd, CommandException
-from youwol_utils import generate_headers_downstream, QueryBody, files_check_sum, shutil, \
-    PublishPackageError, get_content_type, QueryIndexException
+from youwol_utils import generate_headers_downstream, QueryBody, files_check_sum, PublishPackageError, get_content_type, \
+    QueryIndexException
 from youwol_utils.clients.docdb.models import Query, WhereClause, OrderingClause, SelectClause
 from youwol_utils.context import Context
-from youwol_cdn_backend.configurations import Constants, Configuration
 from youwol_utils.http_clients.cdn_backend import FormData, PublishResponse, FileResponse, \
     FolderResponse, ExplorerResponse, ListVersionsResponse, Release, LibraryResolved
-from youwol_cdn_backend.utils_indexing import format_doc_db_record, get_version_number_str
 from youwol_utils.http_clients.cdn_backend.utils import is_fixed_version, resolve_version
 from youwol_utils.utils_paths import extract_zip_file
 
@@ -35,14 +34,6 @@ async def fetch(request, path, file_id, storage):
     headers = generate_headers_downstream(request.headers)
     return await storage.get_bytes(path="{}/{}".format(path, file_id), owner=Constants.owner,
                                    headers=headers)
-
-
-def create_tmp_folder(zip_filename):
-    dir_path = Path("./tmp_zips") / str(uuid4())
-    zip_path = (dir_path / zip_filename).with_suffix('.zip')
-    zip_dir_name = zip_filename.split('.')[0]
-    os.makedirs(dir_path)
-    return dir_path, zip_path, zip_dir_name
 
 
 def get_filename(d):
@@ -108,17 +99,15 @@ async def publish_package(file: IO, filename: str, content_encoding, configurati
     if content_encoding not in ['identity', 'brotli']:
         raise HTTPException(status_code=422, detail="Only identity and brotli encoding are accepted ")
     need_compression = content_encoding == 'identity'
-    dir_path = Path("./tmp_zips") / str(uuid4())
-    zip_path = (dir_path / filename).with_suffix('.zip')
+    with tempfile.TemporaryDirectory() as temp_dir:
+        zip_path = (Path(temp_dir) / filename).with_suffix('.zip')
 
-    os.makedirs(dir_path)
-    headers = context.headers()
-    try:
-        compressed_size = extract_zip_file(file, zip_path, dir_path, delete_original=False)
+        headers = context.headers()
+        compressed_size = extract_zip_file(file, zip_path, temp_dir, delete_original=False)
         await context.info(text=f"zip extracted, size={compressed_size / 1000}ko")
 
         package_path = next(flatten([[Path(root) / f for f in files if f == "package.json"]
-                                     for root, _, files in os.walk(dir_path)]), None)
+                                     for root, _, files in os.walk(temp_dir)]), None)
 
         if package_path is None:
             raise PublishPackageError("It is required for the package to include a 'package.json' file")
@@ -142,7 +131,7 @@ async def publish_package(file: IO, filename: str, content_encoding, configurati
         base_path = Path('libraries') / library_id / version
         file_system = configuration.file_system
 
-        paths = flatten([[Path(root) / f for f in files] for root, _, files in os.walk(dir_path)])
+        paths = flatten([[Path(root) / f for f in files] for root, _, files in os.walk(temp_dir)])
         paths = [p for p in paths if p != zip_path]
         await context.info(text=f"Prepare {len(paths)} files to publish", data={"paths": paths})
 
@@ -150,7 +139,7 @@ async def publish_package(file: IO, filename: str, content_encoding, configurati
                                             paths=paths, need_compression=need_compression, context=context)
         # the fingerprint in the md5 checksum of the included files after having eventually being compressed
         os.remove(zip_path)
-        md5_stamp = md5_from_folder(dir_path)
+        md5_stamp = md5_from_folder(temp_dir)
         await context.info(text=f"md5_stamp={md5_stamp}")
 
         async with context.start(action="Upload data in storage") as ctx:  # type: Context
@@ -202,8 +191,6 @@ async def publish_package(file: IO, filename: str, content_encoding, configurati
         return PublishResponse(name=package_json["name"], version=version, compressedSize=compressed_size,
                                id=to_package_id(package_json["name"]), fingerprint=md5_stamp,
                                url=f"{to_package_id(package_json['name'])}/{record['version']}/{record['bundle']}")
-    finally:
-        shutil.rmtree(dir_path)
 
 
 async def create_explorer_data(dir_path: Path, root_path: Path, forms: List[FormData], context: Context)\
