@@ -155,7 +155,9 @@ def generate_readme(working_path: Path, input_template: Template):
 
 
 def generate_test_files(working_path: Path):
-    f = open(working_path / 'src' / 'tests' / 'fake.test.ts', 'w')
+    path_dir_tests = working_path / 'src' / 'tests'
+    path_dir_tests.mkdir(parents=True)
+    f = open(path_dir_tests / 'fake.test.ts', 'w')
     f.write("// @ts-ignore \ntest('fake test waiting for better', () => expect(true).toBeTruthy())")
     f.close()
 
