@@ -687,7 +687,7 @@ async def add_plugin(
         libraries[body.packageName] = "latest"
 
         assets_gtw = configuration.assets_gtw_client
-        loading_graph = await assets_gtw.cdn_loading_graph(body={
+        loading_graph = await assets_gtw.get_cdn_backend_router().query_loading_graph(body={
             "libraries": libraries
         }, headers=ctx.headers())
 
@@ -733,7 +733,7 @@ async def upgrade_plugins(
             "libraries": functools.reduce(lambda acc, e: {**acc, e: "x"}, requirements.plugins, {})
         }
         assets_gtw = configuration.assets_gtw_client
-        loading_graph = await assets_gtw.cdn_loading_graph(body=body, headers=ctx.headers())
+        loading_graph = await assets_gtw.get_cdn_backend_router().query_loading_graph(body=body, headers=ctx.headers())
 
         new_requirements = Requirements(
             plugins=[*requirements.plugins],

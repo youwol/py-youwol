@@ -274,7 +274,10 @@ async def post_metadata(
                 "libraries": {name: version for name, version in libraries.items() if name in used_packages},
                 "using": {name: version for name, version in libraries.items()}
             }
-            loading_graph = await assets_gtw.cdn_loading_graph(body=body, headers=ctx.headers())
+            loading_graph = await assets_gtw.\
+                get_cdn_backend_router().\
+                query_loading_graph(body=body, headers=ctx.headers())
+
             flux_packs = [p['name'] for p in loading_graph['lock'] if p['type'] == 'flux-pack']
             await ctx.info("loading graph retrieved", data={"loading graph": loading_graph})
 

@@ -1,8 +1,8 @@
-import json
 from dataclasses import dataclass
 
 from youwol.environment.clients import RemoteClients, LocalClients
 from youwol.environment.youwol_environment import YouwolEnvironment
+from youwol.routers.environment.download_assets import zip_project
 from youwol.routers.environment.upload_assets.models import UploadTask
 from youwol_utils import JSON
 from youwol_utils.context import Context
@@ -22,11 +22,12 @@ class UploadFluxProjectTask(UploadTask):
 
         async with context.start("UploadFluxProjectTask.create_raw") as ctx:  # type: Context
             data['projectId'] = self.raw_id
+            zipped = zip_project(project=data)
             remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=self.remote_host, context=ctx)
-            await remote_gtw.put_asset_with_raw(
-                kind='flux-project',
-                folder_id=folder_id,
-                data=json.dumps(data).encode(),
+            await remote_gtw.get_flux_backend_router().upload_project(
+                project_id=self.raw_id,
+                data=zipped,
+                params={'folder-id': folder_id},
                 headers=ctx.headers()
                 )
 

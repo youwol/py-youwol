@@ -67,7 +67,9 @@ async def check_update(
         package_id = encode_id(local_package.library_name)
 
         try:
-            remote_package = await remote_gtw_client.cdn_get_versions(package_id=package_id, headers=headers)
+            remote_package = await remote_gtw_client\
+                .get_cdn_backend_router()\
+                .get_library_info(library_id=package_id, headers=headers)
         except HTTPException as e:
             if e.status_code == 404:
                 await ctx.info(text=f"{name} does not exist in remote")

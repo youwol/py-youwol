@@ -49,11 +49,10 @@ class UploadStoryTask(UploadTask):
 
         async with context.start("UploadStoryTask.create_raw") as ctx:  # type: Context
             remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=self.remote_host, context=ctx)
-            await remote_gtw.put_asset_with_raw(
-                kind='story',
-                folder_id=folder_id,
+            stories_client = remote_gtw.get_stories_backend_router()
+            await stories_client.publish_story(
                 data={'file': data, 'content_encoding': 'identity'},
-                rest_of_path="/publish",
+                params={'folder-id': folder_id},
                 headers=ctx.headers()
                 )
 
