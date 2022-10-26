@@ -54,11 +54,12 @@ def main():
             # Installing daemon fails on Windows -> not in requirements
             import daemon
             # noinspection PyUnresolvedReferences
-            with daemon.DaemonContext(pidfile=lockfile.FileLock("py-youwol")):
-                shutdown_script_path.write_text(shutdown_daemon_script(pid=os.getpid()))
-                # app: incorrect type. More here: https://github.com/tiangolo/fastapi/issues/3927
-                # noinspection PyTypeChecker
-                uvicorn.run(fastapi_app, host="localhost", port=env.httpPort, log_level=uvicorn_log_level)
+            with open("py-youwol.log", "x") as log:
+                with daemon.DaemonContext(pidfile=lockfile.FileLock("py-youwol"), stderr=log, stdout=log):
+                    shutdown_script_path.write_text(shutdown_daemon_script(pid=os.getpid()))
+                    # app: incorrect type. More here: https://github.com/tiangolo/fastapi/issues/3927
+                    # noinspection PyTypeChecker
+                    uvicorn.run(fastapi_app, host="localhost", port=env.httpPort, log_level=uvicorn_log_level)
         else:
             # app: incorrect type. More here: https://github.com/tiangolo/fastapi/issues/3927
             # noinspection PyTypeChecker
