@@ -42,9 +42,8 @@ class ApiConfiguration:
 class IPipelineFactory(ABC):
 
     @abstractmethod
-    async def get(self, env: YouwolEnvironment, context: Context) -> Pipeline:
+    async def get(self, _env: YouwolEnvironment, _context: Context) -> Pipeline:
         return NotImplemented
-
 
 
 class IConfigurationCustomizer(ABC):
