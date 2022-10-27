@@ -212,6 +212,7 @@ Aborting"
     exit
 fi
 kill $py_youwol_pid
+timeout 10 tail --pid=$py_youwol_pid -f /dev/null
 if [ $? -eq 0 ]; then
     echo "Successfully send kill signal"
 else
