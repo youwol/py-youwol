@@ -91,12 +91,23 @@ jobs:
           script: core.setFailed("Job failed because tests has failed, see job logs and annotations.")
 
   integration_http-clients:
-    name: Integration with http-clients
-    runs-on: ubuntu-latest
+        strategy:
+          matrix:
+            python: [3.8, 3.9]
+            os:
+              - ubuntu-22.04
+              - ubuntu-20.04 # latest
+              - macos-10.15
+              - macos-11 # latest
+              - macos-12
+        name: Integration with http-clients (python ${{ matrix.python }} on ${{ matrix.os }})
+        runs-on: ${{ matrix.os }}
     steps:
       - name: Prepare repository
         id: prepare
         uses: youwol/nestor/py/prepare@v1
+              with:
+                python-version: ${{ matrix.python }}
 
       - name: Prepare http-clients
         id: prepare_http-clients
