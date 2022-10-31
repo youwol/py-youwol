@@ -203,9 +203,8 @@ async def create_asset_local(
         # 'groupId' may not be the original one as it has changed if current user do not have access to it
         del metadata['groupId']
         # the next line is not fetching images
-        resp = await local_gtw.get_assets_backend_router().update_asset(
+        await local_gtw.get_assets_backend_router().update_asset(
             asset_id=asset_id, body=metadata,
             headers=ctx.headers()
         )
-        print(resp)
         await ctx.info(text="Asset metadata uploaded successfully")
