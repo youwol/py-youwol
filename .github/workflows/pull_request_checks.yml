@@ -108,7 +108,7 @@ jobs:
           - os: macos-11
             python: "3.9"
             OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
-            experimental: true
+            experimental: false
           - os: windows-2022
             python: "3.9"
             experimental: true
@@ -117,7 +117,7 @@ jobs:
             experimental: false
           - os: ubuntu-20.04
             python: "3.10"
-            experimental: false
+            experimental: true
 
     name: Integration with http-clients (python ${{ matrix.python }} on ${{ matrix.os }})
     runs-on: ${{ matrix.os }}

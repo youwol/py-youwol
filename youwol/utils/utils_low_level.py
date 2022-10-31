@@ -210,10 +210,18 @@ Aborting"
     exit
 fi
 kill $py_youwol_pid
-timeout 10 tail --pid=$py_youwol_pid -f /dev/null
-if [ $? -eq 0 ]; then
+
+success() {{
     echo "Successfully send kill signal"
-else
-    echo "Failed to send kill signal"
-fi
+    exit 0
+}}
+
+for i in 5 4 3 2 1 ; do
+    kill -0 $py_youwol_pid 2> /dev/null || success
+    echo "Still running … trying for $i second(s)"
+    sleep 1
+done
+kill -0 $py_youwol_pid 2> /dev/null || success
+echo "Failed to send kill signal"
+exit 1
 """
