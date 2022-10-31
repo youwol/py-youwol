@@ -26,7 +26,7 @@ class UploadFluxProjectTask(UploadTask):
             remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=self.remote_host, context=ctx)
             await remote_gtw.get_flux_backend_router().upload_project(
                 project_id=self.raw_id,
-                data=zipped,
+                data={'file': zipped, 'content_encoding': 'identity'},
                 params={'folder-id': folder_id},
                 headers=ctx.headers()
                 )
