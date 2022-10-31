@@ -7,17 +7,16 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 from typing import Tuple, Union, List, Mapping, Any, Dict
-from uuid import uuid4
 
 from PIL import Image
 from fastapi import UploadFile
 from starlette.requests import Request
 
+from youwol_assets_backend.configurations import Configuration, Constants
 from youwol_utils import (
     chunks, Storage, get_content_type, user_info,
     get_user_group_ids, ensure_group_permission, QueryBody, DocDb, log_info,
 )
-from youwol_assets_backend.configurations import Configuration, Constants
 from youwol_utils.context import Context
 from youwol_utils.http_clients.assets_backend.models import ParsedFile, FormData, AssetResponse, GroupAccess, \
     ReadPolicyEnumFactory, SharePolicyEnumFactory, AccessPolicyResp
@@ -120,16 +119,6 @@ def to_snake_case(key: str):
         "groupId": "group_id"
     }
     return key if key not in conv else conv[key]
-
-
-def create_tmp_folder(
-        zip_filename: Union[str, Path]
-) -> (Path, Path, str):
-    dir_path = Path("./tmp_zips") / str(uuid4())
-    zip_path = (dir_path / zip_filename).with_suffix('.zip')
-    zip_dir_name = zip_filename.split('.')[0]
-    os.makedirs(dir_path)
-    return dir_path, zip_path, zip_dir_name
 
 
 def extract_zip_file(

@@ -1,16 +1,23 @@
 import asyncio
 import io
 import json
-import shutil
+import tempfile
 from typing import Optional, Dict, List
 
 from fastapi import UploadFile, File, HTTPException, Form, APIRouter, Depends
 from starlette.requests import Request
 from starlette.responses import Response
 
+from youwol_cdn_backend.configurations import Configuration, Constants, get_configuration
 from youwol_cdn_backend.loading_graph_implementation import resolve_dependencies_recursive, loading_graph, \
     get_full_exported_symbol, ResolvedQuery, LibName, ExportedKey, QueryKey, get_api_key
-
+from youwol_cdn_backend.resources_initialization import synchronize
+from youwol_cdn_backend.utils import (
+    extract_zip_file, to_package_id, to_package_name, get_url, publish_package,
+    list_versions,
+    fetch_resource, resolve_resource, get_path, resolve_explicit_version
+)
+from youwol_cdn_backend.utils_indexing import get_version_number_str
 from youwol_utils import PackagesNotFound
 from youwol_utils.clients.docdb.models import WhereClause, QueryBody, Query
 from youwol_utils.context import Context
@@ -19,16 +26,6 @@ from youwol_utils.http_clients.cdn_backend import (
     LoadingGraphResponseV1, LoadingGraphBody, Library,
     ExplorerResponse, DeleteLibraryResponse, LibraryQuery, LibraryResolved, get_exported_symbol
 )
-from youwol_cdn_backend.configurations import Configuration, Constants, get_configuration
-from youwol_cdn_backend.resources_initialization import synchronize
-from youwol_cdn_backend.utils import (
-    extract_zip_file, to_package_id, create_tmp_folder,
-    to_package_name, get_url, publish_package,
-    list_versions,
-    fetch_resource, resolve_resource, get_path, resolve_explicit_version
-)
-
-from youwol_cdn_backend.utils_indexing import get_version_number_str
 from youwol_utils.http_clients.cdn_backend.utils import resolve_version
 
 router = APIRouter(tags=["cdn-backend"])
@@ -97,11 +94,12 @@ async def publish_libraries(
             response=lambda: response
     ) as ctx:  # type: Context
 
-        dir_path, zip_path, zip_dir_name = create_tmp_folder(file.filename)
-
-        try:
-            compressed_size = extract_zip_file(file.file, zip_path, dir_path)
-            files_count, libraries_count, namespaces = await synchronize(dir_path, zip_dir_name, configuration,
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # compressed_size = extract_zip_file(file.file, zip_path, dir_path)
+            # files_count, libraries_count, namespaces = await synchronize(dir_path, zip_dir_name, configuration,
+            compressed_size = extract_zip_file(file.file, file.filename, temp_dir)
+            files_count, libraries_count, namespaces = await synchronize(temp_dir, file.filename.split('.')[0],
+                                                                         configuration,
                                                                          ctx.headers(), context=ctx)
 
             response = PublishLibrariesResponse(
@@ -111,8 +109,6 @@ async def publish_libraries(
                 namespaces=namespaces
             )
             return response
-        finally:
-            shutil.rmtree(dir_path)
 
 
 @router.get("/libraries/{library_id}", summary="list versions of a library",
