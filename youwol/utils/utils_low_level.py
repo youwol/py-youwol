@@ -201,18 +201,19 @@ def assert_py_youwol_starting_preconditions(http_port: int):
 
 
 def shutdown_daemon_script(pid: int) -> str:
-    return f"""#/bin/sh
+    return f"""#!/bin/sh
 py_youwol_pid={pid}
 ## Sanity check
 program_name=$(ps -p $py_youwol_pid -o command=)
-echo "$program_name" | grep -q py-youwol
-if [[ $? -ne 0 ]]; then
+echo "$program_name" | grep -q 'youwol/main.py'
+if [ $? -ne 0 ]; then
     echo "Pid $py_youwol_pid does not look like py-youwol - program name is '$program_name'
 Aborting"
     exit
 fi
 kill $py_youwol_pid
-if [[ $? -eq 0 ]]; then
+timeout 10 tail --pid=$py_youwol_pid -f /dev/null
+if [ $? -eq 0 ]; then
     echo "Successfully send kill signal"
 else
     echo "Failed to send kill signal"
