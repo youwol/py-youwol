@@ -93,13 +93,16 @@ jobs:
   integration_http-clients:
         strategy:
           matrix:
-            python: [3.8, 3.9]
+            python:
+#              - 3.8
+              - 3.9
             os:
-              - ubuntu-22.04
+#              - ubuntu-22.04
               - ubuntu-20.04 # latest
-              - macos-10.15
+#              - macos-10.15
               - macos-11 # latest
-              - macos-12
+#              - macos-12
+          fail-fast: false
         name: Integration with http-clients (python ${{ matrix.python }} on ${{ matrix.os }})
         runs-on: ${{ matrix.os }}
     steps:
