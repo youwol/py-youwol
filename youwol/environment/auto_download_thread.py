@@ -75,8 +75,7 @@ async def process_download_asset(
         pbar.total = pbar.total + 1
         async with context.start(
                 action=f"Proceed download task",
-                with_attributes={"kind": kind, "rawId": raw_id},
-                on_exit=queue.task_done()
+                with_attributes={"kind": kind, "rawId": raw_id}
         ) as ctx:  # types: Context
 
             cache_downloaded_ids.add(download_id)
@@ -99,8 +98,8 @@ async def process_download_asset(
 
             except Exception as e:
                 await on_error("Error while installing the asset in local",  e, ctx)
-                raise e
             finally:
+                queue.task_done()
                 download_id in cache_downloaded_ids and cache_downloaded_ids.remove(download_id)
                 pbar.set_description(downloading_pbar(env), refresh=True)
 
