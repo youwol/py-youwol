@@ -1,10 +1,9 @@
-from typing import Callable, Union, Awaitable, Any, Optional
+from typing import Callable, Union, Awaitable, Optional
 
 from pydantic import BaseModel
 
+from youwol_utils import JSON
 from youwol_utils.context import Context
-
-JSON = Any
 
 
 class Command(BaseModel):

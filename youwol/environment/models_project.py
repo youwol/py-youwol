@@ -9,8 +9,8 @@ from pydantic import BaseModel
 
 from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol.environment.paths import PathsBook
+from youwol_utils import JSON
 from youwol_utils import execute_shell_cmd, CommandException
-from youwol.utils.utils_low_level import JSON
 from youwol_utils import files_check_sum
 from youwol_utils.context import Context
 from youwol_utils.utils_paths import matching_files, parse_json
@@ -249,7 +249,7 @@ class FromAsset(Parametrization):
 class OpenWith(Parametrization):
     name: Optional[str]
     match: Union[Dict, str]
-    parameters:  Union[Dict, str]
+    parameters: Union[Dict, str]
 
 
 class Execution(BaseModel):

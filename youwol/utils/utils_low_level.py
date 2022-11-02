@@ -7,7 +7,7 @@ import tempfile
 from importlib.machinery import SourceFileLoader
 from importlib.util import spec_from_loader
 from pathlib import Path
-from typing import Union, Mapping, List, Type, cast, TypeVar, Optional
+from typing import Union, List, Type, cast, TypeVar, Optional
 
 import aiohttp
 from aiohttp import ClientSession, TCPConnector
@@ -19,8 +19,6 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol_utils import log_info, assert_response
 from youwol_utils.context import Context
-
-JSON = Union[str, int, float, bool, None, Mapping[str, 'JSON'], List['JSON']]
 
 
 def sed_inplace(filename, pattern, repl):

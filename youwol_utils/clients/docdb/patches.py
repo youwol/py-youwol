@@ -1,6 +1,6 @@
-from typing import Dict, Any
+from typing import Dict
 
-JSON = Any
+from youwol_utils.utils import JSON
 
 
 def compare_schemas(left: Dict[str, any], right: Dict[str, any]):
