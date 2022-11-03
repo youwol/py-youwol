@@ -38,7 +38,7 @@ coverage==6.5.0
     # via -r deps/dev.in
 cowpy==1.1.5
     # via -r deps/base.in
-cryptography==37.0.2
+cryptography==38.0.3
     # via pyjwt
 deepdiff==5.8.1
     # via -r deps/base.in
