@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from aiohttp import FormData
 from fastapi import HTTPException
 
 from youwol.environment.clients import LocalClients, RemoteClients
@@ -36,14 +37,31 @@ class DownloadStoryTask(DownloadTask):
         env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
 
         remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=env.selectedRemote, context=context)
+
+        async def get_raw_data(ctx_get_raw: Context):
+            resp = await remote_gtw.get_stories_backend_router().download_zip(story_id=self.raw_id,
+                                                                              headers=ctx_get_raw.headers())
+            return resp
+
+        async def post_raw_data(folder_id: str, raw_data, ctx: Context):
+            form_data = FormData()
+            form_data.add_field(name='file', value=raw_data)
+
+            resp = await LocalClients \
+                .get_assets_gateway_client(env=env) \
+                .get_stories_backend_router() \
+                .publish_story(data=form_data,
+                               params={'folder-id': folder_id},
+                               headers=ctx.headers()
+                               )
+            return resp
+
         default_drive = await env.get_default_drive(context=context)
         await create_asset_local(
             asset_id=self.asset_id,
             kind='story',
             default_owning_folder_id=default_drive.downloadFolderId,
-            get_raw_data=lambda _ctx: remote_gtw.get_stories_backend_router().download_zip(
-                story_id=self.raw_id,
-                headers=_ctx.headers()),
-            to_post_raw_data=lambda pack: {'file': pack},
+            get_raw_data=get_raw_data,
+            post_raw_data=post_raw_data,
             context=context
             )

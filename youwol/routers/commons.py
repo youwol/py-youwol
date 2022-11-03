@@ -23,11 +23,12 @@ async def ensure_path(path_item: PathResponse, assets_gateway_client: AssetsGate
     async with context.start(action="ensure path") as ctx:
         await context.info(text="target path", data=path_item)
         folders = path_item.folders
+        treedb_backend = assets_gateway_client.get_treedb_backend_router()
         try:
             if folders:
-                await assets_gateway_client.get_tree_folder(folder_id=folders[-1].folderId, headers=ctx.headers())
+                await treedb_backend.get_folder(folder_id=folders[-1].folderId, headers=ctx.headers())
             else:
-                await assets_gateway_client.get_tree_drive(drive_id=path_item.drive.driveId, headers=ctx.headers())
+                await treedb_backend.get_drive(drive_id=path_item.drive.driveId, headers=ctx.headers())
         except HTTPException as e:
             if e.status_code == 404:
                 if len(folders) <= 1:
@@ -39,18 +40,19 @@ async def ensure_path(path_item: PathResponse, assets_gateway_client: AssetsGate
                     return
                 folder = folders[-1]
                 body = {"folderId": folder.folderId, "name": folder.name}
-                await assets_gateway_client.create_folder(parent_folder_id=folder.parentFolderId, body=body,
-                                                          headers=ctx.headers())
+                await treedb_backend.create_folder(parent_folder_id=folder.parentFolderId, body=body,
+                                                   headers=ctx.headers())
 
 
 async def ensure_drive(drive: DriveResponse, assets_gateway_client: AssetsGatewayClient, context: Context):
     async with context.start(action="ensure drive") as ctx:
+        treedb_backend = assets_gateway_client.get_treedb_backend_router()
         try:
-            await assets_gateway_client.get_tree_drive(drive_id=drive.driveId, headers=ctx.headers())
+            await treedb_backend.get_drive(drive_id=drive.driveId, headers=ctx.headers())
         except HTTPException as e:
             if e.status_code == 404:
                 body = {"driveId": drive.driveId, "name": drive.name}
-                await assets_gateway_client.create_drive(group_id=drive.groupId, body=body, headers=ctx.headers())
+                await treedb_backend.create_drive(group_id=drive.groupId, body=body, headers=ctx.headers())
                 return
             raise e
 
@@ -79,4 +81,3 @@ async def local_path(tree_item: dict, context: Context):
     env = await context.get('env', YouwolEnvironment)
     treedb = LocalClients.get_treedb_client(env=env)
     return await treedb.get_path(item_id=tree_item['treeId'], headers=context.headers())
-

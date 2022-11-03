@@ -220,12 +220,11 @@ class PublishCdnRemoteStep(PipelineStep):
             local_cdn = LocalClients.get_cdn_client(env=env)
             remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=self.cdnTarget.host,
                                                                        context=context)
-
+            remote_cdn = remote_gtw.get_cdn_backend_router()
+            library_id = encode_id(project.publishName)
             local_info, remote_info = await asyncio.gather(
-                local_cdn.get_version_info(library_id=encode_id(project.publishName), version=project.version,
-                                           headers=ctx.headers()),
-                remote_gtw.cdn_get_package(library_name=project.publishName, version=project.version, metadata=True,
-                                           headers=ctx.headers()),
+                local_cdn.get_version_info(library_id=library_id, version=project.version, headers=ctx.headers()),
+                remote_cdn.get_version_info(library_id=library_id, version=project.version, headers=ctx.headers()),
                 return_exceptions=True
             )
             if isinstance(remote_info, HTTPException) and remote_info.status_code == 404:

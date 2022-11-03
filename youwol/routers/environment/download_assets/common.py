@@ -1,6 +1,6 @@
 import asyncio
 import json
-from typing import List, Callable, Awaitable, TypeVar, cast, Dict
+from typing import List, Callable, Awaitable, TypeVar, cast, Dict, Optional
 
 from fastapi import HTTPException
 
@@ -9,8 +9,7 @@ from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from youwol_utils.clients.treedb.treedb import TreeDbClient
 from youwol_utils.context import Context
-from youwol_utils.http_clients.assets_gateway import ItemsResponse
-from youwol_utils.http_clients.tree_db_backend import PathResponse, ItemResponse, DriveResponse
+from youwol_utils.http_clients.tree_db_backend import PathResponse, ItemResponse, DriveResponse, ItemsResponse
 
 
 async def get_remote_paths(
@@ -19,7 +18,7 @@ async def get_remote_paths(
         context: Context
 ):
     items_path_ = await asyncio.gather(*[
-        remote_treedb.get_path(item.treeId, headers=context.headers())
+        remote_treedb.get_path(item.itemId, headers=context.headers())
         for item in tree_items.items
     ])
     items_path = [PathResponse(**p) for p in items_path_]
@@ -95,9 +94,9 @@ async def sync_borrowed_items(
     await asyncio.gather(*[ensure_local_path(p, local_treedb, context) for p in borrowed_locations])
 
     await asyncio.gather(*[
-        local_gtw.borrow_tree_item(
-            asset_id,
-            {'itemId': p.item.itemId, 'destinationFolderId': p.folders[-1].folderId},
+        local_gtw.get_treedb_backend_router().borrow(
+            item_id=asset_id,
+            body={'targetId': p.item.itemId, 'destinationFolderId': p.folders[-1].folderId},
             headers=context.headers()
         )
         for p in borrowed_locations
@@ -130,7 +129,7 @@ async def create_asset_local(
         kind: str,
         default_owning_folder_id,
         get_raw_data: Callable[[Context], Awaitable[T]],
-        to_post_raw_data: Callable[[T], any],
+        post_raw_data: Optional[Callable[[str, T, Context], Awaitable[None]]],
         context: Context
         ):
     env = await context.get("env", YouwolEnvironment)
@@ -141,11 +140,12 @@ async def create_asset_local(
         local_gtw: AssetsGatewayClient = LocalClients.get_assets_gateway_client(env)
         remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=env.selectedRemote, context=context)
         remote_treedb = remote_gtw.get_treedb_backend_router()
+        remote_assets = remote_gtw.get_assets_backend_router()
         headers = ctx.headers()
         raw_data, metadata, tree_items = await asyncio.gather(
             get_raw_data(ctx),
-            remote_gtw.get_asset_metadata(asset_id=asset_id, headers=headers),
-            remote_gtw.get_tree_items_by_related_id(related_id=asset_id, headers=headers),
+            remote_assets.get_asset(asset_id=asset_id, headers=headers),
+            remote_treedb.get_items_from_asset(asset_id=asset_id, headers=headers),
             return_exceptions=True
         )
 
@@ -188,13 +188,8 @@ async def create_asset_local(
         await ctx.info(text="Owning folder retrieved", data={
             "owning_folder_id": owning_folder_id
         })
+        await post_raw_data(owning_folder_id, raw_data, ctx)
 
-        await local_gtw.put_asset_with_raw(
-            kind=kind,
-            folder_id=owning_folder_id,
-            data=to_post_raw_data(raw_data),
-            headers=ctx.headers()
-        )
         await ctx.info(text="Asset raw's data downloaded successfully")
         await sync_access_policies(asset_id=asset_id, context=context)
         await sync_borrowed_items(
@@ -205,6 +200,11 @@ async def create_asset_local(
             context=ctx
         )
         await ctx.info(text="Borrowed items created successfully")
+        # 'groupId' may not be the original one as it has changed if current user do not have access to it
+        del metadata['groupId']
         # the next line is not fetching images
-        await local_gtw.update_asset(asset_id=asset_id, body=metadata, headers=ctx.headers())
+        await local_gtw.get_assets_backend_router().update_asset(
+            asset_id=asset_id, body=metadata,
+            headers=ctx.headers()
+        )
         await ctx.info(text="Asset metadata uploaded successfully")

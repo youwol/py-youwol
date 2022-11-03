@@ -44,10 +44,7 @@ class UploadDataTask(UploadTask):
 
         async with context.start(action="UploadDataTask.update_raw") as ctx:  # type: Context
             remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=self.remote_host, context=ctx)
-            await remote_gtw.update_raw_asset(
-                kind='data',
-                raw_id=self.raw_id,
+            await remote_gtw.get_files_backend_router().upload(
                 data=data,
-                rest_of_path="content",
                 headers=ctx.headers()
                 )

@@ -90,9 +90,8 @@ class UploadPackageTask(UploadTask):
             if self.options and self.options.versions:
                 to_sync_releases = [v for v in to_sync_releases if v in self.options.versions]
             try:
-                raw_metadata = await assets_gateway_client.get_raw_metadata(
-                    kind='package',
-                    raw_id=decode_id(self.asset_id),
+                raw_metadata = await assets_gateway_client.get_cdn_backend_router().get_library_info(
+                    library_id=decode_id(self.asset_id),
                     headers=ctx.headers())
             except HTTPException as e:
                 if e.status_code == 404:
@@ -117,6 +116,7 @@ class UploadPackageTask(UploadTask):
     async def publish_version(self, folder_id: str, version: str, context: Context):
 
         remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=self.remote_host, context=context)
+        remote_cdn = remote_gtw.get_cdn_backend_router()
         env = await context.get('env', YouwolEnvironment)
         async with context.start(action="UploadPackageTask.publish_version") as ctx:  # type: Context
 
@@ -129,8 +129,8 @@ class UploadPackageTask(UploadTask):
 
             try:
                 data = {'file': zip_path.read_bytes(), 'content_encoding': 'identity'}
-                await remote_gtw.put_asset_with_raw(kind='package', folder_id=folder_id, data=data,
-                                                    timeout=60000, headers=ctx.headers())
+                await remote_cdn.publish(data=data, params={'folder-id': folder_id}, timeout=60000,
+                                         headers=ctx.headers())
             finally:
                 await ctx.info(
                     text=f"{library_name}#{version}: synchronization done"

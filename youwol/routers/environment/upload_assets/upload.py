@@ -48,7 +48,8 @@ async def synchronize_permissions(assets_gtw_client: AssetsGatewayClient, asset_
     ) as ctx:  # type: Context
         env = await context.get('env', YouwolEnvironment)
         local_assets_gtw = LocalClients.get_assets_gateway_client(env=env)
-        access_info = await local_assets_gtw.get_asset_access(asset_id=asset_id, headers=ctx.headers())
+        access_info = await local_assets_gtw.get_assets_backend_router()\
+            .get_access_info(asset_id=asset_id, headers=ctx.headers())
         await ctx.info(
             labels=[str(Label.RUNNING)],
             text="Permissions retrieved",
@@ -56,12 +57,13 @@ async def synchronize_permissions(assets_gtw_client: AssetsGatewayClient, asset_
         )
         default_permission = access_info["ownerInfo"]["defaultAccess"]
         groups = access_info["ownerInfo"]["exposingGroups"]
+        assets_client = assets_gtw_client.get_assets_backend_router()
         await asyncio.gather(
-            assets_gtw_client.put_asset_access(asset_id=asset_id, group_id='*', body=default_permission,
-                                               headers=ctx.headers()),
+            assets_client.put_access_policy(asset_id=asset_id, group_id='*', body=default_permission,
+                                            headers=ctx.headers()),
             *[
-                assets_gtw_client.put_asset_access(asset_id=asset_id, group_id=g['groupId'], body=g['access'],
-                                                   headers=ctx.headers())
+                assets_client.put_access_policy(asset_id=asset_id, group_id=g['groupId'], body=g['access'],
+                                                headers=ctx.headers())
                 for g in groups
             ]
         )
@@ -100,8 +102,9 @@ async def create_borrowed_item(borrowed_tree_id: str, item: Mapping[str, any], a
     ) as ctx:  # type: Context
 
         tree_id = item["item_id"]
+        treedb_backend = assets_gtw_client.get_treedb_backend_router()
         try:
-            await assets_gtw_client.get_tree_item(item_id=tree_id, headers=ctx.headers())
+            await treedb_backend.get_item(item_id=tree_id, headers=ctx.headers())
             return
         except HTTPException as e:
             if e.status_code != 404:
@@ -119,13 +122,13 @@ async def create_borrowed_item(borrowed_tree_id: str, item: Mapping[str, any], a
             if len(path_item.folders) > 0:
                 parent_id = path_item.folders[0].folderId
 
-        await assets_gtw_client.borrow_tree_item(tree_id=borrowed_tree_id,
-                                                 body={
-                                                     "itemId": tree_id,
-                                                     "destinationFolderId": parent_id
-                                                 },
-                                                 headers=ctx.headers()
-                                                 )
+        await treedb_backend.borrow(item_id=borrowed_tree_id,
+                                    body={
+                                         "itemId": tree_id,
+                                         "destinationFolderId": parent_id
+                                     },
+                                    headers=ctx.headers()
+                                    )
         await ctx.info(text="Borrowed item created")
 
 
@@ -141,8 +144,8 @@ async def synchronize_metadata(asset_id: str, assets_gtw_client: AssetsGatewayCl
         local_assets_gtw: AssetsGatewayClient = LocalClients.get_assets_gateway_client(env=env)
 
         local_metadata, remote_metadata = await asyncio.gather(
-            local_assets_gtw.get_asset_metadata(asset_id=asset_id, headers=ctx.headers()),
-            assets_gtw_client.get_asset_metadata(asset_id=asset_id, headers=ctx.headers()),
+            local_assets_gtw.get_assets_backend_router().get_asset(asset_id=asset_id, headers=ctx.headers()),
+            assets_gtw_client.get_assets_backend_router().get_asset(asset_id=asset_id, headers=ctx.headers()),
             return_exceptions=True
         )
         missing_images_urls = [p for p in local_metadata['images'] if p not in remote_metadata['images']]
@@ -176,8 +179,9 @@ async def synchronize_metadata(asset_id: str, assets_gtw_client: AssetsGatewayCl
         await asyncio.gather(
             remote_assets.update_asset(asset_id=asset_id, body=local_metadata, headers=ctx.headers()),
             *[
-                assets_gtw_client.post_asset_image(asset_id=asset_id, filename=name, data=form, headers=ctx.headers())
-                for name, form in zip(filenames, forms)
+                assets_gtw_client.get_assets_backend_router().post_image(asset_id=asset_id, filename=filename,
+                                                                         src=src, headers=ctx.headers())
+                for filename, src in zip(filenames, images_data)
             ]
         )
 
@@ -248,11 +252,12 @@ async def upload_asset(
         )
 
         assets_gtw_client = await RemoteClients.get_assets_gateway_client(remote_host=remote_host, context=ctx)
-
+        assets_client = assets_gtw_client.get_assets_backend_router()
         await ensure_path(path_item=PathResponse(**path_item), assets_gateway_client=assets_gtw_client, context=ctx)
         try:
-            remote_asset = await assets_gtw_client.get_asset_metadata(asset_id=asset_id, headers=ctx.headers())
-            remote_tree_item = await assets_gtw_client.get_tree_item(tree_item['itemId'], headers=ctx.headers())
+            remote_asset = await assets_client.get_asset(asset_id=asset_id, headers=ctx.headers())
+            remote_tree_item = await assets_gtw_client.get_treedb_backend_router()\
+                .get_item(item_id=tree_item['itemId'], headers=ctx.headers())
             await ctx.info(
                 text="Asset already found in deployed environment",
                 data={

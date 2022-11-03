@@ -5,13 +5,12 @@ import os
 import zipfile
 from pathlib import Path
 from typing import Union, List, Tuple, Coroutine, Mapping
-from uuid import uuid4
 
 from fastapi import UploadFile, HTTPException
 
-from youwol_utils import JSON, DocDb, Storage, base64, log_info
 from youwol_flux_backend.backward_compatibility import convert_project_to_current_version
 from youwol_flux_backend.configurations import Configuration, Constants
+from youwol_utils import JSON, DocDb, Storage, base64, log_info
 from youwol_utils.http_clients.cdn_backend import patch_loading_graph
 from youwol_utils.http_clients.flux_backend import (
     Workflow, BuilderRendering, RunnerRendering, Project, Component, Requirements, DeprecatedData
@@ -213,14 +212,6 @@ async def retrieve_component(component_id: str, owner: Union[None, str], storage
                           runnerRendering=RunnerRendering(**components[-1]) if has_view else None)
 
     return component
-
-
-def create_tmp_folder(zip_filename):
-    dir_path = Path("./tmp_zips") / str(uuid4())
-    zip_path = (dir_path / zip_filename).with_suffix('.zip')
-    zip_dir_name = zip_filename.split('.')[0]
-    os.makedirs(dir_path)
-    return dir_path, zip_path, zip_dir_name
 
 
 def extract_zip_file(file: UploadFile, zip_path: Union[Path, str], dir_path: Union[Path, str]):

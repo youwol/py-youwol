@@ -3,9 +3,9 @@ from fastapi import Query as QueryParam
 from starlette.requests import Request
 from starlette.responses import Response
 
-from youwol_assets_gateway.raw_stores import AssetMeta
 from youwol_assets_gateway.routers.common import assert_read_permissions_from_raw_id, \
     assert_write_permissions_from_raw_id, create_asset, delete_asset, assert_write_permissions_folder_id
+from youwol_assets_gateway.utils import AssetMeta
 from youwol_utils.context import Context
 from youwol_assets_gateway.configurations import Configuration, get_configuration
 from youwol_utils.http_clients.assets_gateway import NewAssetResponse
@@ -371,4 +371,3 @@ async def add_plugin(
         await assert_write_permissions_from_raw_id(raw_id=story_id, configuration=configuration, context=ctx)
         return await configuration.stories_client.upgrade_plugins(story_id=story_id, body=body.dict(),
                                                                   headers=ctx.headers())
-

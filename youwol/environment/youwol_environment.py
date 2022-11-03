@@ -33,7 +33,7 @@ from youwol.utils.utils_low_level import get_public_user_auth_token
 from youwol.web_socket import WsDataStreamer
 from youwol_utils import retrieve_user_info
 from youwol_utils.context import Context, ContextFactory, InMemoryReporter
-from youwol_utils.http_clients.assets_gateway import DefaultDriveResponse
+from youwol_utils.http_clients.tree_db_backend import DefaultDriveResponse
 from youwol_utils.servers.fast_api import FastApiRouter
 from youwol_utils.utils_paths import parse_json, write_json
 
@@ -142,7 +142,7 @@ class YouwolEnvironment(BaseModel):
             return self.private_cache.get("default-drive")
         env = await context.get('env', YouwolEnvironment)
         default_drive = await LocalClients\
-            .get_assets_gateway_client(env)\
+            .get_assets_gateway_client(env).get_treedb_backend_router()\
             .get_default_user_drive(headers=context.headers())
 
         self.private_cache["default-drive"] = DefaultDriveResponse(**default_drive)

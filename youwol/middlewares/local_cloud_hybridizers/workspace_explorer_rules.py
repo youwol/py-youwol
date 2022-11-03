@@ -107,80 +107,6 @@ class GetChildrenDispatch(AbstractDispatch):
             }
 
 
-class GetPermissionsDispatch(AbstractDispatch):
-
-    @staticmethod
-    async def is_matching(request: Request) -> bool:
-        return request.method == "GET" \
-               and request.url.path.startswith("/api/assets-gateway/tree/") \
-               and request.url.path.endswith('/permissions') \
-               and ('user-agent' in request.headers and "Python" not in request.headers.get('user-agent'))
-
-    async def apply(self,
-                    request: Request,
-                    call_next: RequestResponseEndpoint,
-                    context: Context
-                    ) -> Optional[Response]:
-
-        if not await GetPermissionsDispatch.is_matching(request=request):
-            return None
-
-        async with context.start(action="GetPermissionsDispatch.apply", muted_http_errors={404}) as ctx:
-
-            env = await ctx.get('env', YouwolEnvironment)
-            local_gtw = LocalClients.get_assets_gateway_client(env=env)
-            remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=env.selectedRemote, context=ctx)
-            item_id = request.url.path.split('/api/assets-gateway/tree/')[1].split('/')[0]
-
-            local_resp, remote_resp = await asyncio.gather(
-                local_gtw.get_permissions(item_id=item_id),
-                remote_gtw.get_permissions(item_id=item_id),
-                return_exceptions=True
-                )
-            if isinstance(local_resp, Exception):
-                await ctx.info("Asset not found in local store, return remote data")
-                return JSONResponse(remote_resp)
-
-            await ctx.info("Asset found in local store, return local data")
-            return JSONResponse(local_resp)
-
-
-class GetItemDispatch(AbstractDispatch):
-
-    @staticmethod
-    async def is_matching(request: Request) -> bool:
-        return request.method == "GET" \
-               and request.url.path.startswith('/api/assets-gateway/tree/items/') \
-               and "Python" not in request.headers.get('user-agent')
-
-    async def apply(self,
-                    request: Request,
-                    call_next: RequestResponseEndpoint,
-                    context: Context
-                    ) -> Optional[Response]:
-
-        if not await GetItemDispatch.is_matching(request=request):
-            return None
-
-        async with context.start(action="GetItemDispatch.apply", muted_http_errors={404}) as ctx:
-            env = await ctx.get('env', YouwolEnvironment)
-            local_gtw = LocalClients.get_assets_gateway_client(env=env)
-            remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=env.selectedRemote, context=ctx)
-            item_id = request.url.path.split('/api/assets-gateway/tree/items/')[1]
-
-            local_resp, remote_resp = await asyncio.gather(
-                local_gtw.get_tree_item(item_id=item_id),
-                remote_gtw.get_tree_item(item_id=item_id),
-                return_exceptions=True
-            )
-            if isinstance(local_resp, Exception):
-                await ctx.info("Asset not found in local store, return remote data")
-                return JSONResponse(remote_resp)
-
-            await ctx.info("Asset found in local store, return local data")
-            return JSONResponse(local_resp)
-
-
 class MoveBorrowInRemoteFolderDispatch(AbstractDispatch):
 
     async def apply(self,
@@ -189,21 +115,21 @@ class MoveBorrowInRemoteFolderDispatch(AbstractDispatch):
                     context: Context
                     ) -> Optional[Response]:
         env = await context.get('env', YouwolEnvironment)
-        match, replaced = url_match(request=request, pattern='POST:/api/assets-gateway/tree/*/*')
-        if not match or replaced[-1] not in ['move', 'borrow']:
+        match, replaced = url_match(request=request, pattern='POST:/api/assets-gateway/treedb-backend/**')
+        if not match or replaced[0][-1] not in ['move', 'borrow']:
             return None
 
         async with context.start(action="MoveBorrowInRemoteFolderDispatch.apply", muted_http_errors={404}) as ctx:
             body = await request.json()
             folder_id = body["destinationFolderId"]
             await ensure_local_path(folder_id=folder_id, env=env, context=ctx)
-            gtw = LocalClients.get_assets_gateway_client(env=env)
+            explorer_db = LocalClients.get_assets_gateway_client(env=env).get_treedb_backend_router()
             # Ideally we would like to proceed to call_next(request), it is not possible because the body of the
             # request has already been fetched (and would result in a fast api getting stuck trying to parse it again)
             headers = {**ctx.headers(), 'py-youwol-local-only': 'true'}
-            if replaced[-1] == "move":
-                resp = await gtw.move_tree_item(tree_id=replaced[0], body=body, headers=headers)
+            if replaced[0][-1] == "move":
+                resp = await explorer_db.move(body=body, headers=headers)
                 return JSONResponse(resp)
-
-            resp = await gtw.borrow_tree_item(tree_id=replaced[0], body=body, headers=headers)
+            item_id = replaced[0][1]
+            resp = await explorer_db.borrow(item_id=item_id, body=body, headers=headers)
             return JSONResponse(resp)

@@ -14,7 +14,6 @@ from youwol.environment.youwol_environment import yw_config
 from youwol_stories_backend import Configuration as StoriesConfig
 from youwol_utils import CdnClient, CacheClient
 from youwol_utils.clients.assets.assets import AssetsClient
-from youwol_utils.clients.data_api.data import DataClient
 from youwol_utils.clients.docdb.local_docdb import LocalDocDbClient as LocalDocDb, LocalDocDbClient
 from youwol_utils.clients.file_system.local_file_system import LocalFileSystem
 from youwol_utils.clients.files import FilesClient
@@ -100,12 +99,6 @@ async def assets_gtw_config_py_youwol():
     url_base = f"http://localhost:{env.httpPort}/api"
 
     config_yw_assets_gateway = assets_gtw.Configuration(
-        data_client=DataClient(
-            storage=LocalStorage(root_path=env.pathsBook.local_storage, bucket_name='data'),
-            docdb=LocalDocDb(root_path=env.pathsBook.local_docdb,
-                             keyspace_name='data',
-                             table_body=assets_gtw.Constants.table_data_schema),
-        ),
         flux_client=FluxClient(url_base=f"{url_base}/flux-backend"),
         cdn_client=CdnClient(url_base=f"{url_base}/cdn-backend"),
         stories_client=StoriesClient(url_base=f"{url_base}/stories-backend"),
