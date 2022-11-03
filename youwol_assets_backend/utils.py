@@ -15,7 +15,7 @@ from starlette.requests import Request
 from youwol_assets_backend.configurations import Configuration, Constants
 from youwol_utils import (
     chunks, Storage, get_content_type, user_info,
-    get_user_group_ids, ensure_group_permission, QueryBody, DocDb, log_info,
+    get_user_group_ids, ensure_group_permission, QueryBody, DocDb, log_info, JSON,
 )
 from youwol_utils.context import Context
 from youwol_utils.http_clients.assets_backend.models import ParsedFile, FormData, AssetResponse, GroupAccess, \
@@ -96,7 +96,7 @@ def get_raw_record_permissions(
     }
 
 
-def format_asset(doc, _: Request):
+def format_asset(doc: JSON, _: Request):
     return AssetResponse(assetId=doc["asset_id"], kind=doc["kind"], rawId=doc["related_id"], name=doc["name"],
                          images=doc["images"], thumbnails=doc["thumbnails"], tags=doc["tags"],
                          description=doc["description"], groupId=doc["group_id"])
