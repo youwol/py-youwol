@@ -251,11 +251,15 @@ async def get_group_from_item(
 
 
 async def ensure_get_permission(
-        request: Request,
         docdb: DocDb,
         partition_keys: Dict[str, Any],
         context: Context
 ):
+    """
+    There is no restriction on accessing an item's data, only the associated 'raw' part is protected.
+    This is needed at least by py-youwol to properly 'install' new asset in local, even if the user is not part
+    of the owning group.
+    """
     async with context.start(
             action="ensure_get_permission",
     ) as ctx:  # type: Context
@@ -263,8 +267,6 @@ async def ensure_get_permission(
         await ctx.info(text="partition_keys", data=partition_keys)
         asset = await docdb.get_document(partition_keys=partition_keys, clustering_keys={},
                                          owner=Constants.public_owner, headers=ctx.headers())
-        # there is no restriction on access asset 'metadata' for now
-        ensure_group_permission(request=request, group_id=asset["group_id"])
         return asset
 
 
