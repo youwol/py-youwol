@@ -163,7 +163,7 @@ jobs:
         run: |
           title="Combine Coverage"
           msg="Coverage Combine failed. See job logs"
-          coverage combine $ARTIFACT_DIR/*/coverage.coverage > coverage.log 2>&1 || echo "::error title=$title::$msg"
+          coverage combine --keep $ARTIFACT_DIR/*/coverage.coverage > coverage.log 2>&1 || echo "::error title=$title::$msg"
         shell: sh
 
       - name: Coverage HTML Report
