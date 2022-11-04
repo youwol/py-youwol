@@ -49,6 +49,7 @@ jobs:
           path: ${{ runner.temp }}/local-youwol-client
           py-youwol_path: ${{ github.workspace }}
           py-youwol_conf_path: ${{ runner.temp }}/local-youwol-client/src/tests/yw_config/yw_config.py
+          coverage_omit: '*/src/tests/*/yw_pipeline.py'
 
       - name: On Tests Failure
         id: on_tests_failure
