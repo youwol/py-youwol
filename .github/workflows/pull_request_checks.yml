@@ -44,7 +44,7 @@ jobs:
 
       - name: Run local-youwol-client tests
         id: tests_local-youwol-client
-        uses: youwol/nestor/ts/tests_coverage@test
+        uses: youwol/nestor/ts/tests_coverage@v1
         with:
           path: ${{ runner.temp }}/local-youwol-client
           py-youwol_path: ${{ github.workspace }}
@@ -76,7 +76,7 @@ jobs:
 
       - name: Run cdn-client tests
         id: tests_cdn-client
-        uses: youwol/nestor/ts/tests_coverage@test
+        uses: youwol/nestor/ts/tests_coverage@v1
         with:
           path: ${{ runner.temp }}/cdn-client
           py-youwol_path: ${{ github.workspace }}
@@ -108,7 +108,7 @@ jobs:
 
       - name: Run http-clients tests
         id: tests_http-clients
-        uses: youwol/nestor/ts/tests_coverage@test
+        uses: youwol/nestor/ts/tests_coverage@v1
         with:
           path: ${{ runner.temp }}/http-clients
           py-youwol_path: ${{ github.workspace }}
