@@ -120,3 +120,93 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: core.setFailed("Job failed because tests has failed, see job logs and annotations.")
+
+  combine_coverages:
+    name: Combine Coverages
+    runs-on: ubuntu-latest
+    needs:
+      - integration_local-youwol-client
+      - integration_cdn-client
+      - integration_http-clients
+    steps:
+      - name: Download artifacts
+        id: download_artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: ${{ runner.temp }}/artifacts
+
+      - name: Prepare py-youwol
+        uses: youwol/nestor/py/prepare@v1
+        with:
+          requirements: dev-requirements.txt
+
+      - name: Setup Coverage configuration
+        env:
+          ARTIFACT_DIR: ${{ runner.temp }}/artifacts
+        run: |
+          # Set up coverage conf
+          cat  << _coverage_rc > ".coveragerc"
+            [run]
+            branch = True
+            data_file = coverage.coverage
+            relative_files = True
+            debug = sys,config,pathmap
+          _coverage_rc
+        shell: sh
+
+      - name: Combine coverages
+        id: combine_coverages
+        env:
+          COVERAGE_DEBUG_FILE: coverage.debug
+          ARTIFACT_DIR: ${{ runner.temp }}/artifacts
+        run: |
+          title="Combine Coverage"
+          msg="Coverage Combine failed. See job logs"
+          coverage combine $ARTIFACT_DIR/*/coverage.coverage > coverage.log 2>&1 || echo "::error title=$title::$msg"
+        shell: sh
+
+      - name: Coverage HTML Report
+        id: coverage_html_report
+        env:
+          COVERAGE_DEBUG_FILE: coverage_html.debug
+          ARTIFACT_DIR: ${{ runner.temp }}/artifacts
+        run: |
+          title="Coverage report HTML"
+          msg="HTML report generation failed. See job logs"
+          coverage html > coverage_html.log 2>&1 || echo "::error title=$title::$msg"
+          mv coverage_html.debug $ARTIFACT_DIR || echo "::error title=$title::coverage_html.debug not found"
+          mv coverage_html.log  $ARTIFACT_DIR || echo "::error title=$title::coverage_html.log not found"
+          mv htmlcov $ARTIFACT_DIR || echo "::error title=$title::htmlcov not found"
+        shell: sh
+
+      - name: Coverage XML Report
+        id: coverage_xml_report
+        env:
+          COVERAGE_DEBUG_FILE: coverage_xml.debug
+          ARTIFACT_DIR: ${{ runner.temp }}/artifacts
+        run: |
+          title="Coverage report XML"
+          msg="XML report generation failed. See job logs"
+          coverage xml > coverage_xml.log 2>&1 || echo "::error title=$title::$msg"
+          mv coverage_xml.debug $ARTIFACT_DIR || echo "::error title=$title::coverage_xml.debug not found"
+          mv coverage_xml.log  $ARTIFACT_DIR || echo "::error title=$title::coverage_xml.log not found"
+          mv coverage.xml $ARTIFACT_DIR || echo "::error title=$title::coverage.xml not found"
+        shell: sh
+
+      - name: Move Combined Coverage artifacts
+        id: mv_combined_coverage_artifacts
+        env:
+          ARTIFACT_DIR: ${{ runner.temp }}/artifacts
+        run: |
+          title="Move combined coverage artifacts"
+          mv .coveragerc $ARTIFACT_DIR || echo "::error title=$title::.covergarc not found"
+          mv coverage.debug $ARTIFACT_DIR || echo "::error title=$title::coverage.debug not found"
+          mv coverage.log $ARTIFACT_DIR || echo "::error title=$title::coverage.log not found"
+          mv coverage.coverage $ARTIFACT_DIR || echo "::error title=$title::coverage.coverage not found"
+
+      - name: Upload artifacts
+        id: upload_artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: py-youwol_logs
+          path: ${{ runner.temp }}/artifacts/
