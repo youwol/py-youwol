@@ -1,122 +1,213 @@
 name: Pull Request Checks
 
 on:
-    workflow_dispatch:
-      inputs:
-        local-youwol-client_ref:
-          description: >
-            Branch, tag or SHA for local-youwol-client checkout.
-            Default to 'main'
-          default: main
+  workflow_dispatch:
+    inputs:
+      local-youwol-client_ref:
+        description: >
+          Branch, tag or SHA for local-youwol-client checkout.
+          Default to 'main'
+        default: main
 
-        cdn-client_ref:
-          description: >
-            Branch, tag or SHA for cdn-client checkout.
-            Default to 'main'
-          default: main
+      cdn-client_ref:
+        description: >
+          Branch, tag or SHA for cdn-client checkout.
+          Default to 'main'
+        default: main
 
-        http-clients_ref:
-          description: >
-            Branch, tag or SHA for http-clients checkout.
-            Default to 'main'
-          default: main
+      http-clients_ref:
+        description: >
+          Branch, tag or SHA for http-clients checkout.
+          Default to 'main'
+        default: main
 
-    pull_request:
-        branches:
-            - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-    integration_local-youwol-client:
-        name: Integration with local-youwol-client
-        runs-on: ubuntu-latest
-        steps:
-            - name: Prepare repository
-              id: prepare
-              uses: youwol/nestor/py/prepare@v1
+  integration_local-youwol-client:
+    name: Integration with local-youwol-client
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare repository
+        id: prepare
+        uses: youwol/nestor/py/prepare@v1
 
-            - name: Prepare local-youwol-client
-              id: prepare_local-youwol-client
-              uses: youwol/nestor/ts/prepare@v1
-              with:
-                repository: youwol/local-youwol-client
-                ref: ${{ inputs.local-youwol-client_ref }}
-                path: ${{ runner.temp }}/local-youwol-client
+      - name: Prepare local-youwol-client
+        id: prepare_local-youwol-client
+        uses: youwol/nestor/ts/prepare@v1
+        with:
+          repository: youwol/local-youwol-client
+          ref: ${{ inputs.local-youwol-client_ref }}
+          path: ${{ runner.temp }}/local-youwol-client
 
-            - name: Run local-youwol-client tests
-              id: tests_local-youwol-client
-              uses: youwol/nestor/ts/tests_coverage@v1
-              with:
-                  path: ${{ runner.temp }}/local-youwol-client
-                  py-youwol_path: ${{ github.workspace }}
-                  py-youwol_conf_path: ${{ runner.temp }}/local-youwol-client/src/tests/yw_config/yw_config.py
+      - name: Run local-youwol-client tests
+        id: tests_local-youwol-client
+        uses: youwol/nestor/ts/tests_coverage@v1
+        with:
+          path: ${{ runner.temp }}/local-youwol-client
+          py-youwol_path: ${{ github.workspace }}
+          py-youwol_conf_path: ${{ runner.temp }}/local-youwol-client/src/tests/yw_config/yw_config.py
+          coverage_omit: '*/src/tests/*/yw_pipeline.py'
 
-            - name: On Tests Failure
-              id: on_tests_failure
-              if: steps.tests_local-youwol-client.outputs.result == 'failure'
-              uses: actions/github-script@v6
-              with:
-                  script: core.setFailed("Job failed because tests has failed, see job logs and annotations.")
+      - name: On Tests Failure
+        id: on_tests_failure
+        if: steps.tests_local-youwol-client.outputs.result == 'failure'
+        uses: actions/github-script@v6
+        with:
+          script: core.setFailed("Job failed because tests has failed, see job logs and annotations.")
 
-    integration_cdn-client:
-        name: Integration with cdn-client
-        runs-on: ubuntu-latest
-        steps:
-            - name: Prepare repository
-              id: prepare
-              uses: youwol/nestor/py/prepare@v1
+  integration_cdn-client:
+    name: Integration with cdn-client
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare repository
+        id: prepare
+        uses: youwol/nestor/py/prepare@v1
 
-            - name: Prepare cdn-client
-              id: prepare_cdn-client
-              uses: youwol/nestor/ts/prepare@v1
-              with:
-                repository: youwol/cdn-client
-                ref: ${{ inputs.cdn-client_ref }}
-                path: ${{ runner.temp }}/cdn-client
+      - name: Prepare cdn-client
+        id: prepare_cdn-client
+        uses: youwol/nestor/ts/prepare@v1
+        with:
+          repository: youwol/cdn-client
+          ref: ${{ inputs.cdn-client_ref }}
+          path: ${{ runner.temp }}/cdn-client
 
-            - name: Run cdn-client tests
-              id: tests_cdn-client
-              uses: youwol/nestor/ts/tests_coverage@v1
-              with:
-                  path: ${{ runner.temp }}/cdn-client
-                  py-youwol_path: ${{ github.workspace }}
-                  py-youwol_conf_path: yw_config_IT.py
-                  py-youwol_conf_repository: youwol/integrations-tests-conf
+      - name: Run cdn-client tests
+        id: tests_cdn-client
+        uses: youwol/nestor/ts/tests_coverage@v1
+        with:
+          path: ${{ runner.temp }}/cdn-client
+          py-youwol_path: ${{ github.workspace }}
+          py-youwol_conf_path: yw_config_IT.py
+          py-youwol_conf_repository: youwol/integrations-tests-conf
 
-            - name: On Tests Failure
-              id: on_tests_failure
-              if: steps.tests_cdn-client.outputs.result == 'failure'
-              uses: actions/github-script@v6
-              with:
-                  script: core.setFailed("Job failed because tests has failed, see job logs and annotations.")
+      - name: On Tests Failure
+        id: on_tests_failure
+        if: steps.tests_cdn-client.outputs.result == 'failure'
+        uses: actions/github-script@v6
+        with:
+          script: core.setFailed("Job failed because tests has failed, see job logs and annotations.")
 
-    integration_http-clients:
-        name: Integration with http-clients
-        runs-on: ubuntu-latest
-        steps:
-            - name: Prepare repository
-              id: prepare
-              uses: youwol/nestor/py/prepare@v1
+  integration_http-clients:
+    name: Integration with http-clients
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare repository
+        id: prepare
+        uses: youwol/nestor/py/prepare@v1
 
-            - name: Prepare http-clients
-              id: prepare_http-clients
-              uses: youwol/nestor/ts/prepare@v1
-              with:
-                repository: youwol/http-clients
-                ref: ${{ inputs.http-clients_ref }}
-                path: ${{ runner.temp }}/http-clients
+      - name: Prepare http-clients
+        id: prepare_http-clients
+        uses: youwol/nestor/ts/prepare@v1
+        with:
+          repository: youwol/http-clients
+          ref: ${{ inputs.http-clients_ref }}
+          path: ${{ runner.temp }}/http-clients
 
-            - name: Run http-clients tests
-              id: tests_http-clients
-              uses: youwol/nestor/ts/tests_coverage@v1
-              with:
-                  path: ${{ runner.temp }}/http-clients
-                  py-youwol_path: ${{ github.workspace }}
-                  py-youwol_conf_path: yw_config_IT.py
-                  py-youwol_conf_repository: youwol/integrations-tests-conf
+      - name: Run http-clients tests
+        id: tests_http-clients
+        uses: youwol/nestor/ts/tests_coverage@v1
+        with:
+          path: ${{ runner.temp }}/http-clients
+          py-youwol_path: ${{ github.workspace }}
+          py-youwol_conf_path: yw_config_IT.py
+          py-youwol_conf_repository: youwol/integrations-tests-conf
 
-            - name: On Tests Failure
-              id: on_tests_failure
-              if: steps.tests_http-clients.outputs.result == 'failure'
-              uses: actions/github-script@v6
-              with:
-                  script: core.setFailed("Job failed because tests has failed, see job logs and annotations.")
+      - name: On Tests Failure
+        id: on_tests_failure
+        if: steps.tests_http-clients.outputs.result == 'failure'
+        uses: actions/github-script@v6
+        with:
+          script: core.setFailed("Job failed because tests has failed, see job logs and annotations.")
+
+  combine_coverages:
+    name: Combine Coverages
+    runs-on: ubuntu-latest
+    needs:
+      - integration_local-youwol-client
+      - integration_cdn-client
+      - integration_http-clients
+    steps:
+      - name: Download artifacts
+        id: download_artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: ${{ runner.temp }}/artifacts
+
+      - name: Prepare py-youwol
+        uses: youwol/nestor/py/prepare@v1
+        with:
+          requirements: dev-requirements.txt
+
+      - name: Setup Coverage configuration
+        env:
+          ARTIFACT_DIR: ${{ runner.temp }}/artifacts
+        run: |
+          # Set up coverage conf
+          cat  << _coverage_rc > ".coveragerc"
+            [run]
+            branch = True
+            data_file = coverage.coverage
+            relative_files = True
+            debug = sys,config,pathmap
+          _coverage_rc
+        shell: sh
+
+      - name: Combine coverages
+        id: combine_coverages
+        env:
+          COVERAGE_DEBUG_FILE: coverage.debug
+          ARTIFACT_DIR: ${{ runner.temp }}/artifacts
+        run: |
+          title="Combine Coverage"
+          msg="Coverage Combine failed. See job logs"
+          coverage combine --keep $ARTIFACT_DIR/*/coverage.coverage > coverage.log 2>&1 || echo "::error title=$title::$msg"
+        shell: sh
+
+      - name: Coverage HTML Report
+        id: coverage_html_report
+        env:
+          COVERAGE_DEBUG_FILE: coverage_html.debug
+          ARTIFACT_DIR: ${{ runner.temp }}/artifacts
+        run: |
+          title="Coverage report HTML"
+          msg="HTML report generation failed. See job logs"
+          coverage html > coverage_html.log 2>&1 || echo "::error title=$title::$msg"
+          mv coverage_html.debug $ARTIFACT_DIR || echo "::error title=$title::coverage_html.debug not found"
+          mv coverage_html.log  $ARTIFACT_DIR || echo "::error title=$title::coverage_html.log not found"
+          mv htmlcov $ARTIFACT_DIR || echo "::error title=$title::htmlcov not found"
+        shell: sh
+
+      - name: Coverage XML Report
+        id: coverage_xml_report
+        env:
+          COVERAGE_DEBUG_FILE: coverage_xml.debug
+          ARTIFACT_DIR: ${{ runner.temp }}/artifacts
+        run: |
+          title="Coverage report XML"
+          msg="XML report generation failed. See job logs"
+          coverage xml > coverage_xml.log 2>&1 || echo "::error title=$title::$msg"
+          mv coverage_xml.debug $ARTIFACT_DIR || echo "::error title=$title::coverage_xml.debug not found"
+          mv coverage_xml.log  $ARTIFACT_DIR || echo "::error title=$title::coverage_xml.log not found"
+          mv coverage.xml $ARTIFACT_DIR || echo "::error title=$title::coverage.xml not found"
+        shell: sh
+
+      - name: Move Combined Coverage artifacts
+        id: mv_combined_coverage_artifacts
+        env:
+          ARTIFACT_DIR: ${{ runner.temp }}/artifacts
+        run: |
+          title="Move combined coverage artifacts"
+          mv .coveragerc $ARTIFACT_DIR || echo "::error title=$title::.covergarc not found"
+          mv coverage.debug $ARTIFACT_DIR || echo "::error title=$title::coverage.debug not found"
+          mv coverage.log $ARTIFACT_DIR || echo "::error title=$title::coverage.log not found"
+          mv coverage.coverage $ARTIFACT_DIR || echo "::error title=$title::coverage.coverage not found"
+
+      - name: Upload artifacts
+        id: upload_artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: py-youwol_logs
+          path: ${{ runner.temp }}/artifacts/
