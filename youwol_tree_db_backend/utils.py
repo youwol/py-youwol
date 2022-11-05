@@ -3,11 +3,9 @@ import json
 from typing import Union, Mapping, List, Dict, Any
 
 from fastapi import HTTPException
-from starlette.requests import Request
 
 from youwol_utils import (
-    DocDb, get_all_individual_groups, asyncio, ensure_group_permission, user_info,
-    get_user_group_ids, log_info, decode_id,
+    DocDb, get_all_individual_groups, asyncio, log_info, decode_id,
 )
 from youwol_utils.context import Context
 from youwol_utils.http_clients.tree_db_backend import ItemResponse, FolderResponse, DriveResponse
@@ -250,18 +248,13 @@ async def get_group_from_item(
     return group_id0 or group_id1
 
 
-async def ensure_get_permission(
+async def db_get(
         docdb: DocDb,
         partition_keys: Dict[str, Any],
         context: Context
 ):
-    """
-    There is no restriction on accessing an item's data, only the associated 'raw' part is protected.
-    This is needed at least by py-youwol to properly 'install' new asset in local, even if the user is not part
-    of the owning group.
-    """
     async with context.start(
-            action="ensure_get_permission",
+            action="db_get",
     ) as ctx:  # type: Context
 
         await ctx.info(text="partition_keys", data=partition_keys)
@@ -270,22 +263,19 @@ async def ensure_get_permission(
         return asset
 
 
-async def ensure_post_permission(
-        request: Request,
+async def db_post(
         docdb: DocDb,
         doc: Any,
         context: Context
 ):
     async with context.start(
-            action="ensure_post_permission",
+            action="db_post",
             with_attributes={"groupId": doc["group_id"]}
     ) as ctx:  # type: Context
-        ensure_group_permission(request=request, group_id=doc["group_id"])
         return await docdb.update_document(doc, owner=Constants.public_owner, headers=ctx.headers())
 
 
-async def ensure_query_permission(
-        request: Request,
+async def db_query(
         docdb: DocDb,
         key: str,
         value: str,
@@ -293,46 +283,36 @@ async def ensure_query_permission(
         context: Context
 ):
     async with context.start(
-            action="ensure_query_permission"
+            action="db_query"
     ) as ctx:  # type: Context
-        user = user_info(request)
-        allowed_groups = get_user_group_ids(user)
-        await ctx.info("Allowed groups retrieved", data={"allowed_groups": allowed_groups})
         r = await docdb.query(query_body=f"{key}={value}#{max_count}", owner=Constants.public_owner,
                               headers=ctx.headers())
 
-        await ctx.info("Unfiltered documents retrieved", data={"count": len(r)})
-        return [d for d in r["documents"] if d['group_id'] in allowed_groups]
+        return [d for d in r["documents"]]
 
 
-async def ensure_delete_permission(
-        request: Request,
+async def db_delete(
         docdb: DocDb,
         doc: Dict[str, Any],
         context: Context
 ):
-    # only owning group can delete
-    # if isinstance(doc, FolderResponse) or isinstance(doc, ItemResponse) or isinstance(doc, DriveResponse):
-
     async with context.start(
-            action="ensure_delete_permission"
+            action="db_delete"
     ) as ctx:  # type: Context
-        ensure_group_permission(request=request, group_id=doc["group_id"])
         return await docdb.delete_document(doc=doc, owner=Constants.public_owner, headers=ctx.headers())
 
 
 async def get_parent(
-        request: Request,
         parent_id: str,
         configuration: Configuration,
         context: Context
 ):
     folders_db, drives_db = configuration.doc_dbs.folders_db, configuration.doc_dbs.drives_db
     parent_folder, parent_drive = await asyncio.gather(
-        ensure_query_permission(request=request, docdb=folders_db, key="folder_id", value=parent_id,
-                                max_count=1, context=context),
-        ensure_query_permission(request=request, docdb=drives_db, key="drive_id", value=parent_id,
-                                max_count=1, context=context)
+        db_query(docdb=folders_db, key="folder_id", value=parent_id,
+                 max_count=1, context=context),
+        db_query(docdb=drives_db, key="drive_id", value=parent_id,
+                 max_count=1, context=context)
     )
     if len(parent_folder) + len(parent_drive) == 0:
         raise HTTPException(status_code=404, detail="Containing drive/folder not found")
