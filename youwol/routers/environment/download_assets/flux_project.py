@@ -16,30 +16,6 @@ from youwol_utils import Context, write_json
 from youwol_utils.clients.flux.flux import FluxClient
 
 
-def zip_project(project) -> bytes:
-
-    with tempfile.TemporaryDirectory() as tmp_folder:
-        base_path = Path(tmp_folder)
-        write_json(data=project['requirements'], path=base_path / 'requirements.json')
-        description = {
-            "description": project['description'],
-            "schemaVersion": project['schemaVersion'],
-            "name": project["name"]
-        }
-        write_json(data=description, path=base_path / 'description.json')
-        write_json(data=project['workflow'], path=base_path / 'workflow.json')
-        write_json(data=project['runnerRendering'], path=base_path / 'runnerRendering.json')
-        write_json(data=project['builderRendering'], path=base_path / 'builderRendering.json')
-
-        zipper = zipfile.ZipFile(base_path / 'story.zip', 'w', zipfile.ZIP_DEFLATED)
-
-        for filename in ['requirements.json', 'description.json', 'workflow.json', 'runnerRendering.json',
-                         'builderRendering.json']:
-            zipper.write(base_path / filename, arcname=filename)
-        zipper.close()
-        return (Path(tmp_folder) / "story.zip").read_bytes()
-
-
 @dataclass
 class DownloadFluxProjectTask(DownloadTask):
 

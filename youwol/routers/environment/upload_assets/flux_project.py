@@ -2,8 +2,8 @@ from dataclasses import dataclass
 
 from youwol.environment.clients import RemoteClients, LocalClients
 from youwol.environment.youwol_environment import YouwolEnvironment
-from youwol.routers.environment.download_assets import zip_project
 from youwol.routers.environment.upload_assets.models import UploadTask
+from youwol_flux_backend import zip_project
 from youwol_utils import JSON
 from youwol_utils.context import Context
 

@@ -2,6 +2,7 @@ import asyncio
 import itertools
 import json
 import os
+import tempfile
 import zipfile
 from pathlib import Path
 from typing import Union, List, Tuple, Coroutine, Mapping
@@ -10,7 +11,7 @@ from fastapi import UploadFile, HTTPException
 
 from youwol_flux_backend.backward_compatibility import convert_project_to_current_version
 from youwol_flux_backend.configurations import Configuration, Constants
-from youwol_utils import JSON, DocDb, Storage, base64, log_info
+from youwol_utils import JSON, DocDb, Storage, base64, log_info, write_json
 from youwol_utils.http_clients.cdn_backend import patch_loading_graph
 from youwol_utils.http_clients.flux_backend import (
     Workflow, BuilderRendering, RunnerRendering, Project, Component, Requirements, DeprecatedData
@@ -228,6 +229,30 @@ def extract_zip_file(file: UploadFile, zip_path: Union[Path, str], dir_path: Uni
 
     os.remove(zip_path)
     return compressed_size, md5_stamp
+
+
+def zip_project(project) -> bytes:
+
+    with tempfile.TemporaryDirectory() as tmp_folder:
+        base_path = Path(tmp_folder)
+        write_json(data=project['requirements'], path=base_path / 'requirements.json')
+        description = {
+            "description": project['description'],
+            "schemaVersion": project['schemaVersion'],
+            "name": project["name"]
+        }
+        write_json(data=description, path=base_path / 'description.json')
+        write_json(data=project['workflow'], path=base_path / 'workflow.json')
+        write_json(data=project['runnerRendering'], path=base_path / 'runnerRendering.json')
+        write_json(data=project['builderRendering'], path=base_path / 'builderRendering.json')
+
+        zipper = zipfile.ZipFile(base_path / 'story.zip', 'w', zipfile.ZIP_DEFLATED)
+
+        for filename in ['requirements.json', 'description.json', 'workflow.json', 'runnerRendering.json',
+                         'builderRendering.json']:
+            zipper.write(base_path / filename, arcname=filename)
+        zipper.close()
+        return (Path(tmp_folder) / "story.zip").read_bytes()
 
 
 def to_directory_name(name):
