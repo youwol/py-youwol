@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Query, HTTPException
 from starlette.requests import Request
 
 from youwol_assets_gateway.configurations import Configuration, get_configuration
+from youwol_utils import ensure_group_permission
 from .files_backend import remove_file
 from .flux_backend import delete_project
 from .stories_backend import delete_story
@@ -43,6 +44,7 @@ async def create_drive(
     async with Context.start_ep(
             request=request
     ) as ctx:
+        ensure_group_permission(request=request, group_id=group_id)
         return await configuration.treedb_client.create_drive(
             group_id=group_id,
             body=drive.dict(),
@@ -79,6 +81,11 @@ async def update_drive(
     async with Context.start_ep(
             request=request
     ) as ctx:
+        drive = await configuration.treedb_client.get_drive(
+            drive_id=drive_id,
+            headers=ctx.headers()
+        )
+        ensure_group_permission(request=request, group_id=drive['groupId'])
         return await configuration.treedb_client.update_drive(
             drive_id=drive_id,
             body=body.dict(),
@@ -137,15 +144,21 @@ async def get_default_user_drive(
 async def create_folder(
         request: Request,
         parent_folder_id: str,
-        folder: FolderBody,
+        body: FolderBody,
         configuration: Configuration = Depends(get_configuration)
 ):
     async with Context.start_ep(
             request=request
     ) as ctx:
+        folder = await configuration.treedb_client.get_folder(
+            folder_id=parent_folder_id,
+            headers=ctx.headers()
+        )
+        ensure_group_permission(request=request, group_id=folder['groupId'])
+
         return await configuration.treedb_client.create_folder(
             parent_folder_id=parent_folder_id,
-            body=folder.dict(),
+            body=body.dict(),
             headers=ctx.headers()
         )
 
@@ -162,6 +175,12 @@ async def update_folder(
     async with Context.start_ep(
             request=request
     ) as ctx:
+        folder = await configuration.treedb_client.get_folder(
+            folder_id=folder_id,
+            headers=ctx.headers()
+        )
+        ensure_group_permission(request=request, group_id=folder['groupId'])
+
         return await configuration.treedb_client.update_folder(
             folder_id=folder_id,
             body=body.dict(),
@@ -198,6 +217,12 @@ async def create_item(
     async with Context.start_ep(
             request=request
     ) as ctx:
+        folder = await configuration.treedb_client.get_folder(
+            folder_id=folder_id,
+            headers=ctx.headers()
+        )
+        ensure_group_permission(request=request, group_id=folder['groupId'])
+
         return await configuration.treedb_client.create_item(
             folder_id=folder_id,
             body=item.dict(),
@@ -217,6 +242,9 @@ async def update_item(
     async with Context.start_ep(
             request=request
     ) as ctx:
+        item = await configuration.treedb_client.get_item(item_id=item_id, headers=ctx.headers())
+        ensure_group_permission(request=request, group_id=item['groupId'])
+
         assets_client = configuration.assets_client
         try:
             asset = await assets_client.get_asset(asset_id=item_id, headers=ctx.headers())
@@ -313,6 +341,14 @@ async def move(
     async with Context.start_ep(
             request=request
     ) as ctx:
+        treedb_client = configuration.treedb_client
+        entity, folder = await asyncio.gather(
+            treedb_client.get_entity(entity_id=body.targetId, headers=ctx.headers()),
+            treedb_client.get_folder(folder_id=body.destinationFolderId, headers=ctx.headers()),
+        )
+        ensure_group_permission(request=request, group_id=entity['groupId'])
+        ensure_group_permission(request=request, group_id=folder['groupId'])
+
         return await configuration.treedb_client.move(
             body=body.dict(),
             headers=ctx.headers()
@@ -332,6 +368,10 @@ async def borrow(
             request=request
     ) as ctx:
         tree_db, assets_db = configuration.treedb_client, configuration.assets_client
+
+        folder = await tree_db.get_folder(folder_id=body.destinationFolderId, headers=ctx.headers())
+        ensure_group_permission(request=request, group_id=folder['groupId'])
+
         tree_item, destination = await asyncio.gather(
             tree_db.get_item(item_id=item_id, headers=ctx.headers()),
             tree_db.get_entity(entity_id=body.destinationFolderId, headers=ctx.headers())
@@ -442,6 +482,9 @@ async def queue_delete_item(
     async with Context.start_ep(
             request=request
     ) as ctx:
+        item = await configuration.treedb_client.get_item(item_id=item_id, headers=ctx.headers())
+        ensure_group_permission(request=request, group_id=item['groupId'])
+
         return await configuration.treedb_client.remove_item(
             item_id=item_id,
             headers=ctx.headers()
@@ -458,6 +501,9 @@ async def queue_delete_folder(
     async with Context.start_ep(
             request=request
     ) as ctx:
+        folder = await configuration.treedb_client.get_folder(folder_id=folder_id, headers=ctx.headers())
+        ensure_group_permission(request=request, group_id=folder['groupId'])
+
         return await configuration.treedb_client.remove_folder(
             folder_id=folder_id,
             headers=ctx.headers()
@@ -474,6 +520,9 @@ async def delete_drive(
     async with Context.start_ep(
             request=request
     ) as ctx:
+        drive = await configuration.treedb_client.get_drive(drive_id=drive_id, headers=ctx.headers())
+        ensure_group_permission(request=request, group_id=drive['groupId'])
+
         return await configuration.treedb_client.delete_drive(
             drive_id=drive_id,
             headers=ctx.headers()
@@ -513,6 +562,9 @@ async def purge_drive(
             request=request
     ) as ctx:
         tree_db = configuration.treedb_client
+        drive = await tree_db.get_drive(drive_id=drive_id, headers=ctx.headers())
+        ensure_group_permission(request=request, group_id=drive['groupId'])
+
         resp = await tree_db.purge_drive(
             drive_id=drive_id,
             headers=ctx.headers()
