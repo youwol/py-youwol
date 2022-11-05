@@ -12,6 +12,7 @@ from youwol.routers.environment.download_assets.common import create_asset_local
 from youwol.routers.local_cdn.models import CheckUpdateResponse, UpdateStatus, PackageVersionInfo, \
     DownloadedPackageResponse, DownloadPackageBody, PackageEventResponse, Event
 from youwol_utils import encode_id
+from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from youwol_utils.context import Context
 from youwol_utils.http_clients.cdn_backend.utils import resolve_version
 from youwol_utils.utils_paths import parse_json
@@ -135,12 +136,31 @@ async def download_package(
         version: str,
         check_update_status: bool,
         context: Context):
+
+    env = await context.get('env', YouwolEnvironment)
+
     async def on_exit(ctx_exit):
         await ctx_exit.send(
             PackageEventResponse(packageName=package_name, version=version, event=Event.downloadDone)
         )
         if check_update_status:
             asyncio.create_task(check_update(local_package=TargetPackage.from_response(record), context=context))
+
+    async def sync_raw_data(asset_id: str, remote_gtw: AssetsGatewayClient, caller_context: Context):
+
+        async with caller_context.start(action="Sync. raw data of cdn-package",
+                                        with_attributes={"asset_id": asset_id}) as ctx:  # type: Context
+
+            library_id = encode_id(package_name)
+            resp = await remote_gtw.get_cdn_backend_router().download_library(
+                library_id=library_id,
+                version=version,
+                headers=ctx.headers()
+            )
+            form_data = FormData()
+            form_data.add_field(name='file', value=resp)
+
+            await LocalClients.get_cdn_client(env=env).publish(data=form_data, headers=ctx.headers())
 
     async with context.start(
             action=f"download package {package_name}#{version}",
@@ -154,41 +174,11 @@ async def download_package(
             ),
             on_exit=on_exit,
     ) as ctx_download:
-        env = await context.get('env', YouwolEnvironment)
-        remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=env.selectedRemote, context=ctx_download)
-        default_drive = await env.get_default_drive(context=ctx_download)
-        asset_id = encode_id(encode_id(package_name))
-
-        await ctx_download.info(text=f"asset_id: {asset_id} queued for download")
-
-        async def get_raw_data(ctx_raw: Context):
-            library_id = encode_id(package_name)
-            resp = await remote_gtw.get_cdn_backend_router().download_library(
-                library_id=library_id,
-                version=version,
-                headers=ctx_raw.headers()
-            )
-            return resp
-
-        async def post_raw_data(folder_id: str, raw_data, ctx: Context):
-            form_data = FormData()
-            form_data.add_field(name='file', value=raw_data)
-
-            resp = await LocalClients \
-                .get_assets_gateway_client(env=env) \
-                .get_cdn_backend_router() \
-                .publish(data=form_data,
-                         params={'folder-id': folder_id},
-                         headers=ctx.headers()
-                         )
-            return resp
 
         await create_asset_local(
-            asset_id=asset_id,
+            asset_id=encode_id(encode_id(package_name)),
             kind='package',
-            default_owning_folder_id=default_drive.systemPackagesFolderId,
-            get_raw_data=get_raw_data,
-            post_raw_data=post_raw_data,
+            sync_raw_data=sync_raw_data,
             context=ctx_download
         )
         db = parse_json(env.pathsBook.local_cdn_docdb)
