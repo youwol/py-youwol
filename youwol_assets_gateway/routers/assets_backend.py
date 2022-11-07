@@ -4,6 +4,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from youwol_assets_gateway.configurations import Configuration, get_configuration
+from youwol_utils import ensure_group_permission
 from youwol_utils.context import Context
 from youwol_utils.http_clients.assets_backend import HealthzResponse, AssetResponse, NewAssetBody, PostAssetBody, \
     AccessPolicyBody, AccessPolicyResp, PermissionsResp, AccessInfoResp
@@ -37,6 +38,9 @@ async def create_asset(
     async with Context.start_ep(
             request=request
     ) as ctx:
+        if body.groupId:
+            ensure_group_permission(request=request, group_id=body.groupId)
+
         return await configuration.assets_client.create_asset(
             body=body.dict(),
             headers=ctx.headers()
@@ -56,6 +60,12 @@ async def post_asset(
     async with Context.start_ep(
             request=request
     ) as ctx:
+        asset = await configuration.assets_client.get_asset(asset_id=asset_id, headers=ctx.headers())
+        if body.groupId:
+            ensure_group_permission(request=request, group_id=body.groupId)
+
+        ensure_group_permission(request=request, group_id=asset['groupId'])
+
         return await configuration.assets_client.update_asset(
             asset_id=asset_id,
             body=body.dict(),
@@ -72,6 +82,9 @@ async def delete_asset(
     async with Context.start_ep(
             request=request
     ) as ctx:
+        asset = await configuration.assets_client.get_asset(asset_id=asset_id, headers=ctx.headers())
+        ensure_group_permission(request=request, group_id=asset['groupId'])
+
         return await configuration.assets_client.delete_asset(
             asset_id=asset_id,
             headers=ctx.headers()
@@ -107,6 +120,9 @@ async def put_access_policy(
     async with Context.start_ep(
             request=request
     ) as ctx:
+        asset = await configuration.assets_client.get_asset(asset_id=asset_id, headers=ctx.headers())
+        ensure_group_permission(request=request, group_id=asset['groupId'])
+
         return await configuration.assets_client.put_access_policy(
             asset_id=asset_id,
             group_id=group_id,
@@ -125,6 +141,9 @@ async def delete_access_policy(
     async with Context.start_ep(
             request=request
     ) as ctx:
+        asset = await configuration.assets_client.get_asset(asset_id=asset_id, headers=ctx.headers())
+        ensure_group_permission(request=request, group_id=asset['groupId'])
+
         return await configuration.assets_client.delete_access_policy(
             asset_id=asset_id,
             group_id=group_id,
@@ -195,6 +214,9 @@ async def post_image(
     async with Context.start_ep(
             request=request
     ) as ctx:
+        asset = await configuration.assets_client.get_asset(asset_id=asset_id, headers=ctx.headers())
+        ensure_group_permission(request=request, group_id=asset['groupId'])
+
         form = await request.form()
         src = await form.get('file').read()
         return await configuration.assets_client.post_image(
@@ -215,6 +237,9 @@ async def remove_image(
     async with Context.start_ep(
             request=request
     ) as ctx:
+        asset = await configuration.assets_client.get_asset(asset_id=asset_id, headers=ctx.headers())
+        ensure_group_permission(request=request, group_id=asset['groupId'])
+
         return await configuration.assets_client.remove_image(
             asset_id=asset_id,
             filename=filename,
