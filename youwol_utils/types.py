@@ -1,4 +1,4 @@
-from typing import Any, Union, List, Mapping
+from typing import Any, Union, List, Dict
 
 # 'Any' should be 'JSON', but pydantic scream (most likely because of recursive definition)
-JSON = Union[str, int, float, bool, None, Mapping[str, Any], List]
+JSON = Union[str, int, float, bool, None, Dict[str, Any], List]
