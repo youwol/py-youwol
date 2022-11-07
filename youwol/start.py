@@ -54,4 +54,4 @@ def start(shutdown_script_path: Optional[Path] = None):
     finally:
         download_thread.join()
         cleaner_thread.join()
-        shutdown_script_path.unlink(missing_ok=True)
+        shutdown_script_path and shutdown_script_path.unlink(missing_ok=True)
