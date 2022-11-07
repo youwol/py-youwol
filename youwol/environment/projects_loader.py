@@ -112,11 +112,6 @@ async def load_projects(additional_python_scr_paths: List[Path],
                 print(msg)
                 results.append(Failure(path=str(dir_candidate), message=str(e)))
 
-        print(f"""- list of projects successfully loaded:
-{chr(10).join([f"  * {p.name} at {p.path} with pipeline {p.pipeline.tags}" for p in results if isinstance(p, Project)])}
-- list of projects that failed to load:
-{chr(10).join([f"  * {p.path} : {p.message}" for p in results if not isinstance(p, Project)])}
-    """)
         return results
 
 
