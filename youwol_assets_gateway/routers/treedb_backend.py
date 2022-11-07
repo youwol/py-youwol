@@ -346,7 +346,7 @@ async def move(
             treedb_client.get_entity(entity_id=body.targetId, headers=ctx.headers()),
             treedb_client.get_folder(folder_id=body.destinationFolderId, headers=ctx.headers()),
         )
-        ensure_group_permission(request=request, group_id=entity['groupId'])
+        ensure_group_permission(request=request, group_id=entity['entity']['groupId'])
         ensure_group_permission(request=request, group_id=folder['groupId'])
 
         return await configuration.treedb_client.move(
@@ -369,8 +369,8 @@ async def borrow(
     ) as ctx:
         tree_db, assets_db = configuration.treedb_client, configuration.assets_client
 
-        folder = await tree_db.get_folder(folder_id=body.destinationFolderId, headers=ctx.headers())
-        ensure_group_permission(request=request, group_id=folder['groupId'])
+        parent = await tree_db.get_entity(entity_id=body.destinationFolderId, headers=ctx.headers())
+        ensure_group_permission(request=request, group_id=parent['entity']['groupId'])
 
         tree_item, destination = await asyncio.gather(
             tree_db.get_item(item_id=item_id, headers=ctx.headers()),
