@@ -22,8 +22,8 @@ from youwol_utils.http_clients.assets_backend import AssetResponse, NewAssetBody
     ReadPolicyEnum, AccessPolicyBody, AccessPolicyResp, PermissionsResp, HealthzResponse, AccessInfoResp,\
     ConsumerInfo, OwningGroup, OwnerInfo, ExposingGroup
 from .utils import (
-    to_doc_db_id, access_policy_record_id, ensure_post_permission, format_asset,
-    ensure_get_permission, to_snake_case, ensure_delete_permission, format_record_history, format_image, get_thumbnail,
+    to_doc_db_id, access_policy_record_id, db_post, format_asset,
+    db_get, to_snake_case, db_delete, format_record_history, format_image, get_thumbnail,
     format_policy,
 )
 
@@ -68,7 +68,7 @@ async def create_asset(
             "images": [],
             "thumbnails": []
         }
-        await ensure_post_permission(request=request, doc=doc_asset, configuration=configuration, context=ctx)
+        await db_post(doc=doc_asset, configuration=configuration, context=ctx)
         if policy.read == ReadPolicyEnum.forbidden and policy.share == SharePolicyEnum.forbidden:
             return format_asset(doc_asset, request)
 
@@ -105,8 +105,7 @@ async def post_asset(
     ) as ctx:  # type: Context
 
         docdb_access = configuration.doc_db_access_policy
-        asset = await ensure_get_permission(request=request, asset_id=asset_id, scope="w", configuration=configuration,
-                                            context=ctx)
+        asset = await db_get(asset_id=asset_id, configuration=configuration, context=ctx)
 
         new_attributes = {to_snake_case(k): v for k, v in body.dict().items() if v is not None}
         if 'group_id' in new_attributes and "/" in new_attributes['group_id']:
@@ -118,7 +117,7 @@ async def post_asset(
             #  access data are stored only in access_policy db
             del doc['defaultAccessPolicy']
 
-        await ensure_post_permission(request=request, doc=doc, configuration=configuration, context=ctx)
+        await db_post(doc=doc, configuration=configuration, context=ctx)
         if body.defaultAccessPolicy:
             now = time.time()  # s since epoch (January 1, 1970)
             doc_access = {
@@ -149,8 +148,7 @@ async def put_access_policy(
             request=request
     ) as ctx:  # type: Context
 
-        asset = await ensure_get_permission(request=request, asset_id=asset_id, scope="w", configuration=configuration,
-                                            context=ctx)
+        asset = await db_get(asset_id=asset_id, configuration=configuration, context=ctx)
         docdb_access = configuration.doc_db_access_policy
         now = time.time()  # s since epoch (January 1, 1970)
         doc_access = {
@@ -220,8 +218,7 @@ async def get_access_policy(
             return AccessPolicyResp(read=ReadPolicyEnum[doc["read"]], parameters=json.loads(doc["parameters"]),
                                     share=SharePolicyEnum[doc["share"]], timestamp=doc["timestamp"])
 
-        asset = await ensure_get_permission(request=request, asset_id=asset_id, scope='r', configuration=configuration,
-                                            context=ctx)
+        asset = await db_get(asset_id=asset_id, configuration=configuration, context=ctx)
         if is_child_group(child_group_id=group_id, parent_group_id=asset['group_id']):
             return AccessPolicyResp(read=ReadPolicyEnum.owning, parameters={}, share=SharePolicyEnum.authorized,
                                     timestamp=None)
@@ -278,8 +275,7 @@ async def get_permissions_implementation(
     group_ids = list(flatten([[group_id] + ancestors_group_id(group_id) for group_id in group_ids]))
     group_ids = list(set(group_ids))
 
-    asset = await ensure_get_permission(request=request, asset_id=asset_id, scope='r', configuration=configuration,
-                                        context=context)
+    asset = await db_get(asset_id=asset_id, configuration=configuration, context=context)
     #  watch for owner case with read access
     if any([is_child_group(child_group_id=group_id, parent_group_id=asset['group_id'])
             for group_id in group_ids]):
@@ -396,8 +392,7 @@ async def delete_asset(
             request=request
     ) as ctx:  # type: Context
 
-        asset = await ensure_get_permission(request=request, asset_id=asset_id, scope="w", configuration=configuration,
-                                            context=ctx)
+        asset = await db_get(asset_id=asset_id, configuration=configuration, context=ctx)
         docdb_access = configuration.doc_db_access_policy
 
         query = QueryBody(
@@ -406,8 +401,7 @@ async def delete_asset(
         )
 
         _, docs = await asyncio.gather(
-            ensure_delete_permission(request=request, asset=asset, configuration=configuration,
-                                     context=ctx),
+            db_delete(asset=asset, configuration=configuration, context=ctx),
             docdb_access.query(query_body=query, owner=Constants.public_owner, headers=ctx.headers()))
 
         await asyncio.gather(*[docdb_access.delete_document(doc=d, owner=Constants.public_owner, headers=ctx.headers())
@@ -420,8 +414,7 @@ async def get_asset_implementation(
         asset_id: str,
         configuration: Configuration,
         context: Context) -> AssetResponse:
-    asset = await ensure_get_permission(request=request, asset_id=asset_id, scope='r', configuration=configuration,
-                                        context=context)
+    asset = await db_get(asset_id=asset_id, configuration=configuration, context=context)
     return format_asset(asset, request)
 
 
@@ -558,8 +551,7 @@ async def post_image(
 
         storage, doc_db = configuration.storage, configuration.doc_db_asset
 
-        asset = await ensure_get_permission(request=request, asset_id=asset_id, scope="w", configuration=configuration,
-                                            context=ctx)
+        asset = await db_get(asset_id=asset_id, configuration=configuration, context=ctx)
 
         if [img for img in asset["images"] if img.split('/')[-1] == filename]:
             raise HTTPException(status_code=409, detail=f"image '{filename}' already exist")
@@ -572,8 +564,7 @@ async def post_image(
             "thumbnails": [*asset["thumbnails"], f"/api/assets-backend/assets/{asset_id}/thumbnails/{thumbnail.name}"]}
                }
 
-        await ensure_post_permission(request=request, doc=doc, configuration=configuration,
-                                     context=ctx)
+        await db_post(doc=doc, configuration=configuration, context=ctx)
 
         post_image_body = FileData(
             objectData=image.content, objectName=Path(asset['kind']) / asset_id / "images" / image.name,
@@ -612,8 +603,7 @@ async def remove_image(
 
         storage, doc_db = configuration.storage, configuration.doc_db_asset
 
-        asset = await ensure_get_permission(request=request, asset_id=asset_id, scope="w", configuration=configuration,
-                                            context=ctx)
+        asset = await db_get(asset_id=asset_id, configuration=configuration, context=ctx)
         base_path = Path("/api/assets-backend/") / 'assets' / asset_id
         doc = {**asset, **{
             "images": [image for image in asset["images"]
@@ -622,8 +612,7 @@ async def remove_image(
                            if thumbnail != str(base_path / "thumbnails" / filename)]
         }
                }
-        await ensure_post_permission(request=request, doc=doc, configuration=configuration,
-                                     context=ctx)
+        await db_post(doc=doc, configuration=configuration, context=ctx)
         await asyncio.gather(storage.delete(Path(asset['kind']) / asset_id / "images" / filename,
                                             owner=Constants.public_owner, headers=ctx.headers()),
                              storage.delete(Path(asset['kind']) / asset_id / "thumbnails" / filename,
@@ -644,8 +633,7 @@ async def get_media(
             request=request
     ) as ctx:  # type: Context
 
-        asset = await ensure_get_permission(request=request, asset_id=asset_id, scope="r", configuration=configuration,
-                                            context=ctx)
+        asset = await db_get(asset_id=asset_id, configuration=configuration, context=ctx)
 
         storage = configuration.storage
         path = Path(asset['kind']) / asset_id / media_type / name
