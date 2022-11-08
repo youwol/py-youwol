@@ -19,7 +19,7 @@ class CustomMiddleware(BaseModel):
                        call_next: RequestResponseEndpoint,
                        context: Context
                        ) -> Optional[Response]:
-        raise NotImplementedError("AbstractDispatch.switch not implemented")
+        raise NotImplementedError("CustomMiddleware.switch not implemented")
 
 
 class FlowSwitch(BaseModel):
