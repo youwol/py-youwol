@@ -11,6 +11,7 @@ from youwol.configuration.defaults import default_http_port, default_path_data_d
     default_platform_host, default_jwt_source
 from youwol.configuration.models_config import Profiles, ConfigurationData, PortRange, ModuleLoading, \
     CascadeBaseProfile, CascadeAppend, CascadeReplace, CdnOverride, Redirection, JwtSource, Events, ConfigPath
+from youwol.configuration.models_config_middleware import CustomMiddleware
 from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol.environment.models import IConfigurationCustomizer, Projects
 from youwol.environment.paths import app_dirs
@@ -172,6 +173,9 @@ class ConfigurationHandler:
             templates=projects.templates,
             uploadTargets=projects.uploadTargets
         )
+
+    def get_middlewares(self) -> List[CustomMiddleware]:
+        return self.effective_config_data.middlewares or []
 
     def get_dispatches(self) -> List[AbstractDispatch]:
         if not self.effective_config_data.dispatches:

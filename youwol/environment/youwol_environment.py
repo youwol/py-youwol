@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from typing import Dict, Any, Union, Optional, Awaitable, List
 
 import youwol
+from youwol.configuration.models_config_middleware import CustomMiddleware
 from youwol.environment.config_from_module import configuration_from_python
 from youwol.environment.config_from_static_file import configuration_from_json
 from youwol.environment.configuration_handler import ConfigurationHandler
@@ -62,6 +63,7 @@ class YouwolEnvironment(BaseModel):
     activeProfile: Optional[str]
     cdnAutomaticUpdate: bool
     customDispatches: List[AbstractDispatch]
+    customMiddlewares: List[CustomMiddleware] = []
 
     projects: Projects
     commands: Dict[str, Command]
@@ -233,6 +235,7 @@ class YouwolEnvironmentFactory:
             availableProfiles=conf.availableProfiles,
             commands=conf.commands,
             customDispatches=conf.customDispatches,
+            customMiddlewares=conf.customMiddlewares,
             cdnAutomaticUpdate=conf.cdnAutomaticUpdate,
             events=conf.events
         )
@@ -265,6 +268,7 @@ class YouwolEnvironmentFactory:
             availableProfiles=conf.availableProfiles,
             commands=conf.commands,
             customDispatches=conf.customDispatches,
+            customMiddlewares=conf.customMiddlewares,
             cdnAutomaticUpdate=conf.cdnAutomaticUpdate,
             events=conf.events
         )
@@ -447,6 +451,7 @@ async def safe_load(
         projects=conf_handler.get_projects(),
         commands=conf_handler.get_commands(),
         customDispatches=conf_handler.get_dispatches(),
+        customMiddlewares=conf_handler.get_middlewares()
     )
     return await conf_handler.customize(youwol_configuration)
 
