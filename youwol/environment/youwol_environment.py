@@ -63,7 +63,7 @@ class YouwolEnvironment(BaseModel):
     activeProfile: Optional[str]
     cdnAutomaticUpdate: bool
     customDispatches: List[AbstractDispatch]
-    customMiddlewares: List[CustomMiddleware] = []
+    customMiddlewares: List[CustomMiddleware]
 
     projects: Projects
     commands: Dict[str, Command]
