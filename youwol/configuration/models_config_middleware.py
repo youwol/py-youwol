@@ -28,7 +28,7 @@ class FlowSwitch(BaseModel):
         return DispatchInfo(name=self.__str__(), activated=True,
                             parameters={"description": "no description provided ('info' method not overriden)"})
 
-    async def is_matching(self, incoming_request: Request, context: Context):
+    async def is_matching(self, incoming_request: Request, context: Context) -> bool:
         raise NotImplementedError("FlowSwitchMiddleware.is_matching not implemented")
 
     async def switch(self,
