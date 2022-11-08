@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import List, Union, Optional, Dict, Callable, Awaitable, Any
 
 from pydantic import BaseModel
+from youwol.configuration.models_config_middleware import CustomMiddleware
 
 from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol.environment.models_project import ProjectTemplate
@@ -82,6 +83,7 @@ class ConfigurationData(BaseModel):
     cacheDir: Optional[ConfigPath]
     serversPortsRange: Optional[PortRange]
     cdnAutoUpdate: Optional[bool]
+    middlewares: Optional[List[CustomMiddleware]]
     dispatches: Optional[List[Union[str, Redirection, CdnOverride, AbstractDispatch, RedirectDispatch]]]
     defaultModulePath: Optional[ConfigPath]
     additionalPythonSrcPath: Optional[Union[ConfigPath, List[ConfigPath]]]
