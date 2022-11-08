@@ -155,11 +155,13 @@ class RedirectSwitch(FlowSwitch):
         if not incoming_request.url.path.startswith(self.origin):
             await context.info(text=f"RedirectSwitch[{self}]: URL not matching",
                                data={"url": incoming_request.url.path})
-            return None
+            return False
 
         if not self.is_listening():
             await context.info(f"RedirectSwitch[{self}]: destination not listening -> proceed with no dispatch")
-            return None
+            return False
+
+        return True
 
     async def switch(self,
                      incoming_request: Request,
