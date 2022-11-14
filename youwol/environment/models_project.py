@@ -274,7 +274,7 @@ BrowserApp = BrowserAppBundle
 
 
 class MicroService(Target):
-    family = Family.service
+    family: str = Family.service
 
 
 class Pipeline(BaseModel):
