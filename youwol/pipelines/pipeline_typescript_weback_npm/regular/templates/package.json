@@ -49,6 +49,7 @@
 
     "@youwol/prettier-config": "^0.0.1",
     "@youwol/eslint-config": "^0.0.1",
+    "@youwol/tsconfig": "^0.0.1",
     "prettier":"^2.7.1",
     "prettier-plugin-properties":"^0.2.0",
     "@typescript-eslint/eslint-plugin":"^5.33.1",
