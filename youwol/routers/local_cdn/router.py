@@ -157,7 +157,14 @@ async def smooth_reset(
             await ctx.info(f"Filter out packages from local projects",
                            data={"packages": [p['name'] for p in packages]})
 
-        cdn_client = LocalClients.get_gtw_cdn_client(env)
+        """
+        The current user may not have the permissions to delete the package as it can belong to a 'forbidden' group
+        for him (still, we want to proceed as it is the local version of YouWol and such things are expected).
+        To skip permissions checks, we use 'LocalClients.get_cdn_client' and not 'LocalClients.get_gtw_cdn_client'.
+        Because of this, the 'asset' must be explicitly deleted using 'assets_client.delete_asset'.
+        """
+        cdn_client = LocalClients.get_cdn_client(env)
+        assets_client = LocalClients.get_assets_client(env)
         for package in packages:
             info = await cdn_client.get_library_info(library_id=package['related_id'], headers=ctx.headers())
             for version in info['versions']:
@@ -167,6 +174,8 @@ async def smooth_reset(
 
             await cdn_client.delete_library(library_id=package['related_id'], params={'purge': "true"},
                                             headers=ctx.headers())
+            await assets_client.delete_asset(asset_id=package['asset_id'],  headers=ctx.headers())
+
         await status(request=request)
         return ResetCdnResponse(deletedPackages=[p['name'] for p in packages])
 
