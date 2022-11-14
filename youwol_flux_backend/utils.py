@@ -221,14 +221,10 @@ def extract_zip_file(file: UploadFile, zip_path: Union[Path, str], dir_path: Uni
         for chunk in iter(lambda: file.file.read(10000), b''):
             f.write(chunk)
 
-    compressed_size = zip_path.stat().st_size
-    md5_stamp = os.popen('md5sum ' + str(zip_path)).read().split(" ")[0]
-
     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
         zip_ref.extractall(dir_path)
 
     os.remove(zip_path)
-    return compressed_size, md5_stamp
 
 
 def zip_project(project) -> bytes:
