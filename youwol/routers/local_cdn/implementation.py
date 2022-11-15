@@ -143,7 +143,7 @@ async def download_package(
         await ctx_exit.send(
             PackageEventResponse(packageName=package_name, version=version, event=Event.downloadDone)
         )
-        if check_update_status:
+        if check_update_status and record is not None:
             asyncio.create_task(check_update(local_package=TargetPackage.from_response(record), context=context))
 
     async def sync_raw_data(asset_id: str, remote_gtw: AssetsGatewayClient, caller_context: Context):
@@ -175,6 +175,7 @@ async def download_package(
             on_exit=on_exit,
     ) as ctx_download:
 
+        record = None
         await create_asset_local(
             asset_id=encode_id(encode_id(package_name)),
             kind='package',
