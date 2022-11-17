@@ -200,7 +200,7 @@ async def sync_user(
             auth_token = await get_public_user_auth_token(
                 username=body.email,
                 pwd=body.password,
-                client_id=config.get_remote_info().metadata['keycloakClientId'],
+                client_id=config.get_remote_info().openidClient.client_id,
                 openid_host=config.openidHost
             )
         except Exception:

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import List, Callable, Optional, Union, Awaitable, Dict
+from typing import List, Callable, Optional, Union, Awaitable
 
 from pydantic import BaseModel
 
@@ -22,7 +22,6 @@ class UserInfo(BaseModel):
 class RemoteGateway(BaseModel):
     name: str
     host: str
-    metadata: Dict[str, str]
     openidClient: Union[PublicClient, PrivateClient]
     openidBaseUrl: str
     adminClient: Optional[PrivateClient]
