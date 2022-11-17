@@ -22,7 +22,6 @@ from youwol.configuration.models_config import JwtSource, Events
 from youwol.configuration.models_config_middleware import CustomMiddleware
 from youwol.environment.clients import LocalClients
 from youwol.environment.config_from_module import configuration_from_python
-from youwol.environment.config_from_static_file import configuration_from_json
 from youwol.environment.configuration_handler import ConfigurationHandler
 from youwol.environment.models import RemoteGateway, UserInfo, ApiConfiguration, Projects
 from youwol.environment.models_project import ErrorResponse
@@ -123,7 +122,7 @@ class YouwolEnvironment(BaseModel):
             access_token = await get_public_user_auth_token(
                 username=username,
                 pwd=pwd,
-                client_id=remote.metadata['keycloakClientId'],
+                client_id=remote.openidClient.client_id,
                 openid_host=remote.host
             )
         except Exception as e:
@@ -360,16 +359,7 @@ async def safe_load(
             ]
         )
 
-    loaders = {
-        ".py": configuration_from_python,
-        ".json": configuration_from_json
-    }
-
-    try:
-        conf_handler: ConfigurationHandler = await loaders[path.suffix](path)
-    except KeyError as k:
-        print(f"Unknown suffix : ${k}")
-        raise ConfigurationLoadingException(get_status(False))
+    conf_handler: ConfigurationHandler = await configuration_from_python(path)
 
     paths_book = PathsBook(
         config=path,
