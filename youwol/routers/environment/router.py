@@ -1,8 +1,8 @@
+import itertools
 import random
 from pathlib import Path
 from typing import List, Optional
 
-import itertools
 from aiohttp.client_exceptions import ClientConnectorError, ContentTypeError
 from cowpy import cow
 from fastapi import APIRouter, Depends, HTTPException
@@ -15,7 +15,7 @@ from youwol.environment.models import UserInfo
 from youwol.environment.projects_loader import ProjectLoader
 from youwol.environment.youwol_environment import yw_config, YouwolEnvironment, YouwolEnvironmentFactory
 from youwol.routers.environment.models import (
-    SyncUserBody, LoginBody, RemoteGatewayInfo, SelectRemoteBody, AvailableProfiles, ProjectsLoadingResults,
+    SyncUserBody, LoginBody, RemoteGatewayInfo, SelectRemoteBody, ProjectsLoadingResults,
     CustomDispatch, CustomDispatchesResponse
 )
 from youwol.routers.environment.upload_assets.upload import upload_asset
@@ -97,34 +97,6 @@ async def reload_configuration(
     return await status(request, env)
 
 
-@router.get("/configuration/profiles/",
-            response_model=AvailableProfiles,
-            summary="list available configuration profiles")
-async def change_configuration_profile(
-        config: YouwolEnvironment = Depends(yw_config)
-):
-    return AvailableProfiles(profiles=config.availableProfiles,
-                             active=config.activeProfile)
-
-
-@router.put("/configuration/profiles/active",
-            response_model=EnvironmentStatusResponse,
-            summary="change configuration profile")
-async def change_configuration_profile(
-        request: Request,
-        body: AvailableProfiles,
-        config: YouwolEnvironment = Depends(yw_config)
-):
-    profile = body.active
-    if profile == config.activeProfile:
-        raise HTTPException(status_code=409, detail=f"current configuration profile is already '{profile}'")
-    if profile not in config.availableProfiles:
-        raise HTTPException(status_code=404, detail=f"no configuration profile '{profile}'")
-
-    env = await YouwolEnvironmentFactory.reload(profile)
-    return await status(request, env)
-
-
 @router.get("/configuration/config-file",
             response_class=PlainTextResponse,
             summary="text content of the configuration file")
@@ -144,7 +116,6 @@ async def status(
     async with Context.start_ep(
             request=request,
             with_reporters=[LogsStreamer()],
-            with_attributes={"profile": config.activeProfile or 'default'}
     ) as ctx:   # type: Context
         connected = await connect_to_remote(config=config, context=ctx)
         remote_gateway_info = config.get_remote_info()

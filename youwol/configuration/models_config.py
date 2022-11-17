@@ -3,8 +3,8 @@ from pathlib import Path
 from typing import List, Union, Optional, Dict, Callable, Awaitable, Any
 
 from pydantic import BaseModel
-from youwol.configuration.models_config_middleware import CustomMiddleware
 
+from youwol.configuration.models_config_middleware import CustomMiddleware
 from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol.environment.models_project import ProjectTemplate
 from youwol.middlewares.models_dispatch import AbstractDispatch, RedirectDispatch
@@ -68,7 +68,7 @@ class Projects(BaseModel):
     uploadTargets: List[UploadTargets] = []
 
 
-class ConfigurationData(BaseModel):
+class Configuration(BaseModel):
     httpPort: Optional[int]
     jwtSource: Optional[JwtSource]
     platformHost: Optional[str]
@@ -90,30 +90,3 @@ class ConfigurationData(BaseModel):
     events: Optional[Union[Events, str, ModuleLoading]]
     customCommands: List[Union[str, Command, ModuleLoading]] = []
     customize: Optional[Union[str, ModuleLoading]]
-
-
-class CascadeBaseProfile(Enum):
-    REPLACE = "replace"
-    APPEND = "append"
-
-
-class CascadeReplace(BaseModel):
-    replaced_profile: str
-
-
-class CascadeAppend(BaseModel):
-    append_to_profile: str
-
-
-Cascade = Union[CascadeAppend, CascadeReplace, CascadeBaseProfile]
-
-
-class ExtendingProfile(BaseModel):
-    config_data: ConfigurationData
-    cascade: Cascade = CascadeBaseProfile.REPLACE
-
-
-class Profiles(BaseModel):
-    default: ConfigurationData
-    extending_profiles: Dict[str, ExtendingProfile] = {}
-    selected: Optional[str]

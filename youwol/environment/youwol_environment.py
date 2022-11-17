@@ -1,20 +1,17 @@
 import json
 import os
 import shutil
-from colorama import Fore, Style
-from cowpy import cow
 from datetime import datetime
-from fastapi import HTTPException
 from getpass import getpass
 from pathlib import Path
-from pydantic import BaseModel
 from typing import Dict, Any, Union, Optional, Awaitable, List
 
+from colorama import Fore, Style
+from cowpy import cow
+from fastapi import HTTPException
+from pydantic import BaseModel
+
 import youwol
-from youwol.configuration.models_config_middleware import CustomMiddleware
-from youwol.environment.config_from_module import configuration_from_python
-from youwol.environment.config_from_static_file import configuration_from_json
-from youwol.environment.configuration_handler import ConfigurationHandler
 from youwol.configuration.configuration_validation import (
     ConfigurationLoadingStatus, ConfigurationLoadingException,
     CheckSystemFolderWritable, CheckDatabasesFolderHealthy, CheckSecretPathExist,
@@ -22,7 +19,11 @@ from youwol.configuration.configuration_validation import (
 )
 from youwol.configuration.defaults import default_platform_host
 from youwol.configuration.models_config import JwtSource, Events
+from youwol.configuration.models_config_middleware import CustomMiddleware
 from youwol.environment.clients import LocalClients
+from youwol.environment.config_from_module import configuration_from_python
+from youwol.environment.config_from_static_file import configuration_from_json
+from youwol.environment.configuration_handler import ConfigurationHandler
 from youwol.environment.models import RemoteGateway, UserInfo, ApiConfiguration, Projects
 from youwol.environment.models_project import ErrorResponse
 from youwol.environment.paths import PathsBook, ensure_config_file_exists_or_create_it
@@ -54,13 +55,11 @@ class DeadlinedCache(BaseModel):
 
 
 class YouwolEnvironment(BaseModel):
-    availableProfiles: List[str]
     httpPort: int
     jwtSource: JwtSource
     redirectBasePath: str
     openidHost: str
     events: Events
-    activeProfile: Optional[str]
     cdnAutomaticUpdate: bool
     customDispatches: List[AbstractDispatch]
     customMiddlewares: List[CustomMiddleware]
@@ -183,7 +182,6 @@ class YouwolEnvironment(BaseModel):
         return f"""Running with youwol: {youwol}
 Configuration loaded from '{self.pathsBook.config}'
 - user email: {self.userEmail}
-- active profile: {self.activeProfile if self.activeProfile else "Default profile"}
 - paths: {self.pathsBook}
 - cdn packages count: {len(parse_json(self.pathsBook.local_cdn_docdb)['documents'])}
 - assets count: {len(parse_json(self.pathsBook.local_assets_entities_docdb)['documents'])}
@@ -203,11 +201,10 @@ class YouwolEnvironmentFactory:
         return config
 
     @staticmethod
-    async def reload(profile: str = None):
+    async def reload():
         cached = YouwolEnvironmentFactory.__cached_config
         conf = await safe_load(
             path=cached.pathsBook.config,
-            profile=profile if profile is not None else cached.activeProfile,
             user_email=cached.userEmail,
             selected_remote=cached.selectedRemote
         )
@@ -232,7 +229,6 @@ class YouwolEnvironmentFactory:
             httpPort=conf.httpPort,
             cache={},
             projects=conf.projects,
-            availableProfiles=conf.availableProfiles,
             commands=conf.commands,
             customDispatches=conf.customDispatches,
             customMiddlewares=conf.customMiddlewares,
@@ -246,7 +242,7 @@ class YouwolEnvironmentFactory:
     @staticmethod
     async def init():
         path = await get_yw_config_starter(get_main_arguments())
-        conf = await safe_load(path=path, profile=get_main_arguments().profile, user_email=None, selected_remote=None)
+        conf = await safe_load(path=path, user_email=None, selected_remote=None)
 
         YouwolEnvironmentFactory.__cached_config = conf
         await YouwolEnvironmentFactory.trigger_on_load(config=conf)
@@ -265,7 +261,6 @@ class YouwolEnvironmentFactory:
             httpPort=conf.httpPort,
             cache={},
             projects=conf.projects,
-            availableProfiles=conf.availableProfiles,
             commands=conf.commands,
             customDispatches=conf.customDispatches,
             customMiddlewares=conf.customMiddlewares,
@@ -339,7 +334,6 @@ async def login(
 
 async def safe_load(
         path: Path,
-        profile: str,
         user_email: Optional[str],
         selected_remote: Optional[RemoteGateway],
         context: Optional[Context] = None,
@@ -372,7 +366,7 @@ async def safe_load(
     }
 
     try:
-        conf_handler: ConfigurationHandler = await loaders[path.suffix](path, profile)
+        conf_handler: ConfigurationHandler = await loaders[path.suffix](path)
     except KeyError as k:
         print(f"Unknown suffix : ${k}")
         raise ConfigurationLoadingException(get_status(False))
@@ -435,9 +429,7 @@ async def safe_load(
         context=context)
 
     youwol_configuration = YouwolEnvironment(
-        activeProfile=conf_handler.get_profile(),
         jwtSource=conf_handler.get_jwt_source(),
-        availableProfiles=conf_handler.get_available_profiles(),
         redirectBasePath=conf_handler.get_redirect_base_path(),
         openidHost=conf_handler.get_openid_host(),
         httpPort=conf_handler.get_http_port(),

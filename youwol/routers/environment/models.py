@@ -8,11 +8,6 @@ from youwol.environment.projects_loader import Result
 from youwol.middlewares.models_dispatch import DispatchInfo
 
 
-class AvailableProfiles(BaseModel):
-    profiles: Optional[List[str]]
-    active: str
-
-
 class CustomDispatch(BaseModel):
     type: str
     name: str
@@ -48,10 +43,6 @@ class LoginBody(BaseModel):
 
 class SelectRemoteBody(BaseModel):
     name: str
-
-
-class PostParametersBody(BaseModel):
-    profile: str
 
 
 class SyncUserBody(BaseModel):
