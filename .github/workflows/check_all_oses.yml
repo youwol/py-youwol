@@ -1,0 +1,135 @@
+name: Check on all OSes
+
+on:
+  workflow_dispatch:
+
+  schedule:
+    - cron: '39 23 * * 0' # Every sunday at 23:39
+
+jobs:
+  integration_local-youwol-client:
+    name: Integration with local-youwol-client
+    if: inputs.only == '' || contains(inputs.only, 'local-youwol-client')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare repository
+        id: prepare
+        uses: youwol/nestor/py/prepare@v1
+
+      - name: Prepare local-youwol-client
+        id: prepare_local-youwol-client
+        uses: youwol/nestor/ts/prepare@v1
+        with:
+          repository: youwol/local-youwol-client
+          ref: ${{ inputs.local-youwol-client_ref }}
+          path: ${{ runner.temp }}/local-youwol-client
+
+      - name: Run local-youwol-client tests
+        id: tests_local-youwol-client
+        uses: youwol/nestor/ts/tests_coverage@v1
+        with:
+          path: ${{ runner.temp }}/local-youwol-client
+          py-youwol_path: ${{ github.workspace }}
+          py-youwol_conf_path: ${{ runner.temp }}/local-youwol-client/src/tests/yw_config/yw_config.py
+          coverage_omit: '*/src/tests/*/yw_pipeline.py'
+
+      - name: On Tests Failure
+        id: on_tests_failure
+        if: steps.tests_local-youwol-client.outputs.result == 'failure'
+        uses: actions/github-script@v6
+        with:
+          script: core.setFailed("Job failed because tests has failed, see job logs and annotations.")
+
+  integration_cdn-client:
+    name: Integration with cdn-client
+    if: inputs.only == '' || contains(inputs.only, 'cdn-client')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare repository
+        id: prepare
+        uses: youwol/nestor/py/prepare@v1
+
+      - name: Prepare cdn-client
+        id: prepare_cdn-client
+        uses: youwol/nestor/ts/prepare@v1
+        with:
+          repository: youwol/cdn-client
+          ref: ${{ inputs.cdn-client_ref }}
+          path: ${{ runner.temp }}/cdn-client
+
+      - name: Run cdn-client tests
+        id: tests_cdn-client
+        uses: youwol/nestor/ts/tests_coverage@v1
+        with:
+          path: ${{ runner.temp }}/cdn-client
+          py-youwol_path: ${{ github.workspace }}
+          py-youwol_conf_path: yw_config_IT.py
+          py-youwol_conf_repository: youwol/integrations-tests-conf
+
+      - name: On Tests Failure
+        id: on_tests_failure
+        if: steps.tests_cdn-client.outputs.result == 'failure'
+        uses: actions/github-script@v6
+        with:
+          script: core.setFailed("Job failed because tests has failed, see job logs and annotations.")
+
+  integration_http-clients:
+    strategy:
+      matrix:
+        os: # See https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
+          - windows-2022 # latest
+          - windows-2019
+          - ubuntu-22.04
+          - ubuntu-20.04 # latest
+          - ubuntu-18.04 # deprecated
+          - macos-12
+          - macos-11     # latest
+          - macos-10.15  # deprecated
+        python:
+          - "3.8"
+          - "3.9"
+#          - "3.10" blocked by TG-131
+        include:
+          - os: macos-11
+            python: "3.9"
+            OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
+          - os: windows-2022
+            python: "3.9"
+            experimental: true
+
+    name: http-clients - python ${{ matrix.python }} on ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    if: inputs.only == '' || contains(inputs.only,'http-clients')
+    env:
+      OBJC_DISABLE_INITIALIZE_FORK_SAFETY: ${{ matrix.OBJC_DISABLE_INITIALIZE_FORK_SAFETY }}
+    continue-on-error: ${{ matrix.experimental }}
+    steps:
+      - name: Prepare repository
+        id: prepare
+        uses: youwol/nestor/py/prepare@v1
+        with:
+          python-version: "${{ matrix.python }}"
+
+      - name: Prepare http-clients
+        id: prepare_http-clients
+        uses: youwol/nestor/ts/prepare@v1
+        with:
+          repository: youwol/http-clients
+          ref: ${{ inputs.http-clients_ref }}
+          path: ${{ runner.temp }}/http-clients
+
+      - name: Run http-clients tests
+        id: tests_http-clients
+        uses: youwol/nestor/ts/tests_coverage@v1
+        with:
+          path: ${{ runner.temp }}/http-clients
+          py-youwol_path: ${{ github.workspace }}
+          py-youwol_conf_path: yw_config_IT.py
+          py-youwol_conf_repository: youwol/integrations-tests-conf
+
+      - name: On Tests Failure
+        id: on_tests_failure
+        if: steps.tests_http-clients.outputs.result == 'failure'
+        uses: actions/github-script@v6
+        with:
+          script: core.setFailed("Job failed because tests has failed, see job logs and annotations.")
