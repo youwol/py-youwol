@@ -1,6 +1,5 @@
 import json
 import os
-import shutil
 from datetime import datetime
 from getpass import getpass
 from pathlib import Path
@@ -57,7 +56,6 @@ class YouwolEnvironment(BaseModel):
     httpPort: int
     jwtSource: JwtSource
     redirectBasePath: str
-    openidHost: str
     events: Events
     cdnAutomaticUpdate: bool
     customDispatches: List[AbstractDispatch]
@@ -67,7 +65,8 @@ class YouwolEnvironment(BaseModel):
     commands: Dict[str, Command]
 
     userEmail: Optional[str]
-    selectedRemote: Optional[str]
+    selectedRemote: str
+    remotes: List[RemoteGateway]
 
     pathsBook: PathsBook
     portsBook: Dict[str, int] = {}
@@ -97,11 +96,12 @@ class YouwolEnvironment(BaseModel):
 
     def get_remote_info(self, remote_host: str = None) -> Optional[RemoteGateway]:
 
-        info = parse_json(self.pathsBook.remotesInfo)['remotes']
-        selected = remote_host or self.selectedRemote
-        if selected in info:
-            data = info[selected]
-            return RemoteGateway(**data)
+        if not remote_host:
+            remote_host = self.selectedRemote
+
+        candidates = [remote for remote in self.remotes if remote.host == remote_host]
+        if len(candidates) > 0:
+            return candidates[0]
 
         return None
 
@@ -123,7 +123,7 @@ class YouwolEnvironment(BaseModel):
                 username=username,
                 pwd=pwd,
                 client_id=remote.openidClient.client_id,
-                openid_host=remote.host
+                openid_base_url=remote.openidBaseUrl
             )
         except Exception as e:
             raise RuntimeError(f"Can not authorize from email/pwd provided in " +
@@ -141,8 +141,8 @@ class YouwolEnvironment(BaseModel):
         if self.private_cache.get("default-drive"):
             return self.private_cache.get("default-drive")
         env = await context.get('env', YouwolEnvironment)
-        default_drive = await LocalClients\
-            .get_assets_gateway_client(env).get_treedb_backend_router()\
+        default_drive = await LocalClients \
+            .get_assets_gateway_client(env).get_treedb_backend_router() \
             .get_default_user_drive(headers=context.headers())
 
         self.private_cache["default-drive"] = DefaultDriveResponse(**default_drive)
@@ -213,13 +213,20 @@ class YouwolEnvironmentFactory:
         return conf
 
     @staticmethod
-    async def login(email: Union[str, None], remote_name: Union[str, None], context: Context = None):
+    async def login(email: Union[str, None], remote_name: Union[str, None]):
         conf = YouwolEnvironmentFactory.__cached_config
-        email, remote_name = await login(email, remote_name, conf.pathsBook.usersInfo,
-                                         conf.pathsBook.remotesInfo, context)
+        users_info_path = conf.pathsBook.usersInfo
+        if email is None:
+            users_info = parse_json(users_info_path)
+            if 'default' in users_info['policies']:
+                email = users_info['policies']["default"]
 
+        if email is None:
+            raise HTTPException(
+                status_code=401,
+                detail=f"User has not been identified, make sure it is defined in users info file ({users_info_path})"
+            )
         new_conf = YouwolEnvironment(
-            openidHost=conf.openidHost,
             jwtSource=conf.jwtSource,
             redirectBasePath=conf.redirectBasePath,
             userEmail=email,
@@ -232,7 +239,8 @@ class YouwolEnvironmentFactory:
             customDispatches=conf.customDispatches,
             customMiddlewares=conf.customMiddlewares,
             cdnAutomaticUpdate=conf.cdnAutomaticUpdate,
-            events=conf.events
+            events=conf.events,
+            remotes=conf.remotes
         )
         YouwolEnvironmentFactory.__cached_config = new_conf
         await YouwolEnvironmentFactory.trigger_on_load(config=conf)
@@ -251,7 +259,6 @@ class YouwolEnvironmentFactory:
     def clear_cache():
         conf = YouwolEnvironmentFactory.__cached_config
         new_conf = YouwolEnvironment(
-            openidHost=conf.openidHost,
             jwtSource=conf.jwtSource,
             redirectBasePath=conf.redirectBasePath,
             userEmail=conf.userEmail,
@@ -264,7 +271,8 @@ class YouwolEnvironmentFactory:
             customDispatches=conf.customDispatches,
             customMiddlewares=conf.customMiddlewares,
             cdnAutomaticUpdate=conf.cdnAutomaticUpdate,
-            events=conf.events
+            events=conf.events,
+            remotes=conf.remotes
         )
         YouwolEnvironmentFactory.__cached_config = new_conf
 
@@ -288,54 +296,10 @@ async def yw_config() -> YouwolEnvironment:
     return await YouwolEnvironmentFactory.get()
 
 
-async def login(
-        user_email: Union[str, None],
-        selected_remote: Union[str, None],
-        users_info_path: Path,
-        remotes_info: Path,
-        context: Union[Context, None]) -> (str, str):
-    if user_email is None:
-        users_info = parse_json(users_info_path)
-        if 'default' in users_info['policies']:
-            user_email = users_info['policies']["default"]
-
-    if user_email is None:
-        raise HTTPException(
-            status_code=401,
-            detail=f"User has not been identified, make sure it is defined in users info file ({users_info_path})"
-        )
-    if user_email not in parse_json(users_info_path)['users']:
-        context and context.info(
-            text=f"User {user_email} not registered in {users_info_path}: switch user",
-            data={"user_email": user_email, 'usersInfo': parse_json(users_info_path)
-                  }
-        )
-        return await login(user_email=None, selected_remote=selected_remote, users_info_path=users_info_path,
-                           remotes_info=remotes_info,
-                           context=context)
-
-    if remotes_info is None:
-        return user_email, None
-
-    remotes_info = parse_json(remotes_info)
-    remotes = remotes_info['remotes']
-
-    if selected_remote in remotes:
-        return user_email, selected_remote
-
-    if "policies" in remotes_info and "default" in remotes_info['policies']:
-        default = remotes_info['policies']['default']
-        if default in remotes:
-            return user_email, default
-
-    return user_email, None
-
-
 async def safe_load(
         path: Path,
         user_email: Optional[str],
-        selected_remote: Optional[RemoteGateway],
-        context: Optional[Context] = None,
+        selected_remote: Optional[str],
 ) -> YouwolEnvironment:
     """
     Possible errors:
@@ -367,7 +331,6 @@ async def safe_load(
         system=Path(conf_handler.get_cache_dir()),
         secrets=Path(conf_handler.get_config_dir() / Path("secrets.json")),
         usersInfo=Path(conf_handler.get_config_dir() / Path("users-info.json")),
-        remotesInfo=Path(conf_handler.get_config_dir() / Path("remotes-info.json")),
         additionalPythonScrPaths=conf_handler.get_additional_python_src_paths()
     )
 
@@ -399,9 +362,6 @@ async def safe_load(
     if not paths_book.usersInfo.exists():
         open(paths_book.usersInfo, "w").write(json.dumps({"policies": {}, "users": {}}))
 
-    if not paths_book.remotesInfo.exists():
-        open(paths_book.remotesInfo, "w").write(json.dumps({"remotes": {}}))
-
     if not paths_book.secrets.exists():
         base_secrets = {
             "identities": {}
@@ -411,29 +371,32 @@ async def safe_load(
     if not paths_book.packages_cache_path.exists():
         open(paths_book.secrets, "w").write(json.dumps({}))
 
-    user_email, selected_remote = await login(
-        user_email=user_email,
-        selected_remote=selected_remote,
-        users_info_path=paths_book.usersInfo,
-        remotes_info=paths_book.remotesInfo,
-        context=context)
-
+    if user_email is None:
+        users_info = parse_json(paths_book.usersInfo)
+        if 'default' in users_info['policies']:
+            user_email = users_info['policies']["default"]
+    if user_email is None:
+        raise HTTPException(
+            status_code=401,
+            detail=f"User has not been identified, make sure it is defined in users inf"
+                   f"o file ({paths_book.usersInfo})"
+        )
     youwol_configuration = YouwolEnvironment(
         jwtSource=conf_handler.get_jwt_source(),
         redirectBasePath=conf_handler.get_redirect_base_path(),
-        openidHost=conf_handler.get_openid_host(),
         httpPort=conf_handler.get_http_port(),
         portsBook=conf_handler.get_ports_book(),
         routers=conf_handler.get_routers(),
         userEmail=user_email,
-        selectedRemote=selected_remote,
+        selectedRemote=selected_remote if selected_remote else conf_handler.get_selected_remote().host,
         events=conf_handler.get_events(),
         cdnAutomaticUpdate=conf_handler.get_cdn_auto_update(),
         pathsBook=paths_book,
         projects=conf_handler.get_projects(),
         commands=conf_handler.get_commands(),
         customDispatches=conf_handler.get_dispatches(),
-        customMiddlewares=conf_handler.get_middlewares()
+        customMiddlewares=conf_handler.get_middlewares(),
+        remotes=[RemoteGateway.from_config(remote_config) for remote_config in conf_handler.get_remotes()]
     )
     return await conf_handler.customize(youwol_configuration)
 
@@ -442,12 +405,12 @@ async def get_yw_config_starter(main_args: MainArguments):
     (conf_path, exists) = ensure_config_file_exists_or_create_it(main_args.config_path)
 
     if not exists:
-        await first_run(conf_path, main_args)
+        await first_run(conf_path)
 
     return conf_path
 
 
-async def first_run(conf_path, main_args):
+async def first_run(conf_path):
     resp = input("No config path has been provided as argument (using --conf),"
                  f" and no file found in the default folder.\n"
                  "Do you want to create a new workspace with default settings (y/N)")
@@ -462,20 +425,19 @@ async def first_run(conf_path, main_args):
     token = None
     try:
         token = await get_public_user_auth_token(username=email, pwd=pwd, client_id='public-user',
-                                                 openid_host=default_platform_host)
+                                                 openid_base_url=f"https://{default_platform_host}/auth/realms/youwol")
         print("token", token)
     except HTTPException as e:
         print(f"Can not retrieve authentication token:\n\tstatus code: {e.status_code}\n\tdetail:{e.detail}")
         exit(1)
     user_info = None
     try:
-        user_info = await retrieve_user_info(auth_token=token, openid_host=default_platform_host)
+        user_info = await retrieve_user_info(auth_token=token,
+                                             openid_base_url=f"https://{default_platform_host}/auth/realms/youwol")
         print("user_info", user_info)
     except HTTPException as e:
         print(f"Can not retrieve user info:\n\tstatus code: {e.status_code}\n\tdetail:{e.detail}")
         exit(1)
-    shutil.copyfile(main_args.youwol_path.parent / 'youwol_data' / 'remotes-info.json',
-                    conf_path.parent / 'remotes-info.json')
     if not (conf_path.parent / 'secrets.json').exists():
         write_json({email: {'password': pwd}}, conf_path.parent / 'secrets.json')
     user_info = {

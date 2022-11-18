@@ -4,12 +4,14 @@ from typing import List, Union, Optional, Dict, Callable, Awaitable, Any
 
 from pydantic import BaseModel
 
+from youwol.configuration.defaults import default_openid_client_id
 from youwol.configuration.models_config_middleware import CustomMiddleware
 from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol.environment.models_project import ProjectTemplate
 from youwol.middlewares.models_dispatch import AbstractDispatch, RedirectDispatch
 from youwol.routers.custom_commands.models import Command
 from youwol_utils import Context
+from youwol_utils.clients.oidc.oidc_config import PublicClient, PrivateClient
 from youwol_utils.servers.fast_api import FastApiRouter
 
 
@@ -68,12 +70,32 @@ class Projects(BaseModel):
     uploadTargets: List[UploadTargets] = []
 
 
+class RemoteConfig(BaseModel):
+    name: Optional[str]
+    host: str
+    openidBaseUrl: Optional[str]
+    openidClient: Optional[Union[PublicClient, PrivateClient]]
+    keycloakAdminBaseURl: Optional[str]
+    keycloakAdminClient: Optional[PrivateClient]
+
+    def __hash__(self):
+        return hash(tuple([self.host, self.openidBaseUrl, self.openidClient.client_id]))
+
+    @classmethod
+    def default_for_host(cls, host: str):
+        return RemoteConfig(
+            host=host,
+            openidBaseUrl=f"https://{host}/auth/realms/youwol",
+            openidClient=PublicClient(client_id=default_openid_client_id)
+        )
+
+
 class Configuration(BaseModel):
     httpPort: Optional[int]
     jwtSource: Optional[JwtSource]
-    platformHost: Optional[str]
+    selectedRemote: Optional[Union[str, RemoteConfig]]
+    remotes: List[RemoteConfig] = []
     redirectBasePath: Optional[str]
-    openIdHost: Optional[str]
     user: Optional[str]
     portsBook: Optional[Dict[str, int]]
     routers: Optional[List[FastApiRouter]]

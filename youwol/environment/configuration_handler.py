@@ -3,14 +3,14 @@ import os
 import shutil
 import zipfile
 from pathlib import Path
-from typing import List, Union, Dict, Callable, cast
+from typing import List, Union, Dict, Callable, cast, Optional, Set
 
 from youwol import environment
 from youwol.configuration.defaults import default_http_port, default_path_data_dir, \
     default_path_cache_dir, default_port_range_start, default_port_range_end, \
     default_platform_host, default_jwt_source
 from youwol.configuration.models_config import Configuration, PortRange, ModuleLoading, \
-    CdnOverride, Redirection, JwtSource, Events, ConfigPath
+    CdnOverride, Redirection, JwtSource, Events, ConfigPath, RemoteConfig
 from youwol.configuration.models_config_middleware import CustomMiddleware
 from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol.environment.models import IConfigurationCustomizer, Projects
@@ -45,15 +45,7 @@ class ConfigurationHandler:
 
     def get_redirect_base_path(self) -> str:
         return self.config_data.redirectBasePath if self.config_data.redirectBasePath \
-            else f"https://{self.get_platform_host()}/api"
-
-    def get_openid_host(self) -> str:
-        return self.config_data.openIdHost if self.config_data.openIdHost \
-            else self.get_platform_host()
-
-    def get_platform_host(self) -> str:
-        return self.config_data.platformHost if self.config_data.platformHost \
-            else default_platform_host
+            else f"https://{self.get_selected_remote().host}/api"
 
     def get_http_port(self) -> int:
         return self.config_data.httpPort if self.config_data.httpPort else default_http_port
@@ -132,7 +124,7 @@ class ConfigurationHandler:
 
         port_range: PortRange = self.config_data.serversPortsRange \
             if self.config_data.serversPortsRange else PortRange(start=default_port_range_start,
-                                                                           end=default_port_range_end)
+                                                                 end=default_port_range_end)
 
         assigned_ports = [cdnServer.port for cdnServer in self.config_data.dispatches
                           if isinstance(cdnServer, CdnOverrideDispatch)]
@@ -243,6 +235,30 @@ class ConfigurationHandler:
 
     def get_routers(self) -> List[FastApiRouter]:
         return self.config_data.routers or []
+
+    def get_remotes(self) -> Set[RemoteConfig]:
+        if not self.config_data.remotes:
+            return {self.get_selected_remote()}
+        else:
+            return set(self.config_data.remotes + [self.get_selected_remote()])
+
+    def get_selected_remote(self) -> Optional[RemoteConfig]:
+        selected = self.config_data.selectedRemote
+
+        if selected is None:
+            if len(self.config_data.remotes) > 0:
+                return self.config_data.remotes[0]
+            else:
+                return RemoteConfig.default_for_host(default_platform_host)
+
+        if isinstance(selected, str):
+            candidates = [remote for remote in self.config_data.remotes if remote.host == selected]
+            if len(candidates) > 0:
+                return candidates[0]
+            else:
+                return RemoteConfig.default_for_host(selected)
+
+        return selected
 
 
 def ensure_loading_source_exists(arg: Union[str, ModuleLoading],

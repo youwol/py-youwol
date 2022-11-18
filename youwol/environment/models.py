@@ -4,7 +4,7 @@ from typing import List, Callable, Optional, Union, Awaitable
 
 from pydantic import BaseModel
 
-from youwol.configuration.models_config import ConfigPath, UploadTargets
+from youwol.configuration.models_config import ConfigPath, UploadTargets, RemoteConfig
 from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol.environment.models_project import Pipeline, ProjectTemplate
 from youwol.environment.utils import default_projects_finder
@@ -24,8 +24,19 @@ class RemoteGateway(BaseModel):
     host: str
     openidClient: Union[PublicClient, PrivateClient]
     openidBaseUrl: str
-    adminClient: Optional[PrivateClient]
     keycloakAdminBaseUrl: Optional[str]
+    adminClient: Optional[PrivateClient]
+
+    @classmethod
+    def from_config(cls, remote_config: RemoteConfig):
+        return RemoteGateway(
+            name=remote_config.name if remote_config.name else remote_config.host,
+            host=remote_config.host,
+            openidClient=remote_config.openidClient,
+            openidBaseUrl=remote_config.openidBaseUrl,
+            keycloakAdminBaseUrl=remote_config.keycloakAdminBaseURl,
+            adminClient=remote_config.keycloakAdminClient
+        )
 
 
 class Secret(BaseModel):

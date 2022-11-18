@@ -55,14 +55,14 @@ async def start_web_socket(ws: WebSocket):
             break
 
 
-async def get_public_user_auth_token(username: str, pwd: str, client_id: str, openid_host: str):
+async def get_public_user_auth_token(username: str, pwd: str, client_id: str, openid_base_url: str):
 
     form = aiohttp.FormData()
     form.add_field("username", username)
     form.add_field("password", pwd)
     form.add_field("client_id", client_id)
     form.add_field("grant_type", "password")
-    url = f"https://{openid_host}/auth/realms/youwol/protocol/openid-connect/token"
+    url = f"{openid_base_url}/protocol/openid-connect/token"
     async with aiohttp.ClientSession(
             connector=aiohttp.TCPConnector(verify_ssl=False),
             timeout=aiohttp.ClientTimeout(total=5)) as session:
