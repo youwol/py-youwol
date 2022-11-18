@@ -1,13 +1,16 @@
 {   "policies": {
-        "default": "gc.platform.youwol.com"
+        "default": "platform.youwol.com"
     },
     "remotes": {
-        "gc.platform.youwol.com":{
-            "host":"gc.platform.youwol.com",
+        "platform.youwol.com":{
+            "host":"platform.youwol.com",
             "name":"production server",
             "metadata": {
                 "keycloakClientId":"public-dev"
-            }
-        }
+            },
+            "openidClient": {
+                "client_id": "public-dev"
+            },
+            "openidBaseUrl": "https://platform.youwol.com/auth/realms/youwol"        }
     }
 }

@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import List, Callable, Optional, Union, Awaitable, Dict
+
 from pydantic import BaseModel
-from typing import List, Dict, Callable, Optional, Union, Awaitable
 
 from youwol.configuration.models_config import ConfigPath, UploadTargets
 from youwol.environment.forward_declaration import YouwolEnvironment
