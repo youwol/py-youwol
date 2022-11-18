@@ -1,4 +1,5 @@
 import base64
+import itertools
 import json
 from datetime import datetime
 from enum import Enum
@@ -6,14 +7,13 @@ from pathlib import Path, PosixPath
 from typing import Union, List, cast, Callable, Iterable, Any, NamedTuple, Dict, Set
 
 import aiohttp
-import itertools
 from fastapi import HTTPException
 from pydantic import BaseModel
 from starlette.requests import Request
 
-from youwol_utils.types import JSON
-from youwol_utils.clients.utils import to_group_id
 from youwol_utils.clients.oidc.oidc_config import OidcInfos, OidcConfig
+from youwol_utils.clients.utils import to_group_id
+from youwol_utils.types import JSON
 
 flatten = itertools.chain.from_iterable
 
@@ -186,9 +186,9 @@ def get_content_encoding(file_name: Union[str, Path]):
     return "identity"
 
 
-async def retrieve_user_info(auth_token: str, openid_host: str):
+async def retrieve_user_info(auth_token: str, openid_base_url: str):
     headers = {"authorization": f"Bearer {auth_token}"}
-    url = f"https://{openid_host}/auth/realms/youwol/protocol/openid-connect/userinfo"
+    url = f"{openid_base_url}/protocol/openid-connect/userinfo"
 
     async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
         async with await session.post(url=url, headers=headers) as resp:

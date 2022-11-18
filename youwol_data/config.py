@@ -12,7 +12,6 @@ class ConfigurationFactory(IConfigurationFactory):
 
     async def get(self, main_args: MainArguments) -> Configuration:
         return Configuration(
-            platformHost="platform.youwol.com",
             jwtSource=JwtSource.CONFIG,
             projects=Projects(
                 finder=lambda env, _ctx: auto_detect_projects(

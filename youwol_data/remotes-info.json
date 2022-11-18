@@ -5,9 +5,6 @@
         "platform.youwol.com":{
             "host":"platform.youwol.com",
             "name":"production server",
-            "metadata": {
-                "keycloakClientId":"public-dev"
-            },
             "openidClient": {
                 "client_id": "public-dev"
             },

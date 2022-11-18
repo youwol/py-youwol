@@ -20,7 +20,6 @@ class PathsBook(BaseModel):
     databases: Path
     additionalPythonScrPaths: List[Path]
     usersInfo: Path
-    remotesInfo: Path
     secrets: Union[Path, None]
     youwol: Path = Path(youwol.__file__).parent
 

@@ -123,13 +123,15 @@ async def status(
             remote_gateway_info = RemoteGatewayInfo(name=remote_gateway_info.name,
                                                     host=remote_gateway_info.host,
                                                     connected=connected)
-        remotes_info = parse_json(config.pathsBook.remotesInfo)['remotes'].values()
         response = EnvironmentStatusResponse(
             users=config.get_users_list(),
             userInfo=config.get_user_info(),
             configuration=config,
             remoteGatewayInfo=remote_gateway_info,
-            remotesInfo=list(remotes_info)
+            remotesInfo=[
+                RemoteGatewayInfo(name=remote.name, host=remote.host, connected=(remote.host == config.selectedRemote))
+                for remote in config.remotes
+            ]
         )
         await ctx.send(response)
         await ctx.send(ProjectsLoadingResults(results=await ProjectLoader.get_results(config, ctx)))
@@ -200,8 +202,8 @@ async def sync_user(
             auth_token = await get_public_user_auth_token(
                 username=body.email,
                 pwd=body.password,
-                client_id=config.get_remote_info().metadata['keycloakClientId'],
-                openid_host=config.openidHost
+                client_id=config.get_remote_info().openidClient.client_id,
+                openid_base_url=config.get_remote_info().openidBaseUrl
             )
         except Exception:
             raise RuntimeError(f"Can not authorize from email/pwd @ {config.get_remote_info().host}")
@@ -215,7 +217,7 @@ async def sync_user(
             secrets[body.email] = {"password": body.password}
         write_json(secrets, config.pathsBook.secrets)
 
-        user_info = await retrieve_user_info(auth_token=auth_token, openid_host=config.openidHost)
+        user_info = await retrieve_user_info(auth_token=auth_token, openid_base_url=config.get_remote_info().openidBaseUrl)
 
         users_info = parse_json(config.pathsBook.usersInfo)
         users_info['users'][body.email] = {
@@ -243,4 +245,4 @@ async def upload(
             },
             with_reporters=[LogsStreamer()]
     ) as ctx:
-        return await upload_asset(remote_host=config.selectedRemote, asset_id=asset_id, options=None, context=ctx)
+        return await upload_asset(remote_host=config.get_remote_info().host, asset_id=asset_id, options=None, context=ctx)
