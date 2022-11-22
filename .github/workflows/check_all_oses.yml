@@ -2,19 +2,71 @@ name: Check on all OSes
 
 on:
   workflow_dispatch:
+    inputs:
+      only:
+        description: >
+          Only run specified integrations.
+          Default to 'http-clients local-youwol-client cdn-client'
+        default: "http-clients local-youwol-client cdn-client"
 
   schedule:
     - cron: '39 23 * * 0' # Every sunday at 23:39
 
 jobs:
   integration_local-youwol-client:
-    name: Integration with local-youwol-client
+    strategy:
+      matrix:
+        python:
+          - "3.8"
+          - "3.9"
+        #         - "3.10" blocked by TG-131
+
+        os:
+          # See https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
+          # Windows
+          - image: windows-2022 # windows-latest
+            experimental: true
+            env: {}
+          - image: windows-2019
+            experimental: true
+            env: {}
+
+          # Linux
+          - image: ubuntu-22.04
+            experimental: false
+            env: {}
+          - image: ubuntu-20.04 # ubuntu-latest
+            experimental: false
+            env: {}
+          - image: ubuntu-18.04 # deprecated
+            experimental: false
+            env: {}
+
+          # MacOS
+          - image: macos-12
+            experimental: false
+            env:
+              OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
+          - image: macos-11 # macos-latest
+            experimental: false
+            env:
+              OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
+          - image: macos-10.15 # deprecated
+            experimental: false
+            env:
+              OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
+
+    name: local-youwol-client - python ${{ matrix.python }} on ${{ matrix.os.image }})
+    runs-on: ${{ matrix.os.image }}
     if: inputs.only == '' || contains(inputs.only, 'local-youwol-client')
-    runs-on: ubuntu-latest
+    env: ${{ matrix.os.env }}
+    continue-on-error: ${{ matrix.os.experimental }}
     steps:
       - name: Prepare repository
         id: prepare
         uses: youwol/nestor/py/prepare@v1
+        with:
+          python-version: "${{ matrix.python }}"
 
       - name: Prepare local-youwol-client
         id: prepare_local-youwol-client
@@ -41,13 +93,59 @@ jobs:
           script: core.setFailed("Job failed because tests has failed, see job logs and annotations.")
 
   integration_cdn-client:
-    name: Integration with cdn-client
+    strategy:
+      matrix:
+        python:
+          - "3.8"
+          - "3.9"
+        #         - "3.10" blocked by TG-131
+
+        os:
+          # See https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
+          # Windows
+          - image: windows-2022 # windows-latest
+            experimental: true
+            env: {}
+          - image: windows-2019
+            experimental: true
+            env: {}
+
+          # Linux
+          - image: ubuntu-22.04
+            experimental: false
+            env: {}
+          - image: ubuntu-20.04 # ubuntu-latest
+            experimental: false
+            env: {}
+          - image: ubuntu-18.04 # deprecated
+            experimental: false
+            env: {}
+
+          # MacOS
+          - image: macos-12
+            experimental: false
+            env:
+              OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
+          - image: macos-11 # macos-latest
+            experimental: false
+            env:
+              OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
+          - image: macos-10.15 # deprecated
+            experimental: false
+            env:
+              OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
+
+    name: cdn-client - python ${{ matrix.python }} on ${{ matrix.os.image }})
+    runs-on: ${{ matrix.os.image }}
     if: inputs.only == '' || contains(inputs.only, 'cdn-client')
-    runs-on: ubuntu-latest
+    env: ${{ matrix.os.env }}
+    continue-on-error: ${{ matrix.os.experimental }}
     steps:
       - name: Prepare repository
         id: prepare
         uses: youwol/nestor/py/prepare@v1
+        with:
+          python-version: "${{ matrix.python }}"
 
       - name: Prepare cdn-client
         id: prepare_cdn-client
@@ -76,33 +174,51 @@ jobs:
   integration_http-clients:
     strategy:
       matrix:
-        os: # See https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
-          - windows-2022 # latest
-          - windows-2019
-          - ubuntu-22.04
-          - ubuntu-20.04 # latest
-          - ubuntu-18.04 # deprecated
-          - macos-12
-          - macos-11     # latest
-          - macos-10.15  # deprecated
         python:
           - "3.8"
           - "3.9"
-#          - "3.10" blocked by TG-131
-        include:
-          - os: macos-11
-            python: "3.9"
-            OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
-          - os: windows-2022
-            python: "3.9"
-            experimental: true
+#         - "3.10" blocked by TG-131
 
-    name: http-clients - python ${{ matrix.python }} on ${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
+        os:
+          # See https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
+          # Windows
+          - image: windows-2022 # windows-latest
+            experimental: true
+            env: {}
+          - image: windows-2019
+            experimental: true
+            env: {}
+
+          # Linux
+          - image: ubuntu-22.04
+            experimental: false
+            env: {}
+          - image: ubuntu-20.04 # ubuntu-latest
+            experimental: false
+            env: {}
+          - image: ubuntu-18.04 # deprecated
+            experimental: false
+            env: {}
+
+          # MacOS
+          - image: macos-12
+            experimental: false
+            env:
+              OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
+          - image: macos-11 # macos-latest
+            experimental: false
+            env:
+              OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
+          - image: macos-10.15 # deprecated
+            experimental: false
+            env:
+              OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
+
+    name: http-clients - python ${{ matrix.python }} on ${{ matrix.os.image }})
+    runs-on: ${{ matrix.os.image }}
     if: inputs.only == '' || contains(inputs.only,'http-clients')
-    env:
-      OBJC_DISABLE_INITIALIZE_FORK_SAFETY: ${{ matrix.OBJC_DISABLE_INITIALIZE_FORK_SAFETY }}
-    continue-on-error: ${{ matrix.experimental }}
+    env: ${{ matrix.os.env }}
+    continue-on-error: ${{ matrix.os.experimental }}
     steps:
       - name: Prepare repository
         id: prepare
