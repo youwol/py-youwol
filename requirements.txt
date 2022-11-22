@@ -82,7 +82,7 @@ pdoc3==0.10.0
     # via -r deps/dev.in
 pep517==0.12.0
     # via pip-tools
-pillow==9.1.1
+pillow==9.3.0
     # via -r deps/base.in
 pip-tools==6.6.2
     # via -r deps/dev.in
@@ -136,7 +136,7 @@ zipp==3.8.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==22.3
+pip==22.3.1
     # via
     #   -r deps/dev.in
     #   pip-tools
