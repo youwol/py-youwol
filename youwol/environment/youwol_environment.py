@@ -1,41 +1,36 @@
 import json
 import os
 from datetime import datetime
-from getpass import getpass
 from pathlib import Path
-from typing import Dict, Any, Union, Optional, Awaitable, List
+from typing import Dict, Any, Optional, Awaitable, List
 
 from colorama import Fore, Style
 from cowpy import cow
-from fastapi import HTTPException
 from pydantic import BaseModel
 
 import youwol
 from youwol.configuration.configuration_validation import (
     ConfigurationLoadingStatus, ConfigurationLoadingException,
-    CheckSystemFolderWritable, CheckDatabasesFolderHealthy, CheckSecretPathExist,
-    CheckSecretHealthy
+    CheckSystemFolderWritable, CheckDatabasesFolderHealthy
 )
-from youwol.configuration.defaults import default_platform_host
-from youwol.configuration.models_config import JwtSource, Events
+from youwol.configuration.models_config import Events
 from youwol.configuration.models_config_middleware import CustomMiddleware
 from youwol.environment.clients import LocalClients
 from youwol.environment.config_from_module import configuration_from_python
 from youwol.environment.configuration_handler import ConfigurationHandler
-from youwol.environment.models import RemoteGateway, UserInfo, ApiConfiguration, Projects
+from youwol.environment.models import RemoteGateway, ApiConfiguration, Projects
 from youwol.environment.models_project import ErrorResponse
 from youwol.environment.paths import PathsBook, ensure_config_file_exists_or_create_it
 from youwol.main_args import get_main_arguments, MainArguments
 from youwol.middlewares.models_dispatch import AbstractDispatch
 from youwol.routers.custom_backends import install_routers
 from youwol.routers.custom_commands.models import Command
-from youwol.utils.utils_low_level import get_public_user_auth_token
 from youwol.web_socket import WsDataStreamer
-from youwol_utils import retrieve_user_info
+from youwol_utils.clients.oidc.oidc_config import OidcConfig
 from youwol_utils.context import Context, ContextFactory, InMemoryReporter
 from youwol_utils.http_clients.tree_db_backend import DefaultDriveResponse
 from youwol_utils.servers.fast_api import FastApiRouter
-from youwol_utils.utils_paths import parse_json, write_json
+from youwol_utils.utils_paths import parse_json
 
 
 class DeadlinedCache(BaseModel):
@@ -54,7 +49,6 @@ class DeadlinedCache(BaseModel):
 
 class YouwolEnvironment(BaseModel):
     httpPort: int
-    jwtSource: JwtSource
     redirectBasePath: str
     events: Events
     cdnAutomaticUpdate: bool
@@ -64,8 +58,8 @@ class YouwolEnvironment(BaseModel):
     projects: Projects
     commands: Dict[str, Command]
 
-    userEmail: Optional[str]
     selectedRemote: str
+    selectedUser: Optional[str]
     remotes: List[RemoteGateway]
 
     pathsBook: PathsBook
@@ -80,19 +74,8 @@ class YouwolEnvironment(BaseModel):
         self.cache = {}
         self.private_cache = {}
 
-    def get_user_info(self) -> UserInfo:
-
-        users_info = parse_json(self.pathsBook.usersInfo)['users']
-
-        if self.userEmail in users_info:
-            data = users_info[self.userEmail]
-            return UserInfo(**data)
-
-        raise RuntimeError(f"User '{self.userEmail}' not reference in '{str(self.pathsBook.usersInfo)}")
-
     def get_users_list(self) -> List[str]:
-        users = list(parse_json(self.pathsBook.usersInfo)['users'].keys())
-        return users
+        return [user.username for user in self.get_remote_info().users]
 
     def get_remote_info(self, remote_host: str = None) -> Optional[RemoteGateway]:
 
@@ -105,29 +88,21 @@ class YouwolEnvironment(BaseModel):
 
         return None
 
-    async def get_auth_token(self, context: Context, remote_host: str = None, use_cache=True):
-        username = self.userEmail
+    async def get_auth_token(self, context: Context, remote_host: str = None, username: str = None):
+        username = username if username else self.selectedUser
         remote = self.get_remote_info(remote_host)
         dependencies = {"username": username, "host": remote.host, "type": "auth_token"}
         cached_token = next((c for c in self.tokensCache if c.is_valid(dependencies)), None)
-        if use_cache and cached_token and not remote_host:
+        if cached_token and not remote_host:
             return cached_token.value
 
-        secrets = parse_json(self.pathsBook.secrets)
-        if username not in secrets:
-            raise RuntimeError(f"Can not find {username} in {str(self.pathsBook.secrets)}")
-
-        pwd = secrets[username]['password']
         try:
-            access_token = await get_public_user_auth_token(
+            access_token = (await OidcConfig(remote.openidBaseUrl).for_client(remote.openidClient).direct_flow(
                 username=username,
-                pwd=pwd,
-                client_id=remote.openidClient.client_id,
-                openid_base_url=remote.openidBaseUrl
-            )
+                password=([user.password for user in remote.users if user.username == username][0])
+            ))['access_token']
         except Exception as e:
-            raise RuntimeError(f"Can not authorize from email/pwd provided in " +
-                               f"{str(self.pathsBook.secrets)} (error:{e})")
+            raise RuntimeError(f"Can not get access token for user '{username}' : {e}")
 
         deadline = datetime.timestamp(datetime.now()) + 1 * 60 * 60 * 1000
         self.tokensCache.append(DeadlinedCache(value=access_token, deadline=deadline, dependencies=dependencies))
@@ -180,7 +155,8 @@ class YouwolEnvironment(BaseModel):
 
         return f"""Running with youwol: {youwol}
 Configuration loaded from '{self.pathsBook.config}'
-- user email: {self.userEmail}
+- user: {self.selectedUser if self.selectedUser else 'dynamic'}
+- remote : {self.selectedRemote}
 - paths: {self.pathsBook}
 - cdn packages count: {len(parse_json(self.pathsBook.local_cdn_docdb)['documents'])}
 - assets count: {len(parse_json(self.pathsBook.local_assets_entities_docdb)['documents'])}
@@ -200,12 +176,12 @@ class YouwolEnvironmentFactory:
         return config
 
     @staticmethod
-    async def reload():
+    async def reload(selected_user: Optional[str] = None, selected_remote: Optional[str] = None):
         cached = YouwolEnvironmentFactory.__cached_config
         conf = await safe_load(
             path=cached.pathsBook.config,
-            user_email=cached.userEmail,
-            selected_remote=cached.selectedRemote
+            selected_user=selected_user if selected_user else cached.selectedUser,
+            selected_remote=selected_remote if selected_remote else cached.selectedRemote
         )
 
         await YouwolEnvironmentFactory.trigger_on_load(config=conf)
@@ -213,43 +189,9 @@ class YouwolEnvironmentFactory:
         return conf
 
     @staticmethod
-    async def login(email: Union[str, None], remote_name: Union[str, None]):
-        conf = YouwolEnvironmentFactory.__cached_config
-        users_info_path = conf.pathsBook.usersInfo
-        if email is None:
-            users_info = parse_json(users_info_path)
-            if 'default' in users_info['policies']:
-                email = users_info['policies']["default"]
-
-        if email is None:
-            raise HTTPException(
-                status_code=401,
-                detail=f"User has not been identified, make sure it is defined in users info file ({users_info_path})"
-            )
-        new_conf = YouwolEnvironment(
-            jwtSource=conf.jwtSource,
-            redirectBasePath=conf.redirectBasePath,
-            userEmail=email,
-            selectedRemote=remote_name,
-            pathsBook=conf.pathsBook,
-            httpPort=conf.httpPort,
-            cache={},
-            projects=conf.projects,
-            commands=conf.commands,
-            customDispatches=conf.customDispatches,
-            customMiddlewares=conf.customMiddlewares,
-            cdnAutomaticUpdate=conf.cdnAutomaticUpdate,
-            events=conf.events,
-            remotes=conf.remotes
-        )
-        YouwolEnvironmentFactory.__cached_config = new_conf
-        await YouwolEnvironmentFactory.trigger_on_load(config=conf)
-        return new_conf
-
-    @staticmethod
     async def init():
         path = await get_yw_config_starter(get_main_arguments())
-        conf = await safe_load(path=path, user_email=None, selected_remote=None)
+        conf = await safe_load(path=path, selected_user=None, selected_remote=None)
 
         YouwolEnvironmentFactory.__cached_config = conf
         await YouwolEnvironmentFactory.trigger_on_load(config=conf)
@@ -259,9 +201,8 @@ class YouwolEnvironmentFactory:
     def clear_cache():
         conf = YouwolEnvironmentFactory.__cached_config
         new_conf = YouwolEnvironment(
-            jwtSource=conf.jwtSource,
             redirectBasePath=conf.redirectBasePath,
-            userEmail=conf.userEmail,
+            selectedUser=conf.selectedUser,
             selectedRemote=conf.selectedRemote,
             pathsBook=conf.pathsBook,
             httpPort=conf.httpPort,
@@ -298,7 +239,7 @@ async def yw_config() -> YouwolEnvironment:
 
 async def safe_load(
         path: Path,
-        user_email: Optional[str],
+        selected_user: Optional[str],
         selected_remote: Optional[str],
 ) -> YouwolEnvironment:
     """
@@ -308,8 +249,6 @@ async def safe_load(
     """
     check_system_folder_writable = CheckSystemFolderWritable()
     check_database_folder_healthy = CheckDatabasesFolderHealthy()
-    check_secret_exists = CheckSecretPathExist()
-    check_secret_healthy = CheckSecretHealthy()
 
     def get_status(validated: bool = False):
         return ConfigurationLoadingStatus(
@@ -318,8 +257,6 @@ async def safe_load(
             checks=[
                 check_system_folder_writable,
                 check_database_folder_healthy,
-                check_secret_exists,
-                check_secret_healthy
             ]
         )
 
@@ -329,8 +266,6 @@ async def safe_load(
         config=path,
         databases=Path(conf_handler.get_data_dir()),
         system=Path(conf_handler.get_cache_dir()),
-        secrets=Path(conf_handler.get_config_dir() / Path("secrets.json")),
-        usersInfo=Path(conf_handler.get_config_dir() / Path("users-info.json")),
         additionalPythonScrPaths=conf_handler.get_additional_python_src_paths()
     )
 
@@ -359,35 +294,12 @@ async def safe_load(
     if not paths_book.packages_cache_path.exists():
         open(paths_book.packages_cache_path, "w").write(json.dumps({}))
 
-    if not paths_book.usersInfo.exists():
-        open(paths_book.usersInfo, "w").write(json.dumps({"policies": {}, "users": {}}))
-
-    if not paths_book.secrets.exists():
-        base_secrets = {
-            "identities": {}
-        }
-        open(paths_book.secrets, "w").write(json.dumps(base_secrets))
-
-    if not paths_book.packages_cache_path.exists():
-        open(paths_book.secrets, "w").write(json.dumps({}))
-
-    if user_email is None:
-        users_info = parse_json(paths_book.usersInfo)
-        if 'default' in users_info['policies']:
-            user_email = users_info['policies']["default"]
-    if user_email is None:
-        raise HTTPException(
-            status_code=401,
-            detail=f"User has not been identified, make sure it is defined in users inf"
-                   f"o file ({paths_book.usersInfo})"
-        )
     youwol_configuration = YouwolEnvironment(
-        jwtSource=conf_handler.get_jwt_source(),
         redirectBasePath=conf_handler.get_redirect_base_path(),
         httpPort=conf_handler.get_http_port(),
         portsBook=conf_handler.get_ports_book(),
         routers=conf_handler.get_routers(),
-        userEmail=user_email,
+        selectedUser=selected_user if selected_user else conf_handler.get_selected_remote().defaultUser,
         selectedRemote=selected_remote if selected_remote else conf_handler.get_selected_remote().host,
         events=conf_handler.get_events(),
         cdnAutomaticUpdate=conf_handler.get_cdn_auto_update(),
@@ -404,55 +316,7 @@ async def safe_load(
 async def get_yw_config_starter(main_args: MainArguments):
     (conf_path, exists) = ensure_config_file_exists_or_create_it(main_args.config_path)
 
-    if not exists:
-        await first_run(conf_path)
-
     return conf_path
-
-
-async def first_run(conf_path):
-    resp = input("No config path has been provided as argument (using --conf),"
-                 f" and no file found in the default folder.\n"
-                 "Do you want to create a new workspace with default settings (y/N)")
-    # Ask to create fresh workspace with default settings
-    if not (resp == 'y' or resp == 'Y'):
-        print("Exit youwol")
-        exit()
-    # create the default identities
-    email = input("Your email address?")
-    pwd = getpass("Your YouWol password?")
-    print(f"Pass : {pwd}")
-    token = None
-    try:
-        token = await get_public_user_auth_token(username=email, pwd=pwd, client_id='public-user',
-                                                 openid_base_url=f"https://{default_platform_host}/auth/realms/youwol")
-        print("token", token)
-    except HTTPException as e:
-        print(f"Can not retrieve authentication token:\n\tstatus code: {e.status_code}\n\tdetail:{e.detail}")
-        exit(1)
-    user_info = None
-    try:
-        user_info = await retrieve_user_info(auth_token=token,
-                                             openid_base_url=f"https://{default_platform_host}/auth/realms/youwol")
-        print("user_info", user_info)
-    except HTTPException as e:
-        print(f"Can not retrieve user info:\n\tstatus code: {e.status_code}\n\tdetail:{e.detail}")
-        exit(1)
-    if not (conf_path.parent / 'secrets.json').exists():
-        write_json({email: {'password': pwd}}, conf_path.parent / 'secrets.json')
-    user_info = {
-        "policies": {"default": email},
-        "users": {
-            email: {
-                "id": user_info['sub'],
-                "name": user_info['name'],
-                "memberOf": user_info['memberof'],
-                "email": user_info['email']
-            }
-        }
-    }
-    if not (conf_path.parent / 'users-info.json').exists():
-        write_json(user_info, conf_path.parent / 'users-info.json')
 
 
 def print_invite(conf: YouwolEnvironment, shutdown_script_path: Optional[Path]):

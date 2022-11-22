@@ -4,17 +4,17 @@ from fastapi import FastAPI, Depends, WebSocket
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import RedirectResponse, Response
+from starlette.types import ASGIApp
 
 import youwol.middlewares.custom_dispatch_middleware as custom_dispatch
 import youwol.middlewares.local_cloud_hybridizers as local_cloud_hybridizer
-from starlette.types import ASGIApp
 from youwol.configuration.models_config_middleware import CustomMiddleware
 from youwol.environment.auto_download_thread import AssetDownloadThread
 from youwol.environment.youwol_environment import yw_config, api_configuration, YouwolEnvironment
 from youwol.middlewares.auth_middleware import get_remote_openid_infos, JwtProviderConfig
 from youwol.middlewares.browser_caching_middleware import BrowserCachingMiddleware
 from youwol.middlewares.hybridizer_middleware import LocalCloudHybridizerMiddleware
-from youwol.routers import native_backends, admin, authorization
+from youwol.routers import native_backends, admin
 from youwol.routers.environment.download_assets import DownloadDataTask, DownloadFluxProjectTask, DownloadPackageTask, \
     DownloadStoryTask
 from youwol.utils.utils_low_level import start_web_socket
@@ -112,8 +112,6 @@ def setup_middlewares(env: YouwolEnvironment):
 
     fastapi_app.include_router(native_backends.router)
     fastapi_app.include_router(admin.router, prefix=api_configuration.base_path + "/admin")
-    fastapi_app.include_router(authorization.router, prefix=api_configuration.base_path + "/authorization",
-                               tags=["authorization"])
 
 
 async def create_app():

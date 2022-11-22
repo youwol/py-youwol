@@ -19,8 +19,6 @@ class PathsBook(BaseModel):
     system: Path
     databases: Path
     additionalPythonScrPaths: List[Path]
-    usersInfo: Path
-    secrets: Union[Path, None]
     youwol: Path = Path(youwol.__file__).parent
 
     @property

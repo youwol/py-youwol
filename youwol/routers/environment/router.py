@@ -3,27 +3,23 @@ import random
 from pathlib import Path
 from typing import List, Optional
 
-from aiohttp.client_exceptions import ClientConnectorError, ContentTypeError
 from cowpy import cow
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from starlette.requests import Request
 
-from youwol.environment.clients import RemoteClients
 from youwol.environment.models import UserInfo
 from youwol.environment.projects_loader import ProjectLoader
 from youwol.environment.youwol_environment import yw_config, YouwolEnvironment, YouwolEnvironmentFactory
 from youwol.routers.environment.models import (
-    SyncUserBody, LoginBody, RemoteGatewayInfo, SelectRemoteBody, ProjectsLoadingResults,
+    LoginBody, RemoteGatewayInfo, ProjectsLoadingResults,
     CustomDispatch, CustomDispatchesResponse
 )
 from youwol.routers.environment.upload_assets.upload import upload_asset
-from youwol.utils.utils_low_level import get_public_user_auth_token
 from youwol.web_socket import LogsStreamer
-from youwol_utils import retrieve_user_info
+from youwol_utils.clients.oidc.oidc_config import OidcConfig
 from youwol_utils.context import Context
-from youwol_utils.utils_paths import parse_json, write_json
 
 router = APIRouter()
 flatten = itertools.chain.from_iterable
@@ -35,38 +31,6 @@ class EnvironmentStatusResponse(BaseModel):
     userInfo: UserInfo
     remoteGatewayInfo: Optional[RemoteGatewayInfo]
     remotesInfo: List[RemoteGatewayInfo]
-
-
-async def connect_to_remote(config: YouwolEnvironment, context: Context) -> bool:
-    remote_gateway_info = config.get_remote_info()
-    if not remote_gateway_info:
-        return False
-
-    try:
-        await config.get_auth_token(context=context)
-        client = await RemoteClients.get_assets_gateway_client(remote_host=config.selectedRemote, context=context)
-        await client.healthz()
-        return True
-    except HTTPException as e:
-        await context.info(
-            text="Authorization: HTTP Error",
-            data={'host': remote_gateway_info.host, 'error': str(e)})
-        return False
-    except ClientConnectorError as e:
-        await context.info(
-            text="Authorization: Connection error (internet on?)",
-            data={'host': remote_gateway_info.host, 'error': str(e)})
-        return False
-    except RuntimeError as e:
-        await context.info(
-            text="Authorization error",
-            data={'host': remote_gateway_info.host, 'error': str(e)})
-        return False
-    except ContentTypeError as e:
-        await context.info(
-            text="Failed to call healthz on assets-gateway",
-            data={'host': remote_gateway_info.host, 'error': str(e)})
-        return False
 
 
 @router.get("/cow-say",
@@ -116,16 +80,16 @@ async def status(
     async with Context.start_ep(
             request=request,
             with_reporters=[LogsStreamer()],
-    ) as ctx:   # type: Context
-        connected = await connect_to_remote(config=config, context=ctx)
+    ) as ctx:  # type: Context
         remote_gateway_info = config.get_remote_info()
         if remote_gateway_info:
             remote_gateway_info = RemoteGatewayInfo(name=remote_gateway_info.name,
                                                     host=remote_gateway_info.host,
-                                                    connected=connected)
+                                                    connected=True)
+        data = request.state.user_info
         response = EnvironmentStatusResponse(
             users=config.get_users_list(),
-            userInfo=config.get_user_info(),
+            userInfo=(UserInfo(id=data["upn"], name=data["username"], email=data["email"], memberOf=[])),
             configuration=config,
             remoteGatewayInfo=remote_gateway_info,
             remotesInfo=[
@@ -149,12 +113,12 @@ async def custom_dispatches(
             request=request,
             with_reporters=[LogsStreamer()],
     ):
-
         dispatches = [CustomDispatch(type=d.__class__.__name__, **(await d.info()).dict())
                       for d in config.customDispatches]
 
         def key_fct(d):
             return d.type
+
         grouped = itertools.groupby(sorted(dispatches, key=key_fct), key=key_fct)
         dispatches = {k: list(items) for k, items in grouped}
         return CustomDispatchesResponse(dispatches=dispatches)
@@ -167,68 +131,12 @@ async def login(
         body: LoginBody,
         config: YouwolEnvironment = Depends(yw_config)
 ):
-    await YouwolEnvironmentFactory.login(email=body.email, remote_name=config.selectedRemote)
-    new_conf = await yw_config()
-    await status(request, new_conf)
-    return new_conf.get_user_info()
-
-
-@router.post("/select-remote-gateway",
-             summary="select a remote")
-async def select_remote(
-        request: Request,
-        body: SelectRemoteBody,
-        config: YouwolEnvironment = Depends(yw_config)
-):
-    await YouwolEnvironmentFactory.login(email=config.userEmail, remote_name=body.name)
-    new_conf = await yw_config()
-    await status(request, new_conf)
-    return new_conf.get_user_info()
-
-
-@router.post("/sync-user",
-             summary="sync a new local user w/ remote one")
-async def sync_user(
-        request: Request,
-        body: SyncUserBody,
-        config: YouwolEnvironment = Depends(yw_config)
-):
-    async with Context.start_ep(
-            request=request,
-            with_reporters=[LogsStreamer()]
-    ) as ctx:
-
-        try:
-            auth_token = await get_public_user_auth_token(
-                username=body.email,
-                pwd=body.password,
-                client_id=config.get_remote_info().openidClient.client_id,
-                openid_base_url=config.get_remote_info().openidBaseUrl
-            )
-        except Exception:
-            raise RuntimeError(f"Can not authorize from email/pwd @ {config.get_remote_info().host}")
-
-        await ctx.info(text="Login successful")
-
-        secrets = parse_json(config.pathsBook.secrets)
-        if body.email in secrets:
-            secrets[body.email] = {**secrets[body.email], **{"password": body.password}}
-        else:
-            secrets[body.email] = {"password": body.password}
-        write_json(secrets, config.pathsBook.secrets)
-
-        user_info = await retrieve_user_info(auth_token=auth_token, openid_base_url=config.get_remote_info().openidBaseUrl)
-
-        users_info = parse_json(config.pathsBook.usersInfo)
-        users_info['users'][body.email] = {
-            "id": user_info['sub'],
-            "name": user_info['preferred_username'],
-            "memberOf": user_info['memberof'],
-            "email": user_info["email"]
-        }
-        write_json(users_info, config.pathsBook.usersInfo)
-        await login(request=request, body=LoginBody(email=body.email), config=config)
-        return users_info['users'][body.email]
+    async with Context.from_request(request).start(action="login") as ctx:
+        await YouwolEnvironmentFactory.reload(selected_user=body.email, selected_remote=body.remote)
+        conf = await yw_config()
+        await status(request, conf)
+        data = await OidcConfig(conf.get_remote_info().openidBaseUrl).token_decode(await conf.get_auth_token(ctx))
+        return UserInfo(id=data["upn"], name=data["username"], email=data["email"], memberOf=[])
 
 
 @router.post("/upload/{asset_id}",
@@ -245,4 +153,5 @@ async def upload(
             },
             with_reporters=[LogsStreamer()]
     ) as ctx:
-        return await upload_asset(remote_host=config.get_remote_info().host, asset_id=asset_id, options=None, context=ctx)
+        return await upload_asset(remote_host=config.get_remote_info().host, asset_id=asset_id, options=None,
+                                  context=ctx)

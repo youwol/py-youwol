@@ -3,8 +3,7 @@ from dataclasses import dataclass
 from typing import List, Callable, Optional, Union, Awaitable
 
 from pydantic import BaseModel
-
-from youwol.configuration.models_config import ConfigPath, UploadTargets, RemoteConfig
+from youwol.configuration.models_config import ConfigPath, UploadTargets, RemoteConfig, DirectAuthUser
 from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol.environment.models_project import Pipeline, ProjectTemplate
 from youwol.environment.utils import default_projects_finder
@@ -26,6 +25,7 @@ class RemoteGateway(BaseModel):
     openidBaseUrl: str
     keycloakAdminBaseUrl: Optional[str]
     adminClient: Optional[PrivateClient]
+    users: List[DirectAuthUser] = []
 
     @classmethod
     def from_config(cls, remote_config: RemoteConfig):
@@ -35,7 +35,8 @@ class RemoteGateway(BaseModel):
             openidClient=remote_config.openidClient,
             openidBaseUrl=remote_config.openidBaseUrl,
             keycloakAdminBaseUrl=remote_config.keycloakAdminBaseURl,
-            adminClient=remote_config.keycloakAdminClient
+            adminClient=remote_config.keycloakAdminClient,
+            users=remote_config.directAuthUsers
         )
 
 
