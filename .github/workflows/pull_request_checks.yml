@@ -39,7 +39,7 @@ jobs:
         uses: youwol/nestor/ts/prepare@v1
         with:
           repository: youwol/local-youwol-client
-          ref: ${{ inputs.local-youwol-client_ref }}
+          ref: feature/local_auth_improvement
           path: ${{ runner.temp }}/local-youwol-client
 
       - name: Run local-youwol-client tests
@@ -82,6 +82,7 @@ jobs:
           py-youwol_path: ${{ github.workspace }}
           py-youwol_conf_path: yw_config_IT.py
           py-youwol_conf_repository: youwol/integrations-tests-conf
+          py-youwol_conf_ref: feature/local_auth_improvement
 
       - name: On Tests Failure
         id: on_tests_failure
@@ -114,6 +115,7 @@ jobs:
           py-youwol_path: ${{ github.workspace }}
           py-youwol_conf_path: yw_config_IT.py
           py-youwol_conf_repository: youwol/integrations-tests-conf
+          py-youwol_conf_ref: feature/local_auth_improvement
 
       - name: On Tests Failure
         id: on_tests_failure
