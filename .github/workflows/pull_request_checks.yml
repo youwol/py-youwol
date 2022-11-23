@@ -21,6 +21,12 @@ on:
           Default to 'main'
         default: main
 
+      only:
+        description: >
+          Only run specified integrations.
+          Default to 'http-clients local-youwol-client cdn-client'
+        default: 'http-clients local-youwol-client cdn-client'
+
   pull_request:
     branches:
       - main
@@ -28,6 +34,7 @@ on:
 jobs:
   integration_local-youwol-client:
     name: Integration with local-youwol-client
+    if: inputs.only == '' || contains(inputs.only, 'local-youwol-client')
     runs-on: ubuntu-latest
     steps:
       - name: Prepare repository
@@ -64,6 +71,7 @@ jobs:
 
   integration_cdn-client:
     name: Integration with cdn-client
+    if: inputs.only == '' || contains(inputs.only, 'cdn-client')
     runs-on: ubuntu-latest
     steps:
       - name: Prepare repository
@@ -101,6 +109,7 @@ jobs:
 
   integration_http-clients:
     name: Integration with http-clients
+    if: inputs.only == '' || contains(inputs.only, 'http-clients')
     runs-on: ubuntu-latest
     steps:
       - name: Prepare repository

@@ -1,0 +1,251 @@
+name: Check on all OSes
+
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: >
+          Only run specified integrations.
+          Default to 'http-clients local-youwol-client cdn-client'
+        default: "http-clients local-youwol-client cdn-client"
+
+  schedule:
+    - cron: '39 23 * * 0' # Every sunday at 23:39
+
+jobs:
+  integration_local-youwol-client:
+    strategy:
+      matrix:
+        python:
+          - "3.8"
+          - "3.9"
+        #         - "3.10" blocked by TG-131
+
+        os:
+          # See https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
+          # Windows
+          - image: windows-2022 # windows-latest
+            experimental: true
+            env: {}
+          - image: windows-2019
+            experimental: true
+            env: {}
+
+          # Linux
+          - image: ubuntu-22.04
+            experimental: false
+            env: {}
+          - image: ubuntu-20.04 # ubuntu-latest
+            experimental: false
+            env: {}
+          - image: ubuntu-18.04 # deprecated
+            experimental: false
+            env: {}
+
+          # MacOS
+          - image: macos-12
+            experimental: false
+            env:
+              OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
+          - image: macos-11 # macos-latest
+            experimental: false
+            env:
+              OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
+          - image: macos-10.15 # deprecated
+            experimental: false
+            env:
+              OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
+
+    name: local-youwol-client - python ${{ matrix.python }} on ${{ matrix.os.image }})
+    runs-on: ${{ matrix.os.image }}
+    if: inputs.only == '' || contains(inputs.only, 'local-youwol-client')
+    env: ${{ matrix.os.env }}
+    continue-on-error: ${{ matrix.os.experimental }}
+    steps:
+      - name: Prepare repository
+        id: prepare
+        uses: youwol/nestor/py/prepare@v1
+        with:
+          python-version: "${{ matrix.python }}"
+
+      - name: Prepare local-youwol-client
+        id: prepare_local-youwol-client
+        uses: youwol/nestor/ts/prepare@v1
+        with:
+          repository: youwol/local-youwol-client
+          ref: ${{ inputs.local-youwol-client_ref }}
+          path: ${{ runner.temp }}/local-youwol-client
+
+      - name: Run local-youwol-client tests
+        id: tests_local-youwol-client
+        uses: youwol/nestor/ts/tests_coverage@v1
+        with:
+          path: ${{ runner.temp }}/local-youwol-client
+          py-youwol_path: ${{ github.workspace }}
+          py-youwol_conf_path: ${{ runner.temp }}/local-youwol-client/src/tests/yw_config/yw_config.py
+          coverage_omit: '*/src/tests/*/yw_pipeline.py'
+
+      - name: On Tests Failure
+        id: on_tests_failure
+        if: steps.tests_local-youwol-client.outputs.result == 'failure'
+        uses: actions/github-script@v6
+        with:
+          script: core.setFailed("Job failed because tests has failed, see job logs and annotations.")
+
+  integration_cdn-client:
+    strategy:
+      matrix:
+        python:
+          - "3.8"
+          - "3.9"
+        #         - "3.10" blocked by TG-131
+
+        os:
+          # See https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
+          # Windows
+          - image: windows-2022 # windows-latest
+            experimental: true
+            env: {}
+          - image: windows-2019
+            experimental: true
+            env: {}
+
+          # Linux
+          - image: ubuntu-22.04
+            experimental: false
+            env: {}
+          - image: ubuntu-20.04 # ubuntu-latest
+            experimental: false
+            env: {}
+          - image: ubuntu-18.04 # deprecated
+            experimental: false
+            env: {}
+
+          # MacOS
+          - image: macos-12
+            experimental: false
+            env:
+              OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
+          - image: macos-11 # macos-latest
+            experimental: false
+            env:
+              OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
+          - image: macos-10.15 # deprecated
+            experimental: false
+            env:
+              OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
+
+    name: cdn-client - python ${{ matrix.python }} on ${{ matrix.os.image }})
+    runs-on: ${{ matrix.os.image }}
+    if: inputs.only == '' || contains(inputs.only, 'cdn-client')
+    env: ${{ matrix.os.env }}
+    continue-on-error: ${{ matrix.os.experimental }}
+    steps:
+      - name: Prepare repository
+        id: prepare
+        uses: youwol/nestor/py/prepare@v1
+        with:
+          python-version: "${{ matrix.python }}"
+
+      - name: Prepare cdn-client
+        id: prepare_cdn-client
+        uses: youwol/nestor/ts/prepare@v1
+        with:
+          repository: youwol/cdn-client
+          ref: ${{ inputs.cdn-client_ref }}
+          path: ${{ runner.temp }}/cdn-client
+
+      - name: Run cdn-client tests
+        id: tests_cdn-client
+        uses: youwol/nestor/ts/tests_coverage@v1
+        with:
+          path: ${{ runner.temp }}/cdn-client
+          py-youwol_path: ${{ github.workspace }}
+          py-youwol_conf_path: yw_config_IT.py
+          py-youwol_conf_repository: youwol/integrations-tests-conf
+
+      - name: On Tests Failure
+        id: on_tests_failure
+        if: steps.tests_cdn-client.outputs.result == 'failure'
+        uses: actions/github-script@v6
+        with:
+          script: core.setFailed("Job failed because tests has failed, see job logs and annotations.")
+
+  integration_http-clients:
+    strategy:
+      matrix:
+        python:
+          - "3.8"
+          - "3.9"
+#         - "3.10" blocked by TG-131
+
+        os:
+          # See https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
+          # Windows
+          - image: windows-2022 # windows-latest
+            experimental: true
+            env: {}
+          - image: windows-2019
+            experimental: true
+            env: {}
+
+          # Linux
+          - image: ubuntu-22.04
+            experimental: false
+            env: {}
+          - image: ubuntu-20.04 # ubuntu-latest
+            experimental: false
+            env: {}
+          - image: ubuntu-18.04 # deprecated
+            experimental: false
+            env: {}
+
+          # MacOS
+          - image: macos-12
+            experimental: false
+            env:
+              OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
+          - image: macos-11 # macos-latest
+            experimental: false
+            env:
+              OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
+          - image: macos-10.15 # deprecated
+            experimental: false
+            env:
+              OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
+
+    name: http-clients - python ${{ matrix.python }} on ${{ matrix.os.image }})
+    runs-on: ${{ matrix.os.image }}
+    if: inputs.only == '' || contains(inputs.only,'http-clients')
+    env: ${{ matrix.os.env }}
+    continue-on-error: ${{ matrix.os.experimental }}
+    steps:
+      - name: Prepare repository
+        id: prepare
+        uses: youwol/nestor/py/prepare@v1
+        with:
+          python-version: "${{ matrix.python }}"
+
+      - name: Prepare http-clients
+        id: prepare_http-clients
+        uses: youwol/nestor/ts/prepare@v1
+        with:
+          repository: youwol/http-clients
+          ref: ${{ inputs.http-clients_ref }}
+          path: ${{ runner.temp }}/http-clients
+
+      - name: Run http-clients tests
+        id: tests_http-clients
+        uses: youwol/nestor/ts/tests_coverage@v1
+        with:
+          path: ${{ runner.temp }}/http-clients
+          py-youwol_path: ${{ github.workspace }}
+          py-youwol_conf_path: yw_config_IT.py
+          py-youwol_conf_repository: youwol/integrations-tests-conf
+
+      - name: On Tests Failure
+        id: on_tests_failure
+        if: steps.tests_http-clients.outputs.result == 'failure'
+        uses: actions/github-script@v6
+        with:
+          script: core.setFailed("Job failed because tests has failed, see job logs and annotations.")
