@@ -9,9 +9,7 @@ from importlib.util import spec_from_loader
 from pathlib import Path
 from typing import Union, List, Type, cast, TypeVar, Optional
 
-import aiohttp
 from aiohttp import ClientSession, TCPConnector
-from fastapi import HTTPException
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.websockets import WebSocket, WebSocketDisconnect
@@ -53,24 +51,6 @@ async def start_web_socket(ws: WebSocket):
         except WebSocketDisconnect:
             log_info(f'{ws.scope["client"]} - "WebSocket {ws.scope["path"]}" [disconnected]')
             break
-
-
-async def get_public_user_auth_token(username: str, pwd: str, client_id: str, openid_base_url: str):
-
-    form = aiohttp.FormData()
-    form.add_field("username", username)
-    form.add_field("password", pwd)
-    form.add_field("client_id", client_id)
-    form.add_field("grant_type", "password")
-    url = f"{openid_base_url}/protocol/openid-connect/token"
-    async with aiohttp.ClientSession(
-            connector=aiohttp.TCPConnector(verify_ssl=False),
-            timeout=aiohttp.ClientTimeout(total=5)) as session:
-        async with await session.post(url=url, data=form) as resp:
-            if resp.status != 200:
-                raise HTTPException(status_code=resp.status, detail=await resp.read())
-            resp = await resp.json()
-            return resp['access_token']
 
 
 async def redirect_api_remote(request: Request, context: Context):

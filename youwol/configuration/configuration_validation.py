@@ -34,14 +34,6 @@ class CheckDatabasesFolderHealthy(Check):
     name: str = "Databases folder is healthy?"
 
 
-class CheckSecretPathExist(Check):
-    name: str = "Secrets path is valid?"
-
-
-class CheckSecretHealthy(Check):
-    name: str = "Secrets are valid?"
-
-
 class ConfigurationLoadingStatus(BaseModel):
 
     path: str

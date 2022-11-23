@@ -1,6 +1,5 @@
 import base64
 import itertools
-import json
 from datetime import datetime
 from enum import Enum
 from pathlib import Path, PosixPath
@@ -25,6 +24,7 @@ class YouwolHeaders(NamedTuple):
     correlation_id = 'x-correlation-id'
     trace_id = 'x-trace-id'
     muted_http_errors = "muted_http_errors"
+
     @staticmethod
     def get_correlation_id(request: Request):
         return request.headers.get(YouwolHeaders.correlation_id, None)
@@ -186,34 +186,6 @@ def get_content_encoding(file_name: Union[str, Path]):
     return "identity"
 
 
-async def retrieve_user_info(auth_token: str, openid_base_url: str):
-    headers = {"authorization": f"Bearer {auth_token}"}
-    url = f"{openid_base_url}/protocol/openid-connect/userinfo"
-
-    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
-        async with await session.post(url=url, headers=headers) as resp:
-            if resp.status != 200:
-                raise HTTPException(status_code=resp.status, detail=await resp.read())
-            resp = await resp.json()
-            return resp
-
-
-async def get_myself_auth_token(secret_path: Path, openid_host):
-    secret = json.loads(open(str(secret_path)).read())
-    form = aiohttp.FormData()
-    form.add_field("username", secret["myself"]["username"])
-    form.add_field("password", secret["myself"]["password"])
-    form.add_field("client_id", secret["dev.platform.youwol.com"]["clientId"])
-    form.add_field("grant_type", "password")
-    form.add_field("client_secret", secret["dev.platform.youwol.com"]["clientSecret"])
-    form.add_field("scope", "email profile youwol_dev")
-    url = f"https://{openid_host}/auth/realms/youwol/protocol/openid-connect/token"
-    async with aiohttp.ClientSession() as session:
-        async with await session.post(url=url, data=form) as resp:
-            resp = await resp.json()
-            return resp['access_token']
-
-
 def exception_message(error: Exception):
     if isinstance(error, HTTPException):
         return error.detail
@@ -276,7 +248,6 @@ def to_json_rec(_obj: Union[Dict[str, Any], List[Any]]):
 
 
 def to_json(obj: Union[BaseModel, Dict[str, Any]]) -> JSON:
-
     base = obj.dict() if isinstance(obj, BaseModel) else obj
     return to_json_rec(base)
 

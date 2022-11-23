@@ -8,9 +8,9 @@ from typing import List, Union, Dict, Callable, cast, Optional, Set
 from youwol import environment
 from youwol.configuration.defaults import default_http_port, default_path_data_dir, \
     default_path_cache_dir, default_port_range_start, default_port_range_end, \
-    default_platform_host, default_jwt_source
+    default_platform_host
 from youwol.configuration.models_config import Configuration, PortRange, ModuleLoading, \
-    CdnOverride, Redirection, JwtSource, Events, ConfigPath, RemoteConfig
+    CdnOverride, Redirection, Events, ConfigPath, RemoteConfig
 from youwol.configuration.models_config_middleware import CustomMiddleware
 from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol.environment.models import IConfigurationCustomizer, Projects
@@ -38,10 +38,6 @@ class ConfigurationHandler:
     def __init__(self, path: Path, config_data: Configuration):
         self.path = path
         self.config_data = config_data
-
-    def get_jwt_source(self) -> JwtSource:
-        return self.config_data.jwtSource if self.config_data.jwtSource \
-            else default_jwt_source
 
     def get_redirect_base_path(self) -> str:
         return self.config_data.redirectBasePath if self.config_data.redirectBasePath \
@@ -249,14 +245,14 @@ class ConfigurationHandler:
             if len(self.config_data.remotes) > 0:
                 return self.config_data.remotes[0]
             else:
-                return RemoteConfig.default_for_host(default_platform_host)
+                return RemoteConfig.build(default_platform_host)
 
         if isinstance(selected, str):
             candidates = [remote for remote in self.config_data.remotes if remote.host == selected]
             if len(candidates) > 0:
                 return candidates[0]
             else:
-                return RemoteConfig.default_for_host(selected)
+                return RemoteConfig.build(selected)
 
         return selected
 

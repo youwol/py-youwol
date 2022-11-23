@@ -1,9 +1,7 @@
-from enum import Enum
 from pathlib import Path
 from typing import List, Union, Optional, Dict, Callable, Awaitable, Any
 
 from pydantic import BaseModel
-
 from youwol.configuration.defaults import default_openid_client_id
 from youwol.configuration.models_config_middleware import CustomMiddleware
 from youwol.environment.forward_declaration import YouwolEnvironment
@@ -45,11 +43,6 @@ class Redirection(BaseModel):
     to_url: str
 
 
-class JwtSource(str, Enum):
-    COOKIE = 'cookie'
-    CONFIG = 'config'
-
-
 class UploadTarget(BaseModel):
     name: str
 
@@ -70,29 +63,51 @@ class Projects(BaseModel):
     uploadTargets: List[UploadTargets] = []
 
 
+class DirectAuthUser(BaseModel):
+    username: str
+    password: str
+
+
 class RemoteConfig(BaseModel):
-    name: Optional[str]
     host: str
+    name: Optional[str]
     openidBaseUrl: Optional[str]
     openidClient: Optional[Union[PublicClient, PrivateClient]]
     keycloakAdminBaseURl: Optional[str]
     keycloakAdminClient: Optional[PrivateClient]
+    defaultUser: Optional[str]
+    directAuthUsers: List[DirectAuthUser] = []
 
-    def __hash__(self):
-        return hash(tuple([self.host, self.openidBaseUrl, self.openidClient.client_id]))
-
-    @classmethod
-    def default_for_host(cls, host: str):
+    @staticmethod
+    def build(host: str, name: Optional[str] = None, openid_base_url: Optional[str] = None,
+              openid_client: Optional[Union[PublicClient, PrivateClient]] = None,
+              keycloak_admin_base_url: Optional[str] = None, keycloak_admin_client: Optional[PrivateClient] = None,
+              default_user: Optional[str] = None, direct_auth_users: List[DirectAuthUser] = None):
+        if default_user and len([user for user in direct_auth_users if user.username == default_user]) == 0:
+            raise RuntimeError(f"default user {default_user} for remote {name} is not in directAuthUsers")
         return RemoteConfig(
             host=host,
-            openidBaseUrl=f"https://{host}/auth/realms/youwol",
-            openidClient=PublicClient(client_id=default_openid_client_id)
+            name=name if name else host,
+            openidBaseUrl=openid_base_url if openid_base_url else f"https://{host}/auth/realms/youwol",
+            openidClient=openid_client if openid_client else PublicClient(client_id=default_openid_client_id),
+            keycloakAdminBaseURl=keycloak_admin_base_url,
+            keycloakAdminClient=keycloak_admin_client,
+            directAuthUsers=direct_auth_users if direct_auth_users else [],
+            defaultUser=default_user
         )
+
+    def __hash__(self):
+        return hash(tuple([self.name,
+                           self.host,
+                           self.openidBaseUrl,
+                           self.openidClient.client_id,
+                           self.keycloakAdminBaseURl,
+                           self.keycloakAdminClient.client_id if self.keycloakAdminClient else None
+                           ]))
 
 
 class Configuration(BaseModel):
     httpPort: Optional[int]
-    jwtSource: Optional[JwtSource]
     selectedRemote: Optional[Union[str, RemoteConfig]]
     remotes: List[RemoteConfig] = []
     redirectBasePath: Optional[str]

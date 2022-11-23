@@ -1,6 +1,5 @@
 from fastapi import APIRouter
 
-import youwol.routers.authorization as authorization
 import youwol.routers.custom_commands.router as custom_commands
 import youwol.routers.environment.router as environment
 import youwol.routers.local_cdn.router as local_cdn
@@ -21,7 +20,5 @@ router.include_router(local_cdn.router, prefix=api_configuration.base_path + "/l
                       tags=["admin.local-cdn"])
 router.include_router(custom_commands.router, prefix=api_configuration.base_path + "/custom-commands",
                       tags=["admin.custom commands"])
-router.include_router(authorization.router, prefix=api_configuration.base_path+"/authorization",
-                      tags=["admin.authorization"])
 
 router.include_router(router_remote.router, prefix=api_configuration.base_path + "/remote")

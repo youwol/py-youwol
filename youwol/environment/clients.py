@@ -16,9 +16,7 @@ class RemoteClients:
     async def get_assets_gateway_client(remote_host: str, context: Context) -> AssetsGatewayClient:
         env = await context.get('env', YouwolEnvironment)
         remote_host = remote_host or env.get_remote_info().host
-        auth_token = await env.get_auth_token(context=context, remote_host=remote_host)
-        headers = {"Authorization": f"Bearer {auth_token}"}
-        return AssetsGatewayClient(url_base=f"https://{remote_host}/api/assets-gateway", headers=headers)
+        return AssetsGatewayClient(url_base=f"https://{remote_host}/api/assets-gateway")
 
 
 class LocalClients:
