@@ -68,7 +68,6 @@ def generate_template(input_template: Template):
                             working_path=working_path,
                             input_template=input_template
                             )
-    generate_test_files(working_path=working_path)
 
 
 def generate_pipeline(base_template_path: Path, working_path: Path, input_template: Template):
@@ -152,14 +151,6 @@ def generate_readme(working_path: Path, input_template: Template):
         ['devServer.port', str(input_template.devServer.port) if input_template.devServer else ""]
     ]:
         sed_inplace(filename, "{{"+pattern+"}}", repl)
-
-
-def generate_test_files(working_path: Path):
-    path_dir_tests = working_path / 'src' / 'tests'
-    path_dir_tests.mkdir(parents=True)
-    f = open(path_dir_tests / 'fake.test.ts', 'w')
-    f.write("// @ts-ignore \ntest('fake test waiting for better', () => expect(true).toBeTruthy())")
-    f.close()
 
 
 imTsSrc = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAABGdBTUEAALGPC"\
