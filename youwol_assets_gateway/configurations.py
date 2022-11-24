@@ -31,6 +31,7 @@ class Configuration:
     assets_client: AssetsClient
     files_client: FilesClient
     admin_headers: Optional[Dict[str, str]] = None
+    deployed: bool = False
 
 
 class Dependencies:
