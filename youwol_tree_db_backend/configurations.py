@@ -14,6 +14,9 @@ class Constants:
     default_owner = "/youwol-users"
     public_owner = '/youwol-users'
     text_content_type = "text/plain"
+    # This is the limit of children that can be fetched for a folder/drive.
+    # It has to disappear, see issue #158 files explorer: no max children count
+    max_children_count = 1000
 
 
 @dataclass(frozen=True)
