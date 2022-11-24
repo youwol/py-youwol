@@ -1,6 +1,6 @@
 import shutil
 from pathlib import Path
-from typing import Union, Optional, List
+from typing import Union, Optional
 
 from appdirs import AppDirs
 from pydantic import BaseModel
@@ -18,7 +18,6 @@ class PathsBook(BaseModel):
     config: Path
     system: Path
     databases: Path
-    additionalPythonScrPaths: List[Path]
     youwol: Path = Path(youwol.__file__).parent
 
     @property
@@ -127,8 +126,7 @@ class PathsBook(BaseModel):
  * config file: {self.config}
  * databases directory: {self.databases}
  * system directory: {self.system}
- * additional Python source directories:
-{chr(10).join([f"  * {path}" for path in self.additionalPythonScrPaths])}"""
+"""
 
 
 app_dirs = AppDirs(appname="py-youwol", appauthor="Youwol")

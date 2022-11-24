@@ -22,7 +22,6 @@ from youwol.environment.models import RemoteGateway, ApiConfiguration, Projects
 from youwol.environment.models_project import ErrorResponse
 from youwol.environment.paths import PathsBook, ensure_config_file_exists_or_create_it
 from youwol.main_args import get_main_arguments, MainArguments
-from youwol.middlewares.models_dispatch import AbstractDispatch
 from youwol.routers.custom_backends import install_routers
 from youwol.routers.custom_commands.models import Command
 from youwol.web_socket import WsDataStreamer
@@ -49,10 +48,7 @@ class DeadlinedCache(BaseModel):
 
 class YouwolEnvironment(BaseModel):
     httpPort: int
-    redirectBasePath: str
     events: Events
-    cdnAutomaticUpdate: bool
-    customDispatches: List[AbstractDispatch]
     customMiddlewares: List[CustomMiddleware]
 
     projects: Projects
@@ -63,7 +59,6 @@ class YouwolEnvironment(BaseModel):
     remotes: List[RemoteGateway]
 
     pathsBook: PathsBook
-    portsBook: Dict[str, int] = {}
     routers: List[FastApiRouter] = []
     cache: Dict[str, Any] = {}
     private_cache: Dict[str, Any] = {}
@@ -124,11 +119,11 @@ class YouwolEnvironment(BaseModel):
         return DefaultDriveResponse(**default_drive)
 
     def __str__(self):
-        def str_redirections():
-            if len(self.customDispatches) != 0:
+        def str_middlewares():
+            if len(self.customMiddlewares) != 0:
                 return f"""
-- list of redirections:
-{chr(10).join([f"  * {redirection}" for redirection in self.customDispatches])}
+- list of middlewares:
+{chr(10).join([f"  * {redirection}" for redirection in self.customMiddlewares])}
 """
             else:
                 return "- no redirections configured"
@@ -160,7 +155,7 @@ Configuration loaded from '{self.pathsBook.config}'
 - paths: {self.pathsBook}
 - cdn packages count: {len(parse_json(self.pathsBook.local_cdn_docdb)['documents'])}
 - assets count: {len(parse_json(self.pathsBook.local_assets_entities_docdb)['documents'])}
-{str_redirections()}
+{str_middlewares()}
 {str_commands()}
 {str_routers()}
 """
@@ -201,7 +196,6 @@ class YouwolEnvironmentFactory:
     def clear_cache():
         conf = YouwolEnvironmentFactory.__cached_config
         new_conf = YouwolEnvironment(
-            redirectBasePath=conf.redirectBasePath,
             selectedUser=conf.selectedUser,
             selectedRemote=conf.selectedRemote,
             pathsBook=conf.pathsBook,
@@ -209,9 +203,7 @@ class YouwolEnvironmentFactory:
             cache={},
             projects=conf.projects,
             commands=conf.commands,
-            customDispatches=conf.customDispatches,
             customMiddlewares=conf.customMiddlewares,
-            cdnAutomaticUpdate=conf.cdnAutomaticUpdate,
             events=conf.events,
             remotes=conf.remotes
         )
@@ -265,8 +257,7 @@ async def safe_load(
     paths_book = PathsBook(
         config=path,
         databases=Path(conf_handler.get_data_dir()),
-        system=Path(conf_handler.get_cache_dir()),
-        additionalPythonScrPaths=conf_handler.get_additional_python_src_paths()
+        system=Path(conf_handler.get_cache_dir())
     )
 
     if not os.access(paths_book.system.parent, os.W_OK):
@@ -294,23 +285,18 @@ async def safe_load(
     if not paths_book.packages_cache_path.exists():
         open(paths_book.packages_cache_path, "w").write(json.dumps({}))
 
-    youwol_configuration = YouwolEnvironment(
-        redirectBasePath=conf_handler.get_redirect_base_path(),
+    return YouwolEnvironment(
         httpPort=conf_handler.get_http_port(),
-        portsBook=conf_handler.get_ports_book(),
         routers=conf_handler.get_routers(),
         selectedUser=selected_user if selected_user else conf_handler.get_selected_remote().defaultUser,
         selectedRemote=selected_remote if selected_remote else conf_handler.get_selected_remote().host,
         events=conf_handler.get_events(),
-        cdnAutomaticUpdate=conf_handler.get_cdn_auto_update(),
         pathsBook=paths_book,
         projects=conf_handler.get_projects(),
         commands=conf_handler.get_commands(),
-        customDispatches=conf_handler.get_dispatches(),
         customMiddlewares=conf_handler.get_middlewares(),
         remotes=[RemoteGateway.from_config(remote_config) for remote_config in conf_handler.get_remotes()]
     )
-    return await conf_handler.customize(youwol_configuration)
 
 
 async def get_yw_config_starter(main_args: MainArguments):

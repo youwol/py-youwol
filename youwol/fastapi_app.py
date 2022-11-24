@@ -6,7 +6,6 @@ from starlette.requests import Request
 from starlette.responses import RedirectResponse, Response
 from starlette.types import ASGIApp
 
-import youwol.middlewares.custom_dispatch_middleware as custom_dispatch
 import youwol.middlewares.local_cloud_hybridizers as local_cloud_hybridizer
 from youwol.configuration.models_config_middleware import CustomMiddleware
 from youwol.environment.auto_download_thread import AssetDownloadThread
@@ -86,8 +85,6 @@ def setup_middlewares(env: YouwolEnvironment):
         ],
         disabling_header=YouwolHeaders.py_youwol_local_only
     )
-    # deprecated: see YouwolEnvironment.customMiddlewares
-    fastapi_app.add_middleware(custom_dispatch.CustomDispatchesMiddleware)
 
     for middleware in reversed(env.customMiddlewares):
         fastapi_app.add_middleware(CustomMiddlewareWrapper, model_config=middleware)

@@ -1,3 +1,4 @@
+import asyncio
 import itertools
 import random
 from pathlib import Path
@@ -8,14 +9,14 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from starlette.requests import Request
+from youwol.configuration.models_config_middleware import FlowSwitcherMiddleware
 
 from youwol.environment.models import UserInfo
 from youwol.environment.projects_loader import ProjectLoader
 from youwol.environment.youwol_environment import yw_config, YouwolEnvironment, YouwolEnvironmentFactory
-from youwol.routers.environment.models import (
-    LoginBody, RemoteGatewayInfo, ProjectsLoadingResults,
-    CustomDispatch, CustomDispatchesResponse
-)
+from youwol.routers.environment.models import LoginBody, RemoteGatewayInfo, ProjectsLoadingResults,\
+    CustomDispatchesResponse
+
 from youwol.routers.environment.upload_assets.upload import upload_asset
 from youwol.web_socket import LogsStreamer
 from youwol_utils.clients.oidc.oidc_config import OidcConfig
@@ -113,14 +114,14 @@ async def custom_dispatches(
             request=request,
             with_reporters=[LogsStreamer()],
     ):
-        dispatches = [CustomDispatch(type=d.__class__.__name__, **(await d.info()).dict())
-                      for d in config.customDispatches]
+        flow_switches = [(switcher.name, switch) for switcher in config.customMiddlewares
+                         if isinstance(switcher, FlowSwitcherMiddleware) for switch in switcher.oneOf]
 
-        def key_fct(d):
-            return d.type
+        infos = await asyncio.gather(*[f.info() for _, f in flow_switches])
+        dispatches = zip([f[0] for f in flow_switches], infos)
+        grouped = itertools.groupby(sorted(dispatches, key=lambda d: d[0]), key=lambda d: d[0])
+        dispatches = {k: [item[1] for item in items] for k, items in grouped}
 
-        grouped = itertools.groupby(sorted(dispatches, key=key_fct), key=key_fct)
-        dispatches = {k: list(items) for k, items in grouped}
         return CustomDispatchesResponse(dispatches=dispatches)
 
 
@@ -128,8 +129,7 @@ async def custom_dispatches(
              summary="log in as specified user")
 async def login(
         request: Request,
-        body: LoginBody,
-        config: YouwolEnvironment = Depends(yw_config)
+        body: LoginBody
 ):
     async with Context.from_request(request).start(action="login") as ctx:
         await YouwolEnvironmentFactory.reload(selected_user=body.email, selected_remote=body.remote)

@@ -56,10 +56,7 @@ class ProjectLoader:
             return env.private_cache["ProjectLoader"]
 
         if not ProjectLoader.projects_promise:
-            ProjectLoader.projects_promise = load_projects(
-                additional_python_scr_paths=env.pathsBook.additionalPythonScrPaths,
-                env=env,
-                context=context)
+            ProjectLoader.projects_promise = load_projects(env=env, context=context)
             projects = await ProjectLoader.projects_promise
             env.private_cache["ProjectLoader"] = projects
             ProjectLoader.projects_promise = None
@@ -76,10 +73,7 @@ class ProjectLoader:
         return projects
 
 
-async def load_projects(additional_python_scr_paths: List[Path],
-                        env: YouwolEnvironment,
-                        context: Context
-                        ) -> List[Result]:
+async def load_projects(env: YouwolEnvironment, context: Context) -> List[Result]:
     async with context.start(
             action="load_projects"
     ) as ctx:  # type: Context

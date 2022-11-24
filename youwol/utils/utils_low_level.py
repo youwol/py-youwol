@@ -60,7 +60,8 @@ async def redirect_api_remote(request: Request, context: Context):
         # headers = {"Authorization": request.headers.get("authorization")}
 
         env = await context.get("env", YouwolEnvironment)
-        redirect_base_path = env.redirectBasePath
+        redirect_base_path = f"https://{env.get_remote_info.host}/api"
+
         return await redirect_request(
             incoming_request=request,
             origin_base_path="/api",
