@@ -92,14 +92,16 @@ class YouwolEnvironment(BaseModel):
             return cached_token.value
 
         try:
-            access_token = (await OidcConfig(remote.openidBaseUrl).for_client(remote.openidClient).direct_flow(
+            token = await OidcConfig(remote.openidBaseUrl).for_client(remote.openidClient).direct_flow(
                 username=username,
                 password=([user.password for user in remote.users if user.username == username][0])
-            ))['access_token']
+            )
+            access_token = token['access_token']
+            expire = token['expires_in']
         except Exception as e:
             raise RuntimeError(f"Can not get access token for user '{username}' : {e}")
 
-        deadline = datetime.timestamp(datetime.now()) + 1 * 60 * 60 * 1000
+        deadline = datetime.timestamp(datetime.now()) + expire * 1000
         self.tokensCache.append(DeadlinedCache(value=access_token, deadline=deadline, dependencies=dependencies))
 
         await context.info(text="Access token renewed",
