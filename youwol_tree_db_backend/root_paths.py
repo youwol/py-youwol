@@ -740,12 +740,15 @@ async def _children(
         folder_id: str,
         configuration: Configuration,
         context: Context):
+
+    # max_count: see comment in class 'Constants'
+    max_count = Constants.max_children_count
     async with context.start(action="_children") as ctx:  # type: Context
 
         folders_db, items_db = configuration.doc_dbs.folders_db, configuration.doc_dbs.items_db
         folders, items = await asyncio.gather(
-            db_query(docdb=folders_db, key="parent_folder_id", value=folder_id, max_count=100, context=ctx),
-            db_query(docdb=items_db, key="folder_id", value=folder_id, max_count=100, context=ctx)
+            db_query(docdb=folders_db, key="parent_folder_id", value=folder_id, max_count=max_count, context=ctx),
+            db_query(docdb=items_db, key="folder_id", value=folder_id, max_count=max_count, context=ctx)
         )
 
         return ChildrenResponse(folders=[doc_to_folder(f) for f in folders],
