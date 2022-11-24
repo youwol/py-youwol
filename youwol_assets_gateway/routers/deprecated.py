@@ -1,3 +1,6 @@
+from typing import Union, Awaitable, Dict
+
+import aiohttp
 from starlette.responses import Response
 
 from youwol_assets_gateway.routers.common import assert_read_permissions_from_raw_id
@@ -6,18 +9,17 @@ from youwol_assets_gateway.routers.common import assert_read_permissions_from_ra
 from fastapi import APIRouter, Depends
 from starlette.requests import Request
 
-from youwol_utils import HTTPException
+from youwol_utils import raise_exception_from_response, JSON
 from youwol_utils.context import Context
 from youwol_assets_gateway.configurations import Configuration, get_configuration
 
 router = APIRouter(tags=["assets-gateway.deprecated"])
 
 
-@router.get("/raw/{kind}/{raw_id}/{rest_of_path:path}",
-            summary="get raw record DEPRECATED")
-async def get_raw(
+@router.get("/raw/package/{raw_id}/{rest_of_path:path}",
+            summary="get raw cdn-package. DEPRECATED")
+async def get_raw_package(
         request: Request,
-        kind: str,
         rest_of_path: str,
         raw_id: str,
         configuration: Configuration = Depends(get_configuration)
@@ -34,8 +36,6 @@ async def get_raw(
             request=request,
             with_attributes={"raw_id": raw_id, "path": rest_of_path}
     ) as ctx:
-        if kind != "package":
-            raise HTTPException(status_code=410, detail="Only 'package' kind is kept under get-raw.")
         version = rest_of_path.split('/')[0]
         rest_of_path = '/'.join(rest_of_path.split('/')[1:])
         await assert_read_permissions_from_raw_id(raw_id=raw_id, configuration=configuration, context=ctx)
@@ -53,3 +53,69 @@ async def get_raw(
             headers=ctx.headers())
 
         return resp
+
+"""
+Following deprecated end points are used in flux-projects including modules providing access
+to the files in the YouWol environment (like 'Drive', 'FilePicker', etc).
+The libraries are '@youwol/flux-youwol-essentials' & '@youwol/youwol-essentials'.
+"""
+
+
+async def forward_deprecated_get(request, forward_path, configuration: Configuration, to_json=True) -> \
+        Union[Awaitable[JSON], Union[Awaitable[bytes], Dict[str, str]]]:
+
+    async with Context.start_ep(
+            request=request
+    ) as ctx:
+        url = f"http://{forward_path}" if configuration.deployed else f"{request.base_url}api/{forward_path}"
+        await ctx.info(f"Deprecated GET end-point => redirect to GET:{url}")
+        headers = ctx.headers()
+        async with aiohttp.ClientSession() as session:
+            async with await session.get(url=url, headers=headers) as resp:
+                if resp.status == 200:
+                    return await resp.json() if to_json else (await resp.read(), resp.headers)
+                await raise_exception_from_response(resp)
+
+
+@router.get("/raw/data/{raw_id}", summary="get raw data. DEPRECATED")
+async def get_raw_data(
+        request: Request,
+        raw_id: str,
+        configuration: Configuration = Depends(get_configuration)
+):
+    content, headers = await forward_deprecated_get(request=request, to_json=False,
+                                                    forward_path=f"assets-gateway/files-backend/files/{raw_id}",
+                                                    configuration=configuration)
+    return Response(content=content, headers=headers)
+
+
+@router.get("/groups", summary="get user's groups. DEPRECATED")
+async def groups(
+        request: Request,
+        configuration: Configuration = Depends(get_configuration)
+):
+    resp = await forward_deprecated_get(request=request, forward_path=f"accounts/session",
+                                        configuration=configuration)
+    return resp['userInfo']
+
+
+@router.get("/tree/groups/{group_id}/drives", summary="get drives. DEPRECATED")
+async def drives(
+        request: Request,
+        group_id: str,
+        configuration: Configuration = Depends(get_configuration)
+):
+    return await forward_deprecated_get(request=request,
+                                        forward_path=f"assets-gateway/treedb-backend/groups/{group_id}/drives",
+                                        configuration=configuration)
+
+
+@router.get("/tree/items/{item_id}", summary="get item. DEPRECATED")
+async def item(
+        request: Request,
+        item_id: str,
+        configuration: Configuration = Depends(get_configuration)
+):
+    return await forward_deprecated_get(request=request,
+                                        forward_path=f"assets-gateway/treedb-backend/items/{item_id}",
+                                        configuration=configuration)
