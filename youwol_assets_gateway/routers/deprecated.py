@@ -94,10 +94,6 @@ async def groups(
         request: Request,
         configuration: Configuration = Depends(get_configuration)
 ):
-    """
-    This end point is deprecated, it is used in following circumstance:
-        - in @youwol/flux-youwol-essentials: in 'assets-gateway-client.ts'
-    """
     resp = await forward_deprecated_get(request=request, forward_path=f"accounts/session",
                                         configuration=configuration)
     return resp['userInfo']
