@@ -78,7 +78,7 @@ class UpdatePyYouwolStep(PipelineStep):
                          last_manifest: Optional[Manifest], context: Context) -> PipelineStepStatus:
 
         return_code, outputs = await execute_shell_cmd(
-            cmd=f"(cd {project.path}/py-youwol && git log HEAD..origin/master --oneline)",
+            cmd=f"(cd {project.path}/py-youwol && git log HEAD..origin/main --oneline)",
             context=context)
         if return_code != 0:
             return PipelineStepStatus.KO
