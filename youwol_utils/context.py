@@ -131,6 +131,7 @@ class Context(NamedTuple):
     with_attributes: JSON = {}
     with_labels: List[str] = []
     with_headers: Dict[str, str] = {}
+    with_cookies: Dict[str, str] = {}
 
     @staticmethod
     def from_request(request: Request):
@@ -144,6 +145,7 @@ class Context(NamedTuple):
                     with_attributes: JSON = None,
                     with_data: Dict[str, DataType] = None,
                     with_headers: Dict[str, str] = None,
+                    with_cookies: Dict[str, str] = None,
                     on_enter: 'CallableBlock' = None,
                     on_exit: 'CallableBlock' = None,
                     on_exception: 'CallableBlockException' = None,
@@ -168,7 +170,8 @@ class Context(NamedTuple):
                       with_labels=[*self.with_labels, *with_labels],
                       with_attributes={**self.with_attributes, **with_attributes},
                       with_data={**self.with_data, **with_data},
-                      with_headers={**self.with_headers, **(with_headers or {})}
+                      with_headers={**self.with_headers, **(with_headers or {})},
+                      with_cookies={**self.with_cookies, **(with_cookies or {})}
                       )
 
         try:
@@ -237,7 +240,8 @@ class Context(NamedTuple):
             with_attributes={"method": request.method, **with_attributes},
             with_reporters=with_reporters,
             on_enter=on_enter_fct,
-            on_exit=on_exit_fct
+            on_exit=on_exit_fct,
+            with_cookies=request.cookies
         )
 
     async def log(self, level: LogLevel, text: str, labels: List[StringLike] = None,
@@ -346,7 +350,8 @@ class ContextFactory:
         return Context(request=request,
                        logs_reporters=[logs_reporter],
                        data_reporters=[data_reporter],
-                       with_data=with_data)
+                       with_data=with_data,
+                       with_cookies=request.cookies if request else {})
 
 
 class DeployedContextReporter(ContextReporter):
