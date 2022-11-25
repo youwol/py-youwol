@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -38,8 +38,8 @@ class BuildStep(PipelineStep):
 
 class PipelineConfig(BaseModel):
     target: JsBundle = JsBundle(links=[Link(name="bundle-analysis", url="dist/bundle-analysis.html")])
-    customInitStep: PipelineStep = None
-    customBuildStep: PipelineStep = None
+    customInitStep: Optional[PipelineStep] = None
+    customBuildStep: Optional[PipelineStep] = None
 
 
 async def pipeline(config: PipelineConfig, context: Context) -> Pipeline:

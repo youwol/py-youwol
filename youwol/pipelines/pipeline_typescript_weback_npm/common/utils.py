@@ -2,15 +2,15 @@ import functools
 import glob
 import shutil
 from pathlib import Path
-from typing import Dict, List, Union, NamedTuple
+from typing import Dict, List, Union, NamedTuple, cast
 
 import pyparsing
 import semantic_version
 
 from youwol.environment.models_project import PipelineStep
-from youwol.environment.youwol_environment import YouwolEnvironment
-from youwol.pipelines import PublishCdnRemoteStep, PackagesPublishYwCdn
-from youwol.pipelines.pipeline_typescript_weback_npm.common import Template, PackageType, PackagesPublishNpm
+from youwol.pipelines import PublishCdnRemoteStep
+from youwol.pipelines.pipeline_typescript_weback_npm.environment import get_environment
+from youwol.pipelines.pipeline_typescript_weback_npm.common import Template, PackageType
 from youwol.pipelines.pipeline_typescript_weback_npm.common.npm_step import PublishNpmStep
 from youwol.utils.utils_low_level import sed_inplace
 from youwol_cdn_backend import get_api_key

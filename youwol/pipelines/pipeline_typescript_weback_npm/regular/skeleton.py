@@ -5,7 +5,7 @@ from base64 import b64encode
 from pathlib import Path
 from typing import Dict, NamedTuple
 
-from youwol.environment.models_project import ProjectTemplate
+from youwol.configuration.models_config import ProjectTemplate
 from youwol.pipelines.pipeline_typescript_weback_npm import get_externals, DevServer, Bundles, MainModule
 from youwol.pipelines.pipeline_typescript_weback_npm.common import Template, generate_package_json, \
     copy_files_folders, generate_webpack_config, PackageType, Dependencies, RunTimeDeps
