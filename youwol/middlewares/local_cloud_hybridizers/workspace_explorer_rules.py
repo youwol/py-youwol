@@ -44,7 +44,7 @@ class GetChildrenDispatch(AbstractDispatch):
             return None
         await context.info(text="GetChildrenDispatch matching incoming request")
         async with context.start(action="GetChildrenDispatch.apply", muted_http_errors={404}) as ctx:
-            env = await context.get('env', YouwolEnvironment)
+            env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
 
             local_gtw_treedb = LocalClients.get_gtw_treedb_client(env=env)
             try:
@@ -56,7 +56,8 @@ class GetChildrenDispatch(AbstractDispatch):
                                     "remote")
                 await ensure_local_path(folder_id=folder_id, env=env, context=ctx)
 
-            assets_gtw = await RemoteClients.get_assets_gateway_client(remote_host=env.selectedRemote, context=context)
+            assets_gtw = await RemoteClients.get_assets_gateway_client(remote_host=env.currentAccess.host,
+                                                                       context=context)
             remote_gtw_treedb = assets_gtw.get_treedb_backend_router()
 
             local_resp, remote_resp = await asyncio.gather(

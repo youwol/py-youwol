@@ -16,7 +16,7 @@ class JwtProviderConfig(JwtProvider):
 
     async def get_token(self, request: Request, context: Context) -> Optional[str]:
         config = await yw_config()
-        if config.selectedUser:
+        if config.currentAccess.userId:
             return await config.get_auth_token(context=context)
         else:
             return await JwtProviderCookie(

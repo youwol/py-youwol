@@ -94,7 +94,7 @@ async def status(
             configuration=config,
             remoteGatewayInfo=remote_gateway_info,
             remotesInfo=[
-                RemoteGatewayInfo(name=remote.name, host=remote.host, connected=(remote.host == config.selectedRemote))
+                RemoteGatewayInfo(host=remote.host, connected=(remote.host == config.currentAccess.host))
                 for remote in config.remotes
             ]
         )

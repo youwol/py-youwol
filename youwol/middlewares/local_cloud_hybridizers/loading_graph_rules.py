@@ -1,4 +1,3 @@
-import asyncio
 import json
 from typing import Optional
 
@@ -7,7 +6,7 @@ from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response, JSONResponse
 
-from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
+from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.middlewares.models_dispatch import AbstractDispatch
 from youwol_cdn_backend import resolve_loading_tree, Dependencies
 from youwol_utils import DependenciesError, YouwolHeaders
@@ -32,10 +31,7 @@ class GetLoadingGraph(AbstractDispatch):
 
             body = LoadingGraphBody(**(json.loads(body_raw.decode('utf8'))))
             await ctx.info("Loading graph body", data=body)
-            yw_conf, cdn_conf = await asyncio.gather(
-                yw_config(),
-                Dependencies.get_configuration()
-                )
+            cdn_conf = await Dependencies.get_configuration()
 
             env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
             try:
@@ -46,14 +42,14 @@ class GetLoadingGraph(AbstractDispatch):
                     text="Loading tree can not be resolved locally, proceed to remote platform",
                     data=e.detail
                 )
-                url = f'https://{yw_conf.selectedRemote}{request.url.path}'
+                url = f'https://{env.currentAccess.host}{request.url.path}'
 
                 async with aiohttp.ClientSession(
                         connector=aiohttp.TCPConnector(verify_ssl=False),
                         auto_decompress=False) as session:
                     async with await session.post(url=url, json=body.dict(), headers=ctx.headers()) as resp:
                         headers_resp = {k: v for k, v in resp.headers.items()}
-                        headers_resp[YouwolHeaders.youwol_origin] = env.selectedRemote
+                        headers_resp[YouwolHeaders.youwol_origin] = env.currentAccess.host
                         content = await resp.read()
                         if not resp.ok:
                             await ctx.error(text="Loading tree has not been resolved in remote neither")

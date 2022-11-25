@@ -46,7 +46,8 @@ async def check_update(
         context: Context):
 
     env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
-    remote_gtw_client = await RemoteClients.get_assets_gateway_client(remote_host=env.selectedRemote, context=context)
+    remote_gtw_client = await RemoteClients.get_assets_gateway_client(remote_host=env.currentAccess.host,
+                                                                      context=context)
     headers = {
         "authorization": context.request.headers.get("authorization")
     }
