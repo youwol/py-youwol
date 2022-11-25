@@ -1,5 +1,7 @@
 import json
 import os
+import shutil
+import zipfile
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, Optional, Awaitable, List
@@ -16,11 +18,8 @@ from youwol.configuration.configuration_validation import (
 
 from youwol.configuration.models_config import Events, RemoteAccess, Impersonation, Configuration
 from youwol.configuration.models_config_middleware import CustomMiddleware
-from youwol.environment.clients import LocalClients
 from youwol.environment.config_from_module import configuration_from_python
-from youwol.environment.configuration_handler import ConfigurationHandler
 from youwol.environment.models import RemoteGateway, ApiConfiguration, Projects
-from youwol.environment.models_project import ErrorResponse
 from youwol.environment.paths import PathsBook, ensure_config_file_exists_or_create_it
 from youwol.main_args import get_main_arguments, MainArguments
 from youwol.routers.custom_backends import install_routers
@@ -28,9 +27,9 @@ from youwol.routers.custom_commands.models import Command
 from youwol.web_socket import WsDataStreamer
 from youwol_utils.clients.oidc.oidc_config import OidcConfig
 from youwol_utils.context import Context, ContextFactory, InMemoryReporter
-from youwol_utils.http_clients.tree_db_backend import DefaultDriveResponse
 from youwol_utils.servers.fast_api import FastApiRouter
-from youwol_utils.utils_paths import parse_json
+from youwol_utils.utils_paths import parse_json, ensure_dir_exists
+from youwol.environment.paths import app_dirs
 
 
 class DeadlinedCache(BaseModel):
@@ -55,9 +54,10 @@ class YouwolEnvironment(BaseModel):
     projects: Projects
     commands: Dict[str, Command]
 
-    selectedRemote: str
-    selectedUser: Optional[str]
+    currentAccess: RemoteAccess
+
     remotes: List[RemoteGateway]
+    impersonations: List[Impersonation]
 
     pathsBook: PathsBook
     routers: List[FastApiRouter] = []
@@ -76,7 +76,7 @@ class YouwolEnvironment(BaseModel):
     def get_remote_info(self, remote_host: str = None) -> Optional[RemoteGateway]:
 
         if not remote_host:
-            remote_host = self.selectedRemote
+            remote_host = self.currentAccess.host
 
         candidates = [remote for remote in self.remotes if remote.host == remote_host]
         if len(candidates) > 0:
@@ -84,12 +84,25 @@ class YouwolEnvironment(BaseModel):
 
         return None
 
-    async def get_auth_token(self, context: Context, remote_host: str = None, username: str = None):
-        username = username if username else self.selectedUser
-        remote = self.get_remote_info(remote_host)
+    def get_user_info(self, user_id: str = None) -> Optional[Impersonation]:
+
+        if not user_id:
+            user_id = self.currentAccess.userId
+
+        candidates = [user for user in self.impersonations if user.userId == user_id]
+        if len(candidates) > 0:
+            return candidates[0]
+
+        return None
+
+    async def get_auth_token(self, context: Context):
+        remote = self.get_remote_info(self.currentAccess.host)
+        user = self.get_user_info(self.currentAccess.userId)
+
+        username = user.userName
         dependencies = {"username": username, "host": remote.host, "type": "auth_token"}
         cached_token = next((c for c in self.tokensCache if c.is_valid(dependencies)), None)
-        if cached_token and not remote_host:
+        if cached_token and not remote.host:
             return cached_token.value
 
         try:
@@ -141,8 +154,8 @@ class YouwolEnvironment(BaseModel):
 
         return f"""Running with youwol: {youwol}
 Configuration loaded from '{self.pathsBook.config}'
-- user: {self.selectedUser if self.selectedUser else 'dynamic'}
-- remote : {self.selectedRemote}
+- user: {self.currentAccess.userId if self.currentAccess.userId else 'dynamic'}
+- remote : {self.currentAccess.host}
 - paths: {self.pathsBook}
 - cdn packages count: {len(parse_json(self.pathsBook.local_cdn_docdb)['documents'])}
 - assets count: {len(parse_json(self.pathsBook.local_assets_entities_docdb)['documents'])}
@@ -166,8 +179,10 @@ class YouwolEnvironmentFactory:
         cached = YouwolEnvironmentFactory.__cached_config
         conf = await safe_load(
             path=cached.pathsBook.config,
-            selected_user=selected_user if selected_user else cached.selectedUser,
-            selected_remote=selected_remote if selected_remote else cached.selectedRemote
+            remote_access=RemoteAccess(
+                userId=selected_user or cached.currentAccess.userId,
+                host=selected_remote or cached.currentAccess.host
+            )
         )
 
         await YouwolEnvironmentFactory.trigger_on_load(config=conf)
@@ -177,7 +192,7 @@ class YouwolEnvironmentFactory:
     @staticmethod
     async def init():
         path = await get_yw_config_starter(get_main_arguments())
-        conf = await safe_load(path=path, selected_user=None, selected_remote=None)
+        conf = await safe_load(path=path)
 
         YouwolEnvironmentFactory.__cached_config = conf
         await YouwolEnvironmentFactory.trigger_on_load(config=conf)
@@ -187,8 +202,7 @@ class YouwolEnvironmentFactory:
     def clear_cache():
         conf = YouwolEnvironmentFactory.__cached_config
         new_conf = YouwolEnvironment(
-            selectedUser=conf.selectedUser,
-            selectedRemote=conf.selectedRemote,
+            currentAccess=conf.currentAccess,
             pathsBook=conf.pathsBook,
             httpPort=conf.httpPort,
             cache={},
@@ -196,7 +210,8 @@ class YouwolEnvironmentFactory:
             commands=conf.commands,
             customMiddlewares=conf.customMiddlewares,
             events=conf.events,
-            remotes=conf.remotes
+            remotes=conf.remotes,
+            impersonations=conf.impersonations
         )
         YouwolEnvironmentFactory.__cached_config = new_conf
 
@@ -208,7 +223,7 @@ class YouwolEnvironmentFactory:
             request=None
         )
         if config.events and config.events.onLoad:
-            on_load_cb = config.events.onLoad(config, context)
+            on_load_cb = config.events.onLoad(context)
             data = await on_load_cb if isinstance(on_load_cb, Awaitable) else on_load_cb
             await context.info(text="Applied onLoad event's callback", data=data)
 
@@ -222,8 +237,7 @@ async def yw_config() -> YouwolEnvironment:
 
 async def safe_load(
         path: Path,
-        selected_user: Optional[str],
-        selected_remote: Optional[str],
+        remote_access: Optional[RemoteAccess] = None
 ) -> YouwolEnvironment:
     """
     Possible errors:
