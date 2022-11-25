@@ -241,7 +241,7 @@ async def login(
     :return:
     """
     if flow == 'auto':
-        flow = 'user' if yw_login_hint else 'temp'
+        flow = 'user' if (yw_login_hint or conf.admin_client is None) else 'temp'
 
     if flow == 'user':
         return await authorization_flow(request, target_uri, yw_login_hint, conf)
