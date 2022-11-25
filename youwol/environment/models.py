@@ -49,19 +49,12 @@ class ApiConfiguration:
     open_api_prefix: str
     base_path: str
 
-
-class IPipelineFactory(ABC):
-
-    @abstractmethod
-    async def get(self, _env: YouwolEnvironment, _context: Context) -> Pipeline:
-        return NotImplemented
-
-
-class IConfigurationCustomizer(ABC):
-
-    @abstractmethod
-    async def customize(self, _youwol_configuration: YouwolEnvironment) -> YouwolEnvironment:
-        return NotImplemented
+class IPipelineFactory:
+    """
+    This class should not be used: instead use IPipelineFactory from youwol.environment.models_project.
+    It is here for backward compatibility purpose & will disappear soon.
+    """
+    pass
 
 
 class Projects(BaseModel):

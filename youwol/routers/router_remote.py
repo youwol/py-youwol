@@ -1,11 +1,30 @@
 from fastapi import APIRouter
 
 from starlette.requests import Request
+from youwol.environment.youwol_environment import YouwolEnvironment
+from youwol.utils.utils_low_level import redirect_request
 
-from youwol.utils.utils_low_level import redirect_api_remote
 from youwol_utils.context import Context
 
 router = APIRouter()
+
+
+async def redirect_api_remote(request: Request, context: Context):
+
+    async with context.start(action="redirect API in remote") as ctx:
+        # One of the header item leads to a server error ... for now only provide authorization
+        # headers = {k: v for k, v in request.headers.items()}
+        # headers = {"Authorization": request.headers.get("authorization")}
+
+        env = await context.get("env", YouwolEnvironment)
+        redirect_base_path = f"https://{env.get_remote_info().host}/api"
+
+        return await redirect_request(
+            incoming_request=request,
+            origin_base_path="/api",
+            destination_base_path=redirect_base_path,
+            headers=ctx.headers(),
+        )
 
 
 @router.get("/{rest_of_path:path}",

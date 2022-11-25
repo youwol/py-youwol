@@ -6,7 +6,9 @@ from typing import Optional, cast, Mapping, List, Iterable
 
 from fastapi import HTTPException
 
-from youwol.configuration.models_config import UploadTarget, UploadTargets
+from youwol.configuration.models_config import UploadTargets, DirectAuthUser, YouwolCloud
+from youwol_utils.clients.oidc.oidc_config import OidcConfig
+
 from youwol_utils.http_clients.assets_gateway import DefaultDriveResponse
 from youwol.environment.clients import LocalClients, RemoteClients
 from youwol.environment.models_project import (
@@ -60,6 +62,20 @@ async def publish_browser_app_metadata(package: str, version: str, target: Brows
         )
         await ctx.info(text="user settings of @youwol/platform-essentials", data=settings)
         await client.post(package="@youwol/platform-essentials", key="settings", body=settings, headers=ctx.headers())
+
+
+async def get_default_drive(context: Context) -> DefaultDriveResponse:
+    env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
+
+    if env.private_cache.get("default-drive"):
+        return env.private_cache.get("default-drive")
+
+    default_drive = await LocalClients \
+        .get_assets_gateway_client(env).get_treedb_backend_router() \
+        .get_default_user_drive(headers=context.headers())
+
+    env.private_cache["default-drive"] = DefaultDriveResponse(**default_drive)
+    return DefaultDriveResponse(**default_drive)
 
 
 class PublishCdnLocalStep(PipelineStep):

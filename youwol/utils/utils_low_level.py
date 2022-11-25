@@ -13,10 +13,7 @@ from aiohttp import ClientSession, TCPConnector
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.websockets import WebSocket, WebSocketDisconnect
-
-from youwol.environment.forward_declaration import YouwolEnvironment
 from youwol_utils import log_info, assert_response
-from youwol_utils.context import Context
 
 
 def sed_inplace(filename, pattern, repl):
@@ -51,23 +48,6 @@ async def start_web_socket(ws: WebSocket):
         except WebSocketDisconnect:
             log_info(f'{ws.scope["client"]} - "WebSocket {ws.scope["path"]}" [disconnected]')
             break
-
-
-async def redirect_api_remote(request: Request, context: Context):
-    async with context.start(action="redirect API in remote") as ctx:
-        # One of the header item leads to a server error ... for now only provide authorization
-        # headers = {k: v for k, v in request.headers.items()}
-        # headers = {"Authorization": request.headers.get("authorization")}
-
-        env = await context.get("env", YouwolEnvironment)
-        redirect_base_path = f"https://{env.get_remote_info.host}/api"
-
-        return await redirect_request(
-            incoming_request=request,
-            origin_base_path="/api",
-            destination_base_path=redirect_base_path,
-            headers=ctx.headers(),
-        )
 
 
 async def redirect_request(
@@ -135,15 +115,22 @@ def get_object_from_module(
             raise NameError(f"{module_absolute_path} : Expected class '{object_or_class_name}' not found")
 
         maybe_class_or_var = imported_module.__getattribute__(object_or_class_name)
-
-        if isinstance(maybe_class_or_var, object_type):
-            return cast(object_type, maybe_class_or_var)
-
-        if issubclass(maybe_class_or_var, object_type):
-            return cast(object_type, maybe_class_or_var(**object_instantiation_kwargs))
-
-        raise TypeError(f"{module_absolute_path} : Expected class '{object_or_class_name}'"
-                        f" does not implements expected type '{object_type}")
+        return cast(object_type, maybe_class_or_var(**object_instantiation_kwargs))
+        # Need to be re-pluged ASAP. The problem is for now pipeline use deprecated
+        # type youwol.environment.models.IPipelineFactory
+        # Need to replace in yw_pipeline.py
+        # from youwol.environment.models import IPipelineFactory
+        # by
+        # from youwol.environment.models_projects  import IPipelineFactory
+        # Original code:
+        # if isinstance(maybe_class_or_var, object_type):
+        #     return cast(object_type, maybe_class_or_var)
+        #
+        # if issubclass(maybe_class_or_var, object_type):
+        #     return cast(object_type, maybe_class_or_var(**object_instantiation_kwargs))
+        #
+        # raise TypeError(f"{module_absolute_path} : Expected class '{object_or_class_name}'"
+        #                 f" does not implements expected type '{object_type}")
 
     module_name = module_absolute_path.stem
     try:

@@ -7,10 +7,10 @@ from starlette.requests import Request
 from starlette.responses import Response, JSONResponse
 
 from youwol.environment.clients import LocalClients
-from youwol.environment.forward_declaration import YouwolEnvironment
+from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.middlewares.models_dispatch import AbstractDispatch
 from youwol.routers.commons import ensure_local_path
-from youwol.utils.utils_low_level import redirect_api_remote
+from youwol.routers.router_remote import redirect_api_remote
 from youwol_utils.context import Context
 from youwol_utils.request_info_factory import url_match
 
@@ -28,7 +28,7 @@ class PostMetadataDeprecated(AbstractDispatch):
             return None
 
         async with context.start(action="PostMetadataDispatch.apply", muted_http_errors={404}) as ctx:
-            env = await ctx.get('env', YouwolEnvironment)
+            env: YouwolEnvironment = await ctx.get('env', YouwolEnvironment)
             asset_id = replaced[0]
 
             try:

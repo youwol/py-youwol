@@ -14,7 +14,7 @@ from youwol_utils.servers.fast_api import FastApiRouter
 
 
 class Events(BaseModel):
-    onLoad: Callable[[YouwolEnvironment, Context], Optional[Union[Any, Awaitable[Any]]]] = None
+    onLoad: Callable[[Context], Optional[Union[Any, Awaitable[Any]]]] = None
 
 
 ConfigPath = Union[str, Path]
@@ -38,13 +38,21 @@ class UploadTargets(BaseModel):
     targets: List[UploadTarget]
 
 
+class ProjectTemplate(BaseModel):
+    icon: Any
+    type: str
+    folder: Union[str, Path]
+    parameters: Dict[str, str]
+    generator: Callable[[Path, Dict[str, str], Context], Awaitable[Tuple[str, Path]]]
+
+
 class Projects(BaseModel):
     finder: Union[
         ConfigPath,
         List[ConfigPath],
-        Callable[[YouwolEnvironment, Context], List[ConfigPath]],
-        Callable[[YouwolEnvironment, Context], Awaitable[List[ConfigPath]]]
-    ] = None
+        Callable[[PathsBook, Context], List[ConfigPath]],
+        Callable[[PathsBook, Context], Awaitable[List[ConfigPath]]]
+    ] = lambda paths_book, _ctx: default_projects_finder(paths_book=paths_book)
     templates: List[ProjectTemplate] = []
     uploadTargets: List[UploadTargets] = []
 

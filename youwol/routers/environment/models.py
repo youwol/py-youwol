@@ -2,8 +2,8 @@ from enum import Enum
 from typing import List, Optional, Dict
 
 from pydantic import BaseModel
+from youwol.configuration.configuration_validation import ErrorResponse
 
-from youwol.environment.models_project import ErrorResponse
 from youwol.environment.projects_loader import Result
 from youwol.middlewares.models_dispatch import DispatchInfo
 

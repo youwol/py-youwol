@@ -1,13 +1,12 @@
 import functools
-import sys
-import traceback
+from abc import ABC, abstractmethod
 from enum import Enum
 from pathlib import Path
-from typing import List, Union, Set, Dict, Any, Callable, Awaitable, Iterable, cast, Optional, Tuple
+from typing import List, Union, Set, Dict, Any, Callable, Awaitable, Iterable, cast, Optional
 
 from pydantic import BaseModel
 
-from youwol.environment.forward_declaration import YouwolEnvironment
+from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.environment.paths import PathsBook
 from youwol_utils import JSON
 from youwol_utils import execute_shell_cmd, CommandException
@@ -16,27 +15,6 @@ from youwol_utils.context import Context
 from youwol_utils.utils_paths import matching_files, parse_json
 
 FlowId = str
-
-
-class ErrorResponse(BaseModel):
-    reason: str
-    hints: List[str] = []
-
-
-def format_unknown_error(reason: str, error: Exception):
-    detail = error.args[0]
-    error_class = error.__class__.__name__
-    cl, exc, tb = sys.exc_info()
-    line_number = traceback.extract_tb(tb)[-1][1]
-    return ErrorResponse(
-        reason=reason,
-        hints=[f"{error_class} at line {line_number}: {detail}"]
-    )
-
-
-class Check(BaseModel):
-    name: str
-    status: Union[bool, ErrorResponse, None] = None
 
 
 class FileListing(BaseModel):
@@ -289,6 +267,13 @@ class Pipeline(BaseModel):
     projectVersion: Callable[[Path], str]
 
 
+class IPipelineFactory(ABC):
+
+    @abstractmethod
+    async def get(self, _env: YouwolEnvironment, _context: Context) -> Pipeline:
+        return NotImplemented
+
+
 class Project(BaseModel):
     pipeline: Pipeline
     path: Path
@@ -400,11 +385,3 @@ class Project(BaseModel):
         if not manifest_path.exists():
             return None
         return Manifest(**parse_json(manifest_path))
-
-
-class ProjectTemplate(BaseModel):
-    icon: Any
-    type: str
-    folder: Union[str, Path]
-    parameters: Dict[str, str]
-    generator: Callable[[Path, Dict[str, str], Context], Awaitable[Tuple[str, Path]]]

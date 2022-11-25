@@ -11,9 +11,10 @@ from pydantic import BaseModel
 import youwol
 from youwol.configuration.configuration_validation import (
     ConfigurationLoadingStatus, ConfigurationLoadingException,
-    CheckSystemFolderWritable, CheckDatabasesFolderHealthy
+    CheckSystemFolderWritable, CheckDatabasesFolderHealthy, ErrorResponse
 )
-from youwol.configuration.models_config import Events
+
+from youwol.configuration.models_config import Events, RemoteAccess, Impersonation, Configuration
 from youwol.configuration.models_config_middleware import CustomMiddleware
 from youwol.environment.clients import LocalClients
 from youwol.environment.config_from_module import configuration_from_python
@@ -107,18 +108,6 @@ class YouwolEnvironment(BaseModel):
         await context.info(text="Access token renewed",
                            data={"host": remote.host, "access_token": access_token})
         return access_token
-
-    async def get_default_drive(self, context: Context) -> DefaultDriveResponse:
-
-        if self.private_cache.get("default-drive"):
-            return self.private_cache.get("default-drive")
-        env = await context.get('env', YouwolEnvironment)
-        default_drive = await LocalClients \
-            .get_assets_gateway_client(env).get_treedb_backend_router() \
-            .get_default_user_drive(headers=context.headers())
-
-        self.private_cache["default-drive"] = DefaultDriveResponse(**default_drive)
-        return DefaultDriveResponse(**default_drive)
 
     def __str__(self):
         def str_middlewares():

@@ -5,8 +5,8 @@ from pathlib import Path
 from pydantic import BaseModel
 from typing import List, Union, Optional, Awaitable
 
-from youwol.environment.forward_declaration import YouwolEnvironment
-from youwol.environment.models import IPipelineFactory
+from youwol.environment.models_project import IPipelineFactory
+from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.environment.models_project import Project
 from youwol.utils.utils_low_level import get_object_from_module
 from youwol_utils import encode_id
@@ -77,7 +77,7 @@ async def load_projects(env: YouwolEnvironment, context: Context) -> List[Result
             action="load_projects"
     ) as ctx:  # type: Context
         projects = env.projects
-        project_folders = await projects.finder(env, ctx)
+        project_folders = await projects.finder(env.pathsBook, ctx)
 
         results: List[Result] = []
         for dir_candidate in project_folders:

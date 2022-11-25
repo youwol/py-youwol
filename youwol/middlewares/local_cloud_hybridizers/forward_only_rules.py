@@ -1,7 +1,7 @@
 from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.middlewares.models_dispatch import AbstractDispatch
+from youwol.routers.router_remote import redirect_api_remote
 
-from youwol.utils.utils_low_level import redirect_api_remote
 from youwol_utils import YouwolHeaders
 from youwol_utils.request_info_factory import url_match
 from youwol_utils.context import Context
