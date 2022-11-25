@@ -19,7 +19,6 @@ class UserInfo(BaseModel):
 
 
 class RemoteGateway(BaseModel):
-    name: str
     host: str
     openidClient: Union[PublicClient, PrivateClient]
     openidBaseUrl: str
@@ -28,16 +27,16 @@ class RemoteGateway(BaseModel):
     users: List[DirectAuthUser] = []
 
     @classmethod
-    def from_config(cls, remote_config: RemoteConfig):
+    def from_config(cls, cloud: YouwolCloud, impersonations: List[Impersonation]):
         return RemoteGateway(
-            name=remote_config.name if remote_config.name else remote_config.host,
-            host=remote_config.host,
-            openidClient=remote_config.openidClient,
-            openidBaseUrl=remote_config.openidBaseUrl,
-            keycloakAdminBaseUrl=remote_config.keycloakAdminBaseURl,
-            adminClient=remote_config.keycloakAdminClient,
-            users=remote_config.directAuthUsers
+            **cloud.dict(),
+            users=[DirectAuthUser(username=user.userName, password=user.password)
+                   for user in impersonations if cloud.host in user.forHosts]
         )
+
+
+def get_standard_youwol_cloud(host: str):
+    return YouwolCloud(**default_cloud_environment(host))
 
 
 class Secret(BaseModel):

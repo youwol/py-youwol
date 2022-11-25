@@ -1,12 +1,12 @@
 from pathlib import Path
-from typing import List, Union, Optional, Callable, Awaitable, Any
+from typing import List, Union, Optional, Callable, Awaitable, Any, Dict, Tuple
 
 from pydantic import BaseModel
-from youwol.configuration.defaults import default_openid_client_id, default_path_cache_dir, \
-    default_path_data_dir, default_http_port
+from youwol.configuration.defaults import default_path_cache_dir, \
+    default_path_data_dir, default_http_port, default_platform_host, default_cloud_environment
 from youwol.configuration.models_config_middleware import CustomMiddleware
-from youwol.environment.forward_declaration import YouwolEnvironment
-from youwol.environment.models_project import ProjectTemplate
+from youwol.environment.paths import PathsBook
+from youwol.environment.utils import default_projects_finder
 from youwol.routers.custom_commands.models import Command
 from youwol_utils import Context
 from youwol_utils.clients.oidc.oidc_config import PublicClient, PrivateClient
@@ -54,49 +54,47 @@ class DirectAuthUser(BaseModel):
     password: str
 
 
-class RemoteConfig(BaseModel):
+class YouwolCloud(BaseModel):
     host: str
-    name: Optional[str]
-    openidBaseUrl: Optional[str]
-    openidClient: Optional[Union[PublicClient, PrivateClient]]
-    keycloakAdminBaseURl: Optional[str]
-    keycloakAdminClient: Optional[PrivateClient]
-    defaultUser: Optional[str]
-    directAuthUsers: List[DirectAuthUser] = []
+    name: str
+    openidBaseUrl: str
+    openidClient: Union[PublicClient, PrivateClient]
+    keycloakAdminBaseUrl: str
+    keycloakAdminClient: Optional[PrivateClient] = None
 
-    @staticmethod
-    def build(host: str, name: Optional[str] = None, openid_base_url: Optional[str] = None,
-              openid_client: Optional[Union[PublicClient, PrivateClient]] = None,
-              keycloak_admin_base_url: Optional[str] = None, keycloak_admin_client: Optional[PrivateClient] = None,
-              default_user: Optional[str] = None, direct_auth_users: List[DirectAuthUser] = None):
-        if default_user and len([user for user in direct_auth_users if user.username == default_user]) == 0:
-            raise RuntimeError(f"default user {default_user} for remote {name} is not in directAuthUsers")
-        return RemoteConfig(
-            host=host,
-            name=name if name else host,
-            openidBaseUrl=openid_base_url if openid_base_url else f"https://{host}/auth/realms/youwol",
-            openidClient=openid_client if openid_client else PublicClient(client_id=default_openid_client_id),
-            keycloakAdminBaseURl=keycloak_admin_base_url,
-            keycloakAdminClient=keycloak_admin_client,
-            directAuthUsers=direct_auth_users if direct_auth_users else [],
-            defaultUser=default_user
-        )
 
-    def __hash__(self):
-        return hash(tuple([self.name,
-                           self.host,
-                           self.openidBaseUrl,
-                           self.openidClient.client_id,
-                           self.keycloakAdminBaseURl,
-                           self.keycloakAdminClient.client_id if self.keycloakAdminClient else None
-                           ]))
+class RemoteAccess(BaseModel):
+    host: str
+    userId: Optional[str]
+
+
+class BrowserAuthAccess(RemoteAccess):
+    host: str
+
+
+class ImpersonateAuthAccess(RemoteAccess):
+    host: str
+    userId: str
+
+
+class Impersonation(BaseModel):
+    userId: str
+    userName: str
+    password: str
+    forHosts: List[str] = []
+
+
+class CloudEnvironments(BaseModel):
+    defaultAccess: RemoteAccess = BrowserAuthAccess(host=default_platform_host)
+    environments: List[YouwolCloud] = []
+    impersonations: List[Impersonation] = []
 
 
 class System(BaseModel):
     httpPort: Optional[int] = default_http_port
-    selectedRemote: Optional[Union[str, RemoteConfig]]
-    remotes: Optional[List[RemoteConfig]]
-    configDir: Optional[ConfigPath]
+    cloudEnvironments: CloudEnvironments = CloudEnvironments(
+        environments=[YouwolCloud(**default_cloud_environment(default_platform_host))]
+    )
     dataDir: Optional[ConfigPath] = default_path_data_dir
     cacheDir: Optional[ConfigPath] = default_path_cache_dir
 
