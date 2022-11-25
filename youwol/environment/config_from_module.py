@@ -22,7 +22,7 @@ class IConfigurationFactory(ABC):
         return NotImplemented
 
 
-async def configuration_from_python(path: Path) -> ConfigurationHandler:
+async def configuration_from_python(path: Path) -> Configuration:
     (final_path, exists) = existing_path_or_default(path,
                                                     root_candidates=[Path().cwd(),
                                                                      app_dirs.user_config_dir,
@@ -69,5 +69,4 @@ async def configuration_from_python(path: Path) -> ConfigurationHandler:
             hints=[f"You can have a look at the default_config_yw.py located in 'py-youwol/system'"])
         raise ConfigurationLoadingException(get_status(False))
 
-    return ConfigurationHandler(path=final_path,
-                                config_data=config_data)
+    return config_data

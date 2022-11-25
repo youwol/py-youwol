@@ -257,13 +257,17 @@ async def safe_load(
             ]
         )
 
-    conf_handler: ConfigurationHandler = await configuration_from_python(path)
+    config: Configuration = await configuration_from_python(path)
+    system = config.system
+    projects = config.projects
+    customization = config.customization
 
     paths_book = PathsBook(
         config=path,
-        databases=Path(conf_handler.get_data_dir()),
-        system=Path(conf_handler.get_cache_dir())
+        databases=Path(system.dataDir),
+        system=Path(system.cacheDir)
     )
+    ensure_dir_exists(system.cacheDir, root_candidates=app_dirs.user_cache_dir)
 
     if not os.access(paths_book.system.parent, os.W_OK):
         check_system_folder_writable.status = ErrorResponse(
@@ -290,17 +294,31 @@ async def safe_load(
     if not paths_book.packages_cache_path.exists():
         open(paths_book.packages_cache_path, "w").write(json.dumps({}))
 
+    def create_data_dir(final_path: Path):
+        databases_zip = 'databases.zip'
+        final_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(get_main_arguments().youwol_path.parent / 'youwol_data' / databases_zip,
+                        final_path.parent / databases_zip)
+
+        with zipfile.ZipFile(final_path.parent / databases_zip, 'r') as zip_ref:
+            zip_ref.extractall(final_path.parent)
+
+        os.remove(final_path.parent / databases_zip)
+
+    ensure_dir_exists(path=system.dataDir, root_candidates=app_dirs.user_data_dir, create=create_data_dir)
+
     return YouwolEnvironment(
-        httpPort=conf_handler.get_http_port(),
-        routers=conf_handler.get_routers(),
-        selectedUser=selected_user if selected_user else conf_handler.get_selected_remote().defaultUser,
-        selectedRemote=selected_remote if selected_remote else conf_handler.get_selected_remote().host,
-        events=conf_handler.get_events(),
+        httpPort=system.httpPort,
+        routers=customization.endPoints.routers,
+        currentAccess=remote_access or system.cloudEnvironments.defaultAccess,
+        events=customization.events,
         pathsBook=paths_book,
-        projects=conf_handler.get_projects(),
-        commands=conf_handler.get_commands(),
-        customMiddlewares=conf_handler.get_middlewares(),
-        remotes=[RemoteGateway.from_config(remote_config) for remote_config in conf_handler.get_remotes()]
+        projects=Projects.from_config(projects),
+        commands={c.name: c for c in customization.endPoints.commands},
+        customMiddlewares=customization.middlewares,
+        remotes=[RemoteGateway.from_config(cloud, system.cloudEnvironments.impersonations)
+                 for cloud in system.cloudEnvironments.environments],
+        impersonations=system.cloudEnvironments.impersonations
     )
 
 

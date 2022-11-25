@@ -1,11 +1,14 @@
-from abc import ABC, abstractmethod
+import inspect
 from dataclasses import dataclass
-from typing import List, Callable, Optional, Union, Awaitable
+from pathlib import Path
+from typing import List, Callable, Optional, Union, Awaitable, cast
 
 from pydantic import BaseModel
-from youwol.configuration.models_config import ConfigPath, UploadTargets, RemoteConfig, DirectAuthUser
-from youwol.environment.forward_declaration import YouwolEnvironment
-from youwol.environment.models_project import Pipeline, ProjectTemplate
+from youwol.configuration.defaults import default_cloud_environment
+from youwol.configuration.models_config import ConfigPath, DirectAuthUser, YouwolCloud, Impersonation, \
+    Projects as ProjectsConfig, ProjectTemplate
+from youwol.environment.paths import PathsBook
+
 from youwol.environment.utils import default_projects_finder
 from youwol_utils.clients.oidc.oidc_config import PrivateClient, PublicClient
 from youwol_utils.context import Context
@@ -58,9 +61,39 @@ class IPipelineFactory:
 
 
 class Projects(BaseModel):
+
     finder: Callable[
-        [YouwolEnvironment, Context],
+        [PathsBook, Context],
         Awaitable[List[ConfigPath]]
-    ] = lambda env, _ctx: default_projects_finder(env=env)
-    templates: List[ProjectTemplate] = []
-    uploadTargets: List[UploadTargets] = []
+    ]
+
+    templates: List[ProjectTemplate]
+
+    @classmethod
+    def from_config(cls, projects: ProjectsConfig):
+
+        finder = None
+        if callable(projects.finder):
+            # finder is Callable[[YouwolEnvironment, Context], List[ConfigPath]]
+            # or Callable[[YouwolEnvironment, Context], Awaitable[List[ConfigPath]]]
+            is_coroutine = inspect.iscoroutinefunction(projects.finder)
+
+            async def await_finder(env, ctx):
+                #  if no cast => python complains about typing w/ ModuleLoading accepting only keyword arguments
+                return cast(Callable[[PathsBook, Context], List[ConfigPath]], projects.finder)(env, ctx)
+
+            finder = projects.finder if is_coroutine else await_finder
+        elif isinstance(projects.finder, str) \
+                or isinstance(projects.finder, Path) \
+                or isinstance(projects.finder, List):
+            # finder is List[ConfigPath]
+            async def default_finder(paths_book, _ctx):
+                return default_projects_finder(paths_book=paths_book, root_folders=projects.finder)
+
+            finder = default_finder
+
+        return Projects(
+            finder=finder,
+            templates=projects.templates
+        )
+
