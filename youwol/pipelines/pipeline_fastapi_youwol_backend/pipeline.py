@@ -8,9 +8,9 @@ from pydantic import BaseModel
 from youwol.environment.models_project import Manifest, PipelineStepStatus, Link, Flow, \
     SourcesFctImplicit, Pipeline, PipelineStep, FileListing, \
     Artifact, Project, RunImplicit, MicroService
-from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.pipelines.docker_k8s_helm import get_helm_app_version, InstallHelmStep, InstallHelmStepConfig, \
-    PublishDockerStep, PublishDockerStepConfig, InstallDryRunHelmStep, DockerImagesPush, HelmChartsInstall
+    PublishDockerStep, PublishDockerStepConfig, InstallDryRunHelmStep
+from youwol.pipelines.pipeline_fastapi_youwol_backend.environment import get_environment
 from youwol_utils import execute_shell_cmd
 from youwol_utils.context import Context
 
@@ -222,23 +222,17 @@ async def pipeline(
 
     async with context.start(action="pipeline") as ctx:
         await ctx.info(text="Instantiate pipeline", data=config)
-
-        env: YouwolEnvironment = await ctx.get('env', YouwolEnvironment)
-
-        docker = next(d for d in env.projects.uploadTargets if isinstance(d, DockerImagesPush))
-        docker_repo = docker.get_repo(config.dockerConfig.repoName)
+        pipeline_env = get_environment()
 
         dry_run_config = InstallHelmStepConfig(**config.helmConfig.dict())
         dry_run_config.overridingHelmValues = add_dry_values
-        k8s = next(deployment for deployment in env.projects.uploadTargets
-                   if isinstance(deployment, HelmChartsInstall))
 
         install_helm_steps = [InstallHelmStep(id=f'install-helm_{k8sTarget.name}',
                                               config=config.helmConfig,
                                               k8sTarget=k8sTarget)
-                              for k8sTarget in k8s.targets]
+                              for k8sTarget in pipeline_env.helm_targets.targets]
 
-        dags = [f'dry-run-helm > install-helm_{k8sTarget.name}' for k8sTarget in k8s.targets]
+        dags = [f'dry-run-helm > install-helm_{k8sTarget.name}' for k8sTarget in pipeline_env.helm_targets.targets]
 
         return Pipeline(
             target=MicroService(),
@@ -251,7 +245,7 @@ async def pipeline(
                 PullStep(),
                 NewBranchStep(),
                 UpdatePyYouwolStep(),
-                PublishDockerStep(imageVersion=lambda p, _: p.version, dockerRepo=docker_repo),
+                PublishDockerStep(imageVersion=lambda p, _: p.version, dockerRepo=pipeline_env.docker_target),
                 SyncHelmDeps(),
                 InstallDryRunHelmStep(
                     config=dry_run_config

@@ -139,8 +139,8 @@ class K8sClusterTarget(UploadTarget):
 
 
 class HelmChartsInstall(UploadTargets):
-    k8sConfigFile: Optional[Path]
-    targets: List[K8sClusterTarget]
+    k8sConfigFile: Optional[Path] = None
+    targets: List[K8sClusterTarget] = []
 
 
 class InstallHelmStep(PipelineStep):

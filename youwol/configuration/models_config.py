@@ -54,7 +54,6 @@ class Projects(BaseModel):
         Callable[[PathsBook, Context], Awaitable[List[ConfigPath]]]
     ] = lambda paths_book, _ctx: default_projects_finder(paths_book=paths_book)
     templates: List[ProjectTemplate] = []
-    uploadTargets: List[UploadTargets] = []
 
 
 class DirectAuthUser(BaseModel):
