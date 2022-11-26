@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from youwol.environment.models.models_config import default_cloud_environment, ConfigPath, DirectAuthUser, YouwolCloud,\
     Impersonation, Projects as ProjectsConfig, ProjectTemplate, PathsBook
 
-from youwol.environment.utils import default_projects_finder
+from youwol.environment.projects_finders import default_projects_finder
 from youwol_utils.clients.oidc.oidc_config import PrivateClient, PublicClient
 from youwol_utils.context import Context
 

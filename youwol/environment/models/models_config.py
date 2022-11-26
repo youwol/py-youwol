@@ -6,7 +6,7 @@ from youwol.environment.paths import PathsBook
 from youwol.environment.models.models_config_middleware import CustomMiddleware
 from youwol.environment.models.defaults import default_path_cache_dir, default_path_data_dir, default_http_port, \
     default_platform_host, default_cloud_environment
-from youwol.environment.utils import default_projects_finder
+from youwol.environment.projects_finders import default_projects_finder
 from youwol.routers.custom_commands.models import Command
 from youwol_utils import Context
 from youwol_utils.clients.oidc.oidc_config import PublicClient, PrivateClient
