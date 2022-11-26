@@ -4,7 +4,8 @@ from pathlib import Path
 import lockfile
 
 from youwol.main_args import get_main_arguments
-from youwol.utils.utils_low_level import shutdown_daemon_script, assert_python
+from youwol.shut_down import shutdown_daemon_script
+from youwol.utils.utils_low_level import assert_python
 
 if __name__ == "__main__":
     assert_python()
