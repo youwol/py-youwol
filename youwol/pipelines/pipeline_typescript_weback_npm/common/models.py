@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Any
 
 from pydantic import BaseModel
 
-from youwol.configuration.models_config import UploadTarget, UploadTargets
+from youwol.environment import UploadTarget, UploadTargets
 from youwol.routers.projects.models_project import Project
 from youwol_utils import execute_shell_cmd, CommandException
 from youwol_utils.context import Context

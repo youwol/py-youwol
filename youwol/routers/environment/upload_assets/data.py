@@ -3,8 +3,7 @@ from dataclasses import dataclass
 
 from aiohttp import FormData
 
-from youwol.environment.clients import RemoteClients, LocalClients
-from youwol.environment.youwol_environment import YouwolEnvironment
+from youwol.environment import RemoteClients, LocalClients, YouwolEnvironment
 from youwol.routers.environment.upload_assets.models import UploadTask
 from youwol_utils import YouwolHeaders
 from youwol_utils.context import Context

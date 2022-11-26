@@ -1,4 +1,4 @@
-from youwol.environment.youwol_environment import YouwolEnvironment
+from youwol.environment import YouwolEnvironment
 from youwol.middlewares.models_dispatch import AbstractDispatch
 from youwol.routers.router_remote import redirect_api_remote
 

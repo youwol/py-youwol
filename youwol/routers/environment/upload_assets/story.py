@@ -4,8 +4,7 @@ import zipfile
 from dataclasses import dataclass
 from pathlib import Path
 
-from youwol.environment.clients import RemoteClients, LocalClients
-from youwol.environment.youwol_environment import YouwolEnvironment
+from youwol.environment.clients import RemoteClients, LocalClients, YouwolEnvironment
 from youwol.routers.environment.upload_assets.models import UploadTask
 from youwol_utils import JSON
 from youwol_utils.context import Context

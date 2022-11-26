@@ -11,9 +11,8 @@ from starlette.requests import Request
 from starlette.responses import FileResponse, JSONResponse
 
 from youwol.routers.projects.models_project import Project, Manifest, PipelineStepStatus
-from youwol.environment.paths import PathsBook
 from youwol.routers.projects.projects_loader import ProjectLoader
-from youwol.environment.youwol_environment import yw_config, YouwolEnvironment, YouwolEnvironmentFactory
+from youwol.environment import yw_config, YouwolEnvironment, YouwolEnvironmentFactory, PathsBook
 from youwol_utils import CommandException
 from youwol.routers.commons import Label
 from youwol.routers.environment.models import ProjectsLoadingResults

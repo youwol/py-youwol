@@ -6,7 +6,7 @@ from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response, JSONResponse
 
-from youwol.environment.youwol_environment import YouwolEnvironment
+from youwol.environment import YouwolEnvironment
 from youwol.middlewares.models_dispatch import AbstractDispatch
 from youwol_cdn_backend import resolve_loading_tree, Dependencies
 from youwol_utils import DependenciesError, YouwolHeaders

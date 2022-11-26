@@ -1,4 +1,4 @@
-from youwol.environment.youwol_environment import YouwolEnvironment
+from youwol.environment import YouwolEnvironment
 from youwol_utils import CdnClient
 from youwol_utils.clients.assets.assets import AssetsClient
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient

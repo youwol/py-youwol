@@ -4,10 +4,8 @@ from pathlib import Path
 from typing import List, Callable, Optional, Union, Awaitable, cast
 
 from pydantic import BaseModel
-from youwol.configuration.defaults import default_cloud_environment
-from youwol.configuration.models_config import ConfigPath, DirectAuthUser, YouwolCloud, Impersonation, \
-    Projects as ProjectsConfig, ProjectTemplate
-from youwol.environment.paths import PathsBook
+from youwol.environment.models.models_config import default_cloud_environment, ConfigPath, DirectAuthUser, YouwolCloud,\
+    Impersonation, Projects as ProjectsConfig, ProjectTemplate, PathsBook
 
 from youwol.environment.utils import default_projects_finder
 from youwol_utils.clients.oidc.oidc_config import PrivateClient, PublicClient
@@ -51,6 +49,7 @@ class Secret(BaseModel):
 class ApiConfiguration:
     open_api_prefix: str
     base_path: str
+
 
 class IPipelineFactory:
     """

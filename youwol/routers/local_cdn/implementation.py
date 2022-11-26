@@ -5,8 +5,7 @@ from typing import NamedTuple, List
 from aiohttp import FormData
 from fastapi import HTTPException
 
-from youwol.environment.clients import RemoteClients, LocalClients
-from youwol.environment.youwol_environment import YouwolEnvironment
+from youwol.environment import RemoteClients, LocalClients, YouwolEnvironment
 from youwol.routers.commons import Label
 from youwol.routers.environment.download_assets.common import create_asset_local
 from youwol.routers.local_cdn.models import CheckUpdateResponse, UpdateStatus, PackageVersionInfo, \

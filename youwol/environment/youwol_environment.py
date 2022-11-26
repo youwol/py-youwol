@@ -16,10 +16,10 @@ from youwol.environment.errors_handling import (
     CheckSystemFolderWritable, CheckDatabasesFolderHealthy, ErrorResponse
 )
 
-from youwol.configuration.models_config import Events, RemoteAccess, Impersonation, Configuration
-from youwol.configuration.models_config_middleware import CustomMiddleware
+from youwol.environment.models import Events, RemoteAccess, Impersonation, Configuration, CustomMiddleware, \
+    RemoteGateway, ApiConfiguration
+from youwol.environment.models.models import Projects
 from youwol.environment.config_from_module import configuration_from_python
-from youwol.environment.models import RemoteGateway, ApiConfiguration, Projects
 from youwol.environment.paths import PathsBook, ensure_config_file_exists_or_create_it
 from youwol.main_args import get_main_arguments, MainArguments
 from youwol.routers.custom_backends import install_routers

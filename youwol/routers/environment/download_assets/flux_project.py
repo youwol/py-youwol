@@ -4,8 +4,7 @@ from aiohttp import FormData
 from fastapi import HTTPException
 
 import youwol_flux_backend
-from youwol.environment.clients import LocalClients
-from youwol.environment.youwol_environment import YouwolEnvironment
+from youwol.environment import LocalClients, YouwolEnvironment
 from youwol.routers.environment.download_assets.common import (
     create_asset_local
 )

@@ -3,8 +3,7 @@ from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
 
-from youwol.environment.auto_download_thread import AssetDownloadThread
-from youwol.environment.youwol_environment import YouwolEnvironment
+from youwol.environment import AssetDownloadThread, YouwolEnvironment
 from youwol.middlewares.models_dispatch import AbstractDispatch
 from youwol.routers.router_remote import redirect_api_remote
 from youwol_utils import YouwolHeaders

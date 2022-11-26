@@ -7,9 +7,8 @@ from deepdiff import DeepDiff
 
 from youwol.routers.projects.models_project import Manifest, PipelineStepStatus, ExplicitNone, \
     parse_json, PipelineStep, Artifact, Project, FlowId, CommandPipelineStep
-from youwol.environment.paths import PathsBook
+from youwol.environment import PathsBook, YouwolEnvironment
 from youwol.routers.projects.projects_loader import ProjectLoader
-from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.pipelines.pipeline_typescript_weback_npm.regular.common import Paths
 from youwol.pipelines.pipeline_typescript_weback_npm.regular.build_step import BuildStep
 from youwol.pipelines.pipeline_typescript_weback_npm.regular.models import InputDataDependency

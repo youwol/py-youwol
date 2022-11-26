@@ -2,7 +2,7 @@ from enum import Enum
 from typing import List, Optional, Dict
 
 from pydantic import BaseModel
-from youwol.environment.errors_handling import ErrorResponse
+from youwol.environment import ErrorResponse
 
 from youwol.routers.projects.projects_loader import Result
 from youwol.middlewares.models_dispatch import DispatchInfo

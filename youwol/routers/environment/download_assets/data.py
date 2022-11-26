@@ -4,8 +4,7 @@ from dataclasses import dataclass
 from aiohttp import FormData
 from fastapi import HTTPException
 
-from youwol.environment.clients import LocalClients
-from youwol.environment.youwol_environment import YouwolEnvironment
+from youwol.environment import LocalClients, YouwolEnvironment
 from youwol.routers.environment.download_assets.common import create_asset_local
 from youwol.routers.environment.download_assets.models import DownloadTask
 from youwol_utils import Context, decode_id

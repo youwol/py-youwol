@@ -7,16 +7,14 @@ from typing import Optional, cast, Mapping, List, Iterable
 from fastapi import HTTPException
 from pydantic import BaseModel
 
-from youwol.configuration.models_config import UploadTargets, DirectAuthUser, YouwolCloud
+from youwol.environment import UploadTargets, DirectAuthUser, YouwolCloud, LocalClients, RemoteClients, PathsBook, \
+    YouwolEnvironment
 from youwol_utils.clients.oidc.oidc_config import OidcConfig
 
 from youwol_utils.http_clients.assets_gateway import DefaultDriveResponse
-from youwol.environment.clients import LocalClients, RemoteClients
 from youwol.routers.projects.models_project import (
     PipelineStep, Project, Manifest, PipelineStepStatus, FlowId, ExplicitNone, BrowserApp,
 )
-from youwol.environment.paths import PathsBook
-from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.environment.upload_assets.package import UploadPackageOptions
 from youwol.routers.environment.upload_assets.upload import upload_asset
 from youwol_utils import encode_id, files_check_sum, to_json, YouwolHeaders

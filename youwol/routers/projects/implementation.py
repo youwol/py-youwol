@@ -2,10 +2,10 @@ import os
 import shutil
 from typing import Tuple, List
 
-from youwol.routers.projects.models_project import Project, PipelineStep, Artifact, Flow, Link, Manifest, PipelineStepStatus
-from youwol.environment.paths import PathsBook
+from youwol.routers.projects.models_project import Project, PipelineStep, Artifact, Flow, Link, Manifest, \
+    PipelineStepStatus
+from youwol.environment import PathsBook, YouwolEnvironment
 from youwol.routers.projects.projects_loader import ProjectLoader
-from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.projects.models import (
     PipelineStepStatusResponse, ArtifactResponse, PipelineStepEvent, Event
 )

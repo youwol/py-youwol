@@ -6,8 +6,7 @@ from typing import List, Union, Set, Dict, Any, Callable, Awaitable, Iterable, c
 
 from pydantic import BaseModel
 
-from youwol.environment.youwol_environment import YouwolEnvironment
-from youwol.environment.paths import PathsBook
+from youwol.environment import YouwolEnvironment, PathsBook
 from youwol_utils import JSON
 from youwol_utils import execute_shell_cmd, CommandException
 from youwol_utils import files_check_sum

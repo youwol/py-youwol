@@ -2,7 +2,7 @@ from typing import Optional
 
 from starlette.requests import Request
 
-from youwol.environment.youwol_environment import yw_config
+from youwol.environment import yw_config
 from youwol_utils import CacheClient
 from youwol_utils.clients.oidc.oidc_config import OidcInfos
 from youwol_utils.context import Context

@@ -5,7 +5,7 @@ import youwol.routers.environment.router as environment
 import youwol.routers.local_cdn.router as local_cdn
 import youwol.routers.projects.router as projects
 import youwol.routers.system.router as system
-from youwol.environment.youwol_environment import api_configuration
+from youwol.environment import api_configuration
 from youwol.routers import router_remote
 
 router = APIRouter(tags=["admin"])

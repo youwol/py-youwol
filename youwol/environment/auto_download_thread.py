@@ -7,7 +7,7 @@ from typing import Dict, Any
 from pydantic import BaseModel
 from tqdm import tqdm
 
-from youwol.environment.youwol_environment import YouwolEnvironment
+from youwol.environment import YouwolEnvironment
 from youwol.routers.environment.download_assets.models import DownloadTask
 from youwol.web_socket import LogsStreamer
 from youwol_utils import encode_id

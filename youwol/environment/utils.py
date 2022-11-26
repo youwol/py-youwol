@@ -2,8 +2,8 @@ import itertools
 from pathlib import Path
 from typing import Union, List
 
-from youwol.configuration.defaults import default_path_projects_dir
 from youwol.environment.paths import PathsBook
+from youwol.environment.models import default_path_projects_dir
 from youwol_utils.utils_paths import FileListing, matching_files
 
 

@@ -7,9 +7,7 @@ from starlette.responses import RedirectResponse, Response
 from starlette.types import ASGIApp
 
 import youwol.middlewares.local_cloud_hybridizers as local_cloud_hybridizer
-from youwol.configuration.models_config_middleware import CustomMiddleware
-from youwol.environment.auto_download_thread import AssetDownloadThread
-from youwol.environment.youwol_environment import yw_config, api_configuration, YouwolEnvironment
+from youwol.environment import CustomMiddleware, AssetDownloadThread, yw_config, api_configuration, YouwolEnvironment
 from youwol.middlewares.auth_middleware import get_remote_openid_infos, JwtProviderConfig
 from youwol.middlewares.browser_caching_middleware import BrowserCachingMiddleware
 from youwol.middlewares.hybridizer_middleware import LocalCloudHybridizerMiddleware

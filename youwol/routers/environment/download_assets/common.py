@@ -3,8 +3,7 @@ from typing import Awaitable, Protocol
 
 from fastapi import HTTPException
 
-from youwol.environment.clients import RemoteClients, LocalClients
-from youwol.environment.youwol_environment import YouwolEnvironment
+from youwol.environment import RemoteClients, LocalClients, YouwolEnvironment
 from youwol_utils import YouwolHeaders
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from youwol_utils.clients.treedb.treedb import TreeDbClient

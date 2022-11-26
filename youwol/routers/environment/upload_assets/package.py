@@ -4,8 +4,7 @@ from typing import List, NamedTuple, Optional
 from fastapi import HTTPException
 from pydantic import BaseModel
 
-from youwol.environment.clients import RemoteClients
-from youwol.environment.youwol_environment import YouwolEnvironment
+from youwol.environment import RemoteClients, YouwolEnvironment
 from youwol.routers.environment.upload_assets.models import UploadTask
 from youwol_utils import decode_id
 from youwol_utils.context import Context

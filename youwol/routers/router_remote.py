@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 from starlette.requests import Request
-from youwol.environment.youwol_environment import YouwolEnvironment
+from youwol.environment import YouwolEnvironment
 from youwol.utils.utils_low_level import redirect_request
 
 from youwol_utils.context import Context
