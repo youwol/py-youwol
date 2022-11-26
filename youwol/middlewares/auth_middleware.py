@@ -2,7 +2,7 @@ from typing import Optional
 
 from starlette.requests import Request
 
-from youwol.environment import yw_config
+from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol_utils import CacheClient
 from youwol_utils.clients.oidc.oidc_config import OidcInfos
 from youwol_utils.context import Context
@@ -15,19 +15,18 @@ class JwtProviderConfig(JwtProvider):
         self.__jwt_cache = jwt_cache
 
     async def get_token(self, request: Request, context: Context) -> Optional[str]:
-        config = await yw_config()
-        if config.currentAccess.userId:
-            return await config.get_auth_token(context=context)
+        env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
+        if env.currentAccess.userId:
+            return await env.get_auth_token(context=context)
         else:
             return await JwtProviderCookie(
                 jwt_cache=self.__jwt_cache,
                 openid_infos=OidcInfos(
-                    base_uri=config.get_remote_info().openidBaseUrl,
-                    client=config.get_remote_info().openidClient
+                    base_uri=env.get_remote_info().openidBaseUrl,
+                    client=env.get_remote_info().openidClient
                 )
             ).get_token(request, context)
 
 
-async def get_remote_openid_infos() -> OidcInfos:
-    config = await yw_config()
-    return OidcInfos(base_uri=config.get_remote_info().openidBaseUrl, client=config.get_remote_info().openidClient)
+async def get_remote_openid_infos(env: YouwolEnvironment) -> OidcInfos:
+    return OidcInfos(base_uri=env.get_remote_info().openidBaseUrl, client=env.get_remote_info().openidClient)

@@ -1,4 +1,5 @@
 import asyncio
+from functools import partial
 
 from fastapi import FastAPI, Depends, WebSocket
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
@@ -90,7 +91,7 @@ def setup_middlewares(env: YouwolEnvironment):
     fastapi_app.add_middleware(BrowserCachingMiddleware)
     fastapi_app.add_middleware(
         AuthMiddleware,
-        openid_infos=get_remote_openid_infos,
+        openid_infos=partial(get_remote_openid_infos, env),
         predicate_public_path=lambda url:
         url.path.startswith("/api/accounts/openid_rp/"),
         jwt_providers=[JwtProviderConfig(jwt_cache=jwt_cache)],
