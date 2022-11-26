@@ -1,5 +1,5 @@
 from youwol.environment import YouwolEnvironment
-from youwol.middlewares.models_dispatch import AbstractDispatch
+from youwol.middlewares.local_cloud_hybridizers.abstract_local_cloud_dispatch import AbstractLocalCloudDispatch
 from youwol.routers.router_remote import redirect_api_remote
 
 from youwol_utils import YouwolHeaders
@@ -11,7 +11,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 
-class ForwardOnly(AbstractDispatch):
+class ForwardOnly(AbstractLocalCloudDispatch):
 
     async def apply(self,
                     request: Request,

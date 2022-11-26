@@ -7,14 +7,14 @@ from starlette.requests import Request
 from starlette.responses import Response, JSONResponse
 
 from youwol.environment import YouwolEnvironment
-from youwol.middlewares.models_dispatch import AbstractDispatch
+from youwol.middlewares.local_cloud_hybridizers.abstract_local_cloud_dispatch import AbstractLocalCloudDispatch
 from youwol_cdn_backend import resolve_loading_tree, Dependencies
 from youwol_utils import DependenciesError, YouwolHeaders
 from youwol_utils.context import Context
 from youwol_utils.http_clients.cdn_backend import LoadingGraphBody, patch_loading_graph
 
 
-class GetLoadingGraph(AbstractDispatch):
+class GetLoadingGraph(AbstractLocalCloudDispatch):
 
     async def apply(self,
                     request: Request,

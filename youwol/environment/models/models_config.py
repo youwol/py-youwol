@@ -1,4 +1,5 @@
 from pathlib import Path
+import socket
 from typing import Union, Callable, Awaitable, Any, Dict, Tuple
 
 from youwol.environment.paths import PathsBook
@@ -16,7 +17,6 @@ from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
 
-from youwol.middlewares.models_dispatch import DispatchInfo, is_localhost_ws_listening
 from youwol.utils.utils_low_level import redirect_request
 from youwol_utils import Context, encode_id, YouWolException, youwol_exception_handler
 from youwol_utils.context import Label
@@ -128,6 +128,12 @@ class CustomMiddleware(BaseModel):
                        context: Context
                        ) -> Optional[Response]:
         raise NotImplementedError("CustomMiddleware.switch not implemented")
+
+
+class DispatchInfo(BaseModel):
+    name: str
+    activated: Optional[bool]
+    parameters: Optional[Dict[str, str]]
 
 
 class FlowSwitch(BaseModel):
@@ -313,3 +319,9 @@ class Configuration(BaseModel):
     system: Optional[System] = System()
     projects: Optional[Projects] = Projects()
     customization: Optional[Customization] = Customization()
+
+
+def is_localhost_ws_listening(port: int):
+    a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    location = ('localhost', port)
+    return a_socket.connect_ex(location) == 0

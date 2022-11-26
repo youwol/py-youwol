@@ -4,14 +4,14 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from youwol.environment import AssetDownloadThread, YouwolEnvironment
-from youwol.middlewares.models_dispatch import AbstractDispatch
+from youwol.middlewares.local_cloud_hybridizers.abstract_local_cloud_dispatch import AbstractLocalCloudDispatch
 from youwol.routers.router_remote import redirect_api_remote
 from youwol_utils import YouwolHeaders
 from youwol_utils.context import Context
 from youwol_utils.request_info_factory import url_match
 
 
-class Download(AbstractDispatch):
+class Download(AbstractLocalCloudDispatch):
 
     async def apply(self,
                     request: Request,

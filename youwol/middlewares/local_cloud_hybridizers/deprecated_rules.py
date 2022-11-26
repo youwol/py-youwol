@@ -7,14 +7,14 @@ from starlette.requests import Request
 from starlette.responses import Response, JSONResponse
 
 from youwol.environment import LocalClients, YouwolEnvironment
-from youwol.middlewares.models_dispatch import AbstractDispatch
+from youwol.middlewares.local_cloud_hybridizers.abstract_local_cloud_dispatch import AbstractLocalCloudDispatch
 from youwol.routers.commons import ensure_local_path
 from youwol.routers.router_remote import redirect_api_remote
 from youwol_utils.context import Context
 from youwol_utils.request_info_factory import url_match
 
 
-class PostMetadataDeprecated(AbstractDispatch):
+class PostMetadataDeprecated(AbstractLocalCloudDispatch):
 
     async def apply(self,
                     request: Request,
@@ -56,7 +56,7 @@ class PostMetadataDeprecated(AbstractDispatch):
             return resp_remote
 
 
-class CreateAssetDeprecated(AbstractDispatch):
+class CreateAssetDeprecated(AbstractLocalCloudDispatch):
 
     async def apply(self,
                     request: Request,
