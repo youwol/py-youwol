@@ -2,8 +2,8 @@ import shutil
 from pathlib import Path
 from youwol.pipelines.pipeline_typescript_weback_npm.common import generate_package_json, copy_files_folders, \
     generate_webpack_config, Dependencies, RunTimeDeps, Template
-from youwol.utils.utils_low_level import sed_inplace
 from youwol_cdn_backend import get_api_key
+from youwol_utils.utils_paths import sed_inplace
 
 
 def generate_template(input_template: Template):
