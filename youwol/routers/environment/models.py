@@ -38,7 +38,7 @@ class SwitchResponse(BaseModel):
 
 
 class LoginBody(BaseModel):
-    email: Optional[str]
+    userId: Optional[str]
     remote: Optional[str]
 
 

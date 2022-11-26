@@ -132,7 +132,7 @@ async def login(
         body: LoginBody
 ):
     async with Context.from_request(request).start(action="login") as ctx:
-        await YouwolEnvironmentFactory.reload(selected_user=body.email, selected_remote=body.remote)
+        await YouwolEnvironmentFactory.reload(selected_user=body.userId, selected_remote=body.remote)
         conf = await yw_config()
         await status(request, conf)
         data = await OidcConfig(conf.get_remote_info().openidBaseUrl).token_decode(await conf.get_auth_token(ctx))
