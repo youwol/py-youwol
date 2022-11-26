@@ -53,7 +53,6 @@ async def configuration(
 
 
 @router.post("/configuration",
-             response_model=EnvironmentStatusResponse,
              summary="reload configuration")
 async def reload_configuration(
         request: Request,
@@ -72,8 +71,7 @@ async def file_content(
 
 
 @router.get("/status",
-            summary="status",
-            response_model=EnvironmentStatusResponse)
+            summary="status")
 async def status(
         request: Request,
         config: YouwolEnvironment = Depends(yw_config)
@@ -99,8 +97,9 @@ async def status(
             ]
         )
         await ctx.send(response)
-        await ctx.send(ProjectsLoadingResults(results=await ProjectLoader.get_results(config, ctx)))
-        return response
+        # Returning 'response' instead 'to_json(response)' (along with 'response_model=EnvironmentStatusResponse')
+        # lead to missing fields (e.g. some middlewares). Not sure what the problem is.
+        return to_json(response)
 
 
 @router.get("/configuration/custom-dispatches",
