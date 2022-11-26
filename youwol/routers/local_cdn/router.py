@@ -7,7 +7,7 @@ from fastapi import APIRouter
 from starlette.requests import Request
 
 from youwol.environment.clients import LocalClients
-from youwol.environment.projects_loader import ProjectLoader
+from youwol.routers.projects.projects_loader import ProjectLoader
 from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.local_cdn.implementation import get_latest_local_cdn_version, check_updates_from_queue, \
     download_packages_from_queue, get_version_info

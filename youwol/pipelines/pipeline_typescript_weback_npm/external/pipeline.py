@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from youwol.environment.models_project import Artifact, Flow, Pipeline, PipelineStep, FileListing, JsBundle, Link
+from youwol.routers.projects.models_project import Artifact, Flow, Pipeline, PipelineStep, FileListing, JsBundle, Link
 from youwol.pipelines.pipeline_typescript_weback_npm import create_sub_pipelines_publish_cdn
 from youwol.pipelines.pipeline_typescript_weback_npm.common import InitStep
 from youwol.pipelines.publish_cdn import PublishCdnLocalStep

@@ -7,7 +7,7 @@ from typing import Dict, List, Union, NamedTuple, cast
 import pyparsing
 import semantic_version
 
-from youwol.environment.models_project import PipelineStep
+from youwol.routers.projects.models_project import PipelineStep
 from youwol.pipelines import PublishCdnRemoteStep
 from youwol.pipelines.pipeline_typescript_weback_npm.environment import get_environment
 from youwol.pipelines.pipeline_typescript_weback_npm.common import Template, PackageType

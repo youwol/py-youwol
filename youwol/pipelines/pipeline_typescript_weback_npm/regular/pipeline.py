@@ -2,7 +2,7 @@ from typing import List
 
 from pydantic import BaseModel
 
-from youwol.environment.models_project import Flow, Pipeline, parse_json, BrowserTarget, BrowserLibBundle
+from youwol.routers.projects.models_project import Flow, Pipeline, parse_json, BrowserTarget, BrowserLibBundle
 from youwol.pipelines.pipeline_typescript_weback_npm import create_sub_pipelines_publish
 from youwol.pipelines.pipeline_typescript_weback_npm.regular.build_step import BuildStep
 from youwol.pipelines.pipeline_typescript_weback_npm.regular.common import Paths, get_dependencies

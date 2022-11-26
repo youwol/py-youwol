@@ -5,9 +5,9 @@ from pathlib import Path
 from pydantic import BaseModel
 from typing import List, Union, Optional, Awaitable
 
-from youwol.environment.models_project import IPipelineFactory
+from youwol.routers.projects.models_project import IPipelineFactory
 from youwol.environment.youwol_environment import YouwolEnvironment
-from youwol.environment.models_project import Project
+from youwol.routers.projects.models_project import Project
 from youwol.utils.utils_low_level import get_object_from_module
 from youwol_utils import encode_id
 from youwol_utils.context import Context

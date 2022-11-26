@@ -5,7 +5,7 @@ from typing import Callable, Union, List, Optional, NamedTuple
 from pydantic import BaseModel
 
 from youwol.configuration.models_config import UploadTarget, UploadTargets
-from youwol.environment.models_project import PipelineStep, Project, ExplicitNone, FlowId, RunImplicit, Manifest, \
+from youwol.routers.projects.models_project import PipelineStep, Project, ExplicitNone, FlowId, RunImplicit, Manifest, \
     PipelineStepStatus, FileListing
 from youwol.pipelines.deploy_service import HelmPackage
 from youwol_utils import execute_shell_cmd, CommandException

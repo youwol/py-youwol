@@ -10,9 +10,9 @@ from fastapi import APIRouter, Depends, Query, HTTPException
 from starlette.requests import Request
 from starlette.responses import FileResponse, JSONResponse
 
-from youwol.environment.models_project import Project, Manifest, PipelineStepStatus
+from youwol.routers.projects.models_project import Project, Manifest, PipelineStepStatus
 from youwol.environment.paths import PathsBook
-from youwol.environment.projects_loader import ProjectLoader
+from youwol.routers.projects.projects_loader import ProjectLoader
 from youwol.environment.youwol_environment import yw_config, YouwolEnvironment, YouwolEnvironmentFactory
 from youwol_utils import CommandException
 from youwol.routers.commons import Label

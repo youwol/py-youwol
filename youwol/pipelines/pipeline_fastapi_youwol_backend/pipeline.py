@@ -5,7 +5,7 @@ import pkg_resources
 import yaml
 from pydantic import BaseModel
 
-from youwol.environment.models_project import Manifest, PipelineStepStatus, Link, Flow, \
+from youwol.routers.projects.models_project import Manifest, PipelineStepStatus, Link, Flow, \
     SourcesFctImplicit, Pipeline, PipelineStep, FileListing, \
     Artifact, Project, RunImplicit, MicroService
 from youwol.pipelines.docker_k8s_helm import get_helm_app_version, InstallHelmStep, InstallHelmStepConfig, \

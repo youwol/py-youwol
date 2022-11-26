@@ -12,7 +12,7 @@ from youwol_utils.clients.oidc.oidc_config import OidcConfig
 
 from youwol_utils.http_clients.assets_gateway import DefaultDriveResponse
 from youwol.environment.clients import LocalClients, RemoteClients
-from youwol.environment.models_project import (
+from youwol.routers.projects.models_project import (
     PipelineStep, Project, Manifest, PipelineStepStatus, FlowId, ExplicitNone, BrowserApp,
 )
 from youwol.environment.paths import PathsBook

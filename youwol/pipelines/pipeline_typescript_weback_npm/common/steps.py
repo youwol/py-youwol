@@ -1,6 +1,6 @@
 from typing import Optional
 
-from youwol.environment.models_project import PipelineStep, Project, Manifest, PipelineStepStatus
+from youwol.routers.projects.models_project import PipelineStep, Project, Manifest, PipelineStepStatus
 from youwol_utils.context import Context
 
 

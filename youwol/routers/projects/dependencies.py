@@ -3,8 +3,8 @@ from typing import List, Dict
 
 from pydantic import BaseModel
 
-from youwol.environment.models_project import Project
-from youwol.environment.projects_loader import ProjectLoader
+from youwol.routers.projects.models_project import Project
+from youwol.routers.projects.projects_loader import ProjectLoader
 from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol.routers.projects.models import (
     ChildToParentConnections, DependenciesResponse,
