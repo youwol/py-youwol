@@ -9,7 +9,6 @@ from youwol.environment.errors_handling import ConfigurationLoadingException
 from youwol.environment.youwol_environment import YouwolEnvironmentFactory, print_invite, YouwolEnvironment
 from youwol.fastapi_app import download_thread, fastapi_app, cleaner_thread
 from youwol.main_args import get_main_arguments
-from youwol.utils.utils_low_level import assert_py_youwol_starting_preconditions
 
 
 def start(shutdown_script_path: Optional[Path] = None):
@@ -20,12 +19,6 @@ def start(shutdown_script_path: Optional[Path] = None):
     except ConfigurationLoadingException as e:
         print("Error while loading configuration")
         print(e)
-        raise e
-
-    try:
-        assert_py_youwol_starting_preconditions(http_port=env.httpPort)
-    except ValueError as e:
-        print(f"Pre-conditions failed while starting py-youwol server: {e}")
         raise e
 
     try:
