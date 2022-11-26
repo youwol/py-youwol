@@ -8,7 +8,7 @@ from typing import List, Union, Optional, Awaitable
 from youwol.routers.projects.models_project import IPipelineFactory
 from youwol.environment import YouwolEnvironment
 from youwol.routers.projects.models_project import Project
-from youwol.utils.utils_low_level import get_object_from_module
+from youwol.environment.python_dynamic_loader import get_object_from_module
 from youwol_utils import encode_id
 from youwol_utils.context import Context
 

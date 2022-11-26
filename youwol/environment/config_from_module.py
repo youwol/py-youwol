@@ -11,7 +11,7 @@ from youwol.environment.errors_handling import CheckValidConfigurationFunction, 
     ConfigurationLoadingException, format_unknown_error, ErrorResponse
 from youwol.environment.models import Configuration
 from youwol.main_args import MainArguments, get_main_arguments
-from youwol.utils.utils_low_level import get_object_from_module
+from youwol.environment.python_dynamic_loader import get_object_from_module
 from youwol_utils.utils_paths import PathException, existing_path_or_default
 
 
