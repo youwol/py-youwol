@@ -24,7 +24,6 @@ class ProjectsLoadingResults(BaseModel):
 
 
 class RemoteGatewayInfo(BaseModel):
-    name: str
     host: str
     connected: Optional[bool]
 

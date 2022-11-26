@@ -81,9 +81,7 @@ async def status(
     ) as ctx:  # type: Context
         remote_gateway_info = config.get_remote_info()
         if remote_gateway_info:
-            remote_gateway_info = RemoteGatewayInfo(name=remote_gateway_info.name,
-                                                    host=remote_gateway_info.host,
-                                                    connected=True)
+            remote_gateway_info = RemoteGatewayInfo(host=remote_gateway_info.host, connected=True)
         data = request.state.user_info
         response = EnvironmentStatusResponse(
             users=config.get_users_list(),
