@@ -9,19 +9,7 @@ from typing import Union, List, Type, cast, TypeVar, Optional
 from aiohttp import ClientSession, TCPConnector
 from starlette.requests import Request
 from starlette.responses import Response
-from starlette.websockets import WebSocket, WebSocketDisconnect
-from youwol_utils import log_info, assert_response
-
-
-async def start_web_socket(ws: WebSocket):
-    await ws.accept()
-    await ws.send_json({})
-    while True:
-        try:
-            _ = await ws.receive_text()
-        except WebSocketDisconnect:
-            log_info(f'{ws.scope["client"]} - "WebSocket {ws.scope["path"]}" [disconnected]')
-            break
+from youwol_utils import assert_response
 
 
 async def redirect_request(

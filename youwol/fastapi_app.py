@@ -14,7 +14,7 @@ from youwol.middlewares import BrowserCachingMiddleware, LocalCloudHybridizerMid
 from youwol.routers import native_backends, admin
 from youwol.routers.environment.download_assets import DownloadDataTask, DownloadFluxProjectTask, DownloadPackageTask, \
     DownloadStoryTask
-from youwol.utils.utils_low_level import start_web_socket
+from youwol.web_socket import start_web_socket
 from youwol.web_socket import WebSocketsStore, WsDataStreamer
 from youwol_utils import YouWolException, youwol_exception_handler, YouwolHeaders, CleanerThread, factory_local_cache
 from youwol_utils.context import ContextFactory, InMemoryReporter, Context
