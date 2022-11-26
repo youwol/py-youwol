@@ -9,9 +9,8 @@ from starlette.types import ASGIApp
 
 import youwol.middlewares.local_cloud_hybridizers as local_cloud_hybridizer
 from youwol.environment import CustomMiddleware, AssetDownloadThread, yw_config, api_configuration, YouwolEnvironment
-from youwol.middlewares.auth_middleware import get_remote_openid_infos, JwtProviderConfig
-from youwol.middlewares.browser_caching_middleware import BrowserCachingMiddleware
-from youwol.middlewares.hybridizer_middleware import LocalCloudHybridizerMiddleware
+from youwol.middlewares import BrowserCachingMiddleware, LocalCloudHybridizerMiddleware,  get_remote_openid_infos,\
+    JwtProviderConfig
 from youwol.routers import native_backends, admin
 from youwol.routers.environment.download_assets import DownloadDataTask, DownloadFluxProjectTask, DownloadPackageTask, \
     DownloadStoryTask
