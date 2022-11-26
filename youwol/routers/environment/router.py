@@ -12,13 +12,12 @@ from starlette.requests import Request
 from youwol.configuration.models_config_middleware import FlowSwitcherMiddleware
 
 from youwol.environment.models import UserInfo
-from youwol.environment.projects_loader import ProjectLoader
 from youwol.environment.youwol_environment import yw_config, YouwolEnvironment, YouwolEnvironmentFactory
-from youwol.routers.environment.models import LoginBody, RemoteGatewayInfo, ProjectsLoadingResults,\
-    CustomDispatchesResponse
+from youwol.routers.environment.models import LoginBody, RemoteGatewayInfo, CustomDispatchesResponse
 
 from youwol.routers.environment.upload_assets.upload import upload_asset
 from youwol.web_socket import LogsStreamer
+from youwol_utils import to_json
 from youwol_utils.clients.oidc.oidc_config import OidcConfig
 from youwol_utils.context import Context
 
@@ -96,6 +95,8 @@ async def status(
                 for remote in config.remotes
             ]
         )
+        # disable projects loading for now
+        # await ctx.send(ProjectsLoadingResults(results=await ProjectLoader.get_results(config, ctx)))
         await ctx.send(response)
         # Returning 'response' instead 'to_json(response)' (along with 'response_model=EnvironmentStatusResponse')
         # lead to missing fields (e.g. some middlewares). Not sure what the problem is.
