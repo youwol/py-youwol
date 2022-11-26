@@ -11,7 +11,7 @@ from cowpy import cow
 from pydantic import BaseModel
 
 import youwol
-from youwol.configuration.configuration_validation import (
+from youwol.environment.errors_handling import (
     ConfigurationLoadingStatus, ConfigurationLoadingException,
     CheckSystemFolderWritable, CheckDatabasesFolderHealthy, ErrorResponse
 )

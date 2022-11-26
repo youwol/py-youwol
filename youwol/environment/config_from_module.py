@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Awaitable
 
-from youwol.configuration.configuration_validation import CheckValidConfigurationFunction, ConfigurationLoadingStatus, \
+from youwol.environment.errors_handling import CheckValidConfigurationFunction, ConfigurationLoadingStatus, \
     ConfigurationLoadingException, format_unknown_error, ErrorResponse
 from youwol.environment.paths import app_dirs
 from youwol.configuration.models_config import Configuration

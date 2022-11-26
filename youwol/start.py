@@ -5,7 +5,7 @@ from typing import Optional
 
 import uvicorn
 
-from youwol.configuration.configuration_validation import ConfigurationLoadingException
+from youwol.environment.errors_handling import ConfigurationLoadingException
 from youwol.environment.youwol_environment import YouwolEnvironmentFactory, print_invite, YouwolEnvironment
 from youwol.fastapi_app import download_thread, fastapi_app, cleaner_thread
 from youwol.main_args import get_main_arguments
