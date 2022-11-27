@@ -2,6 +2,7 @@ from typing import Optional
 
 from starlette.requests import Request
 
+from youwol.environment import ImpersonateAuthConnection
 from youwol.environment.youwol_environment import YouwolEnvironment
 from youwol_utils import CacheClient
 from youwol_utils.clients.oidc.oidc_config import OidcInfos
@@ -16,7 +17,7 @@ class JwtProviderConfig(JwtProvider):
 
     async def get_token(self, request: Request, context: Context) -> Optional[str]:
         env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
-        if env.currentAccess.userId:
+        if isinstance(env.currentConnection, ImpersonateAuthConnection):
             return await env.get_auth_token(context=context)
         else:
             return await JwtProviderCookie(

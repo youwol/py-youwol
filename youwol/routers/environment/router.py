@@ -84,7 +84,7 @@ async def status(
             configuration=config,
             remoteGatewayInfo=remote_gateway_info,
             remotesInfo=[
-                RemoteGatewayInfo(host=remote.host, connected=(remote.host == config.currentAccess.host))
+                RemoteGatewayInfo(host=remote.host, connected=(remote.host == config.currentConnection.host))
                 for remote in config.remotes
             ]
         )

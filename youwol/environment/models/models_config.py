@@ -79,16 +79,16 @@ class YouwolCloud(BaseModel):
     keycloakAdminClient: Optional[PrivateClient] = None
 
 
-class RemoteAccess(BaseModel):
+class RemoteConnection(BaseModel):
     host: str
     userId: Optional[str]
 
 
-class BrowserAuthAccess(RemoteAccess):
+class BrowserAuthConnection(RemoteConnection):
     host: str
 
 
-class ImpersonateAuthAccess(RemoteAccess):
+class ImpersonateAuthConnection(RemoteConnection):
     host: str
     userId: str
 
@@ -101,7 +101,7 @@ class Impersonation(BaseModel):
 
 
 class CloudEnvironments(BaseModel):
-    defaultAccess: RemoteAccess = BrowserAuthAccess(host=default_platform_host)
+    defaultConnection: RemoteConnection = BrowserAuthConnection(host=default_platform_host)
     environments: List[YouwolCloud] = []
     impersonations: List[Impersonation] = []
 

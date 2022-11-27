@@ -36,7 +36,7 @@ class ForwardOnly(AbstractLocalCloudDispatch):
             if resp.status_code == 404:
                 await ctx.info("Forward request to remote as it can not proceed locally ")
                 resp = await redirect_api_remote(request=request, context=ctx)
-                resp.headers[YouwolHeaders.youwol_origin] = env.currentAccess.host
+                resp.headers[YouwolHeaders.youwol_origin] = env.currentConnection.host
                 return resp
 
             resp.headers[YouwolHeaders.youwol_origin] = request.url.hostname

@@ -16,7 +16,7 @@ from youwol.environment.errors_handling import (
     CheckSystemFolderWritable, CheckDatabasesFolderHealthy, ErrorResponse
 )
 
-from youwol.environment.models import Events, RemoteAccess, Impersonation, Configuration, CustomMiddleware, \
+from youwol.environment.models import Events, RemoteConnection, Impersonation, Configuration, CustomMiddleware, \
     RemoteGateway, ApiConfiguration
 from youwol.environment.models.models import Projects
 from youwol.environment.config_from_module import configuration_from_python
@@ -54,7 +54,7 @@ class YouwolEnvironment(BaseModel):
     projects: Projects
     commands: Dict[str, Command]
 
-    currentAccess: RemoteAccess
+    currentConnection: RemoteConnection
 
     remotes: List[RemoteGateway]
     impersonations: List[Impersonation]
@@ -76,7 +76,7 @@ class YouwolEnvironment(BaseModel):
     def get_remote_info(self, remote_host: str = None) -> Optional[RemoteGateway]:
 
         if not remote_host:
-            remote_host = self.currentAccess.host
+            remote_host = self.currentConnection.host
 
         candidates = [remote for remote in self.remotes if remote.host == remote_host]
         if len(candidates) > 0:
@@ -87,7 +87,7 @@ class YouwolEnvironment(BaseModel):
     def get_user_info(self, user_id: str = None) -> Optional[Impersonation]:
 
         if not user_id:
-            user_id = self.currentAccess.userId
+            user_id = self.currentConnection.userId
 
         candidates = [user for user in self.impersonations if user.userId == user_id]
         if len(candidates) > 0:
@@ -96,8 +96,8 @@ class YouwolEnvironment(BaseModel):
         return None
 
     async def get_auth_token(self, context: Context):
-        remote = self.get_remote_info(self.currentAccess.host)
-        user = self.get_user_info(self.currentAccess.userId)
+        remote = self.get_remote_info(self.currentConnection.host)
+        user = self.get_user_info(self.currentConnection.userId)
 
         username = user.userName
         dependencies = {"username": username, "host": remote.host, "type": "auth_token"}
@@ -154,8 +154,8 @@ class YouwolEnvironment(BaseModel):
 
         return f"""Running with youwol: {youwol}
 Configuration loaded from '{self.pathsBook.config}'
-- user: {self.currentAccess.userId if self.currentAccess.userId else 'dynamic'}
-- remote : {self.currentAccess.host}
+- user: {self.currentConnection.userId if self.currentConnection.userId else 'dynamic'}
+- remote : {self.currentConnection.host}
 - paths: {self.pathsBook}
 - cdn packages count: {len(parse_json(self.pathsBook.local_cdn_docdb)['documents'])}
 - assets count: {len(parse_json(self.pathsBook.local_assets_entities_docdb)['documents'])}
@@ -179,9 +179,9 @@ class YouwolEnvironmentFactory:
         cached = YouwolEnvironmentFactory.__cached_config
         conf = await safe_load(
             path=cached.pathsBook.config,
-            remote_access=RemoteAccess(
-                userId=selected_user or cached.currentAccess.userId,
-                host=selected_remote or cached.currentAccess.host
+            remote_connection=RemoteConnection(
+                userId=selected_user or cached.currentConnection.userId,
+                host=selected_remote or cached.currentConnection.host
             )
         )
 
@@ -202,7 +202,7 @@ class YouwolEnvironmentFactory:
     def clear_cache():
         conf = YouwolEnvironmentFactory.__cached_config
         new_conf = YouwolEnvironment(
-            currentAccess=conf.currentAccess,
+            currentConnection=conf.currentConnection,
             pathsBook=conf.pathsBook,
             httpPort=conf.httpPort,
             cache={},
@@ -237,7 +237,7 @@ async def yw_config() -> YouwolEnvironment:
 
 async def safe_load(
         path: Path,
-        remote_access: Optional[RemoteAccess] = None
+        remote_connection: Optional[RemoteConnection] = None
 ) -> YouwolEnvironment:
     """
     Possible errors:
@@ -311,7 +311,7 @@ async def safe_load(
     return YouwolEnvironment(
         httpPort=system.httpPort,
         routers=customization.endPoints.routers,
-        currentAccess=remote_access or system.cloudEnvironments.defaultAccess,
+        currentConnection=remote_connection or system.cloudEnvironments.defaultConnection,
         events=customization.events,
         pathsBook=paths_book,
         projects=Projects.from_config(projects),
