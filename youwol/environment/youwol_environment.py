@@ -264,10 +264,10 @@ async def safe_load(
 
     paths_book = PathsBook(
         config=path,
-        databases=Path(system.dataDir),
-        system=Path(system.cacheDir)
+        databases=Path(system.localEnvironment.dataDir),
+        system=Path(system.localEnvironment.cacheDir)
     )
-    ensure_dir_exists(system.cacheDir, root_candidates=app_dirs.user_cache_dir)
+    ensure_dir_exists(system.localEnvironment.cacheDir, root_candidates=app_dirs.user_cache_dir)
 
     if not os.access(paths_book.system.parent, os.W_OK):
         check_system_folder_writable.status = ErrorResponse(
@@ -305,7 +305,8 @@ async def safe_load(
 
         os.remove(final_path.parent / databases_zip)
 
-    ensure_dir_exists(path=system.dataDir, root_candidates=app_dirs.user_data_dir, create=create_data_dir)
+    ensure_dir_exists(path=system.localEnvironment.dataDir, root_candidates=app_dirs.user_data_dir,
+                      create=create_data_dir)
 
     return YouwolEnvironment(
         httpPort=system.httpPort,

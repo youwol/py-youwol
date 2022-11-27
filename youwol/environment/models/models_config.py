@@ -106,13 +106,17 @@ class CloudEnvironments(BaseModel):
     impersonations: List[Impersonation] = []
 
 
+class LocalEnvironment(BaseModel):
+    dataDir: Optional[ConfigPath] = default_path_data_dir
+    cacheDir: Optional[ConfigPath] = default_path_cache_dir
+
+
 class System(BaseModel):
     httpPort: Optional[int] = default_http_port
     cloudEnvironments: CloudEnvironments = CloudEnvironments(
         environments=[YouwolCloud(**default_cloud_environment(default_platform_host))]
     )
-    dataDir: Optional[ConfigPath] = default_path_data_dir
-    cacheDir: Optional[ConfigPath] = default_path_cache_dir
+    localEnvironment: LocalEnvironment = LocalEnvironment()
 
 
 class CustomEndPoints(BaseModel):
