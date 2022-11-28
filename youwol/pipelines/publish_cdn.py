@@ -11,7 +11,7 @@ from youwol.environment import UploadTargets, DirectAuthUser, YouwolCloud, Local
     YouwolEnvironment
 from youwol_utils.clients.oidc.oidc_config import OidcConfig
 
-from youwol_utils.http_clients.assets_gateway import DefaultDriveResponse
+from youwol_utils.http_clients.tree_db_backend import DefaultDriveResponse
 from youwol.routers.projects.models_project import (
     PipelineStep, Project, Manifest, PipelineStepStatus, FlowId, ExplicitNone, BrowserApp,
 )
