@@ -4,14 +4,14 @@ import shutil
 import zipfile
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, Optional, Awaitable, List
+from typing import Dict, Any, Optional, Awaitable, List, Union
 
 from colorama import Fore, Style
 from cowpy import cow
 from pydantic import BaseModel
 
 import youwol
-from youwol.environment import ImpersonateAuthConnection
+from youwol.environment import ImpersonateAuthConnection, BrowserAuthConnection
 from youwol.environment.errors_handling import (
     ConfigurationLoadingStatus, ConfigurationLoadingException,
     CheckSystemFolderWritable, CheckDatabasesFolderHealthy, ErrorResponse
@@ -176,14 +176,11 @@ class YouwolEnvironmentFactory:
         return config
 
     @staticmethod
-    async def reload(selected_user: Optional[str] = None, selected_remote: Optional[str] = None):
+    async def reload(connection: Union[BrowserAuthConnection, ImpersonateAuthConnection] = None):
         cached = YouwolEnvironmentFactory.__cached_config
         conf = await safe_load(
             path=cached.pathsBook.config,
-            remote_connection=RemoteConnection(
-                userId=selected_user or cached.currentConnection.userId,
-                host=selected_remote or cached.currentConnection.host
-            )
+            remote_connection=connection or cached.currentConnection
         )
 
         await YouwolEnvironmentFactory.trigger_on_load(config=conf)

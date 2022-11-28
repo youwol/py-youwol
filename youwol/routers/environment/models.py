@@ -37,7 +37,7 @@ class SwitchResponse(BaseModel):
 
 class LoginBody(BaseModel):
     userId: Optional[str]
-    remote: Optional[str]
+    host: Optional[str]
 
 
 class SelectRemoteBody(BaseModel):

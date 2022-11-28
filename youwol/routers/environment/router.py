@@ -8,7 +8,8 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from starlette.requests import Request
-from youwol.environment import FlowSwitcherMiddleware, UserInfo, yw_config, YouwolEnvironment, YouwolEnvironmentFactory
+from youwol.environment import FlowSwitcherMiddleware, UserInfo, yw_config, YouwolEnvironment, \
+    YouwolEnvironmentFactory, BrowserAuthConnection, ImpersonateAuthConnection
 from youwol.routers.environment.models import LoginBody, RemoteGatewayInfo, CustomDispatchesResponse
 from youwol.routers.environment.upload_assets.upload import upload_asset
 from youwol.web_socket import LogsStreamer
@@ -122,10 +123,19 @@ async def custom_dispatches(
              summary="log in as specified user")
 async def login(
         request: Request,
-        body: LoginBody
+        body: LoginBody,
+        config: YouwolEnvironment = Depends(yw_config)
 ):
     async with Context.from_request(request).start(action="login") as ctx:
-        await YouwolEnvironmentFactory.reload(selected_user=body.userId, selected_remote=body.remote)
+        host = config.currentConnection.host
+        user_id = None
+        if isinstance(config.currentConnection, ImpersonateAuthConnection):
+            user_id = config.currentConnection.userId
+
+        connection = BrowserAuthConnection(host=body.host or host) \
+            if not body.userId and isinstance(config.currentConnection, BrowserAuthConnection) \
+            else ImpersonateAuthConnection(host=body.host or host, userId=body.userId or user_id)
+        await YouwolEnvironmentFactory.reload(connection)
         conf = await yw_config()
         await status(request, conf)
         data = await OidcConfig(conf.get_remote_info().openidBaseUrl).token_decode(await conf.get_auth_token(ctx))
