@@ -11,6 +11,7 @@ from cowpy import cow
 from pydantic import BaseModel
 
 import youwol
+from youwol.environment import ImpersonateAuthConnection
 from youwol.environment.errors_handling import (
     ConfigurationLoadingStatus, ConfigurationLoadingException,
     CheckSystemFolderWritable, CheckDatabasesFolderHealthy, ErrorResponse
@@ -154,7 +155,7 @@ class YouwolEnvironment(BaseModel):
 
         return f"""Running with youwol: {youwol}
 Configuration loaded from '{self.pathsBook.config}'
-- user: {self.currentConnection.userId if self.currentConnection.userId else 'dynamic'}
+- user: {self.currentConnection.userId if isinstance(self.currentConnection, ImpersonateAuthConnection) else 'dynamic'}
 - remote : {self.currentConnection.host}
 - paths: {self.pathsBook}
 - cdn packages count: {len(parse_json(self.pathsBook.local_cdn_docdb)['documents'])}
