@@ -103,7 +103,7 @@ class YouwolEnvironment(BaseModel):
         username = user.userName
         dependencies = {"username": username, "host": remote.host, "type": "auth_token"}
         cached_token = next((c for c in self.tokensCache if c.is_valid(dependencies)), None)
-        if cached_token and not remote.host:
+        if cached_token:
             return cached_token.value
 
         try:
@@ -116,7 +116,7 @@ class YouwolEnvironment(BaseModel):
         except Exception as e:
             raise RuntimeError(f"Can not get access token for user '{username}' : {e}")
 
-        deadline = datetime.timestamp(datetime.now()) + expire * 1000
+        deadline = datetime.timestamp(datetime.now()) + expire
         self.tokensCache.append(DeadlinedCache(value=access_token, deadline=deadline, dependencies=dependencies))
 
         await context.info(text="Access token renewed",
