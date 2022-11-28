@@ -65,11 +65,6 @@ class Projects(BaseModel):
     templates: List[ProjectTemplate] = []
 
 
-class DirectAuthUser(BaseModel):
-    username: str
-    password: str
-
-
 class YouwolCloud(BaseModel):
     host: str
     name: str

@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import List, Callable, Optional, Union, Awaitable, cast
 
 from pydantic import BaseModel
-from youwol.environment.models.models_config import default_cloud_environment, ConfigPath, DirectAuthUser, YouwolCloud,\
+from youwol.environment.models.models_config import default_cloud_environment, ConfigPath, YouwolCloud,\
     Impersonation, Projects as ProjectsConfig, ProjectTemplate, PathsBook
 
 from youwol.environment.projects_finders import default_projects_finder
@@ -17,6 +17,11 @@ class UserInfo(BaseModel):
     name: str
     email: str
     memberOf: List[str]
+
+
+class DirectAuthUser(BaseModel):
+    username: str
+    password: str
 
 
 class RemoteGateway(BaseModel):
