@@ -121,8 +121,8 @@ class CustomMiddleware(BaseModel):
 
 class DispatchInfo(BaseModel):
     name: str
-    activated: Optional[bool]
-    parameters: Optional[Dict[str, str]]
+    activated: bool
+    parameters: Dict[str, str] = {}
 
 
 class FlowSwitch(BaseModel):
@@ -179,7 +179,7 @@ class FlowSwitcherMiddleware(CustomMiddleware):
 
 class CdnSwitch(FlowSwitch):
     packageName: str
-    port: Optional[int]
+    port: int
 
     async def info(self):
         return DispatchInfo(
