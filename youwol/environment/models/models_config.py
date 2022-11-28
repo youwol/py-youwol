@@ -18,7 +18,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from youwol_utils.utils_requests import redirect_request
-from youwol_utils import Context, encode_id, YouWolException, youwol_exception_handler
+from youwol_utils import Context, encode_id, YouWolException, youwol_exception_handler, ResourcesNotFoundException
 from youwol_utils.context import Label
 
 
@@ -223,12 +223,16 @@ class CdnSwitch(FlowSwitch):
             async with await session.get(url=url) as resp:
                 if resp.status != 200:
                     await context.error(text=f"CdnSwitch[{self}]: \
-                        Bad status response while dispatching", data={
+                        Error status while dispatching", data={
                         "origin": incoming_request.url.path,
                         "destination": url,
+                        "path": rest_of_path,
                         "status": resp.status
                     })
-                    return None
+                    raise ResourcesNotFoundException(
+                        path=rest_of_path,
+                        detail=resp.reason
+                    )
                 content = await resp.read()
                 return Response(content=content, headers={k: v for k, v in resp.headers.items()})
 
