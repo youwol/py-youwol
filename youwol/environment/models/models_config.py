@@ -23,6 +23,14 @@ from youwol_utils.context import Label
 
 
 class Events(BaseModel):
+    """
+Gather the list of events on which user actions can be performed.
+
+**Attributes**:
+
+*  **onLoad** (:class:`Context`) => :class:`Any` or :class:`Awaitable[Any]`
+Action when configuration is loaded.
+"""
     onLoad: Callable[[Context], Optional[Union[Any, Awaitable[Any]]]] = None
 
 
@@ -30,14 +38,66 @@ ConfigPath = Union[str, Path]
 
 
 class UploadTarget(BaseModel):
+    """
+Upload target are used when configuring Pipeline, see dedicated documentation of the pipeline.
+Pipelines can define some required upload targets by sub-classing this class.
+
+**Attributes**:
+
+*  **name** list of :class:`str`
+Name of the target.
+"""
     name: str
 
 
 class UploadTargets(BaseModel):
+    """
+Upload targets are used when configuring Pipeline, see dedicated documentation of the pipeline.
+
+**Attributes**:
+
+*  **targets** list of :class:`UploadTarget`
+Gather :class:`UploadTarget` targets of similar king (e.g. multiple docker registries, multiple remote CDN )
+
+"""
+
     targets: List[UploadTarget]
 
 
 class ProjectTemplate(BaseModel):
+    """
+Definition of a template that create an initial project folder that can be built & published.
+Usually they come from python packages formalizing a particular type of project based on a particular stack.
+
+See for instance 'lib_ts_webpack_template' and 'app_ts_webpack_template' generators.
+
+**Attributes**:
+
+*  **icon** :class:`JSON`
+A json DOM representation of the icon for the template. See the library '@youwol/flux-view'.
+
+*  **type**  :class:`str`
+A unique type id that represent the type of the project.
+
+*  **folder**  :class:`str`
+Where the created project folders will be located.
+
+*  **parameters**  :class:`Dict[str, str]`
+A dictionary *'parameter name'* -> *'parameter default value'* defining the parameters the user will have to supply
+to create the template.
+
+*  **generators** (:class:`Path`, :class:`Dict[str, str]`, class:`Context`) => ( :class:`str`,  :class:`Path`)
+
+The generator called to create the template project, arguments are:
+
+1 - First argument is the folder's path in which the project needs to be created (parent folder of the created project).
+
+2 - Second argument is the value of the parameters the user supplied.
+
+3 - Third argument is the context.
+
+Return the project's name and its path.
+"""
     icon: Any
     type: str
     folder: Union[str, Path]
@@ -46,6 +106,35 @@ class ProjectTemplate(BaseModel):
 
 
 class Projects(BaseModel):
+    """
+Specification of projects to contribute to the YouWol's ecosystem.
+
+Attributes:
+
+- **finder** either:
+
+1 - :class:`ConfigPath`
+
+Projects will be automatically discovered recursively from this path.
+
+2 - list of :class:`ConfigPath`
+
+Projects will be automatically discovered recursively from each of the provided path.
+
+3 - Callable (:class:`PathsBook`, :class:`Context`) => list of  :class:`ConfigPath`
+
+A function that returns the path of the projects.
+
+4 - Callable (:class:`PathsBook`, :class:`Context`) => awaitable of list of  :class:`ConfigPath`
+
+An awaitable function that returns the path of the projects.
+
+
+- **templates** :class:`ProjectTemplate`
+List of projects' template.
+
+*Default to empty list*
+    """
     finder: Union[
         ConfigPath,
         List[ConfigPath],
@@ -56,55 +145,187 @@ class Projects(BaseModel):
 
 
 class YouwolCloud(BaseModel):
+    """
+Specification of a remote YouWol environment.
+
+Attributes:
+
+- **host** :class:`string`
+host of the environment (e.g. youwol.platform.com).
+
+- **openidBaseUrl** :class:`string`
+base url of the openId service, e.g. https://youwol.platform.com/auth/realms/youwol
+
+- **openidClient** :class:`PublicClient` or :class:`PrivateClient`
+public (client-id only) or private (client-id + client-secret) use to query the open-id service.
+
+- **keycloakAdminBaseUrl**
+
+- **keycloakAdminClient** :class:`PrivateClient`
+Keycloak admin client.
+
+*Default to None*
+    """
     host: str
-    name: str
     openidBaseUrl: str
     openidClient: Union[PublicClient, PrivateClient]
     keycloakAdminBaseUrl: str
     keycloakAdminClient: Optional[PrivateClient] = None
 
 
-class RemoteConnection(BaseModel):
+class BrowserAuthConnection(BaseModel):
+    """
+Connection to a cloud environment using 'standard' browser authentication.
+
+    **Attributes**:
+
+- **host** :class:`string`
+Host of the environment (e.g. youwol.platform.com).
+    """
     host: str
-    userId: Optional[str]
 
 
-class BrowserAuthConnection(RemoteConnection):
-    host: str
+class ImpersonateAuthConnection(BaseModel):
+    """
+Connection to a cloud environment using an impersonated user/service account
 
+    **Attributes**:
 
-class ImpersonateAuthConnection(RemoteConnection):
+- **host** :class:`string`
+Host of the environment (e.g. youwol.platform.com).
+
+- **userId** :class:`string`
+Reference a user defined in `cloudEnvironment.impersonations`.
+    """
     host: str
     userId: str
+
+
+RemoteConnection = Union[ImpersonateAuthConnection, BrowserAuthConnection]
 
 
 class Impersonation(BaseModel):
+    """
+Impersonation used to authenticate connection on given platform's hosts.
+
+    **Attributes**:
+
+- **userId** :class:`string`
+Unique user id among all impersonated users defined in cloudEnvironment
+
+- **userName** :class:`string`
+Credential's user-name
+
+- **password** :class:`string`
+Credential's password
+
+- **forHosts** :class:`string`
+List of hosts on which user-name/password is registered.
+    """
     userId: str
     userName: str
     password: str
-    forHosts: List[str] = []
+    forHosts: List[str]
 
 
 class CloudEnvironments(BaseModel):
+    """
+Cloud environments on which connection can be established.
+At a particular point in time, py-youwol is connected to one remote environment,
+this is from where missing data/libraries are fetched.
+
+The authentication mode can be either the 'usual' one (provided by the browser), or based on service accounts.
+
+    **Attributes**:
+
+- **defaultConnection** :class:`BrowserAuthConnection` or :class:`ImpersonateAuthConnection`
+
+Connection used when py-youwol is started. Either:
+
+*  :class:`BrowserAuthConnection` (default) : authentication is done by the browser
+*  :class:`ImpersonateAuthConnection`: authenticate w/ provided impersonated user.
+
+*Default to BrowserAuthConnection(host=default_platform_host)*
+
+- **environments** :class:`YouwolCloud`
+
+List of YouWol's cloud environments with which connection can be established.
+
+*Default to [YouwolCloud(**default_cloud_environment(default_platform_host))]*
+
+- **impersonations** :class:`Impersonation`
+
+Defines additional users (usually service accounts) for authentication.
+
+*Default to empty list*
+    """
     defaultConnection: RemoteConnection = BrowserAuthConnection(host=default_platform_host)
-    environments: List[YouwolCloud] = []
+    environments: List[YouwolCloud] = [YouwolCloud(**default_cloud_environment(default_platform_host))]
     impersonations: List[Impersonation] = []
 
 
 class LocalEnvironment(BaseModel):
+    """
+Local folders to store data.
+
+**Attributes**:
+
+- **dataDir** :class:`ConfigPath`
+Defines folder location in which persisted data are saved, relative to the parent folder of the configuration file.
+
+*Default to {default_path_data_dir}*
+
+- **cacheDir** :class:`ConfigPath`
+Defines folder location of cached data, relative to the parent folder of the configuration file.
+
+*Default to {default_path_cache_dir}*
+    """
     dataDir: Optional[ConfigPath] = default_path_data_dir
     cacheDir: Optional[ConfigPath] = default_path_cache_dir
 
 
 class System(BaseModel):
+    """
+Connectivity with remote(s) environment & local storage.
+
+**Attributes**:
+
+- **httpPort** :class:`int`
+Port on which py-youwol is served.
+
+*optional, default to {default_http_port}*
+
+- **cloudEnvironments** :class:`CloudEnvironments`
+Specify remote environment(s) from where data are collected.
+
+*optional, default to CloudEnvironments()*
+
+- **localEnvironment** :class:`LocalEnvironment`
+Specify how collected data are persisted in the computer.
+
+*optional, default to LocalEnvironment()*
+    """
     httpPort: Optional[int] = default_http_port
-    cloudEnvironments: CloudEnvironments = CloudEnvironments(
-        environments=[YouwolCloud(**default_cloud_environment(default_platform_host))]
-    )
+    cloudEnvironments: CloudEnvironments = CloudEnvironments()
     localEnvironment: LocalEnvironment = LocalEnvironment()
 
 
 class CustomEndPoints(BaseModel):
+    """
+Extends the environment by adding custom end-points.
+
+**Attributes**:
+
+- **commands** list of :class:`Command`
+A list of commands that can be triggered via HTTP requests.
+
+*Default to empty list*
+
+- **routers** :class:`FastApiRouter`
+Additional routers to bind to the environment.
+
+*Default to empty list*
+"""
     commands: Optional[List[Command]] = []
     routers: Optional[List[FastApiRouter]] = []
 
@@ -120,13 +341,38 @@ class CustomMiddleware(BaseModel):
 
 
 class DispatchInfo(BaseModel):
+    """
+Summary of the state of a :class:`FlowSwitch` (used as displayed info).
+
+**Attributes**:
+
+- **name** :class:`str`
+Name of the switch.
+
+- **activated** :class:`bool`
+Whether the switch is actually applicable or not (e.g. dev-server listening or not)
+
+- **parameters** :class:`Dict[str, str]`
+Some relevant parameters to display, dictionary 'parameter's name' -> 'value'
+
+*Default to empty dict*
+"""
     name: str
     activated: bool
     parameters: Dict[str, str] = {}
 
 
 class FlowSwitch(BaseModel):
+    """
+Abstract class.
 
+A FlowSwitch is used in :class:`FlowSwitcherMiddleware`, it provides the ability to interrupt the normal flow of
+a request by redirecting it to another target end-point.
+
+A typical example is when running a dev-server of a front app (:class:`CdnSwitch`). In this case a 'FlowSwitch'
+can switch from the original target (underlying resource in the CDN database), to the running dev-server.
+
+"""
     async def info(self) -> DispatchInfo:
         return DispatchInfo(name=self.__str__(), activated=True,
                             parameters={"description": "no description provided ('info' method not overriden)"})
@@ -142,7 +388,18 @@ class FlowSwitch(BaseModel):
 
 
 class FlowSwitcherMiddleware(CustomMiddleware):
+    """
+Given a list of :class:`FlowSwitch`, this middleware will eventually switch from the original targeted end-point
+ to another one if one, and only one, :class:`FlowSwitch` element match the original request.
 
+**Attributes**:
+
+- **name** :class:`str`
+Name of the middleware.
+
+- **oneOf** list of :class:`FlowSwitch`
+List of the :class:`FlowSwitch` elements.
+"""
     name: str
     oneOf: List[FlowSwitch]
 
@@ -178,6 +435,20 @@ class FlowSwitcherMiddleware(CustomMiddleware):
 
 
 class CdnSwitch(FlowSwitch):
+    """
+CDN resource are stored in the CDN database: each time a related resource is queried, it is retrieved from here.
+The class CdnSwitch can alter this behavior for a particular package, and serve the resources using a running
+dev-server.
+
+**Attributes**:
+
+- **packageName** :class:`str`
+Name of the targeted package.
+
+- **port** :class:`int`
+Listening port of the dev-server.
+"""
+
     packageName: str
     port: int
 
@@ -241,6 +512,18 @@ class CdnSwitch(FlowSwitch):
 
 
 class RedirectSwitch(FlowSwitch):
+    """
+Redirect switch target requests with url that starts with a predefined 'origin', in this case the request is redirected
+to a corresponding 'destination' (the rest of the path appended to it).
+
+**Attributes**:
+
+- **origin** :class:`str`
+Origin base path targeted.
+
+- **destination** :class:`int`
+Corresponding destination
+"""
 
     origin: str
     destination: str
@@ -303,12 +586,53 @@ class RedirectSwitch(FlowSwitch):
 
 
 class Customization(BaseModel):
+    """
+Exposes customization options.
+
+**Attributes**:
+
+- **endPoints** :class:`CustomEndPoints`
+Allows adding custom end-points to the environment.
+
+*Default to CustomEndPoints()*
+
+- **middlewares** :class:`CustomMiddleware`
+Allows adding custom middlewares to the environment.
+
+*Default to empty list*
+
+- **events** :class:`Events`
+Allows defining actions to be triggered on specific events.
+
+*Default to Events()*
+    """
     endPoints: CustomEndPoints = CustomEndPoints()
     middlewares: Optional[List[CustomMiddleware]] = []
     events: Optional[Events] = Events()
 
 
 class Configuration(BaseModel):
+    """
+Defines py-youwol running environment.
+
+**Attributes**:
+
+- **system** :class:`System`
+Essentially about data, e.g. how they are retrieved & stored.
+
+*Default to System()*
+
+- **projects** :class:`Projects`
+Defines projects that can be built & published in the environment.
+
+*Default to Projects()*
+
+- **customization** :class:`Customization`
+Various handles for customization (e.g. middleware, commands, ...)
+
+*Default to Customization()*
+    """
+
     system: Optional[System] = System()
     projects: Optional[Projects] = Projects()
     customization: Optional[Customization] = Customization()

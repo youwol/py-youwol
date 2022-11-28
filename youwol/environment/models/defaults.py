@@ -16,7 +16,6 @@ default_jwt_source: str = 'config'
 def default_cloud_environment(platform_host):
     return {
         "host": platform_host,
-        "name": platform_host,
         "openidBaseUrl": f"https://{platform_host}/auth/realms/youwol",
         "openidClient": PublicClient(client_id="tbd_test_openid_connect_js"),
         "keycloakAdminBaseUrl": f"https://{platform_host}/auth/admin/realms/youwol",
