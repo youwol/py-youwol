@@ -33,13 +33,12 @@ def get_object_from_module(
 
         maybe_class_or_var = imported_module.__getattribute__(object_or_class_name)
         return cast(object_type, maybe_class_or_var(**object_instantiation_kwargs))
-        # Need to be re-pluged ASAP. The problem is for now pipeline use deprecated
+        # Need to be re-pluged ASAP. The problem is for now pipeline in 'yw_pipeline.py' use the deprecated
         # type youwol.environment.models.IPipelineFactory
-        # Need to replace in yw_pipeline.py
-        # from youwol.environment.models import IPipelineFactory
-        # by
-        # from youwol.environment.models_projects  import IPipelineFactory
-        # Original code:
+        # Need to be replaced by:
+        # youwol.routers.projects.models_projects.IPipelineFactory
+        #
+        # Below, original code:
         # if isinstance(maybe_class_or_var, object_type):
         #     return cast(object_type, maybe_class_or_var)
         #
