@@ -29,16 +29,6 @@ class Events(BaseModel):
 ConfigPath = Union[str, Path]
 
 
-class CdnOverride(BaseModel):
-    packageName: str
-    port: Optional[int]
-
-
-class Redirection(BaseModel):
-    from_url_path: str
-    to_url: str
-
-
 class UploadTarget(BaseModel):
     name: str
 
