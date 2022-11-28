@@ -64,7 +64,7 @@ class IPipelineFactory:
     pass
 
 
-class Projects(BaseModel):
+class ProjectsSanitized(BaseModel):
 
     finder: Callable[
         [PathsBook, Context],
@@ -96,7 +96,7 @@ class Projects(BaseModel):
 
             finder = default_finder
 
-        return Projects(
+        return ProjectsSanitized(
             finder=finder,
             templates=projects.templates
         )
