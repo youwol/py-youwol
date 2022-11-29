@@ -4,10 +4,13 @@ from typing import Awaitable, Protocol
 from fastapi import HTTPException
 
 from youwol.environment import RemoteClients, LocalClients, YouwolEnvironment
+from youwol.routers.native_backends_config import assets_backend_config_py_youwol
+from youwol_assets_backend import put_access_policy_impl
 from youwol_utils import YouwolHeaders
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from youwol_utils.clients.treedb.treedb import TreeDbClient
 from youwol_utils.context import Context
+from youwol_utils.http_clients.assets_backend import AccessPolicyBody
 from youwol_utils.http_clients.tree_db_backend import PathResponse, ItemResponse, DriveResponse
 
 
@@ -65,9 +68,16 @@ async def sync_asset_data(
 
         access_info = await assets_remote.get_access_info(asset_id=asset_id, headers=ctx.headers())
         access_info = access_info['ownerInfo']
+        assets_backend_config = await assets_backend_config_py_youwol()
+
         await asyncio.gather(
-            assets_local.put_access_policy(asset_id=asset_id, group_id="*", body=access_info['defaultAccess']),
-            *[assets_local.put_access_policy(asset_id=asset_id, group_id=group['groupId'], body=group['access'])
+            put_access_policy_impl(asset_id=asset_id, group_id="*",
+                                   body=AccessPolicyBody(**access_info['defaultAccess']),
+                                   context=ctx, configuration=assets_backend_config),
+            *[put_access_policy_impl(asset_id=asset_id, group_id=group['groupId'],
+                                     body=AccessPolicyBody(**group['access']),
+                                     context=ctx,
+                                     configuration=assets_backend_config)
               for group in access_info['exposingGroups']]
         )
 
