@@ -23,6 +23,9 @@ def auto_detect_projects(paths_book: PathsBook, root_folder: Union[Path, str], i
     database_ignore = None
     system_ignore = None
     root_folder = Path(root_folder)
+    if not root_folder.exists():
+        return []
+
     try:
         database_ignore = paths_book.databases.relative_to(root_folder)
     except ValueError:
