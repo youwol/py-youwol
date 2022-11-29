@@ -240,8 +240,7 @@ class Context(NamedTuple):
             with_attributes={"method": request.method, **with_attributes},
             with_reporters=with_reporters,
             on_enter=on_enter_fct,
-            on_exit=on_exit_fct,
-            with_cookies=request.cookies
+            on_exit=on_exit_fct
         )
 
     async def log(self, level: LogLevel, text: str, labels: List[StringLike] = None,
@@ -315,6 +314,13 @@ class Context(NamedTuple):
             YouwolHeaders.trace_id: self.trace_uid,
             YouwolHeaders.muted_http_errors: ','.join(str(s) for s in self.muted_http_errors),
             **self.with_headers
+        }
+
+    def cookies(self):
+        cookies = self.request.cookies if self.request else {}
+        return {
+            **cookies,
+            **self.cookies
         }
 
     @staticmethod
