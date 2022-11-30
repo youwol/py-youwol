@@ -125,14 +125,13 @@ async def custom_dispatches(
              summary="log in as specified user")
 async def login(
         request: Request,
-        body: LoginBody,
-        env: YouwolEnvironment = Depends(yw_config)
+        body: LoginBody
 ):
     async with Context.from_request(request).start(action="login") as ctx:
         # Need to check validity of combination envId, authId
         # What happen if switch from 'DirectAuth' to 'BrowserAuth', following code will not work,
         # should a somehow a redirect takes place?
-        await YouwolEnvironmentFactory.reload(Connection(authId=body.authId, envId=body.envId))
+        env = await YouwolEnvironmentFactory.reload(Connection(authId=body.authId, envId=body.envId))
         await status(request, env)
         auth_provider = env.get_remote_info().authProvider
         auth_token = await JwtProviderPyYouwol.get_auth_token(
