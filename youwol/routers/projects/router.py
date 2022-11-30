@@ -239,17 +239,17 @@ async def run_pipeline_step(
   
     async def on_enter(ctx_enter):
         env_enter = await ctx_enter.get('env', YouwolEnvironment)
-        if 'runningProjectSteps' not in env_enter.private_cache:
-            env_enter.private_cache['runningProjectSteps'] = set()
-        env_enter.private_cache['runningProjectSteps'].add(f"{project_id}#{flow_id}#{step_id}")
+        if 'runningProjectSteps' not in env_enter.cache_py_youwol:
+            env_enter.cache_py_youwol['runningProjectSteps'] = set()
+        env_enter.cache_py_youwol['runningProjectSteps'].add(f"{project_id}#{flow_id}#{step_id}")
         await ctx_enter.send(
             PipelineStepEvent(projectId=project_id, flowId=flow_id, stepId=step_id, event=Event.runStarted)
         ),
 
     async def on_exit(ctx_exit):
         env_exit = await ctx_exit.get('env', YouwolEnvironment)
-        if f"{project_id}#{flow_id}#{step_id}" in env_exit.private_cache['runningProjectSteps']:
-            env_exit.private_cache['runningProjectSteps'].remove(f"{project_id}#{flow_id}#{step_id}")
+        if f"{project_id}#{flow_id}#{step_id}" in env_exit.cache_py_youwol['runningProjectSteps']:
+            env_exit.cache_py_youwol['runningProjectSteps'].remove(f"{project_id}#{flow_id}#{step_id}")
         async with ctx_exit.start(action="refresh_status_downstream_steps") as ctx_1:
             await ctx_1.send(
                 PipelineStepEvent(projectId=project_id, flowId=flow_id, stepId=step_id, event=Event.runDone)
@@ -261,7 +261,7 @@ async def run_pipeline_step(
             return asyncio.gather(*[
                 get_status(project=_project, flow_id=flow_id, step=_step, context=ctx_1)
                 for _step in steps
-                if f"{project_id}#{flow_id}#{_step.id}" not in env.private_cache['runningProjectSteps']
+                if f"{project_id}#{flow_id}#{_step.id}" not in env.cache_py_youwol['runningProjectSteps']
             ])
 
     async with Context.start_ep(

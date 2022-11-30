@@ -165,10 +165,10 @@ async def accounts_backend_config_py_youwol():
     pkce_cache: CacheClient = ContextFactory.with_static_data['accounts_pkce_cache']
     jwt_cache: CacheClient = ContextFactory.with_static_data['jwt_cache']
     return youwol_accounts.Configuration(
-        openid_base_url=config.get_remote_info().openidBaseUrl,
-        openid_client=config.get_remote_info().openidClient,
-        admin_client=config.get_remote_info().adminClient,
-        keycloak_admin_base_url=config.get_remote_info().keycloakAdminBaseUrl,
+        openid_base_url=config.get_remote_info().authProvider.openidBaseUrl,
+        openid_client=config.get_remote_info().authProvider.openidClient,
+        admin_client=config.get_remote_info().authProvider.keycloakAdminClient,
+        keycloak_admin_base_url=config.get_remote_info().authProvider.keycloakAdminBaseUrl,
         jwt_cache=jwt_cache,
         pkce_cache=pkce_cache
     )

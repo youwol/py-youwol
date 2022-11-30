@@ -42,14 +42,14 @@ class GetLoadingGraph(AbstractLocalCloudDispatch):
                     text="Loading tree can not be resolved locally, proceed to remote platform",
                     data=e.detail
                 )
-                url = f'https://{env.currentConnection.host}{request.url.path}'
+                url = f'https://{env.get_remote_info().host}{request.url.path}'
 
                 async with aiohttp.ClientSession(
                         connector=aiohttp.TCPConnector(verify_ssl=False),
                         auto_decompress=False) as session:
                     async with await session.post(url=url, json=body.dict(), headers=ctx.headers()) as resp:
                         headers_resp = {k: v for k, v in resp.headers.items()}
-                        headers_resp[YouwolHeaders.youwol_origin] = env.currentConnection.host
+                        headers_resp[YouwolHeaders.youwol_origin] = env.get_remote_info().host
                         content = await resp.read()
                         if not resp.ok:
                             await ctx.error(text="Loading tree has not been resolved in remote neither")

@@ -7,9 +7,8 @@ from typing import Optional, cast, Mapping, List, Iterable
 from fastapi import HTTPException
 from pydantic import BaseModel
 
-from youwol.environment import UploadTargets, DirectAuthUser, YouwolCloud, LocalClients, RemoteClients, PathsBook, \
-    YouwolEnvironment
-from youwol_utils.clients.oidc.oidc_config import OidcConfig
+from youwol.environment import CloudEnvironment, LocalClients, RemoteClients, PathsBook, YouwolEnvironment
+from youwol.middlewares import JwtProviderConfig
 
 from youwol_utils.http_clients.tree_db_backend import DefaultDriveResponse
 from youwol.routers.projects.models_project import (
@@ -66,14 +65,14 @@ async def publish_browser_app_metadata(package: str, version: str, target: Brows
 async def get_default_drive(context: Context) -> DefaultDriveResponse:
     env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
 
-    if env.private_cache.get("default-drive"):
-        return env.private_cache.get("default-drive")
+    if env.cache_py_youwol.get("default-drive"):
+        return env.cache_py_youwol.get("default-drive")
 
     default_drive = await LocalClients \
         .get_assets_gateway_client(env).get_treedb_backend_router() \
         .get_default_user_drive(headers=context.headers())
 
-    env.private_cache["default-drive"] = DefaultDriveResponse(**default_drive)
+    env.cache_py_youwol["default-drive"] = DefaultDriveResponse(**default_drive)
     return DefaultDriveResponse(**default_drive)
 
 
@@ -112,8 +111,7 @@ class PublishCdnLocalStep(PipelineStep):
             try:
                 local_lib_info = await local_cdn.get_library_info(
                     library_id=encode_id(project.publishName),
-                    headers={YouwolHeaders.muted_http_errors: "404"},
-                    cookies=ctx.with_cookies
+                    headers={**ctx.headers(), YouwolHeaders.muted_http_errors: "404"},
                 )
             except HTTPException as e:
                 await ctx.info(text="The package has not been published yet in the local cdn")
@@ -214,26 +212,36 @@ class CdnTarget(BaseModel):
 class PublishCdnRemoteStep(PipelineStep):
 
     id = 'cdn-remote'
-    cdnTarget: YwPlatformTarget
+    cdnTarget: CdnTarget
     run: ExplicitNone = ExplicitNone()
 
-    async def get_access_token(self):
-        cloud_target = self.cdnTarget.cloudTarget
-        direct_user = self.cdnTarget.user
-        jwt_token = await OidcConfig(base_url=cloud_target.openidBaseUrl) \
-            .for_client(cloud_target.openidClient) \
-            .direct_flow(username=direct_user.username, password=direct_user.password)
-        return jwt_token['access_token']
+    async def get_access_token(self, context: Context):
+
+        try:
+            authentication = next(auth for auth in self.cdnTarget.cloudTarget.authentications
+                                  if auth.authId == self.cdnTarget.authId)
+        except StopIteration as e:
+            await context.error(text=f"Can no find auth {self.cdnTarget.authId} in cloud target's authentications",
+                                data={"cloud target": self.cdnTarget.cloudTarget})
+            raise e
+
+        token = await JwtProviderConfig.get_auth_token(
+            auth_provider=self.cdnTarget.cloudTarget.authProvider,
+            authentication=authentication,
+            context=context
+        )
+
+        return f"Bearer {token}"
 
     async def get_status(self, project: Project, flow_id: str, last_manifest: Optional[Manifest], context: Context) \
             -> PipelineStepStatus:
 
-        access_token = await self.get_access_token()
+        access_token = await self.get_access_token(context=context)
 
         async with context.start(
                 action="PublishCdnRemoteStep.get_status",
                 with_headers={
-                    "Authorization": f"Bearer {access_token}",
+                    "Authorization": access_token,
                 }
         ) as ctx:
 
@@ -278,13 +286,12 @@ class PublishCdnRemoteStep(PipelineStep):
 
         env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
 
-        access_token = await self.get_access_token()
+        access_token = await self.get_access_token(context=context)
 
         async with context.start(
                 action="PublishCdnRemoteStep.execute_run",
                 with_headers={
-                    "Authorization": f"Bearer {access_token}",
-                    "tmp-header": 'working'
+                    "Authorization": access_token
                 }
         ) as ctx:
             options = UploadPackageOptions(versions=[project.version])

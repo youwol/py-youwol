@@ -170,7 +170,7 @@ def generate_webpack_config(source: Path, working_path: Path, input_template: Te
 
 async def create_sub_pipelines_publish_cdn(start_step: str, context: Context):
 
-    targets = get_environment().cdn_targets
+    targets = get_environment().cdnTargets
     steps = [PublishCdnRemoteStep(id=f'cdn_{cdn_target.name}', cdnTarget=cdn_target)
              for cdn_target in targets]
     dags = [f'{start_step} > cdn_{cdn_target.name}' for cdn_target in targets]
@@ -180,7 +180,7 @@ async def create_sub_pipelines_publish_cdn(start_step: str, context: Context):
 
 async def create_sub_pipelines_publish_npm(start_step: str, context: Context):
 
-    targets = get_environment().npm_targets
+    targets = get_environment().npmTargets
     steps = [PublishNpmStep(id=f'npm_{npm_target.name}', npm_target=npm_target) for npm_target in targets]
     dags = [f'{start_step} > npm_{npm_target.name}' for npm_target in targets]
     await context.info(text="Npm pipelines created", data={"targets:": targets, "steps": steps, "dags": dags})

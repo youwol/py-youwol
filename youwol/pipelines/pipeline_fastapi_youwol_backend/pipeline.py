@@ -230,9 +230,9 @@ async def pipeline(
         install_helm_steps = [InstallHelmStep(id=f'install-helm_{k8sTarget.name}',
                                               config=config.helmConfig,
                                               k8sTarget=k8sTarget)
-                              for k8sTarget in pipeline_env.helm_targets.targets]
+                              for k8sTarget in pipeline_env.helmTargets.targets]
 
-        dags = [f'dry-run-helm > install-helm_{k8sTarget.name}' for k8sTarget in pipeline_env.helm_targets.targets]
+        dags = [f'dry-run-helm > install-helm_{k8sTarget.name}' for k8sTarget in pipeline_env.helmTargets.targets]
 
         return Pipeline(
             target=MicroService(),
@@ -245,7 +245,7 @@ async def pipeline(
                 PullStep(),
                 NewBranchStep(),
                 UpdatePyYouwolStep(),
-                PublishDockerStep(imageVersion=lambda p, _: p.version, dockerRepo=pipeline_env.docker_target),
+                PublishDockerStep(imageVersion=lambda p, _: p.version, dockerRepo=pipeline_env.dockerTarget),
                 SyncHelmDeps(),
                 InstallDryRunHelmStep(
                     config=dry_run_config

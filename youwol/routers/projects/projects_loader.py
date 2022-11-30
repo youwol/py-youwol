@@ -51,20 +51,20 @@ class ProjectLoader:
 
     @staticmethod
     async def get_results(env: YouwolEnvironment, context: Context) -> List[Result]:
-        if "ProjectLoader" in env.private_cache:
-            return env.private_cache["ProjectLoader"]
+        if "ProjectLoader" in env.cache_py_youwol:
+            return env.cache_py_youwol["ProjectLoader"]
 
         if not ProjectLoader.projects_promise:
             ProjectLoader.projects_promise = load_projects(env=env, context=context)
             projects = await ProjectLoader.projects_promise
-            env.private_cache["ProjectLoader"] = projects
+            env.cache_py_youwol["ProjectLoader"] = projects
             ProjectLoader.projects_promise = None
         else:
             projects = None
             for _ in range(10):
                 await asyncio.sleep(0.2)
-                if env.private_cache.get("ProjectLoader", None):
-                    projects = env.private_cache.get("ProjectLoader")
+                if env.cache_py_youwol.get("ProjectLoader", None):
+                    projects = env.cache_py_youwol.get("ProjectLoader")
                     break
             if not projects:
                 raise RuntimeError("Resolution of already started projects took too long")

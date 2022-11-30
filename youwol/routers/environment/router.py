@@ -9,7 +9,8 @@ from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from starlette.requests import Request
 from youwol.environment import FlowSwitcherMiddleware, UserInfo, yw_config, YouwolEnvironment, \
-    YouwolEnvironmentFactory, BrowserAuthConnection, ImpersonateAuthConnection
+    YouwolEnvironmentFactory, Connection, DirectAuth
+from youwol.middlewares import JwtProviderConfig
 from youwol.routers.environment.models import LoginBody, RemoteGatewayInfo, CustomDispatchesResponse
 from youwol.routers.environment.upload_assets.upload import upload_asset
 from youwol.web_socket import LogsStreamer
@@ -79,13 +80,14 @@ async def status(
         if remote_gateway_info:
             remote_gateway_info = RemoteGatewayInfo(host=remote_gateway_info.host, connected=True)
         data = request.state.user_info
+        users = [auth.userName for auth in config.get_remote_info().authentications if isinstance(auth, DirectAuth)]
         response = EnvironmentStatusResponse(
-            users=config.get_users_list(),
+            users=users,
             userInfo=(UserInfo(id=data["upn"], name=data["username"], email=data["email"], memberOf=[])),
             configuration=config,
             remoteGatewayInfo=remote_gateway_info,
             remotesInfo=[
-                RemoteGatewayInfo(host=remote.host, connected=(remote.host == config.currentConnection.host))
+                RemoteGatewayInfo(host=remote.host, connected=(remote.host == config.get_remote_info().host))
                 for remote in config.remotes
             ]
         )
@@ -124,21 +126,21 @@ async def custom_dispatches(
 async def login(
         request: Request,
         body: LoginBody,
-        config: YouwolEnvironment = Depends(yw_config)
+        env: YouwolEnvironment = Depends(yw_config)
 ):
     async with Context.from_request(request).start(action="login") as ctx:
-        host = config.currentConnection.host
-        user_id = None
-        if isinstance(config.currentConnection, ImpersonateAuthConnection):
-            user_id = config.currentConnection.userId
-
-        connection = BrowserAuthConnection(host=body.host or host) \
-            if not body.userId and isinstance(config.currentConnection, BrowserAuthConnection) \
-            else ImpersonateAuthConnection(host=body.host or host, userId=body.userId or user_id)
-        await YouwolEnvironmentFactory.reload(connection)
-        conf = await yw_config()
-        await status(request, conf)
-        data = await OidcConfig(conf.get_remote_info().openidBaseUrl).token_decode(await conf.get_auth_token(ctx))
+        # Need to check validity of combination envId, authId
+        # What happen if switch from 'DirectAuth' to 'BrowserAuth', following code will not work,
+        # should a somehow a redirect takes place?
+        await YouwolEnvironmentFactory.reload(Connection(authId=body.authId, envId=body.envId))
+        await status(request, env)
+        auth_provider = env.get_remote_info().authProvider
+        auth_token = await JwtProviderConfig.get_auth_token(
+            auth_provider=auth_provider,
+            authentication=env.get_authentication_info(),
+            context=ctx
+        )
+        data = await OidcConfig(auth_provider.openidBaseUrl).token_decode(auth_token)
         return UserInfo(id=data["upn"], name=data["username"], email=data["email"], memberOf=[])
 
 

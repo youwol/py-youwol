@@ -15,8 +15,8 @@ from youwol_utils.utils_paths import matching_files, parse_json
 
 
 def is_step_running(project_id: str, flow_id: str, step_id: str, env: YouwolEnvironment):
-    if 'runningProjectSteps' in env.private_cache \
-            and f"{project_id}#{flow_id}#{step_id}" in env.private_cache['runningProjectSteps']:
+    if 'runningProjectSteps' in env.cache_py_youwol \
+            and f"{project_id}#{flow_id}#{step_id}" in env.cache_py_youwol['runningProjectSteps']:
         return True
     return False
 

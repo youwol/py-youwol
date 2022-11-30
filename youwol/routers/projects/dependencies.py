@@ -82,9 +82,9 @@ class ResolvedDependencies(BaseModel):
 
 async def resolve_workspace_dependencies(context: Context) -> ResolvedDependencies:
 
-    env = await context.get('env', YouwolEnvironment)
+    env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
     projects = await ProjectLoader.get_projects(env, context)
-    cache = env.cache
+    cache = env.cache_py_youwol
     if 'resolved_dependencies' in cache:
         return cache['resolved_dependencies']
 

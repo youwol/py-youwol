@@ -44,7 +44,7 @@ class Download(AbstractLocalCloudDispatch):
                 await ctx.info("Raw data can not be locally retrieved, proceed to remote platform")
                 headers = {"Authorization": request.headers.get("authorization")}
                 resp = await redirect_api_remote(request, ctx)
-                resp.headers[YouwolHeaders.youwol_origin] = env.currentConnection.host
+                resp.headers[YouwolHeaders.youwol_origin] = env.get_remote_info().host
                 thread = await ctx.get('download_thread', AssetDownloadThread)
                 await ctx.info("~> schedule asset download")
                 thread.enqueue_asset(url=request.url.path, kind=kind, raw_id=raw_id, context=ctx, headers=headers)
