@@ -31,20 +31,6 @@ from youwol_utils.utils_paths import parse_json, ensure_dir_exists
 from youwol.environment.paths import app_dirs
 
 
-class DeadlinedCache(BaseModel):
-    value: Any
-    deadline: float
-    dependencies: Dict[str, str]
-
-    def is_valid(self, dependencies) -> bool:
-
-        for k, v in self.dependencies.items():
-            if k not in dependencies or dependencies[k] != v:
-                return False
-        margin = self.deadline - datetime.timestamp(datetime.now())
-        return margin > 0
-
-
 class YouwolEnvironment(BaseModel):
     httpPort: int
     events: Events
@@ -77,33 +63,6 @@ class YouwolEnvironment(BaseModel):
         remote = self.get_remote_info()
         auth_id = self.currentConnection.authId
         return next(auth for auth in remote.authentications if auth.authId == auth_id)
-
-    async def get_auth_token(self, context: Context):
-        remote = self.get_remote_info(self.currentConnection.host)
-        user = self.get_user_info(self.currentConnection.userId)
-
-        username = user.userName
-        dependencies = {"username": username, "host": remote.host, "type": "auth_token"}
-        cached_token = next((c for c in self.tokensCache if c.is_valid(dependencies)), None)
-        if cached_token:
-            return cached_token.value
-
-        try:
-            token = await OidcConfig(remote.openidBaseUrl).for_client(remote.openidClient).direct_flow(
-                username=username,
-                password=([user.password for user in remote.users if user.username == username][0])
-            )
-            access_token = token['access_token']
-            expire = token['expires_in']
-        except Exception as e:
-            raise RuntimeError(f"Can not get access token for user '{username}' : {e}")
-
-        deadline = datetime.timestamp(datetime.now()) + expire
-        self.tokensCache.append(DeadlinedCache(value=access_token, deadline=deadline, dependencies=dependencies))
-
-        await context.info(text="Access token renewed",
-                           data={"host": remote.host, "access_token": access_token})
-        return access_token
 
     def __str__(self):
         def str_middlewares():
