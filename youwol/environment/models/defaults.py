@@ -8,7 +8,7 @@ Changing values defined in this file usually required updates in the documentati
 
 default_http_port: int = 2000
 default_platform_host: str = "platform.youwol.com"
-default_openid_client_id: str = "public-dev"
+default_openid_client_id: str = "tbd_test_openid_connect_js"
 default_path_data_dir: Path = Path("./databases")
 default_path_cache_dir: Path = Path("./system")
 default_path_projects_dir: Path = Path("Projects")
@@ -20,8 +20,7 @@ default_jwt_source: str = 'config'
 def default_auth_provider(platform_host=default_platform_host):
     return {
         "openidBaseUrl": f"https://{platform_host}/auth/realms/youwol",
-        "openidClient": PublicClient(client_id="tbd_test_openid_connect_js"),
+        "openidClient": PublicClient(client_id=default_openid_client_id),
         "keycloakAdminBaseUrl": f"https://{platform_host}/auth/admin/realms/youwol",
         "keycloakAdminClient": None
     }
-
