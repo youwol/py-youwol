@@ -37,12 +37,10 @@ class JwtProviderPyYouwol(JwtProvider):
     async def get_token(self, request: Request, context: Context) -> Optional[str]:
         # get auth token of current connection
         env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
-        remote = env.get_remote_info()
-        authentication = env.get_authentication_info()
 
         return await JwtProviderPyYouwol.get_auth_token(
-            auth_provider=remote.authProvider,
-            authentication=authentication,
+            auth_provider=env.get_remote_info().authProvider,
+            authentication=env.get_authentication_info(),
             context=context
         )
 
