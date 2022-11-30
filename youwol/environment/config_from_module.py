@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import ast
+import importlib
 import sys
 import traceback
 from abc import ABC, abstractmethod
+from importlib.machinery import SourceFileLoader
+from importlib.util import spec_from_loader
 from pathlib import Path
-from typing import Awaitable
+from typing import Awaitable, Optional, cast
 
 from youwol.environment.paths import app_dirs
 from youwol.environment.errors_handling import CheckValidConfigurationFunction, ConfigurationLoadingStatus, \
@@ -20,6 +24,39 @@ class IConfigurationFactory(ABC):
     @abstractmethod
     async def get(self, _main_args: MainArguments) -> Configuration:
         return NotImplemented
+
+
+def try_last_expression_as_config(config_path: Path) -> Optional[Configuration]:
+    """
+
+    :param config_path: path of the config file
+    :return: either the configuration if the last statement is a Configuration else None
+    """
+    # first import the config file as module, retrieve all the globals
+    module_name = config_path.stem
+    loader = SourceFileLoader(module_name, str(config_path))
+    spec = spec_from_loader(module_name, loader)
+    module = importlib.util.module_from_spec(spec)
+    loader.exec_module(module)
+    config_globals = {k: module.__getattribute__(k) for k in module.__dict__}
+    script = open(config_path, 'r').read()
+    stmts = list(ast.iter_child_nodes(ast.parse(script)))
+    if not stmts:
+        return None
+
+    if isinstance(stmts[-1], ast.Expr):
+        last_expr: ast.Expr = cast(ast.Expr, stmts[-1])
+
+        if len(stmts) > 1:
+            compiled = compile(ast.Module(body=stmts[:-1], type_ignores=[]), filename="<ast>", mode="exec")
+            exec(compiled, config_globals)
+        # then we eval the last one
+        compiled = compile(ast.Expression(body=last_expr.value, type_ignores=[]), filename="<ast>", mode="eval")
+        value = eval(compiled, config_globals)
+        if isinstance(value, Configuration):
+            return value
+
+    return None
 
 
 async def configuration_from_python(path: Path) -> Configuration:
@@ -45,6 +82,10 @@ async def configuration_from_python(path: Path) -> Configuration:
                 check_valid_conf_fct,
             ]
         )
+
+    config = try_last_expression_as_config(final_path)
+    if config:
+        return config
 
     factory = get_object_from_module(module_absolute_path=final_path,
                                      object_or_class_name="ConfigurationFactory",
