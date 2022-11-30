@@ -10,7 +10,7 @@ from starlette.types import ASGIApp
 import youwol.middlewares.local_cloud_hybridizers as local_cloud_hybridizer
 from youwol.environment import CustomMiddleware, AssetDownloadThread, yw_config, api_configuration, YouwolEnvironment
 from youwol.middlewares import BrowserCachingMiddleware, LocalCloudHybridizerMiddleware,  get_remote_openid_infos,\
-    JwtProviderConfig
+    JwtProviderPyYouwol
 from youwol.routers import native_backends, admin
 from youwol.routers.environment.download_assets import DownloadDataTask, DownloadFluxProjectTask, DownloadPackageTask, \
     DownloadStoryTask
@@ -93,7 +93,7 @@ def setup_middlewares(env: YouwolEnvironment):
         openid_infos=partial(get_remote_openid_infos, env),
         predicate_public_path=lambda url:
         url.path.startswith("/api/accounts/openid_rp/"),
-        jwt_providers=[JwtProviderConfig(jwt_cache=jwt_cache)],
+        jwt_providers=[JwtProviderPyYouwol(jwt_cache=jwt_cache)],
         on_missing_token=lambda url:
         redirect_to_login(url) if url.path.startswith('/applications')
             else Response(content="Unauthenticated", status_code=403)

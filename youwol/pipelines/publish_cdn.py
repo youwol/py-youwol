@@ -8,7 +8,7 @@ from fastapi import HTTPException
 from pydantic import BaseModel
 
 from youwol.environment import CloudEnvironment, LocalClients, RemoteClients, PathsBook, YouwolEnvironment
-from youwol.middlewares import JwtProviderConfig
+from youwol.middlewares import JwtProviderPyYouwol
 
 from youwol_utils.http_clients.tree_db_backend import DefaultDriveResponse
 from youwol.routers.projects.models_project import (
@@ -225,7 +225,7 @@ class PublishCdnRemoteStep(PipelineStep):
                                 data={"cloud target": self.cdnTarget.cloudTarget})
             raise e
 
-        token = await JwtProviderConfig.get_auth_token(
+        token = await JwtProviderPyYouwol.get_auth_token(
             auth_provider=self.cdnTarget.cloudTarget.authProvider,
             authentication=authentication,
             context=context

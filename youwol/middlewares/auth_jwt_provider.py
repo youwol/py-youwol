@@ -26,13 +26,13 @@ class DeadlinedCache(BaseModel):
         return margin > 0
 
 
-class JwtProviderConfig(JwtProvider):
+class JwtProviderPyYouwol(JwtProvider):
 
     __tokens_cache: List[DeadlinedCache] = []
     __jwt_cache: CacheClient
 
     def __init__(self, jwt_cache: CacheClient):
-        JwtProviderConfig.__jwt_cache = jwt_cache
+        JwtProviderPyYouwol.__jwt_cache = jwt_cache
 
     async def get_token(self, request: Request, context: Context) -> Optional[str]:
         # get auth token of current connection
@@ -40,7 +40,7 @@ class JwtProviderConfig(JwtProvider):
         remote = env.get_remote_info()
         authentication = env.get_authentication_info()
 
-        return await JwtProviderConfig.get_auth_token(
+        return await JwtProviderPyYouwol.get_auth_token(
             auth_provider=remote.authProvider,
             authentication=authentication,
             context=context
@@ -53,14 +53,14 @@ class JwtProviderConfig(JwtProvider):
             context: Context):
 
         if isinstance(authentication, DirectAuth):
-            return await JwtProviderConfig.get_auth_token_direct(
+            return await JwtProviderPyYouwol.get_auth_token_direct(
                 auth_provider=auth_provider,
                 authentication=authentication,
                 context=context
             )
 
         if isinstance(authentication, BrowserAuth):
-            return await JwtProviderConfig.get_auth_token_cookie(
+            return await JwtProviderPyYouwol.get_auth_token_cookie(
                 auth_provider=auth_provider,
                 context=context
             )
@@ -73,7 +73,7 @@ class JwtProviderConfig(JwtProvider):
         username = authentication.userName
         dependencies = {"username": username, "openIdClient": f"{auth_provider.openidClient}", "type": "auth_token"}
 
-        cached_token = next((c for c in JwtProviderConfig.__tokens_cache if c.is_valid(dependencies)), None)
+        cached_token = next((c for c in JwtProviderPyYouwol.__tokens_cache if c.is_valid(dependencies)), None)
         if cached_token:
             return cached_token.value
 
@@ -88,8 +88,8 @@ class JwtProviderConfig(JwtProvider):
             raise RuntimeError(f"Can not get access token for user '{username}' : {e}")
 
         deadline = datetime.timestamp(datetime.now()) + expire
-        JwtProviderConfig.__tokens_cache.append(DeadlinedCache(value=access_token, deadline=deadline,
-                                                               dependencies=dependencies))
+        JwtProviderPyYouwol.__tokens_cache.append(DeadlinedCache(value=access_token, deadline=deadline,
+                                                                 dependencies=dependencies))
 
         await context.info(text="Access token renewed",
                            data={"openIdClient": auth_provider.openidClient, "access_token": access_token})
@@ -97,7 +97,7 @@ class JwtProviderConfig(JwtProvider):
 
     @staticmethod
     async def get_auth_token_cookie(auth_provider: AuthorizationProvider, context: Context):
-        jwt_cache: CacheClient = JwtProviderConfig.__jwt_cache
+        jwt_cache: CacheClient = JwtProviderPyYouwol.__jwt_cache
         request = context.request
         return await JwtProviderCookie(
             jwt_cache=jwt_cache,

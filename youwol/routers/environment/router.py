@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from starlette.requests import Request
 from youwol.environment import FlowSwitcherMiddleware, UserInfo, yw_config, YouwolEnvironment, \
     YouwolEnvironmentFactory, Connection, DirectAuth
-from youwol.middlewares import JwtProviderConfig
+from youwol.middlewares import JwtProviderPyYouwol
 from youwol.routers.environment.models import LoginBody, RemoteGatewayInfo, CustomDispatchesResponse
 from youwol.routers.environment.upload_assets.upload import upload_asset
 from youwol.web_socket import LogsStreamer
@@ -135,7 +135,7 @@ async def login(
         await YouwolEnvironmentFactory.reload(Connection(authId=body.authId, envId=body.envId))
         await status(request, env)
         auth_provider = env.get_remote_info().authProvider
-        auth_token = await JwtProviderConfig.get_auth_token(
+        auth_token = await JwtProviderPyYouwol.get_auth_token(
             auth_provider=auth_provider,
             authentication=env.get_authentication_info(),
             context=ctx
