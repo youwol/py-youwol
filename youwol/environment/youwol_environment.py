@@ -10,7 +10,7 @@ from cowpy import cow
 from pydantic import BaseModel
 
 import youwol
-from youwol.environment import CloudEnvironment, Authentication
+from youwol.environment import CloudEnvironment, Authentication, Command
 
 from youwol.environment.errors_handling import (
     ConfigurationLoadingStatus, ConfigurationLoadingException,
@@ -23,7 +23,6 @@ from youwol.environment.config_from_module import configuration_from_python
 from youwol.environment.paths import PathsBook, ensure_config_file_exists_or_create_it
 from youwol.main_args import get_main_arguments, MainArguments
 from youwol.routers.custom_backends import install_routers
-from youwol.routers.custom_commands.models import Command
 from youwol.web_socket import WsDataStreamer
 from youwol_utils.context import ContextFactory, InMemoryReporter
 from youwol_utils.servers.fast_api import FastApiRouter

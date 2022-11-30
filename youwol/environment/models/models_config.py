@@ -5,7 +5,6 @@ from typing import Union, Callable, Awaitable, Any, Dict, Tuple
 from youwol.environment.paths import PathsBook
 from youwol.environment.models.defaults import default_path_cache_dir, default_path_data_dir, default_http_port, \
     default_path_projects_dir, default_platform_host, default_auth_provider
-from youwol.routers.custom_commands.models import Command
 from youwol_utils.clients.oidc.oidc_config import PublicClient, PrivateClient
 from youwol_utils.servers.fast_api import FastApiRouter
 from typing import List, Optional
@@ -17,7 +16,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from youwol_utils.utils_requests import redirect_request
-from youwol_utils import Context, encode_id, YouWolException, youwol_exception_handler, ResourcesNotFoundException
+from youwol_utils import Context, encode_id, YouWolException, youwol_exception_handler, ResourcesNotFoundException, JSON
 from youwol_utils.context import Label
 
 
@@ -313,6 +312,14 @@ Specify how data are persisted in the computer.
         ]
     )
     localEnvironment: LocalEnvironment = LocalEnvironment()
+
+
+class Command(BaseModel):
+    name: str
+    do_get: Optional[Callable[[Context], Union[Awaitable[JSON], JSON]]] = None
+    do_post: Optional[Callable[[JSON, Context], Union[Awaitable[JSON], JSON]]] = None
+    do_put: Optional[Callable[[JSON, Context], Union[Awaitable[JSON], JSON]]] = None
+    do_delete: Optional[Callable[[Context], Union[Awaitable[JSON], JSON]]] = None
 
 
 class CustomEndPoints(BaseModel):
