@@ -27,7 +27,13 @@ class DeadlinedCache(BaseModel):
 
 
 class JwtProviderPyYouwol(JwtProvider):
+    """
+    This class hides some 'code smells':
 
+    *  usage of two caching mechanisms, one should be able to cover both usages
+    *  static nature of the caches
+    *  'request = context.request' used in get_auth_token_cookie
+    """
     __tokens_cache: List[DeadlinedCache] = []
     __jwt_cache: CacheClient
 
