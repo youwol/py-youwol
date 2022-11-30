@@ -46,7 +46,7 @@ jobs:
         uses: youwol/nestor/ts/prepare@v1
         with:
           repository: youwol/local-youwol-client
-          ref: ${{ inputs.local-youwol-client_ref }}
+          ref: feature/configuration-API-v1
           path: ${{ runner.temp }}/local-youwol-client
 
       - name: Run local-youwol-client tests
@@ -94,6 +94,7 @@ jobs:
           py-youwol_path: ${{ github.workspace }}
           py-youwol_conf_path: yw_config_IT.py
           py-youwol_conf_repository: youwol/integrations-tests-conf
+          py-youwol_conf_ref: feature/configuration-API-v1
           USERNAME_INTEGRATION_TESTS: ${{ secrets.USERNAME_INTEGRATION_TESTS }}
           PASSWORD_INTEGRATION_TESTS: ${{ secrets.PASSWORD_INTEGRATION_TESTS }}
           USERNAME_INTEGRATION_TESTS_BIS: ${{ secrets.USERNAME_INTEGRATION_TESTS_BIS }}
@@ -131,6 +132,7 @@ jobs:
           py-youwol_path: ${{ github.workspace }}
           py-youwol_conf_path: yw_config_IT.py
           py-youwol_conf_repository: youwol/integrations-tests-conf
+          py-youwol_conf_ref: feature/configuration-API-v1
           USERNAME_INTEGRATION_TESTS: ${{ secrets.USERNAME_INTEGRATION_TESTS }}
           PASSWORD_INTEGRATION_TESTS: ${{ secrets.PASSWORD_INTEGRATION_TESTS }}
           USERNAME_INTEGRATION_TESTS_BIS: ${{ secrets.USERNAME_INTEGRATION_TESTS_BIS }}
