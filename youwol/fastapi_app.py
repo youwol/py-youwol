@@ -1,4 +1,5 @@
 import asyncio
+from functools import partial
 
 from fastapi import FastAPI, Depends, WebSocket
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
@@ -6,18 +7,14 @@ from starlette.requests import Request
 from starlette.responses import RedirectResponse, Response
 from starlette.types import ASGIApp
 
-import youwol.middlewares.custom_dispatch_middleware as custom_dispatch
 import youwol.middlewares.local_cloud_hybridizers as local_cloud_hybridizer
-from youwol.configuration.models_config_middleware import CustomMiddleware
-from youwol.environment.auto_download_thread import AssetDownloadThread
-from youwol.environment.youwol_environment import yw_config, api_configuration, YouwolEnvironment
-from youwol.middlewares.auth_middleware import get_remote_openid_infos, JwtProviderConfig
-from youwol.middlewares.browser_caching_middleware import BrowserCachingMiddleware
-from youwol.middlewares.hybridizer_middleware import LocalCloudHybridizerMiddleware
+from youwol.environment import CustomMiddleware, AssetDownloadThread, yw_config, api_configuration, YouwolEnvironment
+from youwol.middlewares import BrowserCachingMiddleware, LocalCloudHybridizerMiddleware,  get_remote_openid_infos,\
+    JwtProviderPyYouwol
 from youwol.routers import native_backends, admin
 from youwol.routers.environment.download_assets import DownloadDataTask, DownloadFluxProjectTask, DownloadPackageTask, \
     DownloadStoryTask
-from youwol.utils.utils_low_level import start_web_socket
+from youwol.web_socket import start_web_socket
 from youwol.web_socket import WebSocketsStore, WsDataStreamer
 from youwol_utils import YouWolException, youwol_exception_handler, YouwolHeaders, CleanerThread, factory_local_cache
 from youwol_utils.context import ContextFactory, InMemoryReporter, Context
@@ -86,8 +83,6 @@ def setup_middlewares(env: YouwolEnvironment):
         ],
         disabling_header=YouwolHeaders.py_youwol_local_only
     )
-    # deprecated: see YouwolEnvironment.customMiddlewares
-    fastapi_app.add_middleware(custom_dispatch.CustomDispatchesMiddleware)
 
     for middleware in reversed(env.customMiddlewares):
         fastapi_app.add_middleware(CustomMiddlewareWrapper, model_config=middleware)
@@ -95,10 +90,10 @@ def setup_middlewares(env: YouwolEnvironment):
     fastapi_app.add_middleware(BrowserCachingMiddleware)
     fastapi_app.add_middleware(
         AuthMiddleware,
-        openid_infos=get_remote_openid_infos,
+        openid_infos=partial(get_remote_openid_infos, env),
         predicate_public_path=lambda url:
         url.path.startswith("/api/accounts/openid_rp/"),
-        jwt_providers=[JwtProviderConfig(jwt_cache=jwt_cache)],
+        jwt_providers=[JwtProviderPyYouwol(jwt_cache=jwt_cache)],
         on_missing_token=lambda url:
         redirect_to_login(url) if url.path.startswith('/applications')
             else Response(content="Unauthenticated", status_code=403)

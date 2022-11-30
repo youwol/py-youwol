@@ -6,9 +6,8 @@ from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response, JSONResponse
 
-from youwol.environment.clients import RemoteClients, LocalClients
-from youwol.environment.youwol_environment import YouwolEnvironment
-from youwol.middlewares.models_dispatch import AbstractDispatch
+from youwol.environment import RemoteClients, LocalClients, YouwolEnvironment
+from youwol.middlewares.local_cloud_hybridizers.abstract_local_cloud_dispatch import AbstractLocalCloudDispatch
 from youwol.routers.commons import ensure_local_path
 from youwol_utils import JSON
 from youwol_utils.context import Context
@@ -24,7 +23,7 @@ def cast_response(response: Union[JSON, BaseException], _type: PydanticType):
     return _type(**response)
 
 
-class GetChildrenDispatch(AbstractDispatch):
+class GetChildrenDispatch(AbstractLocalCloudDispatch):
 
     @staticmethod
     def is_matching(request: Request) -> Union[None, str]:
@@ -44,7 +43,7 @@ class GetChildrenDispatch(AbstractDispatch):
             return None
         await context.info(text="GetChildrenDispatch matching incoming request")
         async with context.start(action="GetChildrenDispatch.apply", muted_http_errors={404}) as ctx:
-            env = await context.get('env', YouwolEnvironment)
+            env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
 
             local_gtw_treedb = LocalClients.get_gtw_treedb_client(env=env)
             try:
@@ -56,7 +55,8 @@ class GetChildrenDispatch(AbstractDispatch):
                                     "remote")
                 await ensure_local_path(folder_id=folder_id, env=env, context=ctx)
 
-            assets_gtw = await RemoteClients.get_assets_gateway_client(remote_host=env.selectedRemote, context=context)
+            assets_gtw = await RemoteClients.get_assets_gateway_client(remote_host=env.get_remote_info().host,
+                                                                       context=context)
             remote_gtw_treedb = assets_gtw.get_treedb_backend_router()
 
             local_resp, remote_resp = await asyncio.gather(
@@ -107,7 +107,7 @@ class GetChildrenDispatch(AbstractDispatch):
             }
 
 
-class MoveBorrowInRemoteFolderDispatch(AbstractDispatch):
+class MoveBorrowInRemoteFolderDispatch(AbstractLocalCloudDispatch):
 
     async def apply(self,
                     request: Request,

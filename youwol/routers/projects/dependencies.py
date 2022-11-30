@@ -3,9 +3,9 @@ from typing import List, Dict
 
 from pydantic import BaseModel
 
-from youwol.environment.models_project import Project
-from youwol.environment.projects_loader import ProjectLoader
-from youwol.environment.youwol_environment import YouwolEnvironment
+from youwol.routers.projects.models_project import Project
+from youwol.routers.projects.projects_loader import ProjectLoader
+from youwol.environment import YouwolEnvironment
 from youwol.routers.projects.models import (
     ChildToParentConnections, DependenciesResponse,
 )
@@ -82,9 +82,9 @@ class ResolvedDependencies(BaseModel):
 
 async def resolve_workspace_dependencies(context: Context) -> ResolvedDependencies:
 
-    env = await context.get('env', YouwolEnvironment)
+    env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
     projects = await ProjectLoader.get_projects(env, context)
-    cache = env.cache
+    cache = env.cache_py_youwol
     if 'resolved_dependencies' in cache:
         return cache['resolved_dependencies']
 

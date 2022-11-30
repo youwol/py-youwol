@@ -1,15 +1,14 @@
 from __future__ import annotations
 
 import asyncio
-import os
 from pathlib import Path
 from pydantic import BaseModel
-from typing import List, Union, Optional, Awaitable, Iterable
+from typing import List, Union, Optional, Awaitable
 
-from youwol.environment.forward_declaration import YouwolEnvironment
-from youwol.environment.models import IPipelineFactory
-from youwol.environment.models_project import Project
-from youwol.utils.utils_low_level import get_object_from_module
+from youwol.routers.projects.models_project import IPipelineFactory
+from youwol.environment import YouwolEnvironment
+from youwol.routers.projects.models_project import Project
+from youwol.environment.python_dynamic_loader import get_object_from_module
 from youwol_utils import encode_id
 from youwol_utils.context import Context
 
@@ -52,23 +51,20 @@ class ProjectLoader:
 
     @staticmethod
     async def get_results(env: YouwolEnvironment, context: Context) -> List[Result]:
-        if "ProjectLoader" in env.private_cache:
-            return env.private_cache["ProjectLoader"]
+        if "ProjectLoader" in env.cache_py_youwol:
+            return env.cache_py_youwol["ProjectLoader"]
 
         if not ProjectLoader.projects_promise:
-            ProjectLoader.projects_promise = load_projects(
-                additional_python_scr_paths=env.pathsBook.additionalPythonScrPaths,
-                env=env,
-                context=context)
+            ProjectLoader.projects_promise = load_projects(env=env, context=context)
             projects = await ProjectLoader.projects_promise
-            env.private_cache["ProjectLoader"] = projects
+            env.cache_py_youwol["ProjectLoader"] = projects
             ProjectLoader.projects_promise = None
         else:
             projects = None
             for _ in range(10):
                 await asyncio.sleep(0.2)
-                if env.private_cache.get("ProjectLoader", None):
-                    projects = env.private_cache.get("ProjectLoader")
+                if env.cache_py_youwol.get("ProjectLoader", None):
+                    projects = env.cache_py_youwol.get("ProjectLoader")
                     break
             if not projects:
                 raise RuntimeError("Resolution of already started projects took too long")
@@ -76,31 +72,17 @@ class ProjectLoader:
         return projects
 
 
-async def load_projects(additional_python_scr_paths: List[Path],
-                        env: YouwolEnvironment,
-                        context: Context
-                        ) -> List[Result]:
+async def load_projects(env: YouwolEnvironment, context: Context) -> List[Result]:
     async with context.start(
             action="load_projects"
     ) as ctx:  # type: Context
         projects = env.projects
-        project_folders = await projects.finder(env, ctx)
+        project_folders = await projects.finder(env.pathsBook, ctx)
 
-        results_dirs = get_projects_dirs_candidates(project_folders)
-        candidates_dirs = [
-            candidate_dirs
-            for candidate_dirs in results_dirs
-            if isinstance(candidate_dirs, Path)
-        ]
-        # await ctx.info(text="Candidates directory", data={"directories": candidates_dirs})
-        results: List[Result] = [
-            candidate_dirs
-            for candidate_dirs in results_dirs
-            if not isinstance(candidate_dirs, Path)
-        ]
-        for dir_candidate in candidates_dirs:
+        results: List[Result] = []
+        for dir_candidate in project_folders:
             try:
-                results.append(await get_project(dir_candidate, additional_python_scr_paths, env, ctx))
+                results.append(await get_project(dir_candidate, [], env, ctx))
             except SyntaxError as e:
                 msg = f"Could not load project in dir '{dir_candidate}' because of syntax error : {e.msg} "
                 await ctx.error(text=msg)
@@ -113,37 +95,6 @@ async def load_projects(additional_python_scr_paths: List[Path],
                 results.append(Failure(path=str(dir_candidate), message=str(e)))
 
         return results
-
-
-def get_projects_dirs_candidates(projects_dirs: Iterable[Path]) -> List[Union[Path, Failure]]:
-    def is_project(maybe_path: Path):
-        test_path = maybe_path / PROJECT_PIPELINE_DIRECTORY / 'yw_pipeline.py'
-        return maybe_path if test_path.exists() else FailureNoPipeline(path=str(maybe_path))
-
-    return [is_project(p) for p in projects_dirs]
-
-
-def get_projects_dir_candidate(projects_dir) -> List[Union[Path, Failure]]:
-    result = []
-    if len(os.listdir(projects_dir)) == 0:
-        result.append(FailureEmptyDir(path=str(projects_dir)))
-    elif (projects_dir / PROJECT_PIPELINE_DIRECTORY).exists():
-        # This dir is a project
-        result.append(projects_dir)
-    else:
-        # This dir may contain projects
-        for sub_dir in os.listdir(projects_dir):
-            sub_dir_path = projects_dir / Path(sub_dir)
-            if not sub_dir_path.is_dir():
-                continue
-            if sub_dir[0] == ".":
-                continue
-            if (sub_dir_path / PROJECT_PIPELINE_DIRECTORY).exists():
-                result.append(sub_dir_path)
-            else:
-                result.append(FailureNoPipeline(path=str(sub_dir_path)))
-
-    return result
 
 
 async def get_project(project_path: Path,

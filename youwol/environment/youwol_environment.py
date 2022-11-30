@@ -1,6 +1,7 @@
 import json
 import os
-from datetime import datetime
+import shutil
+import zipfile
 from pathlib import Path
 from typing import Dict, Any, Optional, Awaitable, List
 
@@ -9,126 +10,65 @@ from cowpy import cow
 from pydantic import BaseModel
 
 import youwol
-from youwol.configuration.configuration_validation import (
+from youwol.environment import CloudEnvironment, Authentication, Command
+
+from youwol.environment.errors_handling import (
     ConfigurationLoadingStatus, ConfigurationLoadingException,
-    CheckSystemFolderWritable, CheckDatabasesFolderHealthy
+    CheckSystemFolderWritable, CheckDatabasesFolderHealthy, ErrorResponse
 )
-from youwol.configuration.models_config import Events
-from youwol.configuration.models_config_middleware import CustomMiddleware
-from youwol.environment.clients import LocalClients
+
+from youwol.environment.models import Events, Configuration, CustomMiddleware, ApiConfiguration, Connection
+from youwol.environment.models.models import ProjectsSanitized
 from youwol.environment.config_from_module import configuration_from_python
-from youwol.environment.configuration_handler import ConfigurationHandler
-from youwol.environment.models import RemoteGateway, ApiConfiguration, Projects
-from youwol.environment.models_project import ErrorResponse
 from youwol.environment.paths import PathsBook, ensure_config_file_exists_or_create_it
 from youwol.main_args import get_main_arguments, MainArguments
-from youwol.middlewares.models_dispatch import AbstractDispatch
 from youwol.routers.custom_backends import install_routers
-from youwol.routers.custom_commands.models import Command
 from youwol.web_socket import WsDataStreamer
-from youwol_utils.clients.oidc.oidc_config import OidcConfig
-from youwol_utils.context import Context, ContextFactory, InMemoryReporter
-from youwol_utils.http_clients.tree_db_backend import DefaultDriveResponse
+from youwol_utils.context import ContextFactory, InMemoryReporter
 from youwol_utils.servers.fast_api import FastApiRouter
-from youwol_utils.utils_paths import parse_json
-
-
-class DeadlinedCache(BaseModel):
-    value: Any
-    deadline: float
-    dependencies: Dict[str, str]
-
-    def is_valid(self, dependencies) -> bool:
-
-        for k, v in self.dependencies.items():
-            if k not in dependencies or dependencies[k] != v:
-                return False
-        margin = self.deadline - datetime.timestamp(datetime.now())
-        return margin > 0
+from youwol_utils.utils_paths import parse_json, ensure_dir_exists
+from youwol.environment.paths import app_dirs
 
 
 class YouwolEnvironment(BaseModel):
     httpPort: int
-    redirectBasePath: str
     events: Events
-    cdnAutomaticUpdate: bool
-    customDispatches: List[AbstractDispatch]
     customMiddlewares: List[CustomMiddleware]
 
-    projects: Projects
+    projects: ProjectsSanitized
     commands: Dict[str, Command]
 
-    selectedRemote: str
-    selectedUser: Optional[str]
-    remotes: List[RemoteGateway]
+    currentConnection: Connection
+
+    remotes: List[CloudEnvironment]
 
     pathsBook: PathsBook
-    portsBook: Dict[str, int] = {}
     routers: List[FastApiRouter] = []
-    cache: Dict[str, Any] = {}
-    private_cache: Dict[str, Any] = {}
 
-    tokensCache: List[DeadlinedCache] = []
+    cache_user: Dict[str, Any] = {}
+    cache_py_youwol: Dict[str, Any] = {}
 
     def reset_cache(self):
-        self.cache = {}
-        self.private_cache = {}
+        self.cache_user = {}
+        self.cache_py_youwol = {}
 
-    def get_users_list(self) -> List[str]:
-        return [user.username for user in self.get_remote_info().users]
+    def get_remote_info(self) -> CloudEnvironment:
 
-    def get_remote_info(self, remote_host: str = None) -> Optional[RemoteGateway]:
+        env_id = self.currentConnection.envId
+        return next(remote for remote in self.remotes if remote.envId == env_id)
 
-        if not remote_host:
-            remote_host = self.selectedRemote
+    def get_authentication_info(self) -> Optional[Authentication]:
 
-        candidates = [remote for remote in self.remotes if remote.host == remote_host]
-        if len(candidates) > 0:
-            return candidates[0]
-
-        return None
-
-    async def get_auth_token(self, context: Context, remote_host: str = None, username: str = None):
-        username = username if username else self.selectedUser
-        remote = self.get_remote_info(remote_host)
-        dependencies = {"username": username, "host": remote.host, "type": "auth_token"}
-        cached_token = next((c for c in self.tokensCache if c.is_valid(dependencies)), None)
-        if cached_token and not remote_host:
-            return cached_token.value
-
-        try:
-            access_token = (await OidcConfig(remote.openidBaseUrl).for_client(remote.openidClient).direct_flow(
-                username=username,
-                password=([user.password for user in remote.users if user.username == username][0])
-            ))['access_token']
-        except Exception as e:
-            raise RuntimeError(f"Can not get access token for user '{username}' : {e}")
-
-        deadline = datetime.timestamp(datetime.now()) + 1 * 60 * 60 * 1000
-        self.tokensCache.append(DeadlinedCache(value=access_token, deadline=deadline, dependencies=dependencies))
-
-        await context.info(text="Access token renewed",
-                           data={"host": remote.host, "access_token": access_token})
-        return access_token
-
-    async def get_default_drive(self, context: Context) -> DefaultDriveResponse:
-
-        if self.private_cache.get("default-drive"):
-            return self.private_cache.get("default-drive")
-        env = await context.get('env', YouwolEnvironment)
-        default_drive = await LocalClients \
-            .get_assets_gateway_client(env).get_treedb_backend_router() \
-            .get_default_user_drive(headers=context.headers())
-
-        self.private_cache["default-drive"] = DefaultDriveResponse(**default_drive)
-        return DefaultDriveResponse(**default_drive)
+        remote = self.get_remote_info()
+        auth_id = self.currentConnection.authId
+        return next(auth for auth in remote.authentications if auth.authId == auth_id)
 
     def __str__(self):
-        def str_redirections():
-            if len(self.customDispatches) != 0:
+        def str_middlewares():
+            if len(self.customMiddlewares) != 0:
                 return f"""
-- list of redirections:
-{chr(10).join([f"  * {redirection}" for redirection in self.customDispatches])}
+- list of middlewares:
+{chr(10).join([f"  * {redirection}" for redirection in self.customMiddlewares])}
 """
             else:
                 return "- no redirections configured"
@@ -155,12 +95,12 @@ class YouwolEnvironment(BaseModel):
 
         return f"""Running with youwol: {youwol}
 Configuration loaded from '{self.pathsBook.config}'
-- user: {self.selectedUser if self.selectedUser else 'dynamic'}
-- remote : {self.selectedRemote}
+- authentication: {self.get_authentication_info()}
+- remote : { self.get_remote_info().envId } (on {self.get_remote_info().host})
 - paths: {self.pathsBook}
 - cdn packages count: {len(parse_json(self.pathsBook.local_cdn_docdb)['documents'])}
 - assets count: {len(parse_json(self.pathsBook.local_assets_entities_docdb)['documents'])}
-{str_redirections()}
+{str_middlewares()}
 {str_commands()}
 {str_routers()}
 """
@@ -176,12 +116,11 @@ class YouwolEnvironmentFactory:
         return config
 
     @staticmethod
-    async def reload(selected_user: Optional[str] = None, selected_remote: Optional[str] = None):
+    async def reload(connection: Connection = None):
         cached = YouwolEnvironmentFactory.__cached_config
         conf = await safe_load(
             path=cached.pathsBook.config,
-            selected_user=selected_user if selected_user else cached.selectedUser,
-            selected_remote=selected_remote if selected_remote else cached.selectedRemote
+            remote_connection=connection or cached.currentConnection
         )
 
         await YouwolEnvironmentFactory.trigger_on_load(config=conf)
@@ -191,7 +130,7 @@ class YouwolEnvironmentFactory:
     @staticmethod
     async def init():
         path = await get_yw_config_starter(get_main_arguments())
-        conf = await safe_load(path=path, selected_user=None, selected_remote=None)
+        conf = await safe_load(path=path)
 
         YouwolEnvironmentFactory.__cached_config = conf
         await YouwolEnvironmentFactory.trigger_on_load(config=conf)
@@ -201,17 +140,12 @@ class YouwolEnvironmentFactory:
     def clear_cache():
         conf = YouwolEnvironmentFactory.__cached_config
         new_conf = YouwolEnvironment(
-            redirectBasePath=conf.redirectBasePath,
-            selectedUser=conf.selectedUser,
-            selectedRemote=conf.selectedRemote,
+            currentConnection=conf.currentConnection,
             pathsBook=conf.pathsBook,
             httpPort=conf.httpPort,
-            cache={},
             projects=conf.projects,
             commands=conf.commands,
-            customDispatches=conf.customDispatches,
             customMiddlewares=conf.customMiddlewares,
-            cdnAutomaticUpdate=conf.cdnAutomaticUpdate,
             events=conf.events,
             remotes=conf.remotes
         )
@@ -225,7 +159,7 @@ class YouwolEnvironmentFactory:
             request=None
         )
         if config.events and config.events.onLoad:
-            on_load_cb = config.events.onLoad(config, context)
+            on_load_cb = config.events.onLoad(context)
             data = await on_load_cb if isinstance(on_load_cb, Awaitable) else on_load_cb
             await context.info(text="Applied onLoad event's callback", data=data)
 
@@ -239,8 +173,7 @@ async def yw_config() -> YouwolEnvironment:
 
 async def safe_load(
         path: Path,
-        selected_user: Optional[str],
-        selected_remote: Optional[str],
+        remote_connection: Optional[Connection] = None
 ) -> YouwolEnvironment:
     """
     Possible errors:
@@ -260,14 +193,21 @@ async def safe_load(
             ]
         )
 
-    conf_handler: ConfigurationHandler = await configuration_from_python(path)
+    config: Configuration = await configuration_from_python(path)
+    system = config.system
+    projects = config.projects
+    customization = config.customization
+    data_dir = Path(system.localEnvironment.dataDir)
+    data_dir = data_dir if data_dir.is_absolute() else path.parent / data_dir
+    cache_dir = Path(system.localEnvironment.cacheDir)
+    cache_dir = cache_dir if cache_dir.is_absolute() else path.parent / cache_dir
 
     paths_book = PathsBook(
         config=path,
-        databases=Path(conf_handler.get_data_dir()),
-        system=Path(conf_handler.get_cache_dir()),
-        additionalPythonScrPaths=conf_handler.get_additional_python_src_paths()
+        databases=data_dir,
+        system=cache_dir
     )
+    ensure_dir_exists(system.localEnvironment.cacheDir, root_candidates=app_dirs.user_cache_dir)
 
     if not os.access(paths_book.system.parent, os.W_OK):
         check_system_folder_writable.status = ErrorResponse(
@@ -294,23 +234,31 @@ async def safe_load(
     if not paths_book.packages_cache_path.exists():
         open(paths_book.packages_cache_path, "w").write(json.dumps({}))
 
-    youwol_configuration = YouwolEnvironment(
-        redirectBasePath=conf_handler.get_redirect_base_path(),
-        httpPort=conf_handler.get_http_port(),
-        portsBook=conf_handler.get_ports_book(),
-        routers=conf_handler.get_routers(),
-        selectedUser=selected_user if selected_user else conf_handler.get_selected_remote().defaultUser,
-        selectedRemote=selected_remote if selected_remote else conf_handler.get_selected_remote().host,
-        events=conf_handler.get_events(),
-        cdnAutomaticUpdate=conf_handler.get_cdn_auto_update(),
+    def create_data_dir(final_path: Path):
+        databases_zip = 'databases.zip'
+        final_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(get_main_arguments().youwol_path.parent / 'youwol_data' / databases_zip,
+                        final_path.parent / databases_zip)
+
+        with zipfile.ZipFile(final_path.parent / databases_zip, 'r') as zip_ref:
+            zip_ref.extractall(final_path.parent)
+
+        os.remove(final_path.parent / databases_zip)
+
+    ensure_dir_exists(path=paths_book.databases, root_candidates=app_dirs.user_data_dir,
+                      create=create_data_dir)
+
+    return YouwolEnvironment(
+        httpPort=system.httpPort,
+        routers=customization.endPoints.routers,
+        currentConnection=remote_connection or system.cloudEnvironments.defaultConnection,
+        events=customization.events,
         pathsBook=paths_book,
-        projects=conf_handler.get_projects(),
-        commands=conf_handler.get_commands(),
-        customDispatches=conf_handler.get_dispatches(),
-        customMiddlewares=conf_handler.get_middlewares(),
-        remotes=[RemoteGateway.from_config(remote_config) for remote_config in conf_handler.get_remotes()]
+        projects=ProjectsSanitized.from_config(projects),
+        commands={c.name: c for c in customization.endPoints.commands},
+        customMiddlewares=customization.middlewares,
+        remotes=system.cloudEnvironments.environments
     )
-    return await conf_handler.customize(youwol_configuration)
 
 
 async def get_yw_config_starter(main_args: MainArguments):

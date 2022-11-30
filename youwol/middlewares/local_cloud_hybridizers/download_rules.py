@@ -3,16 +3,15 @@ from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
 
-from youwol.environment.auto_download_thread import AssetDownloadThread
-from youwol.environment.youwol_environment import YouwolEnvironment
-from youwol.middlewares.models_dispatch import AbstractDispatch
-from youwol.utils.utils_low_level import redirect_api_remote
+from youwol.environment import AssetDownloadThread, YouwolEnvironment
+from youwol.middlewares.local_cloud_hybridizers.abstract_local_cloud_dispatch import AbstractLocalCloudDispatch
+from youwol.routers.router_remote import redirect_api_remote
 from youwol_utils import YouwolHeaders
 from youwol_utils.context import Context
 from youwol_utils.request_info_factory import url_match
 
 
-class Download(AbstractDispatch):
+class Download(AbstractLocalCloudDispatch):
 
     async def apply(self,
                     request: Request,
@@ -45,7 +44,7 @@ class Download(AbstractDispatch):
                 await ctx.info("Raw data can not be locally retrieved, proceed to remote platform")
                 headers = {"Authorization": request.headers.get("authorization")}
                 resp = await redirect_api_remote(request, ctx)
-                resp.headers[YouwolHeaders.youwol_origin] = env.selectedRemote
+                resp.headers[YouwolHeaders.youwol_origin] = env.get_remote_info().host
                 thread = await ctx.get('download_thread', AssetDownloadThread)
                 await ctx.info("~> schedule asset download")
                 thread.enqueue_asset(url=request.url.path, kind=kind, raw_id=raw_id, context=ctx, headers=headers)

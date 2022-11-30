@@ -4,7 +4,7 @@ from typing import List, Optional, Dict, Any, Mapping
 
 from pydantic import BaseModel
 
-from youwol.environment.models_project import PipelineStepStatus, Manifest, Link, Project
+from youwol.routers.projects.models_project import PipelineStepStatus, Manifest, Link, Project
 
 ArtifactId = str
 PipelineStepId = str

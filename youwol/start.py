@@ -1,15 +1,22 @@
 import asyncio
+import socket
 import traceback
 from pathlib import Path
 from typing import Optional
 
 import uvicorn
 
-from youwol.configuration.configuration_validation import ConfigurationLoadingException
+from youwol.environment.errors_handling import ConfigurationLoadingException
 from youwol.environment.youwol_environment import YouwolEnvironmentFactory, print_invite, YouwolEnvironment
 from youwol.fastapi_app import download_thread, fastapi_app, cleaner_thread
 from youwol.main_args import get_main_arguments
-from youwol.utils.utils_low_level import assert_py_youwol_starting_preconditions
+
+
+def assert_free_http_port(http_port: int):
+    a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    location = ("127.0.0.1", http_port)
+    if a_socket.connect_ex(location) == 0:
+        raise ValueError(f"The port {http_port} is already bound to a process")
 
 
 def start(shutdown_script_path: Optional[Path] = None):
@@ -22,11 +29,7 @@ def start(shutdown_script_path: Optional[Path] = None):
         print(e)
         raise e
 
-    try:
-        assert_py_youwol_starting_preconditions(http_port=env.httpPort)
-    except ValueError as e:
-        print(f"Pre-conditions failed while starting py-youwol server: {e}")
-        raise e
+    assert_free_http_port(http_port=env.httpPort)
 
     try:
         download_thread.go()

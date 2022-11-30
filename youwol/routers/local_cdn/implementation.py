@@ -5,8 +5,7 @@ from typing import NamedTuple, List
 from aiohttp import FormData
 from fastapi import HTTPException
 
-from youwol.environment.clients import RemoteClients, LocalClients
-from youwol.environment.youwol_environment import YouwolEnvironment
+from youwol.environment import RemoteClients, LocalClients, YouwolEnvironment
 from youwol.routers.commons import Label
 from youwol.routers.environment.download_assets.common import create_asset_local
 from youwol.routers.local_cdn.models import CheckUpdateResponse, UpdateStatus, PackageVersionInfo, \
@@ -46,7 +45,8 @@ async def check_update(
         context: Context):
 
     env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
-    remote_gtw_client = await RemoteClients.get_assets_gateway_client(remote_host=env.selectedRemote, context=context)
+    remote_gtw_client = await RemoteClients.get_assets_gateway_client(remote_host=env.get_remote_info().host,
+                                                                      context=context)
     headers = {
         "authorization": context.request.headers.get("authorization")
     }

@@ -135,6 +135,27 @@ async def post_asset(
         return format_asset(doc, request)
 
 
+async def put_access_policy_impl(asset_id: str, group_id: str, body: AccessPolicyBody,
+                                 configuration: Configuration, context: Context):
+
+    asset = await db_get(asset_id=asset_id, configuration=configuration, context=context)
+    docdb_access = configuration.doc_db_access_policy
+    now = time.time()  # s since epoch (January 1, 1970)
+    doc_access = {
+        "record_id": access_policy_record_id(asset_id, group_id),
+        "asset_id": asset_id,
+        "related_id": asset['related_id'],
+        "consumer_group_id": group_id,
+        "read": body.read.value,
+        "share": body.share.value,
+        "parameters": json.dumps(body.parameters),
+        "timestamp": int(now)
+    }
+    await docdb_access.create_document(doc=doc_access, owner=Constants.public_owner, headers=context.headers())
+
+    return {}
+
+
 @router.put("/assets/{asset_id}/access/{group_id}",
             summary="update an asset")
 async def put_access_policy(
@@ -147,23 +168,8 @@ async def put_access_policy(
     async with Context.start_ep(
             request=request
     ) as ctx:  # type: Context
-
-        asset = await db_get(asset_id=asset_id, configuration=configuration, context=ctx)
-        docdb_access = configuration.doc_db_access_policy
-        now = time.time()  # s since epoch (January 1, 1970)
-        doc_access = {
-            "record_id": access_policy_record_id(asset_id, group_id),
-            "asset_id": asset_id,
-            "related_id": asset['related_id'],
-            "consumer_group_id": group_id,
-            "read": body.read.value,
-            "share": body.share.value,
-            "parameters": json.dumps(body.parameters),
-            "timestamp": int(now)
-        }
-        await docdb_access.create_document(doc=doc_access, owner=Constants.public_owner, headers=ctx.headers())
-
-        return {}
+        return await put_access_policy_impl(asset_id=asset_id, group_id=group_id, body=body,
+                                            configuration=configuration, context=ctx)
 
 
 @router.delete("/assets/{asset_id}/access/{group_id}", summary="update an asset")

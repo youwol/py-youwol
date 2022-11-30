@@ -1,7 +1,7 @@
-from youwol.environment.youwol_environment import YouwolEnvironment
-from youwol.middlewares.models_dispatch import AbstractDispatch
+from youwol.environment import YouwolEnvironment
+from youwol.middlewares.local_cloud_hybridizers.abstract_local_cloud_dispatch import AbstractLocalCloudDispatch
+from youwol.routers.router_remote import redirect_api_remote
 
-from youwol.utils.utils_low_level import redirect_api_remote
 from youwol_utils import YouwolHeaders
 from youwol_utils.request_info_factory import url_match
 from youwol_utils.context import Context
@@ -11,7 +11,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 
-class ForwardOnly(AbstractDispatch):
+class ForwardOnly(AbstractLocalCloudDispatch):
 
     async def apply(self,
                     request: Request,
@@ -36,7 +36,7 @@ class ForwardOnly(AbstractDispatch):
             if resp.status_code == 404:
                 await ctx.info("Forward request to remote as it can not proceed locally ")
                 resp = await redirect_api_remote(request=request, context=ctx)
-                resp.headers[YouwolHeaders.youwol_origin] = env.selectedRemote
+                resp.headers[YouwolHeaders.youwol_origin] = env.get_remote_info().host
                 return resp
 
             resp.headers[YouwolHeaders.youwol_origin] = request.url.hostname

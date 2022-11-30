@@ -2,8 +2,7 @@ from dataclasses import dataclass
 
 from fastapi import HTTPException
 
-from youwol.environment.clients import LocalClients
-from youwol.environment.youwol_environment import YouwolEnvironment
+from youwol.environment import LocalClients, YouwolEnvironment
 from youwol.routers.commons import Label
 from youwol.routers.environment.download_assets.models import DownloadTask
 from youwol.routers.local_cdn.implementation import download_package

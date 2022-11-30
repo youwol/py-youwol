@@ -1,5 +1,6 @@
-from youwol.environment.forward_declaration import YouwolEnvironment
+from youwol.environment import YouwolEnvironment
 from youwol_utils import CdnClient
+from youwol_utils.clients.accounts.accounts import AccountsClient
 from youwol_utils.clients.assets.assets import AssetsClient
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from youwol_utils.clients.cdn_sessions_storage import CdnSessionsStorageClient
@@ -84,3 +85,8 @@ class LocalClients:
     def get_cdn_sessions_storage_client(env: YouwolEnvironment) -> CdnSessionsStorageClient:
         base_path = LocalClients.base_path(env)
         return CdnSessionsStorageClient(url_base=f"{base_path}/cdn-sessions-storage")
+
+    @staticmethod
+    def get_accounts_client(env: YouwolEnvironment) -> AccountsClient:
+        base_path = LocalClients.base_path(env)
+        return AccountsClient(url_base=f"{base_path}/accounts")

@@ -1,19 +1,21 @@
 from __future__ import annotations
 
+import ast
+import importlib
 import sys
 import traceback
 from abc import ABC, abstractmethod
+from importlib.machinery import SourceFileLoader
+from importlib.util import spec_from_loader
 from pathlib import Path
-from typing import Awaitable
+from typing import Awaitable, Optional, cast
 
-from youwol.configuration.configuration_validation import CheckValidConfigurationFunction, ConfigurationLoadingStatus, \
-    ConfigurationLoadingException
-from youwol.configuration.models_config import Configuration
-from youwol.environment.configuration_handler import ConfigurationHandler
-from youwol.environment.models_project import format_unknown_error, ErrorResponse
 from youwol.environment.paths import app_dirs
+from youwol.environment.errors_handling import CheckValidConfigurationFunction, ConfigurationLoadingStatus, \
+    ConfigurationLoadingException, format_unknown_error, ErrorResponse
+from youwol.environment.models import Configuration
 from youwol.main_args import MainArguments, get_main_arguments
-from youwol.utils.utils_low_level import get_object_from_module
+from youwol.environment.python_dynamic_loader import get_object_from_module
 from youwol_utils.utils_paths import PathException, existing_path_or_default
 
 
@@ -24,7 +26,40 @@ class IConfigurationFactory(ABC):
         return NotImplemented
 
 
-async def configuration_from_python(path: Path) -> ConfigurationHandler:
+def try_last_expression_as_config(config_path: Path) -> Optional[Configuration]:
+    """
+
+    :param config_path: path of the config file
+    :return: either the configuration if the last statement is a Configuration else None
+    """
+    # first import the config file as module, retrieve all the globals
+    module_name = config_path.stem
+    loader = SourceFileLoader(module_name, str(config_path))
+    spec = spec_from_loader(module_name, loader)
+    module = importlib.util.module_from_spec(spec)
+    loader.exec_module(module)
+    config_globals = {k: module.__getattribute__(k) for k in module.__dict__}
+    script = open(config_path, 'r').read()
+    stmts = list(ast.iter_child_nodes(ast.parse(script)))
+    if not stmts:
+        return None
+
+    if isinstance(stmts[-1], ast.Expr):
+        last_expr: ast.Expr = cast(ast.Expr, stmts[-1])
+
+        if len(stmts) > 1:
+            compiled = compile(ast.Module(body=stmts[:-1], type_ignores=[]), filename="<ast>", mode="exec")
+            exec(compiled, config_globals)
+        # then we eval the last one
+        compiled = compile(ast.Expression(body=last_expr.value, type_ignores=[]), filename="<ast>", mode="eval")
+        value = eval(compiled, config_globals)
+        if isinstance(value, Configuration):
+            return value
+
+    return None
+
+
+async def configuration_from_python(path: Path) -> Configuration:
     (final_path, exists) = existing_path_or_default(path,
                                                     root_candidates=[Path().cwd(),
                                                                      app_dirs.user_config_dir,
@@ -47,6 +82,10 @@ async def configuration_from_python(path: Path) -> ConfigurationHandler:
                 check_valid_conf_fct,
             ]
         )
+
+    config = try_last_expression_as_config(final_path)
+    if config:
+        return config
 
     factory = get_object_from_module(module_absolute_path=final_path,
                                      object_or_class_name="ConfigurationFactory",
@@ -71,5 +110,4 @@ async def configuration_from_python(path: Path) -> ConfigurationHandler:
             hints=[f"You can have a look at the default_config_yw.py located in 'py-youwol/system'"])
         raise ConfigurationLoadingException(get_status(False))
 
-    return ConfigurationHandler(path=final_path,
-                                config_data=config_data)
+    return config_data

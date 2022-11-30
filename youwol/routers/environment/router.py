@@ -1,23 +1,20 @@
+import asyncio
 import itertools
 import random
 from pathlib import Path
 from typing import List, Optional
-
 from cowpy import cow
 from fastapi import APIRouter, Depends
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from starlette.requests import Request
-
-from youwol.environment.models import UserInfo
-from youwol.environment.projects_loader import ProjectLoader
-from youwol.environment.youwol_environment import yw_config, YouwolEnvironment, YouwolEnvironmentFactory
-from youwol.routers.environment.models import (
-    LoginBody, RemoteGatewayInfo, ProjectsLoadingResults,
-    CustomDispatch, CustomDispatchesResponse
-)
+from youwol.environment import FlowSwitcherMiddleware, yw_config, YouwolEnvironment, \
+    YouwolEnvironmentFactory, Connection, DirectAuth
+from youwol.middlewares import JwtProviderPyYouwol
+from youwol.routers.environment.models import LoginBody, RemoteGatewayInfo, CustomDispatchesResponse, UserInfo
 from youwol.routers.environment.upload_assets.upload import upload_asset
 from youwol.web_socket import LogsStreamer
+from youwol_utils import to_json
 from youwol_utils.clients.oidc.oidc_config import OidcConfig
 from youwol_utils.context import Context
 
@@ -52,7 +49,6 @@ async def configuration(
 
 
 @router.post("/configuration",
-             response_model=EnvironmentStatusResponse,
              summary="reload configuration")
 async def reload_configuration(
         request: Request,
@@ -71,8 +67,7 @@ async def file_content(
 
 
 @router.get("/status",
-            summary="status",
-            response_model=EnvironmentStatusResponse)
+            summary="status")
 async def status(
         request: Request,
         config: YouwolEnvironment = Depends(yw_config)
@@ -83,23 +78,25 @@ async def status(
     ) as ctx:  # type: Context
         remote_gateway_info = config.get_remote_info()
         if remote_gateway_info:
-            remote_gateway_info = RemoteGatewayInfo(name=remote_gateway_info.name,
-                                                    host=remote_gateway_info.host,
-                                                    connected=True)
+            remote_gateway_info = RemoteGatewayInfo(host=remote_gateway_info.host, connected=True)
         data = request.state.user_info
+        users = [auth.userName for auth in config.get_remote_info().authentications if isinstance(auth, DirectAuth)]
         response = EnvironmentStatusResponse(
-            users=config.get_users_list(),
+            users=users,
             userInfo=(UserInfo(id=data["upn"], name=data["username"], email=data["email"], memberOf=[])),
             configuration=config,
             remoteGatewayInfo=remote_gateway_info,
             remotesInfo=[
-                RemoteGatewayInfo(name=remote.name, host=remote.host, connected=(remote.host == config.selectedRemote))
+                RemoteGatewayInfo(host=remote.host, connected=(remote.host == config.get_remote_info().host))
                 for remote in config.remotes
             ]
         )
+        # disable projects loading for now
+        # await ctx.send(ProjectsLoadingResults(results=await ProjectLoader.get_results(config, ctx)))
         await ctx.send(response)
-        await ctx.send(ProjectsLoadingResults(results=await ProjectLoader.get_results(config, ctx)))
-        return response
+        # Returning 'response' instead 'to_json(response)' (along with 'response_model=EnvironmentStatusResponse')
+        # lead to missing fields (e.g. some middlewares). Not sure what the problem is.
+        return to_json(response)
 
 
 @router.get("/configuration/custom-dispatches",
@@ -113,14 +110,14 @@ async def custom_dispatches(
             request=request,
             with_reporters=[LogsStreamer()],
     ):
-        dispatches = [CustomDispatch(type=d.__class__.__name__, **(await d.info()).dict())
-                      for d in config.customDispatches]
+        flow_switches = [(switcher.name, switch) for switcher in config.customMiddlewares
+                         if isinstance(switcher, FlowSwitcherMiddleware) for switch in switcher.oneOf]
 
-        def key_fct(d):
-            return d.type
+        infos = await asyncio.gather(*[f.info() for _, f in flow_switches])
+        dispatches = zip([f[0] for f in flow_switches], infos)
+        grouped = itertools.groupby(sorted(dispatches, key=lambda d: d[0]), key=lambda d: d[0])
+        dispatches = {k: [item[1] for item in items] for k, items in grouped}
 
-        grouped = itertools.groupby(sorted(dispatches, key=key_fct), key=key_fct)
-        dispatches = {k: list(items) for k, items in grouped}
         return CustomDispatchesResponse(dispatches=dispatches)
 
 
@@ -128,14 +125,21 @@ async def custom_dispatches(
              summary="log in as specified user")
 async def login(
         request: Request,
-        body: LoginBody,
-        config: YouwolEnvironment = Depends(yw_config)
+        body: LoginBody
 ):
     async with Context.from_request(request).start(action="login") as ctx:
-        await YouwolEnvironmentFactory.reload(selected_user=body.email, selected_remote=body.remote)
-        conf = await yw_config()
-        await status(request, conf)
-        data = await OidcConfig(conf.get_remote_info().openidBaseUrl).token_decode(await conf.get_auth_token(ctx))
+        # Need to check validity of combination envId, authId
+        # What happen if switch from 'DirectAuth' to 'BrowserAuth', following code will not work,
+        # should a somehow a redirect takes place?
+        env = await YouwolEnvironmentFactory.reload(Connection(authId=body.authId, envId=body.envId))
+        await status(request, env)
+        auth_provider = env.get_remote_info().authProvider
+        auth_token = await JwtProviderPyYouwol.get_auth_token(
+            auth_provider=auth_provider,
+            authentication=env.get_authentication_info(),
+            context=ctx
+        )
+        data = await OidcConfig(auth_provider.openidBaseUrl).token_decode(auth_token)
         return UserInfo(id=data["upn"], name=data["username"], email=data["email"], memberOf=[])
 
 

@@ -5,7 +5,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp
 
-from youwol.middlewares.models_dispatch import AbstractDispatch
+from youwol.middlewares.local_cloud_hybridizers.abstract_local_cloud_dispatch import AbstractLocalCloudDispatch
 from youwol_utils import YouWolException, youwol_exception_handler
 from youwol_utils.context import Context, Label
 
@@ -13,7 +13,7 @@ from youwol_utils.context import Context, Label
 class LocalCloudHybridizerMiddleware(BaseHTTPMiddleware):
 
     def __init__(self, app: ASGIApp,
-                 dynamic_dispatch_rules: List[AbstractDispatch],
+                 dynamic_dispatch_rules: List[AbstractLocalCloudDispatch],
                  disabling_header: str
                  ) -> None:
         super().__init__(app)

@@ -2,10 +2,10 @@ import os
 import shutil
 from typing import Tuple, List
 
-from youwol.environment.models_project import Project, PipelineStep, Artifact, Flow, Link, Manifest, PipelineStepStatus
-from youwol.environment.paths import PathsBook
-from youwol.environment.projects_loader import ProjectLoader
-from youwol.environment.youwol_environment import YouwolEnvironment
+from youwol.routers.projects.models_project import Project, PipelineStep, Artifact, Flow, Link, Manifest, \
+    PipelineStepStatus
+from youwol.environment import PathsBook, YouwolEnvironment
+from youwol.routers.projects.projects_loader import ProjectLoader
 from youwol.routers.projects.models import (
     PipelineStepStatusResponse, ArtifactResponse, PipelineStepEvent, Event
 )
@@ -15,8 +15,8 @@ from youwol_utils.utils_paths import matching_files, parse_json
 
 
 def is_step_running(project_id: str, flow_id: str, step_id: str, env: YouwolEnvironment):
-    if 'runningProjectSteps' in env.private_cache \
-            and f"{project_id}#{flow_id}#{step_id}" in env.private_cache['runningProjectSteps']:
+    if 'runningProjectSteps' in env.cache_py_youwol \
+            and f"{project_id}#{flow_id}#{step_id}" in env.cache_py_youwol['runningProjectSteps']:
         return True
     return False
 

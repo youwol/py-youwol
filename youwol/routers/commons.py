@@ -2,8 +2,8 @@ from enum import Enum
 
 from fastapi import HTTPException
 
-from youwol.environment.clients import RemoteClients, LocalClients
-from youwol.environment.youwol_environment import Context, YouwolEnvironment
+from youwol.environment import RemoteClients, LocalClients, YouwolEnvironment
+from youwol_utils import Context
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from youwol_utils.http_clients.tree_db_backend import PathResponse, DriveResponse
 
@@ -69,7 +69,7 @@ async def ensure_local_path(folder_id: str, env: YouwolEnvironment, context: Con
             await local_treedb.get_folder(folder_id=folder_id, headers=ctx.headers())
         except HTTPException as e:
             if e.status_code == 404:
-                assets_gtw = await RemoteClients.get_assets_gateway_client(remote_host=env.selectedRemote,
+                assets_gtw = await RemoteClients.get_assets_gateway_client(remote_host=env.get_remote_info().host,
                                                                            context=context)
                 remote_treedb = assets_gtw.get_treedb_backend_router()
                 path = await remote_treedb.get_path_folder(folder_id=folder_id, headers=context.headers())

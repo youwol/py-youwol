@@ -2,21 +2,21 @@ import functools
 import glob
 import shutil
 from pathlib import Path
-from typing import Dict, List, Union, NamedTuple
+from typing import Dict, List, Union, NamedTuple, cast
 
 import pyparsing
 import semantic_version
 
-from youwol.environment.models_project import PipelineStep
-from youwol.environment.youwol_environment import YouwolEnvironment
-from youwol.pipelines import PublishCdnRemoteStep, PackagesPublishYwCdn
-from youwol.pipelines.pipeline_typescript_weback_npm.common import Template, PackageType, PackagesPublishNpm
+from youwol.routers.projects.models_project import PipelineStep
+from youwol.pipelines import PublishCdnRemoteStep
+from youwol.pipelines.pipeline_typescript_weback_npm.environment import get_environment
+from youwol.pipelines.pipeline_typescript_weback_npm.common import Template, PackageType
 from youwol.pipelines.pipeline_typescript_weback_npm.common.npm_step import PublishNpmStep
-from youwol.utils.utils_low_level import sed_inplace
 from youwol_cdn_backend import get_api_key
 from youwol_cdn_backend.loading_graph_implementation import exportedSymbols
 from youwol_utils import parse_json, write_json, JSON
 from youwol_utils.context import Context
+from youwol_utils.utils_paths import sed_inplace
 
 
 class FileNames(NamedTuple):
@@ -170,29 +170,21 @@ def generate_webpack_config(source: Path, working_path: Path, input_template: Te
 
 async def create_sub_pipelines_publish_cdn(start_step: str, context: Context):
 
-    env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
-    cdn_targets = next((uploadTarget for uploadTarget in env.projects.uploadTargets
-                        if isinstance(uploadTarget, PackagesPublishYwCdn)), PackagesPublishYwCdn(targets=[]))
-
-    publish_cdn_steps: List[PipelineStep] = [PublishCdnRemoteStep(id=f'cdn_{cdn_target.name}',
-                                                                  cdnTarget=cdn_target)
-                                             for cdn_target in cdn_targets.targets]
-    dags_cdn = [f'{start_step} > cdn_{cdn_target.name}' for cdn_target in cdn_targets.targets]
-
-    return publish_cdn_steps, dags_cdn
+    targets = get_environment().cdnTargets
+    steps = [PublishCdnRemoteStep(id=f'cdn_{cdn_target.name}', cdnTarget=cdn_target)
+             for cdn_target in targets]
+    dags = [f'{start_step} > cdn_{cdn_target.name}' for cdn_target in targets]
+    await context.info(text="Cdn pipelines created", data={"targets:": targets, "steps": steps, "dags": dags})
+    return steps, dags
 
 
 async def create_sub_pipelines_publish_npm(start_step: str, context: Context):
 
-    env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
-    npm_targets = next((uploadTarget for uploadTarget in env.projects.uploadTargets
-                        if isinstance(uploadTarget, PackagesPublishNpm)), PackagesPublishNpm(targets=[]))
-    publish_npm_steps: List[PipelineStep] = [PublishNpmStep(id=f'npm_{npm_target.name}', npm_target=npm_target)
-                                             for npm_target in npm_targets.targets]
-
-    dags_npm = [f'{start_step} > npm_{npm_target.name}' for npm_target in npm_targets.targets]
-
-    return publish_npm_steps, dags_npm
+    targets = get_environment().npmTargets
+    steps = [PublishNpmStep(id=f'npm_{npm_target.name}', npm_target=npm_target) for npm_target in targets]
+    dags = [f'{start_step} > npm_{npm_target.name}' for npm_target in targets]
+    await context.info(text="Npm pipelines created", data={"targets:": targets, "steps": steps, "dags": dags})
+    return steps, dags
 
 
 async def create_sub_pipelines_publish(start_step: str, context: Context):
@@ -200,4 +192,4 @@ async def create_sub_pipelines_publish(start_step: str, context: Context):
     publish_cdn_steps, dags_cdn = await create_sub_pipelines_publish_cdn(start_step=start_step, context=context)
     publish_npm_steps, dags_npm = await create_sub_pipelines_publish_npm(start_step=start_step, context=context)
 
-    return publish_cdn_steps + publish_npm_steps, dags_cdn + dags_npm
+    return cast(List[PipelineStep], publish_cdn_steps) + publish_npm_steps, dags_cdn + dags_npm

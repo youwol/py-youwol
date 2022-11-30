@@ -1,9 +1,19 @@
-from typing import List
+import sys
+import traceback
+from typing import List, Union
 
 from colorama import Fore, Style
 from pydantic import BaseModel
 
-from youwol.environment.models_project import Check, ErrorResponse
+
+class ErrorResponse(BaseModel):
+    reason: str
+    hints: List[str] = []
+
+
+class Check(BaseModel):
+    name: str
+    status: Union[bool, ErrorResponse, None] = None
 
 
 class CheckConfPath(Check):
@@ -55,3 +65,15 @@ class ConfigurationLoadingException(Exception):
             {self.failed_check.name}: {Fore.LIGHTYELLOW_EX}{self.failed_check.status.reason}{Style.RESET_ALL}
             hints: {'/n'.join([hint for hint in self.failed_check.status.hints])}
         """
+
+
+def format_unknown_error(reason: str, error: Exception):
+    detail = error.args[0]
+    error_class = error.__class__.__name__
+    cl, exc, tb = sys.exc_info()
+    line_number = traceback.extract_tb(tb)[-1][1]
+    return ErrorResponse(
+        reason=reason,
+        hints=[f"{error_class} at line {line_number}: {detail}"]
+    )
+

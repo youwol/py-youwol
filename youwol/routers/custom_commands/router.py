@@ -4,7 +4,7 @@ from typing import Awaitable
 from fastapi import APIRouter, Depends, HTTPException
 from starlette.requests import Request
 
-from youwol.environment.youwol_environment import yw_config, YouwolEnvironment
+from youwol.environment import yw_config, YouwolEnvironment
 from youwol.web_socket import LogsStreamer
 from youwol_utils.context import Context
 

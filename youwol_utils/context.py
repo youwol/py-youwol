@@ -131,6 +131,7 @@ class Context(NamedTuple):
     with_attributes: JSON = {}
     with_labels: List[str] = []
     with_headers: Dict[str, str] = {}
+    with_cookies: Dict[str, str] = {}
 
     @staticmethod
     def from_request(request: Request):
@@ -144,6 +145,7 @@ class Context(NamedTuple):
                     with_attributes: JSON = None,
                     with_data: Dict[str, DataType] = None,
                     with_headers: Dict[str, str] = None,
+                    with_cookies: Dict[str, str] = None,
                     on_enter: 'CallableBlock' = None,
                     on_exit: 'CallableBlock' = None,
                     on_exception: 'CallableBlockException' = None,
@@ -168,7 +170,8 @@ class Context(NamedTuple):
                       with_labels=[*self.with_labels, *with_labels],
                       with_attributes={**self.with_attributes, **with_attributes},
                       with_data={**self.with_data, **with_data},
-                      with_headers={**self.with_headers, **(with_headers or {})}
+                      with_headers={**self.with_headers, **(with_headers or {})},
+                      with_cookies={**self.with_cookies, **(with_cookies or {})}
                       )
 
         try:
@@ -313,6 +316,13 @@ class Context(NamedTuple):
             **self.with_headers
         }
 
+    def cookies(self):
+        cookies = self.request.cookies if self.request else {}
+        return {
+            **cookies,
+            **self.cookies
+        }
+
     @staticmethod
     async def __execute_block(
             ctx: Context,
@@ -346,7 +356,8 @@ class ContextFactory:
         return Context(request=request,
                        logs_reporters=[logs_reporter],
                        data_reporters=[data_reporter],
-                       with_data=with_data)
+                       with_data=with_data,
+                       with_cookies=request.cookies if request else {})
 
 
 class DeployedContextReporter(ContextReporter):

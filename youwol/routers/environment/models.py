@@ -2,10 +2,16 @@ from enum import Enum
 from typing import List, Optional, Dict
 
 from pydantic import BaseModel
+from youwol.environment import ErrorResponse, DispatchInfo
 
-from youwol.environment.models_project import ErrorResponse
-from youwol.environment.projects_loader import Result
-from youwol.middlewares.models_dispatch import DispatchInfo
+from youwol.routers.projects.projects_loader import Result
+
+
+class UserInfo(BaseModel):
+    id: str
+    name: str
+    email: str
+    memberOf: List[str]
 
 
 class CustomDispatch(BaseModel):
@@ -24,7 +30,6 @@ class ProjectsLoadingResults(BaseModel):
 
 
 class RemoteGatewayInfo(BaseModel):
-    name: str
     host: str
     connected: Optional[bool]
 
@@ -38,8 +43,8 @@ class SwitchResponse(BaseModel):
 
 
 class LoginBody(BaseModel):
-    email: Optional[str]
-    remote: Optional[str]
+    authId: Optional[str]
+    envId: Optional[str]
 
 
 class SelectRemoteBody(BaseModel):

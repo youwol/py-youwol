@@ -7,7 +7,7 @@ from typing import Dict, Any
 from pydantic import BaseModel
 from tqdm import tqdm
 
-from youwol.environment.youwol_environment import YouwolEnvironment
+from youwol.environment import YouwolEnvironment
 from youwol.routers.environment.download_assets.models import DownloadTask
 from youwol.web_socket import LogsStreamer
 from youwol_utils import encode_id
@@ -31,7 +31,7 @@ CACHE_DOWNLOADING_KEY = "download-thread#downloading_ids"
 
 
 def downloading_pbar(env: YouwolEnvironment):
-    return f"Downloading [{','.join(env.private_cache[CACHE_DOWNLOADING_KEY])}]"
+    return f"Downloading [{','.join(env.cache_py_youwol[CACHE_DOWNLOADING_KEY])}]"
 
 
 async def process_download_asset(
@@ -58,9 +58,9 @@ async def process_download_asset(
         task: DownloadTask = factories[kind](
             process_id=process_id, raw_id=raw_id, asset_id=asset_id, url=url
         )
-        if CACHE_DOWNLOADING_KEY not in env.private_cache:
-            env.private_cache[CACHE_DOWNLOADING_KEY] = set()
-        cache_downloaded_ids = env.private_cache[CACHE_DOWNLOADING_KEY]
+        if CACHE_DOWNLOADING_KEY not in env.cache_py_youwol:
+            env.cache_py_youwol[CACHE_DOWNLOADING_KEY] = set()
+        cache_downloaded_ids = env.cache_py_youwol[CACHE_DOWNLOADING_KEY]
 
         download_id = task.download_id()
         if download_id in cache_downloaded_ids:

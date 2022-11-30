@@ -3,7 +3,7 @@ from typing import NamedTuple, Optional
 
 from pydantic.main import BaseModel
 
-from youwol_utils import execute_shell_cmd
+from youwol_utils.utils_shell import execute_shell_cmd
 from youwol_utils.context import Context
 
 

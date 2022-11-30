@@ -5,7 +5,7 @@ from typing import List
 
 from pydantic import BaseModel
 
-from youwol.utils.helm_utils import helm_install, helm_list, helm_uninstall, helm_dry_run
+from youwol_utils.utils_helm import helm_install, helm_list, helm_uninstall, helm_dry_run
 from youwol_utils import to_json
 from youwol_utils.context import Context
 

@@ -18,8 +18,9 @@ from starlette.responses import Response
 from youwol_cdn_backend.configurations import Constants, Configuration
 from youwol_cdn_backend.utils_indexing import format_doc_db_record, get_version_number_str
 from youwol_utils import execute_shell_cmd, CommandException
-from youwol_utils import generate_headers_downstream, QueryBody, files_check_sum, PublishPackageError, get_content_type, \
+from youwol_utils import generate_headers_downstream, QueryBody, PublishPackageError, get_content_type, \
     QueryIndexException
+from youwol_utils.clients.cdn import files_check_sum
 from youwol_utils.clients.docdb.models import Query, WhereClause, OrderingClause, SelectClause
 from youwol_utils.context import Context
 from youwol_utils.http_clients.cdn_backend import FormData, PublishResponse, FileResponse, \

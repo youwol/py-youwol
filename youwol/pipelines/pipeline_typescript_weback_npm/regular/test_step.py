@@ -2,7 +2,7 @@ from typing import List
 
 from pydantic import BaseModel
 
-from youwol.environment.models_project import Artifact, FileListing, Link, PipelineStep
+from youwol.routers.projects.models_project import Artifact, FileListing, Link, PipelineStep
 from youwol.pipelines.pipeline_typescript_weback_npm.regular.common import Paths
 
 test_result: Artifact = Artifact(

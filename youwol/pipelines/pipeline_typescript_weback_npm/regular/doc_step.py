@@ -1,6 +1,6 @@
 from typing import List
 
-from youwol.environment.models_project import PipelineStep, FileListing, Artifact, Link
+from youwol.routers.projects.models_project import PipelineStep, FileListing, Artifact, Link
 from youwol.pipelines.pipeline_typescript_weback_npm.regular.common import Paths
 
 

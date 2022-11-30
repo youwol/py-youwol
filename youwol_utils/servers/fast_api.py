@@ -21,6 +21,20 @@ BaseConfig.arbitrary_types_allowed = True
 
 
 class FastApiRouter(BaseModel):
+    """
+Define a router using the fast-api library.
+
+**Attributes**:
+
+- **router** an :class:`APIRouter` or a function returning an :class:`APIRouter` (eventually awaitable)
+Defines the :class:`APIRouter`, see fast-api documentation.
+
+- **base_path** :class:`str`
+Base path from which the router is served.
+
+*Default to empty string*
+"""
+
     router: Union[APIRouter, Callable[[Context], Union[APIRouter, Awaitable[APIRouter]]]]
     base_path: Optional[str] = ""
     __pydantic_model__ = create_model("FastApiRouter")

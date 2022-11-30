@@ -3,7 +3,7 @@ from typing import List
 
 from pydantic import BaseModel
 
-from youwol.environment.models_project import Project
+from youwol.routers.projects.models_project import Project
 
 
 class InputDataDependency(BaseModel):
