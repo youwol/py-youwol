@@ -1,11 +1,14 @@
-from typing import Callable, Optional
+from typing import Callable
 
 from pydantic import BaseModel
 from youwol.pipelines import HelmChartsTargets, DockerRepo
 
 
 class Environment(BaseModel):
-    dockerTarget: Optional[DockerRepo]
+    dockerTarget: DockerRepo = DockerRepo(
+        name="gitlab-docker-repo",
+        host="registry.gitlab.com/youwol/platform"
+    )
     helmTargets: HelmChartsTargets = HelmChartsTargets()
 
 
