@@ -12,13 +12,6 @@ from youwol.environment.projects_finders import default_projects_finder
 from youwol_utils.context import Context
 
 
-class UserInfo(BaseModel):
-    id: str
-    name: str
-    email: str
-    memberOf: List[str]
-
-
 def get_standard_auth_provider(host: str, **kwargs) -> AuthorizationProvider:
     """
     Configuration for a standard YouWol installation.

@@ -7,6 +7,13 @@ from youwol.environment import ErrorResponse, DispatchInfo
 from youwol.routers.projects.projects_loader import Result
 
 
+class UserInfo(BaseModel):
+    id: str
+    name: str
+    email: str
+    memberOf: List[str]
+
+
 class CustomDispatch(BaseModel):
     type: str
     name: str

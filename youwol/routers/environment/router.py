@@ -8,10 +8,10 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from starlette.requests import Request
-from youwol.environment import FlowSwitcherMiddleware, UserInfo, yw_config, YouwolEnvironment, \
+from youwol.environment import FlowSwitcherMiddleware, yw_config, YouwolEnvironment, \
     YouwolEnvironmentFactory, Connection, DirectAuth
 from youwol.middlewares import JwtProviderPyYouwol
-from youwol.routers.environment.models import LoginBody, RemoteGatewayInfo, CustomDispatchesResponse
+from youwol.routers.environment.models import LoginBody, RemoteGatewayInfo, CustomDispatchesResponse, UserInfo
 from youwol.routers.environment.upload_assets.upload import upload_asset
 from youwol.web_socket import LogsStreamer
 from youwol_utils import to_json
