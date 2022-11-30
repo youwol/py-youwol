@@ -1,12 +1,12 @@
 import inspect
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Callable, Awaitable, cast
+from typing import List, Callable, Awaitable, cast, Optional
 
 from pydantic import BaseModel
-from youwol.environment.models.defaults import default_auth_provider
+from youwol.environment.models.defaults import default_auth_provider, default_platform_host
 from youwol.environment.models.models_config import ConfigPath, Projects as ProjectsConfig, \
-    ProjectTemplate, PathsBook, AuthorizationProvider
+    ProjectTemplate, PathsBook, AuthorizationProvider, CloudEnvironment, BrowserAuth, Authentication
 
 from youwol.environment.projects_finders import default_projects_finder
 from youwol_utils.context import Context
@@ -20,6 +20,22 @@ def get_standard_auth_provider(host: str, **kwargs) -> AuthorizationProvider:
     :return: The configuration
     """
     return AuthorizationProvider(**{**default_auth_provider(host), **kwargs})
+
+
+def get_standard_youwol_env(
+        env_id: str,
+        host: Optional[str] = None,
+        authentications: Optional[List[Authentication]] = None,
+        **kwargs
+) -> CloudEnvironment:
+    host = host or default_platform_host
+    authentications = authentications or [BrowserAuth(authId='browser')]
+    return CloudEnvironment(
+        envId=env_id,
+        host=host,
+        authProvider=get_standard_auth_provider("platform.youwol.com", **kwargs),
+        authentications=authentications
+    )
 
 
 @dataclass(frozen=True)
