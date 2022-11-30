@@ -138,7 +138,7 @@ class K8sClusterTarget(UploadTarget):
     context: str
 
 
-class HelmChartsInstall(UploadTargets):
+class HelmChartsTargets(UploadTargets):
     k8sConfigFile: Optional[Path] = None
     targets: List[K8sClusterTarget] = []
 

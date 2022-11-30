@@ -1,14 +1,14 @@
 import inspect
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Callable, Optional, Union, Awaitable, cast
+from typing import List, Callable, Awaitable, cast
 
 from pydantic import BaseModel
-from youwol.environment.models.models_config import default_cloud_environment, ConfigPath, YouwolCloud,\
-    Impersonation, Projects as ProjectsConfig, ProjectTemplate, PathsBook
+from youwol.environment.models.defaults import default_auth_provider
+from youwol.environment.models.models_config import ConfigPath, Projects as ProjectsConfig, \
+    ProjectTemplate, PathsBook, AuthorizationProvider
 
 from youwol.environment.projects_finders import default_projects_finder
-from youwol_utils.clients.oidc.oidc_config import PrivateClient, PublicClient
 from youwol_utils.context import Context
 
 
@@ -19,30 +19,14 @@ class UserInfo(BaseModel):
     memberOf: List[str]
 
 
-class DirectAuthUser(BaseModel):
-    username: str
-    password: str
+def get_standard_auth_provider(host: str, **kwargs) -> AuthorizationProvider:
+    """
+    Configuration for a standard YouWol installation.
 
-
-class RemoteGateway(BaseModel):
-    host: str
-    openidClient: Union[PublicClient, PrivateClient]
-    openidBaseUrl: str
-    keycloakAdminBaseUrl: Optional[str]
-    adminClient: Optional[PrivateClient]
-    users: List[DirectAuthUser] = []
-
-    @classmethod
-    def from_config(cls, cloud: YouwolCloud, impersonations: List[Impersonation]):
-        return RemoteGateway(
-            **cloud.dict(),
-            users=[DirectAuthUser(username=user.userName, password=user.password)
-                   for user in impersonations if cloud.host in user.forHosts]
-        )
-
-
-def get_standard_youwol_cloud(host: str):
-    return YouwolCloud(**default_cloud_environment(host))
+    :param host: host of the installation (e.g. platform.youwol.com)
+    :return: The configuration
+    """
+    return AuthorizationProvider(**{**default_auth_provider(host), **kwargs})
 
 
 class Secret(BaseModel):
@@ -100,4 +84,3 @@ class ProjectsSanitized(BaseModel):
             finder=finder,
             templates=projects.templates
         )
-

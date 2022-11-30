@@ -1,12 +1,12 @@
 from typing import Callable, Optional
-from dataclasses import dataclass, field
-from youwol.pipelines import HelmChartsInstall, DockerRepo
+
+from pydantic import BaseModel
+from youwol.pipelines import HelmChartsTargets, DockerRepo
 
 
-@dataclass(frozen=True)
-class Environment:
-    docker_target: Optional[DockerRepo] = None
-    helm_targets: Optional[HelmChartsInstall] = field(default_factory=lambda: HelmChartsInstall())
+class Environment(BaseModel):
+    dockerTarget: Optional[DockerRepo]
+    helmTargets: HelmChartsTargets = HelmChartsTargets()
 
 
 def set_environment(environment: Environment):
@@ -17,5 +17,5 @@ class Dependencies:
     get_environment: Callable[[], Environment]
 
 
-def get_environment():
+def get_environment() -> Environment:
     return Dependencies.get_environment()

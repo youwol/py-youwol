@@ -204,15 +204,11 @@ class PublishCdnLocalStep(PipelineStep):
             return resp
 
 
-class YwPlatformTarget(BaseModel):
+class CdnTarget(BaseModel):
 
-    cloudTarget: YouwolCloud
+    cloudTarget: CloudEnvironment
     name: str
-    user: DirectAuthUser
-
-
-class PackagesPublishYwCdn(UploadTargets):
-    targets: List[YwPlatformTarget]
+    authId: str
 
 
 class PublishCdnRemoteStep(PipelineStep):

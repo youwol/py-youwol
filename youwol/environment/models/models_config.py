@@ -4,8 +4,7 @@ from typing import Union, Callable, Awaitable, Any, Dict, Tuple
 
 from youwol.environment.paths import PathsBook
 from youwol.environment.models.defaults import default_path_cache_dir, default_path_data_dir, default_http_port, \
-    default_platform_host, default_cloud_environment
-from youwol.environment.projects_finders import default_projects_finder
+    default_path_projects_dir, default_platform_host, default_auth_provider
 from youwol.routers.custom_commands.models import Command
 from youwol_utils.clients.oidc.oidc_config import PublicClient, PrivateClient
 from youwol_utils.servers.fast_api import FastApiRouter
@@ -111,7 +110,7 @@ Specification of projects to contribute to the YouWol's ecosystem.
 
 Attributes:
 
-- **finder** either:
+- **finder** either (all path are absolute):
 
 1 - :class:`ConfigPath`
 
@@ -129,6 +128,7 @@ A function that returns the path of the projects.
 
 An awaitable function that returns the path of the projects.
 
+*Default to ~/Projects*
 
 - **templates** :class:`ProjectTemplate`
 List of projects' template.
@@ -140,173 +140,178 @@ List of projects' template.
         List[ConfigPath],
         Callable[[PathsBook, Context], List[ConfigPath]],
         Callable[[PathsBook, Context], Awaitable[List[ConfigPath]]]
-    ] = lambda paths_book, _ctx: default_projects_finder(paths_book=paths_book)
+    ] = Path.home() / default_path_projects_dir
+
     templates: List[ProjectTemplate] = []
 
 
-class YouwolCloud(BaseModel):
-    """
-Specification of a remote YouWol environment.
-
-Attributes:
-
-- **host** :class:`string`
-host of the environment (e.g. youwol.platform.com).
-
-- **openidBaseUrl** :class:`string`
-base url of the openId service, e.g. https://youwol.platform.com/auth/realms/youwol
-
-- **openidClient** :class:`PublicClient` or :class:`PrivateClient`
-public (client-id only) or private (client-id + client-secret) use to query the open-id service.
-
-- **keycloakAdminBaseUrl**
-
-- **keycloakAdminClient** :class:`PrivateClient`
-Keycloak admin client.
-
-*Default to None*
-    """
-    host: str
+class AuthorizationProvider(BaseModel):
     openidBaseUrl: str
     openidClient: Union[PublicClient, PrivateClient]
     keycloakAdminBaseUrl: str
     keycloakAdminClient: Optional[PrivateClient] = None
 
 
-class BrowserAuthConnection(BaseModel):
+class Authentication(BaseModel):
     """
-Connection to a cloud environment using 'standard' browser authentication.
+Virtual base class for authentication modes.
 
-    **Attributes**:
+**Attributes**:
 
-- **host** :class:`string`
-Host of the environment (e.g. youwol.platform.com).
+- **authId** :class:`string`
+Unique id of the authentication for encapsulating :class:`CloudEnvironment`.
+"""
+    authId: str
+
+
+class BrowserAuth(Authentication):
     """
-    host: str
+Authentication using the browser using cookies: the browser automatically handle authentication (eventually redirecting
+to the login page if needed).
 
-
-class ImpersonateAuthConnection(BaseModel):
-    """
-Connection to a cloud environment using an impersonated user/service account
-
-    **Attributes**:
-
-- **host** :class:`string`
-Host of the environment (e.g. youwol.platform.com).
-
-- **userId** :class:`string`
-Reference a user defined in `cloudEnvironment.impersonations`.
-    """
-    host: str
-    userId: str
-
-
-RemoteConnection = Union[ImpersonateAuthConnection, BrowserAuthConnection]
-
-
-class Impersonation(BaseModel):
-    """
-Impersonation used to authenticate connection on given platform's hosts.
-
-    **Attributes**:
-
-- **userId** :class:`string`
-Unique user id among all impersonated users defined in cloudEnvironment
+  **Attributes**:
 
 - **userName** :class:`string`
 Credential's user-name
 
 - **password** :class:`string`
 Credential's password
-
-- **forHosts** :class:`string`
-List of hosts on which user-name/password is registered.
     """
-    userId: str
+    pass
+
+
+class DirectAuth(Authentication):
+    """
+Authentication using direct-flow.
+
+    **Attributes**:
+
+- **userName** :class:`string`
+Credential's user-name
+
+- **password** :class:`string`
+Credential's password
+    """
     userName: str
     password: str
-    forHosts: List[str]
+
+
+class CloudEnvironment(BaseModel):
+    """
+Specification of a remote YouWol environment.
+
+Attributes:
+
+- **envId** :class:`string`
+Unique id for this environment.
+
+- **host** :class:`string`
+host of the environment (e.g. platform.youwol.com).
+
+- **authProvider** :class:`AuthorizationProvider`
+Specification of the authorization provider
+
+- **authentications** list of :class:`Authentication`
+List of accepted authentications for the environment.
+    """
+    envId: str
+    host: str
+    authProvider: AuthorizationProvider
+    authentications: List[Authentication]
+
+
+class Connection(BaseModel):
+    """
+A connection is the association of an environment id and an authentication id.
+
+Attributes:
+
+- **envId** :class:`string`
+Reference a :class:`CloudEnvironment`.envId
+
+- **authId** :class:`string`
+Reference a :class:`Authentication`.authId
+    """
+    envId: str
+    authId: str
 
 
 class CloudEnvironments(BaseModel):
     """
 Cloud environments on which connection can be established.
-At a particular point in time, py-youwol is connected to one remote environment,
-this is from where missing data/libraries are fetched.
-
-The authentication mode can be either the 'usual' one (provided by the browser), or based on service accounts.
+At a particular time, py-youwol is connected to one cloud environment.
+This is where missing data & libraries are retrieved.
 
     **Attributes**:
 
-- **defaultConnection** :class:`BrowserAuthConnection` or :class:`ImpersonateAuthConnection`
+- **defaultConnection** :class:`Connection`
 
-Connection used when py-youwol is started. Either:
+Connection used when py-youwol is started
 
-*  :class:`BrowserAuthConnection` (default) : authentication is done by the browser
-*  :class:`ImpersonateAuthConnection`: authenticate w/ provided impersonated user.
+- **environments** list of :class:`CloudEnvironment`
 
-*Default to BrowserAuthConnection(host=default_platform_host)*
-
-- **environments** :class:`YouwolCloud`
-
-List of YouWol's cloud environments with which connection can be established.
-
-*Default to [YouwolCloud(**default_cloud_environment(default_platform_host))]*
-
-- **impersonations** :class:`Impersonation`
-
-Defines additional users (usually service accounts) for authentication.
-
-*Default to empty list*
+Available (YouWol) cloud environments with which py-youwol can connect.
     """
-    defaultConnection: RemoteConnection = BrowserAuthConnection(host=default_platform_host)
-    environments: List[YouwolCloud] = [YouwolCloud(**default_cloud_environment(default_platform_host))]
-    impersonations: List[Impersonation] = []
+    defaultConnection: Connection
+    environments: List[CloudEnvironment]
 
 
 class LocalEnvironment(BaseModel):
     """
-Local folders to store data.
+Local folders to store data. If paths are relatives, they are referenced with respect to the parent folder of the
+configuration file.
 
 **Attributes**:
 
 - **dataDir** :class:`ConfigPath`
-Defines folder location in which persisted data are saved, relative to the parent folder of the configuration file.
+Defines folder location in which persisted data are saved.
 
-*Default to {default_path_data_dir}*
+*Default to './databases'*
 
 - **cacheDir** :class:`ConfigPath`
-Defines folder location of cached data, relative to the parent folder of the configuration file.
+Defines folder location of cached data.
 
-*Default to {default_path_cache_dir}*
+*Default to './system'*
     """
-    dataDir: Optional[ConfigPath] = default_path_data_dir
-    cacheDir: Optional[ConfigPath] = default_path_cache_dir
+    dataDir: ConfigPath = default_path_data_dir
+    cacheDir: ConfigPath = default_path_cache_dir
 
 
 class System(BaseModel):
-    """
-Connectivity with remote(s) environment & local storage.
+    f"""
+Specification of local & remote environments.
 
 **Attributes**:
 
 - **httpPort** :class:`int`
-Port on which py-youwol is served.
+Local port on which py-youwol is served.
 
-*optional, default to {default_http_port}*
+*optional, default to 2000*
 
 - **cloudEnvironments** :class:`CloudEnvironments`
-Specify remote environment(s) from where data are collected.
+Specify remote environment(s) from where data can be collected.
 
-*optional, default to CloudEnvironments()*
+*optional, default to the standard YouWol cloud environment with Browser based authentication*
 
 - **localEnvironment** :class:`LocalEnvironment`
-Specify how collected data are persisted in the computer.
+Specify how data are persisted in the computer.
 
 *optional, default to LocalEnvironment()*
     """
     httpPort: Optional[int] = default_http_port
-    cloudEnvironments: CloudEnvironments = CloudEnvironments()
+    cloudEnvironments: CloudEnvironments = CloudEnvironments(
+        defaultConnection=Connection(envId='public-youwol', authId='browser'),
+        environments=[
+            CloudEnvironment(
+                envId='public-youwol',
+                host=default_platform_host,
+                authProvider=AuthorizationProvider(**default_auth_provider()),
+                authentications=[
+                    BrowserAuth(authId="browser")
+                ]
+            )
+        ]
+    )
     localEnvironment: LocalEnvironment = LocalEnvironment()
 
 
@@ -623,7 +628,7 @@ Essentially about data, e.g. how they are retrieved & stored.
 *Default to System()*
 
 - **projects** :class:`Projects`
-Defines projects that can be built & published in the environment.
+Defines projects that can be built & published in the youwol's ecosystem.
 
 *Default to Projects()*
 
@@ -633,9 +638,9 @@ Various handles for customization (e.g. middleware, commands, ...)
 *Default to Customization()*
     """
 
-    system: Optional[System] = System()
-    projects: Optional[Projects] = Projects()
-    customization: Optional[Customization] = Customization()
+    system: System = System()
+    projects: Projects = Projects()
+    customization: Customization = Customization()
 
 
 def is_localhost_ws_listening(port: int):

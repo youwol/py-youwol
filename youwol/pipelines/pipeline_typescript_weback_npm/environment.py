@@ -1,20 +1,19 @@
 from typing import List, Callable
-from dataclasses import dataclass, field
 
+from pydantic import BaseModel
 from youwol.environment import UploadTargets
-from youwol.pipelines import YwPlatformTarget
+from youwol.pipelines import CdnTarget
 from youwol.pipelines.pipeline_typescript_weback_npm.common.models import NpmRepo
 
 upload_targets = List[UploadTargets]
 
 
-@dataclass(frozen=True)
-class Environment:
-    cdn_targets: List[YwPlatformTarget] = field(default_factory=lambda: [])
-    npm_targets: List[NpmRepo] = field(default_factory=lambda: [])
+class Environment(BaseModel):
+    cdnTargets: List[CdnTarget] = []
+    npmTargets: List[NpmRepo] = []
 
 
-def set_environment(environment: Environment = Environment(cdn_targets=[], npm_targets=[])):
+def set_environment(environment: Environment = Environment()):
     Dependencies.get_environment = lambda: environment
 
 
@@ -22,5 +21,5 @@ class Dependencies:
     get_environment: Callable[[], Environment]
 
 
-def get_environment():
+def get_environment() -> Environment:
     return Dependencies.get_environment()
