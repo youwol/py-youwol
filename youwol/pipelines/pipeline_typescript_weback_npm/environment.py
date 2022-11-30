@@ -18,7 +18,7 @@ def set_environment(environment: Environment = Environment()):
 
 
 class Dependencies:
-    get_environment: Callable[[], Environment]
+    get_environment: Callable[[], Environment] = lambda: Environment()
 
 
 def get_environment() -> Environment:
