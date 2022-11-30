@@ -22,7 +22,7 @@ def get_standard_auth_provider(host: str, **kwargs) -> AuthorizationProvider:
     return AuthorizationProvider(**{**default_auth_provider(host), **kwargs})
 
 
-@dataclass(frozen=False)
+@dataclass(frozen=True)
 class ApiConfiguration:
     open_api_prefix: str
     base_path: str
