@@ -1,5 +1,4 @@
 import os
-import socket
 import sys
 from pathlib import Path
 
@@ -21,16 +20,8 @@ def assert_python():
         exit(1)
 
 
-def assert_free_http_port(http_port: int):
-    a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    location = ("127.0.0.1", http_port)
-    if a_socket.connect_ex(location) == 0:
-        raise ValueError(f"The port {http_port} is already bound to a process")
-
-
 if __name__ == "__main__":
     assert_python()
-    assert_free_http_port(http_port=get_main_arguments().port)
 
     if get_main_arguments().daemonize:
         shutdown_script_path = Path().cwd() / "py-youwol.shutdown.sh"
