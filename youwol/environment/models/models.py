@@ -22,11 +22,6 @@ def get_standard_auth_provider(host: str, **kwargs) -> AuthorizationProvider:
     return AuthorizationProvider(**{**default_auth_provider(host), **kwargs})
 
 
-class Secret(BaseModel):
-    clientId: str
-    clientSecret: str
-
-
 @dataclass(frozen=False)
 class ApiConfiguration:
     open_api_prefix: str
