@@ -2,23 +2,22 @@ import json
 import os
 import shutil
 import zipfile
-from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, Optional, Awaitable, List, Union
+from typing import Dict, Any, Optional, Awaitable, List
 
 from colorama import Fore, Style
 from cowpy import cow
 from pydantic import BaseModel
 
 import youwol
-from youwol.environment import ImpersonateAuthConnection, BrowserAuthConnection
+from youwol.environment import CloudEnvironment, Authentication
+
 from youwol.environment.errors_handling import (
     ConfigurationLoadingStatus, ConfigurationLoadingException,
     CheckSystemFolderWritable, CheckDatabasesFolderHealthy, ErrorResponse
 )
 
-from youwol.environment.models import Events, RemoteConnection, Impersonation, Configuration, CustomMiddleware, \
-    RemoteGateway, ApiConfiguration
+from youwol.environment.models import Events, Configuration, CustomMiddleware, ApiConfiguration, Connection
 from youwol.environment.models.models import ProjectsSanitized
 from youwol.environment.config_from_module import configuration_from_python
 from youwol.environment.paths import PathsBook, ensure_config_file_exists_or_create_it
@@ -26,8 +25,7 @@ from youwol.main_args import get_main_arguments, MainArguments
 from youwol.routers.custom_backends import install_routers
 from youwol.routers.custom_commands.models import Command
 from youwol.web_socket import WsDataStreamer
-from youwol_utils.clients.oidc.oidc_config import OidcConfig
-from youwol_utils.context import Context, ContextFactory, InMemoryReporter
+from youwol_utils.context import ContextFactory, InMemoryReporter
 from youwol_utils.servers.fast_api import FastApiRouter
 from youwol_utils.utils_paths import parse_json, ensure_dir_exists
 from youwol.environment.paths import app_dirs
@@ -55,46 +53,30 @@ class YouwolEnvironment(BaseModel):
     projects: ProjectsSanitized
     commands: Dict[str, Command]
 
-    currentConnection: RemoteConnection
+    currentConnection: Connection
 
-    remotes: List[RemoteGateway]
-    impersonations: List[Impersonation]
+    remotes: List[CloudEnvironment]
 
     pathsBook: PathsBook
     routers: List[FastApiRouter] = []
-    cache: Dict[str, Any] = {}
-    private_cache: Dict[str, Any] = {}
 
-    tokensCache: List[DeadlinedCache] = []
+    cache_user: Dict[str, Any] = {}
+    cache_py_youwol: Dict[str, Any] = {}
 
     def reset_cache(self):
-        self.cache = {}
-        self.private_cache = {}
+        self.cache_user = {}
+        self.cache_py_youwol = {}
 
-    def get_users_list(self) -> List[str]:
-        return [user.username for user in self.get_remote_info().users]
+    def get_remote_info(self) -> CloudEnvironment:
 
-    def get_remote_info(self, remote_host: str = None) -> Optional[RemoteGateway]:
+        env_id = self.currentConnection.envId
+        return next(remote for remote in self.remotes if remote.envId == env_id)
 
-        if not remote_host:
-            remote_host = self.currentConnection.host
+    def get_authentication_info(self) -> Optional[Authentication]:
 
-        candidates = [remote for remote in self.remotes if remote.host == remote_host]
-        if len(candidates) > 0:
-            return candidates[0]
-
-        return None
-
-    def get_user_info(self, user_id: str = None) -> Optional[Impersonation]:
-
-        if not user_id:
-            user_id = self.currentConnection.userId
-
-        candidates = [user for user in self.impersonations if user.userId == user_id]
-        if len(candidates) > 0:
-            return candidates[0]
-
-        return None
+        remote = self.get_remote_info()
+        auth_id = self.currentConnection.authId
+        return next(auth for auth in remote.authentications if auth.authId == auth_id)
 
     async def get_auth_token(self, context: Context):
         remote = self.get_remote_info(self.currentConnection.host)
@@ -155,8 +137,8 @@ class YouwolEnvironment(BaseModel):
 
         return f"""Running with youwol: {youwol}
 Configuration loaded from '{self.pathsBook.config}'
-- user: {self.currentConnection.userId if isinstance(self.currentConnection, ImpersonateAuthConnection) else 'dynamic'}
-- remote : {self.currentConnection.host}
+- authentication: {self.get_authentication_info()}
+- remote : { self.get_remote_info().envId } (on {self.get_remote_info().host})
 - paths: {self.pathsBook}
 - cdn packages count: {len(parse_json(self.pathsBook.local_cdn_docdb)['documents'])}
 - assets count: {len(parse_json(self.pathsBook.local_assets_entities_docdb)['documents'])}
@@ -176,7 +158,7 @@ class YouwolEnvironmentFactory:
         return config
 
     @staticmethod
-    async def reload(connection: Union[BrowserAuthConnection, ImpersonateAuthConnection] = None):
+    async def reload(connection: Connection = None):
         cached = YouwolEnvironmentFactory.__cached_config
         conf = await safe_load(
             path=cached.pathsBook.config,
@@ -203,13 +185,11 @@ class YouwolEnvironmentFactory:
             currentConnection=conf.currentConnection,
             pathsBook=conf.pathsBook,
             httpPort=conf.httpPort,
-            cache={},
             projects=conf.projects,
             commands=conf.commands,
             customMiddlewares=conf.customMiddlewares,
             events=conf.events,
-            remotes=conf.remotes,
-            impersonations=conf.impersonations
+            remotes=conf.remotes
         )
         YouwolEnvironmentFactory.__cached_config = new_conf
 
@@ -235,7 +215,7 @@ async def yw_config() -> YouwolEnvironment:
 
 async def safe_load(
         path: Path,
-        remote_connection: Optional[RemoteConnection] = None
+        remote_connection: Optional[Connection] = None
 ) -> YouwolEnvironment:
     """
     Possible errors:
@@ -259,11 +239,15 @@ async def safe_load(
     system = config.system
     projects = config.projects
     customization = config.customization
+    data_dir = Path(system.localEnvironment.dataDir)
+    data_dir = data_dir if data_dir.is_absolute() else path.parent / data_dir
+    cache_dir = Path(system.localEnvironment.cacheDir)
+    cache_dir = cache_dir if cache_dir.is_absolute() else path.parent / cache_dir
 
     paths_book = PathsBook(
         config=path,
-        databases=Path(system.localEnvironment.dataDir),
-        system=Path(system.localEnvironment.cacheDir)
+        databases=data_dir,
+        system=cache_dir
     )
     ensure_dir_exists(system.localEnvironment.cacheDir, root_candidates=app_dirs.user_cache_dir)
 
@@ -303,7 +287,7 @@ async def safe_load(
 
         os.remove(final_path.parent / databases_zip)
 
-    ensure_dir_exists(path=system.localEnvironment.dataDir, root_candidates=app_dirs.user_data_dir,
+    ensure_dir_exists(path=paths_book.databases, root_candidates=app_dirs.user_data_dir,
                       create=create_data_dir)
 
     return YouwolEnvironment(
@@ -315,9 +299,7 @@ async def safe_load(
         projects=ProjectsSanitized.from_config(projects),
         commands={c.name: c for c in customization.endPoints.commands},
         customMiddlewares=customization.middlewares,
-        remotes=[RemoteGateway.from_config(cloud, system.cloudEnvironments.impersonations)
-                 for cloud in system.cloudEnvironments.environments],
-        impersonations=system.cloudEnvironments.impersonations
+        remotes=system.cloudEnvironments.environments
     )
 
 
