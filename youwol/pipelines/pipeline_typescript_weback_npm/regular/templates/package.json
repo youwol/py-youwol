@@ -10,7 +10,7 @@
     "clean": "del-cli dist",
     "auto-gen": "python template.py",
     "build": "yarn build:dev",
-    "pre-build": "yarn clean && yarn auto-gen",
+    "pre-build": "yarn clean",
     "build:dev": "yarn pre-build && webpack --mode development",
     "build:prod": "yarn pre-build && webpack --mode production",
     "lint-check": "yarn lint-prettier-check && yarn lint-eslint-check",
