@@ -21,6 +21,12 @@ on:
           Default to 'main'
         default: main
 
+      todo-app-ts_ref:
+        description: >
+          Branch, tag or SHA for http-clients checkout.
+          Default to 'main'
+        default: main
+
       only:
         description: >
           Only run specified integrations.
@@ -232,3 +238,62 @@ jobs:
         with:
           name: py-youwol_logs
           path: ${{ runner.temp }}/artifacts/
+
+  pipeline_ts:
+    name: Pipeline_ts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare repository
+        id: prepare
+        uses: youwol/nestor/py/prepare@v1
+
+      - name: Prepare todo-app-ts
+        id: prepare_todo-app-ts
+        uses: youwol/nestor/ts/prepare@v1
+        with:
+          repository: youwol/todo-app-ts
+          ref: feature/0.0.2
+          path: ${{ runner.temp }}/todo-app-ts
+
+      - name: Py-youwol templating
+        id: autogen
+        working-directory: ${{ runner.temp }}/todo-app-ts
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: yarn auto-gen || echo "result=failure" >> $GITHUB_OUTPUT
+        shell: sh
+
+      - name: Build
+        id: build
+        working-directory: ${{ runner.temp }}/todo-app-ts
+        run: yarn build || echo "result=failure" >> $GITHUB_OUTPUT
+        shell: sh
+
+      - name: Check repository cleanness
+        id: git_cleanness
+        working-directory: ${{ runner.temp }}/todo-app-ts
+        run: |
+          git_status=$(git status -s)
+          [ -z "$git_status" ] || ( echo "$git_status" ; echo "result=failure" >> $GITHUB_OUTPUT )
+        shell: sh
+
+      - name: On Py-youwol templating Failure
+        id: autogen_failure
+        if: steps.autogen.outputs.result == 'failure'
+        uses: actions/github-script@v6
+        with:
+          script: core.setFailed("Job failed because py-youwol templating failed, see job logs and annotations.")
+
+      - name: On Build Failure
+        id: build_failure
+        if: steps.build.outputs.result == 'failure'
+        uses: actions/github-script@v6
+        with:
+          script: core.setFailed("Job failed because build failed, see job logs and annotations.")
+
+      - name: On Repository dirty
+        id: git_cleanness_dirty
+        if: steps.git_cleanness.outputs.result == 'failure'
+        uses: actions/github-script@v6
+        with:
+          script: core.setFailed("Job failed because some files were modified or untracked, see job logs and annotations.")

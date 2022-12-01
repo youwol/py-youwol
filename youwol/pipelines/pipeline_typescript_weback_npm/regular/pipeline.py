@@ -1,6 +1,7 @@
 from typing import List
 
 from pydantic import BaseModel
+from youwol.pipelines.pipeline_typescript_weback_npm.regular.setup_step import SetupStep
 
 from youwol.routers.projects.models_project import Flow, Pipeline, parse_json, BrowserTarget, BrowserLibBundle
 from youwol.pipelines.pipeline_typescript_weback_npm import create_sub_pipelines_publish
@@ -38,6 +39,7 @@ async def pipeline(config: PipelineConfig, context: Context):
             projectVersion=lambda path: parse_json(path / Paths.package_json_file)["version"],
             dependencies=lambda project, _ctx: get_dependencies(project),
             steps=[
+                SetupStep(),
                 DependenciesStep(),
                 BuildStep(id="build-dev", run="yarn build:dev"),
                 BuildStep(id="build-prod", run="yarn build:prod"),
@@ -50,17 +52,10 @@ async def pipeline(config: PipelineConfig, context: Context):
                 Flow(
                     name="prod",
                     dag=[
-                        "dependencies > build-prod > test > cdn-local",
+                        "setup > dependencies > build-prod > test > cdn-local",
                         "build-prod > doc > cdn-local",
                         *dags
                     ]
-                ),
-                Flow(
-                    name="dev",
-                    dag=[
-                        "dependencies > build-dev > cdn-local",
-                        "build-dev > doc > cdn-local"
-                        ]
-                    )
-                ]
-            )
+                )
+            ]
+        )

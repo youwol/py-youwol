@@ -8,8 +8,5 @@ module.exports = {
         url: 'http://localhost:2001',
     },
     reporters: ['default', 'jest-junit'],
-    modulePathIgnorePatterns: [
-        '/dist',
-        '/.template'
-    ],
+    modulePathIgnorePatterns: ['/dist', '/.template'],
 }
