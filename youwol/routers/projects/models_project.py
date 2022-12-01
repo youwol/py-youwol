@@ -111,6 +111,7 @@ class PipelineStep(BaseModel):
             -> PipelineStepStatus:
 
         if not last_manifest:
+            await context.info(text="No manifest found, status is PipelineStepStatus.none")
             return PipelineStepStatus.none
 
         env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
