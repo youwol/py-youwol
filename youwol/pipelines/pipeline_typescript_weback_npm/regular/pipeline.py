@@ -56,13 +56,6 @@ async def pipeline(config: PipelineConfig, context: Context):
                         "build-prod > doc > cdn-local",
                         *dags
                     ]
-                ),
-                Flow(
-                    name="dev",
-                    dag=[
-                        "dependencies > build-dev > cdn-local",
-                        "build-dev > doc > cdn-local"
-                        ]
-                    )
-                ]
-            )
+                )
+            ]
+        )
