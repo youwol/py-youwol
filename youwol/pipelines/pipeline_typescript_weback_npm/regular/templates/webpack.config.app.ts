@@ -7,11 +7,10 @@ import HtmlWebpackPlugin from 'html-webpack-plugin'
 import MiniCssExtractPlugin from 'mini-css-extract-plugin'
 
 // This line is required to get type's definition of 'devServer' attribute.
-import 'webpack-dev-server';
+import 'webpack-dev-server'
 
 const ROOT = path.resolve(__dirname, 'src/app')
 const DESTINATION = path.resolve(__dirname, 'dist')
-
 
 const webpackConfig: webpack.Configuration = {
     context: ROOT,
