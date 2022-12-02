@@ -12,32 +12,6 @@ from youwol.environment.projects_finders import default_projects_finder
 from youwol_utils.context import Context
 
 
-def get_standard_auth_provider(host: str, **kwargs) -> AuthorizationProvider:
-    """
-    Configuration for a standard YouWol installation.
-
-    :param host: host of the installation (e.g. platform.youwol.com)
-    :return: The configuration
-    """
-    return AuthorizationProvider(**{**default_auth_provider(host), **kwargs})
-
-
-def get_standard_youwol_env(
-        env_id: str,
-        host: Optional[str] = None,
-        authentications: Optional[List[Authentication]] = None,
-        **kwargs
-) -> CloudEnvironment:
-    host = host or default_platform_host
-    authentications = authentications or [BrowserAuth(authId='browser')]
-    return CloudEnvironment(
-        envId=env_id,
-        host=host,
-        authProvider=get_standard_auth_provider("platform.youwol.com", **kwargs),
-        authentications=authentications
-    )
-
-
 @dataclass(frozen=True)
 class ApiConfiguration:
     open_api_prefix: str
