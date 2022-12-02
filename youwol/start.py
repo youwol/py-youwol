@@ -41,7 +41,7 @@ def start(shutdown_script_path: Optional[Path] = None):
     try:
         cleaner_thread.go()
     except BaseException as e:
-        print("Error while starting download thread")
+        print("Error while starting cleaner thread")
         print(traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__))
         raise e
 
