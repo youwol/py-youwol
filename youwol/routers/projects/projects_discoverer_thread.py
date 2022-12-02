@@ -31,7 +31,6 @@ def start_project_discoverer(env: YouwolEnvironment):
 
 
 class ProjectsEventHandler(FileSystemEventHandler):
-    """Logs all the events captured."""
     env: YouwolEnvironment
     context: Context
     current_projects: List[Project]
