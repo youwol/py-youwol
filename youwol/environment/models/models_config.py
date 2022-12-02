@@ -1,10 +1,12 @@
+import itertools
 from pathlib import Path
 import socket
 from typing import Union, Callable, Awaitable, Any, Dict, Tuple
 
+from youwol.environment.projects_finders import auto_detect_projects
 from youwol.environment.paths import PathsBook
 from youwol.environment.models.defaults import default_path_cache_dir, default_path_data_dir, default_http_port, \
-    default_path_projects_dir, default_platform_host, default_auth_provider
+    default_path_projects_dir, default_platform_host, default_auth_provider, default_ignored_paths
 from youwol_utils.clients.oidc.oidc_config import PublicClient, PrivateClient
 from youwol_utils.servers.fast_api import FastApiRouter
 from typing import List, Optional
@@ -103,43 +105,75 @@ Return the project's name and its path.
     generator: Callable[[Path, Dict[str, str], Context], Awaitable[Tuple[str, Path]]]
 
 
+class ProjectsFinder(BaseModel):
+    """
+    Abstract class for ProjectsFinder strategies
+"""
+    async def get_projects(self, paths_book: PathsBook, context: Context) -> List[Path]:
+        raise NotImplementedError("class ProjectsFinder is abstract")
+
+
+class ImplicitProjectsFinder(ProjectsFinder):
+    """
+    Implicit strategy for finding projects: all projects below the provided paths will be discovered.
+
+    **Attributes**:
+
+    - **fromPaths** list of :class:`ConfigPath`
+    All projects below these paths will be discovered
+
+    *default to '~/Projects'*
+
+    - **ignorePatterns** List of :class:`str`
+    List of ignored patterns to discard folder when traversing the tree.
+    See https://docs.python.org/3/library/fnmatch.html
+
+    *default to ["**/dist", '**/py-youwol', '**/node_modules', "**/.template"]*
+
+    - **watch** :class:`bool`
+    Whether or not watching added/removed projects is activated.
+    """
+    fromPaths: List[ConfigPath] = [Path.home() / default_path_projects_dir]
+    ignorePatterns: List[str] = default_ignored_paths
+    watch: bool = True
+
+    async def get_projects(self, paths_book: PathsBook, context: Context) -> List[Path]:
+        results = [auto_detect_projects(paths_book=paths_book, root_folder=root_folder,
+                                        ignore=self.ignorePatterns)
+                   for root_folder in self.fromPaths]
+        return list(itertools.chain.from_iterable(results))
+
+
+class ExplicitProjectsFinder(ProjectsFinder):
+
+    fromPaths: List[ConfigPath]
+
+    async def get_projects(self, paths_book: PathsBook, context: Context) -> List[Path]:
+        return [Path(p) for p in self.fromPaths]
+
+
 class Projects(BaseModel):
     """
 Specification of projects to contribute to the YouWol's ecosystem.
 
 Attributes:
 
-- **finder** either (all path are absolute):
+- **finder**  :class:`ProjectsFinder`:
 
-1 - :class:`ConfigPath`
+Strategy for finding projects.
 
-Projects will be automatically discovered recursively from this path.
+See e.g. :class:`ImplicitProjectsFinder`, :class:`ExplicitProjectsFinder`.
 
-2 - list of :class:`ConfigPath`
+A custom strategy can be provided by deriving from :class:`ProjectsFinder`.
 
-Projects will be automatically discovered recursively from each of the provided path.
-
-3 - Callable (:class:`PathsBook`, :class:`Context`) => list of  :class:`ConfigPath`
-
-A function that returns the path of the projects.
-
-4 - Callable (:class:`PathsBook`, :class:`Context`) => awaitable of list of  :class:`ConfigPath`
-
-An awaitable function that returns the path of the projects.
-
-*Default to ~/Projects*
+*Default to ImplicitProjectsFinder()*
 
 - **templates** :class:`ProjectTemplate`
 List of projects' template.
 
 *Default to empty list*
     """
-    finder: Union[
-        ConfigPath,
-        List[ConfigPath],
-        Callable[[PathsBook, Context], List[ConfigPath]],
-        Callable[[PathsBook, Context], Awaitable[List[ConfigPath]]]
-    ] = Path.home() / default_path_projects_dir
+    finder: ProjectsFinder = ImplicitProjectsFinder()
 
     templates: List[ProjectTemplate] = []
 

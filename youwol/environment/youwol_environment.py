@@ -10,7 +10,7 @@ from cowpy import cow
 from pydantic import BaseModel
 
 import youwol
-from youwol.environment import CloudEnvironment, Authentication, Command
+from youwol.environment import CloudEnvironment, Authentication, Command, Projects
 
 from youwol.environment.errors_handling import (
     ConfigurationLoadingStatus, ConfigurationLoadingException,
@@ -18,7 +18,6 @@ from youwol.environment.errors_handling import (
 )
 
 from youwol.environment.models import Events, Configuration, CustomMiddleware, ApiConfiguration, Connection
-from youwol.environment.models.models import ProjectsSanitized
 from youwol.environment.config_from_module import configuration_from_python
 from youwol.environment.paths import PathsBook, ensure_config_file_exists_or_create_it
 from youwol.main_args import get_main_arguments, MainArguments
@@ -35,7 +34,7 @@ class YouwolEnvironment(BaseModel):
     events: Events
     customMiddlewares: List[CustomMiddleware]
 
-    projects: ProjectsSanitized
+    projects: Projects
     commands: Dict[str, Command]
 
     currentConnection: Connection
@@ -254,7 +253,7 @@ async def safe_load(
         currentConnection=remote_connection or system.cloudEnvironments.defaultConnection,
         events=customization.events,
         pathsBook=paths_book,
-        projects=ProjectsSanitized.from_config(projects),
+        projects=projects,
         commands={c.name: c for c in customization.endPoints.commands},
         customMiddlewares=customization.middlewares,
         remotes=system.cloudEnvironments.environments

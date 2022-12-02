@@ -15,6 +15,7 @@ default_path_projects_dir: Path = Path("Projects")
 default_port_range_start: int = 3000
 default_port_range_end: int = 4000
 default_jwt_source: str = 'config'
+default_ignored_paths = ["**/dist", '**/py-youwol', '**/node_modules', "**/.template"]
 
 
 def default_auth_provider(platform_host=default_platform_host):

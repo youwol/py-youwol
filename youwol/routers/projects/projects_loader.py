@@ -77,7 +77,7 @@ async def load_projects(env: YouwolEnvironment, context: Context) -> List[Result
             action="load_projects"
     ) as ctx:  # type: Context
         projects = env.projects
-        project_folders = await projects.finder(env.pathsBook, ctx)
+        project_folders = await projects.finder.get_projects(env.pathsBook, ctx)
 
         results: List[Result] = []
         for dir_candidate in project_folders:
