@@ -1,6 +1,7 @@
 import asyncio
 import fnmatch
 import time
+import traceback
 from pathlib import Path
 from threading import Thread
 from typing import List, Optional
@@ -12,6 +13,21 @@ from youwol.routers.environment import ProjectsLoadingResults
 from youwol.routers.projects import get_project, ProjectLoader, Project
 from youwol.web_socket import WsDataStreamer
 from youwol_utils import log_info, Context
+
+
+def start_project_discoverer(env: YouwolEnvironment):
+
+    if isinstance(env.projects.finder, ImplicitProjectsFinder) and env.projects.finder.watch:
+        projects_discoverer_thread = ProjectsDiscovererThread(
+            finder=env.projects.finder,
+            env=env
+        )
+        try:
+            projects_discoverer_thread.go()
+        except RuntimeError as e:
+            print("Error while starting projects discoverer thread")
+            print(traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__))
+            raise e
 
 
 class ProjectsEventHandler(FileSystemEventHandler):

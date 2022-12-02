@@ -1,5 +1,4 @@
 import asyncio
-import traceback
 from functools import partial
 
 from fastapi import FastAPI, Depends, WebSocket
@@ -9,14 +8,13 @@ from starlette.responses import RedirectResponse, Response
 from starlette.types import ASGIApp
 
 import youwol.middlewares.local_cloud_hybridizers as local_cloud_hybridizer
-from youwol.environment import CustomMiddleware, AssetDownloadThread, yw_config, api_configuration, YouwolEnvironment, \
-    ImplicitProjectsFinder
+from youwol.environment import CustomMiddleware, AssetDownloadThread, yw_config, api_configuration, YouwolEnvironment
 from youwol.middlewares import BrowserCachingMiddleware, LocalCloudHybridizerMiddleware,  get_remote_openid_infos,\
     JwtProviderPyYouwol
 from youwol.routers import native_backends, admin
 from youwol.routers.environment.download_assets import DownloadDataTask, DownloadFluxProjectTask, DownloadPackageTask, \
     DownloadStoryTask
-from youwol.routers.projects.projects_discoverer_thread import ProjectsDiscovererThread
+from youwol.routers.projects.projects_discoverer_thread import start_project_discoverer
 from youwol.web_socket import start_web_socket
 from youwol.web_socket import WebSocketsStore, WsDataStreamer
 from youwol_utils import YouWolException, youwol_exception_handler, YouwolHeaders, CleanerThread, factory_local_cache
@@ -115,17 +113,7 @@ def setup_middlewares(env: YouwolEnvironment):
 async def create_app():
     environment = await yw_config()
     setup_middlewares(env=environment)
-    if isinstance(environment.projects.finder, ImplicitProjectsFinder) and environment.projects.finder.watch:
-        projects_discoverer_thread = ProjectsDiscovererThread(
-            finder=environment.projects.finder,
-            env=environment
-        )
-        try:
-            projects_discoverer_thread.go()
-        except RuntimeError as e:
-            print("Error while starting projects discoverer thread")
-            print(traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__))
-            raise e
+    start_project_discoverer(env=environment)
 
     @fastapi_app.exception_handler(YouWolException)
     async def exception_handler(request: Request, exc: YouWolException):
