@@ -84,9 +84,6 @@ async def resolve_workspace_dependencies(context: Context) -> ResolvedDependenci
 
     env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
     projects = await ProjectLoader.get_projects(env, context)
-    cache = env.cache_py_youwol
-    if 'resolved_dependencies' in cache:
-        return cache['resolved_dependencies']
 
     parent_ids = defaultdict(lambda: [])
     [parent_ids[d.name].append(project.name)
@@ -110,12 +107,11 @@ async def resolve_workspace_dependencies(context: Context) -> ResolvedDependenci
                  ]
                 for p in sorted_projects
                 }
-    cache['resolved_dependencies'] = ResolvedDependencies(
+    return ResolvedDependencies(
         global_dag=[ChildToParentConnections(id=k, parentIds=v) for k, v in parent_ids.items()],
         sorted_projects=sorted_projects,
         recursive_dependencies=deps_rec
         )
-    return cache['resolved_dependencies']
 
 
 async def resolve_project_dependencies(project: Project, context: Context):
