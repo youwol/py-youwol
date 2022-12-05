@@ -1,6 +1,7 @@
 import traceback
 from pathlib import Path
 import socket
+from threading import Thread
 from typing import Union, Callable, Awaitable, Any, Dict, Tuple
 
 from youwol.environment.models.recursive_finder_thread import RecursiveProjectsFinderThread, OnProjectsCountUpdate
@@ -118,8 +119,8 @@ class ProjectsFinder(BaseModel):
     On first **resolve** call, the path list of all projects need to be supplied to 'on_projects_count_update'
     (as first element of the Tuple).
 """
-    def resolve(self, paths_book: PathsBook,
-                on_projects_count_update: OnProjectsCountUpdate):
+    async def resolve(self, paths_book: PathsBook,
+                      on_projects_count_update: OnProjectsCountUpdate) -> Optional[Thread]:
         raise NotImplementedError("class ProjectsFinder is abstract")
 
 
@@ -147,8 +148,8 @@ class RecursiveProjectsFinder(ProjectsFinder):
     ignoredPatterns: List[str] = default_ignored_paths
     watch: bool = True
 
-    def resolve(self, paths_book: PathsBook,
-                on_projects_count_update: OnProjectsCountUpdate):
+    async def resolve(self, paths_book: PathsBook,
+                      on_projects_count_update: OnProjectsCountUpdate):
         thread = RecursiveProjectsFinderThread(
             paths=self.fromPaths,
             ignored_patterns=self.ignoredPatterns,
@@ -166,11 +167,12 @@ class RecursiveProjectsFinder(ProjectsFinder):
 
 class ExplicitProjectsFinder(ProjectsFinder):
 
-    fromPaths: List[ConfigPath]
+    fromPaths: Union[List[ConfigPath], Callable[[], List[ConfigPath]]]
 
-    def resolve(self, paths_book: PathsBook,
-                on_projects_count_update: OnProjectsCountUpdate):
-        on_projects_count_update(([Path(p) for p in self.fromPaths], []))
+    async def resolve(self, paths_book: PathsBook,
+                      on_projects_count_update: OnProjectsCountUpdate):
+        project_paths = self.fromPaths() if callable(self.fromPaths) else self.fromPaths
+        await on_projects_count_update((project_paths, []))
 
 
 class Projects(BaseModel):
