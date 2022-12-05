@@ -33,9 +33,11 @@ class ProjectLoader:
 
     @staticmethod
     async def resolve(env: YouwolEnvironment):
+
+        ProjectLoader.projects_list = []
+
         if ProjectLoader.thread:
             ProjectLoader.thread.join()
-            ProjectLoader.projects_list = []
 
         async def on_resolved(update: (List[Path], List[Path])):
             # First element of the update is path of new projects, second is path of removed projects
