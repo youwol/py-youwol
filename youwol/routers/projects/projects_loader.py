@@ -5,6 +5,7 @@ from pathlib import Path
 from pydantic import BaseModel
 from typing import List, Union, Optional, Awaitable
 
+from youwol.routers.projects.models import FailureSyntax, Failure
 from youwol.routers.projects.models_project import IPipelineFactory
 from youwol.environment import YouwolEnvironment
 from youwol.routers.projects.models_project import Project
@@ -14,28 +15,11 @@ from youwol_utils.context import Context
 
 PROJECT_PIPELINE_DIRECTORY = '.yw_pipeline'
 
-
-class Failure(BaseModel):
-    path: str
-    failure: str = 'generic'
-    message: str
-
-
-class FailureNoPipeline(Failure):
-    failure: str = 'no_pipeline'
-    message: str = "No pipeline in directory"
-
-
-class FailureEmptyDir(Failure):
-    failure: str = 'empty_dir'
-    message: str = "Directory is empty"
-
-
-class FailureSyntax(Failure):
-    failure: str = 'syntax'
-
-
 Result = Union[Project, Failure]
+
+
+class ProjectsLoadingResults(BaseModel):
+    results: List[Result]
 
 
 class ProjectLoader:

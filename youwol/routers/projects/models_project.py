@@ -385,3 +385,7 @@ class Project(BaseModel):
         if not manifest_path.exists():
             return None
         return Manifest(**parse_json(manifest_path))
+
+
+class CreateProjectFromTemplateResponse(Project):
+    pass

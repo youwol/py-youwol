@@ -15,15 +15,15 @@ from youwol.routers.projects.projects_loader import ProjectLoader
 from youwol.environment import yw_config, YouwolEnvironment, YouwolEnvironmentFactory, PathsBook
 from youwol_utils import CommandException
 from youwol.routers.commons import Label
-from youwol.routers.environment.models import ProjectsLoadingResults
 from youwol.routers.projects.dependencies import resolve_project_dependencies
 from youwol.routers.projects.implementation import (
     create_artifacts, get_status, get_project_step, get_project_flow_steps, format_artifact_response,
     get_project_configuration
 )
-from youwol.routers.projects.models import (
+from youwol.routers.projects import (
     PipelineStepStatusResponse, PipelineStatusResponse, ArtifactsResponse, ProjectStatusResponse, CdnResponse,
     CdnVersionResponse, PipelineStepEvent, Event, CreateProjectFromTemplateBody, CreateProjectFromTemplateResponse,
+    ProjectsLoadingResults,
     UpdateConfigurationResponse)
 from youwol.web_socket import LogsStreamer
 from youwol_utils import decode_id

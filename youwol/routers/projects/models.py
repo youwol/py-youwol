@@ -10,6 +10,26 @@ ArtifactId = str
 PipelineStepId = str
 
 
+class Failure(BaseModel):
+    path: str
+    failure: str = 'generic'
+    message: str
+
+
+class FailureNoPipeline(Failure):
+    failure: str = 'no_pipeline'
+    message: str = "No pipeline in directory"
+
+
+class FailureEmptyDir(Failure):
+    failure: str = 'empty_dir'
+    message: str = "Directory is empty"
+
+
+class FailureSyntax(Failure):
+    failure: str = 'syntax'
+
+
 class ListProjectsResponse(BaseModel):
     projects: List[Project]
 
@@ -88,10 +108,6 @@ class PipelineStepEvent(BaseModel):
 class CreateProjectFromTemplateBody(BaseModel):
     type: str
     parameters: Dict[str, str]
-
-
-class CreateProjectFromTemplateResponse(Project):
-    pass
 
 
 class UpdateConfigurationResponse(BaseModel):
