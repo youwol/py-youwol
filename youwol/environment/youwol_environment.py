@@ -10,8 +10,9 @@ from cowpy import cow
 from pydantic import BaseModel
 
 import youwol
-from youwol.environment import CloudEnvironment, Authentication, Command, Projects
+from youwol.environment import CloudEnvironment, Authentication, Command, Projects, ExplicitProjectsFinder
 
+from youwol.environment.projects_finders import auto_detect_projects
 from youwol.environment.errors_handling import (
     ConfigurationLoadingStatus, ConfigurationLoadingException,
     CheckSystemFolderWritable, CheckDatabasesFolderHealthy, ErrorResponse
@@ -246,6 +247,13 @@ async def safe_load(
 
     ensure_dir_exists(path=paths_book.databases, root_candidates=app_dirs.user_data_dir,
                       create=create_data_dir)
+
+    if isinstance(projects.finder, str) or isinstance(projects.finder, Path):
+        #  5/12/2022: Backward compatibility code
+        root = projects.finder
+        projects.finder = ExplicitProjectsFinder(
+            fromPaths=lambda: auto_detect_projects(paths_book=paths_book, root_folder=root)
+        )
 
     return YouwolEnvironment(
         httpPort=system.httpPort,

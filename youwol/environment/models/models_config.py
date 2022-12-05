@@ -183,6 +183,8 @@ Attributes:
 
 - **finder**  :class:`ProjectsFinder`:
 
+⚠️ Do not use type 'ConfigPath' : Deprecated ⚠
+
 Strategy for finding projects.
 
 See e.g. :class:`ImplicitProjectsFinder`, :class:`ExplicitProjectsFinder`.
@@ -196,7 +198,7 @@ List of projects' template.
 
 *Default to empty list*
     """
-    finder: ProjectsFinder = RecursiveProjectsFinder()
+    finder: Union[ProjectsFinder, ConfigPath] = RecursiveProjectsFinder()
 
     templates: List[ProjectTemplate] = []
 
