@@ -48,8 +48,8 @@ class ProjectLoader:
             log_info(f"New projects count: {len(projects)}")
             await ProjectLoader.context.send(ProjectsLoadingResults(results=projects))
 
-        ProjectLoader.thread = env.projects.finder.resolve(paths_book=env.pathsBook,
-                                                           on_projects_count_update=on_resolved)
+        ProjectLoader.thread = await env.projects.finder.resolve(paths_book=env.pathsBook,
+                                                                 on_projects_count_update=on_resolved)
 
     @staticmethod
     async def get_projects(env: YouwolEnvironment, context: Context) -> List[Project]:
