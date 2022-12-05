@@ -196,15 +196,17 @@ async def download_package(
         await ctx_download.send(response)
 
 
-async def get_version_info(version_data, env: YouwolEnvironment):
+async def get_version_info(version_data, env: YouwolEnvironment, context: Context):
 
     cdn = LocalClients.get_cdn_client(env)
     version = version_data['version']
     entry_point = version_data['bundle']
     folder_path = '/'.join(entry_point.split('/')[:-1])
     folder_content, root_content = await asyncio.gather(
-        cdn.get_explorer(library_id=encode_id(version_data['library_name']), version=version, folder_path=folder_path),
-        cdn.get_explorer(library_id=encode_id(version_data['library_name']), version=version, folder_path="")
+        cdn.get_explorer(library_id=encode_id(version_data['library_name']), version=version, folder_path=folder_path,
+                         headers=context.headers()),
+        cdn.get_explorer(library_id=encode_id(version_data['library_name']), version=version, folder_path="",
+                         headers=context.headers())
     )
     files_count = root_content['filesCount']
     entry_point_size = next((file['size'] for file in folder_content['files']
