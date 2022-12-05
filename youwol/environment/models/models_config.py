@@ -189,7 +189,7 @@ See e.g. :class:`ImplicitProjectsFinder`, :class:`ExplicitProjectsFinder`.
 
 A custom strategy can be provided by deriving from :class:`ProjectsFinder`.
 
-*Default to ImplicitProjectsFinder()*
+*Default to RecursiveProjectsFinder()*
 
 - **templates** :class:`ProjectTemplate`
 List of projects' template.
