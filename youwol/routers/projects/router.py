@@ -47,7 +47,7 @@ async def status(
             request=request,
             with_reporters=[LogsStreamer()]
     ) as ctx:  # type: Context
-        response = ProjectsLoadingResults(results=await ProjectLoader.get_results(config, ctx))
+        response = ProjectsLoadingResults(results=await ProjectLoader.get_projects(config, ctx))
         await ctx.send(response)
         return response
 
@@ -394,7 +394,7 @@ async def new_project_from_template(
         name, project_folder = await template.generator(template.folder, body.parameters, ctx)
 
         config = await YouwolEnvironmentFactory.reload()
-        response = ProjectsLoadingResults(results=await ProjectLoader.get_results(config, ctx))
+        response = ProjectsLoadingResults(results=await ProjectLoader.get_projects(config, ctx))
         await ctx.send(response)
 
         projects = await ProjectLoader.get_projects(await ctx.get("env", YouwolEnvironment), ctx)

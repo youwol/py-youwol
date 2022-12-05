@@ -1,9 +1,9 @@
-import itertools
+import traceback
 from pathlib import Path
 import socket
 from typing import Union, Callable, Awaitable, Any, Dict, Tuple
 
-from youwol.environment.projects_finders import auto_detect_projects
+from youwol.environment.models.recursive_finder_thread import RecursiveProjectsFinderThread, OnProjectsCountUpdate
 from youwol.environment.paths import PathsBook
 from youwol.environment.models.defaults import default_path_cache_dir, default_path_data_dir, default_http_port, \
     default_path_projects_dir, default_platform_host, default_auth_provider, default_ignored_paths
@@ -107,15 +107,25 @@ Return the project's name and its path.
 
 class ProjectsFinder(BaseModel):
     """
-    Abstract class for ProjectsFinder strategies
+    Abstract class for ProjectsFinder strategies.
+
+    Derived classes need to implement the **'resolve'** method.
+    Whenever projects count is updated the 'on_projects_count_update' need to be called,
+    it takes as single argument a tuple where:
+*  the first element is the path of the **new projects**
+*  the second element is the path of **removed projects**
+
+    On first **resolve** call, the path list of all projects need to be supplied to 'on_projects_count_update'
+    (as first element of the Tuple).
 """
-    async def get_projects(self, paths_book: PathsBook, context: Context) -> List[Path]:
+    def resolve(self, paths_book: PathsBook,
+                on_projects_count_update: OnProjectsCountUpdate):
         raise NotImplementedError("class ProjectsFinder is abstract")
 
 
-class ImplicitProjectsFinder(ProjectsFinder):
+class RecursiveProjectsFinder(ProjectsFinder):
     """
-    Implicit strategy for finding projects: all projects below the provided paths will be discovered.
+    Strategy to discover all projects below the provided paths will be discovered.
 
     **Attributes**:
 
@@ -124,7 +134,7 @@ class ImplicitProjectsFinder(ProjectsFinder):
 
     *default to '~/Projects'*
 
-    - **ignorePatterns** List of :class:`str`
+    - **ignoredPatterns** List of :class:`str`
     List of ignored patterns to discard folder when traversing the tree.
     See https://docs.python.org/3/library/fnmatch.html
 
@@ -134,22 +144,33 @@ class ImplicitProjectsFinder(ProjectsFinder):
     Whether or not watching added/removed projects is activated.
     """
     fromPaths: List[ConfigPath] = [Path.home() / default_path_projects_dir]
-    ignorePatterns: List[str] = default_ignored_paths
+    ignoredPatterns: List[str] = default_ignored_paths
     watch: bool = True
 
-    async def get_projects(self, paths_book: PathsBook, context: Context) -> List[Path]:
-        results = [auto_detect_projects(paths_book=paths_book, root_folder=root_folder,
-                                        ignore=self.ignorePatterns)
-                   for root_folder in self.fromPaths]
-        return list(itertools.chain.from_iterable(results))
+    def resolve(self, paths_book: PathsBook,
+                on_projects_count_update: OnProjectsCountUpdate):
+        thread = RecursiveProjectsFinderThread(
+            paths=self.fromPaths,
+            ignored_patterns=self.ignoredPatterns,
+            paths_book=paths_book,
+            on_projects_count_update=on_projects_count_update
+        )
+        try:
+            thread.go()
+            return thread
+        except RuntimeError as e:
+            print("Error while starting projects RecursiveProjectsFinderThread")
+            print(traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__))
+            raise e
 
 
 class ExplicitProjectsFinder(ProjectsFinder):
 
     fromPaths: List[ConfigPath]
 
-    async def get_projects(self, paths_book: PathsBook, context: Context) -> List[Path]:
-        return [Path(p) for p in self.fromPaths]
+    def resolve(self, paths_book: PathsBook,
+                on_projects_count_update: OnProjectsCountUpdate):
+        on_projects_count_update(([Path(p) for p in self.fromPaths], []))
 
 
 class Projects(BaseModel):
@@ -173,7 +194,7 @@ List of projects' template.
 
 *Default to empty list*
     """
-    finder: ProjectsFinder = ImplicitProjectsFinder()
+    finder: ProjectsFinder = RecursiveProjectsFinder()
 
     templates: List[ProjectTemplate] = []
 

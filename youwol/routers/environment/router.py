@@ -13,6 +13,8 @@ from youwol.environment import FlowSwitcherMiddleware, yw_config, YouwolEnvironm
 from youwol.middlewares import JwtProviderPyYouwol
 from youwol.routers.environment.models import LoginBody, RemoteGatewayInfo, CustomDispatchesResponse, UserInfo
 from youwol.routers.environment.upload_assets.upload import upload_asset
+from youwol.routers.projects import ProjectLoader
+
 from youwol.web_socket import LogsStreamer
 from youwol_utils import to_json
 from youwol_utils.clients.oidc.oidc_config import OidcConfig
@@ -53,8 +55,13 @@ async def configuration(
 async def reload_configuration(
         request: Request,
 ):
-    env = await YouwolEnvironmentFactory.reload()
-    return await status(request, env)
+    async with Context.start_ep(
+            request=request,
+            with_reporters=[LogsStreamer()],
+    ):
+        env = await YouwolEnvironmentFactory.reload()
+        asyncio.ensure_future(ProjectLoader.resolve(env=env))
+        return await status(request, env)
 
 
 @router.get("/configuration/config-file",
