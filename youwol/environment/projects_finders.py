@@ -5,7 +5,7 @@ from youwol.environment.paths import PathsBook
 from youwol_utils.utils_paths import FileListing, matching_files
 
 
-def auto_detect_projects(paths_book: PathsBook, root_folder: Union[Path, str], ignore: List[str] = None):
+def auto_detect_projects(paths_book: PathsBook, root_folder: Union[Path, str], ignore: List[str] = None) -> List[Path]:
     database_ignore = None
     system_ignore = None
     root_folder = Path(root_folder)
