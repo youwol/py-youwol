@@ -60,7 +60,7 @@ async def reload_configuration(
             with_reporters=[LogsStreamer()],
     ):
         env = await YouwolEnvironmentFactory.reload()
-        asyncio.ensure_future(ProjectLoader.resolve(env=env))
+        asyncio.ensure_future(ProjectLoader.initialize(env=env))
         return await status(request, env)
 
 

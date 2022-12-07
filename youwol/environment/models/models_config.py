@@ -1,10 +1,10 @@
-import traceback
 from pathlib import Path
 import socket
-from threading import Thread
 from typing import Union, Callable, Awaitable, Any, Dict, Tuple
 
-from youwol.environment.models.recursive_finder_thread import RecursiveProjectsFinderThread, OnProjectsCountUpdate
+from youwol.environment.models.models import OnProjectsCountUpdate, ProjectsFinderHandler, ConfigPath
+from youwol.environment.models.projects_finder_handlers import RecursiveProjectFinderHandler, \
+    ExplicitProjectsFinderHandler
 from youwol.environment.paths import PathsBook
 from youwol.environment.models.defaults import default_path_cache_dir, default_path_data_dir, default_http_port, \
     default_path_projects_dir, default_platform_host, default_auth_provider, default_ignored_paths
@@ -33,9 +33,6 @@ Gather the list of events on which user actions can be performed.
 Action when configuration is loaded.
 """
     onLoad: Callable[[Context], Optional[Union[Any, Awaitable[Any]]]] = None
-
-
-ConfigPath = Union[str, Path]
 
 
 class UploadTarget(BaseModel):
@@ -108,20 +105,15 @@ Return the project's name and its path.
 
 class ProjectsFinder(BaseModel):
     """
-    Abstract class for ProjectsFinder strategies.
+    Abstract class for ProjectsFinder.
 
-    Derived classes need to implement the **'resolve'** method.
-    Whenever projects count is updated the 'on_projects_count_update' need to be called,
-    it takes as single argument a tuple where:
-*  the first element is the path of the **new projects**
-*  the second element is the path of **removed projects**
-
-    On first **resolve** call, the path list of all projects need to be supplied to 'on_projects_count_update'
-    (as first element of the Tuple).
+    Derived classes need to implement the **'handler'** method.
+    See e.g. :class:`ProjectsFinderHandler`, :class:`RecursiveProjectsFinder`,
+    and :class:`ExplicitProjectsFinder`.
 """
-    async def resolve(self, paths_book: PathsBook,
-                      on_projects_count_update: OnProjectsCountUpdate) -> Optional[Thread]:
-        raise NotImplementedError("class ProjectsFinder is abstract")
+    def handler(self, paths_book: PathsBook,
+                on_projects_count_update: OnProjectsCountUpdate) -> ProjectsFinderHandler:
+        raise NotImplementedError()
 
 
 class RecursiveProjectsFinder(ProjectsFinder):
@@ -148,31 +140,25 @@ class RecursiveProjectsFinder(ProjectsFinder):
     ignoredPatterns: List[str] = default_ignored_paths
     watch: bool = True
 
-    async def resolve(self, paths_book: PathsBook,
-                      on_projects_count_update: OnProjectsCountUpdate):
-        thread = RecursiveProjectsFinderThread(
+    def handler(self, paths_book: PathsBook, on_projects_count_update: OnProjectsCountUpdate):
+        return RecursiveProjectFinderHandler(
             paths=self.fromPaths,
             ignored_patterns=self.ignoredPatterns,
             paths_book=paths_book,
             on_projects_count_update=on_projects_count_update
         )
-        try:
-            thread.go()
-            return thread
-        except RuntimeError as e:
-            print("Error while starting projects RecursiveProjectsFinderThread")
-            print(traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__))
-            raise e
 
 
 class ExplicitProjectsFinder(ProjectsFinder):
 
-    fromPaths: Union[List[ConfigPath], Callable[[], List[ConfigPath]]]
+    fromPaths: Union[List[ConfigPath], Callable[[PathsBook], List[ConfigPath]]]
 
-    async def resolve(self, paths_book: PathsBook,
-                      on_projects_count_update: OnProjectsCountUpdate):
-        project_paths = self.fromPaths() if callable(self.fromPaths) else self.fromPaths
-        await on_projects_count_update((project_paths, []))
+    def handler(self, paths_book: PathsBook, on_projects_count_update: OnProjectsCountUpdate):
+        return ExplicitProjectsFinderHandler(
+            paths=self.fromPaths,
+            paths_book=paths_book,
+            on_projects_count_update=on_projects_count_update
+        )
 
 
 class Projects(BaseModel):

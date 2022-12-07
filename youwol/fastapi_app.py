@@ -113,7 +113,7 @@ def setup_middlewares(env: YouwolEnvironment):
 async def create_app():
     env = await yw_config()
     setup_middlewares(env=env)
-    asyncio.ensure_future(ProjectLoader.resolve(env=env))
+    asyncio.ensure_future(ProjectLoader.initialize(env=env))
 
     @fastapi_app.exception_handler(YouWolException)
     async def exception_handler(request: Request, exc: YouWolException):
