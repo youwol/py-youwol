@@ -40,14 +40,13 @@ flatten = itertools.chain.from_iterable
             response_model=ProjectsLoadingResults,
             summary="status")
 async def status(
-        request: Request,
-        config: YouwolEnvironment = Depends(yw_config)
+        request: Request
 ):
     async with Context.start_ep(
             request=request,
             with_reporters=[LogsStreamer()]
     ) as ctx:  # type: Context
-        response = ProjectsLoadingResults(results=await ProjectLoader.get_projects(config, ctx))
+        response = ProjectsLoadingResults(results=await ProjectLoader.refresh(ctx))
         await ctx.send(response)
         return response
 
@@ -393,8 +392,7 @@ async def new_project_from_template(
         await ctx.info(text="Found template generator", data=template)
         name, project_folder = await template.generator(template.folder, body.parameters, ctx)
 
-        config = await YouwolEnvironmentFactory.reload()
-        response = ProjectsLoadingResults(results=await ProjectLoader.get_projects(config, ctx))
+        response = ProjectsLoadingResults(results=await ProjectLoader.refresh(ctx))
         await ctx.send(response)
 
         projects = await ProjectLoader.get_cached_projects()
