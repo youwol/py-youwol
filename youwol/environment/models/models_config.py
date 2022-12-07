@@ -2,9 +2,12 @@ from pathlib import Path
 import socket
 from typing import Union, Callable, Awaitable, Any, Dict, Tuple
 
+from youwol.environment.models.models import OnProjectsCountUpdate, ProjectsFinderHandler, ConfigPath
+from youwol.environment.models.projects_finder_handlers import RecursiveProjectFinderHandler, \
+    ExplicitProjectsFinderHandler
 from youwol.environment.paths import PathsBook
 from youwol.environment.models.defaults import default_path_cache_dir, default_path_data_dir, default_http_port, \
-    default_path_projects_dir, default_platform_host, default_auth_provider
+    default_path_projects_dir, default_platform_host, default_auth_provider, default_ignored_paths
 from youwol_utils.clients.oidc.oidc_config import PublicClient, PrivateClient
 from youwol_utils.servers.fast_api import FastApiRouter
 from typing import List, Optional
@@ -30,9 +33,6 @@ Gather the list of events on which user actions can be performed.
 Action when configuration is loaded.
 """
     onLoad: Callable[[Context], Optional[Union[Any, Awaitable[Any]]]] = None
-
-
-ConfigPath = Union[str, Path]
 
 
 class UploadTarget(BaseModel):
@@ -103,43 +103,88 @@ Return the project's name and its path.
     generator: Callable[[Path, Dict[str, str], Context], Awaitable[Tuple[str, Path]]]
 
 
+class ProjectsFinder(BaseModel):
+    """
+    Abstract class for ProjectsFinder.
+
+    Derived classes need to implement the **'handler'** method.
+    See e.g. :class:`ProjectsFinderHandler`, :class:`RecursiveProjectsFinder`,
+    and :class:`ExplicitProjectsFinder`.
+"""
+    def handler(self, paths_book: PathsBook,
+                on_projects_count_update: OnProjectsCountUpdate) -> ProjectsFinderHandler:
+        raise NotImplementedError()
+
+
+class RecursiveProjectsFinder(ProjectsFinder):
+    """
+    Strategy to discover all projects below the provided paths will be discovered.
+
+    **Attributes**:
+
+    - **fromPaths** list of :class:`ConfigPath`
+    All projects below these paths will be discovered
+
+    *default to '~/Projects'*
+
+    - **ignoredPatterns** List of :class:`str`
+    List of ignored patterns to discard folder when traversing the tree.
+    See https://docs.python.org/3/library/fnmatch.html
+
+    *default to ["**/dist", '**/py-youwol', '**/node_modules', "**/.template"]*
+
+    - **watch** :class:`bool`
+    Whether or not watching added/removed projects is activated.
+    """
+    fromPaths: List[ConfigPath] = [Path.home() / default_path_projects_dir]
+    ignoredPatterns: List[str] = default_ignored_paths
+    watch: bool = True
+
+    def handler(self, paths_book: PathsBook, on_projects_count_update: OnProjectsCountUpdate):
+        return RecursiveProjectFinderHandler(
+            paths=self.fromPaths,
+            ignored_patterns=self.ignoredPatterns,
+            paths_book=paths_book,
+            on_projects_count_update=on_projects_count_update
+        )
+
+
+class ExplicitProjectsFinder(ProjectsFinder):
+
+    fromPaths: Union[List[ConfigPath], Callable[[PathsBook], List[ConfigPath]]]
+
+    def handler(self, paths_book: PathsBook, on_projects_count_update: OnProjectsCountUpdate):
+        return ExplicitProjectsFinderHandler(
+            paths=self.fromPaths,
+            paths_book=paths_book,
+            on_projects_count_update=on_projects_count_update
+        )
+
+
 class Projects(BaseModel):
     """
 Specification of projects to contribute to the YouWol's ecosystem.
 
 Attributes:
 
-- **finder** either (all path are absolute):
+- **finder**  :class:`ProjectsFinder`:
 
-1 - :class:`ConfigPath`
+⚠️ Do not use type 'ConfigPath' : Deprecated ⚠
 
-Projects will be automatically discovered recursively from this path.
+Strategy for finding projects.
 
-2 - list of :class:`ConfigPath`
+See e.g. :class:`ImplicitProjectsFinder`, :class:`ExplicitProjectsFinder`.
 
-Projects will be automatically discovered recursively from each of the provided path.
+A custom strategy can be provided by deriving from :class:`ProjectsFinder`.
 
-3 - Callable (:class:`PathsBook`, :class:`Context`) => list of  :class:`ConfigPath`
-
-A function that returns the path of the projects.
-
-4 - Callable (:class:`PathsBook`, :class:`Context`) => awaitable of list of  :class:`ConfigPath`
-
-An awaitable function that returns the path of the projects.
-
-*Default to ~/Projects*
+*Default to RecursiveProjectsFinder()*
 
 - **templates** :class:`ProjectTemplate`
 List of projects' template.
 
 *Default to empty list*
     """
-    finder: Union[
-        ConfigPath,
-        List[ConfigPath],
-        Callable[[PathsBook, Context], List[ConfigPath]],
-        Callable[[PathsBook, Context], Awaitable[List[ConfigPath]]]
-    ] = Path.home() / default_path_projects_dir
+    finder: Union[ProjectsFinder, ConfigPath] = RecursiveProjectsFinder()
 
     templates: List[ProjectTemplate] = []
 

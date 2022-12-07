@@ -2,9 +2,8 @@ from enum import Enum
 from typing import List, Optional, Dict
 
 from pydantic import BaseModel
-from youwol.environment import ErrorResponse, DispatchInfo
-
-from youwol.routers.projects.projects_loader import Result
+from youwol.environment.errors_handling import ErrorResponse
+from youwol.environment.models.models_config import DispatchInfo
 
 
 class UserInfo(BaseModel):
@@ -23,10 +22,6 @@ class CustomDispatch(BaseModel):
 
 class CustomDispatchesResponse(BaseModel):
     dispatches: Dict[str, List[DispatchInfo]]
-
-
-class ProjectsLoadingResults(BaseModel):
-    results: List[Result]
 
 
 class RemoteGatewayInfo(BaseModel):

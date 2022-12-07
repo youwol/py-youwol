@@ -5,7 +5,6 @@ from pydantic import BaseModel
 
 from youwol.routers.projects.models_project import Project
 from youwol.routers.projects.projects_loader import ProjectLoader
-from youwol.environment import YouwolEnvironment
 from youwol.routers.projects.models import (
     ChildToParentConnections, DependenciesResponse,
 )
@@ -17,7 +16,7 @@ async def check_cyclic_dependency(
         all_projects: List[Project],
         forbidden: List[str],
         context: Context) -> bool:
-    env = await context.get("env", YouwolEnvironment)
+
     forbidden = forbidden + [project_name]
     package = next((p for p in all_projects if p.name == project_name), None)
     if package is None:
@@ -25,7 +24,7 @@ async def check_cyclic_dependency(
                             data={"allProjects": [p.name for p in all_projects]})
         raise RuntimeError(f"Project {project_name} not found")
     dependencies = await package.get_dependencies(recursive=False,
-                                                  projects=await ProjectLoader.get_projects(env=env, context=context),
+                                                  projects=await ProjectLoader.get_cached_projects(),
                                                   context=context
                                                   )
     errors = [p for p in dependencies if p.name in forbidden]
@@ -47,7 +46,7 @@ async def sort_projects(
         sorted_projects: List[Project],
         context: Context = Context
 ) -> List[Project]:
-    env = await context.get("env", YouwolEnvironment)
+
     sorted_projects = sorted_projects or []
     if not projects:
         return sorted_projects
@@ -56,7 +55,7 @@ async def sort_projects(
 
     flags = [all(dep.name in sorted_names
                  for dep in await p.get_dependencies(recursive=False,
-                                                     projects=await ProjectLoader.get_projects(env, context),
+                                                     projects=await ProjectLoader.get_cached_projects(),
                                                      context=context
                                                      )
                  )
@@ -82,17 +81,13 @@ class ResolvedDependencies(BaseModel):
 
 async def resolve_workspace_dependencies(context: Context) -> ResolvedDependencies:
 
-    env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
-    projects = await ProjectLoader.get_projects(env, context)
-    cache = env.cache_py_youwol
-    if 'resolved_dependencies' in cache:
-        return cache['resolved_dependencies']
+    projects = await ProjectLoader.get_cached_projects()
 
     parent_ids = defaultdict(lambda: [])
     [parent_ids[d.name].append(project.name)
      for project in projects
      for d in await project.get_dependencies(recursive=False,
-                                             projects=await ProjectLoader.get_projects(env, context),
+                                             projects=projects,
                                              context=context
                                              )
      ]
@@ -104,18 +99,17 @@ async def resolve_workspace_dependencies(context: Context) -> ResolvedDependenci
     deps_rec = {p.name:
                 [d.name
                  for d in await p.get_dependencies(recursive=True,
-                                                   projects=await ProjectLoader.get_projects(env, context),
+                                                   projects=projects,
                                                    context=context
                                                    )
                  ]
                 for p in sorted_projects
                 }
-    cache['resolved_dependencies'] = ResolvedDependencies(
+    return ResolvedDependencies(
         global_dag=[ChildToParentConnections(id=k, parentIds=v) for k, v in parent_ids.items()],
         sorted_projects=sorted_projects,
         recursive_dependencies=deps_rec
         )
-    return cache['resolved_dependencies']
 
 
 async def resolve_project_dependencies(project: Project, context: Context):

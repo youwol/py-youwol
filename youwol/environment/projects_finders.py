@@ -1,27 +1,14 @@
-import itertools
 from pathlib import Path
 from typing import Union, List
 
 from youwol.environment.paths import PathsBook
-from youwol.environment.models import default_path_projects_dir
 from youwol_utils.utils_paths import FileListing, matching_files
 
 
-def default_projects_finder(paths_book: PathsBook, root_folders: Union[None, str, Path, List[str], List[Path]] = None):
-    if not root_folders:
-        (Path.home() / default_path_projects_dir).mkdir(exist_ok=True)
-
-    root_folders = [Path.home() / default_path_projects_dir] if not root_folders else root_folders
-    root_folders = root_folders if isinstance(root_folders, List) else [root_folders]
-    results = [auto_detect_projects(paths_book=paths_book, root_folder=root_folder, ignore=["**/dist", '**/py-youwol'])
-               for root_folder in root_folders]
-
-    return itertools.chain.from_iterable(results)
-
-
-def auto_detect_projects(paths_book: PathsBook, root_folder: Union[Path, str], ignore: List[str] = None):
+def auto_detect_projects(paths_book: PathsBook, root_folder: Union[Path, str], ignore: List[str] = None) -> List[Path]:
     database_ignore = None
     system_ignore = None
+    py_youwol_ignore = None
     root_folder = Path(root_folder)
     if not root_folder.exists():
         return []
@@ -34,8 +21,12 @@ def auto_detect_projects(paths_book: PathsBook, root_folder: Union[Path, str], i
         system_ignore = paths_book.system.relative_to(root_folder)
     except ValueError:
         pass
-
-    ignore = (ignore or []) + [str(path) for path in [database_ignore, system_ignore] if path]
+    try:
+        py_youwol_ignore = paths_book.youwol.relative_to(root_folder)
+    except ValueError:
+        pass
+    native_ignores = [database_ignore, system_ignore, py_youwol_ignore]
+    ignore = (ignore or []) + [str(path) for path in native_ignores if path]
     file_listing = FileListing(
         include=["**/.yw_pipeline/yw_pipeline.py"],
         ignore=["**/node_modules", "**/.template", "**/.git"] + ignore

@@ -1,86 +1,85 @@
 from __future__ import annotations
 
-import asyncio
 from pathlib import Path
-from pydantic import BaseModel
-from typing import List, Union, Optional, Awaitable
 
+from pydantic import BaseModel
+from typing import List, Union, Optional
+
+from youwol.routers.projects.models import FailureSyntax, Failure
 from youwol.routers.projects.models_project import IPipelineFactory
-from youwol.environment import YouwolEnvironment
+from youwol.environment import YouwolEnvironment, ProjectsFinderHandler
 from youwol.routers.projects.models_project import Project
 from youwol.environment.python_dynamic_loader import get_object_from_module
-from youwol_utils import encode_id
+from youwol.web_socket import WsDataStreamer
+from youwol_utils import encode_id, log_info
 from youwol_utils.context import Context
 
 PROJECT_PIPELINE_DIRECTORY = '.yw_pipeline'
 
-
-class Failure(BaseModel):
-    path: str
-    failure: str = 'generic'
-    message: str
-
-
-class FailureNoPipeline(Failure):
-    failure: str = 'no_pipeline'
-    message: str = "No pipeline in directory"
-
-
-class FailureEmptyDir(Failure):
-    failure: str = 'empty_dir'
-    message: str = "Directory is empty"
-
-
-class FailureSyntax(Failure):
-    failure: str = 'syntax'
-
-
 Result = Union[Project, Failure]
 
 
+class ProjectsLoadingResults(BaseModel):
+    results: List[Result]
+
+
 class ProjectLoader:
-    # This attribute is not none when a promise of projects' result has been started but not yet finished
-    # It allows to not fetch projects at the same time
-    projects_promise: Optional[Awaitable[List[Result]]] = None
+    context = Context(logs_reporters=[], data_reporters=[WsDataStreamer()])
+
+    handler: Optional[ProjectsFinderHandler] = None
+
+    projects_list: List[Project] = []
 
     @staticmethod
-    async def get_projects(env: YouwolEnvironment, context: Context) -> List[Project]:
-        return [result
-                for result in await ProjectLoader.get_results(env, context)
-                if isinstance(result, Project)]
+    async def sync_projects(update: (List[Path], List[Path]), env: YouwolEnvironment):
+        # First element of the update is path of new projects, second is path of removed projects
+        new_projects = await load_projects(paths=update[0], env=env, context=ProjectLoader.context)
+        remaining_projects = [p for p in ProjectLoader.projects_list if p.path not in update[0] + update[1]]
+        projects = remaining_projects + new_projects
+        ProjectLoader.projects_list = projects
+        log_info(f"New projects count: {len(projects)}")
+        await ProjectLoader.context.send(ProjectsLoadingResults(results=projects))
 
     @staticmethod
-    async def get_results(env: YouwolEnvironment, context: Context) -> List[Result]:
-        if "ProjectLoader" in env.cache_py_youwol:
-            return env.cache_py_youwol["ProjectLoader"]
+    async def initialize(env: YouwolEnvironment):
+        # This method is called whenever a new YouwolEnvironment is loaded
 
-        if not ProjectLoader.projects_promise:
-            ProjectLoader.projects_promise = load_projects(env=env, context=context)
-            projects = await ProjectLoader.projects_promise
-            env.cache_py_youwol["ProjectLoader"] = projects
-            ProjectLoader.projects_promise = None
-        else:
-            projects = None
-            for _ in range(10):
-                await asyncio.sleep(0.2)
-                if env.cache_py_youwol.get("ProjectLoader", None):
-                    projects = env.cache_py_youwol.get("ProjectLoader")
-                    break
-            if not projects:
-                raise RuntimeError("Resolution of already started projects took too long")
+        async def sync_projects(update: (List[Path], List[Path])):
+            return await ProjectLoader.sync_projects(update, env)
 
-        return projects
+        ProjectLoader.stop()
+
+        ProjectLoader.handler = env.projects.finder.handler(
+            paths_book=env.pathsBook,
+            on_projects_count_update=sync_projects
+        )
+
+        ProjectLoader.projects_list = []
+        await ProjectLoader.handler.initialize()
+
+    @staticmethod
+    async def refresh(context: Context) -> List[Project]:
+
+        async with context.start("ProjectLoader.refresh"):
+            await ProjectLoader.handler.refresh()
+            return ProjectLoader.projects_list
+
+    @staticmethod
+    async def get_cached_projects() -> List[Project]:
+        return ProjectLoader.projects_list
+
+    @staticmethod
+    def stop():
+        ProjectLoader.handler and ProjectLoader.handler.release()
 
 
-async def load_projects(env: YouwolEnvironment, context: Context) -> List[Result]:
+async def load_projects(paths: List[Path], env: YouwolEnvironment, context: Context) -> List[Result]:
     async with context.start(
             action="load_projects"
     ) as ctx:  # type: Context
-        projects = env.projects
-        project_folders = await projects.finder(env.pathsBook, ctx)
 
         results: List[Result] = []
-        for dir_candidate in project_folders:
+        for dir_candidate in paths:
             try:
                 results.append(await get_project(dir_candidate, [], env, ctx))
             except SyntaxError as e:
@@ -121,4 +120,3 @@ async def get_project(project_path: Path,
             pipeline=pipeline,
             path=project_path
         )
-

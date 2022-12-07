@@ -14,6 +14,7 @@ from youwol.middlewares import BrowserCachingMiddleware, LocalCloudHybridizerMid
 from youwol.routers import native_backends, admin
 from youwol.routers.environment.download_assets import DownloadDataTask, DownloadFluxProjectTask, DownloadPackageTask, \
     DownloadStoryTask
+from youwol.routers.projects import ProjectLoader
 from youwol.web_socket import start_web_socket
 from youwol.web_socket import WebSocketsStore, WsDataStreamer
 from youwol_utils import YouWolException, youwol_exception_handler, YouwolHeaders, CleanerThread, factory_local_cache
@@ -110,8 +111,9 @@ def setup_middlewares(env: YouwolEnvironment):
 
 
 async def create_app():
-
-    setup_middlewares(env=await yw_config())
+    env = await yw_config()
+    setup_middlewares(env=env)
+    asyncio.ensure_future(ProjectLoader.initialize(env=env))
 
     @fastapi_app.exception_handler(YouWolException)
     async def exception_handler(request: Request, exc: YouWolException):

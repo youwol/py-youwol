@@ -10,6 +10,7 @@ from youwol.environment.errors_handling import ConfigurationLoadingException
 from youwol.environment.youwol_environment import YouwolEnvironmentFactory, print_invite, YouwolEnvironment
 from youwol.fastapi_app import download_thread, fastapi_app, cleaner_thread
 from youwol.main_args import get_main_arguments
+from youwol.routers.projects import ProjectLoader
 
 
 def assert_free_http_port(http_port: int):
@@ -41,7 +42,7 @@ def start(shutdown_script_path: Optional[Path] = None):
     try:
         cleaner_thread.go()
     except BaseException as e:
-        print("Error while starting download thread")
+        print("Error while starting cleaner thread")
         print(traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__))
         raise e
 
@@ -57,4 +58,5 @@ def start(shutdown_script_path: Optional[Path] = None):
     finally:
         download_thread.join()
         cleaner_thread.join()
+        ProjectLoader.stop()
         shutdown_script_path and shutdown_script_path.unlink(missing_ok=True)

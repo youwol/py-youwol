@@ -38,7 +38,7 @@ async def get_project_step(
         step_id: str,
         context: Context
         ) -> Tuple[Project, PipelineStep]:
-    projects = await ProjectLoader.get_projects(await context.get("env", YouwolEnvironment), context)
+    projects = await ProjectLoader.get_cached_projects()
     project = next((p for p in projects if p.id == project_id), None)
     if project is None:
         raise ProjectNotFound(project=decode_id(project_id),
@@ -57,8 +57,7 @@ async def get_project_flow_steps(
         flow_id: str,
         context: Context
         ) -> Tuple[Project, Flow, List[PipelineStep]]:
-    env = await context.get('env', YouwolEnvironment)
-    projects = await ProjectLoader.get_projects(env, context)
+    projects = await ProjectLoader.get_cached_projects()
     project = next((p for p in projects if p.id == project_id), None)
 
     if project is None:

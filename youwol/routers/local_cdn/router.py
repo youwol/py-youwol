@@ -60,7 +60,8 @@ async def package_info(request: Request, package_id: str):
         env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
         cdn_docs = parse_json(env.pathsBook.local_cdn_docdb)["documents"]
         versions = [d for d in cdn_docs if d["library_name"] == package_name]
-        versions_info = await asyncio.gather(*[get_version_info(version, env) for version in versions])
+        versions_info = await asyncio.gather(*[get_version_info(version_data=version, env=env, context=ctx)
+                                               for version in versions])
         response = CdnPackageResponse(
             name=package_name,
             id=package_id,
@@ -151,7 +152,7 @@ async def smooth_reset(
         await ctx.info(f"Found a total of {len(packages)} packages",
                        data={"packages": [p['name'] for p in packages]})
         if body.keepProjectPackages:
-            projects = [p.name for p in await ProjectLoader.get_projects(env, ctx)]
+            projects = [p.name for p in await ProjectLoader.get_cached_projects()]
             packages = [p for p in packages if p['name'] not in projects]
             await ctx.info(f"Filter out packages from local projects",
                            data={"packages": [p['name'] for p in packages]})

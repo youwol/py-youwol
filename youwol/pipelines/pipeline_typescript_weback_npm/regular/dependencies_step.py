@@ -41,9 +41,9 @@ async def get_input_data(project: Project, flow_id: str, context: Context):
     async with context.start(action="get_input_data") as ctx:  # type: Context
 
         env = await ctx.get('env', YouwolEnvironment)
-        all_projects = await ProjectLoader.get_projects(env, ctx)
+        all_projects = await ProjectLoader.get_cached_projects()
         dependencies = await project.get_dependencies(recursive=True,
-                                                      projects=await ProjectLoader.get_projects(env, ctx),
+                                                      projects=all_projects,
                                                       context=ctx
                                                       )
         await ctx.info("Dependencies in workspace retrieved", data={

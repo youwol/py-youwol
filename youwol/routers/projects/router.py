@@ -12,18 +12,18 @@ from starlette.responses import FileResponse, JSONResponse
 
 from youwol.routers.projects.models_project import Project, Manifest, PipelineStepStatus
 from youwol.routers.projects.projects_loader import ProjectLoader
-from youwol.environment import yw_config, YouwolEnvironment, YouwolEnvironmentFactory, PathsBook
+from youwol.environment import yw_config, YouwolEnvironment, PathsBook
 from youwol_utils import CommandException
 from youwol.routers.commons import Label
-from youwol.routers.environment.models import ProjectsLoadingResults
 from youwol.routers.projects.dependencies import resolve_project_dependencies
 from youwol.routers.projects.implementation import (
     create_artifacts, get_status, get_project_step, get_project_flow_steps, format_artifact_response,
     get_project_configuration
 )
-from youwol.routers.projects.models import (
+from youwol.routers.projects import (
     PipelineStepStatusResponse, PipelineStatusResponse, ArtifactsResponse, ProjectStatusResponse, CdnResponse,
     CdnVersionResponse, PipelineStepEvent, Event, CreateProjectFromTemplateBody, CreateProjectFromTemplateResponse,
+    ProjectsLoadingResults,
     UpdateConfigurationResponse)
 from youwol.web_socket import LogsStreamer
 from youwol_utils import decode_id
@@ -40,14 +40,13 @@ flatten = itertools.chain.from_iterable
             response_model=ProjectsLoadingResults,
             summary="status")
 async def status(
-        request: Request,
-        config: YouwolEnvironment = Depends(yw_config)
+        request: Request
 ):
     async with Context.start_ep(
             request=request,
             with_reporters=[LogsStreamer()]
     ) as ctx:  # type: Context
-        response = ProjectsLoadingResults(results=await ProjectLoader.get_results(config, ctx))
+        response = ProjectsLoadingResults(results=await ProjectLoader.refresh(ctx))
         await ctx.send(response)
         return response
 
@@ -93,7 +92,7 @@ async def project_status(
             },
             with_reporters=[LogsStreamer()]
     ) as ctx:
-        projects = await ProjectLoader.get_projects(await ctx.get("env", YouwolEnvironment), ctx)
+        projects = await ProjectLoader.get_cached_projects()
         project: Project = next(p for p in projects if p.id == project_id)
 
         workspace_dependencies = await resolve_project_dependencies(project=project, context=ctx)
@@ -278,7 +277,7 @@ async def run_pipeline_step(
             with_reporters=[LogsStreamer()]
     ) as ctx:
         env = await ctx.get('env', YouwolEnvironment)
-        projects = await ProjectLoader.get_projects(env, ctx)
+        projects = await ProjectLoader.get_cached_projects()
         paths: PathsBook = env.pathsBook
 
         project, step = await get_project_step(project_id, step_id, ctx)
@@ -393,11 +392,10 @@ async def new_project_from_template(
         await ctx.info(text="Found template generator", data=template)
         name, project_folder = await template.generator(template.folder, body.parameters, ctx)
 
-        config = await YouwolEnvironmentFactory.reload()
-        response = ProjectsLoadingResults(results=await ProjectLoader.get_results(config, ctx))
+        response = ProjectsLoadingResults(results=await ProjectLoader.refresh(ctx))
         await ctx.send(response)
 
-        projects = await ProjectLoader.get_projects(await ctx.get("env", YouwolEnvironment), ctx)
+        projects = await ProjectLoader.get_cached_projects()
         project = next((p for p in projects if p.name == name), None)
         return project
 

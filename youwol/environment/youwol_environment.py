@@ -10,15 +10,15 @@ from cowpy import cow
 from pydantic import BaseModel
 
 import youwol
-from youwol.environment import CloudEnvironment, Authentication, Command
+from youwol.environment import CloudEnvironment, Authentication, Command, Projects, ExplicitProjectsFinder
 
+from youwol.environment.projects_finders import auto_detect_projects
 from youwol.environment.errors_handling import (
     ConfigurationLoadingStatus, ConfigurationLoadingException,
     CheckSystemFolderWritable, CheckDatabasesFolderHealthy, ErrorResponse
 )
 
 from youwol.environment.models import Events, Configuration, CustomMiddleware, ApiConfiguration, Connection
-from youwol.environment.models.models import ProjectsSanitized
 from youwol.environment.config_from_module import configuration_from_python
 from youwol.environment.paths import PathsBook, ensure_config_file_exists_or_create_it
 from youwol.main_args import get_main_arguments, MainArguments
@@ -35,7 +35,7 @@ class YouwolEnvironment(BaseModel):
     events: Events
     customMiddlewares: List[CustomMiddleware]
 
-    projects: ProjectsSanitized
+    projects: Projects
     commands: Dict[str, Command]
 
     currentConnection: Connection
@@ -248,13 +248,20 @@ async def safe_load(
     ensure_dir_exists(path=paths_book.databases, root_candidates=app_dirs.user_data_dir,
                       create=create_data_dir)
 
+    if isinstance(projects.finder, str) or isinstance(projects.finder, Path):
+        #  5/12/2022: Backward compatibility code
+        root = projects.finder
+        projects.finder = ExplicitProjectsFinder(
+            fromPaths=lambda _: auto_detect_projects(paths_book=paths_book, root_folder=root)
+        )
+
     return YouwolEnvironment(
         httpPort=system.httpPort,
         routers=customization.endPoints.routers,
         currentConnection=remote_connection or system.cloudEnvironments.defaultConnection,
         events=customization.events,
         pathsBook=paths_book,
-        projects=ProjectsSanitized.from_config(projects),
+        projects=projects,
         commands={c.name: c for c in customization.endPoints.commands},
         customMiddlewares=customization.middlewares,
         remotes=system.cloudEnvironments.environments
