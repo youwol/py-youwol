@@ -116,6 +116,15 @@ class YouwolEnvironmentFactory:
         return config
 
     @staticmethod
+    async def load_from_file(path: Path):
+        conf = await safe_load(
+            path=path
+        )
+        await YouwolEnvironmentFactory.trigger_on_load(config=conf)
+        YouwolEnvironmentFactory.__cached_config = conf
+        return conf
+
+    @staticmethod
     async def reload(connection: Connection = None):
         cached = YouwolEnvironmentFactory.__cached_config
         conf = await safe_load(
