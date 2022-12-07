@@ -40,8 +40,8 @@ yarn build:prod
 ```
 
 ---
-{{testConfig}}
-To run tests:
+
+{{testConfig}}To run tests:
 
 ```shell
 yarn test

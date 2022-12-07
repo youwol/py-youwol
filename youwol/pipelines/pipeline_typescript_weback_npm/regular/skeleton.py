@@ -9,7 +9,6 @@ from youwol.environment import ProjectTemplate
 from youwol.pipelines.pipeline_typescript_weback_npm import get_externals, DevServer, Bundles, MainModule
 from youwol.pipelines.pipeline_typescript_weback_npm.common import Template, generate_package_json, \
     copy_files_folders, generate_webpack_config, PackageType, Dependencies, RunTimeDeps
-
 from youwol_utils.context import Context
 from youwol_utils.http_clients.cdn_backend import get_api_key
 from youwol_utils.utils_paths import sed_inplace
@@ -137,7 +136,7 @@ def generate_readme(working_path: Path, input_template: Template):
     package_npm = f"[Package on npm](https://www.npmjs.com/package/{input_template.name})"
 
     test_config = "Tests require [py-youwol](https://l.youwol.com/doc/py-youwol) to run on port 2001 using " \
-                  f"the configuration defined [here]({input_template.testConfig})." \
+                  f"the configuration defined [here]({input_template.testConfig}).\n" \
         if input_template.testConfig else ""
 
     for pattern, repl in [
