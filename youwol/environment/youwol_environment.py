@@ -252,7 +252,7 @@ async def safe_load(
         #  5/12/2022: Backward compatibility code
         root = projects.finder
         projects.finder = ExplicitProjectsFinder(
-            fromPaths=lambda: auto_detect_projects(paths_book=paths_book, root_folder=root)
+            fromPaths=lambda _: auto_detect_projects(paths_book=paths_book, root_folder=root)
         )
 
     return YouwolEnvironment(
