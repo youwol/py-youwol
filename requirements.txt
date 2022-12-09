@@ -22,7 +22,7 @@ attrs==21.4.0
     # via aiohttp
 brotli==1.0.9
     # via -r deps/base.in
-certifi==2022.6.15
+certifi==2022.12.7
     # via minio
 cffi==1.15.0
     # via cryptography
