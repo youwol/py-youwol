@@ -178,7 +178,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 # A bit ugly, not very safe ... coming from:
                 # How to set request headers before path operation is executed
                 # https://github.com/tiangolo/fastapi/issues/2727
-                auth_header: Tuple[bytes, bytes] = "authorization".encode(), f"Bearer {token}".encode()
+                auth_header: Tuple[bytes, bytes] = ("authorization".encode(), f"Bearer {token}".encode())
                 request.headers.__dict__["_list"].append(auth_header)
 
             request.state.user_info = token_data
