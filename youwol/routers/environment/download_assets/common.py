@@ -1,5 +1,5 @@
 import asyncio
-from typing import Awaitable, Protocol
+from typing import Awaitable
 
 from fastapi import HTTPException
 
@@ -125,7 +125,7 @@ async def sync_explorer_data(asset_id: str, remote_gtw: AssetsGatewayClient, con
                                        headers={**ctx.headers(), YouwolHeaders.muted_http_errors: ""})
 
 
-class SyncRawDataCallableType(Protocol):
+class SyncRawDataCallableType:
     def __call__(self, asset_id: str, remote_gtw: AssetsGatewayClient, caller_context: Context) -> Awaitable[None]: ...
 
 
