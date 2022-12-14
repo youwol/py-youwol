@@ -240,7 +240,6 @@ async def generate_ts_webpack_project(folder: Path, parameters: Dict[str, str], 
         shutil.copytree(
             src=project_folder / '.template',
             dst=project_folder,
-            dirs_exist_ok=True
         )
         src_template = Path(__file__).parent / 'templates' / 'template.lib.txt' \
             if package_type == PackageType.Library \
