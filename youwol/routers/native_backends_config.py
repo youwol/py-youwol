@@ -71,6 +71,9 @@ async def assets_backend_config_py_youwol():
             root_path=env.pathsBook.local_docdb,
             keyspace_name=assets_backend.Constants.namespace,
             table_body=ACCESS_POLICY
+        ),
+        file_system=LocalFileSystem(
+            root_path=env.pathsBook.local_storage / assets_backend.Constants.namespace
         )
     )
 
@@ -155,7 +158,7 @@ async def files_backend_config_py_youwol():
 
     return youwol_files_backend.Configuration(
         file_system=LocalFileSystem(
-            root_path=env.pathsBook.local_storage / bucket_name / 'youwol-users'
+            root_path=env.pathsBook.local_storage / bucket_name
         ),
     )
 
