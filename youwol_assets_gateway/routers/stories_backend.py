@@ -43,6 +43,7 @@ async def put_story(
         await assert_write_permissions_folder_id(folder_id=folder_id, context=ctx)
         story = await configuration.stories_client.create_story(body=body.dict(), headers=ctx.headers())
         return await create_asset(
+            request=request,
             kind="story",
             raw_id=story["storyId"],
             raw_response=story,
@@ -73,6 +74,7 @@ async def publish_story(
         await assert_write_permissions_folder_id(folder_id=folder_id, context=ctx)
         story = await configuration.stories_client.publish_story(data=form, headers=ctx.headers())
         return await create_asset(
+            request=request,
             kind="story",
             raw_id=story["storyId"],
             raw_response=story,

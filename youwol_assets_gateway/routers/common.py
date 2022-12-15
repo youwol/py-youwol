@@ -5,8 +5,11 @@ from typing import Dict
 from fastapi import HTTPException
 from youwol_assets_gateway.configurations import Configuration
 from youwol_assets_gateway.utils import raw_id_to_asset_id, to_asset_resp, AssetMeta
+from youwol_utils import ensure_group_permission
 from youwol_utils.context import Context
 from youwol_utils.http_clients.assets_gateway import NewAssetResponse, PermissionsResponse
+
+from starlette.requests import Request
 
 
 async def assert_read_permissions_from_raw_id(raw_id: str, configuration: Configuration, context: Context):
@@ -33,6 +36,7 @@ async def assert_write_permissions_folder_id(folder_id: str, context: Context):
 
 
 async def create_asset(
+        request: Request,
         kind: str,
         raw_id: str,
         raw_response: Dict[str, any],
@@ -44,7 +48,7 @@ async def create_asset(
 
     async with context.start(
             action='create asset',
-            with_attributes={"raw_id": raw_id}
+            with_attributes={"raw_id": raw_id, "folder_id": folder_id}
     ) as ctx:
         tree_db, assets_db = configuration.treedb_client, configuration.assets_client
 
@@ -55,6 +59,8 @@ async def create_asset(
                 parent = await tree_db.get_drive(drive_id=folder_id, headers=ctx_1.headers())
             group_id = parent["groupId"]
             await ctx_1.info(text="Parent treedb item found", data=parent)
+            ensure_group_permission(request=request, group_id=group_id)
+            await ctx_1.info(text="User authorized to write in destination folder", data=parent)
 
         asset_id = raw_id_to_asset_id(raw_id)
         body_asset = {

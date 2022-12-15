@@ -78,6 +78,7 @@ async def upload(
             if file.contentType in mime_types_images else \
             []
         parameters_base = {
+            "request": request,
             "kind": "data",
             "raw_id": file.fileId,
             "raw_response": file.dict(),
