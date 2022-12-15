@@ -42,7 +42,7 @@ class DownloadDataTask(DownloadTask):
         return self.raw_id
 
     async def is_local_up_to_date(self, context: Context):
-        return is_asset_in_local(asset_id=self.asset_id, context=context)
+        return await is_asset_in_local(asset_id=self.asset_id, context=context)
 
     async def create_local_asset(self, context: Context):
 
