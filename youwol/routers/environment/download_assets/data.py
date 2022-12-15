@@ -2,13 +2,11 @@ import asyncio
 from dataclasses import dataclass
 
 from aiohttp import FormData
-from fastapi import HTTPException
 
 from youwol.environment import LocalClients, YouwolEnvironment
-from youwol.routers.environment.download_assets.common import create_asset_local
+from youwol.routers.environment.download_assets.common import create_asset_local, is_asset_in_local
 from youwol.routers.environment.download_assets.models import DownloadTask
 from youwol_utils import Context, decode_id
-from youwol_utils.clients.assets.assets import AssetsClient
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 
 
@@ -44,16 +42,7 @@ class DownloadDataTask(DownloadTask):
         return self.raw_id
 
     async def is_local_up_to_date(self, context: Context):
-        env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
-        local_assets: AssetsClient = LocalClients.get_assets_client(env=env)
-        try:
-            await local_assets.get(asset_id=self.asset_id, headers=context.headers())
-            return True
-        except HTTPException as e:
-            if e.status_code == 404:
-                return False
-            else:
-                raise e
+        return is_asset_in_local(asset_id=self.asset_id, context=context)
 
     async def create_local_asset(self, context: Context):
 
