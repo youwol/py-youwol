@@ -167,6 +167,8 @@ def get_content_type(file_name: Union[str, Path]):
         return "image/svg+xml"
     if 'png' in extensions:
         return "image/png"
+    if 'pdf' in extensions:
+        return "application/pdf"
     if 'txt' in extensions:
         return 'text/plain'
     if 'html' in extensions:

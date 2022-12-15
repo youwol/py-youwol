@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
-from typing import Dict, Callable, Awaitable, Any
+from pathlib import Path
+from typing import Dict, Callable, Awaitable, Any, Union
 
 import aiohttp
 from aiohttp import FormData, ClientResponse
@@ -32,6 +33,52 @@ class AssetsClient:
                 if resp.status == 200:
                     resp = await resp.json()
                     return resp
+
+                await raise_exception_from_response(resp, **kwargs)
+
+    async def add_zip_files(self, asset_id: str, data: bytes, **kwargs):
+
+        url = f"{self.url_base}/assets/{asset_id}/files"
+        form_data = FormData()
+        form_data.add_field('file', data, filename="zipped-files.zip", content_type='application/octet-stream')
+
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with await session.post(url=url, data=form_data, **kwargs) as resp:
+                if resp.status == 200:
+                    resp = await resp.json()
+                    return resp
+
+                await raise_exception_from_response(resp, **kwargs)
+
+    async def get_file(self, asset_id: str,  path: Union[Path, str], **kwargs):
+
+        url = f"{self.url_base}/assets/{asset_id}/files/{path}"
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with await session.get(url=url, **kwargs) as resp:
+                if resp.status == 200:
+                    resp = await resp.read()
+                    return resp
+
+                await raise_exception_from_response(resp, **kwargs)
+
+    async def delete_files(self, asset_id: str, **kwargs):
+
+        url = f"{self.url_base}/assets/{asset_id}/files"
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with await session.delete(url=url, **kwargs) as resp:
+                if resp.status == 200:
+                    resp = await resp.json()
+                    return resp
+
+                await raise_exception_from_response(resp, **kwargs)
+
+    async def get_zip_files(self, asset_id: str, **kwargs):
+
+        url = f"{self.url_base}/assets/{asset_id}/files"
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with await session.get(url=url, **kwargs) as resp:
+                if resp.status == 200:
+                    return await resp.read()
 
                 await raise_exception_from_response(resp, **kwargs)
 

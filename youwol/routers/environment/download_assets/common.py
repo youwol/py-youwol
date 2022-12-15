@@ -7,11 +7,25 @@ from youwol.environment import RemoteClients, LocalClients, YouwolEnvironment
 from youwol.routers.native_backends_config import assets_backend_config_py_youwol
 from youwol_assets_backend import put_access_policy_impl
 from youwol_utils import YouwolHeaders
+from youwol_utils.clients.assets.assets import AssetsClient
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from youwol_utils.clients.treedb.treedb import TreeDbClient
 from youwol_utils.context import Context
 from youwol_utils.http_clients.assets_backend import AccessPolicyBody
 from youwol_utils.http_clients.tree_db_backend import PathResponse, ItemResponse, DriveResponse
+
+
+async def is_asset_in_local(asset_id: str, context: Context):
+    env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
+    local_assets: AssetsClient = LocalClients.get_assets_client(env=env)
+    try:
+        await local_assets.get(asset_id=asset_id, headers=context.headers())
+        return True
+    except HTTPException as e:
+        if e.status_code == 404:
+            return False
+        else:
+            raise e
 
 
 async def ensure_local_path(
@@ -63,10 +77,14 @@ async def sync_asset_data(
         assets_remote = remote_gtw.get_assets_backend_router()
         assets_local = LocalClients.get_assets_client(await ctx.get('env', YouwolEnvironment))
         metadata = await assets_remote.get_asset(asset_id=asset_id, headers=ctx.headers())
-
+        await ctx.info(text="asset's metadata retrieved from remote", data=metadata)
         await assets_local.create_asset(body=metadata, headers=ctx.headers())
+        await ctx.info(text="asset created successfully locally")
 
         access_info = await assets_remote.get_access_info(asset_id=asset_id, headers=ctx.headers())
+
+        await ctx.info(text="asset's access info retrieved from remote", data=access_info)
+
         access_info = access_info['ownerInfo']
         assets_backend_config = await assets_backend_config_py_youwol()
 

@@ -36,6 +36,7 @@ async def publish_library(
             headers=ctx.headers()
         )
         return await create_asset(
+            request=request,
             kind="package",
             raw_id=package["id"],
             raw_response=package,

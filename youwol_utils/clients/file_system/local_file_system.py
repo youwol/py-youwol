@@ -1,3 +1,4 @@
+import glob
 import io
 import os
 import shutil
@@ -7,7 +8,7 @@ from typing import Dict, Union, cast
 
 from fastapi import HTTPException
 
-from youwol_utils.clients.file_system.interfaces import FileSystemInterface
+from youwol_utils.clients.file_system.interfaces import FileSystemInterface, FileObject
 from youwol_utils.utils_paths import write_json, parse_json
 
 
@@ -24,6 +25,10 @@ class LocalFileSystem(FileSystemInterface):
 
     def get_full_path(self, path: Union[str, Path]) -> Path:
         return self.root_path / path
+
+    async def ensure_bucket(self):
+        #  Nothing to do here, the folder will be created on first object creation if needed
+        pass
 
     async def put_object(self, object_name: str, data: io.BytesIO, length: int = -1,
                          content_type: str = "", metadata: Dict[str, str] = None, **kwargs):
@@ -83,3 +88,12 @@ class LocalFileSystem(FileSystemInterface):
             raise HTTPException(status_code=404,
                                 detail=f"LocalFileSystem.ensure_object_exist: Object '{path}' not found")
         return path
+
+    async def list_objects(self, prefix: str, recursive: bool, **kwargs):
+        base_path = self.root_path
+        paths = [Path(p).relative_to(base_path)
+                 for p in glob.glob(pathname=str(base_path / "**" / "*"), recursive=recursive)
+                 if '.metadata.json' not in p and not Path(p).is_dir()]
+        return (
+            FileObject(bucket_name=self.root_path.name, object_name=str(path)) for path in paths
+        )

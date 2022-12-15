@@ -32,6 +32,7 @@ async def new_project(
         await assert_write_permissions_folder_id(folder_id=folder_id, context=ctx)
         project = await configuration.flux_client.create_project(body=project_body.dict(), headers=ctx.headers())
         return await create_asset(
+            request=request,
             kind="flux-project",
             raw_id=project["projectId"],
             raw_response=project,
@@ -62,6 +63,7 @@ async def upload(
         project = await configuration.flux_client.upload_project(data=form, project_id=project_id,
                                                                  headers=ctx.headers())
         return await create_asset(
+            request=request,
             kind="flux-project",
             raw_id=project["projectId"],
             raw_response=project,
@@ -200,6 +202,7 @@ async def duplicate(
         asset = await configuration.assets_client.get_asset(encode_id(project_id), headers=ctx.headers())
         metadata = {**asset, "name": f"{asset['name']} (copy)", "images": []}
         return await create_asset(
+            request=request,
             kind="flux-project",
             raw_id=response["projectId"],
             raw_response=response,
@@ -230,6 +233,7 @@ async def publish_application(
             headers=ctx.headers()
         )
         return await create_asset(
+            request=request,
             kind="package",
             raw_id=package["id"],
             raw_response=package,

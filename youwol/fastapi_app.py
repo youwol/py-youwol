@@ -14,6 +14,7 @@ from youwol.middlewares import BrowserCachingMiddleware, LocalCloudHybridizerMid
 from youwol.routers import native_backends, admin
 from youwol.routers.environment.download_assets import DownloadDataTask, DownloadFluxProjectTask, DownloadPackageTask, \
     DownloadStoryTask
+from youwol.routers.environment.download_assets.custom_asset import DownloadCustomAssetTask
 from youwol.routers.projects import ProjectLoader
 from youwol.web_socket import start_web_socket
 from youwol.web_socket import WebSocketsStore, WsDataStreamer
@@ -32,7 +33,8 @@ download_thread = AssetDownloadThread(
         "package": DownloadPackageTask,
         "flux-project": DownloadFluxProjectTask,
         "data": DownloadDataTask,
-        "story": DownloadStoryTask
+        "story": DownloadStoryTask,
+        "custom-asset": DownloadCustomAssetTask
     },
     worker_count=4
 )

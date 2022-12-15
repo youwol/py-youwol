@@ -4,6 +4,7 @@ from typing import Mapping, Dict, cast, Optional, Any
 
 from aiohttp import FormData, ClientSession
 from fastapi import HTTPException
+from youwol.routers.environment.upload_assets.custom_asset import UploadCustomAssetTask
 
 from youwol_utils.http_clients.tree_db_backend import PathResponse
 from youwol.environment.clients import RemoteClients, LocalClients, YouwolEnvironment
@@ -234,7 +235,12 @@ async def upload_asset(
             raw_id=raw_id,
             asset_id=asset_id,
             options=options
-        )
+        ) \
+            if asset['kind'] in upload_factories \
+            else UploadCustomAssetTask(remote_host=remote_host,
+                                       raw_id=raw_id,
+                                       asset_id=asset_id,
+                                       options=options)
 
         local_data = await factory.get_raw(context=ctx)
         try:
