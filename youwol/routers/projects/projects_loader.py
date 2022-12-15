@@ -33,7 +33,11 @@ class ProjectLoader:
     @staticmethod
     async def sync_projects(update: (List[Path], List[Path]), env: YouwolEnvironment):
         # First element of the update is path of new projects, second is path of removed projects
-        new_projects = await load_projects(paths=update[0], env=env, context=ProjectLoader.context)
+        new_maybe_projects = await load_projects(paths=update[0], env=env, context=ProjectLoader.context)
+        failed = [p for p in new_maybe_projects if not isinstance(p, Project)]
+        if failed:
+            log_info(f"{len(failed)} projects where not able to load properly")
+        new_projects = [p for p in new_maybe_projects if isinstance(p, Project)]
         remaining_projects = [p for p in ProjectLoader.projects_list if p.path not in update[0] + update[1]]
         projects = remaining_projects + new_projects
         ProjectLoader.projects_list = projects
