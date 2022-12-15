@@ -77,10 +77,14 @@ async def sync_asset_data(
         assets_remote = remote_gtw.get_assets_backend_router()
         assets_local = LocalClients.get_assets_client(await ctx.get('env', YouwolEnvironment))
         metadata = await assets_remote.get_asset(asset_id=asset_id, headers=ctx.headers())
-
+        await ctx.info(text="asset's metadata retrieved from remote", data=metadata)
         await assets_local.create_asset(body=metadata, headers=ctx.headers())
+        await ctx.info(text="asset created successfully locally")
 
         access_info = await assets_remote.get_access_info(asset_id=asset_id, headers=ctx.headers())
+
+        await ctx.info(text="asset's access info retrieved from remote", data=access_info)
+
         access_info = access_info['ownerInfo']
         assets_backend_config = await assets_backend_config_py_youwol()
 
