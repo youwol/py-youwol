@@ -143,6 +143,11 @@ class PostAssetBody(BaseModel):
     defaultAccessPolicy: Optional[AccessPolicyBody] = None
 
 
+class AddFilesResponse(BaseModel):
+    filesCount: int
+    totalBytes: int
+
+
 WhereClause = dict
 
 

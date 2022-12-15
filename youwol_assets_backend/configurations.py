@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-from typing import Union, Callable, Awaitable, Dict, Optional
+from typing import Union, Callable, Awaitable, Dict, Optional, TypeVar
 
-from youwol_utils import Storage, DocDb
+from youwol_utils import Storage, DocDb, FileSystemInterface
 
 
 @dataclass(frozen=True)
@@ -10,9 +10,13 @@ class Constants:
     public_owner = '/youwol-users'
 
 
+FileSystemImplementation = TypeVar('FileSystemImplementation', bound=FileSystemInterface)
+
+
 @dataclass(frozen=True)
 class Configuration:
 
+    file_system: FileSystemImplementation
     storage: Storage
     doc_db_asset: DocDb
     doc_db_access_history: DocDb

@@ -1,10 +1,14 @@
 import asyncio
+import io
 import itertools
 import json
+import tempfile
 import time
 import uuid
+import zipfile
 from pathlib import Path
 from typing import Optional
+from zipfile import ZipFile
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi import Query as RequestQuery
@@ -14,17 +18,17 @@ from starlette.responses import Response
 from youwol_utils import (
     user_info, private_group_id, to_group_id, is_child_group,
     ancestors_group_id, QueryBody, Query, WhereClause, get_leaf_group_ids, FileData, to_group_scope,
-    QueryIndexException
+    QueryIndexException, get_content_type
 )
 from youwol_assets_backend.configurations import Configuration, get_configuration, Constants
 from youwol_utils.context import Context
 from youwol_utils.http_clients.assets_backend import AssetResponse, NewAssetBody, PostAssetBody, SharePolicyEnum, \
-    ReadPolicyEnum, AccessPolicyBody, AccessPolicyResp, PermissionsResp, HealthzResponse, AccessInfoResp,\
-    ConsumerInfo, OwningGroup, OwnerInfo, ExposingGroup
+    ReadPolicyEnum, AccessPolicyBody, AccessPolicyResp, PermissionsResp, HealthzResponse, AccessInfoResp, \
+    ConsumerInfo, OwningGroup, OwnerInfo, ExposingGroup, AddFilesResponse
 from .utils import (
     to_doc_db_id, access_policy_record_id, db_post, format_asset,
     db_get, to_snake_case, db_delete, format_record_history, format_image, get_thumbnail,
-    format_policy,
+    format_policy, get_file_path, log_asset,
 )
 
 router = APIRouter(tags=["assets-backend"])
@@ -86,7 +90,6 @@ async def create_asset(
         }
 
         await docdb_access.create_document(doc=doc_access_default, owner=Constants.public_owner, headers=ctx.headers())
-
         return format_asset(doc_asset, request)
 
 
@@ -399,6 +402,7 @@ async def delete_asset(
     ) as ctx:  # type: Context
 
         asset = await db_get(asset_id=asset_id, configuration=configuration, context=ctx)
+        await log_asset(asset=asset, context=ctx)
         docdb_access = configuration.doc_db_access_policy
 
         query = QueryBody(
@@ -409,9 +413,19 @@ async def delete_asset(
         _, docs = await asyncio.gather(
             db_delete(asset=asset, configuration=configuration, context=ctx),
             docdb_access.query(query_body=query, owner=Constants.public_owner, headers=ctx.headers()))
-
+        await ctx.info('Found access records for the asset', data={"records": docs})
         await asyncio.gather(*[docdb_access.delete_document(doc=d, owner=Constants.public_owner, headers=ctx.headers())
                                for d in docs['documents']])
+        filesystem = configuration.file_system
+
+        root_path = f"{asset['kind']}/{asset_id}/"
+        await ctx.info(f'Delete associated objects from {root_path}')
+        objects = await filesystem.list_objects(prefix=root_path, recursive=True)
+        for obj in objects:
+            path = obj.object_name
+            await ctx.info(text=f"Delete file @ {path}")
+            await filesystem.remove_object(object_name=path)
+
         return {}
 
 
@@ -627,11 +641,37 @@ async def remove_image(
                                               context=ctx)
 
 
-@router.get("/assets/{asset_id}/{media_type}/{name}", summary="return a media")
-async def get_media(
+async def get_media(asset_id: str, name: str, media_type: str, configuration: Configuration, context: Context):
+    asset = await db_get(asset_id=asset_id, configuration=configuration, context=context)
+
+    storage = configuration.storage
+    path = Path(asset['kind']) / asset_id / media_type / name
+    file = await storage.get_bytes(path, owner=Constants.public_owner, headers=context.headers())
+    return Response(content=file, headers={
+        "Content-Encoding": "",
+        "Content-Type": f"image/{path.suffix[1:]}",
+        "cache-control": "public, max-age=31536000"
+    })
+
+
+@router.get("/assets/{asset_id}/images/{name}", summary="return a media")
+async def get_media_image(
         request: Request,
         asset_id: str,
-        media_type: str,
+        name: str,
+        configuration: Configuration = Depends(get_configuration)
+):
+    async with Context.start_ep(
+            request=request
+    ) as ctx:  # type: Context
+        return await get_media(asset_id=asset_id, name=name, media_type="images", configuration=configuration,
+                               context=ctx)
+
+
+@router.get("/assets/{asset_id}/thumbnails/{name}", summary="return a media")
+async def get_media_thumbnail(
+        request: Request,
+        asset_id: str,
         name: str,
         configuration: Configuration = Depends(get_configuration)
 ):
@@ -639,13 +679,132 @@ async def get_media(
             request=request
     ) as ctx:  # type: Context
 
-        asset = await db_get(asset_id=asset_id, configuration=configuration, context=ctx)
+        return await get_media(asset_id=asset_id, name=name, media_type="images", configuration=configuration,
+                               context=ctx)
 
-        storage = configuration.storage
-        path = Path(asset['kind']) / asset_id / media_type / name
-        file = await storage.get_bytes(path, owner=Constants.public_owner, headers=ctx.headers())
-        return Response(content=file, headers={
-            "Content-Encoding": "",
-            "Content-Type": f"image/{path.suffix[1:]}",
-            "cache-control": "public, max-age=31536000"
+
+@router.post(
+    "/assets/{asset_id}/files",
+    response_model=AddFilesResponse
+)
+async def add_zip_files(
+        request: Request,
+        asset_id: str,
+        file: UploadFile = File(...),
+        configuration: Configuration = Depends(get_configuration)):
+
+    async with Context.start_ep(
+            request=request
+    ) as ctx:  # type: Context
+
+        asset = await db_get(asset_id=asset_id, configuration=configuration, context=ctx)
+        await log_asset(asset=asset, context=ctx)
+        filesystem = configuration.file_system
+        await filesystem.ensure_bucket()
+        content = await file.read()
+        io_stream = io.BytesIO(content)
+        input_zip = ZipFile(io_stream)
+        items = {name: input_zip.read(name) for name in input_zip.namelist()}
+        files = {name: content for name, content in items.items() if name[-1] != '/'}
+
+        await ctx.info(text="Zip file decoded successfully", data={"paths": list(files.keys())})
+
+        for path, content in files.items():
+            await filesystem.put_object(object_name=get_file_path(asset_id=asset_id, kind=asset['kind'],
+                                                                  file_path=path),
+                                        data=io.BytesIO(content),
+                                        metadata={
+                                            "contentType": get_content_type(path),
+                                            "contentEncoding": 'identity'}
+                                        )
+        return AddFilesResponse(filesCount=len(files), totalBytes=len(content))
+
+
+@router.get(
+    "/assets/{asset_id}/files/{rest_of_path:path}"
+)
+async def get_file(
+        request: Request,
+        asset_id: str,
+        rest_of_path: str,
+        configuration: Configuration = Depends(get_configuration)):
+
+    async with Context.start_ep(
+            request=request
+    ) as ctx:  # type: Context
+
+        asset = await db_get(asset_id=asset_id, configuration=configuration, context=ctx)
+        await log_asset(asset=asset, context=ctx)
+        path = get_file_path(asset_id=asset_id, kind=asset['kind'], file_path=rest_of_path)
+        await ctx.info(text=f"Recover object at {path}")
+        filesystem = configuration.file_system
+        stats = await filesystem.get_info(object_name=path)
+        content = await filesystem.get_object(object_name=path)
+        await ctx.info("Retrieved object", data={
+            "stats": stats,
+            "size": len(content)
         })
+        return Response(
+            content=content,
+            headers={
+                "Content-Encoding": stats['metadata']["contentEncoding"],
+                "Content-Type": stats['metadata']["contentType"],
+                "cache-control": f"public, max-age=0",
+                "content-length": f"{len(content)}"
+            }
+        )
+
+
+@router.delete(
+    "/assets/{asset_id}/files"
+)
+async def delete_files(
+        request: Request,
+        asset_id: str,
+        configuration: Configuration = Depends(get_configuration)):
+
+    async with Context.start_ep(
+            request=request
+    ) as ctx:  # type: Context
+        asset = await db_get(asset_id=asset_id, configuration=configuration, context=ctx)
+        await log_asset(asset=asset, context=ctx)
+        filesystem = configuration.file_system
+        await filesystem.remove_folder(
+            prefix=get_file_path(asset_id=asset_id, kind=asset['kind'], file_path=''),
+            raise_not_found=True
+        )
+        return {}
+
+
+@router.get(
+    "/assets/{asset_id}/files"
+)
+async def get_zip_files(
+        request: Request,
+        asset_id: str,
+        configuration: Configuration = Depends(get_configuration)):
+
+    async with Context.start_ep(
+            request=request
+    ) as ctx:  # type: Context
+        asset = await db_get(asset_id=asset_id, configuration=configuration, context=ctx)
+        await log_asset(asset=asset, context=ctx)
+        filesystem = configuration.file_system
+        base_arc_name = get_file_path(asset_id=asset_id, kind=asset['kind'], file_path="")
+        objects = await filesystem.list_objects(prefix=base_arc_name, recursive=True)
+        await ctx.info(text=f"Objects list iterators retrieved successfully")
+        with tempfile.TemporaryDirectory() as tmp_folder:
+            base_path = Path(tmp_folder)
+            zipper = zipfile.ZipFile(base_path / 'asset_files.zip', 'w', zipfile.ZIP_DEFLATED)
+            for obj in objects:
+                path = obj.object_name
+                await ctx.info(text=f"Zip file {path}")
+                content = await filesystem.get_object(object_name=path)
+                (base_path / path).parent.mkdir(exist_ok=True, parents=True)
+                open(base_path / path, 'wb').write(content)
+                arc_name = Path(path).relative_to(base_arc_name)
+                zipper.write(base_path / path, arcname=arc_name)
+
+            zipper.close()
+            content = (Path(tmp_folder) / "asset_files.zip").read_bytes()
+            return Response(content=content, media_type="application/zip")

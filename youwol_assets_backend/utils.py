@@ -4,7 +4,7 @@ import io
 import itertools
 from datetime import datetime
 from pathlib import Path
-from typing import Tuple, Union, List, Mapping, Any, Dict
+from typing import Tuple, Union, List, Mapping, Any, Dict, Optional
 
 from PIL import Image
 from fastapi import UploadFile
@@ -248,3 +248,11 @@ def format_policy(policy: AccessPolicyResp) -> GroupAccess:
     return GroupAccess(read=ReadPolicyEnumFactory[policy.read],
                        expiration=expiration,
                        share=SharePolicyEnumFactory[policy.share])
+
+
+def get_file_path(asset_id: str, kind: str, file_path: Optional[Union[Path, str]] = None) -> str:
+    return f"{kind}/{asset_id}/files/{file_path}" if file_path else f"{kind}/{asset_id}/files/"
+
+
+async def log_asset(asset: Dict[str, str], context: Context):
+    await context.info(text="asset retrieved", data=asset)
