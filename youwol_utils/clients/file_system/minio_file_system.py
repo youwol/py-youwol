@@ -25,8 +25,7 @@ class MinioFileSystem(FileSystemInterface):
     }
 
     async def ensure_bucket(self):
-        buckets = self.client.list_buckets()
-        if self.bucket_name not in [b.name for b in buckets]:
+        if not self.client.bucket_exists(bucket_name=self.bucket_name):
             self.client.make_bucket(self.bucket_name)
 
     async def list_buckets(self):
@@ -133,3 +132,6 @@ class MinioFileSystem(FileSystemInterface):
 
     def get_full_object_name(self, object_name: str):
         return f"{str(self.root_path).strip('/')}/{object_name}"
+
+    async def list_objects(self, prefix: str, recursive: bool, **kwargs):
+        return self.client.list_objects(bucket_name=self.bucket_name, prefix=prefix, recursive=recursive)
