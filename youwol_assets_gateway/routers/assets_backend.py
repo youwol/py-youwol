@@ -1,15 +1,30 @@
+import uuid
+from typing import List, Optional
+
 from aiohttp import ClientResponse
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
 from starlette.requests import Request
 from starlette.responses import Response
 
+from youwol_utils.http_clients.assets_gateway import NewAssetResponse
+from .common import create_asset as common_create_asset
 from youwol_assets_gateway.configurations import Configuration, get_configuration
-from youwol_utils import ensure_group_permission
+from youwol_utils import ensure_group_permission, user_info, private_group_id
 from youwol_utils.context import Context
-from youwol_utils.http_clients.assets_backend import HealthzResponse, AssetResponse, NewAssetBody, PostAssetBody, \
+from youwol_utils.http_clients.assets_backend import HealthzResponse, AssetResponse, PostAssetBody, \
     AccessPolicyBody, AccessPolicyResp, PermissionsResp, AccessInfoResp
+from ..utils import AssetMeta
 
 router = APIRouter(tags=["assets-gateway.flux-backend"])
+
+
+class NewEmptyAssetBody(BaseModel):
+    rawId: Optional[str]
+    kind: str
+    name: str = ''
+    description: str = ''
+    tags: List[str] = []
 
 
 @router.get("/healthz",
@@ -28,23 +43,133 @@ async def healthz(
 
 
 @router.put("/assets",
-            response_model=AssetResponse,
+            response_model=NewAssetResponse,
             summary="new asset")
 async def create_asset(
         request: Request,
-        body: NewAssetBody,
+        body: NewEmptyAssetBody,
+        folder_id: str = Query(None, alias="folder-id"),
+        configuration: Configuration = Depends(get_configuration)):
+
+    # This end point create an asset not affiliated to any backends.
+    # It can be populated with files afterward.
+    # For asset creation related to a backend, see specific router for this backend in the current directory.
+    async with Context.start_ep(
+            request=request
+    ) as ctx:
+        raw_id = body.rawId or str(uuid.uuid4())
+        if not folder_id:
+            await ctx.info(text="No folder specified to create the asset, use user's download folder.")
+            user = user_info(request)
+            default_drive = await configuration.treedb_client.get_default_drive(group_id=private_group_id(user),
+                                                                                headers=ctx.headers())
+            folder_id = default_drive["downloadFolderId"]
+        await ctx.info(text="Create un-affiliated asset", data={"folderId": folder_id})
+        return await common_create_asset(
+            request=request,
+            kind=body.kind,
+            raw_id=raw_id,
+            raw_response={},
+            folder_id=folder_id,
+            metadata=AssetMeta(name=body.name, description=body.description, tags=body.tags),
+            context=ctx,
+            configuration=configuration
+        )
+
+
+@router.post("/assets/{asset_id}/files")
+async def post_asset_files(
+        request: Request,
+        asset_id: str,
         configuration: Configuration = Depends(get_configuration)):
 
     async with Context.start_ep(
             request=request
     ) as ctx:
-        if body.groupId:
-            ensure_group_permission(request=request, group_id=body.groupId)
+        assets_db = configuration.assets_client
+        permissions = await assets_db.get_permissions(asset_id=asset_id, headers=ctx.headers())
+        if not permissions['write']:
+            raise HTTPException(status_code=403, detail=f"Unauthorized to write asset {asset_id}")
 
-        return await configuration.assets_client.create_asset(
-            body=body.dict(),
+        form = await request.form()
+        data = await form.get('file').read()
+        return await assets_db.add_zip_files(
+            asset_id=asset_id,
+            data=data,
             headers=ctx.headers()
         )
+
+
+@router.get(
+    "/assets/{asset_id}/files/{rest_of_path:path}"
+)
+async def get_file(
+        request: Request,
+        asset_id: str,
+        rest_of_path: str,
+        configuration: Configuration = Depends(get_configuration)):
+
+    async with Context.start_ep(
+            request=request
+    ) as ctx:  # type: Context
+
+        assets_db = configuration.assets_client
+        permissions = await assets_db.get_permissions(asset_id=asset_id, headers=ctx.headers())
+        if not permissions['read']:
+            raise HTTPException(status_code=403, detail=f"Unauthorized to read asset {asset_id}")
+
+        return await assets_db.get_file(
+            asset_id=asset_id,
+            path=rest_of_path,
+            headers=ctx.headers()
+        )
+
+
+@router.delete(
+    "/assets/{asset_id}/files"
+)
+async def delete_files(
+        request: Request,
+        asset_id: str,
+        configuration: Configuration = Depends(get_configuration)):
+
+    async with Context.start_ep(
+            request=request
+    ) as ctx:  # type: Context
+
+        assets_db = configuration.assets_client
+        permissions = await assets_db.get_permissions(asset_id=asset_id, headers=ctx.headers())
+        if not permissions['write']:
+            raise HTTPException(status_code=403, detail=f"Unauthorized to delete asset {asset_id}")
+
+        return await assets_db.delete_files(
+            asset_id=asset_id,
+            headers=ctx.headers()
+        )
+
+
+@router.get(
+    "/assets/{asset_id}/files"
+)
+async def zip_all_files(
+        request: Request,
+        asset_id: str,
+        configuration: Configuration = Depends(get_configuration)):
+
+    async with Context.start_ep(
+            request=request
+    ) as ctx:  # type: Context
+
+        assets_db = configuration.assets_client
+        permissions = await assets_db.get_permissions(asset_id=asset_id, headers=ctx.headers())
+        if not permissions['read']:
+            raise HTTPException(status_code=403, detail=f"Unauthorized to read asset {asset_id}")
+
+        content = await assets_db.get_zip_files(
+            asset_id=asset_id,
+            headers=ctx.headers()
+        )
+        return Response(content=content, media_type="application/zip")
 
 
 @router.post("/assets/{asset_id}",
