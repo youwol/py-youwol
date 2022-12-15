@@ -571,7 +571,19 @@ async def purge_drive(
         )
         errors_raw_deletion = []
         errors_asset_deletion = []
-        for to_delete in [item for item in resp['items'] if not item['borrowed']]:
+        original_items = [item for item in resp['items'] if not item['borrowed']]
+        await ctx.info(text=f"Found {len(original_items)} to purge")
+        for to_delete in original_items:
+
+            if to_delete['kind'] not in factory:
+                await ctx.info(text="Delete asset un-affiliated to backend", data=to_delete)
+                try:
+                    await assets_db.delete_asset(asset_id=to_delete['assetId'], headers=ctx.headers())
+                except HTTPException:
+                    await ctx.warning("Error while deleting asset", data=to_delete)
+                    errors_asset_deletion.append(to_delete['assetId'])
+                continue
+
             erase = factory[to_delete['kind']]
             resp_raw, resp_asset = await asyncio.gather(
                 erase(raw_id=to_delete['rawId']),
