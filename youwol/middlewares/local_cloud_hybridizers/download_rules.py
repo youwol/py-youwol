@@ -6,7 +6,7 @@ from starlette.responses import Response
 from youwol.environment import AssetDownloadThread, YouwolEnvironment
 from youwol.middlewares.local_cloud_hybridizers.abstract_local_cloud_dispatch import AbstractLocalCloudDispatch
 from youwol.routers.router_remote import redirect_api_remote
-from youwol_utils import YouwolHeaders
+from youwol_utils import YouwolHeaders, decode_id
 from youwol_utils.context import Context
 from youwol_utils.request_info_factory import url_match
 
@@ -20,6 +20,7 @@ class Download(AbstractLocalCloudDispatch):
                     ) -> Optional[Response]:
 
         patterns = [
+            ("custom-asset", "GET:/api/assets-gateway/assets-backend/assets/*/**"),
             ("story", "GET:/api/assets-gateway/stories-backend/stories/*/**"),
             ("flux-project", "GET:/api/assets-gateway/flux-backend/projects/*/**"),
             ("data", "GET:/api/assets-gateway/files-backend/files/*/**"),
@@ -34,6 +35,10 @@ class Download(AbstractLocalCloudDispatch):
             return None
         kind, params = match
         raw_id = params[0][0] if len(params[0]) == 2 else params[0]
+        if kind == "custom-asset":
+            # In case of 'assets-gateway/assets-backend/assets/*/**', first param is actually the asset_id
+            asset_id = raw_id
+            raw_id = decode_id(asset_id)
         env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
         async with context.start(
                 action="Download.apply",
@@ -51,4 +56,3 @@ class Download(AbstractLocalCloudDispatch):
                 return resp
             resp.headers[YouwolHeaders.youwol_origin] = request.url.hostname
             return resp
-
