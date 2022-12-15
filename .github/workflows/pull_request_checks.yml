@@ -23,7 +23,7 @@ on:
 
       todo-app-ts_ref:
         description: >
-          Branch, tag or SHA for todo-app-ts checkout.
+          Branch, tag or SHA for http-clients checkout.
           Default to 'main'
         default: main
 
@@ -52,7 +52,7 @@ jobs:
         uses: youwol/nestor/ts/prepare@v1
         with:
           repository: youwol/local-youwol-client
-          ref: feature/post-files-asset
+          ref: ${{ inputs.local-youwol-client_ref }}
           path: ${{ runner.temp }}/local-youwol-client
 
       - name: Run local-youwol-client tests
@@ -126,7 +126,7 @@ jobs:
         uses: youwol/nestor/ts/prepare@v1
         with:
           repository: youwol/http-clients
-          ref: feature/backend-free-assets-management
+          ref: ${{ inputs.http-clients_ref }}
           path: ${{ runner.temp }}/http-clients
 
       - name: Run http-clients tests
