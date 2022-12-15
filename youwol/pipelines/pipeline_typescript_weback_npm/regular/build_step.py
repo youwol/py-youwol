@@ -18,7 +18,7 @@ class BuildStep(PipelineStep):
             id='dist',
             files=FileListing(
                 include=[Paths.package_json_file, "dist", "src"],
-                ignore=["dist/docs", '.template/**', "**/node_modules"]
+                ignore=["dist/docs", '.template/**', "**/node_modules", "src/tests/**"]
             ),
             links=[
                 Link(
