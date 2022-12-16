@@ -540,29 +540,51 @@ Listening port of the dev-server.
     async def switch(self,
                      incoming_request: Request,
                      context: Context) -> Optional[Response]:
+        # Following logic is maybe too much 'web-pack dev-server centered:
+        # for webpack dev server, there is two kinds of resources:
+        #   - the one built by webpack (dynamic): they are served from the 'root'
+        #     For instance: '/dist/bundles.js will be served at localhost:xxxx/bundle.js
+        #     In this case we only care about the last part of the url
+        #   - the static assets, they are served 'normally'
+        #     For instance: '/dist/assets/foo.png' will be served at localhost:xxxx/dist/assets/foo.png
+        #     In this case we care about last part of the url after the asset_id
+        # The static case is tested first as usually there are a limited set of dynamic resources
 
-        rest_of_path = incoming_request.url.path.split('/')[-1]
-        url = f"http://localhost:{self.port}/{rest_of_path}"
-        await context.info(text=f"CdnSwitch[{self}] execution",
-                           data={"origin": incoming_request.url.path,
-                                 "destination": url})
+        headers = {k: v for k, v in incoming_request.headers.items()}
 
+        asset_id = f"/{encode_id(self.packageName)}/"
+        trailing_path = incoming_request.url.path.split(asset_id)[1]
+        # the next '[1:]' skip the version of the package
+        rest_of_path_static = '/'.join(trailing_path.split('/')[1:])
+        rest_of_path_dynamic = trailing_path.split('/')[-1]
+
+        resp = await self.__forward_request(rest_of_path=rest_of_path_static, headers=headers)
+        if resp:
+            return resp
+
+        resp = await self.__forward_request(rest_of_path=rest_of_path_dynamic, headers=headers)
+        if resp:
+            return resp
+
+        await context.error(text=f"CdnSwitch[{self}]: Error status while dispatching",
+                            data={
+                                "origin": incoming_request.url.path,
+                                "paths tested": [rest_of_path_static, rest_of_path_dynamic]
+                            })
+        raise ResourcesNotFoundException(
+            path=f"{rest_of_path_dynamic} or ${rest_of_path_dynamic}",
+            detail=f"No resource found"
+        )
+
+    async def __forward_request(self, rest_of_path: str, headers: Dict[str, str]) -> Optional[Response]:
+
+        dest_url = f"http://localhost:{self.port}/{rest_of_path}"
         async with ClientSession(auto_decompress=False) as session:
-            async with await session.get(url=url) as resp:
-                if resp.status != 200:
-                    await context.error(text=f"CdnSwitch[{self}]: \
-                        Error status while dispatching", data={
-                        "origin": incoming_request.url.path,
-                        "destination": url,
-                        "path": rest_of_path,
-                        "status": resp.status
-                    })
-                    raise ResourcesNotFoundException(
-                        path=rest_of_path,
-                        detail=resp.reason
-                    )
-                content = await resp.read()
-                return Response(content=content, headers={k: v for k, v in resp.headers.items()})
+            async with await session.get(url=dest_url, headers=headers) as resp:
+                if resp.status < 400:
+                    content = await resp.read()
+                    return Response(status_code=resp.status, content=content,
+                                    headers={k: v for k, v in resp.headers.items()})
 
     def __str__(self):
         return f"serving cdn package '{self.packageName}' from local port '{self.port}'"
