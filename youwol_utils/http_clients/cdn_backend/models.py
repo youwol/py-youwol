@@ -47,7 +47,9 @@ exportedSymbols = {
     'js-beautify': 'js_beautify',
     'mathjax': 'Mathjax',
     '@pyodide/scikit-learn': 'sklearn',
-    '@pyodide/python-dateutil': 'dateutil'
+    '@pyodide/python-dateutil': 'dateutil',
+    '@tweenjs/tween.js': 'TWEEN',
+    '@youwol/potree': 'Potree'
 }
 
 
