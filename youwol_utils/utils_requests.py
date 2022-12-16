@@ -1,7 +1,10 @@
-from aiohttp import ClientSession, TCPConnector
+from typing import Callable, Awaitable, Union, TypeVar
+
+from aiohttp import ClientSession, TCPConnector, ClientResponse
 from starlette.requests import Request
 from starlette.responses import Response
-from youwol_utils import assert_response
+from youwol_utils.exceptions import assert_response
+from youwol_utils.types import JSON
 
 
 async def redirect_request(
@@ -41,3 +44,29 @@ async def redirect_request(
         if incoming_request.method == 'DELETE':
             async with await session.delete(url=redirect_url, data=data,  params=params, headers=headers) as resp:
                 return await forward_response(resp)
+
+
+async def aiohttp_to_starlette_response(resp: ClientResponse) -> Response:
+    return Response(
+        content=await resp.read(),
+        headers={k: v for k, v in resp.headers.items()}
+    )
+
+TResp = TypeVar("TResp")
+
+
+async def extract_aiohttp_response(resp: ClientResponse, reader: Callable[[ClientResponse], Awaitable[TResp]] = None) \
+        -> Union[TResp, JSON, str, bytes]:
+
+    if reader:
+        return await reader(resp)
+    content_type = resp.content_type
+
+    if content_type == 'application/json':
+        return await resp.json()
+
+    text_applications = ['rtf', 'xml', 'x-sh']
+    if content_type.startswith('text/') or content_type in [f'application/{app}' for app in text_applications]:
+        return await resp.text()
+
+    return await resp.read()

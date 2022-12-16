@@ -10,7 +10,7 @@ from starlette.responses import Response
 from youwol_utils.http_clients.assets_gateway import NewAssetResponse
 from .common import create_asset as common_create_asset
 from youwol_assets_gateway.configurations import Configuration, get_configuration
-from youwol_utils import ensure_group_permission, user_info, private_group_id
+from youwol_utils import ensure_group_permission, user_info, private_group_id, aiohttp_to_starlette_response
 from youwol_utils.context import Context
 from youwol_utils.http_clients.assets_backend import HealthzResponse, AssetResponse, PostAssetBody, \
     AccessPolicyBody, AccessPolicyResp, PermissionsResp, AccessInfoResp
@@ -121,6 +121,7 @@ async def get_file(
         return await assets_db.get_file(
             asset_id=asset_id,
             path=rest_of_path,
+            reader=aiohttp_to_starlette_response,
             headers=ctx.headers()
         )
 

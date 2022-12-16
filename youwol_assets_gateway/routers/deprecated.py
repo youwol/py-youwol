@@ -9,7 +9,7 @@ from youwol_assets_gateway.routers.common import assert_read_permissions_from_ra
 from fastapi import APIRouter, Depends
 from starlette.requests import Request
 
-from youwol_utils import raise_exception_from_response, JSON
+from youwol_utils import raise_exception_from_response, JSON, aiohttp_to_starlette_response
 from youwol_utils.context import Context
 from youwol_assets_gateway.configurations import Configuration, get_configuration
 
@@ -40,19 +40,13 @@ async def get_raw_package(
         rest_of_path = '/'.join(rest_of_path.split('/')[1:])
         await assert_read_permissions_from_raw_id(raw_id=raw_id, configuration=configuration, context=ctx)
 
-        async def reader(resp_cdn):
-            resp_bytes = await resp_cdn.read()
-            return Response(content=resp_bytes, headers={k: v for k, v in resp_cdn.headers.items()})
-
-        resp = await configuration.cdn_client.get_resource(
+        return await configuration.cdn_client.get_resource(
             library_id=raw_id,
             version=version,
             rest_of_path=rest_of_path,
-            reader=reader,
+            reader=aiohttp_to_starlette_response,
             auto_decompress=False,
             headers=ctx.headers())
-
-        return resp
 
 """
 Following deprecated end points are used in flux-projects including modules providing access
