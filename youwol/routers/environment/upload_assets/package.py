@@ -127,9 +127,8 @@ class UploadPackageTask(UploadTask):
             library_name, zip_path = get_zip_path(asset_id=self.asset_id, version=version, env=env)
 
             try:
-                data = {'file': zip_path.read_bytes(), 'content_encoding': 'identity'}
-                await remote_cdn.publish(data=data, params={'folder-id': folder_id}, timeout=60000,
-                                         headers=ctx.headers())
+                await remote_cdn.publish(zip_content=zip_path.read_bytes(), params={'folder-id': folder_id},
+                                         timeout=60000, headers=ctx.headers())
             finally:
                 await ctx.info(
                     text=f"{library_name}#{version}: synchronization done"

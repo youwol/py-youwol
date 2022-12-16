@@ -26,13 +26,9 @@ async def publish_library(
             request=request
     ) as ctx:
         form = await request.form()
-        form = {
-            'file': await form.get('file').read(),
-            'content_encoding': form.get('content_encoding', 'identity')
-        }
         await assert_write_permissions_folder_id(folder_id=folder_id, context=ctx)
         package = await configuration.cdn_client.publish(
-            data=form,
+            zip_content=await form.get('file').read(),
             headers=ctx.headers()
         )
         return await create_asset(

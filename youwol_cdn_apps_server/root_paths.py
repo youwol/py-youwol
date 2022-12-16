@@ -39,7 +39,7 @@ async def get_raw_resource(
 
     async with aiohttp.ClientSession(auto_decompress=False) as session:
         async with await session.get(url=url, headers=ctx.headers()) as resp:
-            if resp.status == 200:
+            if resp.status < 400:
                 return Response(
                     content=await resp.read(),
                     headers={
