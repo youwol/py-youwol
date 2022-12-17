@@ -550,7 +550,7 @@ Listening port of the dev-server.
         #     In this case we care about last part of the url after the asset_id
         # The static case is tested first as usually there are a limited set of dynamic resources
 
-        headers = {k: v for k, v in incoming_request.headers.items()}
+        headers = context.headers(from_req_fwd=lambda header_keys: header_keys)
 
         asset_id = f"/{encode_id(self.packageName)}/"
         trailing_path = incoming_request.url.path.split(asset_id)[1]
