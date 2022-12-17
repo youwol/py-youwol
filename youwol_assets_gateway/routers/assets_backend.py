@@ -38,7 +38,7 @@ async def healthz(
             request=request
     ) as ctx:
         return await configuration.assets_client.healthz(
-            headers=ctx.headers()
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
         )
 
 
@@ -96,7 +96,7 @@ async def post_asset_files(
         return await assets_db.add_zip_files(
             asset_id=asset_id,
             data=data,
-            headers=ctx.headers()
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
         )
 
 
@@ -122,7 +122,7 @@ async def get_file(
             asset_id=asset_id,
             path=rest_of_path,
             reader=aiohttp_to_starlette_response,
-            headers=ctx.headers()
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
         )
 
 
@@ -145,7 +145,7 @@ async def delete_files(
 
         return await assets_db.delete_files(
             asset_id=asset_id,
-            headers=ctx.headers()
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
         )
 
 
@@ -168,7 +168,7 @@ async def zip_all_files(
 
         content = await assets_db.get_zip_files(
             asset_id=asset_id,
-            headers=ctx.headers()
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
         )
         return Response(content=content, media_type="application/zip")
 
@@ -195,7 +195,7 @@ async def post_asset(
         return await configuration.assets_client.update_asset(
             asset_id=asset_id,
             body=body.dict(),
-            headers=ctx.headers()
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
         )
 
 
@@ -213,7 +213,7 @@ async def delete_asset(
 
         return await configuration.assets_client.delete_asset(
             asset_id=asset_id,
-            headers=ctx.headers()
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
         )
 
 
@@ -230,7 +230,7 @@ async def get_asset(
     ) as ctx:
         return await configuration.assets_client.get_asset(
             asset_id=asset_id,
-            headers=ctx.headers()
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
         )
 
 
@@ -253,7 +253,7 @@ async def put_access_policy(
             asset_id=asset_id,
             group_id=group_id,
             body=body.dict(),
-            headers=ctx.headers()
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
         )
 
 
@@ -273,7 +273,7 @@ async def delete_access_policy(
         return await configuration.assets_client.delete_access_policy(
             asset_id=asset_id,
             group_id=group_id,
-            headers=ctx.headers()
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
         )
 
 
@@ -292,7 +292,7 @@ async def get_access_policy(
         return await configuration.assets_client.get_access_policy(
             asset_id=asset_id,
             group_id=group_id,
-            headers=ctx.headers()
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
         )
 
 
@@ -309,7 +309,7 @@ async def get_permissions(
     ) as ctx:
         return await configuration.assets_client.get_permissions(
             asset_id=asset_id,
-            headers=ctx.headers()
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
         )
 
 
@@ -326,7 +326,7 @@ async def get_permissions(
     ) as ctx:
         return await configuration.assets_client.get_access_info(
             asset_id=asset_id,
-            headers=ctx.headers()
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
         )
 
 
@@ -349,7 +349,7 @@ async def post_image(
             asset_id=asset_id,
             filename=filename,
             src=src,
-            headers=ctx.headers()
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
         )
 
 
@@ -369,7 +369,7 @@ async def remove_image(
         return await configuration.assets_client.remove_image(
             asset_id=asset_id,
             filename=filename,
-            headers=ctx.headers()
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
         )
 
 
@@ -393,5 +393,5 @@ async def get_media(
             media_type=media_type,
             name=name,
             reader=reader,
-            headers=ctx.headers()
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
         )
