@@ -2,13 +2,13 @@ import io
 from dataclasses import dataclass
 from pathlib import Path
 
-from typing import Dict, Union
+from typing import Union, List, Tuple
 from minio import Minio, S3Error
 from minio.commonconfig import REPLACE, CopySource
 from minio.deleteobjects import DeleteObject
 
 from youwol_utils.exceptions import ResourcesNotFoundException, ServerError
-from youwol_utils.clients.file_system.interfaces import FileSystemInterface
+from youwol_utils.clients.file_system.interfaces import FileSystemInterface, Metadata, FileObject
 
 
 @dataclass(frozen=True)
@@ -37,14 +37,20 @@ class MinioFileSystem(FileSystemInterface):
                 detail=f"MinioFileSystem.list_buckets: {e.message}"
             )
 
-    async def put_object(self, object_name: str, data: io.BytesIO, length: int = -1,
-                         content_type: str = "", metadata: Dict[str, str] = None, **kwargs):
+    async def put_object(self, object_id: str, data: io.BytesIO, object_name: str, content_type: str,
+                         content_encoding: str, length=-1, **kwargs):
 
-        object_name = self.get_full_object_name(object_name)
+        object_path = self.get_object_path(object_id)
+        metadata = {
+            'fileName': object_name,
+            'contentType': content_type,
+            'contentEncoding': content_encoding
+        }
+
         try:
             length = data.getbuffer().nbytes if length == -1 else length
             return self.client.put_object(
-                bucket_name=self.bucket_name, object_name=object_name, data=data, length=length,
+                bucket_name=self.bucket_name, object_name=object_path, data=data, length=length,
                 metadata=metadata, content_type=content_type
             )
         except S3Error as e:
@@ -53,55 +59,70 @@ class MinioFileSystem(FileSystemInterface):
                 detail=f"MinioFileSystem.put_object: {e.message}"
             )
 
-    async def get_info(self, object_name: str, **kwargs):
+    async def get_info(self, object_id: str, **kwargs):
 
-        object_name = self.get_full_object_name(object_name)
+        object_id = self.get_object_path(object_id)
         try:
             stat = self.client.stat_object(
-                self.bucket_name, object_name=object_name
+                self.bucket_name, object_name=object_id
             )
             return {
-                "metadata": {v: stat.metadata[k] for k, v in self.metadata_keys.items()}
+                "metadata": {v: stat.metadata[k] for k, v in self.metadata_keys.items() if k in stat.metadata}
                 }
         except S3Error as e:
             raise ResourcesNotFoundException(
-                path=f"{self.bucket_name}:{object_name}",
+                path=f"{self.bucket_name}:{object_id}",
                 detail=f"MinioFileSystem.get_stats: {e.message}"
             )
 
-    async def set_metadata(self, object_name: str, metadata: Dict[str, str], **kwargs):
+    async def set_metadata(self, object_id: str, metadata: Metadata, **kwargs):
 
-        object_name = self.get_full_object_name(object_name)
+        object_id = self.get_object_path(object_id)
         try:
+            info = await self.get_info(object_id=object_id)
+
             response = self.client.copy_object(
                 bucket_name=self.bucket_name,
-                object_name=object_name,
-                source=CopySource(self.bucket_name, object_name),
-                metadata=metadata,
+                object_name=object_id,
+                source=CopySource(self.bucket_name, object_id),
+                metadata={**info['metadata'], **{k: v for k, v in metadata.dict().items() if v}},
                 metadata_directive=REPLACE,
             )
             return response
         except S3Error as e:
             raise ResourcesNotFoundException(
-                path=f"{self.bucket_name}:{object_name}",
+                path=f"{self.bucket_name}:{object_id}",
                 detail=f"MinioFileSystem.set_metadata: {e.message}")
 
-    async def get_object(self, object_name: str, **kwargs):
+    async def get_object(self, object_id: str, ranges_bytes: List[Tuple[int, int]] = None, **kwargs):
 
-        object_name = self.get_full_object_name(object_name)
+        object_id = self.get_object_path(object_id)
+        if ranges_bytes and len(ranges_bytes) > 1:
+            raise RuntimeError("Minio file system does not support multiple ranges bytes")
+
         try:
-            response = self.client.get_object(bucket_name=self.bucket_name, object_name=object_name)
+            if ranges_bytes:
+                first_range = ranges_bytes[0]
+                response = self.client.get_object(
+                    bucket_name=self.bucket_name,
+                    object_name=object_id,
+                    offset=first_range[0],
+                    length=first_range[1]-first_range[0] + 1
+                )
+                return response.read()
+
+            response = self.client.get_object(bucket_name=self.bucket_name, object_name=object_id)
             return response.read()
         except S3Error as e:
             raise ResourcesNotFoundException(
-                path=f"{self.bucket_name}:{object_name}",
+                path=f"{self.bucket_name}:{object_id}",
                 detail=f"MinioFileSystem.get_object: {e.message}"
             )
 
-    async def remove_object(self, object_name: str, **kwargs):
-        object_name = self.get_full_object_name(object_name)
+    async def remove_object(self, object_id: str, **kwargs):
+        object_id = self.get_object_path(object_id)
         try:
-            response = self.client.remove_object(bucket_name=self.bucket_name, object_name=object_name)
+            response = self.client.remove_object(bucket_name=self.bucket_name, object_name=object_id)
             return response
         except S3Error as e:
             raise ServerError(
@@ -110,7 +131,7 @@ class MinioFileSystem(FileSystemInterface):
             )
 
     async def remove_folder(self, prefix: str, raise_not_found: bool, **kwargs):
-        prefix = self.get_full_object_name(prefix)
+        prefix = self.get_object_path(prefix)
         try:
             delete_object_list = map(
                 lambda x: DeleteObject(x.object_name),
@@ -130,8 +151,9 @@ class MinioFileSystem(FileSystemInterface):
                 detail=f"MinioFileSystem.remove_folder: {e.message}"
             )
 
-    def get_full_object_name(self, object_name: str):
-        return f"{str(self.root_path).strip('/')}/{object_name}"
+    def get_object_path(self, object_id: str):
+        return f"{str(self.root_path).strip('/')}/{object_id}"
 
     async def list_objects(self, prefix: str, recursive: bool, **kwargs):
-        return self.client.list_objects(bucket_name=self.bucket_name, prefix=prefix, recursive=recursive)
+        return (FileObject(bucket_name=o.bucket_name, object_id=o.object_name)
+                for o in self.client.list_objects(bucket_name=self.bucket_name, prefix=prefix, recursive=recursive))

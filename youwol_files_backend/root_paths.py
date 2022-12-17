@@ -9,6 +9,7 @@ from starlette.responses import Response
 from youwol_files_backend import Configuration
 from youwol_files_backend.configurations import get_configuration
 from youwol_utils import get_content_type, get_content_encoding
+from youwol_utils.clients.file_system.interfaces import Metadata
 from youwol_utils.context import Context
 from youwol_utils.http_clients.files_backend import PostFileResponse, GetInfoResponse, PostMetadataBody
 
@@ -32,28 +33,25 @@ async def upload(
 ):
     async with Context.start_ep(
             request=request
-    ) as ctx:  # type: Context
+    ):  # type: Context
 
         form = await request.form()
         file = form.get('file')
         file_id = form.get('file_id', None) or str(uuid.uuid4())
         filename = form.get('file_name', "default_name")
-        metadata = {
-            "fileId": file_id,
-            "fileName": filename,
-            "contentType": form.get('content_type', file.content_type) or get_content_type(filename),
-            "contentEncoding": form.get('content_encoding', '') or get_content_encoding(filename)
-            }
-        await ctx.info("File metadata", data=metadata)
         content = await file.read()
+        content_type = form.get('content_type', file.content_type) or get_content_type(filename)
+        content_encoding = form.get('content_encoding', '') or get_content_encoding(filename)
         await configuration.file_system.put_object(
-            object_name=file_id,
+            object_id=file_id,
+            object_name=filename,
             data=io.BytesIO(content),
-            content_type=metadata["contentType"],
-            metadata=metadata)
+            content_type=content_type,
+            content_encoding=content_encoding
+        )
 
-        resp = PostFileResponse(fileId=file_id, fileName=metadata['fileName'], contentType=metadata["contentType"],
-                                contentEncoding=metadata["contentEncoding"])
+        resp = PostFileResponse(fileId=file_id, fileName=filename, contentType=content_type,
+                                contentEncoding=content_encoding)
 
         return resp
 
@@ -71,7 +69,7 @@ async def get_info(
     async with Context.start_ep(
             request=request
     ):  # type: Context
-        return await configuration.file_system.get_info(object_name=file_id)
+        return await configuration.file_system.get_info(object_id=file_id)
 
 
 @router.post(
@@ -87,9 +85,10 @@ async def update_metadata(
     async with Context.start_ep(
             request=request
     ):  # type: Context
-        actual_meta = (await configuration.file_system.get_info(object_name=file_id))['metadata']
-        new_fields = {k: v for k, v in body.dict().items() if v}
-        await configuration.file_system.set_metadata(object_name=file_id, metadata={**actual_meta, **new_fields})
+        await configuration.file_system.set_metadata(
+            object_id=file_id,
+            metadata=Metadata(**body.dict())
+        )
         return {}
 
 
@@ -106,8 +105,8 @@ async def get_file(
             request=request,
             with_attributes={'fileId': file_id}
     ) as ctx:  # type: Context
-        stats = await configuration.file_system.get_info(object_name=file_id)
-        content = await configuration.file_system.get_object(object_name=file_id)
+        stats = await configuration.file_system.get_info(object_id=file_id)
+        content = await configuration.file_system.get_object(object_id=file_id)
         max_age = "31536000"
         await ctx.info("Retrieved file", data={
             "stats": stats,
@@ -136,5 +135,5 @@ async def remove_file(
     async with Context.start_ep(
             request=request
     ):  # type: Context
-        await configuration.file_system.remove_object(object_name=file_id)
+        await configuration.file_system.remove_object(object_id=file_id)
         return {}

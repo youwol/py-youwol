@@ -1,4 +1,4 @@
-from typing import Callable, Awaitable, Union, TypeVar
+from typing import Callable, Awaitable, Union, TypeVar, List, Tuple, Optional
 
 from aiohttp import ClientSession, TCPConnector, ClientResponse
 from starlette.requests import Request
@@ -70,3 +70,17 @@ async def extract_aiohttp_response(resp: ClientResponse, reader: Callable[[Clien
         return await resp.text()
 
     return await resp.read()
+
+
+def extract_bytes_ranges(request: Request) -> Optional[List[Tuple[int, int]]]:
+    range_header = request.headers.get('range')
+    if not range_header:
+        return None
+
+    ranges_str = range_header.split("=")[1].split(',')
+
+    def to_range_number(range_str: str):
+        elems = range_str.split('-')
+        return int(elems[0]), int(elems[1])
+
+    return [to_range_number(r) for r in ranges_str]

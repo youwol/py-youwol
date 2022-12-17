@@ -75,7 +75,7 @@ async def download_library(
         file_system = configuration.file_system
         path = get_path(library_id=library_id, version=version, rest_of_path='__original.zip')
         await ctx.info("Original zip path retrieved", data={"path": path})
-        content = await file_system.get_object(object_name=path, headers=ctx.headers())
+        content = await file_system.get_object(object_id=path, headers=ctx.headers())
         return Response(content, media_type='multipart/form-data')
 
 
@@ -319,7 +319,8 @@ async def get_entry_point(
 
         path = get_path(library_id=library_id, version=version, rest_of_path=doc['bundle'])
 
-        return await fetch_resource(path=path, max_age=max_age, configuration=configuration, context=ctx)
+        return await fetch_resource(request=request, path=path, max_age=max_age, configuration=configuration,
+                                    context=ctx)
 
 
 @router.get("/resources/{library_id}/{version}/{rest_of_path:path}", summary="get a library")
@@ -344,7 +345,8 @@ async def get_resource(
 
         path = get_path(library_id=library_id, version=version, rest_of_path=rest_of_path)
         await ctx.info('forward path constructed', data={"path": path})
-        return await fetch_resource(path=path, max_age=max_age, configuration=configuration, context=ctx)
+        return await fetch_resource(request=request, path=path, max_age=max_age, configuration=configuration,
+                                    context=ctx)
 
 
 @router.get("/explorer/{library_id}/{version}",
@@ -384,7 +386,7 @@ async def explorer(
         path = f"generated/explorer/{package_name.replace('@', '')}/{version}/{rest_of_path}/".replace('//', '/')
         file_system = configuration.file_system
         try:
-            items = await file_system.get_object(object_name=path + "items.json", headers=ctx.headers())
+            items = await file_system.get_object(object_id=path + "items.json", headers=ctx.headers())
         except HTTPException as e:
             if e.status_code != 404:
                 raise e
