@@ -8,6 +8,7 @@ from typing import Union, List, cast, Callable, Iterable, Any, NamedTuple, Dict,
 import aiohttp
 from fastapi import HTTPException
 from pydantic import BaseModel
+from starlette.datastructures import Headers
 from starlette.requests import Request
 
 from youwol_utils.clients.oidc.oidc_config import OidcInfos, OidcConfig
@@ -121,19 +122,15 @@ async def reload_youwol_environment(port: int):
                 raise HTTPException(status_code=resp.status, detail=await resp.read())
 
 
-def generate_headers_downstream(incoming_headers):
-    headers = {}
-    if "Authorization" in incoming_headers:
-        headers["Authorization"] = incoming_headers.get("Authorization")
+def generate_headers_downstream(incoming_headers: Headers,
+                                from_req_fwd: Callable[[List[str]], List[str]] = lambda _keys: []):
+    # the following headers are set when a request is sent anyway
+    black_list = ['content-type', 'content-length', 'content-encoding']
+    headers_keys = [h.lower() for h in incoming_headers.keys()]
+    to_propagate = [h.lower() for h in from_req_fwd(headers_keys)] + \
+                   ['authorization', YouwolHeaders.py_youwol_local_only]
 
-    if "user-name" in incoming_headers:
-        headers["user-name"] = incoming_headers.get("user-name")
-
-    if YouwolHeaders.py_youwol_local_only in incoming_headers:
-        headers[YouwolHeaders.py_youwol_local_only] = \
-            incoming_headers.get(YouwolHeaders.py_youwol_local_only)
-
-    return headers
+    return {k: v for k, v in incoming_headers.items() if k.lower() in to_propagate and k.lower() not in black_list}
 
 
 def chunks(lst, n):
