@@ -1,5 +1,4 @@
 from pathlib import Path
-import socket
 from typing import Union, Callable, Awaitable, Any, Dict, Tuple
 
 from youwol.environment.models.models import OnProjectsCountUpdate, ProjectsFinderHandler, ConfigPath
@@ -18,7 +17,7 @@ from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
 
-from youwol_utils.utils_requests import redirect_request
+from youwol_utils.utils_requests import redirect_request, is_socket_stream_connected
 from youwol_utils import Context, encode_id, YouWolException, youwol_exception_handler, ResourcesNotFoundException, JSON
 from youwol_utils.context import Label
 
@@ -718,6 +717,4 @@ Various handles for customization (e.g. middleware, commands, ...)
 
 
 def is_localhost_ws_listening(port: int):
-    a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    location = ('localhost', port)
-    return a_socket.connect_ex(location) == 0
+    return is_socket_stream_connected(host='localhost', port=port)

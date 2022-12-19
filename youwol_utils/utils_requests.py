@@ -1,3 +1,4 @@
+import socket
 from typing import Callable, Awaitable, Union, TypeVar, List, Tuple, Optional
 
 from aiohttp import ClientSession, TCPConnector, ClientResponse
@@ -84,3 +85,9 @@ def extract_bytes_ranges(request: Request) -> Optional[List[Tuple[int, int]]]:
         return int(elems[0]), int(elems[1])
 
     return [to_range_number(r) for r in ranges_str]
+
+
+def is_socket_stream_connected(host: str, port: int):
+    a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    location = (host, port)
+    return a_socket.connect_ex(location) == 0

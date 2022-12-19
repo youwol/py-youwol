@@ -1,5 +1,4 @@
 import asyncio
-import socket
 import traceback
 from pathlib import Path
 from typing import Optional
@@ -11,12 +10,11 @@ from youwol.environment.youwol_environment import YouwolEnvironmentFactory, prin
 from youwol.fastapi_app import download_thread, fastapi_app, cleaner_thread
 from youwol.main_args import get_main_arguments
 from youwol.routers.projects import ProjectLoader
+from youwol_utils import is_socket_stream_connected
 
 
 def assert_free_http_port(http_port: int):
-    a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    location = ("127.0.0.1", http_port)
-    if a_socket.connect_ex(location) == 0:
+    if is_socket_stream_connected(host="127.0.0.1", port=http_port):
         raise ValueError(f"The port {http_port} is already bound to a process")
 
 
