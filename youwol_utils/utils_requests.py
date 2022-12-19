@@ -1,5 +1,6 @@
-import socket
 from typing import Callable, Awaitable, Union, TypeVar, List, Tuple, Optional
+from urllib.error import URLError
+from urllib.request import urlopen
 
 from aiohttp import ClientSession, TCPConnector, ClientResponse
 from starlette.requests import Request
@@ -88,7 +89,9 @@ def extract_bytes_ranges(request: Request) -> Optional[List[Tuple[int, int]]]:
     return [to_range_number(r) for r in ranges_str]
 
 
-def is_socket_stream_connected(host: str, port: int):
-    a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    location = (host, port)
-    return a_socket.connect_ex(location) == 0
+def is_server_http_alive(url: str):
+    try:
+        urlopen(url)
+        return True
+    except URLError:
+        return False

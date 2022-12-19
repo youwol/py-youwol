@@ -10,11 +10,11 @@ from youwol.environment.youwol_environment import YouwolEnvironmentFactory, prin
 from youwol.fastapi_app import download_thread, fastapi_app, cleaner_thread
 from youwol.main_args import get_main_arguments
 from youwol.routers.projects import ProjectLoader
-from youwol_utils import is_socket_stream_connected
+from youwol_utils import is_server_http_alive
 
 
 def assert_free_http_port(http_port: int):
-    if is_socket_stream_connected(host="127.0.0.1", port=http_port):
+    if is_server_http_alive(f"http://localhost:{http_port}"):
         raise ValueError(f"The port {http_port} is already bound to a process")
 
 

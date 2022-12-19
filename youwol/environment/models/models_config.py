@@ -17,7 +17,7 @@ from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
 
-from youwol_utils.utils_requests import redirect_request, is_socket_stream_connected
+from youwol_utils.utils_requests import redirect_request, is_server_http_alive
 from youwol_utils import Context, encode_id, YouWolException, youwol_exception_handler, ResourcesNotFoundException, JSON
 from youwol_utils.context import Label
 
@@ -511,7 +511,7 @@ Listening port of the dev-server.
     async def info(self):
         return DispatchInfo(
             name=self.packageName,
-            activated=is_localhost_ws_listening(self.port),
+            activated=is_server_http_alive(f"http://localhost:{self.port}"),
             parameters={
                 'package': self.packageName,
                 'redirected to':  f'localhost:{self.port}'
@@ -529,7 +529,7 @@ Listening port of the dev-server.
                                data={"url": incoming_request.url.path, "encoded_id": encoded_id})
             return False
 
-        if not is_localhost_ws_listening(self.port):
+        if not is_server_http_alive(f"http://localhost:{self.port}"):
             await context.info(text=f"CdnSwitch[{self}]: ws not listening")
             return False
 
@@ -599,15 +599,15 @@ to a corresponding 'destination' (the rest of the path appended to it).
 - **origin** :class:`str`
 Origin base path targeted.
 
-- **destination** :class:`int`
-Corresponding destination
+- **destination** :class:`str`
+Corresponding destination, e.g. http://localhost:2001
 """
 
     origin: str
     destination: str
 
     def is_listening(self):
-        return is_localhost_ws_listening(int(self.destination.split(':')[-1]))
+        return is_server_http_alive(url=self.destination)
 
     async def info(self) -> DispatchInfo:
         return DispatchInfo(
@@ -714,7 +714,3 @@ Various handles for customization (e.g. middleware, commands, ...)
     system: System = System()
     projects: Projects = Projects()
     customization: Customization = Customization()
-
-
-def is_localhost_ws_listening(port: int):
-    return is_socket_stream_connected(host='localhost', port=port)
