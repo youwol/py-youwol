@@ -49,6 +49,7 @@ async def redirect_request(
 
 async def aiohttp_to_starlette_response(resp: ClientResponse) -> Response:
     return Response(
+        status_code=resp.status,
         content=await resp.read(),
         headers={k: v for k, v in resp.headers.items()}
     )

@@ -239,8 +239,9 @@ def get_content_encoding(file_id):
     return "identity"
 
 
-def format_response(content: bytes, file_id: str, max_age: str = "31536000") -> Response:
+def format_response(content: bytes, file_id: str, partial_content: bool, max_age: str = "31536000") -> Response:
     return Response(
+        status_code=206 if partial_content else 200,
         content=content,
         headers={
             "Content-Encoding": get_content_encoding(file_id),
@@ -402,13 +403,15 @@ async def resolve_resource(library_id: str, input_version: str, configuration: C
 
 async def fetch_resource(request: Request, path: str, max_age: str, configuration: Configuration, context: Context):
 
+    range_bytes = extract_bytes_ranges(request=request)
     content = await configuration.file_system.get_object(
         object_id=path,
-        ranges_bytes=extract_bytes_ranges(request=request),
+        ranges_bytes=range_bytes,
         headers=context.headers()
     )
 
-    return format_response(content=content, file_id=path.split('/')[-1], max_age=max_age)
+    return format_response(content=content, partial_content=True if range_bytes else False,
+                           file_id=path.split('/')[-1], max_age=max_age)
 
 
 def get_path(library_id: str, version: str, rest_of_path: str):

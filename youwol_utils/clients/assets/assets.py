@@ -57,7 +57,7 @@ class AssetsClient:
         url = f"{self.url_base}/assets/{asset_id}/files/{path}"
         async with aiohttp.ClientSession(headers=self.headers) as session:
             async with await session.get(url=url, **kwargs) as resp:
-                if resp.status == 200:
+                if resp.status < 300:
                     return await extract_aiohttp_response(resp=resp, reader=reader)
                 await raise_exception_from_response(resp, **kwargs)
 

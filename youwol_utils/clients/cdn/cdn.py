@@ -194,7 +194,7 @@ class CdnClient:
 
         async with aiohttp.ClientSession(headers=self.headers, auto_decompress=auto_decompress) as session:
             async with await session.get(url, **kwargs) as resp:
-                if resp.status == 200:
+                if resp.status < 300:
                     return await extract_aiohttp_response(resp=resp, reader=reader)
                 await raise_exception_from_response(resp, url=self.push_url, headers=self.headers)
 

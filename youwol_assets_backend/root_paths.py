@@ -735,12 +735,14 @@ async def get_file(
         await ctx.info(text=f"Recover object at {path}")
         filesystem = configuration.file_system
         stats = await filesystem.get_info(object_id=path)
-        content = await filesystem.get_object(object_id=path, ranges_bytes=extract_bytes_ranges(request=request))
+        ranges_bytes = extract_bytes_ranges(request=request)
+        content = await filesystem.get_object(object_id=path, ranges_bytes=ranges_bytes)
         await ctx.info("Retrieved object", data={
             "stats": stats,
             "size": len(content)
         })
         return Response(
+            status_code=206 if ranges_bytes else 200,
             content=content,
             media_type=stats['metadata']["contentType"],
             headers={
