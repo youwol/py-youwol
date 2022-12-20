@@ -18,7 +18,7 @@ class UploadCustomAssetTask(UploadTask):
             headers = {**ctx.headers(), YouwolHeaders.py_youwol_local_only: "true"}
             data = await asyncio.gather(
                 asset_client.get_zip_files(asset_id=self.asset_id, headers=headers),
-                asset_client.get_asset(asset_id=self.asset_id)
+                asset_client.get_asset(asset_id=self.asset_id, headers=headers)
             )
             return data
 

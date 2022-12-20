@@ -18,7 +18,7 @@ from starlette.responses import Response
 from youwol_utils import (
     user_info, private_group_id, to_group_id, is_child_group,
     ancestors_group_id, QueryBody, Query, WhereClause, get_leaf_group_ids, FileData, to_group_scope,
-    QueryIndexException, get_content_type
+    QueryIndexException, get_content_type, extract_bytes_ranges
 )
 from youwol_assets_backend.configurations import Configuration, get_configuration, Constants
 from youwol_utils.context import Context
@@ -422,9 +422,9 @@ async def delete_asset(
         await ctx.info(f'Delete associated objects from {root_path}')
         objects = await filesystem.list_objects(prefix=root_path, recursive=True)
         for obj in objects:
-            path = obj.object_name
+            path = obj.object_id
             await ctx.info(text=f"Delete file @ {path}")
-            await filesystem.remove_object(object_name=path)
+            await filesystem.remove_object(object_id=path)
 
         return {}
 
@@ -710,13 +710,9 @@ async def add_zip_files(
         await ctx.info(text="Zip file decoded successfully", data={"paths": list(files.keys())})
 
         for path, content in files.items():
-            await filesystem.put_object(object_name=get_file_path(asset_id=asset_id, kind=asset['kind'],
-                                                                  file_path=path),
-                                        data=io.BytesIO(content),
-                                        metadata={
-                                            "contentType": get_content_type(path),
-                                            "contentEncoding": 'identity'}
-                                        )
+            await filesystem.put_object(object_id=get_file_path(asset_id=asset_id, kind=asset['kind'], file_path=path),
+                                        data=io.BytesIO(content), object_name=Path(path).name,
+                                        content_type=get_content_type(path), content_encoding='identity')
         return AddFilesResponse(filesCount=len(files), totalBytes=len(content))
 
 
@@ -738,19 +734,20 @@ async def get_file(
         path = get_file_path(asset_id=asset_id, kind=asset['kind'], file_path=rest_of_path)
         await ctx.info(text=f"Recover object at {path}")
         filesystem = configuration.file_system
-        stats = await filesystem.get_info(object_name=path)
-        content = await filesystem.get_object(object_name=path)
+        stats = await filesystem.get_info(object_id=path)
+        ranges_bytes = extract_bytes_ranges(request=request)
+        content = await filesystem.get_object(object_id=path, ranges_bytes=ranges_bytes)
         await ctx.info("Retrieved object", data={
             "stats": stats,
             "size": len(content)
         })
         return Response(
+            status_code=206 if ranges_bytes else 200,
             content=content,
+            media_type=stats['metadata']["contentType"],
             headers={
                 "Content-Encoding": stats['metadata']["contentEncoding"],
-                "Content-Type": stats['metadata']["contentType"],
                 "cache-control": f"public, max-age=0",
-                "content-length": f"{len(content)}"
             }
         )
 
@@ -797,9 +794,9 @@ async def get_zip_files(
             base_path = Path(tmp_folder)
             zipper = zipfile.ZipFile(base_path / 'asset_files.zip', 'w', zipfile.ZIP_DEFLATED)
             for obj in objects:
-                path = obj.object_name
+                path = obj.object_id
                 await ctx.info(text=f"Zip file {path}")
-                content = await filesystem.get_object(object_name=path)
+                content = await filesystem.get_object(object_id=path)
                 (base_path / path).parent.mkdir(exist_ok=True, parents=True)
                 open(base_path / path, 'wb').write(content)
                 arc_name = Path(path).relative_to(base_arc_name)

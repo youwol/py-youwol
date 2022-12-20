@@ -5,6 +5,7 @@ from typing import Dict, Callable, Awaitable, Any, Union
 import aiohttp
 from aiohttp import FormData, ClientResponse
 
+from youwol_utils.utils_requests import extract_aiohttp_response
 from youwol_utils.exceptions import raise_exception_from_response
 
 
@@ -50,15 +51,14 @@ class AssetsClient:
 
                 await raise_exception_from_response(resp, **kwargs)
 
-    async def get_file(self, asset_id: str,  path: Union[Path, str], **kwargs):
+    async def get_file(self, asset_id: str,  path: Union[Path, str],
+                       reader: Callable[[ClientResponse], Awaitable[Any]] = None, **kwargs):
 
         url = f"{self.url_base}/assets/{asset_id}/files/{path}"
         async with aiohttp.ClientSession(headers=self.headers) as session:
             async with await session.get(url=url, **kwargs) as resp:
-                if resp.status == 200:
-                    resp = await resp.read()
-                    return resp
-
+                if resp.status < 300:
+                    return await extract_aiohttp_response(resp=resp, reader=reader)
                 await raise_exception_from_response(resp, **kwargs)
 
     async def delete_files(self, asset_id: str, **kwargs):

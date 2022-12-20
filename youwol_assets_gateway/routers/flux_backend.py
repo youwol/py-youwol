@@ -60,8 +60,11 @@ async def upload(
             'content_encoding': form.get('content_encoding', 'identity')
         }
         await assert_write_permissions_folder_id(folder_id=folder_id, context=ctx)
-        project = await configuration.flux_client.upload_project(data=form, project_id=project_id,
-                                                                 headers=ctx.headers())
+        project = await configuration.flux_client.upload_project(
+            data=form,
+            project_id=project_id,
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
+        )
         return await create_asset(
             request=request,
             kind="flux-project",
@@ -86,7 +89,10 @@ async def download_zip(
             request=request
     ) as ctx:
         await assert_read_permissions_from_raw_id(raw_id=project_id, configuration=configuration, context=ctx)
-        content = await configuration.flux_client.download_zip(project_id=project_id, headers=ctx.headers())
+        content = await configuration.flux_client.download_zip(
+            project_id=project_id,
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
+        )
         return Response(content=content, headers={'content-type': 'application/zip'})
 
 
@@ -100,7 +106,10 @@ async def delete_project(
             request=request
     ) as ctx:
         await assert_write_permissions_from_raw_id(raw_id=project_id, configuration=configuration, context=ctx)
-        response = await configuration.flux_client.delete_project(project_id=project_id, headers=ctx.headers())
+        response = await configuration.flux_client.delete_project(
+            project_id=project_id,
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
+        )
         if purge:
             await delete_asset(raw_id=project_id, configuration=configuration, context=ctx)
 
@@ -121,7 +130,7 @@ async def get_project(
         await assert_read_permissions_from_raw_id(raw_id=project_id, configuration=configuration, context=ctx)
         return await configuration.flux_client.get_project(
             project_id=project_id,
-            headers=ctx.headers()
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
         )
 
 
@@ -139,7 +148,7 @@ async def post_project(
         return await configuration.flux_client.update_project(
             project_id=project_id,
             body=project.dict(),
-            headers=ctx.headers()
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
         )
 
 
@@ -157,7 +166,7 @@ async def post_metadata(
         return await configuration.flux_client.update_metadata(
             project_id=project_id,
             body=metadata_body.dict(),
-            headers=ctx.headers()
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
         )
 
 
@@ -175,7 +184,7 @@ async def get_metadata(
         await assert_read_permissions_from_raw_id(raw_id=project_id, configuration=configuration, context=ctx)
         return await configuration.flux_client.get_metadata(
             project_id=project_id,
-            headers=ctx.headers()
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
         )
 
 
@@ -197,7 +206,7 @@ async def duplicate(
         )
         response = await configuration.flux_client.duplicate(
             project_id=project_id,
-            headers=ctx.headers()
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
         )
         asset = await configuration.assets_client.get_asset(encode_id(project_id), headers=ctx.headers())
         metadata = {**asset, "name": f"{asset['name']} (copy)", "images": []}
@@ -230,7 +239,7 @@ async def publish_application(
         package = await configuration.flux_client.publish_application(
             project_id=project_id,
             body=body.dict(),
-            headers=ctx.headers()
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
         )
         return await create_asset(
             request=request,

@@ -1,7 +1,6 @@
 import asyncio
 import io
 import json
-import tempfile
 from typing import Optional, Dict, List
 
 from fastapi import UploadFile, File, HTTPException, Form, APIRouter, Depends
@@ -11,9 +10,9 @@ from starlette.responses import Response
 from youwol_cdn_backend.configurations import Configuration, Constants, get_configuration
 from youwol_cdn_backend.loading_graph_implementation import resolve_dependencies_recursive, loading_graph, \
     get_full_exported_symbol, ResolvedQuery, LibName, ExportedKey, QueryKey, get_api_key
-from youwol_cdn_backend.resources_initialization import synchronize
+
 from youwol_cdn_backend.utils import (
-    extract_zip_file, to_package_id, to_package_name, get_url, publish_package,
+    to_package_id, to_package_name, get_url, publish_package,
     list_versions,
     fetch_resource, resolve_resource, get_path, resolve_explicit_version
 )
@@ -22,7 +21,7 @@ from youwol_utils import PackagesNotFound
 from youwol_utils.clients.docdb.models import WhereClause, QueryBody, Query
 from youwol_utils.context import Context
 from youwol_utils.http_clients.cdn_backend import (
-    PublishResponse, ListVersionsResponse, PublishLibrariesResponse,
+    PublishResponse, ListVersionsResponse,
     LoadingGraphResponseV1, LoadingGraphBody, Library,
     ExplorerResponse, DeleteLibraryResponse, LibraryQuery, LibraryResolved, get_exported_symbol
 )
@@ -75,40 +74,8 @@ async def download_library(
         file_system = configuration.file_system
         path = get_path(library_id=library_id, version=version, rest_of_path='__original.zip')
         await ctx.info("Original zip path retrieved", data={"path": path})
-        content = await file_system.get_object(object_name=path, headers=ctx.headers())
+        content = await file_system.get_object(object_id=path, headers=ctx.headers())
         return Response(content, media_type='multipart/form-data')
-
-
-@router.post("/publish-libraries",
-             summary="sync the cdn resources from the content of the given .zip file",
-             response_model=PublishLibrariesResponse)
-async def publish_libraries(
-        request: Request,
-        file: UploadFile = File(...),
-        configuration: Configuration = Depends(get_configuration)
-):
-    response: Optional[PublishLibrariesResponse] = None
-
-    async with Context.start_ep(
-            request=request,
-            response=lambda: response
-    ) as ctx:  # type: Context
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # compressed_size = extract_zip_file(file.file, zip_path, dir_path)
-            # files_count, libraries_count, namespaces = await synchronize(dir_path, zip_dir_name, configuration,
-            compressed_size = extract_zip_file(file.file, file.filename, temp_dir)
-            files_count, libraries_count, namespaces = await synchronize(temp_dir, file.filename.split('.')[0],
-                                                                         configuration,
-                                                                         ctx.headers(), context=ctx)
-
-            response = PublishLibrariesResponse(
-                filesCount=files_count,
-                librariesCount=libraries_count,
-                compressedSize=compressed_size,
-                namespaces=namespaces
-            )
-            return response
 
 
 @router.get("/libraries/{library_id}", summary="list versions of a library",
@@ -319,7 +286,8 @@ async def get_entry_point(
 
         path = get_path(library_id=library_id, version=version, rest_of_path=doc['bundle'])
 
-        return await fetch_resource(path=path, max_age=max_age, configuration=configuration, context=ctx)
+        return await fetch_resource(request=request, path=path, max_age=max_age, configuration=configuration,
+                                    context=ctx)
 
 
 @router.get("/resources/{library_id}/{version}/{rest_of_path:path}", summary="get a library")
@@ -344,7 +312,8 @@ async def get_resource(
 
         path = get_path(library_id=library_id, version=version, rest_of_path=rest_of_path)
         await ctx.info('forward path constructed', data={"path": path})
-        return await fetch_resource(path=path, max_age=max_age, configuration=configuration, context=ctx)
+        return await fetch_resource(request=request, path=path, max_age=max_age, configuration=configuration,
+                                    context=ctx)
 
 
 @router.get("/explorer/{library_id}/{version}",
@@ -384,7 +353,7 @@ async def explorer(
         path = f"generated/explorer/{package_name.replace('@', '')}/{version}/{rest_of_path}/".replace('//', '/')
         file_system = configuration.file_system
         try:
-            items = await file_system.get_object(object_name=path + "items.json", headers=ctx.headers())
+            items = await file_system.get_object(object_id=path + "items.json", headers=ctx.headers())
         except HTTPException as e:
             if e.status_code != 404:
                 raise e

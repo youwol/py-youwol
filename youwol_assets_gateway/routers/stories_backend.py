@@ -41,7 +41,10 @@ async def put_story(
             request=request
     ) as ctx:
         await assert_write_permissions_folder_id(folder_id=folder_id, context=ctx)
-        story = await configuration.stories_client.create_story(body=body.dict(), headers=ctx.headers())
+        story = await configuration.stories_client.create_story(
+            body=body.dict(),
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
+        )
         return await create_asset(
             request=request,
             kind="story",
@@ -72,7 +75,10 @@ async def publish_story(
             'content_encoding': form.get('content_encoding', 'identity')
         }
         await assert_write_permissions_folder_id(folder_id=folder_id, context=ctx)
-        story = await configuration.stories_client.publish_story(data=form, headers=ctx.headers())
+        story = await configuration.stories_client.publish_story(
+            data=form,
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
+        )
         return await create_asset(
             request=request,
             kind="story",
@@ -99,7 +105,10 @@ async def delete_story(
             request=request
     ) as ctx:
         await assert_write_permissions_from_raw_id(raw_id=story_id, configuration=configuration, context=ctx)
-        await configuration.stories_client.delete_story(story_id=story_id, headers=ctx.headers())
+        await configuration.stories_client.delete_story(
+            story_id=story_id,
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
+        )
         if purge:
             await delete_asset(raw_id=story_id, configuration=configuration, context=ctx)
         else:
@@ -120,7 +129,10 @@ async def get_story(
             request=request
     ) as ctx:
         await assert_read_permissions_from_raw_id(raw_id=story_id, configuration=configuration, context=ctx)
-        return await configuration.stories_client.get_story(story_id=story_id, headers=ctx.headers())
+        return await configuration.stories_client.get_story(
+            story_id=story_id,
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
+        )
 
 
 @router.get(
@@ -139,9 +151,13 @@ async def get_children(
             request=request
     ) as ctx:
         await assert_read_permissions_from_raw_id(raw_id=story_id, configuration=configuration, context=ctx)
-        return await configuration.stories_client.get_children(story_id=story_id, parent_document_id=document_id,
-                                                               from_index=from_position, count=count,
-                                                               headers=ctx.headers())
+        return await configuration.stories_client.get_children(
+            story_id=story_id,
+            parent_document_id=document_id,
+            from_index=from_position,
+            count=count,
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
+        )
 
 
 @router.put(
@@ -158,8 +174,11 @@ async def put_document(
             request=request
     ) as ctx:
         await assert_write_permissions_from_raw_id(raw_id=story_id, configuration=configuration, context=ctx)
-        return await configuration.stories_client.create_document(story_id=story_id, body=body.dict(),
-                                                                  headers=ctx.headers())
+        return await configuration.stories_client.create_document(
+            story_id=story_id,
+            body=body.dict(),
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
+        )
 
 
 @router.get(
@@ -176,8 +195,10 @@ async def get_document(
             request=request
     ) as ctx:
         await assert_read_permissions_from_raw_id(raw_id=story_id, configuration=configuration, context=ctx)
-        return await configuration.stories_client.get_document(story_id=story_id, document_id=document_id,
-                                                               headers=ctx.headers())
+        return await configuration.stories_client.get_document(
+            story_id=story_id,
+            document_id=document_id,
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys))
 
 
 @router.post(
@@ -195,8 +216,12 @@ async def post_document(
             request=request
     ) as ctx:
         await assert_write_permissions_from_raw_id(raw_id=story_id, configuration=configuration, context=ctx)
-        return await configuration.stories_client.update_document(story_id=story_id, document_id=document_id,
-                                                                  body=body.dict(), headers=ctx.headers())
+        return await configuration.stories_client.update_document(
+            story_id=story_id,
+            document_id=document_id,
+            body=body.dict(),
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
+        )
 
 
 @router.get(
@@ -212,7 +237,10 @@ async def get_global_content(
             request=request
     ) as ctx:
         await assert_read_permissions_from_raw_id(raw_id=story_id, configuration=configuration, context=ctx)
-        return await configuration.stories_client.get_global_contents(story_id=story_id, headers=ctx.headers())
+        return await configuration.stories_client.get_global_contents(
+            story_id=story_id,
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
+        )
 
 
 @router.post(
@@ -228,8 +256,11 @@ async def post_global_content(
             request=request
     ) as ctx:
         await assert_write_permissions_from_raw_id(raw_id=story_id, configuration=configuration, context=ctx)
-        return await configuration.stories_client.post_global_contents(story_id=story_id, body=body.dict(),
-                                                                       headers=ctx.headers())
+        return await configuration.stories_client.post_global_contents(
+            story_id=story_id,
+            body=body.dict(),
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
+        )
 
 
 @router.post(
@@ -247,8 +278,12 @@ async def move_document(
             request=request
     ) as ctx:
         await assert_write_permissions_from_raw_id(raw_id=story_id, configuration=configuration, context=ctx)
-        return await configuration.stories_client.move_document(story_id=story_id, document_id=document_id,
-                                                                body=body.dict(), headers=ctx.headers())
+        return await configuration.stories_client.move_document(
+            story_id=story_id,
+            document_id=document_id,
+            body=body.dict(),
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
+        )
 
 
 @router.get(
@@ -263,7 +298,10 @@ async def download_zip(
             request=request
     ) as ctx:
         await assert_read_permissions_from_raw_id(raw_id=story_id, configuration=configuration, context=ctx)
-        content = await configuration.stories_client.download_zip(story_id=story_id, headers=ctx.headers())
+        content = await configuration.stories_client.download_zip(
+            story_id=story_id,
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
+        )
         return Response(content=content, headers={'content-type': 'application/zip'})
 
 
@@ -281,8 +319,11 @@ async def post_story(
         request=request
     ) as ctx:
         await assert_write_permissions_from_raw_id(raw_id=story_id, configuration=configuration, context=ctx)
-        return await configuration.stories_client.update_story(story_id=story_id, body=body.dict(),
-                                                               headers=ctx.headers())
+        return await configuration.stories_client.update_story(
+            story_id=story_id,
+            body=body.dict(),
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
+        )
 
 
 @router.get(
@@ -299,8 +340,10 @@ async def get_content(
             request=request
     ) as ctx:
         await assert_read_permissions_from_raw_id(raw_id=story_id, configuration=configuration, context=ctx)
-        return await configuration.stories_client.get_content(story_id=story_id, content_id=content_id,
-                                                              headers=ctx.headers())
+        return await configuration.stories_client.get_content(
+            story_id=story_id,
+            content_id=content_id,
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys))
 
 
 @router.post(
@@ -317,8 +360,12 @@ async def post_content(
             request=request
     ) as ctx:
         await assert_write_permissions_from_raw_id(raw_id=story_id, configuration=configuration, context=ctx)
-        return await configuration.stories_client.set_content(story_id=story_id, content_id=content_id,
-                                                              body=body.dict(), headers=ctx.headers())
+        return await configuration.stories_client.set_content(
+            story_id=story_id,
+            content_id=content_id,
+            body=body.dict(),
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
+        )
 
 
 @router.delete(
@@ -335,8 +382,11 @@ async def delete_document(
             request=request
     ) as ctx:
         await assert_write_permissions_from_raw_id(raw_id=story_id, configuration=configuration, context=ctx)
-        return await configuration.stories_client.delete_document(story_id=story_id, document_id=document_id,
-                                                                  headers=ctx.headers())
+        return await configuration.stories_client.delete_document(
+            story_id=story_id,
+            document_id=document_id,
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
+        )
 
 
 @router.post(
@@ -353,8 +403,10 @@ async def add_plugin(
             request=request
     ) as ctx:
         await assert_write_permissions_from_raw_id(raw_id=story_id, configuration=configuration, context=ctx)
-        return await configuration.stories_client.add_plugin(story_id=story_id, body=body.dict(),
-                                                             headers=ctx.headers())
+        return await configuration.stories_client.add_plugin(
+            story_id=story_id,
+            body=body.dict(),
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys))
 
 
 @router.post(
@@ -371,5 +423,8 @@ async def add_plugin(
             request=request
     ) as ctx:
         await assert_write_permissions_from_raw_id(raw_id=story_id, configuration=configuration, context=ctx)
-        return await configuration.stories_client.upgrade_plugins(story_id=story_id, body=body.dict(),
-                                                                  headers=ctx.headers())
+        return await configuration.stories_client.upgrade_plugins(
+            story_id=story_id,
+            body=body.dict(),
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
+        )

@@ -14,10 +14,10 @@ import brotli
 import semantic_version
 from fastapi import HTTPException
 from starlette.responses import Response
-
+from starlette.requests import Request
 from youwol_cdn_backend.configurations import Constants, Configuration
 from youwol_cdn_backend.utils_indexing import format_doc_db_record, get_version_number_str
-from youwol_utils import execute_shell_cmd, CommandException
+from youwol_utils import execute_shell_cmd, CommandException, extract_bytes_ranges
 from youwol_utils import generate_headers_downstream, QueryBody, PublishPackageError, get_content_type, \
     QueryIndexException
 from youwol_utils.clients.cdn import files_check_sum
@@ -150,14 +150,11 @@ async def publish_package(file: IO, filename: str, content_encoding, configurati
 
             async with ctx.start(action=f"Send {len(forms)} files to storage") as ctx_post:  # type: Context
                 post_requests = [file_system.put_object(
-                    object_name=str(form.objectName),
+                    object_id=str(form.objectName),
                     data=io.BytesIO(form.objectData),
-                    content_type=form.content_type,
-                    metadata={
-                        "fileName": form.objectName.name,
-                        "contentType": form.content_type or get_content_type(filename),
-                        "contentEncoding": form.content_encoding or get_content_encoding(filename)
-                    },
+                    content_type=form.content_type or get_content_type(filename),
+                    object_name=form.objectName.name,
+                    content_encoding=form.content_type or get_content_type(filename),
                     headers=ctx_post.headers())
                     for form in forms]
                 await asyncio.gather(*post_requests)
@@ -177,13 +174,11 @@ async def publish_package(file: IO, filename: str, content_encoding, configurati
             path = f"{path_base}/{folder}/items.json" if folder and folder != '.' else f"{path_base}/items.json"
 
             return file_system.put_object(
-                object_name=path,
+                object_id=path,
+                object_name=Path(path).name,
+                content_type='application/json',
+                content_encoding='identity',
                 data=io.BytesIO(json.dumps(items.dict()).encode()),
-                metadata={
-                    "fileName": Path(path).name,
-                    "contentType": 'application/json',
-                    "contentEncoding": 'identity'
-                },
                 headers=headers
             )
 
@@ -244,8 +239,9 @@ def get_content_encoding(file_id):
     return "identity"
 
 
-def format_response(content: bytes, file_id: str, max_age: str = "31536000") -> Response:
+def format_response(content: bytes, file_id: str, partial_content: bool, max_age: str = "31536000") -> Response:
     return Response(
+        status_code=206 if partial_content else 200,
         content=content,
         headers={
             "Content-Encoding": get_content_encoding(file_id),
@@ -405,13 +401,17 @@ async def resolve_resource(library_id: str, input_version: str, configuration: C
     return package_name, version, 0
 
 
-async def fetch_resource(path: str, max_age: str, configuration: Configuration, context: Context):
+async def fetch_resource(request: Request, path: str, max_age: str, configuration: Configuration, context: Context):
+
+    range_bytes = extract_bytes_ranges(request=request)
     content = await configuration.file_system.get_object(
-        object_name=path,
+        object_id=path,
+        ranges_bytes=range_bytes,
         headers=context.headers()
     )
 
-    return format_response(content=content, file_id=path.split('/')[-1], max_age=max_age)
+    return format_response(content=content, partial_content=True if range_bytes else False,
+                           file_id=path.split('/')[-1], max_age=max_age)
 
 
 def get_path(library_id: str, version: str, rest_of_path: str):

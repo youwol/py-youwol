@@ -73,7 +73,7 @@ const webpackConfig: webpack.Configuration = {
     devtool: 'source-map',
     devServer: {
         static: {
-            directory: path.join(__dirname, './src'),
+            directory: path.join(__dirname, './'),
         },
         compress: true,
         port: "{{devServer.port}}",

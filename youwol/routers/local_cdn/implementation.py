@@ -2,7 +2,6 @@ import asyncio
 from itertools import groupby
 from typing import NamedTuple, List
 
-from aiohttp import FormData
 from fastapi import HTTPException
 
 from youwol.environment import RemoteClients, LocalClients, YouwolEnvironment
@@ -157,10 +156,8 @@ async def download_package(
                 version=version,
                 headers=ctx.headers()
             )
-            form_data = FormData()
-            form_data.add_field(name='file', value=resp)
 
-            await LocalClients.get_cdn_client(env=env).publish(data=form_data, headers=ctx.headers())
+            await LocalClients.get_cdn_client(env=env).publish(zip_content=resp, headers=ctx.headers())
 
     async with context.start(
             action=f"download package {package_name}#{version}",

@@ -26,14 +26,10 @@ async def publish_library(
             request=request
     ) as ctx:
         form = await request.form()
-        form = {
-            'file': await form.get('file').read(),
-            'content_encoding': form.get('content_encoding', 'identity')
-        }
         await assert_write_permissions_folder_id(folder_id=folder_id, context=ctx)
         package = await configuration.cdn_client.publish(
-            data=form,
-            headers=ctx.headers()
+            zip_content=await form.get('file').read(),
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
         )
         return await create_asset(
             request=request,
@@ -63,7 +59,7 @@ async def download_library(
         content = await configuration.cdn_client.download_library(
             library_id=library_id,
             version=version,
-            headers=ctx.headers()
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
         )
         return Response(content=content, headers={'content-type': 'application/zip'})
 
@@ -81,7 +77,7 @@ async def get_library_info(
         await assert_read_permissions_from_raw_id(raw_id=library_id, configuration=configuration, context=ctx)
         return await configuration.cdn_client.get_library_info(
             library_id=library_id,
-            headers=ctx.headers()
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
         )
 
 
@@ -100,7 +96,7 @@ async def get_version_info(
         return await configuration.cdn_client.get_version_info(
             library_id=library_id,
             version=version,
-            headers=ctx.headers()
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
         )
 
 
@@ -117,7 +113,7 @@ async def delete_library(
         await assert_write_permissions_from_raw_id(raw_id=library_id, configuration=configuration, context=ctx)
         resp = await configuration.cdn_client.delete_library(
             library_id=library_id,
-            headers=ctx.headers()
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
         )
         if purge:
             await delete_asset(raw_id=library_id, configuration=configuration, context=ctx)
@@ -138,7 +134,7 @@ async def delete_version(
         return await configuration.cdn_client.delete_version(
             library_id=library_id,
             version=version,
-            headers=ctx.headers()
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
         )
 
 
@@ -155,7 +151,7 @@ async def resolve_loading_tree(
     ) as ctx:
         return await configuration.cdn_client.query_loading_graph(
             body=body.dict(),
-            headers=ctx.headers()
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
         )
 
 
@@ -174,7 +170,7 @@ async def get_entry_point(
         return await configuration.cdn_client.get_entry_point(
             library_id=library_id,
             version=version,
-            headers=ctx.headers())
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys))
 
 
 @router.get("/resources/{library_id}/{version}/{rest_of_path:path}", summary="get a resource")
@@ -194,7 +190,7 @@ async def get_resource(request: Request,
             library_id=library_id,
             version=version,
             rest_of_path=rest_of_path,
-            headers=ctx.headers())
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys))
 
 
 @router.get("/explorer/{library_id}/{version}/{rest_of_path:path}",
@@ -215,4 +211,4 @@ async def get_explorer(
             library_id=library_id,
             version=version,
             folder_path=rest_of_path,
-            headers=ctx.headers())
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys))

@@ -182,9 +182,8 @@ class PublishCdnLocalStep(PipelineStep):
                 else:
                     raise e
 
-            data = {'file': zip_path.read_bytes(), 'content_encoding': 'identity'}
-            resp = await local_cdn.publish(data=data, params={"folder-id": folder_id}, headers=ctx.headers(),
-                                           timeout=60000)
+            resp = await local_cdn.publish(zip_content=zip_path.read_bytes(), params={"folder-id": folder_id},
+                                           headers=ctx.headers(), timeout=60000)
             await ctx.info(text="Asset posted in assets_gtw", data=resp)
 
             target = project.pipeline.target

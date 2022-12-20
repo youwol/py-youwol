@@ -1,7 +1,12 @@
-from aiohttp import ClientSession, TCPConnector
+from typing import Callable, Awaitable, Union, TypeVar, List, Tuple, Optional
+from urllib.error import URLError
+from urllib.request import urlopen
+
+from aiohttp import ClientSession, TCPConnector, ClientResponse
 from starlette.requests import Request
 from starlette.responses import Response
-from youwol_utils import assert_response
+from youwol_utils.exceptions import assert_response
+from youwol_utils.types import JSON
 
 
 async def redirect_request(
@@ -41,3 +46,52 @@ async def redirect_request(
         if incoming_request.method == 'DELETE':
             async with await session.delete(url=redirect_url, data=data,  params=params, headers=headers) as resp:
                 return await forward_response(resp)
+
+
+async def aiohttp_to_starlette_response(resp: ClientResponse) -> Response:
+    return Response(
+        status_code=resp.status,
+        content=await resp.read(),
+        headers={k: v for k, v in resp.headers.items()}
+    )
+
+TResp = TypeVar("TResp")
+
+
+async def extract_aiohttp_response(resp: ClientResponse, reader: Callable[[ClientResponse], Awaitable[TResp]] = None) \
+        -> Union[TResp, JSON, str, bytes]:
+
+    if reader:
+        return await reader(resp)
+    content_type = resp.content_type
+
+    if content_type == 'application/json':
+        return await resp.json()
+
+    text_applications = ['rtf', 'xml', 'x-sh']
+    if content_type.startswith('text/') or content_type in [f'application/{app}' for app in text_applications]:
+        return await resp.text()
+
+    return await resp.read()
+
+
+def extract_bytes_ranges(request: Request) -> Optional[List[Tuple[int, int]]]:
+    range_header = request.headers.get('range')
+    if not range_header:
+        return None
+
+    ranges_str = range_header.split("=")[1].split(',')
+
+    def to_range_number(range_str: str):
+        elems = range_str.split('-')
+        return int(elems[0]), int(elems[1])
+
+    return [to_range_number(r) for r in ranges_str]
+
+
+def is_server_http_alive(url: str):
+    try:
+        urlopen(url)
+        return True
+    except URLError:
+        return False

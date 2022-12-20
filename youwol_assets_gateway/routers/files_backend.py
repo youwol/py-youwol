@@ -26,7 +26,9 @@ async def healthz(request: Request, configuration: Configuration = Depends(get_c
     async with Context.start_ep(
             request=request
     ) as ctx:  # type: Context
-        return await configuration.files_client.healthz(headers=ctx.headers())
+        return await configuration.files_client.healthz(
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
+        )
 
 
 @router.post(
@@ -56,7 +58,7 @@ async def upload(
         file = PostFileResponse(
             **await configuration.files_client.upload(
                 data=form,
-                headers=ctx.headers()
+                headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
             )
         )
         try:
@@ -109,7 +111,7 @@ async def get_stats(
         await assert_read_permissions_from_raw_id(raw_id=file_id, configuration=configuration, context=ctx)
         return await configuration.files_client.get_info(
             file_id=file_id,
-            headers=ctx.headers()
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
         )
 
 
@@ -130,7 +132,7 @@ async def update_metadata(
         return await configuration.files_client.update_metadata(
             file_id=file_id,
             body=body.dict(),
-            headers=ctx.headers()
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
         )
 
 
@@ -154,7 +156,7 @@ async def get_file(
         response = await configuration.files_client.get(
             file_id=file_id,
             reader=reader,
-            headers=ctx.headers()
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
         )
         return response
 
@@ -176,7 +178,7 @@ async def remove_file(
         await assert_read_permissions_from_raw_id(raw_id=file_id, configuration=configuration, context=ctx)
         response = await configuration.files_client.remove(
             file_id=file_id,
-            headers=ctx.headers()
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
         )
         if purge:
             await delete_asset(raw_id=file_id, configuration=configuration, context=ctx)

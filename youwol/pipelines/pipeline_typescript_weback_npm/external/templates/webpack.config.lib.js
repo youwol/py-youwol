@@ -23,7 +23,7 @@ module.exports = {
     path: DESTINATION,
     libraryTarget: "umd",
     umdNamedDefine: true,
-    library: `@externals/${pkg.name}_APIv${apiVersion}`,
+    library: `${pkg.name}_APIv${apiVersion}`,
     filename: pkg.name + ".js",
     globalObject: `(typeof self !== 'undefined' ? self : this)`,
   },

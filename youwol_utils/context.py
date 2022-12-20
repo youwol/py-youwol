@@ -116,6 +116,8 @@ class WsContextReporter(ContextReporter):
 
 StringLike = Any
 
+HeadersFwdSelector = Callable[[List[str]], List[str]]
+
 
 class Context(NamedTuple):
     logs_reporters: List[ContextReporter]
@@ -306,8 +308,15 @@ class Context(NamedTuple):
 
         return cast(object_type, result)
 
-    def headers(self):
-        headers = generate_headers_downstream(self.request.headers) if self.request else {}
+    def headers(self, from_req_fwd:  HeadersFwdSelector = lambda _keys: []):
+        """
+        :param from_req_fwd: selector returning the list of header's keys to forward given the header's keys
+        of the initiating request of the context.
+        :return: headers with all contribution (from YouWol, from original request & from eventual contribution at each
+        context's scope)
+        """
+        headers = generate_headers_downstream(incoming_headers=self.request.headers, from_req_fwd=from_req_fwd) \
+            if self.request else {}
         return {
             **headers,
             YouwolHeaders.correlation_id: self.uid,

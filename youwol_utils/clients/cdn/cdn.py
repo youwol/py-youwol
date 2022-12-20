@@ -4,8 +4,9 @@ from pathlib import Path
 from typing import Dict, Union, List, Iterable, Callable, Awaitable, Any
 
 import aiohttp
-from aiohttp import ClientResponse
+from aiohttp import ClientResponse, FormData
 
+from youwol_utils.utils_requests import extract_aiohttp_response
 from youwol_utils.exceptions import raise_exception_from_response
 
 
@@ -121,10 +122,12 @@ class CdnClient:
                     return await resp.json()
                 await raise_exception_from_response(resp, url=url, headers=self.headers)
 
-    async def publish(self, data, **kwargs):
+    async def publish(self, zip_content: bytes, **kwargs):
+        form_data = FormData()
+        form_data.add_field('file', zip_content, filename="cdn.zip", content_type='identity')
 
         async with aiohttp.ClientSession(headers=self.headers) as session:
-            async with await session.post(self.publish_url, data=data, **kwargs) as resp:
+            async with await session.post(self.publish_url, data=form_data, **kwargs) as resp:
                 if resp.status == 200:
                     return await resp.json()
                 await raise_exception_from_response(resp, url=self.publish_url, headers=self.headers)
@@ -191,15 +194,8 @@ class CdnClient:
 
         async with aiohttp.ClientSession(headers=self.headers, auto_decompress=auto_decompress) as session:
             async with await session.get(url, **kwargs) as resp:
-                if resp.status == 200:
-                    if reader:
-                        return await reader(resp)
-
-                    if resp.content_type in ['text/html']:
-                        return await resp.text()
-                    if resp.content_type in ['application/json']:
-                        return await resp.json()
-                    return resp.read()
+                if resp.status < 300:
+                    return await extract_aiohttp_response(resp=resp, reader=reader)
                 await raise_exception_from_response(resp, url=self.push_url, headers=self.headers)
 
 
