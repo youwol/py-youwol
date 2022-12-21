@@ -52,7 +52,7 @@ jobs:
         uses: youwol/nestor/ts/prepare@v1
         with:
           repository: youwol/local-youwol-client
-          ref: ${{ inputs.local-youwol-client_ref }}
+          ref: feature/jest-preset
           path: ${{ runner.temp }}/local-youwol-client
 
       - name: Run local-youwol-client tests
@@ -89,7 +89,7 @@ jobs:
         uses: youwol/nestor/ts/prepare@v1
         with:
           repository: youwol/cdn-client
-          ref: ${{ inputs.cdn-client_ref }}
+          ref: feature/jest-preset
           path: ${{ runner.temp }}/cdn-client
 
       - name: Run cdn-client tests
@@ -126,7 +126,7 @@ jobs:
         uses: youwol/nestor/ts/prepare@v1
         with:
           repository: youwol/http-clients
-          ref: ${{ inputs.http-clients_ref }}
+          ref: feature/jest-preset
           path: ${{ runner.temp }}/http-clients
 
       - name: Run http-clients tests
@@ -252,7 +252,7 @@ jobs:
         uses: youwol/nestor/ts/prepare@v1
         with:
           repository: youwol/todo-app-ts
-          ref: ${{ inputs.todo-app-ts_ref }}
+          ref: feature/jest-preset
           path: ${{ runner.temp }}/todo-app-ts
 
       - name: Py-youwol templating

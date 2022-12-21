@@ -41,7 +41,7 @@ def generate_template(input_template: Template):
     copy_files_folders(
         working_path=working_path,
         base_template_path=base_template_path,
-        files=['.gitignore', '.npmignore', '.prettierignore', 'jest.config.js', 'LICENSE', 'tsconfig.json',
+        files=['.gitignore', '.npmignore', '.prettierignore', 'jest.config.ts', 'LICENSE', 'tsconfig.json',
                'typedoc.js'],
         folders=[])
 
