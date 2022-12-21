@@ -252,7 +252,7 @@ jobs:
         uses: youwol/nestor/ts/prepare@v1
         with:
           repository: youwol/todo-app-ts
-          ref: ${{ inputs.todo-app-ts_ref }}
+          ref: bug/jest_coverage_provider_v8
           path: ${{ runner.temp }}/todo-app-ts
 
       - name: Py-youwol templating
