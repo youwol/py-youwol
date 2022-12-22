@@ -204,8 +204,7 @@ async def generate_ts_webpack_project(folder: Path, parameters: Dict[str, str], 
         name = parameters[Keys.name]
         project_folder = folder / name
 
-        if not folder.exists():
-            raise RuntimeError(f"Folder {folder} does not exist")
+        folder.mkdir(parents=True, exist_ok=True)
 
         if project_folder.exists():
             raise RuntimeError(f"Folder {folder} already exist")
