@@ -142,7 +142,7 @@ pip==22.3.1
     # via
     #   -r deps/dev.in
     #   pip-tools
-setuptools==62.6.0
+setuptools==65.6.3
     # via
     #   pip-tools
     #   python-daemon
