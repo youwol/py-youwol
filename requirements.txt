@@ -128,7 +128,7 @@ watchdog==2.1.9
     # via -r deps/base.in
 websockets==10.3
     # via -r deps/base.in
-wheel==0.37.1
+wheel==0.38.4
     # via pip-tools
 wrapt==1.14.1
     # via deprecated
