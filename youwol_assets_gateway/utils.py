@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 from youwol_utils import to_group_id, base64
 from youwol_utils.http_clients.assets_backend import ReadPolicyEnumFactory, SharePolicyEnumFactory
-from youwol_utils.http_clients.assets_gateway import AssetResponse, GroupAccess,  \
+from youwol_utils.http_clients.assets_gateway import AssetResponse, GroupAccess, \
     AssetWithPermissionResponse, PermissionsResponse
 
 
@@ -52,4 +52,3 @@ class AssetMeta(BaseModel):
     groupId: Union[str, None] = None
     tags: Union[List[str], None] = None
     dynamic_fields: Optional[Dict[str, Union[str, float, int]]] = None
-

@@ -61,7 +61,7 @@ class ConfigurationLoadingException(Exception):
     def __str__(self):
         return f"""{Fore.LIGHTRED_EX}Loading and parsing the configuration file failed{Style.RESET_ALL}.
         The configuration file is located at {self.status.path}
-        The first failing step is: 
+        The first failing step is:
             {self.failed_check.name}: {Fore.LIGHTYELLOW_EX}{self.failed_check.status.reason}{Style.RESET_ALL}
             hints: {'/n'.join([hint for hint in self.failed_check.status.hints])}
         """
@@ -76,4 +76,3 @@ def format_unknown_error(reason: str, error: Exception):
         reason=reason,
         hints=[f"{error_class} at line {line_number}: {detail}"]
     )
-

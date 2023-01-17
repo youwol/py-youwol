@@ -1,4 +1,5 @@
 from typing import Union, Callable, Awaitable
+
 from youwol_assets_gateway.configurations import Configuration, Dependencies
 
 
@@ -13,4 +14,3 @@ def get_router(configuration: Union[
     Dependencies.get_configuration = configuration if callable(configuration) else lambda: configuration
     from youwol_assets_gateway.root_paths import router
     return router
-

@@ -25,4 +25,3 @@ kill -0 $py_youwol_pid 2> /dev/null || success
 echo "Failed to send kill signal"
 exit 1
 """
-

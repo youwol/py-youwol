@@ -173,4 +173,3 @@ class PackagesPublishNpm(UploadTargets):
     async def publish(self, target_name: str, project: Project, context: Context):
         target = next(t for t in self.targets if t.name == target_name)
         await target.publish(project, context)
-
