@@ -1,7 +1,7 @@
 from typing import List
 
-from youwol.routers.projects.models_project import PipelineStep, FileListing, Artifact, Link
 from youwol.pipelines.pipeline_typescript_weback_npm.regular.common import Paths
+from youwol.routers.projects.models_project import PipelineStep, FileListing, Artifact, Link
 
 
 class BuildStep(PipelineStep):
@@ -28,4 +28,3 @@ class BuildStep(PipelineStep):
             ]
         )
     ]
-

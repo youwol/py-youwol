@@ -37,7 +37,7 @@ class BlockEx{
     }
 }
 return async () => ({
-    getComponents: () => [], 
+    getComponents: () => [],
     getBlocks: () => [BlockEx]
 })
 """

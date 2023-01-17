@@ -10,25 +10,24 @@ from fastapi import APIRouter, Depends, Query, HTTPException
 from starlette.requests import Request
 from starlette.responses import FileResponse, JSONResponse
 
-from youwol.routers.projects.models_project import Project, Manifest, PipelineStepStatus
-from youwol.routers.projects.projects_loader import ProjectLoader
 from youwol.environment import yw_config, YouwolEnvironment, PathsBook
-from youwol_utils import CommandException
 from youwol.routers.commons import Label
-from youwol.routers.projects.dependencies import resolve_project_dependencies
-from youwol.routers.projects.implementation import (
-    create_artifacts, get_status, get_project_step, get_project_flow_steps, format_artifact_response,
-    get_project_configuration
-)
 from youwol.routers.projects import (
     PipelineStepStatusResponse, PipelineStatusResponse, ArtifactsResponse, ProjectStatusResponse, CdnResponse,
     CdnVersionResponse, PipelineStepEvent, Event, CreateProjectFromTemplateBody, CreateProjectFromTemplateResponse,
     ProjectsLoadingResults,
     UpdateConfigurationResponse)
+from youwol.routers.projects.dependencies import resolve_project_dependencies
+from youwol.routers.projects.implementation import (
+    create_artifacts, get_status, get_project_step, get_project_flow_steps, format_artifact_response,
+    get_project_configuration
+)
+from youwol.routers.projects.models_project import Project, Manifest, PipelineStepStatus
+from youwol.routers.projects.projects_loader import ProjectLoader
 from youwol.web_socket import LogsStreamer
+from youwol_utils import CommandException
 from youwol_utils import decode_id
 from youwol_utils.context import Context
-
 from youwol_utils.utils_paths import parse_json
 from youwol_utils.utils_paths import write_json
 
@@ -235,7 +234,7 @@ async def run_pipeline_step(
         step_id: str,
         run_upstream: bool = Query(alias='run-upstream', default=False)
 ):
-  
+
     async def on_enter(ctx_enter):
         env_enter = await ctx_enter.get('env', YouwolEnvironment)
         if 'runningProjectSteps' not in env_enter.cache_py_youwol:

@@ -21,5 +21,5 @@ def patch_table_schema(table: JSON):
     """
     to_remove = ["owner_id", "owner_name", "owner_kind"]
     return {"clustering_columns": table["clustering_columns"],
-        "columns": [c for c in table["columns"] if c["name"] not in to_remove], "name": table["name"],
-        "partition_key": [k for k in table["partition_key"] if k not in to_remove]}
+            "columns": [c for c in table["columns"] if c["name"] not in to_remove], "name": table["name"],
+            "partition_key": [k for k in table["partition_key"] if k not in to_remove]}

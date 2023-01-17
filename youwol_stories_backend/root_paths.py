@@ -11,26 +11,26 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi import Query as QueryParam
 from starlette.responses import StreamingResponse
 
-from youwol_utils import (
-    Request, user_info,
-    generate_headers_downstream, Query, WhereClause, InvalidInput
-)
-from youwol_utils.clients.docdb.models import OrderingClause, QueryBody
-from youwol_utils.context import Context
-from youwol_utils.utils_paths import parse_json, write_json, extract_zip_file
 from youwol_stories_backend.configurations import Configuration, get_configuration, Constants
-from youwol_utils.http_clients.stories_backend import (
-    StoryResp, PutStoryBody, GetDocumentResp, GetChildrenResp, PutDocumentBody, DeleteResp,
-    PostContentBody, PostDocumentBody, PostStoryBody, GetContentResp, PostPluginBody, PostPluginResponse, Requirements,
-    LoadingGraphResponse, GetGlobalContentResp, PostGlobalContentBody, MoveDocumentResp, MoveDocumentBody,
-    UpgradePluginsResponse, UpgradePluginsBody,
-)
 from youwol_stories_backend.utils import (
     query_document, position_start,
     position_next, position_format, format_document_resp, get_requirements, get_document_path,
     query_story, zip_data_filename, zip_requirements_filename,
     create_default_global_contents, zip_global_content_filename, get_story_impl, delete_document_impl, get_children_rec,
 )
+from youwol_utils import (
+    Request, user_info,
+    generate_headers_downstream, Query, WhereClause, InvalidInput
+)
+from youwol_utils.clients.docdb.models import OrderingClause, QueryBody
+from youwol_utils.context import Context
+from youwol_utils.http_clients.stories_backend import (
+    StoryResp, PutStoryBody, GetDocumentResp, GetChildrenResp, PutDocumentBody, DeleteResp,
+    PostContentBody, PostDocumentBody, PostStoryBody, GetContentResp, PostPluginBody, PostPluginResponse, Requirements,
+    LoadingGraphResponse, GetGlobalContentResp, PostGlobalContentBody, MoveDocumentResp, MoveDocumentBody,
+    UpgradePluginsResponse, UpgradePluginsBody,
+)
+from youwol_utils.utils_paths import parse_json, write_json, extract_zip_file
 
 router = APIRouter(tags=["stories-backend"])
 flatten = itertools.chain.from_iterable
@@ -579,7 +579,7 @@ async def delete_document(
     async with Context.start_ep(
             request=request
     ) as ctx:  # type: Context
-        return await delete_document_impl(story_id=story_id, document_id=document_id,configuration=configuration,
+        return await delete_document_impl(story_id=story_id, document_id=document_id, configuration=configuration,
                                           context=ctx)
 
 
@@ -702,4 +702,3 @@ async def upgrade_plugins(
             pluginsUpgraded=upgraded_plugins,
             requirements=new_requirements
         )
-

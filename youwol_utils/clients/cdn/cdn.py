@@ -6,8 +6,8 @@ from typing import Dict, Union, List, Iterable, Callable, Awaitable, Any
 import aiohttp
 from aiohttp import ClientResponse, FormData
 
-from youwol_utils.utils_requests import extract_aiohttp_response
 from youwol_utils.exceptions import raise_exception_from_response
+from youwol_utils.utils_requests import extract_aiohttp_response
 
 
 def md5_update_from_file(filename: Union[str, Path], current_hash):
@@ -197,5 +197,3 @@ class CdnClient:
                 if resp.status < 300:
                     return await extract_aiohttp_response(resp=resp, reader=reader)
                 await raise_exception_from_response(resp, url=self.push_url, headers=self.headers)
-
-

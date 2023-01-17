@@ -2,8 +2,8 @@ from dataclasses import dataclass
 from typing import Union
 
 from starlette.websockets import WebSocket, WebSocketDisconnect
-from youwol_utils import log_info
 
+from youwol_utils import log_info
 from youwol_utils.context import WsContextReporter
 
 
@@ -36,4 +36,3 @@ async def start_web_socket(ws: WebSocket):
         except WebSocketDisconnect:
             log_info(f'{ws.scope["client"]} - "WebSocket {ws.scope["path"]}" [disconnected]')
             break
-

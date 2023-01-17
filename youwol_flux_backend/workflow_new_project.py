@@ -11,7 +11,7 @@ QHlvdXdvbC9mbHV4LXlvdXdvbC1lc3NlbnRpYWxz/latest/assets/images/logo_YouWol_Platfo
         <span data-gjs-name='welcome-sentence'> Hi YouWol </span>
         <div class='mx-auto text-left mx-auto border rounded p-5 fv-color-primary' data-gjs-name='useful-links'>
             <span data-gjs-name='useful-links-header'> A couple of useful links: </span>
-            <ul data-gjs-name='useful-links-items'> 
+            <ul data-gjs-name='useful-links-items'>
                 <li> <a href=''>Getting started video </a> </li>
                 <li> <a href=''>Getting started tutorial</a> </li>
             </ul>
