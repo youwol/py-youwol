@@ -530,14 +530,9 @@ async def delete_drive(
         )
 
 
-class AssetsGtwPurgeResponse(PurgeResponse):
-    errorsRawDeletion: List[str]
-    errorsAssetDeletion: List[str]
-
-
 @router.delete("/drives/{drive_id}/purge",
                summary="purge drive's items scheduled for deletion",
-               response_model=AssetsGtwPurgeResponse)
+               response_model=PurgeResponse)
 async def purge_drive(
         request: Request,
         drive_id: str,
@@ -612,5 +607,10 @@ async def purge_drive(
                 await assets_db.delete_access_policy(asset_id=to_delete['assetId'], group_id=to_delete['groupId'],
                                                      headers=ctx.headers())
 
-        return AssetsGtwPurgeResponse(**resp, errorsRawDeletion=errors_raw_deletion,
-                                      errorsAssetDeletion=errors_asset_deletion)
+        if errors_raw_deletion or errors_asset_deletion:
+            raise HTTPException(status_code=500, detail={
+                "treedbResp": resp,
+                "errorsRawDeletion": errors_raw_deletion,
+                "errorsAssetDeletion": errors_asset_deletion
+            })
+        return PurgeResponse(**resp)
