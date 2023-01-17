@@ -161,6 +161,21 @@ async def get_file(
         return response
 
 
+async def remove_file_impl(file_id: str, purge: bool, configuration: Configuration, context: Context):
+
+    async with context.start(action="remove_file_impl") as ctx:  # type: Context
+
+        await assert_read_permissions_from_raw_id(raw_id=file_id, configuration=configuration, context=ctx)
+        response = await configuration.files_client.remove(
+            file_id=file_id,
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
+        )
+        if purge:
+            await delete_asset(raw_id=file_id, configuration=configuration, context=ctx)
+
+        return response
+
+
 @router.delete(
     "/files/{file_id}",
     summary="remove a file"
@@ -175,12 +190,4 @@ async def remove_file(
     async with Context.start_ep(
             request=request
     ) as ctx:  # type: Context
-        await assert_read_permissions_from_raw_id(raw_id=file_id, configuration=configuration, context=ctx)
-        response = await configuration.files_client.remove(
-            file_id=file_id,
-            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
-        )
-        if purge:
-            await delete_asset(raw_id=file_id, configuration=configuration, context=ctx)
-
-        return response
+        return await remove_file_impl(file_id=file_id, purge=purge,configuration=configuration, context=ctx)
