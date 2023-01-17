@@ -297,3 +297,26 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: core.setFailed("Job failed because some files were modified or untracked, see job logs and annotations.")
+
+  static_analysis:
+    name: Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare repository
+        id: prepare
+        uses: youwol/nestor/py/prepare@v1
+
+      - name: PEP 8
+        id: pep8
+        env:
+          line_length: 120
+          format: '::error file=%(path)s,line=%(row)d,col=%(col)d,title=PEP8 %(code)s::%(text)s'
+        run: pycodestyle --max-line-length=$line_length --format="$format" . || echo "result=failure" >> $GITHUB_OUTPUT
+        shell: sh
+
+      - name: On PEP 8 failure
+        id: pep8_failure
+        if: steps.pep8.outputs.result == 'failure'
+        uses: actions/github-script@v6
+        with:
+          script: core.setFailed("Job failed because source is badly formatted, see job logs and annotations.")
