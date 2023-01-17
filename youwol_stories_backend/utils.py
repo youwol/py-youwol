@@ -220,10 +220,6 @@ async def delete_document_impl(
                 doc_db_docs.delete_document(doc=doc, owner=Constants.default_owner, headers=headers)
                 for doc in [document, *all_children]
             ],
-            *[
-                storage.delete(path=get_document_path(story_id=story_id, document_id=doc['content_id']),
-                               owner=Constants.default_owner, headers=headers)
-                for doc in [document, *all_children]
-            ]
+            storage.delete_group(prefix=story_id, owner=Constants.default_owner, headers=headers)
         )
         return DeleteResp(deletedDocuments=len(all_children) + 1)
