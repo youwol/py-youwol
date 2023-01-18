@@ -91,6 +91,21 @@ async def publish_story(
         )
 
 
+async def delete_story_impl(story_id: str, purge: bool, configuration: Configuration, context: Context):
+
+    async with context.start(action="delete_story_impl") as ctx:  # type: Context
+        await assert_write_permissions_from_raw_id(raw_id=story_id, configuration=configuration, context=ctx)
+        await configuration.stories_client.delete_story(
+            story_id=story_id,
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
+        )
+        if purge:
+            await delete_asset(raw_id=story_id, configuration=configuration, context=ctx)
+        else:
+            # delete treedb item
+            pass
+
+
 @router.delete(
     "/stories/{story_id}",
     response_model=DeleteResp,
@@ -104,16 +119,7 @@ async def delete_story(
     async with Context.start_ep(
             request=request
     ) as ctx:
-        await assert_write_permissions_from_raw_id(raw_id=story_id, configuration=configuration, context=ctx)
-        await configuration.stories_client.delete_story(
-            story_id=story_id,
-            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
-        )
-        if purge:
-            await delete_asset(raw_id=story_id, configuration=configuration, context=ctx)
-        else:
-            # delete treedb item
-            pass
+        return await delete_story_impl(story_id=story_id, purge=purge, configuration=configuration, context=ctx)
 
 
 @router.get(

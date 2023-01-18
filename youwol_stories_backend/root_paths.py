@@ -2,12 +2,10 @@ import asyncio
 import functools
 import io
 import itertools
-import math
 import tempfile
 import uuid
 import zipfile
 from pathlib import Path
-from typing import List, Dict, Any
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi import Query as QueryParam
@@ -15,7 +13,7 @@ from starlette.responses import StreamingResponse
 
 from youwol_utils import (
     Request, user_info,
-    generate_headers_downstream, Query, WhereClause, DocDbClient, InvalidInput
+    generate_headers_downstream, Query, WhereClause, InvalidInput
 )
 from youwol_utils.clients.docdb.models import OrderingClause, QueryBody
 from youwol_utils.context import Context
@@ -30,8 +28,8 @@ from youwol_utils.http_clients.stories_backend import (
 from youwol_stories_backend.utils import (
     query_document, position_start,
     position_next, position_format, format_document_resp, get_requirements, get_document_path,
-    query_story, zip_data_filename, zip_requirements_filename, create_global_contents_if_needed,
-    create_default_global_contents, zip_global_content_filename,
+    query_story, zip_data_filename, zip_requirements_filename,
+    create_default_global_contents, zip_global_content_filename, get_story_impl, delete_document_impl, get_children_rec,
 )
 
 router = APIRouter(tags=["stories-backend"])
@@ -289,36 +287,7 @@ async def get_story(
     async with Context.start_ep(
             request=request
     ) as ctx:  # type: Context
-        doc_db_stories = configuration.doc_db_stories
-        doc_db_docs = configuration.doc_db_documents
-        story, root_doc, requirements = await asyncio.gather(
-            doc_db_stories.get_document(
-                partition_keys={"story_id": story_id},
-                clustering_keys={},
-                owner=Constants.default_owner,
-                headers=ctx.headers()
-            ),
-            doc_db_docs.query(
-                query_body=f"parent_document_id={story_id}#1",
-                owner=Constants.default_owner,
-                headers=ctx.headers()
-            ),
-            get_requirements(story_id=story_id, storage=configuration.storage, context=ctx)
-        )
-        if not root_doc['documents']:
-            raise HTTPException(status_code=500, detail="Can not find root document of story")
-        if len(root_doc['documents']) > 1:
-            raise HTTPException(status_code=500, detail="Multiple root documents can not exist")
-
-        root_doc = root_doc['documents'][0]
-        await create_global_contents_if_needed(story_id=story_id, configuration=configuration, context=ctx)
-        return StoryResp(
-            storyId=story['story_id'],
-            title=root_doc['title'],
-            authors=story['authors'],
-            rootDocumentId=root_doc['document_id'],
-            requirements=requirements
-        )
+        return await get_story_impl(story_id=story_id, configuration=configuration, context=ctx)
 
 
 @router.get(
@@ -607,34 +576,11 @@ async def delete_document(
         document_id: str,
         configuration: Configuration = Depends(get_configuration)
 ):
-    headers = generate_headers_downstream(request.headers)
-    doc_db_docs = configuration.doc_db_documents
-    storage = configuration.storage
-
-    all_children = await get_children_rec(
-        document_id=document_id,
-        start_index=-math.inf,
-        chunk_size=10,
-        headers=headers,
-        doc_db_docs=doc_db_docs
-    )
-
-    docs = await doc_db_docs.query(query_body=f"document_id={document_id}#1", owner=Constants.default_owner,
-                                   headers=headers)
-    document = docs['documents'][0]
-
-    await asyncio.gather(
-        *[
-            doc_db_docs.delete_document(doc=doc, owner=Constants.default_owner, headers=headers)
-            for doc in [document, *all_children]
-        ],
-        *[
-            storage.delete(path=get_document_path(story_id=story_id, document_id=doc['content_id']),
-                           owner=Constants.default_owner, headers=headers)
-            for doc in [document, *all_children]
-        ]
-    )
-    return DeleteResp(deletedDocuments=len(all_children) + 1)
+    async with Context.start_ep(
+            request=request
+    ) as ctx:  # type: Context
+        return await delete_document_impl(story_id=story_id, document_id=document_id,configuration=configuration,
+                                          context=ctx)
 
 
 @router.delete(
@@ -646,14 +592,19 @@ async def delete_story(
         story_id: str,
         configuration: Configuration = Depends(get_configuration)
 ):
-    headers = generate_headers_downstream(request.headers)
-    doc_db_stories = configuration.doc_db_stories
-    story = await get_story(request=request, story_id=story_id, configuration=configuration)
-    deleted = await delete_document(request=request, story_id=story_id, document_id=story.rootDocumentId,
-                                    configuration=configuration)
-    await doc_db_stories.delete_document(doc={'story_id': story.storyId}, owner=Constants.default_owner,
-                                         headers=headers)
-    return deleted
+    async with Context.start_ep(
+            request=request,
+            with_labels=['plugin']
+    ) as ctx:
+
+        headers = ctx.headers()
+        doc_db_stories = configuration.doc_db_stories
+        story = await get_story_impl(story_id=story_id, configuration=configuration, context=ctx)
+        deleted = await delete_document_impl(story_id=story_id, document_id=story.rootDocumentId,
+                                             configuration=configuration, context=ctx)
+        await doc_db_stories.delete_document(doc={'story_id': story.storyId}, owner=Constants.default_owner,
+                                             headers=headers)
+        return deleted
 
 
 @router.post(
@@ -752,37 +703,3 @@ async def upgrade_plugins(
             requirements=new_requirements
         )
 
-
-async def get_children_rec(
-        document_id: str,
-        start_index,
-        chunk_size,
-        headers,
-        doc_db_docs: DocDbClient
-) -> List[Dict[str, Any]]:
-    headers = generate_headers_downstream(headers)
-    documents_resp = await doc_db_docs.query(
-        query_body=f"parent_document_id={document_id},position>={start_index}#{chunk_size}",
-        owner=Constants.default_owner,
-        headers=headers
-    )
-    direct_children = documents_resp["documents"]
-
-    indirect_children = await asyncio.gather(
-        *[
-            get_children_rec(document_id=d["document_id"], start_index=0, chunk_size=chunk_size, headers=headers,
-                             doc_db_docs=doc_db_docs) for d in direct_children
-        ]
-    )
-    indirect_children = itertools.chain.from_iterable(indirect_children)
-    if len(direct_children) == chunk_size:
-        children_next = await get_children_rec(
-            document_id=document_id,
-            start_index=direct_children[-1]['order_index'] + 0.5,
-            doc_db_docs=doc_db_docs,
-            chunk_size=chunk_size,
-            headers=headers
-        )
-        return [*direct_children, *indirect_children, *children_next]
-
-    return [*direct_children, *indirect_children]

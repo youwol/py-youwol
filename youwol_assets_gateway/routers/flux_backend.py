@@ -96,15 +96,10 @@ async def download_zip(
         return Response(content=content, headers={'content-type': 'application/zip'})
 
 
-@router.delete("/projects/{project_id}", summary="delete a project")
-async def delete_project(
-        request: Request,
-        project_id: str,
-        purge: bool = False,
-        configuration: Configuration = Depends(get_configuration)):
-    async with Context.start_ep(
-            request=request
-    ) as ctx:
+async def delete_project_impl(project_id: str, purge: bool, configuration: Configuration, context: Context):
+
+    async with context.start(action="delete_project_impl") as ctx:  # type: Context
+
         await assert_write_permissions_from_raw_id(raw_id=project_id, configuration=configuration, context=ctx)
         response = await configuration.flux_client.delete_project(
             project_id=project_id,
@@ -114,6 +109,18 @@ async def delete_project(
             await delete_asset(raw_id=project_id, configuration=configuration, context=ctx)
 
         return response
+
+@router.delete("/projects/{project_id}", summary="delete a project")
+async def delete_project(
+        request: Request,
+        project_id: str,
+        purge: bool = False,
+        configuration: Configuration = Depends(get_configuration)
+):
+    async with Context.start_ep(
+            request=request
+    ) as ctx:
+        return await delete_project_impl(project_id=project_id, purge=purge, configuration=configuration, context=ctx)
 
 
 @router.get("/projects/{project_id}",
