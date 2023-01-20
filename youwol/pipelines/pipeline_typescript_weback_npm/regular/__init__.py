@@ -6,3 +6,4 @@ from .dependencies_step import *
 from .doc_step import *
 from .models import *
 from .test_step import *
+from .webpack_dev_server_switch import *
