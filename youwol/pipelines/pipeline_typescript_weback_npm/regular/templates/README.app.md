@@ -56,11 +56,13 @@ yarn test-coverage
 ---
 
 To start the 'dev-server':
+
 ```shell
 yarn start
 ```
-In order to use the dev-server within Py-YouWol and to serve resources in place of the usual CDN database, 
-the Py-YouWol configuration needs to be updated to include a `WebpackDevServerSwitch` within a 
+
+In order to use the dev-server within Py-YouWol and to serve resources in place of the usual CDN database,
+the Py-YouWol configuration needs to be updated to include a `WebpackDevServerSwitch` within a
 `FlowSwitcherMiddleware`. For example:
 
 ```python
@@ -73,19 +75,20 @@ Configuration(
             FlowSwitcherMiddleware(
                 name = 'front-end dev-servers',
                 oneOf = [
-                    WebpackDevServerSwitch(packageName="{{name}}", port={{devServer.port}}),
-                ]       
+                    WebpackDevServerSwitch(packageName="@youwol/todo-app-ts", port={{devServer.port}}),
+                ]
             )
         ]
     )
 )
 ```
-Additional information on the `Configuration` class can be found in the "Configuration API" page of the 
+
+Additional information on the `Configuration` class can be found in the "Configuration API" page of the
 [Py-YouWol guide](https://l.youwol.com/doc/py-youwol).
 
 Once Py-YouWol is running with the updated configuration,
-the application can be accessed from [here](http://localhost:2000/applications/{{name}}/latest) (providing py-youwol
-running using the default port `2000`).
+the application can be accessed from [here](http://localhost:2000/applications/@youwol/todo-app-ts/latest)
+(providing py-youwol running using the default port `2000`).
 
 ---
 
