@@ -56,3 +56,4 @@ async def start_web_socket(
         except WebSocketDisconnect:
             log_info(f'{ws.scope["client"]} - "WebSocket {ws.scope["path"]}" [disconnected]')
             channels.remove(ws)
+            break
