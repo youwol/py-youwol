@@ -16,8 +16,8 @@ from youwol.routers.environment.download_assets import DownloadDataTask, Downloa
     DownloadStoryTask
 from youwol.routers.environment.download_assets.custom_asset import DownloadCustomAssetTask
 from youwol.routers.projects import ProjectLoader
-from youwol.web_socket import start_web_socket
-from youwol.web_socket import WebSocketsStore, WsDataStreamer
+from youwol.web_socket import start_web_socket, WsType
+from youwol.web_socket import WsDataStreamer
 from youwol_utils import YouWolException, youwol_exception_handler, YouwolHeaders, CleanerThread, factory_local_cache
 from youwol_utils.context import ContextFactory, InMemoryReporter, Context
 from youwol_utils.middlewares import AuthMiddleware, redirect_to_login
@@ -131,12 +131,10 @@ async def create_app():
 
     @fastapi_app.websocket(api_configuration.base_path + "/ws-logs")
     async def ws_logs(ws: WebSocket):
-        WebSocketsStore.logs = ws
-        await start_web_socket(ws)
+        await start_web_socket(ws, WsType.Log)
 
     @fastapi_app.websocket(api_configuration.base_path + "/ws-data")
     async def ws_data(ws: WebSocket):
-        WebSocketsStore.data = ws
-        await start_web_socket(ws)
+        await start_web_socket(ws, WsType.Data)
 
 asyncio.run(create_app())
