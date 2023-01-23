@@ -5,12 +5,12 @@ import pkg_resources
 import yaml
 from pydantic import BaseModel
 
-from youwol.routers.projects.models_project import Manifest, PipelineStepStatus, Link, Flow, \
-    SourcesFctImplicit, Pipeline, PipelineStep, FileListing, \
-    Artifact, Project, RunImplicit, MicroService
 from youwol.pipelines.docker_k8s_helm import get_helm_app_version, InstallHelmStep, InstallHelmStepConfig, \
     PublishDockerStep, PublishDockerStepConfig, InstallDryRunHelmStep
 from youwol.pipelines.pipeline_fastapi_youwol_backend.environment import get_environment
+from youwol.routers.projects.models_project import Manifest, PipelineStepStatus, Link, Flow, \
+    SourcesFctImplicit, Pipeline, PipelineStep, FileListing, \
+    Artifact, Project, RunImplicit, MicroService
 from youwol_utils import execute_shell_cmd
 from youwol_utils.context import Context
 
@@ -111,7 +111,7 @@ class DocStepConfig(BaseModel):
 
     def cmd(self, project: Project) -> str:
         return f"""
-. {self.venvPath}/bin/activate && 
+. {self.venvPath}/bin/activate &&
 pdoc {self.srcPath} --html --force --output-dir {self.outputDir} &&
 mv {self.outputDir}/{to_module_name(project.name)}/* {self.outputDir}
 """

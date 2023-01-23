@@ -3,10 +3,12 @@ import itertools
 import math
 import time
 from typing import Dict, List, Any
+
 from fastapi import HTTPException
+
+from youwol_stories_backend.configurations import Configuration, Constants
 from youwol_utils import log_info, StorageClient, QueryIndexException, DocDbClient, generate_headers_downstream
 from youwol_utils.context import Context
-from youwol_stories_backend.configurations import Configuration, Constants
 from youwol_utils.http_clients.cdn_backend import patch_loading_graph
 from youwol_utils.http_clients.stories_backend import GetDocumentResp, Requirements, StoryResp, DeleteResp
 

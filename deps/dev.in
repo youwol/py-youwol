@@ -3,3 +3,4 @@ pdoc3
 pip-tools
 pip
 coverage
+pycodestyle

@@ -5,10 +5,10 @@ from pathlib import Path
 from typing import Mapping, Union, Dict, List
 
 from fastapi import HTTPException
-from youwol_utils.http_clients.cdn_backend.utils import create_local_scylla_db_docs_file_if_needed
 
 from youwol_utils.clients.docdb.models import TableBody, QueryBody, WhereClause, Query, SecondaryIndex
 from youwol_utils.clients.utils import get_default_owner
+from youwol_utils.http_clients.cdn_backend.utils import create_local_scylla_db_docs_file_if_needed
 
 
 @dataclass(frozen=True)
@@ -161,7 +161,7 @@ class LocalDocDbClient:
         data = json.load(self.data_path.open())
 
         data["documents"] = [d for d in data["documents"]
-                             if not(self.primary_key_id(d) == self.primary_key_id(doc) and d["owner"] == owner)]
+                             if not (self.primary_key_id(d) == self.primary_key_id(doc) and d["owner"] == owner)]
 
         self.data_path.write_text(json.dumps(data, indent=4))
         return {}

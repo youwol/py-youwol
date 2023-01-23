@@ -1,12 +1,11 @@
 import asyncio
-import functools
 import datetime
+import functools
 from typing import Optional
 
-
+from youwol.pipelines.pipeline_typescript_weback_npm.common import NpmRepo
 from youwol.routers.projects.models_project import PipelineStep, Project, Manifest, PipelineStepStatus, FlowId
 from youwol_utils import execute_shell_cmd, CommandException
-from youwol.pipelines.pipeline_typescript_weback_npm.common import NpmRepo
 from youwol_utils.context import Context
 
 
@@ -76,4 +75,3 @@ class PublishNpmStep(PipelineStep):
             shasum_line = next(line for line in outputs if shasum_prefix in line)
             shasum_project = shasum_line.split(shasum_prefix)[1].strip()
             return PipelineStepStatus.OK if shasum_published == shasum_project else PipelineStepStatus.outdated
-

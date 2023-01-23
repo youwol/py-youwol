@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass
 import json
 import time
 import traceback
 import uuid
 from abc import ABC, abstractmethod
 from contextlib import asynccontextmanager
+from dataclasses import dataclass
 from enum import Enum
 from typing import Union, NamedTuple, Callable, Awaitable, Optional, List, TypeVar, Dict, cast, Any, \
     AsyncContextManager, Set
@@ -197,7 +197,7 @@ class Context(NamedTuple):
             )
             await Context.__execute_block(ctx, on_exception, e)
             await Context.__execute_block(ctx, on_exit)
-            if not(isinstance(e, HTTPException) and e.status_code in self.muted_http_errors):
+            if not (isinstance(e, HTTPException) and e.status_code in self.muted_http_errors):
                 traceback.print_exc()
             if self.request.state:
                 self.request.state.context = self
@@ -227,6 +227,7 @@ class Context(NamedTuple):
         with_attributes = with_attributes or {}
 
         muted_http_errors = YouwolHeaders.get_muted_http_errors(request=request).union(muted_http_errors or set())
+
         async def on_exit_fct(ctx):
             await ctx.info('Response', data=response()) if response else None
             on_exit and await on_exit(ctx)

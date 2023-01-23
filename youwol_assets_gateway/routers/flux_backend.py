@@ -4,12 +4,12 @@ from fastapi import APIRouter, Depends, Query
 from starlette.requests import Request
 from starlette.responses import Response
 
-from youwol_assets_gateway.utils import AssetMeta
+from youwol_assets_gateway.configurations import Configuration, get_configuration
 from youwol_assets_gateway.routers.common import assert_write_permissions_folder_id, \
     assert_read_permissions_from_raw_id, assert_write_permissions_from_raw_id, create_asset, delete_asset
+from youwol_assets_gateway.utils import AssetMeta
 from youwol_utils import encode_id
 from youwol_utils.context import Context
-from youwol_assets_gateway.configurations import Configuration, get_configuration
 from youwol_utils.http_clients.assets_gateway import NewAssetResponse
 from youwol_utils.http_clients.flux_backend import Project, NewProject, EditMetadata, ProjectSnippet, \
     PublishApplicationBody
@@ -109,6 +109,7 @@ async def delete_project_impl(project_id: str, purge: bool, configuration: Confi
             await delete_asset(raw_id=project_id, configuration=configuration, context=ctx)
 
         return response
+
 
 @router.delete("/projects/{project_id}", summary="delete a project")
 async def delete_project(
