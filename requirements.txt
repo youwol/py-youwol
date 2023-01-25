@@ -22,6 +22,8 @@ attrs==21.4.0
     # via aiohttp
 brotli==1.0.9
     # via -r deps/base.in
+build==0.10.0
+    # via -r deps/dev.in
 certifi==2022.12.7
     # via minio
 cffi==1.15.0
@@ -79,7 +81,9 @@ multidict==6.0.2
 ordered-set==4.1.0
     # via deepdiff
 packaging==21.3
-    # via redis
+    # via
+    #   build
+    #   redis
 pdoc3==0.10.0
     # via -r deps/dev.in
 pep517==0.12.0
@@ -102,6 +106,8 @@ pyparsing==3.0.9
     # via
     #   -r deps/base.in
     #   packaging
+pyproject-hooks==1.0.0
+    # via build
 python-daemon==2.3.0
     # via -r deps/base.in
 python-multipart==0.0.5
@@ -119,7 +125,10 @@ sniffio==1.2.0
 starlette==0.19.1
     # via fastapi
 tomli==2.0.1
-    # via pep517
+    # via
+    #   build
+    #   pep517
+    #   pyproject-hooks
 tqdm==4.64.1
     # via -r deps/base.in
 typing-extensions==4.2.0

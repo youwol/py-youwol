@@ -3,4 +3,5 @@ pdoc3
 pip-tools
 pip
 coverage
+build
 pycodestyle
