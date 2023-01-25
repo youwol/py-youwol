@@ -1,7 +1,5 @@
 import json
 import os
-import shutil
-import zipfile
 from pathlib import Path
 from typing import Dict, Any, Optional, Awaitable, List
 
@@ -242,20 +240,6 @@ async def safe_load(
 
     if not paths_book.packages_cache_path.exists():
         open(paths_book.packages_cache_path, "w").write(json.dumps({}))
-
-    def create_data_dir(final_path: Path):
-        databases_zip = 'databases.zip'
-        final_path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(get_main_arguments().youwol_path.parent / 'youwol_data' / databases_zip,
-                        final_path.parent / databases_zip)
-
-        with zipfile.ZipFile(final_path.parent / databases_zip, 'r') as zip_ref:
-            zip_ref.extractall(final_path.parent)
-
-        os.remove(final_path.parent / databases_zip)
-
-    ensure_dir_exists(path=paths_book.databases, root_candidates=app_dirs.user_data_dir,
-                      create=create_data_dir)
 
     if isinstance(projects.finder, str) or isinstance(projects.finder, Path):
         #  5/12/2022: Backward compatibility code
