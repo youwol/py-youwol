@@ -1,20 +1,21 @@
 import asyncio
 import itertools
 import random
-from pathlib import Path
 from typing import List, Optional
+
+import importlib_resources
 from cowpy import cow
 from fastapi import APIRouter, Depends
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from starlette.requests import Request
+
 from youwol.environment import FlowSwitcherMiddleware, yw_config, YouwolEnvironment, \
     YouwolEnvironmentFactory, Connection, DirectAuth
 from youwol.middlewares import JwtProviderPyYouwol
 from youwol.routers.environment.models import LoginBody, RemoteGatewayInfo, CustomDispatchesResponse, UserInfo
 from youwol.routers.environment.upload_assets.upload import upload_asset
 from youwol.routers.projects import ProjectLoader
-
 from youwol.web_socket import LogsStreamer
 from youwol_utils import to_json
 from youwol_utils.clients.oidc.oidc_config import OidcConfig
@@ -37,7 +38,7 @@ class EnvironmentStatusResponse(BaseModel):
             summary="status")
 async def cow_say():
     #  https://github.com/bmc/fortunes/
-    quotes = (Path(__file__).parent / 'fortunes.txt').read_text().split("%")
+    quotes = importlib_resources.files().joinpath('fortunes.txt').read_text().split("%")
     return cow.milk_random_cow(random.choice(quotes))
 
 
