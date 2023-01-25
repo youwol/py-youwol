@@ -55,3 +55,6 @@ include = ["youwol*"]
 
 [tool.setuptools.package-data]
 "youwol.routers.environment" = ["fortunes.txt"]
+"youwol_flux_backend" = ["bundle_app_template/*"]
+"youwol.pipelines.pipeline_typescript_weback_npm.regular" = ["templates/.*","templates/*", "templates/**/*","templates/.**/*"]
+"youwol.pipelines.pipeline_typescript_weback_npm.external" = ["templates/.*","templates/*", "templates/**/*","templates/.**/*"]
