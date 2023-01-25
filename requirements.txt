@@ -60,6 +60,8 @@ idna==3.3
     #   yarl
 importlib-metadata==4.12.0
     # via markdown
+importlib-resources==5.10.2
+    # via -r deps/base.in
 lockfile==0.12.2
     # via python-daemon
 mako==1.2.2
@@ -139,7 +141,9 @@ wrapt==1.14.1
 yarl==1.7.2
     # via aiohttp
 zipp==3.8.0
-    # via importlib-metadata
+    # via
+    #   importlib-metadata
+    #   importlib-resources
 
 # The following packages are considered to be unsafe in a requirements file:
 pip==22.3.1

@@ -7,6 +7,7 @@ colorama
 cowpy
 deepdiff
 fastapi
+importlib_resources
 minio
 Pillow
 psutil
