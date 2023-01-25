@@ -97,7 +97,9 @@ pydantic==1.9.1
 pyjwt[crypto]==2.4.0
     # via -r deps/base.in
 pyparsing==3.0.9
-    # via packaging
+    # via
+    #   -r deps/base.in
+    #   packaging
 python-daemon==2.3.0
     # via -r deps/base.in
 python-multipart==0.0.5
