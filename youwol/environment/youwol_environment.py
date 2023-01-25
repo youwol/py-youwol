@@ -1,3 +1,4 @@
+import importlib.metadata
 import json
 import os
 from pathlib import Path
@@ -91,7 +92,13 @@ class YouwolEnvironment(BaseModel):
             else:
                 return "- no custom command configured"
 
-        return f"""Running with youwol: {youwol}
+        version = ""
+        try:
+            version = f"{importlib.metadata.version('youwol')}"
+        except importlib.metadata.PackageNotFoundError:
+            pass
+
+        return f"""Running with youwol {version}: {youwol}
 Configuration loaded from '{self.pathsBook.config}'
 - authentication: {self.get_authentication_info()}
 - remote : { self.get_remote_info().envId } (on {self.get_remote_info().host})
