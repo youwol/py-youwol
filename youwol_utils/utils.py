@@ -49,10 +49,6 @@ class YouwolHeaders(NamedTuple):
         request.headers.__dict__["_list"].append(header)
 
 
-def find_platform_path():
-    return Path(__file__.split('/services')[0])
-
-
 def user_info(request: Request):
     return request.state.user_info
 
