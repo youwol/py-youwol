@@ -20,7 +20,7 @@ def assert_python():
         exit(1)
 
 
-if __name__ == "__main__":
+def main():
     assert_python()
 
     if get_main_arguments().daemonize:
@@ -40,3 +40,7 @@ if __name__ == "__main__":
     else:
         from youwol.start import start
         start()
+
+
+if __name__ == "__main__":
+    main()
