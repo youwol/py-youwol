@@ -1,7 +1,6 @@
+import importlib.metadata
 import json
 import os
-import shutil
-import zipfile
 from pathlib import Path
 from typing import Dict, Any, Optional, Awaitable, List
 
@@ -11,23 +10,21 @@ from pydantic import BaseModel
 
 import youwol
 from youwol.environment import CloudEnvironment, Authentication, Command, Projects, ExplicitProjectsFinder
-
-from youwol.environment.projects_finders import auto_detect_projects
+from youwol.environment.config_from_module import configuration_from_python
 from youwol.environment.errors_handling import (
     ConfigurationLoadingStatus, ConfigurationLoadingException,
     CheckSystemFolderWritable, CheckDatabasesFolderHealthy, ErrorResponse
 )
-
 from youwol.environment.models import Events, Configuration, CustomMiddleware, ApiConfiguration, Connection
-from youwol.environment.config_from_module import configuration_from_python
 from youwol.environment.paths import PathsBook, ensure_config_file_exists_or_create_it
+from youwol.environment.paths import app_dirs
+from youwol.environment.projects_finders import auto_detect_projects
 from youwol.main_args import get_main_arguments, MainArguments
 from youwol.routers.custom_backends import install_routers
 from youwol.web_socket import WsDataStreamer
 from youwol_utils.context import ContextFactory, InMemoryReporter
 from youwol_utils.servers.fast_api import FastApiRouter
 from youwol_utils.utils_paths import parse_json, ensure_dir_exists
-from youwol.environment.paths import app_dirs
 
 
 class YouwolEnvironment(BaseModel):
@@ -93,7 +90,13 @@ class YouwolEnvironment(BaseModel):
             else:
                 return "- no custom command configured"
 
-        return f"""Running with youwol: {youwol}
+        version = ""
+        try:
+            version = f"{importlib.metadata.version('youwol')}"
+        except importlib.metadata.PackageNotFoundError:
+            pass
+
+        return f"""Running with youwol {version}: {youwol}
 Configuration loaded from '{self.pathsBook.config}'
 - authentication: {self.get_authentication_info()}
 - remote : { self.get_remote_info().envId } (on {self.get_remote_info().host})
@@ -206,17 +209,14 @@ async def safe_load(
     system = config.system
     projects = config.projects
     customization = config.customization
-    data_dir = Path(system.localEnvironment.dataDir)
-    data_dir = data_dir if data_dir.is_absolute() else path.parent / data_dir
-    cache_dir = Path(system.localEnvironment.cacheDir)
-    cache_dir = cache_dir if cache_dir.is_absolute() else path.parent / cache_dir
+    data_dir = ensure_dir_exists(system.localEnvironment.dataDir, root_candidates=app_dirs.user_data_dir)
+    cache_dir = ensure_dir_exists(system.localEnvironment.cacheDir, root_candidates=app_dirs.user_cache_dir)
 
     paths_book = PathsBook(
         config=path,
         databases=data_dir,
         system=cache_dir
     )
-    ensure_dir_exists(system.localEnvironment.cacheDir, root_candidates=app_dirs.user_cache_dir)
 
     if not os.access(paths_book.system.parent, os.W_OK):
         check_system_folder_writable.status = ErrorResponse(
@@ -242,20 +242,6 @@ async def safe_load(
 
     if not paths_book.packages_cache_path.exists():
         open(paths_book.packages_cache_path, "w").write(json.dumps({}))
-
-    def create_data_dir(final_path: Path):
-        databases_zip = 'databases.zip'
-        final_path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(get_main_arguments().youwol_path.parent / 'youwol_data' / databases_zip,
-                        final_path.parent / databases_zip)
-
-        with zipfile.ZipFile(final_path.parent / databases_zip, 'r') as zip_ref:
-            zip_ref.extractall(final_path.parent)
-
-        os.remove(final_path.parent / databases_zip)
-
-    ensure_dir_exists(path=paths_book.databases, root_candidates=app_dirs.user_data_dir,
-                      create=create_data_dir)
 
     if isinstance(projects.finder, str) or isinstance(projects.finder, Path):
         #  5/12/2022: Backward compatibility code
@@ -288,8 +274,10 @@ def print_invite(conf: YouwolEnvironment, shutdown_script_path: Optional[Path]):
 """)
     print(conf)
     msg = cow.milk_random_cow(f"""
-All good, you can now browse to
+The desktop application is available at:
 http://localhost:{conf.httpPort}/applications/@youwol/platform/latest
+For a Py-YouWol interactive tour:
+http://localhost:{conf.httpPort}/applications/@youwol/stories/latest?id=9e664525-1dac-45af-83c6-f4b4ef3866af&mode=reader
 """)
     print(msg)
     if shutdown_script_path is not None:

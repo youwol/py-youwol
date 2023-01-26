@@ -1,148 +1,37 @@
 
 
-## Description
+# Py-YouWol
 
-The <a href="https://www.youwol.com/">YouWol</a> local full-stack environment (YouWol FSE).
+Py-YouWol is the local equivalent of the online YouWol platform, designed to run on a personal computer.
+This ability to be installed as a standalone program regardless of the operating system (Windows, Mac, or Unix) is a disruptive characteristic that sets it apart from traditional cloud-based solutions.
+While the online ecosystem of YouWol is the go-to place for sharing resources, the local installation is preferred for the development of those resources.
+In fact, even for daily use of YouWol, the local application provides multiple benefits.
 
-This environment provides:
-- a local version of the YouWol platform
-- a developer environment to extend the platform (npm packages, backends, frontends). 
-Developers are able to integrate their favorite tool-chains.
-- while mostly 'locally sand-boxed', an internet connection is required for:
-  - authentication
-  - installation of missing assets. Installation are lazy: they are triggered when required, 
-  it can be libraries, application, data, etc
+Find out more in the [Py-YouWol guide](https://l.youwol.com/py-youwol).
 
-## Requirements
+## Links
 
-*   We recommend using python *3.9* as it is the python's version we use in YouWol
-*   We (strongly) recommend using one of the latest version of Google Chrome browser (e.g. >= 100). 
-    Some features used by YouWol are available only on the latest releases of the major browsers, 
-    also we did not have the time to thoroughly test the platform with other browsers than Chrome for now.
+[Py-YouWol guide](https://l.youwol.com/py-youwol)
 
-## Installation
-### From pypi
+[YouWol platform](https://youwol.platform.com/applications/@youwol/platform/latest)
 
-A good practice is to create a python virtual environment to host the *YouWol* python dependencies and to not 
-affect your global python installation. 
-You can also go with a global installation by running **pip install youwol** and proceed through the 
-'Starting YouWol' section.
+[YouWol guide](https://l.youwol.com/youwol)
 
-Create a folder in which you plan to organize your YouWol related works (referred as *youwol_folder* in what follows). 
-Then create and activate a virtual environment (feel free to pick any name instead *youwol_venv*, in what follows
-the name of the virtual env is referred as *youwol_venv*): 
--   For **Mac** and **Linux**:
-```bash
-python3.9 -m venv .youwol_venv
-source .youwol_venv/bin/activate
-```
--   For **Windows**
+# Installation
 
-The installation hase been tested on python3.9.5, installed 
-from <a href='https://www.python.org/downloads/release/python-395/'> here </a>
-
-```bash
-c:\Python395\python -m venv  .youwol_venv
-.youwol_venv\Scripts\activate.bat
-```
-
-Then download and install *YouWol*:
-```bash
-pip install youwol
-```
-
-### From source
-
-Clone the gitHub repository, e.g. for master:
-```bash
-git clone https://github.com/youwol/py-youwol.git
-```
-Go through the installation steps described in the previous section, 
-but replace:
-```bash
-pip install youwol
-```
-by (from the cloned folder py-youwol):
-```bash
-python setup.py install
-```
-
-To update the installation with respect to new sources:
--    activate the created virtual environment
--    from py-youwol folder:
-```bash
-git pull
-python setup.py install
-```
+> Note: Py-YouWol can be installed from PyPi repository,
+> see the [Py-YouWol guide](https://l.youwol.com/py-youwol).
 
 
-Some common issues are listed at the end of this page, you may find a
-solution there if you encounter a problem during the installation.
+To install from source code, you will need to have Git and Python installed on your machine.
+Py-YouWol support the Python versions 3.8 & 3.9.
 
+Once you have those, you can follow these steps:
 
-### Developer's installation (IntelliJ / PyCharm)
+1. Clone the repository from GitHub: `git clone https://github.com/youwol/py-youwol`
+2. Navigate to the project directory: `cd py-youwol`
+3. Create a virtual environment (recommended) using python3: `python3 -m venv venv`
+4. Activate the virtual environment: `source venv/bin/activate` (on Linux/Mac) or `venv\Scripts\activate` (on Windows)
+5. Install the required packages: `pip install -r requirements.txt`
+6. Run the application: `python main.py`
 
-Recommended plugins in IntelliJ:
-*  python
-*  pydantic
-
-Clone the gitHub repository, e.g. for master:
-```bash
-git clone https://github.com/youwol/py-youwol.git
-```
-
-Create a virtual environment using python3.9, in IntelliJ:
-*  *Ctrl+Alt+Shift+S*
-* SDK -> add -> new python SDK
-* select python3.9 as base interpreter
-
-In the created virtual environment, add a `youwol.pth` file in `lib64/python3.9/site-packages`
-and set its content to the absolute path of the folder `py-youwol`.
-
-Create an alias command for 'youwol' starting youwol. E.g. in linux system:
-
-`alias youwol=”{PATH_TO_VENV}/bin/python3.9 {PATH_TO_PY_YOUWOL}/youwol/main.py”`
-Where:
-*  PATH_TO_VENV is the absolute path to the python's virtual environment created
-*  PATH_TO_PY_YOUWOL is the absolute path to the py-youwol folder checked ou from git
-Save it to your `~/.bashrc` file.
-
-### Installation issues
-
-Some common issues are listed at the end of this page, you may find a 
-solution there if you encounter a problem during the installation.
-
-
-## Getting started
-
-Start youwol, in a terminal:
-
-```bash
-youwol
-```
-Proceed with initialization with default settings and open the link displayed in the terminal in a browser.
-
-From the applications launcher menu (top-right icon in the top-banner), two of them can be visited first:
-*  developer portal: the application to help create and publish asset to the platform
-*  explorer: file system of youwol
-
-You can find the complete guide to py-youwol and how to create assets [here](https://l.youwol.com/doc/py-youwol).
-
-## install issues
-
-
-### Ubuntu
-#### 'fatal error: Python.h: No such file or directory'
-
-```
-multidict/_multidict.c:1:10: fatal error: Python.h: No such file or directory
-#include "Python.h"
-              ^~~~~~~~~~
-    compilation terminated.
-```
-Solution: you need to run: 
-```
-sudo apt-get install python3.x-dev
-```  
-where **x** is the python version 
-you are using to run ```youwol```

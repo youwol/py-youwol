@@ -1,12 +1,9 @@
-import shutil
 from pathlib import Path
 from typing import Union, Optional
 
 from appdirs import AppDirs
 from pydantic import BaseModel
 
-import youwol
-from youwol.main_args import get_main_arguments
 from youwol_utils.http_clients.cdn_backend.utils import create_local_scylla_db_docs_file_if_needed
 from youwol_utils.utils_paths import existing_path_or_default
 
@@ -18,7 +15,6 @@ class PathsBook(BaseModel):
     config: Path
     system: Path
     databases: Path
-    youwol: Path = Path(youwol.__file__).parent
 
     @property
     def local_docdb(self) -> Path:
@@ -141,6 +137,9 @@ def ensure_config_file_exists_or_create_it(path: Optional[Path]) -> (Path, bool)
                                                     default_root=app_dirs.user_config_dir)
     if not exists:
         final_path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy(get_main_arguments().youwol_path.parent / 'youwol_data' / 'config.py', final_path)
+        final_path.write_text("""
+from youwol.environment import Configuration
 
+Configuration()
+""")
     return final_path, exists

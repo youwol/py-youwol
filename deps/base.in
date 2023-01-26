@@ -7,11 +7,13 @@ colorama
 cowpy
 deepdiff
 fastapi
+importlib_resources
 minio
 Pillow
 psutil
 python-daemon
 python-multipart
+pyparsing
 pyyaml
 pyjwt[crypto]
 redis

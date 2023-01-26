@@ -3,4 +3,6 @@ pdoc3
 pip-tools
 pip
 coverage
+twine
+build
 pycodestyle
