@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Union, List
 
-import youwol.pipelines
+import youwol
 from youwol.environment.paths import PathsBook
 from youwol_utils.utils_paths import FileListing, matching_files
 
@@ -23,7 +23,7 @@ def auto_detect_projects(paths_book: PathsBook, root_folder: Union[Path, str], i
     except ValueError:
         pass
     try:
-        pipelines_path = youwol.pipelines.__file__
+        pipelines_path = youwol.__file__
         if pipelines_path is not None:
             pipelines_ignore = Path(pipelines_path).parent.relative_to(root_folder)
     except ValueError:
