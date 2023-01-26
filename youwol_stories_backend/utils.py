@@ -47,6 +47,8 @@ async def query_document(document_id: str, configuration: Configuration, headers
         owner=Constants.default_owner,
         headers=headers
     )
+    if not docs['documents']:
+        raise QueryIndexException(query="document_id={document_id}#1", error="No document found")
     return docs['documents'][0]
 
 
