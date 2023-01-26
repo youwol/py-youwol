@@ -10,23 +10,21 @@ from pydantic import BaseModel
 
 import youwol
 from youwol.environment import CloudEnvironment, Authentication, Command, Projects, ExplicitProjectsFinder
-
-from youwol.environment.projects_finders import auto_detect_projects
+from youwol.environment.config_from_module import configuration_from_python
 from youwol.environment.errors_handling import (
     ConfigurationLoadingStatus, ConfigurationLoadingException,
     CheckSystemFolderWritable, CheckDatabasesFolderHealthy, ErrorResponse
 )
-
 from youwol.environment.models import Events, Configuration, CustomMiddleware, ApiConfiguration, Connection
-from youwol.environment.config_from_module import configuration_from_python
 from youwol.environment.paths import PathsBook, ensure_config_file_exists_or_create_it
+from youwol.environment.paths import app_dirs
+from youwol.environment.projects_finders import auto_detect_projects
 from youwol.main_args import get_main_arguments, MainArguments
 from youwol.routers.custom_backends import install_routers
 from youwol.web_socket import WsDataStreamer
 from youwol_utils.context import ContextFactory, InMemoryReporter
 from youwol_utils.servers.fast_api import FastApiRouter
 from youwol_utils.utils_paths import parse_json, ensure_dir_exists
-from youwol.environment.paths import app_dirs
 
 
 class YouwolEnvironment(BaseModel):
@@ -211,17 +209,14 @@ async def safe_load(
     system = config.system
     projects = config.projects
     customization = config.customization
-    data_dir = Path(system.localEnvironment.dataDir)
-    data_dir = data_dir if data_dir.is_absolute() else path.parent / data_dir
-    cache_dir = Path(system.localEnvironment.cacheDir)
-    cache_dir = cache_dir if cache_dir.is_absolute() else path.parent / cache_dir
+    data_dir = ensure_dir_exists(system.localEnvironment.dataDir, root_candidates=app_dirs.user_data_dir)
+    cache_dir = ensure_dir_exists(system.localEnvironment.cacheDir, root_candidates=app_dirs.user_cache_dir)
 
     paths_book = PathsBook(
         config=path,
         databases=data_dir,
         system=cache_dir
     )
-    ensure_dir_exists(system.localEnvironment.cacheDir, root_candidates=app_dirs.user_cache_dir)
 
     if not os.access(paths_book.system.parent, os.W_OK):
         check_system_folder_writable.status = ErrorResponse(

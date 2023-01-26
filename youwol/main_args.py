@@ -3,8 +3,6 @@ import os
 from pathlib import Path
 from typing import NamedTuple, Optional
 
-import youwol
-
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--daemonize', help='Daemonize', action="store_true")
@@ -21,7 +19,6 @@ class MainArguments(NamedTuple):
     config_path: Path
     daemonize: bool = False
     email: Optional[str] = None
-    youwol_path: Path = Path(youwol.__file__).parent
     execution_folder = Path(os.getcwd())
     verbose: bool = False
 
