@@ -16,7 +16,8 @@ from youwol_stories_backend.utils import (
     query_document, position_start,
     position_next, position_format, format_document_resp, get_requirements, get_document_path,
     query_story, zip_data_filename, zip_requirements_filename,
-    create_default_global_contents, zip_global_content_filename, get_story_impl, delete_document_impl, get_children_rec,
+    create_default_global_contents, zip_global_content_filename, get_story_impl, delete_from_page, get_children_rec,
+    delete_docdb_docs_from_page,
 )
 from youwol_utils import (
     Request, user_info,
@@ -579,8 +580,8 @@ async def delete_document(
     async with Context.start_ep(
             request=request
     ) as ctx:  # type: Context
-        return await delete_document_impl(story_id=story_id, document_id=document_id, configuration=configuration,
-                                          context=ctx)
+        return await delete_from_page(story_id=story_id, document_id=document_id, configuration=configuration,
+                                      context=ctx)
 
 
 @router.delete(
@@ -599,12 +600,16 @@ async def delete_story(
 
         headers = ctx.headers()
         doc_db_stories = configuration.doc_db_stories
+        storage = configuration.storage
         story = await get_story_impl(story_id=story_id, configuration=configuration, context=ctx)
-        deleted = await delete_document_impl(story_id=story_id, document_id=story.rootDocumentId,
-                                             configuration=configuration, context=ctx)
-        await doc_db_stories.delete_document(doc={'story_id': story.storyId}, owner=Constants.default_owner,
-                                             headers=headers)
-        return deleted
+        deleted_docs, _, _ = await asyncio.gather(
+            delete_docdb_docs_from_page(document_id=story.rootDocumentId, configuration=configuration, context=ctx),
+            doc_db_stories.delete_document(doc={'story_id': story.storyId}, owner=Constants.default_owner,
+                                           headers=headers),
+            storage.delete_group(prefix=story_id, owner=Constants.default_owner, headers=headers)
+        )
+
+        return DeleteResp(deletedDocuments=len(deleted_docs))
 
 
 @router.post(
