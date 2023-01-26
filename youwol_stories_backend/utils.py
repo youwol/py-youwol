@@ -196,8 +196,7 @@ async def get_children_rec(
     return [*direct_children, *indirect_children]
 
 
-async def delete_document_impl(
-        story_id: str,
+async def delete_docdb_docs_from_page(
         document_id: str,
         configuration: Configuration,
         context: Context
@@ -205,8 +204,6 @@ async def delete_document_impl(
     async with context.start(action="delete_document_impl") as ctx:  # type: Context
         headers = ctx.headers()
         doc_db_docs = configuration.doc_db_documents
-        storage = configuration.storage
-
         all_children = await get_children_rec(
             document_id=document_id,
             start_index=-math.inf,
@@ -218,12 +215,34 @@ async def delete_document_impl(
         docs = await doc_db_docs.query(query_body=f"document_id={document_id}#1", owner=Constants.default_owner,
                                        headers=headers)
         document = docs['documents'][0]
-
+        all_docs = [document, *all_children]
         await asyncio.gather(
             *[
                 doc_db_docs.delete_document(doc=doc, owner=Constants.default_owner, headers=headers)
-                for doc in [document, *all_children]
-            ],
-            storage.delete_group(prefix=story_id, owner=Constants.default_owner, headers=headers)
+                for doc in all_docs
+            ]
         )
-        return DeleteResp(deletedDocuments=len(all_children) + 1)
+        return all_docs
+
+
+async def delete_from_page(
+        story_id: str,
+        document_id: str,
+        configuration: Configuration,
+        context: Context
+):
+    async with context.start(action="delete_document_impl") as ctx:  # type: Context
+        headers = ctx.headers()
+        storage = configuration.storage
+
+        deleted_docs = await delete_docdb_docs_from_page(document_id=document_id, configuration=configuration,
+                                                         context=ctx)
+
+        await asyncio.gather(
+            *[
+                storage.delete(path=get_document_path(story_id=story_id, document_id=doc['content_id']),
+                               owner=Constants.default_owner, headers=headers)
+                for doc in deleted_docs
+            ]
+        )
+        return DeleteResp(deletedDocuments=len(deleted_docs))
