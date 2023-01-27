@@ -75,20 +75,21 @@ async def file_content(
 
 
 @router.get("/configurations/predefined/{rest_of_path:path}",
-            summary="text content of the configuration file")
+            summary="load a predefined configuration file")
 async def load_predefined_config_file(
         request: Request,
-        rest_of_path: str,
-        config: YouwolEnvironment = Depends(yw_config)
+        rest_of_path: str
 ):
     async with Context.start_ep(
             request=request,
             with_reporters=[LogsStreamer()],
     ):
-        path = config.pathsBook.youwol / 'environment' / 'models' / 'predefined_configs' / rest_of_path
-        env = await YouwolEnvironmentFactory.load_from_file(path)
-        asyncio.ensure_future(ProjectLoader.initialize(env=env))
-        return await status(request, env)
+        from youwol.environment import predefined_configs
+        source = importlib_resources.files(predefined_configs).joinpath(rest_of_path)
+        with importlib_resources.as_file(source) as path:
+            env = await YouwolEnvironmentFactory.load_from_file(path)
+            asyncio.ensure_future(ProjectLoader.initialize(env=env))
+            return await status(request, env)
 
 
 @router.get("/status",
