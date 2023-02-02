@@ -45,7 +45,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev=["pip-tools"]
-qa=["coverage","pycodestyle"]
+qa=["coverage", "pycodestyle", "pip-audit"]
 publish=["pdoc3", "build", "twine"]
 
 

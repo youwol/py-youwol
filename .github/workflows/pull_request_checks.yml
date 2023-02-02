@@ -305,6 +305,47 @@ jobs:
       - name: Prepare repository
         id: prepare
         uses: youwol/nestor/py/prepare@v1
+        with:
+          requirements: requirements-qa.txt
+
+      - name: Compile dependencies
+        id: deps_compile
+        run: |
+          python -m venv venv
+          . venv/bin/activate
+          pip install -r requirements-dev.txt
+          sh deps_manager.sh compile
+          rm -r venv
+        shell: sh
+
+      - name: Audit requirements with PyPI
+        id: audit_requirements_pypi
+        run: |
+          pip-audit --vulnerability-service pypi \
+            --require-hashes \
+            --requirement requirements-dev.txt \
+            --requirement requirements-docker.txt \
+            --requirement requirements-qa.txt \
+            --requirement requirements-publish.txt \
+            || echo "result=failure" > $GITHUB_OUTPUT
+
+      - name: Audit requirements with OSV
+        id: audit_requirements_osv
+        run: |
+          pip-audit --vulnerability-service osv \
+            --requirement requirements-dev.txt \
+            --requirement requirements-docker.txt \
+            --requirement requirements-qa.txt \
+            --requirement requirements-publish.txt \
+            || echo "result=failure" > $GITHUB_OUTPUT
+
+      - name: Audit project with PyPI
+        id: audit_project_pypi
+        run: pip-audit --vulnerability-service pypi ./ || echo "result=failure" > $GITHUB_OUTPUT
+
+      - name: Audit project with OSV
+        id: audit_project_osv
+        run: pip-audit --vulnerability-service osv ./ || echo "result=failure" > $GITHUB_OUTPUT
 
       - name: PEP 8
         id: pep8
@@ -314,9 +355,51 @@ jobs:
         run: pycodestyle --max-line-length=$line_length --format="$format" . || echo "result=failure" >> $GITHUB_OUTPUT
         shell: sh
 
+      - name: Check repository cleanness
+        id: git_cleanness
+        run: |
+          git_status=$(git status -s)
+          [ -z "$git_status" ] || ( echo "$git_status" ; echo "result=failure" >> $GITHUB_OUTPUT )
+        shell: sh
+
+      - name: On Audit requirements with PyPI failure
+        id: audit_requirements_pypi_failure
+        if: steps.audit_requirements_pypi.outputs.result == 'failure'
+        uses: actions/github-script@v6
+        with:
+          script: core.setFailed("Job failed because auditing requirements with PyPI failed, see job logs and annotations.")
+
+      - name: On Audit requirements with OSV failure
+        id: audit_requirements_osv_failure
+        if: steps.audit_requirements_osv.outputs.result == 'failure'
+        uses: actions/github-script@v6
+        with:
+          script: core.setFailed("Job failed because auditing requirements with OSV failed, see job logs and annotations.")
+
+      - name: On Audit project with PyPI failure
+        id: audit_project_pypi_failure
+        if: steps.audit_project_pypi.outputs.result == 'failure'
+        uses: actions/github-script@v6
+        with:
+          script: core.setFailed("Job failed because auditing project with PyPI failed, see job logs and annotations.")
+
+      - name: On Audit project with OSV failure
+        id: audit_project_osv_failure
+        if: steps.audit_project_osv.outputs.result == 'failure'
+        uses: actions/github-script@v6
+        with:
+          script: core.setFailed("Job failed because auditing project with PyPI failed, see job logs and annotations.")
+
       - name: On PEP 8 failure
         id: pep8_failure
         if: steps.pep8.outputs.result == 'failure'
         uses: actions/github-script@v6
         with:
           script: core.setFailed("Job failed because source is badly formatted, see job logs and annotations.")
+
+      - name: On Repository dirty
+        id: git_cleanness_dirty
+        if: steps.git_cleanness.outputs.result == 'failure'
+        uses: actions/github-script@v6
+        with:
+          script: core.setFailed("Job failed because some files were modified or untracked, see job logs and annotations.")
