@@ -76,8 +76,7 @@ failure_with_help() {
 ch_cwd() {
   script_dir=$(dirname "$0")
   script_dir_realpath=$(realpath "${script_dir}")
-  script_dir_parent="${script_dir_realpath}/.."
-  cd "${script_dir_parent}" > /dev/null || failure "Cannot change current working dir to '${script_dir_parent}'"
+  cd "${script_dir_realpath}" > /dev/null || failure "Cannot change current working dir to '${script_dir_realpath}'"
   echo "[project_dir] '$(pwd)'"
 }
 
