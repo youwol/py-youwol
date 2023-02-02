@@ -34,9 +34,19 @@ set -e
 action="$1"
 package="$2"
 
-out_dev="dev-requirements.txt"
-out_docker="docker-requirements.txt"
+out_dev="requirements-dev.txt"
+extras_dev="--extra=dev --extra=qa --extra=publish"
+
+out_qa="requirements-qa.txt"
+extras_qa="--extra=qa"
+
+out_publish="requirements-publish.txt"
+extras_publish="--extra=publish"
+
+out_docker="requirements-docker.txt"
+
 out_no_hashes="requirements.txt"
+extras_no_hashes="${extras_dev}"
 
 help_message() {
   echo "Usage: ${0} [action]
@@ -67,9 +77,30 @@ failure_with_help() {
 ch_cwd() {
   script_dir=$(dirname "$0")
   script_dir_realpath=$(realpath "${script_dir}")
-  script_dir_parent="${script_dir_realpath}/.."
-  cd "${script_dir_parent}" > /dev/null || failure "Cannot change current working dir to '${script_dir_parent}'"
+  cd "${script_dir_realpath}" > /dev/null || failure "Cannot change current working dir to '${script_dir_realpath}'"
   echo "[project_dir] '$(pwd)'"
+}
+
+pip_compile() {
+  out=$1
+  extras=$2
+  no_hashes=$3
+
+  opts="--allow-unsafe"
+
+  if [ -z "${no_hashes}" ]; then
+    opts="${opts} --generate-hashes"
+  fi
+
+  if [ -n "${extras}" ]; then
+    opts="${opts} ${extras}"
+  fi
+
+  echo "[compile] '${out}'"
+  pip-compile \
+    ${opts} \
+    --output-file="${out}" \
+    pyproject.toml
 }
 
 do_compile() {
@@ -78,30 +109,44 @@ do_compile() {
       echo
       ch_cwd
 
-      echo "[compile] '${out_dev}'"
-      pip-compile \
-          --allow-unsafe \
-          --generate-hashes \
-          deps/base.in deps/dev.in \
-          --output-file="${out_dev}"
-      echo "[compile] '${out_docker}'"
-      pip-compile \
-          --allow-unsafe \
-          --generate-hashes \
-          deps/base.in \
-          --output-file="${out_docker}"
-      echo "[compile] '${out_no_hashes}'"
-      pip-compile \
-          --allow-unsafe \
-          deps/base.in deps/dev.in \
-          --output-file="${out_no_hashes}"
+      pip_compile "${out_dev}" "${extras_dev}"
+
+      pip_compile "${out_qa}" "${extras_qa}"
+
+      pip_compile "${out_publish}" "${extras_publish}"
+
+      pip_compile "${out_docker}"
+
+      pip_compile "${out_no_hashes}" "${extras_no_hashes}" "no_hashes"
 
       echo
       echo "Requirements files updated."
       echo "You should run pip-sync now :"
       echo
-      echo "  pip-sync dev-requirements.txt"
+      echo "  pip-sync requirements-dev.txt"
       echo
+}
+
+pip_upgrade_all() {
+  out=$1
+  extras=$2
+  no_hashes=$3
+
+  opts="--upgrade --allow-unsafe"
+
+  if [ -z "${no_hashes}" ]; then
+    opts="${opts} --generate-hashes"
+  fi
+
+  if [ -n "${extras}" ]; then
+    opts="${opts} ${extras}"
+  fi
+
+  echo "[upgrade] '${out}'"
+  pip-compile \
+    ${opts} \
+    --output-file="${out}" \
+    pyproject.toml
 }
 
 do_upgrade_all() {
@@ -110,33 +155,45 @@ do_upgrade_all() {
       echo
       ch_cwd
 
-      echo "[upgrade] '${out_dev}'"
-      pip-compile \
-          --upgrade \
-          --allow-unsafe \
-          --generate-hashes \
-           deps/base.in deps/dev.in \
-          --output-file="${out_dev}"
-      echo "[upgrade] '${out_docker}'"
-      pip-compile \
-          --upgrade \
-          --allow-unsafe \
-          --generate-hashes \
-           deps/base.in \
-          --output-file="${out_docker}"
-      echo "[upgrade] '${out_no_hashes}'"
-      pip-compile \
-          --upgrade \
-          --allow-unsafe \
-           deps/base.in deps/dev.in \
-          --output-file="${out_no_hashes}"
+      pip_upgrade_all "${out_dev}" "${extras_dev}"
+
+      pip_upgrade_all "${out_qa}" "${extras_qa}"
+
+      pip_upgrade_all "${out_publish}" "${extras_publish}"
+
+      pip_upgrade_all "${out_docker}"
+
+      pip_upgrade_all "${out_no_hashes}" "${extras_no_hashes}" "no_hashes"
 
       echo
       echo "Dependencies upgraded and requirements files updated."
       echo "You should run pip-sync now :"
       echo
-      echo "    pip-sync dev-requirements.txt"
+      echo "    pip-sync requirements-dev.txt"
       echo
+}
+
+pip_upgrade_package() {
+  package=$1
+  out=$2
+  extras=$3
+  no_hashes=$4
+
+  opts="--upgrade-package ${package} --allow-unsafe"
+
+  if [ -z "${no_hashes}" ]; then
+    opts="${opts} --generate-hashes"
+  fi
+
+  if [ -n "${extras}" ]; then
+    opts="${opts} ${extras}"
+  fi
+
+  echo "[upgrade package '${package}'] '${out}'"
+  pip-compile \
+    ${opts} \
+    --output-file="${out}" \
+    pyproject.toml
 }
 
 do_upgrade_package() {
@@ -146,32 +203,21 @@ do_upgrade_package() {
       echo
       ch_cwd
 
-      echo "[upgrade package '${package}'] '${out_dev}'"
-      pip-compile \
-          --upgrade-package "${package}" \
-          --allow-unsafe \
-          --generate-hashes \
-           deps/base.in deps/dev.in \
-          --output-file="${out_dev}"
-      echo "[upgrade package '${package}'] '${out_docker}'"
-      pip-compile \
-          --upgrade-package "${package}" \
-          --allow-unsafe \
-          --generate-hashes \
-           deps/base.in \
-          --output-file="${out_docker}"
-      echo "[upgrade package '${package}'] '${out_no_hashes}'"
-      pip-compile \
-          --upgrade-package "${package}" \
-          --allow-unsafe \
-           deps/base.in deps/dev.in \
-          --output-file="${out_no_hashes}"
+      pip_upgrade_package "${package}" "${out_dev}" "${extras_dev}"
+
+      pip_upgrade_package "${package}" "${out_qa}" "${extras_qa}"
+
+      pip_upgrade_package "${package}" "${out_publish}" "${extras_publish}"
+
+      pip_upgrade_package "${package}" "${out_docker}"
+
+      pip_upgrade_package "${package}" "${out_no_hashes}" "${extras_no_hashes}" "no_hashes"
 
       echo
       echo "Package '${package}' upgraded and requirements files updated."
       echo "You should run pip-sync now :"
       echo
-      echo "    pip-sync dev-requirements.txt"
+      echo "    pip-sync requirements-dev.txt"
       echo
 }
 

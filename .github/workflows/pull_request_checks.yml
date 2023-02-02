@@ -166,7 +166,7 @@ jobs:
       - name: Prepare py-youwol
         uses: youwol/nestor/py/prepare@v1
         with:
-          requirements: dev-requirements.txt
+          requirements: requirements-qa.txt
 
       - name: Setup Coverage configuration
         env:
