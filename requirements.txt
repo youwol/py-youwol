@@ -26,6 +26,8 @@ brotli==1.0.9
     # via youwol (pyproject.toml)
 build==0.10.0
     # via youwol (pyproject.toml)
+cachecontrol[filecache]==0.12.11
+    # via pip-audit
 certifi==2022.12.7
     # via
     #   minio
@@ -50,6 +52,8 @@ cryptography==38.0.3
     # via
     #   pyjwt
     #   secretstorage
+cyclonedx-python-lib==3.1.5
+    # via pip-audit
 deepdiff==5.8.1
     # via youwol (pyproject.toml)
 deprecated==1.2.13
@@ -66,6 +70,8 @@ frozenlist==1.3.0
     #   aiosignal
 h11==0.13.0
     # via uvicorn
+html5lib==1.1
+    # via pip-audit
 idna==3.3
     # via
     #   anyio
@@ -87,7 +93,9 @@ jeepney==0.8.0
 keyring==23.13.1
     # via twine
 lockfile==0.12.2
-    # via python-daemon
+    # via
+    #   cachecontrol
+    #   python-daemon
 mako==1.2.2
     # via pdoc3
 markdown==3.3.7
@@ -102,15 +110,21 @@ minio==7.1.9
     # via youwol (pyproject.toml)
 more-itertools==9.0.0
     # via jaraco-classes
+msgpack==1.0.4
+    # via cachecontrol
 multidict==6.0.2
     # via
     #   aiohttp
     #   yarl
 ordered-set==4.1.0
     # via deepdiff
-packaging==21.3
+packageurl-python==0.10.4
+    # via cyclonedx-python-lib
+packaging==23.0
     # via
     #   build
+    #   pip-audit
+    #   pip-requirements-parser
     #   redis
 pdoc3==0.10.0
     # via youwol (pyproject.toml)
@@ -118,6 +132,12 @@ pep517==0.12.0
     # via pip-tools
 pillow==9.3.0
     # via youwol (pyproject.toml)
+pip-api==0.0.30
+    # via pip-audit
+pip-audit==2.4.14
+    # via youwol (pyproject.toml)
+pip-requirements-parser==32.0.1
+    # via pip-audit
 pip-tools==6.6.2
     # via youwol (pyproject.toml)
 pkginfo==1.9.6
@@ -138,7 +158,7 @@ pyjwt[crypto]==2.4.0
     # via youwol (pyproject.toml)
 pyparsing==3.0.9
     # via
-    #   packaging
+    #   pip-requirements-parser
     #   youwol (pyproject.toml)
 pyproject-hooks==1.0.0
     # via build
@@ -154,14 +174,19 @@ redis==4.3.4
     # via youwol (pyproject.toml)
 requests==2.28.2
     # via
+    #   cachecontrol
     #   requests-toolbelt
     #   twine
 requests-toolbelt==0.10.1
     # via twine
+resolvelib==0.9.0
+    # via pip-audit
 rfc3986==2.0.0
     # via twine
 rich==13.2.0
-    # via twine
+    # via
+    #   pip-audit
+    #   twine
 secretstorage==3.3.3
     # via keyring
 semantic-version==2.10.0
@@ -169,11 +194,18 @@ semantic-version==2.10.0
 six==1.16.0
     # via
     #   bleach
+    #   html5lib
     #   python-multipart
 sniffio==1.2.0
     # via anyio
+sortedcontainers==2.4.0
+    # via cyclonedx-python-lib
 starlette==0.19.1
     # via fastapi
+toml==0.10.2
+    # via
+    #   cyclonedx-python-lib
+    #   pip-audit
 tomli==2.0.1
     # via
     #   build
@@ -197,7 +229,9 @@ uvicorn==0.18.2
 watchdog==2.1.9
     # via youwol (pyproject.toml)
 webencodings==0.5.1
-    # via bleach
+    # via
+    #   bleach
+    #   html5lib
 websockets==10.3
     # via youwol (pyproject.toml)
 wheel==0.38.4
@@ -213,8 +247,11 @@ zipp==3.8.0
 
 # The following packages are considered to be unsafe in a requirements file:
 pip==23.0
-    # via pip-tools
+    # via
+    #   pip-api
+    #   pip-tools
 setuptools==65.6.3
     # via
+    #   cyclonedx-python-lib
     #   pip-tools
     #   python-daemon
