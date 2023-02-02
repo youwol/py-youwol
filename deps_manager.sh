@@ -34,18 +34,19 @@ set -e
 action="$1"
 package="$2"
 
-out_dev="dev-requirements.txt"
+out_dev="requirements-dev.txt"
 extras_dev="--extra=dev --extra=qa --extra=publish"
 
-out_qa="qa-requirements.txt"
+out_qa="requirements-qa.txt"
 extras_qa="--extra=qa"
 
-out_publish="publish-requirements.txt"
+out_publish="requirements-publish.txt"
 extras_publish="--extra=publish"
 
-out_docker="docker-requirements.txt"
+out_docker="requirements-docker.txt"
 
 out_no_hashes="requirements.txt"
+extras_no_hashes="${extras_dev}"
 
 help_message() {
   echo "Usage: ${0} [action]
@@ -116,13 +117,13 @@ do_compile() {
 
       pip_compile "${out_docker}"
 
-      pip_compile "${out_no_hashes}" "${extras_dev}" "no_hashes"
+      pip_compile "${out_no_hashes}" "${extras_no_hashes}" "no_hashes"
 
       echo
       echo "Requirements files updated."
       echo "You should run pip-sync now :"
       echo
-      echo "  pip-sync dev-requirements.txt"
+      echo "  pip-sync requirements-dev.txt"
       echo
 }
 
@@ -168,7 +169,7 @@ do_upgrade_all() {
       echo "Dependencies upgraded and requirements files updated."
       echo "You should run pip-sync now :"
       echo
-      echo "    pip-sync dev-requirements.txt"
+      echo "    pip-sync requirements-dev.txt"
       echo
 }
 
@@ -216,7 +217,7 @@ do_upgrade_package() {
       echo "Package '${package}' upgraded and requirements files updated."
       echo "You should run pip-sync now :"
       echo
-      echo "    pip-sync dev-requirements.txt"
+      echo "    pip-sync requirements-dev.txt"
       echo
 }
 
