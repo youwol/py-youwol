@@ -53,6 +53,7 @@ publish = [
     "pdoc3",
     "build",
     "twine",
+    "tomli-w"
 ]
 
 [project.scripts]
