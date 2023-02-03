@@ -1,6 +1,6 @@
 [project]
 name = "youwol"
-version = "0.0.3"
+version = "0.0.5rc2.dev"
 authors = [
     { name = "G. Reinisch", email = "greinisch@youwol.com" },
     { name = "J. Decharne", email = "jdecharne@youwol.com" },
@@ -47,13 +47,13 @@ dev = [
 qa = [
     "coverage",
     "pycodestyle",
-    "pip-audit"
+    "pip-audit",
 ]
 publish = [
     "pdoc3",
     "build",
     "twine",
-    "tomli-w"
+    "tomli-w",
 ]
 
 [project.scripts]
