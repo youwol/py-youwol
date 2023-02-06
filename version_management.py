@@ -1,27 +1,33 @@
+import subprocess
 import sys
 
 import tomli
 import tomli_w
 from packaging import version
 
+PYPROJECT_TOML = "pyproject.toml"
 
-def debug(_msg: str):
-    # sys.stderr.write(msg + "\n")
-    pass
+
+def debug(msg: str):
+    sys.stderr.write(msg + "\n")
 
 
 def write_version(v: str):
-
     pyproject_dict = None
-    with open("pyproject.toml", "rb") as f_r:
+    with open(PYPROJECT_TOML, "rb") as f_r:
         pyproject_dict = tomli.load(f_r)
 
-    with open("pyproject.toml", "wb") as f_w:
+    with open(PYPROJECT_TOML, "wb") as f_w:
         pyproject_dict.get("project")["version"] = v
         tomli_w.dump(pyproject_dict, f_w)
         debug(f"written : {v}")
 
     debug(f"canonical version : {get_current_version()}")
+
+
+def git_commit(msg: str):
+    subprocess.run("git add pyproject.toml", shell=True)
+    subprocess.run(f"git commit -m '{msg}'", shell=True)
 
 
 def get_current_version():
@@ -64,6 +70,7 @@ def cmd_prepare_release_candidate():
 
     target = f"{major}.{minor}.{micro}{rc}"
     write_version(target)
+    git_commit(f"🔖 release candidate {target}")
 
 
 def cmd_restore_dev():
@@ -80,8 +87,10 @@ def cmd_restore_dev():
     else:
         micro = str(int(micro) + 1)
 
-    dev_version = f"{major}.{minor}.{micro}{rc}.dev"
+    next_version = f"{major}.{minor}.{micro}{rc}"
+    dev_version = f"{next_version}.dev"
     write_version(dev_version)
+    git_commit(f"🔖 prepare for next version {next_version}")
 
 
 def cmd_prepare_final():
@@ -90,6 +99,7 @@ def cmd_prepare_final():
         raise ValueError(f"{current_version} is not a release candidate")
     final_version = current_version.base_version
     write_version(final_version)
+    git_commit(f"🔖 release {final_version}")
 
 
 def cmd_get_final_version():
