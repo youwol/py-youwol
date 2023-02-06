@@ -92,3 +92,9 @@ youwol_flux_backend = [
     "templates/**/*",
     "templates/.**/*",
 ]
+
+[tool.coverage.run]
+branch = true
+relative_files = true
+data_file = "coverage.coverage"
+debug = "sys,config,pathmap"
