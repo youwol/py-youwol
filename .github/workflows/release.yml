@@ -1,0 +1,298 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: the version of this release
+        type: string
+
+      dry-run:
+        description: |
+          Dry run : do not publish any release
+        type: boolean
+        default: true
+
+      final:
+        description: |
+          Final release : also build the final version, and published it (if not a dry run)
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  build-candidate:
+    name: Build & Publish py-youwol
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Only main if actual release
+        id: only_main_actual_release
+        if: "github.ref != 'refs/heads/main' && ! inputs.dry-run"
+        uses: actions/github-script@v6
+        with:
+          script: core.setFailed("Job failed because it is not a dry-run and branch is not main")
+
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.PAT_NESTOR_PYYOUWOL_PUSH }}
+
+      - name: Prepare Python 3.9
+        id: prepare_python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+
+      - name: Install Publish Requirements
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-publish.txt
+
+      - name: Set up GPG
+        id: set_up_gpg
+        uses: youwol/nestor/gpg/set_up@v2
+        with:
+          secret: ${{ secrets.NESTOR_GPG_PRIV }}
+
+      - name: Job Parameters
+        id: job_params
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          final=$(python version_management.py get_final)
+          echo final-version=${VERSION:-$final} >> $GITHUB_OUTPUT
+        shell: sh
+
+      - name: Bump Version to Release Candidate
+        id: bump_version_rc
+        env:
+          GNUPGHOME: ${{ steps.set_up_gpg.outputs.gnupghome }}
+        run: |
+          python version_management.py prepare_rc ${{ steps.job_params.outputs.final-version }}
+          echo version=$(python version_management.py get_current) >> $GITHUB_OUTPUT
+          echo commit=$(git log -1 --pretty=%h) >> $GITHUB_OUTPUT
+        shell: sh
+
+      - name: Build Release Candidate
+        id: build_rc
+        run: python -m build
+        shell: sh
+
+      - name: Upload Artifact for Release Candidate
+        id: upload_artifact_rc
+        uses: actions/upload-artifact@v3
+        with:
+          name: youwol-${{ steps.bump_version_rc.outputs.version }}-${{ steps.bump_version_rc.outputs.commit }}
+          path: dist/youwol-${{ steps.bump_version_rc.outputs.version }}-*
+
+      - name: Bump Version to Next
+        id: bump_version_next_release_candidate
+        env:
+          GNUPGHOME: ${{ steps.set_up_gpg.outputs.gnupghome }}
+        run: python version_management.py restore_dev
+        shell: sh
+
+      - name: Publish Release Candidate
+        if: "! inputs.dry-run"
+        id: publish_rc
+        env:
+          GNUPGHOME: ${{ steps.set_up_gpg.outputs.gnupghome }}
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.TESTPYPI_NESTOR_UPLOAD_YOUWOL }}
+          TWINE_REPOSITORY: testpypi
+          TWINE_NON_INTERACTIVE: batch
+          VERSION: ${{ steps.bump_version_rc.outputs.version }}
+          COMMIT: ${{ steps.bump_version_rc.outputs.commit }}
+        run: |
+          tag_msg_1st_line="Published release candidate $VERSION on test.pypi.org"
+          tag_msg_2nd_line="https://test.pypi.org/project/youwol/$VERSION/"
+          twine upload -s -i nestor@youwol.com --verbose dist/youwol-$VERSION-*
+          git tag -a "v$VERSION" -m "${tag_msg_1st_line}" -m "${tag_msg_2nd_line}" $COMMIT
+          git push --follow-tags
+        shell: sh
+
+      - name: Wait for release availability
+        if: "! inputs.dry-run"
+        id: wait_for_release_candidate
+        env:
+          VERSION: ${{ steps.bump_version_rc.outputs.version }}
+        run: |
+          for i in $(seq 1 1 10); do
+            echo "try $i/10"
+            python3.9 -m pip install \
+              --index-url https://test.pypi.org/simple/ \
+              --extra-index-url https://pypi.org/simple/ \
+              youwol==$VERSION && exit 0
+            echo "no release $VERSION"
+            sleep 10
+          done
+          exit 1
+
+      - name: Install from local
+        if: inputs.dry-run
+        id: install_local
+        run: |
+          python3.9 -m pip install ./
+
+      - name: Prepare http-clients
+        id: prepare_http-clients
+        uses: youwol/nestor/ts/prepare@v2
+        with:
+          repository: youwol/http-clients
+          ref: main
+          path: ${{ runner.temp }}/http-clients
+
+      - name: Prepare cdn-client
+        id: prepare_cdn-client
+        uses: youwol/nestor/ts/prepare@v2
+        with:
+          repository: youwol/cdn-client
+          ref: main
+          path: ${{ runner.temp }}/cdn-client
+
+      - name: Prepare local-youwol-client
+        id: prepare_local-youwol-client
+        uses: youwol/nestor/ts/prepare@v2
+        with:
+          repository: youwol/local-youwol-client
+          ref: main
+          path: ${{ runner.temp }}/local-youwol-client
+
+      - name: Checkout configuration repository
+        id: checkout_conf
+        uses: actions/checkout@v3
+        with:
+          repository: youwol/integrations-tests-conf
+          ref: main
+          path: integration_tests_conf
+
+      - name: Move configuration
+        id: move_conf
+        run: mv integration_tests_conf ${{ runner.temp }}/int_tests_conf
+        shell: sh
+
+      - name: Make dir py-youwol run
+        id: mkdir_py-youwol_run
+        run: mkdir ${{ runner.temp }}/py-youwol_run
+        shell: sh
+
+      - name: Start py-youwol with int conf
+        id: start_py-youwol_int_conf
+        uses: youwol/nestor/py-youwol/start@v2
+        with:
+          path: ${{ runner.temp }}/py-youwol_run
+          custom_start_cmd: 'youwol'
+          conf_repository: youwol/integrations-tests-conf
+          conf_path: yw_config_IT.py
+          USERNAME_INTEGRATION_TESTS: ${{ secrets.USERNAME_INTEGRATION_TESTS }}
+          PASSWORD_INTEGRATION_TESTS: ${{ secrets.PASSWORD_INTEGRATION_TESTS }}
+          USERNAME_INTEGRATION_TESTS_BIS: ${{ secrets.USERNAME_INTEGRATION_TESTS_BIS }}
+          PASSWORD_INTEGRATION_TESTS_BIS: ${{ secrets.PASSWORD_INTEGRATION_TESTS_BIS }}
+
+      - name: Tests http-clients
+        id: tests_http-clients
+        working-directory: ${{ runner.temp }}/http-clients
+        run: |
+          yarn -s test --reporters=default --reporters=github-actions
+        shell: sh
+
+      - name: Tests cdn-client
+        id: tests_cdn-client
+        working-directory: ${{ runner.temp }}/cdn-client
+        run: |
+          yarn -s test --reporters=default --reporters=github-actions
+        shell: sh
+
+      - name: Stop py-youwol with integration conf
+        id: stop_py-youwol_int_conf
+        uses: youwol/nestor/py-youwol/stop@v2
+        with:
+          instance: ${{ steps.start_py-youwol_int_conf.outputs.instance }}
+          artifact: py-youwol_log_int_conf
+
+      - name: Clean dir py-youwol run
+        id: clean_py-youwol_run
+        run: rm -r ${{ runner.temp }}/py-youwol_run/*
+        shell: sh
+
+      - name: Start py-youwol with local-youwol-client conf
+        id: start_py-youwol_lyc_conf
+        uses: youwol/nestor/py-youwol/start@v2
+        with:
+          path: ${{ runner.temp }}/py-youwol_run
+          custom_start_cmd: 'youwol'
+          conf_path: ${{ runner.temp }}/local-youwol-client/src/tests/yw_config/yw_config.py
+          USERNAME_INTEGRATION_TESTS: ${{ secrets.USERNAME_INTEGRATION_TESTS }}
+          PASSWORD_INTEGRATION_TESTS: ${{ secrets.PASSWORD_INTEGRATION_TESTS }}
+          USERNAME_INTEGRATION_TESTS_BIS: ${{ secrets.USERNAME_INTEGRATION_TESTS_BIS }}
+          PASSWORD_INTEGRATION_TESTS_BIS: ${{ secrets.PASSWORD_INTEGRATION_TESTS_BIS }}
+
+      - name: Tests local-youwol-client
+        id: tests_local_youwol_client
+        working-directory: ${{ runner.temp }}/local-youwol-client
+        run: |
+          yarn -s test --reporters=default --reporters=github-actions
+        shell: sh
+
+      - name: Stop py-youwol with local-youwol-client conf
+        id: stop_py-youwol_lyc_conf
+        uses: youwol/nestor/py-youwol/stop@v2
+        with:
+          instance: ${{ steps.start_py-youwol_lyc_conf.outputs.instance }}
+          artifact: py-youwol_log_lyc_conf
+
+      - name: Bump version to Release
+        id: bump_version_release
+        if: inputs.final
+        env:
+          GNUPGHOME: ${{ steps.set_up_gpg.outputs.gnupghome }}
+        run: |
+          python version_management.py prepare_final
+          echo version=$(python version_management.py get_current) >> $GITHUB_OUTPUT
+          echo commit=$(git log -1 --pretty=%h) >> $GITHUB_OUTPUT
+        shell: sh
+
+      - name: Build Release
+        id: build_release
+        if: inputs.final
+        run: python -m build
+        shell: sh
+
+      - name: Upload Artifact
+        id: upload_artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: youwol-${{ steps.bump_version_release.outputs.version }}-${{ steps.bump_version_release.outputs.commit }}
+          path: dist/youwol-${{ steps.bump_version_release.outputs.version }}-*
+
+      - name: Bump version to Next
+        id: bump_version_next
+        if: inputs.final
+        env:
+          GNUPGHOME: ${{ steps.set_up_gpg.outputs.gnupghome }}
+        run: python version_management.py restore_dev
+        shell: sh
+
+      - name: Publish Release
+        if: "! inputs.dry-run && inputs.final"
+        id: publish_release
+        env:
+          GNUPGHOME: ${{ steps.set_up_gpg.outputs.gnupghome }}
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_NESTOR_UPLOAD_YOUWOL }}
+          TWINE_REPOSITORY: pypi
+          TWINE_NON_INTERACTIVE: batch
+          VERSION: ${{ steps.bump_version_release.outputs.version }}
+          COMMIT: ${{ steps.bump_version_release.outputs.commit }}
+        run: |
+          tag_msg_1st_line="Published release $VERSION on pypi.org"
+          tag_msg_2nd_line="https://pypi.org/project/youwol/$VERSION/"
+          twine upload -s -i nestor@youwol.com --verbose dist/youwol-$VERSION-*
+          git tag -a "v$VERSION" -m "${tag_msg_1st_line}" -m "${tag_msg_2nd_line}" $COMMIT
+          git push --follow-tags
+        shell: sh
