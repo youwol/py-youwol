@@ -14,7 +14,7 @@ from youwol_cdn_backend.loading_graph_implementation import resolve_dependencies
 from youwol_cdn_backend.utils import (
     to_package_id, to_package_name, get_url, publish_package,
     list_versions,
-    fetch_resource, resolve_resource, get_path, resolve_explicit_version
+    fetch_resource, resolve_resource, get_path, resolve_explicit_version, library_model_from_doc
 )
 from youwol_cdn_backend.utils_indexing import get_version_number_str
 from youwol_utils import PackagesNotFound
@@ -23,7 +23,7 @@ from youwol_utils.context import Context
 from youwol_utils.http_clients.cdn_backend import (
     PublishResponse, ListVersionsResponse,
     LoadingGraphResponseV1, LoadingGraphBody, Library,
-    ExplorerResponse, DeleteLibraryResponse, LibraryQuery, LibraryResolved, get_exported_symbol
+    ExplorerResponse, DeleteLibraryResponse, LibraryQuery, LibraryResolved
 )
 from youwol_utils.http_clients.cdn_backend.utils import resolve_version
 
@@ -95,19 +95,9 @@ async def get_library_info(
         return response
 
 
-@router.get(
-    "/libraries/{library_id}/{version}",
-    summary="return info on a specific version of a library",
-    response_model=Library
-)
-async def get_version_info(
-        request: Request,
-        library_id: str,
-        version: str,
-        configuration: Configuration = Depends(get_configuration)
-):
-    async with Context.start_ep(
-            request=request,
+async def get_version_info_impl(library_id: str, version: str, configuration: Configuration, context: Context):
+    async with context.start(
+            action="get_version_info_impl",
             with_attributes={"library_id": library_id, "version": version}
     ) as ctx:  # type: Context
         library_name = to_package_name(library_id)
@@ -127,17 +117,32 @@ async def get_version_info(
                 clustering_keys={"version_number": get_version_number_str(version)},
                 owner=Constants.owner,
                 headers=ctx.headers())
-            return Library(name=d["library_name"], version=d["version"], namespace=d["namespace"],
-                           id=to_package_id(d["library_name"]), type=d["type"], fingerprint=d["fingerprint"],
-                           exportedSymbol=get_exported_symbol(d["library_name"]),
-                           apiKey=get_api_key(d['version'])
-                           )
+            return library_model_from_doc(d)
         except HTTPException as e:
             if e.status_code == 404:
                 raise PackagesNotFound(
                     context="Failed to retrieve a package",
                     packages=[f"{library_name}#{version}"]
                 )
+
+
+@router.get(
+    "/libraries/{library_id}/{version}",
+    summary="return info on a specific version of a library",
+    response_model=Library
+)
+async def get_version_info(
+        request: Request,
+        library_id: str,
+        version: str,
+        configuration: Configuration = Depends(get_configuration)
+):
+    async with Context.start_ep(
+            request=request,
+            with_attributes={"library_id": library_id, "version": version}
+    ) as ctx:  # type: Context
+        return await get_version_info_impl(library_id=library_id, version=version, configuration=configuration,
+                                           context=ctx)
 
 
 @router.delete(

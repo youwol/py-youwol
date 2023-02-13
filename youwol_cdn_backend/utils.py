@@ -24,7 +24,8 @@ from youwol_utils.clients.cdn import files_check_sum
 from youwol_utils.clients.docdb.models import Query, WhereClause, OrderingClause, SelectClause
 from youwol_utils.context import Context
 from youwol_utils.http_clients.cdn_backend import FormData, PublishResponse, FileResponse, \
-    FolderResponse, ExplorerResponse, ListVersionsResponse, Release, LibraryResolved
+    FolderResponse, ExplorerResponse, ListVersionsResponse, Release, LibraryResolved, Library, get_exported_symbol, \
+    get_api_key
 from youwol_utils.http_clients.cdn_backend.utils import is_fixed_version, resolve_version
 from youwol_utils.utils_paths import extract_zip_file
 
@@ -417,3 +418,17 @@ async def fetch_resource(request: Request, path: str, max_age: str, configuratio
 def get_path(library_id: str, version: str, rest_of_path: str):
     name = to_package_name(library_id)
     return f"libraries/{name.replace('@', '')}/{version}/{rest_of_path}"
+
+
+def library_model_from_doc(d: Dict[str, str]):
+
+    return Library(
+        name=d["library_name"],
+        version=d["version"],
+        namespace=d["namespace"],
+        id=to_package_id(d["library_name"]),
+        type=d["type"],
+        fingerprint=d["fingerprint"],
+        exportedSymbol=get_exported_symbol(d["library_name"]),
+        apiKey=get_api_key(d['version'])
+    )
