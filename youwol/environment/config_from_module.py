@@ -4,6 +4,7 @@ import ast
 import importlib
 import sys
 import traceback
+from _ast import mod
 from abc import ABC, abstractmethod
 from importlib.machinery import SourceFileLoader
 from importlib.util import spec_from_loader
@@ -48,10 +49,12 @@ def try_last_expression_as_config(config_path: Path) -> Optional[Configuration]:
         last_expr: ast.Expr = cast(ast.Expr, stmts[-1])
 
         if len(stmts) > 1:
-            compiled = compile(ast.Module(body=stmts[:-1], type_ignores=[]), filename="<ast>", mode="exec")
+            ast_module: mod = ast.Module(body=stmts[:-1], type_ignores=[])
+            compiled = compile(ast_module, filename="<ast>", mode="exec")
             exec(compiled, config_globals)
         # then we eval the last one
-        compiled = compile(ast.Expression(body=last_expr.value, type_ignores=[]), filename="<ast>", mode="eval")
+        ast_expression: mod = ast.Expression(body=last_expr.value, type_ignores=[])
+        compiled = compile(ast_expression, filename="<ast>", mode="eval")
         value = eval(compiled, config_globals)
         if isinstance(value, Configuration):
             return value
