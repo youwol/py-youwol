@@ -17,6 +17,7 @@ from youwol.environment.errors_handling import (
     CheckSystemFolderWritable, CheckDatabasesFolderHealthy, ErrorResponse
 )
 from youwol.environment.models import Events, Configuration, CustomMiddleware, ApiConfiguration, Connection
+from youwol.environment.native_backends_config import BackendConfigurations, native_backends_config
 from youwol.environment.paths import PathsBook, ensure_config_file_exists_or_create_it
 from youwol.environment.paths import app_dirs
 from youwol.environment.projects_finders import auto_detect_projects
@@ -42,6 +43,8 @@ class YouwolEnvironment(BaseModel):
 
     pathsBook: PathsBook
     routers: List[FastApiRouter] = []
+
+    backends_configuration: BackendConfigurations
 
     cache_user: Dict[str, Any] = {}
     cache_py_youwol: Dict[str, Any] = {}
@@ -124,6 +127,8 @@ class YouwolEnvironmentFactory:
 
     @staticmethod
     async def load_from_file(path: Path):
+        cached = YouwolEnvironmentFactory.__cached_config
+        cached and cached.backends_configuration.persist_no_sql_data()
         conf = await safe_load(
             path=path
         )
@@ -134,6 +139,7 @@ class YouwolEnvironmentFactory:
     @staticmethod
     async def reload(connection: Connection = None):
         cached = YouwolEnvironmentFactory.__cached_config
+        cached and cached.backends_configuration.persist_no_sql_data()
         conf = await safe_load(
             path=cached.pathsBook.config,
             remote_connection=connection or cached.currentConnection
@@ -163,7 +169,12 @@ class YouwolEnvironmentFactory:
             commands=conf.commands,
             customMiddlewares=conf.customMiddlewares,
             events=conf.events,
-            remotes=conf.remotes
+            remotes=conf.remotes,
+            backends_configuration=native_backends_config(
+                local_http_port=conf.httpPort,
+                local_storage=conf.pathsBook.local_storage,
+                local_nosql=conf.pathsBook.databases / 'docdb',
+            )
         )
         YouwolEnvironmentFactory.__cached_config = new_conf
 
@@ -263,7 +274,12 @@ async def safe_load(
         projects=projects,
         commands={c.name: c for c in customization.endPoints.commands},
         customMiddlewares=customization.middlewares,
-        remotes=system.cloudEnvironments.environments
+        remotes=system.cloudEnvironments.environments,
+        backends_configuration=native_backends_config(
+            local_http_port=system.httpPort,
+            local_storage=paths_book.local_storage,
+            local_nosql=paths_book.databases / 'docdb',
+        )
     )
 
 
