@@ -26,7 +26,7 @@ from youwol.routers.custom_backends import install_routers
 from youwol.web_socket import WsDataStreamer
 from youwol_utils.context import ContextFactory, InMemoryReporter
 from youwol_utils.servers.fast_api import FastApiRouter
-from youwol_utils.utils_paths import parse_json, ensure_dir_exists
+from youwol_utils.utils_paths import ensure_dir_exists
 
 
 class YouwolEnvironment(BaseModel):
@@ -108,8 +108,8 @@ Configuration loaded from '{self.pathsBook.config}'
 - authentication: {self.get_authentication_info()}
 - remote : { self.get_remote_info().envId } (on {self.get_remote_info().host})
 - paths: {self.pathsBook}
-- cdn packages count: {len(parse_json(self.pathsBook.local_cdn_docdb)['documents'])}
-- assets count: {len(parse_json(self.pathsBook.local_assets_entities_docdb)['documents'])}
+- cdn packages count: {len(self.backends_configuration.cdn_backend.doc_db.data['documents'])}
+- assets count: {len(self.backends_configuration.assets_backend.doc_db_asset.data['documents'])}
 {str_middlewares()}
 {str_commands()}
 {str_routers()}

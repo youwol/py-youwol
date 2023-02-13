@@ -9,11 +9,14 @@ from youwol.routers.commons import Label
 from youwol.routers.environment.download_assets.common import create_asset_local
 from youwol.routers.local_cdn.models import CheckUpdateResponse, UpdateStatus, PackageVersionInfo, \
     DownloadedPackageResponse, DownloadPackageBody, PackageEventResponse, Event
+from youwol_cdn_backend import to_package_id, list_versions, \
+    get_version_info_impl, library_model_from_doc
+from youwol_cdn_backend.utils_indexing import get_version_number
 from youwol_utils import encode_id
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from youwol_utils.context import Context
+from youwol_utils.http_clients.cdn_backend import Library
 from youwol_utils.http_clients.cdn_backend.utils import resolve_version
-from youwol_utils.utils_paths import parse_json
 
 
 class TargetPackage(NamedTuple):
@@ -24,18 +27,18 @@ class TargetPackage(NamedTuple):
     fingerprint: str
 
     @staticmethod
-    def from_response(d):
-        return TargetPackage(library_name=d['library_name'], library_id=d['library_id'], version=d['version'],
-                             version_number=int(d['version_number']), fingerprint=d['fingerprint'])
+    def from_response(d: Library):
+        return TargetPackage(library_name=d.name, library_id=d.id, version=d.version,
+                             version_number=get_version_number(d.version), fingerprint=d.fingerprint)
 
 
 def get_latest_local_cdn_version(env: YouwolEnvironment) -> List[TargetPackage]:
 
-    db_path = parse_json(env.pathsBook.local_cdn_docdb)
+    db_path = env.backends_configuration.cdn_backend.doc_db.data
     data = sorted(db_path['documents'], key=lambda d: d['library_name'])
     groups = [list(g) for _, g in groupby(data, key=lambda d: d['library_name'])]
     targets = [max(g, key=lambda d: int(d['version_number'])) for g in groups]
-
+    targets = [library_model_from_doc(t) for t in targets]
     return [TargetPackage.from_response(t) for t in targets]
 
 
@@ -136,7 +139,7 @@ async def download_package(
         check_update_status: bool,
         context: Context):
 
-    env = await context.get('env', YouwolEnvironment)
+    env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
 
     async def on_exit(ctx_exit):
         await ctx_exit.send(
@@ -173,22 +176,24 @@ async def download_package(
     ) as ctx_download:
 
         record = None
+        cdn_config = env.backends_configuration.cdn_backend
         await create_asset_local(
             asset_id=encode_id(encode_id(package_name)),
             kind='package',
             sync_raw_data=sync_raw_data,
             context=ctx_download
         )
-        db = parse_json(env.pathsBook.local_cdn_docdb)
-        all_packages = [d for d in db['documents'] if d['library_name'] == package_name]
-        versions = [d['version'] for d in all_packages]
+        info = await list_versions(name=package_name, max_results=int(1e6), context=ctx_download,
+                                   configuration=cdn_config)
+        versions = info.versions
         version = await resolve_version(name=package_name, version=version, versions=versions, context=ctx_download)
-        record = next(d for d in all_packages if d['library_id'] == f"{package_name}#{version}")
+        record = await get_version_info_impl(library_id=to_package_id(package_name), version=version,
+                                             configuration=cdn_config, context=ctx_download)
         response = DownloadedPackageResponse(
             packageName=package_name,
             version=version,
             versions=versions,
-            fingerprint=record['fingerprint']
+            fingerprint=record.fingerprint
         )
         await ctx_download.send(response)
 

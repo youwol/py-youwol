@@ -16,7 +16,6 @@ from youwol.routers.local_cdn.models import CheckUpdatesResponse, CheckUpdateRes
 from youwol.web_socket import LogsStreamer
 from youwol_utils import decode_id, encode_id
 from youwol_utils.context import Context
-from youwol_utils.utils_paths import parse_json, write_json
 
 router = APIRouter()
 
@@ -32,7 +31,7 @@ async def status(request: Request):
             with_reporters=[LogsStreamer()]
     ) as ctx:  # type: Context
         env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
-        cdn_docs = parse_json(env.pathsBook.local_cdn_docdb)["documents"]
+        cdn_docs = env.backends_configuration.cdn_backend.doc_db.data["documents"]
         cdn_sorted = sorted(cdn_docs, key=lambda d: d['library_name'])
         grouped = itertools.groupby(cdn_sorted, key=lambda d: d['library_name'])
 
@@ -58,7 +57,7 @@ async def package_info(request: Request, package_id: str):
     ) as ctx:  # type: Context
         package_name = decode_id(package_id)
         env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
-        cdn_docs = parse_json(env.pathsBook.local_cdn_docdb)["documents"]
+        cdn_docs = env.backends_configuration.cdn_backend.doc_db.data["documents"]
         versions = [d for d in cdn_docs if d["library_name"] == package_name]
         versions_info = await asyncio.gather(*[get_version_info(version_data=version, env=env, context=ctx)
                                                for version in versions])
@@ -147,8 +146,8 @@ async def smooth_reset(
             with_reporters=[LogsStreamer()]
     ) as ctx:  # type: Context
         env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
-        packages = [p for p in parse_json(env.pathsBook.local_assets_entities_docdb)['documents']
-                    if p['kind'] == 'package']
+        entities = env.backends_configuration.assets_backend.doc_db_asset.data
+        packages = [p for p in entities['documents'] if p['kind'] == 'package']
         await ctx.info(f"Found a total of {len(packages)} packages",
                        data={"packages": [p['name'] for p in packages]})
         if body.keepProjectPackages:
@@ -194,22 +193,27 @@ async def hard_reset(
             with_reporters=[LogsStreamer()]
     ) as ctx:  # type: Context
         env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
-        packages = [p for p in parse_json(env.pathsBook.local_cdn_docdb)['documents']]
+        cdn_packages = env.backends_configuration.cdn_backend.doc_db.data
+        packages = [p for p in cdn_packages["documents"]]
         asset_ids_to_delete = [encode_id(encode_id(p["library_name"])) for p in packages]
 
         await ctx.info(f"Found a total of {len(packages)} packages to remove",
                        data={"packages": [p['library_name'] for p in packages]})
-        assets_entities = parse_json(env.pathsBook.local_assets_entities_docdb)['documents']
-        assets_entities_remaining = [p for p in assets_entities if p['asset_id'] not in asset_ids_to_delete]
+        assets_entities = env.backends_configuration.assets_backend.doc_db_asset.data
+        assets_entities_remaining = [p for p in assets_entities['documents']
+                                     if p['asset_id'] not in asset_ids_to_delete]
 
-        assets_access = parse_json(env.pathsBook.local_assets_access_docdb)['documents']
-        assets_access_remaining = [p for p in assets_access if p['asset_id'] not in asset_ids_to_delete]
+        assets_access = env.backends_configuration.assets_backend.doc_db_access_policy.data
+        assets_access_remaining = [p for p in assets_access['documents']
+                                   if p['asset_id'] not in asset_ids_to_delete]
 
-        treedb_items = parse_json(env.pathsBook.local_treedb_items_docdb)['documents']
-        treedb_items_remaining = [p for p in treedb_items if p['related_id'] not in asset_ids_to_delete]
+        treedb_items = env.backends_configuration.tree_db_backend.doc_dbs.items_db.data
+        treedb_items_remaining = [p for p in treedb_items['documents']
+                                  if p['related_id'] not in asset_ids_to_delete]
 
-        treedb_deleted = parse_json(env.pathsBook.local_treedb_deleted_docdb)['documents']
-        treedb_deleted_remaining = [p for p in treedb_items if p['related_id'] not in asset_ids_to_delete]
+        treedb_deleted = env.backends_configuration.tree_db_backend.doc_dbs.deleted_db.data
+        treedb_deleted_remaining = [p for p in treedb_items['documents']
+                                    if p['related_id'] not in asset_ids_to_delete]
 
         resp = HardResetCdnResponse(
             cdnLibraries=HardResetDbStatus(
@@ -233,11 +237,11 @@ async def hard_reset(
                 remainingCount=len(treedb_deleted_remaining)
             )
         )
-        write_json({"documents": []}, env.pathsBook.local_cdn_docdb)
-        write_json({"documents": assets_entities_remaining}, env.pathsBook.local_assets_entities_docdb)
-        write_json({"documents": assets_access_remaining}, env.pathsBook.local_assets_access_docdb)
-        write_json({"documents": treedb_items_remaining}, env.pathsBook.local_treedb_items_docdb)
-        write_json({"documents": treedb_deleted_remaining}, env.pathsBook.local_treedb_deleted_docdb)
+        cdn_packages['documents'] = []
+        assets_entities['documents'] = assets_entities_remaining
+        assets_access['documents'] = assets_access_remaining
+        treedb_items['documents'] = treedb_items_remaining
+        treedb_deleted['documents'] = treedb_deleted_remaining
 
         shutil.rmtree(env.pathsBook.local_cdn_storage, ignore_errors=True)
         await status(request=request)

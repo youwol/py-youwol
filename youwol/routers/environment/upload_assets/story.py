@@ -8,12 +8,12 @@ from youwol.environment.clients import RemoteClients, LocalClients, YouwolEnviro
 from youwol.routers.environment.upload_assets.models import UploadTask
 from youwol_utils import JSON
 from youwol_utils.context import Context
-from youwol_utils.utils_paths import parse_json, write_json
+from youwol_utils.utils_paths import write_json
 
 
 def zip_local_story(raw_id: str, config: YouwolEnvironment) -> bytes:
-    stories = parse_json(config.pathsBook.local_stories_docdb)
-    documents = parse_json(config.pathsBook.local_stories_documents_docdb)
+    stories = config.backends_configuration.stories_backend.doc_db_stories.data
+    documents = config.backends_configuration.stories_backend.doc_db_documents.data
     data = {
         "story": next(d for d in stories['documents'] if d['story_id'] == raw_id),
         "documents": [d for d in documents['documents'] if d['story_id'] == raw_id]
