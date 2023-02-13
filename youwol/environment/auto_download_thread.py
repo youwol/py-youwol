@@ -10,7 +10,7 @@ from tqdm import tqdm
 from youwol.environment import YouwolEnvironment
 from youwol.routers.environment.download_assets.models import DownloadTask
 from youwol.web_socket import LogsStreamer
-from youwol_utils import encode_id
+from youwol_utils import encode_id, log_error, YouWolException
 from youwol_utils.context import Context
 
 
@@ -39,10 +39,11 @@ async def process_download_asset(
         factories: Dict[str, Any],
         pbar: tqdm
         ):
-    async def on_error(text, _error, _ctx):
+    async def on_error(text, data, _ctx: Context):
+        log_error("Failed to download asset", data)
         await _ctx.error(
             text=text,
-            data={"rawId": raw_id, "assetId": asset_id, "error": e.__dict__}
+            data=data
         )
         await _ctx.send(DownloadEvent(
             kind=_ctx.with_attributes['kind'],
@@ -96,8 +97,14 @@ async def process_download_asset(
                 pbar.update(1)
                 # log_info(f"Done asset install of kind {kind}: {download_id}")
 
-            except Exception as e:
-                await on_error("Error while installing the asset in local",  e, ctx)
+            except Exception as error:
+                await on_error("Error while installing the asset in local",  {
+                    "raw_id": raw_id,
+                    "asset_id": asset_id,
+                    "url": url,
+                    "kind": kind,
+                    "error": error.detail if isinstance(error, YouWolException) else str(error)
+                }, ctx)
             finally:
                 queue.task_done()
                 download_id in cache_downloaded_ids and cache_downloaded_ids.remove(download_id)
