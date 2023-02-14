@@ -1,6 +1,7 @@
 import importlib.metadata
 import json
 import os
+import shutil
 from pathlib import Path
 from typing import Dict, Any, Optional, Awaitable, List
 
@@ -44,6 +45,9 @@ class YouwolEnvironment(BaseModel):
 
     cache_user: Dict[str, Any] = {}
     cache_py_youwol: Dict[str, Any] = {}
+
+    def reset_databases(self):
+        shutil.rmtree(self.pathsBook.databases, ignore_errors=True)
 
     def reset_cache(self):
         self.cache_user = {}
