@@ -48,6 +48,8 @@ qa = [
     "coverage",
     "pycodestyle",
     "pip-audit",
+    "tomli",
+    "tomli-w",
 ]
 publish = [
     "pdoc3",

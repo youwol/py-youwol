@@ -211,6 +211,7 @@ tomli==2.0.1
     #   build
     #   pep517
     #   pyproject-hooks
+    #   youwol (pyproject.toml)
 tomli-w==1.0.0
     # via youwol (pyproject.toml)
 tqdm==4.64.1

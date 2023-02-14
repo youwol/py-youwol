@@ -111,13 +111,21 @@ def cmd_get_current():
     print(current_version)
 
 
+def cmd_check():
+    check()
+    if len(sys.argv) >= 3:
+        parsed_version = version.parse(sys.argv[2])
+        if parsed_version > current_version:
+            raise ValueError(f"{current_version} is before {parsed_version}")
+
+
 def check():
     if not current_version.is_devrelease:
         raise ValueError(f"{current_version} is not a dev version")
 
 
 cmds = {'prepare_rc': cmd_prepare_release_candidate, 'restore_dev': cmd_restore_dev, 'prepare_final': cmd_prepare_final,
-        'get_final': cmd_get_final_version, 'get_current': cmd_get_current}
+        'get_final': cmd_get_final_version, 'get_current': cmd_get_current, 'check': cmd_check}
 
 if __name__ == '__main__':
     current_version = get_current_version()
