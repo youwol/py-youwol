@@ -63,6 +63,7 @@ class BackendConfigurations:
         ]
         self.storage_folders = {
             self.assets_backend.storage.bucket_path, self.assets_backend.file_system.root_path,
+            self.cdn_sessions_storage.storage.bucket_path, self.files_backend.file_system.root_path,
             self.cdn_backend.file_system.root_path, self.flux_backend.storage.bucket_path,
             self.stories_backend.storage.bucket_path
         }
