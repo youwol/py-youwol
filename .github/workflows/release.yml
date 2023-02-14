@@ -265,6 +265,7 @@ jobs:
 
       - name: Upload Artifact
         id: upload_artifact
+        if: inputs.final
         uses: actions/upload-artifact@v3
         with:
           name: youwol-${{ steps.bump_version_release.outputs.version }}-${{ steps.bump_version_release.outputs.commit }}
