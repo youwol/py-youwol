@@ -1,6 +1,6 @@
 [project]
 name = "youwol"
-version = "0.0.5rc2"
+version = "0.0.5rc3.dev"
 authors = [
     { name = "G. Reinisch", email = "greinisch@youwol.com" },
     { name = "J. Decharne", email = "jdecharne@youwol.com" },
