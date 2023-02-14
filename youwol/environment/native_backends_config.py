@@ -61,16 +61,29 @@ class BackendConfigurations:
             self.tree_db_backend.doc_dbs.items_db, self.tree_db_backend.doc_dbs.folders_db,
             self.tree_db_backend.doc_dbs.drives_db, self.tree_db_backend.doc_dbs.deleted_db
         ]
+        self.storage_folders = {
+            self.assets_backend.storage.bucket_path, self.assets_backend.file_system.root_path,
+            self.cdn_backend.file_system.root_path, self.flux_backend.storage.bucket_path,
+            self.stories_backend.storage.bucket_path
+        }
 
     def persist_no_sql_data(self):
-        now = datetime.now()
 
+        now = datetime.now()
         for database in self.no_sql_databases:
             path = database.data_path
             backup_files = sorted(glob(f"{database.data_path.parent}/backup_*"))
             _ = [Path(f).unlink() for f in backup_files[0:-2]]
             shutil.copyfile(src=database.data_path, dst=database.data_path.parent / f'backup_{now}.json')
             path.write_text(data=json.dumps(database.data, indent=4))
+
+    def reset_databases(self):
+
+        for db in self.no_sql_databases:
+            db.data['documents'] = []
+
+        for folder in self.storage_folders:
+            shutil.rmtree(folder, ignore_errors=True)
 
 
 def native_backends_config(
