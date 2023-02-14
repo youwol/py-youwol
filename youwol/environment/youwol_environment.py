@@ -1,7 +1,6 @@
 import importlib.metadata
 import json
 import os
-import shutil
 from pathlib import Path
 from typing import Dict, Any, Optional, Awaitable, List
 
@@ -17,6 +16,7 @@ from youwol.environment.errors_handling import (
     CheckSystemFolderWritable, CheckDatabasesFolderHealthy, ErrorResponse
 )
 from youwol.environment.models import Events, Configuration, CustomMiddleware, ApiConfiguration, Connection
+from youwol.environment.native_backends_config import BackendConfigurations, native_backends_config
 from youwol.environment.paths import PathsBook, ensure_config_file_exists_or_create_it
 from youwol.environment.paths import app_dirs
 from youwol.environment.projects_finders import auto_detect_projects
@@ -25,7 +25,7 @@ from youwol.routers.custom_backends import install_routers
 from youwol.web_socket import WsDataStreamer
 from youwol_utils.context import ContextFactory, InMemoryReporter
 from youwol_utils.servers.fast_api import FastApiRouter
-from youwol_utils.utils_paths import parse_json, ensure_dir_exists
+from youwol_utils.utils_paths import ensure_dir_exists
 
 
 class YouwolEnvironment(BaseModel):
@@ -43,11 +43,13 @@ class YouwolEnvironment(BaseModel):
     pathsBook: PathsBook
     routers: List[FastApiRouter] = []
 
+    backends_configuration: BackendConfigurations
+
     cache_user: Dict[str, Any] = {}
     cache_py_youwol: Dict[str, Any] = {}
 
     def reset_databases(self):
-        shutil.rmtree(self.pathsBook.databases, ignore_errors=True)
+        self.backends_configuration.reset_databases()
 
     def reset_cache(self):
         self.cache_user = {}
@@ -105,8 +107,8 @@ Configuration loaded from '{self.pathsBook.config}'
 - authentication: {self.get_authentication_info()}
 - remote : { self.get_remote_info().envId } (on {self.get_remote_info().host})
 - paths: {self.pathsBook}
-- cdn packages count: {len(parse_json(self.pathsBook.local_cdn_docdb)['documents'])}
-- assets count: {len(parse_json(self.pathsBook.local_assets_entities_docdb)['documents'])}
+- cdn packages count: {len(self.backends_configuration.cdn_backend.doc_db.data['documents'])}
+- assets count: {len(self.backends_configuration.assets_backend.doc_db_asset.data['documents'])}
 {str_middlewares()}
 {str_commands()}
 {str_routers()}
@@ -124,6 +126,8 @@ class YouwolEnvironmentFactory:
 
     @staticmethod
     async def load_from_file(path: Path):
+        cached = YouwolEnvironmentFactory.__cached_config
+        cached and cached.backends_configuration.persist_no_sql_data()
         conf = await safe_load(
             path=path
         )
@@ -134,6 +138,7 @@ class YouwolEnvironmentFactory:
     @staticmethod
     async def reload(connection: Connection = None):
         cached = YouwolEnvironmentFactory.__cached_config
+        cached and cached.backends_configuration.persist_no_sql_data()
         conf = await safe_load(
             path=cached.pathsBook.config,
             remote_connection=connection or cached.currentConnection
@@ -163,7 +168,12 @@ class YouwolEnvironmentFactory:
             commands=conf.commands,
             customMiddlewares=conf.customMiddlewares,
             events=conf.events,
-            remotes=conf.remotes
+            remotes=conf.remotes,
+            backends_configuration=native_backends_config(
+                local_http_port=conf.httpPort,
+                local_storage=conf.pathsBook.local_storage,
+                local_nosql=conf.pathsBook.databases / 'docdb',
+            )
         )
         YouwolEnvironmentFactory.__cached_config = new_conf
 
@@ -263,7 +273,12 @@ async def safe_load(
         projects=projects,
         commands={c.name: c for c in customization.endPoints.commands},
         customMiddlewares=customization.middlewares,
-        remotes=system.cloudEnvironments.environments
+        remotes=system.cloudEnvironments.environments,
+        backends_configuration=native_backends_config(
+            local_http_port=system.httpPort,
+            local_storage=paths_book.local_storage,
+            local_nosql=paths_book.databases / 'docdb',
+        )
     )
 
 

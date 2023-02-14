@@ -211,7 +211,12 @@ def to_serializable_json_leaf(v):
         v = list(v)
     if isinstance(v, datetime):
         return str(v)
-    return v
+    if isinstance(v, int) or isinstance(v, float) or isinstance(v, str) or isinstance(v, bool):
+        return v
+    if v is None:
+        return None
+    # This is the case of a custom class not deriving from 'BaseModel' => no serialization
+    return {}
 
 
 def is_json_leaf(v):

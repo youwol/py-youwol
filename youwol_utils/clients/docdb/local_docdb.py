@@ -2,7 +2,7 @@ import json
 import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Mapping, Union, Dict, List
+from typing import Mapping, Union, Dict, List, Any
 
 from fastapi import HTTPException
 
@@ -11,12 +11,23 @@ from youwol_utils.clients.utils import get_default_owner
 from youwol_utils.http_clients.cdn_backend.utils import create_local_scylla_db_docs_file_if_needed
 
 
+def get_local_nosql_instance(root_path: Path, keyspace_name: str, table_body: TableBody,
+                             secondary_indexes: List[SecondaryIndex]):
+    path = root_path / keyspace_name / table_body.name / 'data.json'
+    create_local_scylla_db_docs_file_if_needed(path)
+    data = json.loads(path.read_text())
+    return LocalDocDbClient(root_path=root_path, keyspace_name=keyspace_name, table_body=table_body,
+                            data=data, secondary_indexes=secondary_indexes)
+
+
 @dataclass(frozen=True)
 class LocalDocDbClient:
 
     root_path: Path
     keyspace_name: str
     table_body: TableBody
+
+    data: Any = field(default_factory=lambda: {"documents": []})
     secondary_indexes: List[SecondaryIndex] = field(default_factory=lambda: [])
 
     @property
@@ -29,7 +40,7 @@ class LocalDocDbClient:
 
     @property
     def data_path(self):
-        return create_local_scylla_db_docs_file_if_needed(self.base_path / "data.json")
+        return self.base_path / "data.json"
 
     @property
     def metadata_path(self):
@@ -44,16 +55,7 @@ class LocalDocDbClient:
             shutil.rmtree(self.base_path)
 
     async def ensure_table(self, **_kwargs):
-
-        self.base_path.mkdir(parents=True, exist_ok=True)
-
-        if not self.data_path.exists():
-            self.data_path.open('w').write('{"documents":[]}')
-
         return True
-
-    async def clear_data(self, **_kwargs):
-        self.data_path.open('w').write('{"documents":[]}')
 
     async def get_document(self, partition_keys: Dict[str, any], clustering_keys: Dict[str, any],
                            owner: Union[str, None], allow_filtering: bool = False,  **kwargs):
@@ -103,8 +105,6 @@ class LocalDocDbClient:
         if len(query_body.query.ordering_clause) > 1:
             raise RuntimeError("Ordering emulated only for 1 ordering clause")
 
-        data = json.loads(self.data_path.read_text())["documents"]
-
         where_clauses = [WhereClause(column="owner", relation="eq", term=owner)] + query_body.query.where_clause
 
         def is_matching(doc):
@@ -113,8 +113,8 @@ class LocalDocDbClient:
                 if not matching:
                     return False
             return True
-
-        r = [doc for doc in data if is_matching(doc)]
+        documents = self.data['documents']
+        r = [doc for doc in documents if is_matching(doc)]
 
         query_ordering = {clause.name: clause.order for clause in query_body.query.ordering_clause}
         for ordering in self.table_body.table_options.clustering_order:
@@ -139,15 +139,12 @@ class LocalDocDbClient:
             owner = get_default_owner(headers)
 
         doc["owner"] = owner
-
-        data = json.load(self.data_path.open('r')) if self.data_path.exists() else {"documents": []}
-        index = [i for i, d in enumerate(data["documents"]) if self.primary_key_id(d) == self.primary_key_id(doc)]
+        documents = self.data['documents']
+        index = [i for i, d in enumerate(documents) if self.primary_key_id(d) == self.primary_key_id(doc)]
         if len(index) == 1:
-            data["documents"][index[0]] = doc
+            documents[index[0]] = doc
         else:
-            data["documents"].append(doc)
-
-        self.data_path.open('w').write(json.dumps(data, indent=4))
+            documents.append(doc)
         return {}
 
     async def delete_document(self, doc: Dict[str, any], owner: Union[str, None],  headers: Mapping[str, str] = None,
@@ -157,11 +154,10 @@ class LocalDocDbClient:
             headers = {}
         if not owner:
             owner = get_default_owner(headers)
+        documents = self.data['documents']
+        items_to_remove = [d for d in documents
+                           if self.primary_key_id(d) == self.primary_key_id(doc) and d["owner"] == owner]
+        for item in items_to_remove:
+            documents.remove(item)
 
-        data = json.load(self.data_path.open())
-
-        data["documents"] = [d for d in data["documents"]
-                             if not (self.primary_key_id(d) == self.primary_key_id(doc) and d["owner"] == owner)]
-
-        self.data_path.write_text(json.dumps(data, indent=4))
         return {}

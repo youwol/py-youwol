@@ -21,7 +21,6 @@ from youwol_utils.clients.assets.assets import AssetsClient
 from youwol_utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from youwol_utils.clients.treedb.treedb import TreeDbClient
 from youwol_utils.context import Context
-from youwol_utils.utils_paths import parse_json
 
 
 async def synchronize_permissions_metadata_symlinks(
@@ -71,7 +70,7 @@ async def synchronize_permissions(assets_gtw_client: AssetsGatewayClient, asset_
 
 async def create_borrowed_items(asset_id: str, tree_id: str, assets_gtw_client: AssetsGatewayClient, context: Context):
 
-    env = await context.get('env', YouwolEnvironment)
+    env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
     async with context.start(
             action="create_borrowed_items",
             with_attributes={
@@ -80,7 +79,7 @@ async def create_borrowed_items(asset_id: str, tree_id: str, assets_gtw_client: 
                 }
             ) as ctx:
 
-        items_treedb = parse_json(env.pathsBook.local_treedb_docdb)
+        items_treedb = env.backends_configuration.tree_db_backend.doc_dbs.items_db.data
         tree_items = [item for item in items_treedb['documents'] if item['related_id'] == asset_id]
         borrowed_items = [item for item in tree_items if json.loads(item['metadata'])['borrowed']]
 

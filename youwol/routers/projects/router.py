@@ -340,7 +340,7 @@ async def cdn_status(
             with_attributes={'event': 'CdnResponsePending', 'projectId': project_id},
             with_reporters=[LogsStreamer()]
             ) as ctx:
-        data = parse_json(config.pathsBook.local_cdn_docdb)['documents']
+        data = config.backends_configuration.cdn_backend.doc_db.data['documents']
         data = [d for d in data if d["library_name"] == decode_id(project_id)]
 
         def format_version(doc):

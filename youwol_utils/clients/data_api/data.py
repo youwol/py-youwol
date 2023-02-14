@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-from youwol_utils import StorageClient, DocDbClient, LocalStorageClient, LocalDocDbClient, TableBody, Storage, DocDb
+from youwol_utils import StorageClient, DocDbClient, LocalStorageClient, TableBody, Storage, DocDb, \
+    get_local_nosql_instance
 from youwol_utils.clients.docdb.models import Column
 
 FILES_TABLE = TableBody(
@@ -36,10 +37,12 @@ def get_local_storage_client(database_path: Path):
 
 
 def get_local_docdb_client(database_path):
-    return LocalDocDbClient(root_path=database_path / 'docdb',
-                            keyspace_name='data',
-                            table_body=FILES_TABLE
-                            )
+    return get_local_nosql_instance(
+        root_path=database_path / 'docdb',
+        keyspace_name='data',
+        table_body=FILES_TABLE,
+        secondary_indexes=[]
+    )
 
 
 @dataclass(frozen=True)

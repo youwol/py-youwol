@@ -1,5 +1,6 @@
 import base64
 import functools
+import json
 from typing import Mapping, Union, NamedTuple
 
 from aiohttp import ClientResponse
@@ -91,9 +92,8 @@ def log_info(message, **kwargs):
     print(content)
 
 
-def log_error(message, json=None):
-    json_message = str(json) if json else ""
-    print(f"ERROR:     {message}", json_message)
+def log_error(message, json_data=None):
+    print(f"\nERROR:\n     {message}", json.dumps(json_data, indent=4))
 
 
 def auto_port_number(service_name: str):

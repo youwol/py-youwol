@@ -8,7 +8,6 @@ from youwol.environment import RemoteClients, YouwolEnvironment
 from youwol.routers.environment.upload_assets.models import UploadTask
 from youwol_utils import decode_id
 from youwol_utils.context import Context
-from youwol_utils.utils_paths import parse_json
 
 
 class TreeItem(BaseModel):
@@ -37,7 +36,7 @@ def get_local_package(asset_id: str, config: YouwolEnvironment) -> Library:
     """
     Not populated with tree items
     """
-    data_packages = parse_json(config.pathsBook.local_docdb / "cdn" / "libraries" / "data.json")
+    data_packages = config.backends_configuration.cdn_backend.doc_db.data
     raw_id = decode_id(asset_id)
     library_name = decode_id(raw_id)
     releases = [d for d in data_packages['documents'] if d['library_name'] == library_name]
