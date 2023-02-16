@@ -3,11 +3,11 @@ from fastapi import Query as QueryParam
 from starlette.requests import Request
 from starlette.responses import Response
 
+from youwol_assets_gateway.configurations import Configuration, get_configuration
 from youwol_assets_gateway.routers.common import assert_read_permissions_from_raw_id, \
     assert_write_permissions_from_raw_id, create_asset, delete_asset, assert_write_permissions_folder_id
 from youwol_assets_gateway.utils import AssetMeta
 from youwol_utils.context import Context
-from youwol_assets_gateway.configurations import Configuration, get_configuration
 from youwol_utils.http_clients.assets_gateway import NewAssetResponse
 from youwol_utils.http_clients.stories_backend import StoryResp, GetGlobalContentResp, PostGlobalContentBody, \
     MoveDocumentResp, MoveDocumentBody, GetDocumentResp, PostDocumentBody, PutDocumentBody, GetChildrenResp, \
@@ -108,7 +108,6 @@ async def delete_story_impl(story_id: str, purge: bool, configuration: Configura
 
 @router.delete(
     "/stories/{story_id}",
-    response_model=DeleteResp,
     summary="delete a story with its children")
 async def delete_story(
         request: Request,

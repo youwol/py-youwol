@@ -179,7 +179,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 # How to set request headers before path operation is executed
                 # https://github.com/tiangolo/fastapi/issues/2727
                 auth_header: Tuple[bytes, bytes] = "authorization".encode(), f"Bearer {token}".encode()
-                request.headers.__dict__["_list"].append(auth_header)
+                # TODO: TG-530
+                request.state.context.request.headers.__dict__["_list"].append(auth_header)
 
             request.state.user_info = token_data
             return await call_next(request)
