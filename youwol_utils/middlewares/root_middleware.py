@@ -37,6 +37,7 @@ class RootMiddleware(BaseHTTPMiddleware):
         trace_id = YouwolHeaders.get_trace_id(request)
         muted_http_errors = YouwolHeaders.get_muted_http_errors(request)
         with_data = ContextFactory.with_static_data or {}
+        with_labels = ContextFactory.with_static_labels or (lambda: [])
         return Context(request=request,
                        logs_reporters=self.logs_reporters,
                        data_reporters=self.data_reporters,
@@ -44,7 +45,8 @@ class RootMiddleware(BaseHTTPMiddleware):
                        trace_uid=trace_id if trace_id else str(uuid.uuid4()),
                        muted_http_errors=muted_http_errors,
                        uid=root_id if root_id else 'root',
-                       with_data=with_data)
+                       with_data=with_data,
+                       with_labels=with_labels())
 
     async def dispatch(
             self,
