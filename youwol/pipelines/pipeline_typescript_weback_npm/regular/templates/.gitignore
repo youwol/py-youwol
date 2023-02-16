@@ -7,3 +7,5 @@ cdn.zip
 __pycache__
 *.iml
 .template
+.env
+/src/tests/**/result.zip
