@@ -81,8 +81,7 @@ class UploadPackageTask(UploadTask):
         async with context.start(action="UploadPackageTask.get_raw") as ctx:  # type: Context
 
             local_package = get_local_package(asset_id=self.asset_id, config=env)
-            assets_gateway_client = await RemoteClients.get_assets_gateway_client(remote_host=self.remote_host,
-                                                                                  context=ctx)
+            assets_gateway_client = await RemoteClients.get_assets_gateway_client(remote_host=self.remote_host)
 
             to_sync_releases = [v.version for v in local_package.releases]
             if self.options and self.options.versions:
@@ -113,7 +112,7 @@ class UploadPackageTask(UploadTask):
 
     async def publish_version(self, folder_id: str, version: str, context: Context):
 
-        remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=self.remote_host, context=context)
+        remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=self.remote_host)
         remote_cdn = remote_gtw.get_cdn_backend_router()
         env = await context.get('env', YouwolEnvironment)
         async with context.start(action="UploadPackageTask.publish_version") as ctx:  # type: Context

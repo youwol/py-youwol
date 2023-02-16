@@ -47,7 +47,7 @@ class UploadStoryTask(UploadTask):
     async def create_raw(self, data: bytes, folder_id: str, context: Context):
 
         async with context.start("UploadStoryTask.create_raw") as ctx:  # type: Context
-            remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=self.remote_host, context=ctx)
+            remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=self.remote_host)
             stories_client = remote_gtw.get_stories_backend_router()
             await stories_client.publish_story(
                 data={'file': data, 'content_encoding': 'identity'},
@@ -58,7 +58,7 @@ class UploadStoryTask(UploadTask):
     async def update_raw(self, data: JSON, folder_id: str, context: Context):
         # <!> stories_client will be removed as it should not be available
         async with context.start("UploadStoryTask.update_raw") as ctx:  # type: Context
-            remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=self.remote_host, context=ctx)
+            remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=self.remote_host)
             stories_client = remote_gtw.get_stories_backend_router()
             await stories_client.publish_story(
                 data={'file': data, 'content_encoding': 'identity'},

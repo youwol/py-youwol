@@ -8,15 +8,12 @@ from youwol_utils.clients.files import FilesClient
 from youwol_utils.clients.flux.flux import FluxClient
 from youwol_utils.clients.stories.stories import StoriesClient
 from youwol_utils.clients.treedb.treedb import TreeDbClient
-from youwol_utils.context import Context
 
 
 class RemoteClients:
 
     @staticmethod
-    async def get_assets_gateway_client(remote_host: str, context: Context) -> AssetsGatewayClient:
-        env = await context.get('env', YouwolEnvironment)
-        remote_host = remote_host or env.get_remote_info().host
+    async def get_assets_gateway_client(remote_host: str) -> AssetsGatewayClient:
         return AssetsGatewayClient(url_base=f"https://{remote_host}/api/assets-gateway")
 
 

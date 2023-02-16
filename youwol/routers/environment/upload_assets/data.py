@@ -35,14 +35,14 @@ class UploadDataTask(UploadTask):
     async def create_raw(self, data: FormData, folder_id: str, context: Context):
 
         async with context.start(action="UploadDataTask.create_raw") as ctx:  # type: Context
-            assets_gtw = await RemoteClients.get_assets_gateway_client(remote_host=self.remote_host, context=ctx)
+            assets_gtw = await RemoteClients.get_assets_gateway_client(remote_host=self.remote_host)
             files_client = assets_gtw.get_files_backend_router()
             await files_client.upload(data=data, params={"folder-id": folder_id}, headers=ctx.headers())
 
     async def update_raw(self, data: bytes, folder_id: str, context: Context):
 
         async with context.start(action="UploadDataTask.update_raw") as ctx:  # type: Context
-            remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=self.remote_host, context=ctx)
+            remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=self.remote_host)
             await remote_gtw.get_files_backend_router().upload(
                 data=data,
                 headers=ctx.headers()

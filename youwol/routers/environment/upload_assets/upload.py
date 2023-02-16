@@ -255,7 +255,7 @@ async def upload_asset(
             data={"path_item": path_item, "raw data": local_data}
         )
 
-        assets_gtw_client = await RemoteClients.get_assets_gateway_client(remote_host=remote_host, context=ctx)
+        assets_gtw_client = await RemoteClients.get_assets_gateway_client(remote_host=remote_host)
         assets_client = assets_gtw_client.get_assets_backend_router()
         await ensure_path(path_item=PathResponse(**path_item), assets_gateway_client=assets_gtw_client, context=ctx)
         try:

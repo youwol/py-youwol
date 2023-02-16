@@ -22,7 +22,7 @@ class UploadFluxProjectTask(UploadTask):
         async with context.start("UploadFluxProjectTask.create_raw") as ctx:  # type: Context
             data['projectId'] = self.raw_id
             zipped = zip_project(project=data)
-            remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=self.remote_host, context=ctx)
+            remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=self.remote_host)
             await remote_gtw.get_flux_backend_router().upload_project(
                 project_id=self.raw_id,
                 data={'file': zipped, 'content_encoding': 'identity'},
@@ -33,6 +33,6 @@ class UploadFluxProjectTask(UploadTask):
     async def update_raw(self, data: JSON, folder_id: str, context: Context):
         # <!> flux_client will be removed as it should not be available
         async with context.start("UploadFluxProjectTask.update_raw") as ctx:  # type: Context
-            remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=self.remote_host, context=ctx)
+            remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=self.remote_host)
             flux_client = remote_gtw.get_flux_backend_router()
             await flux_client.update_project(project_id=self.raw_id, body=data, headers=ctx.headers())

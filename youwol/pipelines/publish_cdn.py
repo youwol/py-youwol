@@ -246,8 +246,7 @@ class PublishCdnRemoteStep(PipelineStep):
 
             env = await context.get('env', YouwolEnvironment)
             local_cdn = LocalClients.get_cdn_client(env=env)
-            remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=self.cdnTarget.cloudTarget.host,
-                                                                       context=context)
+            remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=self.cdnTarget.cloudTarget.host)
             remote_cdn = remote_gtw.get_cdn_backend_router()
             library_id = encode_id(project.publishName)
             headers = {**ctx.headers(), YouwolHeaders.muted_http_errors: "404"}
