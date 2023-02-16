@@ -180,7 +180,6 @@ jobs:
             relative_files = True
             debug = sys,config,pathmap
           _coverage_rc
-        shell: sh
 
       - name: Combine coverages
         id: combine_coverages
@@ -191,7 +190,6 @@ jobs:
           title="Combine Coverage"
           msg="Coverage Combine failed. See job logs"
           coverage combine --keep $ARTIFACT_DIR/*/coverage.coverage > coverage.log 2>&1 || echo "::error title=$title::$msg"
-        shell: sh
 
       - name: Coverage HTML Report
         id: coverage_html_report
@@ -205,7 +203,6 @@ jobs:
           mv coverage_html.debug $ARTIFACT_DIR || echo "::error title=$title::coverage_html.debug not found"
           mv coverage_html.log  $ARTIFACT_DIR || echo "::error title=$title::coverage_html.log not found"
           mv htmlcov $ARTIFACT_DIR || echo "::error title=$title::htmlcov not found"
-        shell: sh
 
       - name: Coverage XML Report
         id: coverage_xml_report
@@ -219,7 +216,6 @@ jobs:
           mv coverage_xml.debug $ARTIFACT_DIR || echo "::error title=$title::coverage_xml.debug not found"
           mv coverage_xml.log  $ARTIFACT_DIR || echo "::error title=$title::coverage_xml.log not found"
           mv coverage.xml $ARTIFACT_DIR || echo "::error title=$title::coverage.xml not found"
-        shell: sh
 
       - name: Move Combined Coverage artifacts
         id: mv_combined_coverage_artifacts
@@ -261,13 +257,11 @@ jobs:
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: yarn auto-gen || echo "result=failure" >> $GITHUB_OUTPUT
-        shell: sh
 
       - name: Build
         id: build
         working-directory: ${{ runner.temp }}/todo-app-ts
         run: yarn build || echo "result=failure" >> $GITHUB_OUTPUT
-        shell: sh
 
       - name: Check repository cleanness
         id: git_cleanness
@@ -275,7 +269,6 @@ jobs:
         run: |
           git_status=$(git status -s)
           [ -z "$git_status" ] || ( echo "$git_status" ; echo "result=failure" >> $GITHUB_OUTPUT )
-        shell: sh
 
       - name: On Py-youwol templating Failure
         id: autogen_failure
@@ -316,7 +309,34 @@ jobs:
           pip install -r requirements-dev.txt
           sh deps_manager.sh compile
           rm -r venv
-        shell: sh
+
+      - name: Checkout main branch
+        id: checkout_main_branch
+        uses: actions/checkout@v3
+        with:
+          ref: main
+          path: .py-youwol_main
+
+      - name: Get main branch version
+        id: get_main_version
+        env:
+          CHECKOUT_DIR: .py-youwol_main
+        run: |
+          cur_dir=$(pwd)
+          cd $CHECKOUT_DIR
+          main_version=$(python3 "${cur_dir}"/version_management.py get_current)
+          echo "main_version=${main_version}" > $GITHUB_OUTPUT
+          cd "${cur_dir}"
+          rm -fr "${CHECKOUT_DIR}"
+
+      - name: Check version monotony
+        id: version_monotony
+        env:
+          MAIN_VERSION: ${{ steps.get_main_version.outputs.main_version }}
+        run: |
+          branch_version=$(python3.9 version_management.py get_current)
+          echo "::notice title=Versions::branch version is ${branch_version}, main version is ${MAIN_VERSION}"
+          python3.9 version_management.py check ${MAIN_VERSION} || echo "result=failure" >> $GITHUB_OUTPUT
 
       - name: Audit requirements with PyPI
         id: audit_requirements_pypi
@@ -353,14 +373,19 @@ jobs:
           line_length: 120
           format: '::error file=%(path)s,line=%(row)d,col=%(col)d,title=PEP8 %(code)s::%(text)s'
         run: pycodestyle --max-line-length=$line_length --format="$format" . || echo "result=failure" >> $GITHUB_OUTPUT
-        shell: sh
 
       - name: Check repository cleanness
         id: git_cleanness
         run: |
           git_status=$(git status -s)
           [ -z "$git_status" ] || ( echo "$git_status" ; echo "result=failure" >> $GITHUB_OUTPUT )
-        shell: sh
+
+      - name: On version monotony failure
+        id: version_monotony_failure
+        if: steps.version_monotony.outputs.result == 'failure'
+        uses: actions/github-script@v6
+        with:
+          script: core.setFailed("Job failed because branch version is incorrect, see job logs and annotations.")
 
       - name: On Audit requirements with PyPI failure
         id: audit_requirements_pypi_failure
