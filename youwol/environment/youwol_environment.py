@@ -180,8 +180,8 @@ class YouwolEnvironmentFactory:
     @staticmethod
     async def trigger_on_load(config: YouwolEnvironment):
         context = ContextFactory.get_instance(
-            logs_reporter=InMemoryReporter(),
-            data_reporter=WsDataStreamer(),
+            logs_reporters=[InMemoryReporter()],
+            data_reporters=[WsDataStreamer()],
             request=None
         )
         if config.events and config.events.onLoad:

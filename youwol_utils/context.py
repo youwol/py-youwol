@@ -349,27 +349,30 @@ CallableBlock = Callable[[Context], Union[Awaitable, None]]
 CallableBlockException = Callable[[Exception, Context], Union[Awaitable, None]]
 
 
+LabelsGetter = Callable[[], Set[str]]
+
+
 @dataclass
 class ContextFactory:
     with_static_data: Optional[Dict[str, DataType]] = None
-    with_static_labels: Callable[[], List[str]] = None
+    with_static_labels: Optional[Dict[str, LabelsGetter]] = None
 
     @staticmethod
-    def get_instance(
-            request: Union[Request, None],
-            logs_reporter: ContextReporter,
-            data_reporter: ContextReporter,
-            **kwargs
-    ) -> Context:
+    def add_labels(key: str, labels: Union[Set[str], LabelsGetter]):
+        if not ContextFactory.with_static_labels:
+            ContextFactory.with_static_labels = {}
+        ContextFactory.with_static_labels[key] = labels if callable(labels) else lambda: labels
+
+    @staticmethod
+    def get_instance(**kwargs) -> Context:
         static_data = ContextFactory.with_static_data or {}
+        static_labels = ContextFactory.with_static_labels or {}
         with_data = kwargs if not static_data else {**static_data, **kwargs}
-        with_labels = ContextFactory.with_static_labels or (lambda: [])
-        return Context(request=request,
-                       logs_reporters=[logs_reporter],
-                       data_reporters=[data_reporter],
-                       with_labels=with_labels(),
+        with_labels = [label for getter in static_labels.values() for label in getter()]
+
+        return Context(with_labels=with_labels,
                        with_data=with_data,
-                       with_cookies=request.cookies if request else {})
+                       **kwargs)
 
 
 class DeployedContextReporter(ContextReporter):
