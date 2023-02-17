@@ -54,7 +54,8 @@ class LocalDocDbClient:
         if self.base_path.exists():
             shutil.rmtree(self.base_path)
 
-    async def ensure_table(self, **_kwargs):
+    @staticmethod
+    async def ensure_table():
         return True
 
     async def get_document(self, partition_keys: Dict[str, any], clustering_keys: Dict[str, any],

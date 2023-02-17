@@ -3,7 +3,6 @@ from typing import List, NamedTuple, Union, Dict, Any
 
 from pydantic import BaseModel
 from semantic_version import Version
-from youwol_utils.types import JSON
 
 from youwol_utils.clients.docdb.models import Column, TableOptions, OrderingClause, TableBody
 
@@ -21,7 +20,7 @@ def get_exported_symbol(name: str):
     return exportedSymbols[name] if name in exportedSymbols else name
 
 
-def patch_loading_graph(loading_graph: JSON):
+def patch_loading_graph(loading_graph: Dict[str, Any]):
 
     if loading_graph['graphType'] == 'sequential-v1':
         #  add missing apiKey & exportedSymbol in 'lock' attribute

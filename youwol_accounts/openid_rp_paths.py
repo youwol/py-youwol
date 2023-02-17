@@ -8,7 +8,7 @@ from starlette.responses import RedirectResponse, JSONResponse
 
 from youwol_accounts.configuration import get_configuration, Configuration
 from youwol_accounts.root_paths import router
-from youwol_utils import ttl
+from youwol_utils import TTL
 from youwol_utils.clients.oidc.oidc_config import OidcConfig
 from youwol_utils.clients.oidc.users_management import KeycloakUsersManagement
 from youwol_utils.session_handler import SessionHandler
@@ -52,7 +52,7 @@ async def authorization_flow(
         login_hint=login_hint
     )
     conf.pkce_cache.set(state_uuid, {'target_uri': target_uri, 'code_verifier': code_verifier},
-                        expire=ttl(FIVE_MINUTES_IN_SECONDS))
+                        expire=TTL(FIVE_MINUTES_IN_SECONDS))
 
     return RedirectResponse(url, status_code=307)
 
