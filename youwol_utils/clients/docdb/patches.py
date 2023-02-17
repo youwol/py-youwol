@@ -1,6 +1,4 @@
-from typing import Dict
-
-from youwol_utils.utils import JSON
+from typing import Dict, Any
 
 
 def compare_schemas(left: Dict[str, any], right: Dict[str, any]):
@@ -14,7 +12,7 @@ def compare_schemas(left: Dict[str, any], right: Dict[str, any]):
     return left_ok and right_ok and partition_key_ok and clustering_ok
 
 
-def patch_table_schema(table: JSON):
+def patch_table_schema(table: Dict[str, Any]):
     """
     When getting table the schema returned include implementation details as columns (e.g. owner_id, owner_name, etc.),
     we want to remove those columns here such that we recover the schema that we initially posted

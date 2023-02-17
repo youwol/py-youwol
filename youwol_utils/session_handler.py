@@ -1,6 +1,6 @@
 from typing import Any, Union
 
-from youwol_utils import CacheClient, ttl
+from youwol_utils import CacheClient, TTL
 from youwol_utils.clients.oidc.oidc_config import OidcConfig, PrivateClient, PublicClient
 
 
@@ -16,17 +16,17 @@ class SessionHandler:
         self.__jwt_cache.set(
             f"{self.__session_uuid}_access_token",
             {'v': tokens['access_token']},
-            ttl(tokens['expires_in'])
+            TTL(tokens['expires_in'])
         )
         self.__jwt_cache.set(
             f"{self.__session_uuid}_refresh_token",
             {'v': tokens['refresh_token']},
-            ttl(tokens['refresh_expires_in'])
+            TTL(tokens['refresh_expires_in'])
         )
         self.__jwt_cache.set(
             f"{self.__session_uuid}_id_token",
             {'v': tokens['id_token']},
-            ttl(tokens['refresh_expires_in'])
+            TTL(tokens['refresh_expires_in'])
         )
 
     def get_id_token(self):

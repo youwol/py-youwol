@@ -5,7 +5,7 @@ from typing import Dict, List, Optional
 
 from pydantic import BaseModel
 
-from youwol_utils.clients.cache import CacheClient, ttl
+from youwol_utils.clients.cache import CacheClient, TTL
 
 
 class CacheEntry(BaseModel):
@@ -35,12 +35,12 @@ class LocalCacheClient(CacheClient):
     def _impl_delete(self, key: str):
         self._cache.pop(key, None)
 
-    def _impl_get_ttl(self, key: str) -> Optional[ttl]:
+    def _impl_get_ttl(self, key: str) -> Optional[TTL]:
         expire_at = self._cache[key].expire_at
         if expire_at == sys.maxsize:
             return None
         else:
-            return ttl(int(expire_at - int(time.time())))
+            return TTL(int(expire_at - int(time.time())))
 
     def clear_expired(self):
         for key in [key for key, entry in self._cache.items() if entry.expire_at < int(time.time())]:

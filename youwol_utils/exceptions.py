@@ -288,7 +288,7 @@ class UpstreamResponseException(YouWolException):
 
     # do not change case in 'exceptionType': UpstreamResponseException needs to be
     # 'auto-constructable' from its details
-    def __init__(self, status: int, url: str, detail: Any, exceptionType: str, **kwargs):
+    def __init__(self, status: int, url: str, detail: Any, exceptionType: str, **kwargs):  # NOSONAR
         super().__init__(status_code=status,
                          detail={
                              "url": url,
