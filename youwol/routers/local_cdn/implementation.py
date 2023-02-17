@@ -49,7 +49,7 @@ async def check_update(
     env: YouwolEnvironment = await context.get('env', YouwolEnvironment)
     remote_gtw_client = await RemoteClients.get_assets_gateway_client(remote_host=env.get_remote_info().host)
     headers = {
-        "authorization": context.request.headers.get("authorization")
+        "authorization": context.headers().get("authorization")
     }
     name, version = local_package.library_name, local_package.version
     async with context.start(
