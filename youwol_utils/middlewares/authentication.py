@@ -1,5 +1,5 @@
 import urllib
-from typing import List, Tuple, Optional, Union, Any
+from typing import List, Optional, Union, Any
 
 from fastapi import HTTPException
 from jwt import InvalidTokenError
@@ -148,7 +148,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         async with Context.from_request(request).start(
                 action="Authorization middleware",
                 with_labels=[Label.MIDDLEWARE]
-        ) as ctx:
+        ) as ctx:  # type: Context
 
             if self.predicate_public_path(request.url):
                 await ctx.info(text="public path", data=str(request.url))
@@ -170,17 +170,12 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 token_data = await (await self.get_oidc_config()).token_decode(token)
                 await ctx.info(text="Token successfully decoded", data=token_data)
             except InvalidTokenError as error:
-                await ctx.info(text="Invalid token", data=error)
+                await ctx.info(text="Invalid token", data={"error": error})
                 return Response(content=f"Invalid token : {error}", status_code=403)
 
             if not request.headers.get('Authorization'):
                 await ctx.info("Setting bearer in Authorization header to found token")
-                # A bit ugly, not very safe ... coming from:
-                # How to set request headers before path operation is executed
-                # https://github.com/tiangolo/fastapi/issues/2727
-                auth_header: Tuple[bytes, bytes] = "authorization".encode(), f"Bearer {token}".encode()
-                # TODO: TG-530
-                request.state.context.request.headers.__dict__["_list"].append(auth_header)
+                ctx.with_headers["authorization"] = f"Bearer {token}"
 
             request.state.user_info = token_data
             return await call_next(request)
