@@ -140,8 +140,7 @@ async def create_asset_local(
             ) as ctx:
 
         env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
-        remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=env.get_remote_info().host,
-                                                                   context=context)
+        remote_gtw = await RemoteClients.get_assets_gateway_client(remote_host=env.get_remote_info().host)
         await sync_raw_data(asset_id=asset_id, remote_gtw=remote_gtw, caller_context=ctx)
         await sync_explorer_data(asset_id=asset_id, remote_gtw=remote_gtw, context=ctx)
         await sync_asset_data(asset_id=asset_id, remote_gtw=remote_gtw, context=ctx)
