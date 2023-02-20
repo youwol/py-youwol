@@ -82,6 +82,20 @@ class TestFailureResult(NamedTuple):
     output_summary: List[str]
 
 
+class TestCounter(NamedTuple):
+    OK: int = 0
+    KO: int = 0
+
+    def with_ok(self):
+        return TestCounter(OK=self.OK+1, KO=self.KO)
+
+    def with_ko(self):
+        return TestCounter(OK=self.OK, KO=self.KO+1)
+
+    def __str__(self):
+        return f"Current status: {Fore.GREEN}{self.OK} OK, {Fore.RED}{self.KO} KO{Style.RESET_ALL}"
+
+
 RunId = str
 File = str
 Test = str
@@ -99,6 +113,7 @@ class TestSession:
     session_id: str
     publication: Publication
     asset_id: Optional[str] = None
+    counter = TestCounter()
 
     def __init__(self, result_folder: Path, publication: Publication):
         self.result_folder = result_folder
@@ -180,6 +195,7 @@ class TestSession:
 
             Path(self.result_folder / filename).write_text(''.join(outputs))
             print(f"Error writen in {filename}")
+            self.counter = self.counter.with_ko()
         else:
             data['results'].append({
                 "title": title,
@@ -188,6 +204,9 @@ class TestSession:
                 "duration": end - start
             })
             print(f"{Fore.GREEN}SUCCESS while executing test{Style.RESET_ALL}")
+            self.counter = self.counter.with_ok()
+
+        print(self.counter)
         write_json(data, self.summary_path)
         to_publish.append(self.summary_path.name)
         await publish_files(
