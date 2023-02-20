@@ -2,6 +2,7 @@ import asyncio
 import shutil
 import tempfile
 import time
+import uuid
 import zipfile
 from signal import SIGKILL
 from typing import AsyncContextManager, Union, NamedTuple, List, Callable, Tuple, Awaitable, Optional
@@ -165,17 +166,17 @@ class TestSession:
 
             errors = await errors_formatter(py_yw_session, outputs, py_yw_logs_getter)
 
-            def to_logs_path(err):
-                return self.result_folder / f"logs_{'_'.join(err.name + [run_id])}.json"
+            def to_logs_path():
+                return self.result_folder / f"logs_{uuid.uuid4()}.json"
 
-            for error in errors:
+            errors_output_file = [to_logs_path() for _ in errors]
+            for error, path in zip(errors, errors_output_file):
                 logs = await error.py_youwol_logs
-                logs_path = to_logs_path(error)
                 write_json(
                     data={"nodes": [log.dict() for log in logs]},
-                    path=logs_path
+                    path=path
                 )
-                to_publish.append(logs_path.name)
+                to_publish.append(path.name)
 
             filename = f'full_outputs{run_id}.txt'
             to_publish.append(filename)
@@ -189,8 +190,8 @@ class TestSession:
                 "errors": [{
                     "name": error.name,
                     "outputSummary": error.output_summary,
-                    "logsFile": str(to_logs_path(error).relative_to(self.result_folder))
-                } for error in errors]
+                    "logsFile": str(path.relative_to(self.result_folder))
+                } for error, path in zip(errors, errors_output_file)]
             })
 
             Path(self.result_folder / filename).write_text(''.join(outputs))
