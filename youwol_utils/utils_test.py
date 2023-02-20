@@ -4,6 +4,7 @@ import tempfile
 import time
 import uuid
 import zipfile
+from http.client import HTTPException
 from signal import SIGKILL
 from typing import AsyncContextManager, Union, NamedTuple, List, Callable, Tuple, Awaitable, Optional
 from contextlib import asynccontextmanager
@@ -210,12 +211,15 @@ class TestSession:
         print(self.counter)
         write_json(data, self.summary_path)
         to_publish.append(self.summary_path.name)
-        await publish_files(
-            result_folder=self.result_folder,
-            files=to_publish,
-            asset_id=self.asset_id,
-            publication=self.publication
-        )
+        try:
+            await publish_files(
+                result_folder=self.result_folder,
+                files=to_publish,
+                asset_id=self.asset_id,
+                publication=self.publication
+            )
+        except HTTPException:
+            print(f"{Fore.RED}FAILED TO PUBLISH FILES{Style.RESET_ALL}")
         return return_code, outputs
 
 
