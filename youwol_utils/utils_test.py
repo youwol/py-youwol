@@ -43,7 +43,7 @@ async def wait_py_youwol_ready(port: int):
             async with websockets.connect(f'ws://localhost:{port}/ws-data') as ws:
                 await handler(ws)
             break
-        except (ConnectionRefusedError, InvalidMessage):
+        except (ConnectionResetError, ConnectionRefusedError, InvalidMessage):
             pass
 
 
