@@ -21,21 +21,11 @@ import youwol
 from youwol.environment import configuration_from_python, RemoteClients, default_auth_provider, AuthorizationProvider, \
     Configuration
 from youwol.routers.system.router import Log
-from youwol_utils import execute_shell_cmd, Context, ContextReporter, LogEntry, parse_json, write_json, OidcConfig
+from youwol_utils import execute_shell_cmd, Context, parse_json, write_json, OidcConfig
 
 colorama_init()
 
 
-class Reporter(ContextReporter):
-    async def log(self, entry: LogEntry):
-        if entry.text != '\n':
-            print(entry.text.replace('\n', ''))
-
-
-context = Context(
-    logs_reporters=[Reporter()],
-    data_reporters=[]
-)
 no_log_context = Context(
     logs_reporters=[],
     data_reporters=[]
