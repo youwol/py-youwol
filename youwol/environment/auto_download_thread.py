@@ -65,11 +65,13 @@ async def process_download_asset(
 
         download_id = task.download_id()
         if download_id in cache_downloaded_ids:
+            queue.task_done()
             await context.info(text="Asset already in download queue")
             continue
 
         up_to_date = await task.is_local_up_to_date(context=context)
         if up_to_date:
+            queue.task_done()
             await context.info(text="Asset up to date")
             continue
 
