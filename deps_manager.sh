@@ -4,23 +4,26 @@
 #
 # Python requirements management with pip-tools in an existing virtual environnement.
 # Requirements are pinned with package version and hashes in the following files :
-#    - dev-requirements.txt is for installing dev environment with :
-#        pip-sync dev-requirements.txt
-#    - docker-requirements.txt for install in docker image (base image should pick it by default).
+#    - requirements-dev.txt contains all dependencies. Install it with pip-sync requirements-dev.txt
+#    - requirements-qa.txt is for code static analysis
+#    - requirements-publish.txt is for publishing workflow
+#    - requirements-docker.txt for install in docker image (base image should pick it by default).
 #    - requirements.txt specify dependencies without hashes (IDEs should pick it by default).
 #
 # Usage:
 #
-#  * Specify the python packages (as for pip install) in the *.in files in this directory :
-#    - deps/base.in for project runtime dependencies
-#    - deps/dev.in for project development dependencies
+#  * Specify the python packages in the pyproject.toml file :
+#    - in project.dependencies for runtime dependencies
+#    - in project.optional-dependencies.dev for development tools (currently only pip-tools)
+#    - in project.optional-dependencies.qa for code static analysis tools
+#    - in project.optional-dependencies.publish for publishing workflow
 #
-#  * Whenever these files are updated, run this script to compile the requirements files :
+#  * Whenever this file is updated, run this script to compile the requirements files :
 #      sh deps/manage.sh compile
-#   and commit the modifications in both deps/*.ir and requirements files
+#   and commit the modifications in requirements files
 #
 #  * Upgrade the pinned versions of dependencies with :
-#      sh deps/manage.sh upgrade
+#      sh deps/manage.sh upgrade <package>
 #
 
 
@@ -30,6 +33,8 @@ set -e
 # Uncomment next line to trace commands execution
 # set -x
 
+self_name=$(basename $0)
+export CUSTOM_COMPILE_COMMAND="sh ${self_name} compile"
 # Either 'compile', 'upgrade' or 'upgrade'
 action="$1"
 package="$2"
@@ -49,7 +54,7 @@ out_no_hashes="requirements.txt"
 extras_no_hashes="${extras_dev}"
 
 help_message() {
-  echo "Usage: ${0} [action]
+  echo "Usage: sh ${self_name} [action]
 
 Python requirements files management.
 
@@ -57,7 +62,7 @@ Available actions :
   * compile             : generate requirements files from deps/*.in
   * upgrade [<package>] : upgrade all packages or only specified package in existing requirements files
 
-See sources in ${0} for details."
+See sources in ${self_name} for details."
 }
 
 failure() {
@@ -104,8 +109,7 @@ pip_compile() {
 }
 
 do_compile() {
-      export CUSTOM_COMPILE_COMMAND="sh ${0} compile"
-      echo "[action] Compiling requirements files from deps/*.in"
+      echo "[action] Compiling requirements files from pyproject.toml"
       echo
       ch_cwd
 
@@ -150,7 +154,6 @@ pip_upgrade_all() {
 }
 
 do_upgrade_all() {
-      export CUSTOM_COMPILE_COMMAND="sh ${0} compile"
       echo "[action] Upgrading all dependencies to their latest version"
       echo
       ch_cwd
@@ -198,7 +201,6 @@ pip_upgrade_package() {
 
 do_upgrade_package() {
       package="$1"
-      export CUSTOM_COMPILE_COMMAND="sh ${0} compile"
       echo "[action] Upgrading '${package}'"
       echo
       ch_cwd
