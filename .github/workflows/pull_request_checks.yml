@@ -23,7 +23,7 @@ on:
 
       todo-app-ts_ref:
         description: >
-          Branch, tag or SHA for http-clients checkout.
+          Branch, tag or SHA for todo-app-ts checkout.
           Default to 'main'
         default: main
 
