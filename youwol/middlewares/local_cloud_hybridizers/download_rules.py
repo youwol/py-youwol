@@ -51,6 +51,9 @@ class Download(AbstractLocalCloudDispatch):
                 resp = await redirect_api_remote(request, ctx)
                 resp.headers[YouwolHeaders.youwol_origin] = env.get_remote_info().host
                 thread = await ctx.get('download_thread', AssetDownloadThread)
+                is_downloading = thread.is_downloading(url=request.url.path, kind=kind, raw_id=raw_id, env=env)
+                if is_downloading:
+                    return resp
                 await ctx.info("~> schedule asset download")
                 thread.enqueue_asset(url=request.url.path, kind=kind, raw_id=raw_id, context=ctx, headers=headers)
                 return resp
