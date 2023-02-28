@@ -117,7 +117,6 @@ class AssetDownloadThread(Thread):
 
     event_loop = asyncio.new_event_loop()
     download_queue = asyncio.Queue(loop=event_loop)
-    downloaded_ids = set()
 
     def __init__(self, factories, worker_count: int):
 
