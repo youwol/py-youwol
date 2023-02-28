@@ -25,7 +25,6 @@ def url_match(request: Request, pattern: str):
     if '**' in parts_regex and parts_regex.index('**') != len(parts_regex) - 1:
         raise ValueError("'**' can only be located at the trailing part of the pattern")
 
-    i = 0
     for i, part in enumerate(parts_target):
         if i >= len(parts_regex):
             return False, None
