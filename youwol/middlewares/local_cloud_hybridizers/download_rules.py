@@ -19,8 +19,10 @@ class Download(AbstractLocalCloudDispatch):
                     context: Context
                     ) -> Optional[Response]:
 
+        # Caution: download should be triggered only when fetching raw data of the asset
+        # not metadata (e.g. do not catch /assets-backend/assets/**).
         patterns = [
-            ("custom-asset", "GET:/api/assets-gateway/assets-backend/assets/*/**"),
+            ("custom-asset", "GET:/api/assets-gateway/assets-backend/assets/*/files/**"),
             ("story", "GET:/api/assets-gateway/stories-backend/stories/*/**"),
             ("flux-project", "GET:/api/assets-gateway/flux-backend/projects/*/**"),
             ("data", "GET:/api/assets-gateway/files-backend/files/*/**"),
