@@ -19,8 +19,10 @@ class Download(AbstractLocalCloudDispatch):
                     context: Context
                     ) -> Optional[Response]:
 
+        # Caution: download should be triggered only when fetching raw data of the asset
+        # not metadata (e.g. do not catch /assets-backend/assets/**).
         patterns = [
-            ("custom-asset", "GET:/api/assets-gateway/assets-backend/assets/*/**"),
+            ("custom-asset", "GET:/api/assets-gateway/assets-backend/assets/*/files/**"),
             ("story", "GET:/api/assets-gateway/stories-backend/stories/*/**"),
             ("flux-project", "GET:/api/assets-gateway/flux-backend/projects/*/**"),
             ("data", "GET:/api/assets-gateway/files-backend/files/*/**"),
@@ -51,6 +53,9 @@ class Download(AbstractLocalCloudDispatch):
                 resp = await redirect_api_remote(request, ctx)
                 resp.headers[YouwolHeaders.youwol_origin] = env.get_remote_info().host
                 thread = await ctx.get('download_thread', AssetDownloadThread)
+                is_downloading = thread.is_downloading(url=request.url.path, kind=kind, raw_id=raw_id, env=env)
+                if is_downloading:
+                    return resp
                 await ctx.info("~> schedule asset download")
                 thread.enqueue_asset(url=request.url.path, kind=kind, raw_id=raw_id, context=ctx, headers=headers)
                 return resp
