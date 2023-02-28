@@ -47,13 +47,18 @@ class Download(AbstractLocalCloudDispatch):
         ) as ctx:
             resp = await call_next(request)
             if resp.status_code == 404:
+                download_thread: AssetDownloadThread = await context.get("download_thread", AssetDownloadThread)
+                is_downloading = download_thread.is_downloading(url=request.url.path, kind=kind, raw_id=raw_id, env=env)
+
                 await ctx.info("Raw data can not be locally retrieved, proceed to remote platform")
                 headers = {"Authorization": request.headers.get("authorization")}
                 resp = await redirect_api_remote(request, ctx)
                 resp.headers[YouwolHeaders.youwol_origin] = env.get_remote_info().host
-                thread = await ctx.get('download_thread', AssetDownloadThread)
+                if is_downloading:
+                    return resp
                 await ctx.info("~> schedule asset download")
-                thread.enqueue_asset(url=request.url.path, kind=kind, raw_id=raw_id, context=ctx, headers=headers)
+                download_thread.enqueue_asset(url=request.url.path, kind=kind, raw_id=raw_id, context=ctx,
+                                              headers=headers)
                 return resp
             resp.headers[YouwolHeaders.youwol_origin] = request.url.hostname
             return resp
