@@ -25,12 +25,15 @@ def url_match(request: Request, pattern: str):
     if '**' in parts_regex and parts_regex.index('**') != len(parts_regex) - 1:
         raise ValueError("'**' can only be located at the trailing part of the pattern")
 
+    i = 0
     for i, part in enumerate(parts_target):
         if i >= len(parts_regex):
             return False, None
         if i >= len(parts_regex) - 1 and parts_regex[-1] == "**":
             replaced.append([t for t in parts_target[i:] if t])
             return True, replaced
+        if i == len(parts_target) - 1 and i+1 < len(parts_regex) and parts_regex[i+1] != "**":
+            return False, None
         if part == parts_regex[i]:
             continue
         if parts_regex[i] == "*":
