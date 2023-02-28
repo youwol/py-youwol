@@ -31,6 +31,8 @@ def url_match(request: Request, pattern: str):
         if i >= len(parts_regex) - 1 and parts_regex[-1] == "**":
             replaced.append([t for t in parts_target[i:] if t])
             return True, replaced
+        if i == len(parts_target) - 1 and i+1 < len(parts_regex) and parts_regex[i+1] != "**":
+            return False, None
         if part == parts_regex[i]:
             continue
         if parts_regex[i] == "*":
