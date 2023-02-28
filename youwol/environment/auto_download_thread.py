@@ -117,7 +117,6 @@ class AssetDownloadThread(Thread):
 
     event_loop = asyncio.new_event_loop()
     download_queue = asyncio.Queue(loop=event_loop)
-    downloaded_ids = set()
 
     def is_downloading(self, url: str, kind: str, raw_id: str, env: YouwolEnvironment):
         if CACHE_DOWNLOADING_KEY not in env.cache_py_youwol:
