@@ -46,18 +46,28 @@ class Download(AbstractLocalCloudDispatch):
                 action="Download.apply",
                 muted_http_errors={404}
         ) as ctx:
+            download_thread = await ctx.get('download_thread', AssetDownloadThread)
+            is_downloading = download_thread.is_downloading(url=request.url.path, kind=kind, raw_id=raw_id, env=env)
+            # if downloading => do not try fetching the asset from local-db (the asset can be in invalid state).
+            if is_downloading:
+                resp = await redirect_api_remote(request, ctx)
+                resp.headers[YouwolHeaders.youwol_origin] = env.get_remote_info().host
+                return resp
+
             resp = await call_next(request)
             if resp.status_code == 404:
                 await ctx.info("Raw data can not be locally retrieved, proceed to remote platform")
                 headers = {"Authorization": request.headers.get("authorization")}
                 resp = await redirect_api_remote(request, ctx)
                 resp.headers[YouwolHeaders.youwol_origin] = env.get_remote_info().host
-                thread = await ctx.get('download_thread', AssetDownloadThread)
-                is_downloading = thread.is_downloading(url=request.url.path, kind=kind, raw_id=raw_id, env=env)
+                is_downloading = download_thread.is_downloading(url=request.url.path, kind=kind, raw_id=raw_id, env=env)
+                # if by the time the remote api call responded the asset is already downloading
+                # => do not enqueue download
                 if is_downloading:
                     return resp
                 await ctx.info("~> schedule asset download")
-                thread.enqueue_asset(url=request.url.path, kind=kind, raw_id=raw_id, context=ctx, headers=headers)
+                download_thread.enqueue_asset(url=request.url.path, kind=kind, raw_id=raw_id, context=ctx,
+                                              headers=headers)
                 return resp
             resp.headers[YouwolHeaders.youwol_origin] = request.url.hostname
             return resp
