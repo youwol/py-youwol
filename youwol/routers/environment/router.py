@@ -1,7 +1,7 @@
 import asyncio
 import itertools
 import random
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 import importlib_resources
 from cowpy import cow
@@ -11,13 +11,12 @@ from pydantic import BaseModel
 from starlette.requests import Request
 
 from youwol.environment import FlowSwitcherMiddleware, yw_config, YouwolEnvironment, \
-    YouwolEnvironmentFactory, Connection, DirectAuth
+    YouwolEnvironmentFactory, Connection, DirectAuth, Command, PathsBook, Projects, CustomMiddleware
 from youwol.middlewares import JwtProviderPyYouwol
 from youwol.routers.environment.models import LoginBody, RemoteGatewayInfo, CustomDispatchesResponse, UserInfo
 from youwol.routers.environment.upload_assets.upload import upload_asset
 from youwol.routers.projects import ProjectLoader
 from youwol.web_socket import LogsStreamer
-from youwol_utils import to_json
 from youwol_utils.clients.oidc.oidc_config import OidcConfig
 from youwol_utils.context import Context
 
@@ -25,8 +24,17 @@ router = APIRouter()
 flatten = itertools.chain.from_iterable
 
 
+class ConfigurationResponse(BaseModel):
+    httpPort: int
+    customMiddlewares: List[CustomMiddleware]
+    projects: Projects
+    commands: Dict[str, Command]
+    currentConnection: Connection
+    pathsBook: PathsBook
+
+
 class EnvironmentStatusResponse(BaseModel):
-    configuration: YouwolEnvironment
+    configuration: ConfigurationResponse
     users: List[str]
     userInfo: UserInfo
     remoteGatewayInfo: Optional[RemoteGatewayInfo]
@@ -110,7 +118,7 @@ async def status(
         response = EnvironmentStatusResponse(
             users=users,
             userInfo=(UserInfo(id=data["upn"], name=data["username"], email=data["email"], memberOf=[])),
-            configuration=config,
+            configuration=ConfigurationResponse(**config.dict()),
             remoteGatewayInfo=remote_gateway_info,
             remotesInfo=[
                 RemoteGatewayInfo(host=remote.host, connected=(remote.host == config.get_remote_info().host))
@@ -120,9 +128,7 @@ async def status(
         # disable projects loading for now
         # await ctx.send(ProjectsLoadingResults(results=await ProjectLoader.get_results(config, ctx)))
         await ctx.send(response)
-        # Returning 'response' instead 'to_json(response)' (along with 'response_model=EnvironmentStatusResponse')
-        # lead to missing fields (e.g. some middlewares). Not sure what the problem is.
-        return to_json(response)
+        return response
 
 
 @router.get("/configuration/custom-dispatches",
