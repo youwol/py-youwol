@@ -126,8 +126,6 @@ class YouwolEnvironmentFactory:
 
     @staticmethod
     async def load_from_file(path: Path):
-        cached = YouwolEnvironmentFactory.__cached_config
-        cached and cached.backends_configuration.persist_no_sql_data()
         conf = await safe_load(
             path=path
         )
@@ -138,7 +136,6 @@ class YouwolEnvironmentFactory:
     @staticmethod
     async def reload(connection: Connection = None):
         cached = YouwolEnvironmentFactory.__cached_config
-        cached and cached.backends_configuration.persist_no_sql_data()
         conf = await safe_load(
             path=cached.pathsBook.config,
             remote_connection=connection or cached.currentConnection

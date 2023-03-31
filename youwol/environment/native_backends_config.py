@@ -1,7 +1,4 @@
-import json
 import shutil
-from datetime import datetime
-from glob import glob
 from pathlib import Path
 
 import youwol_cdn_backend as yw_cdn_backend
@@ -68,20 +65,10 @@ class BackendConfigurations:
             self.stories_backend.storage.bucket_path
         }
 
-    def persist_no_sql_data(self):
-
-        now = datetime.now()
-        for database in self.no_sql_databases:
-            path = database.data_path
-            backup_files = sorted(glob(f"{database.data_path.parent}/backup_*"))
-            _ = [Path(f).unlink() for f in backup_files[0:-2]]
-            shutil.copyfile(src=database.data_path, dst=database.data_path.parent / f'backup_{now}.json')
-            path.write_text(data=json.dumps(database.data, indent=4))
-
     def reset_databases(self):
 
         for db in self.no_sql_databases:
-            db.data['documents'] = []
+            db.reset()
 
         for folder in self.storage_folders:
             shutil.rmtree(folder, ignore_errors=True)
