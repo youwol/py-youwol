@@ -7,6 +7,7 @@ from youwol.environment import CdnSwitch, YouwolEnvironment
 from youwol_utils import Context, encode_id, ResourcesNotFoundException
 import youwol_cdn_backend as cdn_backend
 
+
 class WebpackDevServerSwitch(CdnSwitch):
     """
 CDN resource are stored in the CDN database: each time a related resource is queried, it is retrieved from here.
