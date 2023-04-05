@@ -54,7 +54,6 @@ def start(shutdown_script_path: Optional[Path] = None):
         print(traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__))
         raise e
     finally:
-        env.backends_configuration.persist_no_sql_data()
         download_thread.join()
         cleaner_thread.join()
         ProjectLoader.stop()

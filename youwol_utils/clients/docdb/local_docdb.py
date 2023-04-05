@@ -2,6 +2,7 @@ import json
 import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
+from threading import Lock
 from typing import Mapping, Union, Dict, List, Any
 
 from fastapi import HTTPException
@@ -23,6 +24,7 @@ def get_local_nosql_instance(root_path: Path, keyspace_name: str, table_body: Ta
 @dataclass(frozen=True)
 class LocalDocDbClient:
 
+    __lock = Lock()
     root_path: Path
     keyspace_name: str
     table_body: TableBody
@@ -140,12 +142,14 @@ class LocalDocDbClient:
             owner = get_default_owner(headers)
 
         doc["owner"] = owner
-        documents = self.data['documents']
-        index = [i for i, d in enumerate(documents) if self.primary_key_id(d) == self.primary_key_id(doc)]
-        if len(index) == 1:
-            documents[index[0]] = doc
-        else:
-            documents.append(doc)
+        with self.__lock:
+            documents = self.data['documents']
+            index = [i for i, d in enumerate(documents) if self.primary_key_id(d) == self.primary_key_id(doc)]
+            if len(index) == 1:
+                documents[index[0]] = doc
+            else:
+                documents.append(doc)
+            self.__persist()
         return {}
 
     async def delete_document(self, doc: Dict[str, any], owner: Union[str, None],  headers: Mapping[str, str] = None,
@@ -155,10 +159,22 @@ class LocalDocDbClient:
             headers = {}
         if not owner:
             owner = get_default_owner(headers)
-        documents = self.data['documents']
-        items_to_remove = [d for d in documents
-                           if self.primary_key_id(d) == self.primary_key_id(doc) and d["owner"] == owner]
-        for item in items_to_remove:
-            documents.remove(item)
 
+        with self.__lock:
+            documents = self.data['documents']
+            items_to_remove = [d for d in documents
+                               if self.primary_key_id(d) == self.primary_key_id(doc) and d["owner"] == owner]
+            for item in items_to_remove:
+                documents.remove(item)
+
+            self.__persist()
         return {}
+
+    def __persist(self):
+        # should be called within a mutex section
+        self.data_path.write_text(data=json.dumps(self.data, indent=4))
+
+    def reset(self):
+        with self.__lock:
+            self.data["documents"] = []
+            self.__persist()
