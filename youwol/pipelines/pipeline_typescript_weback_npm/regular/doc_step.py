@@ -9,7 +9,7 @@ class DocStep(PipelineStep):
     run: str = "yarn doc"
     sources: FileListing = FileListing(
         include=["src", "typedoc.js"],
-        ignore=[Paths.auto_generated_file, "**/.*/*", "src/tests"]
+        ignore=[Paths.auto_generated_file, "**/.*/*", "src/tests", "**/node_modules", '**/dist']
     )
 
     artifacts: List[Artifact] = [
