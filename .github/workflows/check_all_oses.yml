@@ -9,8 +9,8 @@ on:
           Default to 'http-clients local-youwol-client cdn-client'
         default: "http-clients local-youwol-client cdn-client"
 
-  schedule:
-    - cron: '39 23 * * 0' # Every sunday at 23:39
+#  schedule:
+#    - cron: '39 23 * * 0' # Every sunday at 23:39
 
 jobs:
   integration_local-youwol-client:
@@ -44,11 +44,11 @@ jobs:
 #            env: {}
 
           # MacOS
-          - image: macos-12
+          - image: macos-12 # macos-latest
             experimental: false
             env:
               OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
-          - image: macos-11 # macos-latest
+          - image: macos-11
             experimental: false
             env:
               OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
@@ -128,11 +128,11 @@ jobs:
 #            env: {}
 
           # MacOS
-          - image: macos-12
+          - image: macos-12 # macos-latest
             experimental: false
             env:
               OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
-          - image: macos-11 # macos-latest
+          - image: macos-11
             experimental: false
             env:
               OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
