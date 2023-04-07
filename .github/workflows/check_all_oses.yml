@@ -9,46 +9,46 @@ on:
           Default to 'http-clients local-youwol-client cdn-client'
         default: "http-clients local-youwol-client cdn-client"
 
-  schedule:
-    - cron: '39 23 * * 0' # Every sunday at 23:39
+#  schedule:
+#    - cron: '39 23 * * 0' # Every sunday at 23:39
 
 jobs:
   integration_local-youwol-client:
     strategy:
+      max-parallel: 1
       matrix:
         python:
-        #          - "3.7" blocked by TG-393
           - "3.8"
           - "3.9"
-        #         - "3.10" blocked by TG-131
+          - "3.10"
 
         os:
           # See https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
           # Windows
-          - image: windows-2022 # windows-latest
-            experimental: true
-            env: {}
-          - image: windows-2019
-            experimental: true
-            env: {}
+#          - image: windows-2022 # windows-latest
+#            experimental: true
+#            env: {}
+#          - image: windows-2019
+#            experimental: true
+#            env: {}
 
           # Linux
-          - image: ubuntu-22.04
+          - image: ubuntu-22.04 # ubuntu-latest
             experimental: false
             env: {}
-          - image: ubuntu-20.04 # ubuntu-latest
+          - image: ubuntu-20.04
             experimental: false
             env: {}
-          - image: ubuntu-18.04 # deprecated
-            experimental: false
-            env: {}
+#          - image: ubuntu-18.04 # deprecated
+#            experimental: false
+#            env: {}
 
           # MacOS
-          - image: macos-12
+          - image: macos-12 # macos-latest
             experimental: false
             env:
               OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
-          - image: macos-11 # macos-latest
+          - image: macos-11
             experimental: false
             env:
               OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
@@ -99,40 +99,40 @@ jobs:
 
   integration_cdn-client:
     strategy:
+      max-parallel: 1
       matrix:
         python:
-          - "3.7"
           - "3.8"
           - "3.9"
-        #         - "3.10" blocked by TG-131
+          - "3.10"
 
         os:
           # See https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
           # Windows
-          - image: windows-2022 # windows-latest
-            experimental: true
-            env: {}
-          - image: windows-2019
-            experimental: true
-            env: {}
+#          - image: windows-2022 # windows-latest
+#            experimental: true
+#            env: {}
+#          - image: windows-2019
+#            experimental: true
+#            env: {}
 
           # Linux
-          - image: ubuntu-22.04
+          - image: ubuntu-22.04 # ubuntu-latest
             experimental: false
             env: {}
-          - image: ubuntu-20.04 # ubuntu-latest
+          - image: ubuntu-20.04
             experimental: false
             env: {}
-          - image: ubuntu-18.04 # deprecated
-            experimental: false
-            env: {}
+#          - image: ubuntu-18.04 # deprecated
+#            experimental: false
+#            env: {}
 
           # MacOS
-          - image: macos-12
+          - image: macos-12 # macos-latest
             experimental: false
             env:
               OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
-          - image: macos-11 # macos-latest
+          - image: macos-11
             experimental: false
             env:
               OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
@@ -183,40 +183,40 @@ jobs:
 
   integration_http-clients:
     strategy:
+      max-parallel: 1
       matrix:
         python:
-          - "3.7"
           - "3.8"
           - "3.9"
-#         - "3.10" blocked by TG-131
+          - "3.10"
 
         os:
           # See https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
           # Windows
-          - image: windows-2022 # windows-latest
-            experimental: true
-            env: {}
-          - image: windows-2019
-            experimental: true
-            env: {}
+#          - image: windows-2022 # windows-latest
+#            experimental: true
+#            env: {}
+#          - image: windows-2019
+#            experimental: true
+#            env: {}
 
           # Linux
-          - image: ubuntu-22.04
+          - image: ubuntu-22.04 # ubuntu-latest
             experimental: false
             env: {}
-          - image: ubuntu-20.04 # ubuntu-latest
+          - image: ubuntu-20.04
             experimental: false
             env: {}
-          - image: ubuntu-18.04 # deprecated
-            experimental: false
-            env: {}
+#          - image: ubuntu-18.04 # deprecated
+#            experimental: false
+#            env: {}
 
           # MacOS
-          - image: macos-12
+          - image: macos-12 # macos-latest
             experimental: false
             env:
               OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
-          - image: macos-11 # macos-latest
+          - image: macos-11
             experimental: false
             env:
               OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
