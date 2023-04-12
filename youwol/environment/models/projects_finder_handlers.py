@@ -58,7 +58,9 @@ class RecursiveFinderEventHandler(FileSystemEventHandler):
         self.paths = paths
         self.paths_book = paths_book
         self.on_projects_count_update = on_projects_count_update
-        self.ignored_patterns = ignored_patterns + [f"{p}/**" for p in ignored_patterns]
+        self.ignored_patterns = ignored_patterns + \
+            [f"{p}/**" for p in ignored_patterns] + \
+            [f"{paths_book.system}/**", f"{paths_book.databases}/**"]
         self.context = context
         asyncio.run(self.reload())
 
