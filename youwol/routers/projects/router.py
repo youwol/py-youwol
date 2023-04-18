@@ -8,7 +8,7 @@ from typing import Mapping, Any
 
 from fastapi import APIRouter, Depends, Query, HTTPException
 from starlette.requests import Request
-from starlette.responses import FileResponse, JSONResponse
+from starlette.responses import FileResponse, JSONResponse, Response
 
 from youwol.environment import yw_config, YouwolEnvironment, PathsBook
 from youwol.routers.commons import Label
@@ -61,7 +61,7 @@ async def pipeline_step_status(
 ) -> PipelineStepStatusResponse:
     async with Context.start_ep(
             request=request,
-            action=f"pipeline_step_status",
+            action="pipeline_step_status",
             with_labels=[str(Label.PIPELINE_STEP_STATUS_PENDING)],
             with_attributes={
                 'projectId': project_id,
@@ -116,7 +116,7 @@ async def flow_status(
 ):
     async with Context.start_ep(
             request=request,
-            action=f"flow_status",
+            action="flow_status",
             with_attributes={
                 'projectId': project_id,
                 'flowId': flow_id
@@ -225,9 +225,7 @@ async def update_configuration(
         return UpdateConfigurationResponse(path=path, configuration=body)
 
 
-@router.post("/{project_id}/flows/{flow_id}/steps/{step_id}/run",
-             summary="status")
-async def run_pipeline_step(
+async def run_pipeline_step_implementation(
         request: Request,
         project_id: str,
         flow_id: str,
@@ -325,6 +323,25 @@ async def run_pipeline_step(
             raise error_run
 
         await create_artifacts(project=project, flow_id=flow_id, step=step, fingerprint=fingerprint, context=ctx)
+
+
+@router.post("/{project_id}/flows/{flow_id}/steps/{step_id}/run",
+             summary="run a step of a pipeline")
+async def run_pipeline_step(
+        request: Request,
+        project_id: str,
+        flow_id: str,
+        step_id: str,
+        run_upstream: bool = Query(alias='run-upstream', default=False)
+):
+    asyncio.ensure_future(run_pipeline_step_implementation(
+        request=request,
+        project_id=project_id,
+        flow_id=flow_id,
+        step_id=step_id,
+        run_upstream=run_upstream)
+    )
+    return Response(status_code=202)
 
 
 @router.get("/{project_id}/cdn",
