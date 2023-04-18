@@ -61,7 +61,7 @@ async def pipeline_step_status(
 ) -> PipelineStepStatusResponse:
     async with Context.start_ep(
             request=request,
-            action=f"pipeline_step_status",
+            action="pipeline_step_status",
             with_labels=[str(Label.PIPELINE_STEP_STATUS_PENDING)],
             with_attributes={
                 'projectId': project_id,
@@ -116,7 +116,7 @@ async def flow_status(
 ):
     async with Context.start_ep(
             request=request,
-            action=f"flow_status",
+            action="flow_status",
             with_attributes={
                 'projectId': project_id,
                 'flowId': flow_id
