@@ -84,13 +84,13 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.package-data]
 "youwol.app.routers.environment" = ["fortunes.txt"]
 "youwol.backends.flux" = ["bundle_app_template/*"]
-"youwol.app.pipelines.pipeline_typescript_weback_npm.regular" = [
+"youwol.pipelines.pipeline_typescript_weback_npm.regular" = [
     "templates/.*",
     "templates/*",
     "templates/**/*",
     "templates/.**/*",
 ]
-"youwol.app.pipelines.pipeline_typescript_weback_npm.external" = [
+"youwol.pipelines.pipeline_typescript_weback_npm.external" = [
     "templates/.*",
     "templates/*",
     "templates/**/*",
@@ -126,7 +126,7 @@ import_heading_yw_backends = "Youwol backends"
 known_yw_utils = "youwol.utils"
 import_heading_yw_utils = "Youwol utilities"
 
-known_yw_pipelines = "youwol.app.pipelines"
+known_yw_pipelines = "youwol.pipelines"
 import_heading_yw_pipelines = "Youwol pipelines"
 
 import_heading_localfolder = "relative"

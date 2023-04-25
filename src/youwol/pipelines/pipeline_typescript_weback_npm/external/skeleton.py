@@ -10,7 +10,7 @@ from youwol.backends.cdn import get_api_key
 from youwol.utils.utils_paths import sed_inplace
 
 # Youwol pipelines
-from youwol.app.pipelines.pipeline_typescript_weback_npm.common import (
+from youwol.pipelines.pipeline_typescript_weback_npm.common import (
     Dependencies,
     RunTimeDeps,
     Template,

@@ -28,7 +28,7 @@ from youwol.utils.context import Context
 from youwol.utils.utils_paths import parse_yaml
 
 # Youwol pipelines
-from youwol.app.pipelines.deploy_service import HelmPackage
+from youwol.pipelines.deploy_service import HelmPackage
 
 
 class FileNames(NamedTuple):

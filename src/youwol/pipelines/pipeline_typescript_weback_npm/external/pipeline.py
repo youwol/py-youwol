@@ -23,11 +23,11 @@ from youwol.utils.context import Context
 from youwol.utils.utils_paths import parse_json
 
 # Youwol pipelines
-from youwol.app.pipelines.pipeline_typescript_weback_npm import (
+from youwol.pipelines.pipeline_typescript_weback_npm import (
     create_sub_pipelines_publish_cdn,
 )
-from youwol.app.pipelines.pipeline_typescript_weback_npm.common import InitStep
-from youwol.app.pipelines.publish_cdn import PublishCdnLocalStep
+from youwol.pipelines.pipeline_typescript_weback_npm.common import InitStep
+from youwol.pipelines.publish_cdn import PublishCdnLocalStep
 
 
 class BuildStep(PipelineStep):

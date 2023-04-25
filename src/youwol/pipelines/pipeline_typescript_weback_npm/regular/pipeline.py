@@ -17,28 +17,22 @@ from youwol.app.routers.projects.models_project import (
 from youwol.utils.context import Context
 
 # Youwol pipelines
-from youwol.app.pipelines.pipeline_typescript_weback_npm import (
-    create_sub_pipelines_publish,
-)
-from youwol.app.pipelines.pipeline_typescript_weback_npm.regular.build_step import (
-    BuildStep,
-)
-from youwol.app.pipelines.pipeline_typescript_weback_npm.regular.common import (
+from youwol.pipelines.pipeline_typescript_weback_npm import create_sub_pipelines_publish
+from youwol.pipelines.pipeline_typescript_weback_npm.regular.build_step import BuildStep
+from youwol.pipelines.pipeline_typescript_weback_npm.regular.common import (
     Paths,
     get_dependencies,
 )
-from youwol.app.pipelines.pipeline_typescript_weback_npm.regular.dependencies_step import (
+from youwol.pipelines.pipeline_typescript_weback_npm.regular.dependencies_step import (
     DependenciesStep,
 )
-from youwol.app.pipelines.pipeline_typescript_weback_npm.regular.doc_step import DocStep
-from youwol.app.pipelines.pipeline_typescript_weback_npm.regular.setup_step import (
-    SetupStep,
-)
-from youwol.app.pipelines.pipeline_typescript_weback_npm.regular.test_step import (
+from youwol.pipelines.pipeline_typescript_weback_npm.regular.doc_step import DocStep
+from youwol.pipelines.pipeline_typescript_weback_npm.regular.setup_step import SetupStep
+from youwol.pipelines.pipeline_typescript_weback_npm.regular.test_step import (
     TestStep,
     TestStepConfig,
 )
-from youwol.app.pipelines.publish_cdn import PublishCdnLocalStep
+from youwol.pipelines.publish_cdn import PublishCdnLocalStep
 
 
 class PublishConfig(BaseModel):

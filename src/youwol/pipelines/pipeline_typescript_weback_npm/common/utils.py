@@ -28,17 +28,12 @@ from youwol.utils.utils_paths import sed_inplace
 from youwol.utils.utils_test import PyYouwolSession, TestFailureResult
 
 # Youwol pipelines
-from youwol.app.pipelines import PublishCdnRemoteStep
-from youwol.app.pipelines.pipeline_typescript_weback_npm.common import (
-    PackageType,
-    Template,
-)
-from youwol.app.pipelines.pipeline_typescript_weback_npm.common.npm_step import (
+from youwol.pipelines import PublishCdnRemoteStep
+from youwol.pipelines.pipeline_typescript_weback_npm.common import PackageType, Template
+from youwol.pipelines.pipeline_typescript_weback_npm.common.npm_step import (
     PublishNpmStep,
 )
-from youwol.app.pipelines.pipeline_typescript_weback_npm.environment import (
-    get_environment,
-)
+from youwol.pipelines.pipeline_typescript_weback_npm.environment import get_environment
 
 
 class FileNames(NamedTuple):

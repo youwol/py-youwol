@@ -11,7 +11,7 @@ from youwol.app.environment import (
 )
 
 # Youwol pipelines
-import youwol.app.pipelines.pipeline_typescript_weback_npm as pipeline_ts
+import youwol.pipelines.pipeline_typescript_weback_npm as pipeline_ts
 
 pipeline_ts.set_environment()
 

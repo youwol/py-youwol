@@ -12,10 +12,10 @@ from youwol.app.environment.models.predefined_configs.py_youwol_tour.starter imp
 )
 
 # Youwol pipelines
-import youwol.app.pipelines.pipeline_typescript_weback_npm as pipeline_ts
+import youwol.pipelines.pipeline_typescript_weback_npm as pipeline_ts
 
-from youwol.app.pipelines import CdnTarget
-from youwol.app.pipelines.pipeline_typescript_weback_npm import app_ts_webpack_template
+from youwol.pipelines import CdnTarget
+from youwol.pipelines.pipeline_typescript_weback_npm import app_ts_webpack_template
 
 root_folder, cache_folder, projects_folder, ecosystem_folder = init_working_folders()
 

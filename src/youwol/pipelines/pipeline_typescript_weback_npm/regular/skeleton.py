@@ -18,13 +18,13 @@ from youwol.utils.http_clients.cdn_backend import get_api_key
 from youwol.utils.utils_paths import sed_inplace
 
 # Youwol pipelines
-from youwol.app.pipelines.pipeline_typescript_weback_npm import (
+from youwol.pipelines.pipeline_typescript_weback_npm import (
     Bundles,
     DevServer,
     MainModule,
     get_externals,
 )
-from youwol.app.pipelines.pipeline_typescript_weback_npm.common import (
+from youwol.pipelines.pipeline_typescript_weback_npm.common import (
     Dependencies,
     PackageType,
     RunTimeDeps,
