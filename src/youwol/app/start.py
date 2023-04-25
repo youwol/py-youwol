@@ -17,12 +17,14 @@ from youwol.app.environment.youwol_environment import (
     YouwolEnvironmentFactory,
     print_invite,
 )
-from youwol.app.fastapi_app import cleaner_thread, download_thread, fastapi_app
-from youwol.app.main_args import get_main_arguments
 from youwol.app.routers.projects import ProjectLoader
 
 # Youwol utilities
 from youwol.utils import is_server_http_alive
+
+# relative
+from .fastapi_app import cleaner_thread, download_thread, fastapi_app
+from .main_args import get_main_arguments
 
 
 def assert_free_http_port(http_port: int):

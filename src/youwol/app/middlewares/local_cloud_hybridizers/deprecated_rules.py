@@ -12,15 +12,15 @@ from starlette.responses import JSONResponse, Response
 
 # Youwol application
 from youwol.app.environment import LocalClients, YouwolEnvironment
-from youwol.app.middlewares.local_cloud_hybridizers.abstract_local_cloud_dispatch import (
-    AbstractLocalCloudDispatch,
-)
 from youwol.app.routers.commons import ensure_local_path
 from youwol.app.routers.router_remote import redirect_api_remote
 
 # Youwol utilities
 from youwol.utils.context import Context
 from youwol.utils.request_info_factory import url_match
+
+# relative
+from .abstract_local_cloud_dispatch import AbstractLocalCloudDispatch
 
 
 class PostMetadataDeprecated(AbstractLocalCloudDispatch):

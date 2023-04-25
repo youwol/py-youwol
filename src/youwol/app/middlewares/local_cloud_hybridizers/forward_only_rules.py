@@ -8,15 +8,15 @@ from starlette.responses import Response
 
 # Youwol application
 from youwol.app.environment import YouwolEnvironment
-from youwol.app.middlewares.local_cloud_hybridizers.abstract_local_cloud_dispatch import (
-    AbstractLocalCloudDispatch,
-)
 from youwol.app.routers.router_remote import redirect_api_remote
 
 # Youwol utilities
 from youwol.utils import YouwolHeaders
 from youwol.utils.context import Context
 from youwol.utils.request_info_factory import url_match
+
+# relative
+from .abstract_local_cloud_dispatch import AbstractLocalCloudDispatch
 
 
 class ForwardOnly(AbstractLocalCloudDispatch):

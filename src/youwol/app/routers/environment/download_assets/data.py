@@ -8,15 +8,14 @@ from aiohttp import FormData
 
 # Youwol application
 from youwol.app.environment import LocalClients, YouwolEnvironment
-from youwol.app.routers.environment.download_assets.common import (
-    create_asset_local,
-    is_asset_in_local,
-)
-from youwol.app.routers.environment.download_assets.models import DownloadTask
 
 # Youwol utilities
 from youwol.utils import Context, decode_id
 from youwol.utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
+
+# relative
+from .common import create_asset_local, is_asset_in_local
+from .models import DownloadTask
 
 
 async def sync_raw_data(
