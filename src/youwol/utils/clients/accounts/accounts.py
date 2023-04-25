@@ -24,7 +24,6 @@ class AccountsClient:
                 await raise_exception_from_response(resp, **kwargs)
 
     async def get_session_details(self, **kwargs):
-
         url = f"{self.url_base}/session"
         async with aiohttp.ClientSession(headers=self.headers) as session:
             async with await session.get(url=url, **kwargs) as resp:

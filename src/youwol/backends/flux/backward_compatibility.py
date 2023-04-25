@@ -1,5 +1,10 @@
 from youwol.backends.flux.configurations import Constants
-from youwol.utils.http_clients.flux_backend import Project, DeprecatedData, Module, FactoryId
+from youwol.utils.http_clients.flux_backend import (
+    Project,
+    DeprecatedData,
+    Module,
+    FactoryId,
+)
 
 
 def from_0_to_1(project: Project, deprecated_data: DeprecatedData):
@@ -28,20 +33,30 @@ def from_0_to_1(project: Project, deprecated_data: DeprecatedData):
                 "html": f"""<div id='{root_id}' class='flux-element flux-component p-2'>
 {project.runnerRendering.layout}</div>""",
                 "moduleIds": deprecated_data.rootLayerTree["moduleIds"],
-                "environment": "return {}"
-            }
+                "environment": "return {}",
+            },
         },
-        factoryId=FactoryId(module="Component", pack='@youwol/flux-core')
+        factoryId=FactoryId(module="Component", pack="@youwol/flux-core"),
     )
     project.workflow.modules.append(root_component)
 
-    group_modules = [module for module in project.workflow.modules
-                     if module.factoryId.module == "GroupModules" and module.factoryId.pack == "@youwol/flux-core"]
+    group_modules = [
+        module
+        for module in project.workflow.modules
+        if module.factoryId.module == "GroupModules"
+        and module.factoryId.pack == "@youwol/flux-core"
+    ]
 
     def get_layers_data_recursive(acc, layer):
-        if not layer['children']:
+        if not layer["children"]:
             return acc
-        data = {**acc, **{"GroupModules_" + child["layerId"]: child["moduleIds"] for child in layer["children"]}}
+        data = {
+            **acc,
+            **{
+                "GroupModules_" + child["layerId"]: child["moduleIds"]
+                for child in layer["children"]
+            },
+        }
         for child_layer in layer["children"]:
             data = get_layers_data_recursive(data, child_layer)
         return data
@@ -54,19 +69,21 @@ def from_0_to_1(project: Project, deprecated_data: DeprecatedData):
     return project
 
 
-compatibilities_factory = {
-    "0": from_0_to_1
-}
+compatibilities_factory = {"0": from_0_to_1}
 
 
-def convert_project_to_current_version(project: Project, deprecated_data: DeprecatedData):
+def convert_project_to_current_version(
+    project: Project, deprecated_data: DeprecatedData
+):
     if project.schemaVersion == Constants.current_schema_version:
         return project
 
     def apply_conversion(from_project: Project):
         if from_project.schemaVersion == Constants.current_schema_version:
             return from_project
-        next_project_version = compatibilities_factory[from_project.schemaVersion](project, deprecated_data)
+        next_project_version = compatibilities_factory[from_project.schemaVersion](
+            project, deprecated_data
+        )
         return apply_conversion(from_project=next_project_version)
 
     apply_conversion(from_project=project)

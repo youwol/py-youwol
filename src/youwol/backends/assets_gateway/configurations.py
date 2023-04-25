@@ -17,13 +17,14 @@ AuthMiddleware = Union[Type[Middleware], Type[AuthLocalMiddleware]]
 @dataclass(frozen=True)
 class Constants:
     cache_prefix: str = "assets-gateway"
-    unprotected_paths: Callable[[str], bool] = lambda url: \
-        url.path.split("/")[-1] == "healthz" or url.path.split("/")[-1] == "openapi-docs"
+    unprotected_paths: Callable[[str], bool] = (
+        lambda url: url.path.split("/")[-1] == "healthz"
+        or url.path.split("/")[-1] == "openapi-docs"
+    )
 
 
 @dataclass(frozen=True)
 class Configuration:
-
     flux_client: FluxClient
     cdn_client: CdnClient
     stories_client: StoriesClient

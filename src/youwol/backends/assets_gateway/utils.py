@@ -4,16 +4,26 @@ from typing import Dict, Any, List, Union, Optional
 from pydantic import BaseModel
 
 from youwol.utils import to_group_id, base64
-from youwol.utils.http_clients.assets_backend import ReadPolicyEnumFactory, SharePolicyEnumFactory
-from youwol.utils.http_clients.assets_gateway import AssetResponse, GroupAccess, \
-    AssetWithPermissionResponse, PermissionsResponse
+from youwol.utils.http_clients.assets_backend import (
+    ReadPolicyEnumFactory,
+    SharePolicyEnumFactory,
+)
+from youwol.utils.http_clients.assets_gateway import (
+    AssetResponse,
+    GroupAccess,
+    AssetWithPermissionResponse,
+    PermissionsResponse,
+)
 
 
-def to_asset_resp(asset, permissions: PermissionsResponse = None) -> Union[AssetResponse, AssetWithPermissionResponse]:
-    group_id = asset['groupId'] if 'groupId' in asset else to_group_id(asset['scope'])
+def to_asset_resp(
+    asset, permissions: PermissionsResponse = None
+) -> Union[AssetResponse, AssetWithPermissionResponse]:
+    group_id = asset["groupId"] if "groupId" in asset else to_group_id(asset["scope"])
     if permissions:
         return AssetWithPermissionResponse(
-            **{**asset, **{"groupId": group_id, "permissions": permissions}})
+            **{**asset, **{"groupId": group_id, "permissions": permissions}}
+        )
     return AssetResponse(**{**asset, **{"groupId": group_id}})
 
 
@@ -25,13 +35,15 @@ def format_policy(policy: Any) -> GroupAccess:
         raise RuntimeError("Share policy not known")
 
     expiration = None
-    if policy['read'] == "expiration-date":
-        deadline = policy['timestamp'] + policy['parameters']['period']
+    if policy["read"] == "expiration-date":
+        deadline = policy["timestamp"] + policy["parameters"]["period"]
         expiration = str(datetime.fromtimestamp(deadline))
 
-    return GroupAccess(read=ReadPolicyEnumFactory[policy["read"]],
-                       expiration=expiration,
-                       share=SharePolicyEnumFactory[policy["share"]])
+    return GroupAccess(
+        read=ReadPolicyEnumFactory[policy["read"]],
+        expiration=expiration,
+        share=SharePolicyEnumFactory[policy["share"]],
+    )
 
 
 def raw_id_to_asset_id(raw_id) -> str:

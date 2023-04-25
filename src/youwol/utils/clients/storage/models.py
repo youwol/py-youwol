@@ -3,7 +3,6 @@ from typing import NamedTuple, Union
 
 
 class FileData(NamedTuple):
-
     objectName: Union[str, Path]
     objectData: bytes
     objectSize: int

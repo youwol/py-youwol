@@ -23,7 +23,7 @@ ReadPolicyEnumFactory = {
     "forbidden": ReadPolicyEnum.forbidden,
     "authorized": ReadPolicyEnum.authorized,
     "owning": ReadPolicyEnum.owning,
-    "expiration-date": ReadPolicyEnum.expiration_date
+    "expiration-date": ReadPolicyEnum.expiration_date,
 }
 
 
@@ -125,13 +125,11 @@ class NewAssetBody(BaseModel):
     rawId: str
     kind: str
     groupId: Optional[str] = None
-    name: str = ''
-    description: str = ''
+    name: str = ""
+    description: str = ""
     tags: List[str] = []
     defaultAccessPolicy: AccessPolicyBody = AccessPolicyBody(
-        read=ReadPolicyEnum.forbidden,
-        share=SharePolicyEnum.forbidden,
-        parameters={}
+        read=ReadPolicyEnum.forbidden, share=SharePolicyEnum.forbidden, parameters={}
     )
 
 
@@ -167,8 +165,8 @@ scylla_db_text = "text"
 scylla_db_list_text = "list<text>"
 
 ASSETS_TABLE = TableBody(
-    name='entities',
-    version='0.0',
+    name="entities",
+    version="0.0",
     columns=[
         Column(name="asset_id", type=scylla_db_text),
         Column(name="related_id", type=scylla_db_text),
@@ -178,15 +176,15 @@ ASSETS_TABLE = TableBody(
         Column(name="images", type=scylla_db_list_text),
         Column(name="thumbnails", type=scylla_db_list_text),
         Column(name="tags", type=scylla_db_list_text),
-        Column(name="description", type=scylla_db_text)
+        Column(name="description", type=scylla_db_text),
     ],
     partition_key=["asset_id"],
-    clustering_columns=[]
+    clustering_columns=[],
 )
 
 ACCESS_HISTORY = TableBody(
-    name='access_history',
-    version='0.0',
+    name="access_history",
+    version="0.0",
     columns=[
         Column(name="record_id", type="text"),
         Column(name="asset_id", type="text"),
@@ -195,12 +193,12 @@ ACCESS_HISTORY = TableBody(
         Column(name="timestamp", type="int"),
     ],
     partition_key=["record_id"],
-    clustering_columns=[]
+    clustering_columns=[],
 )
 
 ACCESS_POLICY = TableBody(
-    name='access_policy',
-    version='0.0',
+    name="access_policy",
+    version="0.0",
     columns=[
         Column(name="asset_id", type="text"),
         Column(name="related_id", type="text"),
@@ -213,6 +211,6 @@ ACCESS_POLICY = TableBody(
     partition_key=["asset_id"],
     clustering_columns=["consumer_group_id"],
     table_options=TableOptions(
-        clustering_order=[OrderingClause(name='consumer_group_id', order='ASC')]
-    )
+        clustering_order=[OrderingClause(name="consumer_group_id", order="ASC")]
+    ),
 )

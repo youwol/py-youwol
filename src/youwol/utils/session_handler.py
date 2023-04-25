@@ -1,7 +1,11 @@
 from typing import Any, Union
 
 from youwol.utils import CacheClient, TTL
-from youwol.utils.clients.oidc.oidc_config import OidcConfig, PrivateClient, PublicClient
+from youwol.utils.clients.oidc.oidc_config import (
+    OidcConfig,
+    PrivateClient,
+    PublicClient,
+)
 
 
 class SessionHandler:
@@ -15,24 +19,24 @@ class SessionHandler:
     def store(self, tokens: Any):
         self.__jwt_cache.set(
             f"{self.__session_uuid}_access_token",
-            {'v': tokens['access_token']},
-            TTL(tokens['expires_in'])
+            {"v": tokens["access_token"]},
+            TTL(tokens["expires_in"]),
         )
         self.__jwt_cache.set(
             f"{self.__session_uuid}_refresh_token",
-            {'v': tokens['refresh_token']},
-            TTL(tokens['refresh_expires_in'])
+            {"v": tokens["refresh_token"]},
+            TTL(tokens["refresh_expires_in"]),
         )
         self.__jwt_cache.set(
             f"{self.__session_uuid}_id_token",
-            {'v': tokens['id_token']},
-            TTL(tokens['refresh_expires_in'])
+            {"v": tokens["id_token"]},
+            TTL(tokens["refresh_expires_in"]),
         )
 
     def get_id_token(self):
         cached_item = self.__jwt_cache.get(f"{self.__session_uuid}_id_token")
         if cached_item:
-            return cached_item['v']
+            return cached_item["v"]
         else:
             return None
 
@@ -50,24 +54,29 @@ class SessionHandler:
     def get_access_token(self):
         cached_item = self.__jwt_cache.get(f"{self.__session_uuid}_access_token")
         if cached_item:
-            return cached_item['v']
+            return cached_item["v"]
         else:
             return None
 
     def get_refresh_token(self):
         cached_item = self.__jwt_cache.get(f"{self.__session_uuid}_refresh_token")
         if cached_item:
-            return cached_item['v']
+            return cached_item["v"]
         else:
             return None
 
-    async def refresh(self, openid_base_url: str, openid_client: Union[PublicClient, PrivateClient]) -> bool:
+    async def refresh(
+        self, openid_base_url: str, openid_client: Union[PublicClient, PrivateClient]
+    ) -> bool:
         refresh_token = self.__jwt_cache.get(f"{self.__session_uuid}_refresh_token")
         if refresh_token is None:
             return False
 
-        tokens = await OidcConfig(base_url=openid_base_url).for_client(openid_client).refresh(
-            refresh_token=refresh_token['v'])
+        tokens = (
+            await OidcConfig(base_url=openid_base_url)
+            .for_client(openid_client)
+            .refresh(refresh_token=refresh_token["v"])
+        )
 
         self.store(tokens)
         return True

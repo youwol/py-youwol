@@ -4,7 +4,12 @@ from typing import List, NamedTuple, Union, Dict, Any
 from pydantic import BaseModel
 from semantic_version import Version
 
-from youwol.utils.clients.docdb.models import Column, TableOptions, OrderingClause, TableBody
+from youwol.utils.clients.docdb.models import (
+    Column,
+    TableOptions,
+    OrderingClause,
+    TableBody,
+)
 
 
 def get_api_key(version: Union[str, Version]):
@@ -21,34 +26,33 @@ def get_exported_symbol(name: str):
 
 
 def patch_loading_graph(loading_graph: Dict[str, Any]):
-
-    if loading_graph['graphType'] == 'sequential-v1':
+    if loading_graph["graphType"] == "sequential-v1":
         #  add missing apiKey & exportedSymbol in 'lock' attribute
-        for lock in loading_graph['lock']:
-            lock['apiKey'] = get_api_key(lock['version'])
-            lock['exportedSymbol'] = get_exported_symbol(lock['name'])
-        loading_graph['graphType'] = 'sequential-v2'
+        for lock in loading_graph["lock"]:
+            lock["apiKey"] = get_api_key(lock["version"])
+            lock["exportedSymbol"] = get_exported_symbol(lock["name"])
+        loading_graph["graphType"] = "sequential-v2"
 
 
 exportedSymbols = {
-    'lodash': '_',
-    'three': 'THREE',
-    'typescript': 'ts',
-    'three-trackballcontrols': 'TrackballControls',
-    'codemirror': 'CodeMirror',
-    'highlight.js': 'hljs',
-    '@pyodide/pyodide': 'loadPyodide',
-    'plotly.js': 'Plotly',
-    'plotly.js-gl2d-dist': 'Plotly',
-    'jquery': '$',
-    'popper.js': 'Popper',
-    'reflect-metadata': 'Reflect',
-    'js-beautify': 'js_beautify',
-    'mathjax': 'Mathjax',
-    '@pyodide/scikit-learn': 'sklearn',
-    '@pyodide/python-dateutil': 'dateutil',
-    '@tweenjs/tween.js': 'TWEEN',
-    '@youwol/potree': 'Potree'
+    "lodash": "_",
+    "three": "THREE",
+    "typescript": "ts",
+    "three-trackballcontrols": "TrackballControls",
+    "codemirror": "CodeMirror",
+    "highlight.js": "hljs",
+    "@pyodide/pyodide": "loadPyodide",
+    "plotly.js": "Plotly",
+    "plotly.js-gl2d-dist": "Plotly",
+    "jquery": "$",
+    "popper.js": "Popper",
+    "reflect-metadata": "Reflect",
+    "js-beautify": "js_beautify",
+    "mathjax": "Mathjax",
+    "@pyodide/scikit-learn": "sklearn",
+    "@pyodide/python-dateutil": "dateutil",
+    "@tweenjs/tween.js": "TWEEN",
+    "@youwol/potree": "Potree",
 }
 
 
@@ -132,7 +136,9 @@ class Library(BaseModel):
 class LoadingGraphResponseV1(BaseModel):
     graphType: str
     lock: List[Library]
-    definition: List[List[Any]]  # 'Any' is actually Tuple[str, Url], but it leads to 500 when rendering the docs
+    definition: List[
+        List[Any]
+    ]  # 'Any' is actually Tuple[str, Url], but it leads to 500 when rendering the docs
 
 
 class DependenciesResponse(BaseModel):
@@ -188,19 +194,23 @@ class FolderResponse(BaseModel):
     name: str
     path: str
     size: int = -1
-    filesCount: int = -1  # prior to 06/07/2022 this property was not computed during publish
+    filesCount: int = (
+        -1
+    )  # prior to 06/07/2022 this property was not computed during publish
 
 
 class ExplorerResponse(BaseModel):
     # prior to some point, no explorer data were published the default is then returned
     size: int = -1
-    filesCount: int = -1  # prior to 06/07/2022 this property was not computed during publish
+    filesCount: int = (
+        -1
+    )  # prior to 06/07/2022 this property was not computed during publish
     files: List[FileResponse] = []
     folders: List[FolderResponse] = []
 
 
 LIBRARIES_TABLE = TableBody(
-    name='libraries',
+    name="libraries",
     version="1.0",
     columns=[
         Column(name="library_id", type="text"),
@@ -215,11 +225,11 @@ LIBRARIES_TABLE = TableBody(
         Column(name="bundle", type="text"),
         Column(name="version_number", type="text"),
         Column(name="path", type="text"),
-        Column(name="fingerprint", type="text")
+        Column(name="fingerprint", type="text"),
     ],
     partition_key=["library_name"],
     clustering_columns=["version_number"],
     table_options=TableOptions(
-        clustering_order=[OrderingClause(name='version_number', order='DESC')]
-    )
+        clustering_order=[OrderingClause(name="version_number", order="DESC")]
+    ),
 )

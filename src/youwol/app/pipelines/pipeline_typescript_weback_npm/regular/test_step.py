@@ -2,27 +2,27 @@ from typing import List
 
 from pydantic import BaseModel
 
-from youwol.app.routers.projects.models_project import Artifact, FileListing, Link, PipelineStep
+from youwol.app.routers.projects.models_project import (
+    Artifact,
+    FileListing,
+    Link,
+    PipelineStep,
+)
 from youwol.app.pipelines.pipeline_typescript_weback_npm.regular.common import Paths
 
 test_result: Artifact = Artifact(
-    id='test-result',
+    id="test-result",
     files=FileListing(
         include=["junit.xml"],
-    )
+    ),
 )
 
 test_coverage: Artifact = Artifact(
-    id='test-coverage',
+    id="test-coverage",
     files=FileListing(
         include=["coverage"],
     ),
-    links=[
-        Link(
-            name='Coverage',
-            url='coverage/lcov-report/index.html'
-        )
-    ]
+    links=[Link(name="Coverage", url="coverage/lcov-report/index.html")],
 )
 
 
@@ -37,5 +37,10 @@ class TestStep(PipelineStep):
 
     sources: FileListing = FileListing(
         include=[Paths.package_json_file, Paths.lib_folder, "src/tests"],
-        ignore=[Paths.auto_generated_file, "**/.*/*", "node_modules", "**/node_modules"]
+        ignore=[
+            Paths.auto_generated_file,
+            "**/.*/*",
+            "node_modules",
+            "**/node_modules",
+        ],
     )

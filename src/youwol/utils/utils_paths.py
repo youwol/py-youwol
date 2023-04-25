@@ -26,7 +26,11 @@ flatten = itertools.chain.from_iterable
 
 
 def list_files(folder: Path, rec=True) -> List[Path]:
-    return [Path(p) for p in glob.glob(str(folder)+'/**/*', recursive=rec) if Path(p).is_file()]
+    return [
+        Path(p)
+        for p in glob.glob(str(folder) + "/**/*", recursive=rec)
+        if Path(p).is_file()
+    ]
 
 
 def parse_json(path: Union[str, Path]):
@@ -39,7 +43,7 @@ def parse_yaml(path: Union[str, Path]):
 
 
 def write_json(data: json, path: Path):
-    open(str(path), 'w').write(json.dumps(data, indent=4))
+    open(str(path), "w").write(json.dumps(data, indent=4))
 
 
 def copy_tree(source: Path, destination: Path, replace: bool = False):
@@ -50,7 +54,6 @@ def copy_tree(source: Path, destination: Path, replace: bool = False):
 
 
 def copy_file(source: Path, destination: Path, create_folders: bool = False):
-
     if create_folders and not destination.parent.exists():
         os.makedirs(destination.parent)
     # A helper to not having to cast stuffs all the time. See https://youtrack.jetbrains.com/issue/PY-30747
@@ -58,9 +61,8 @@ def copy_file(source: Path, destination: Path, create_folders: bool = False):
 
 
 def matching_files(
-        folder: Union[Path, str],
-        patterns: Union[List[str], FileListing]) -> Set[Path]:
-
+    folder: Union[Path, str], patterns: Union[List[str], FileListing]
+) -> Set[Path]:
     folder = Path(folder)
 
     def fix_pattern(pattern):
@@ -68,11 +70,15 @@ def matching_files(
             return [pattern + "/**/*", pattern + "/*"]
         return [pattern]
 
-    patterns = FileListing(include=[p for p in patterns], ignore=[]) if isinstance(patterns, list) else patterns
+    patterns = (
+        FileListing(include=[p for p in patterns], ignore=[])
+        if isinstance(patterns, list)
+        else patterns
+    )
     patterns = FileListing(
         include=list(flatten([fix_pattern(p) for p in patterns.include])),
-        ignore=patterns.ignore
-        )
+        ignore=patterns.ignore,
+    )
     patterns_folder_ignore = patterns.ignore
 
     def is_selected(filepath: Path):
@@ -90,7 +96,9 @@ def matching_files(
         if to_skip_branch(relative_root_path):
             dirs[:] = []
             continue
-        selected = selected + [root_path / f for f in files if is_selected(relative_root_path / f)]
+        selected = selected + [
+            root_path / f for f in files if is_selected(relative_root_path / f)
+        ]
 
     return selected
 
@@ -105,10 +113,7 @@ def ensure_folders(*paths: Union[str, Path]):
 
 
 def files_check_sum(paths: Iterable[Union[str, Path]]):
-
-    def md5_update_from_file(
-            filename: Union[str, Path],
-            current_hash):
+    def md5_update_from_file(filename: Union[str, Path], current_hash):
         with open(str(filename), "rb") as f:
             for chunk in iter(lambda: f.read(4096), b""):
                 current_hash.update(chunk)
@@ -123,10 +128,12 @@ def files_check_sum(paths: Iterable[Union[str, Path]]):
     return sha_hash
 
 
-def create_zip_file(path: Path, files_to_zip: List[Tuple[Path, str]],
-                    with_data: List[Tuple[str, Union[str, bytes]]] = None):
-
-    zipper = zipfile.ZipFile(path, 'w', zipfile.ZIP_DEFLATED)
+def create_zip_file(
+    path: Path,
+    files_to_zip: List[Tuple[Path, str]],
+    with_data: List[Tuple[str, Union[str, bytes]]] = None,
+):
+    zipper = zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED)
     for path, name in files_to_zip:
         zipper.write(filename=path, arcname=name)
     if with_data:
@@ -155,12 +162,16 @@ def do_nothing_on_missing_dir(_path: Path):
     pass
 
 
-def ensure_dir_exists(path: Optional[Union[str, Path]],
-                      root_candidates: Union[Union[str, Path], List[Union[str, Path]]],
-                      default_root: Optional[Union[str, Path]] = None,
-                      create: Optional[Callable[[Path], None]] = default_create_dir) -> Path:
+def ensure_dir_exists(
+    path: Optional[Union[str, Path]],
+    root_candidates: Union[Union[str, Path], List[Union[str, Path]]],
+    default_root: Optional[Union[str, Path]] = None,
+    create: Optional[Callable[[Path], None]] = default_create_dir,
+) -> Path:
     path = path if path else "."
-    (final_path, exists) = existing_path_or_default(path, root_candidates=root_candidates, default_root=default_root)
+    (final_path, exists) = existing_path_or_default(
+        path, root_candidates=root_candidates, default_root=default_root
+    )
 
     if exists:
         if not final_path.is_dir():
@@ -171,11 +182,15 @@ def ensure_dir_exists(path: Optional[Union[str, Path]],
     return final_path
 
 
-def ensure_file_exists(path: Union[str, Path],
-                       root_candidates: Union[Union[str, Path], List[Union[str, Path]]],
-                       default_root: Optional[Union[str, Path]] = None,
-                       default_content: Optional[str] = None) -> Path:
-    (final_path, exists) = existing_path_or_default(path, root_candidates=root_candidates, default_root=default_root)
+def ensure_file_exists(
+    path: Union[str, Path],
+    root_candidates: Union[Union[str, Path], List[Union[str, Path]]],
+    default_root: Optional[Union[str, Path]] = None,
+    default_content: Optional[str] = None,
+) -> Path:
+    (final_path, exists) = existing_path_or_default(
+        path, root_candidates=root_candidates, default_root=default_root
+    )
 
     if exists:
         if not final_path.is_file():
@@ -193,9 +208,11 @@ def ensure_file_exists(path: Union[str, Path],
     return final_path
 
 
-def existing_path_or_default(path: Union[str, Path],
-                             root_candidates: Union[Union[str, Path], List[Union[str, Path]]],
-                             default_root: Optional[Union[str, Path]] = None) -> (Path, bool):
+def existing_path_or_default(
+    path: Union[str, Path],
+    root_candidates: Union[Union[str, Path], List[Union[str, Path]]],
+    default_root: Optional[Union[str, Path]] = None,
+) -> (Path, bool):
     typed_path = Path(path)
 
     if typed_path.is_absolute():
@@ -217,29 +234,38 @@ def existing_path_or_default(path: Union[str, Path],
 
 async def get_databases_path(pyyouwol_port):
     async with aiohttp.ClientSession() as session:
-        async with await session.get(url=f"http://localhost:{pyyouwol_port}/admin/environment/status") as resp:
+        async with await session.get(
+            url=f"http://localhost:{pyyouwol_port}/admin/environment/status"
+        ) as resp:
             if resp.status == 200:
                 json_resp = await resp.json()
-                return Path(json_resp['configuration']['pathsBook']['databases'])
+                return Path(json_resp["configuration"]["pathsBook"]["databases"])
 
 
 async def get_running_py_youwol_env(py_youwol_port):
     async with aiohttp.ClientSession() as session:
-        async with await session.get(url=f"http://localhost:{py_youwol_port}/admin/environment/status") as resp:
+        async with await session.get(
+            url=f"http://localhost:{py_youwol_port}/admin/environment/status"
+        ) as resp:
             if resp.status == 200:
                 json_resp = await resp.json()
-                return json_resp['configuration']
+                return json_resp["configuration"]
 
 
-def extract_zip_file(file: IO, zip_path: Union[Path, str], dir_path: Union[Path, str], delete_original=True):
+def extract_zip_file(
+    file: IO,
+    zip_path: Union[Path, str],
+    dir_path: Union[Path, str],
+    delete_original=True,
+):
     dir_path = str(dir_path)
-    with open(zip_path, 'ab') as f:
-        for chunk in iter(lambda: file.read(10000), b''):
+    with open(zip_path, "ab") as f:
+        for chunk in iter(lambda: file.read(10000), b""):
             f.write(chunk)
 
     compressed_size = zip_path.stat().st_size
 
-    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+    with zipfile.ZipFile(zip_path, "r") as zip_ref:
         zip_ref.extractall(dir_path)
 
     if delete_original:
@@ -249,7 +275,6 @@ def extract_zip_file(file: IO, zip_path: Union[Path, str], dir_path: Union[Path,
 
 
 def sed_inplace(filename, pattern, repl):
-
     # Perform the pure-Python equivalent of in-place `sed` substitution: e.g.,
     # `sed -i -e 's/'${pattern}'/'${repl}' ${filename}"`.
 
@@ -260,7 +285,7 @@ def sed_inplace(filename, pattern, repl):
     # writing with updating). This is usually a good thing. In this case,
     # however, binary writing imposes non-trivial encoding constraints trivially
     # resolved by switching to text writing. Let's do that.
-    with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmp_file:
+    with tempfile.NamedTemporaryFile(mode="w", delete=False) as tmp_file:
         with open(filename) as src_file:
             for line in src_file:
                 tmp_file.write(pattern_compiled.sub(repl, line))

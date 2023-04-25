@@ -8,17 +8,39 @@ from starlette.responses import RedirectResponse, Response
 from starlette.types import ASGIApp
 
 import youwol.app.middlewares.local_cloud_hybridizers as local_cloud_hybridizer
-from youwol.app.environment import CustomMiddleware, AssetDownloadThread, yw_config, api_configuration, YouwolEnvironment
-from youwol.app.middlewares import BrowserCachingMiddleware, LocalCloudHybridizerMiddleware,  get_remote_openid_infos,\
-    JwtProviderPyYouwol
+from youwol.app.environment import (
+    CustomMiddleware,
+    AssetDownloadThread,
+    yw_config,
+    api_configuration,
+    YouwolEnvironment,
+)
+from youwol.app.middlewares import (
+    BrowserCachingMiddleware,
+    LocalCloudHybridizerMiddleware,
+    get_remote_openid_infos,
+    JwtProviderPyYouwol,
+)
 from youwol.app.routers import native_backends, admin
-from youwol.app.routers.environment.download_assets import DownloadDataTask, DownloadFluxProjectTask, DownloadPackageTask, \
-    DownloadStoryTask
-from youwol.app.routers.environment.download_assets.custom_asset import DownloadCustomAssetTask
+from youwol.app.routers.environment.download_assets import (
+    DownloadDataTask,
+    DownloadFluxProjectTask,
+    DownloadPackageTask,
+    DownloadStoryTask,
+)
+from youwol.app.routers.environment.download_assets.custom_asset import (
+    DownloadCustomAssetTask,
+)
 from youwol.app.routers.projects import ProjectLoader
 from youwol.app.web_socket import start_web_socket, WsType
 from youwol.app.web_socket import WsDataStreamer
-from youwol.utils import YouWolException, youwol_exception_handler, YouwolHeaders, CleanerThread, factory_local_cache
+from youwol.utils import (
+    YouWolException,
+    youwol_exception_handler,
+    YouwolHeaders,
+    CleanerThread,
+    factory_local_cache,
+)
 from youwol.utils.context import ContextFactory, InMemoryReporter, Context
 from youwol.utils.middlewares import AuthMiddleware, redirect_to_login
 from youwol.utils.middlewares.root_middleware import RootMiddleware
@@ -26,7 +48,8 @@ from youwol.utils.middlewares.root_middleware import RootMiddleware
 fastapi_app = FastAPI(
     title="Local Dashboard",
     openapi_prefix=api_configuration.open_api_prefix,
-    dependencies=[Depends(yw_config)])
+    dependencies=[Depends(yw_config)],
+)
 
 download_thread = AssetDownloadThread(
     factories={
@@ -34,27 +57,26 @@ download_thread = AssetDownloadThread(
         "flux-project": DownloadFluxProjectTask,
         "data": DownloadDataTask,
         "story": DownloadStoryTask,
-        "custom-asset": DownloadCustomAssetTask
+        "custom-asset": DownloadCustomAssetTask,
     },
-    worker_count=4
+    worker_count=4,
 )
 
 cleaner_thread = CleanerThread()
 
-jwt_cache = factory_local_cache(cleaner_thread, 'jwt_cache')
-accounts_pkce_cache = factory_local_cache(cleaner_thread, 'pkce_cache')
+jwt_cache = factory_local_cache(cleaner_thread, "jwt_cache")
+accounts_pkce_cache = factory_local_cache(cleaner_thread, "pkce_cache")
 ContextFactory.with_static_data = {
     "env": lambda: yw_config(),
     "download_thread": download_thread,
     "cleaner_thread": cleaner_thread,
     "accounts_pkce_cache": accounts_pkce_cache,
     "jwt_cache": jwt_cache,
-    "fastapi_app": lambda: fastapi_app
+    "fastapi_app": lambda: fastapi_app,
 }
 
 
 class CustomMiddlewareWrapper(BaseHTTPMiddleware):
-
     model_config: CustomMiddleware
 
     def __init__(self, app: ASGIApp, model_config: CustomMiddleware):
@@ -67,12 +89,11 @@ class CustomMiddlewareWrapper(BaseHTTPMiddleware):
         return await self.model_config.dispatch(
             incoming_request=request,
             call_next=call_next,
-            context=Context.from_request(request)
+            context=Context.from_request(request),
         )
 
 
 def setup_middlewares(env: YouwolEnvironment):
-
     fastapi_app.add_middleware(
         LocalCloudHybridizerMiddleware,
         dynamic_dispatch_rules=[
@@ -82,9 +103,9 @@ def setup_middlewares(env: YouwolEnvironment):
             local_cloud_hybridizer.download_rules.Download(),
             local_cloud_hybridizer.forward_only_rules.ForwardOnly(),
             local_cloud_hybridizer.deprecated_rules.PostMetadataDeprecated(),
-            local_cloud_hybridizer.deprecated_rules.CreateAssetDeprecated()
+            local_cloud_hybridizer.deprecated_rules.CreateAssetDeprecated(),
         ],
-        disabling_header=YouwolHeaders.py_youwol_local_only
+        disabling_header=YouwolHeaders.py_youwol_local_only,
     )
 
     for middleware in reversed(env.customMiddlewares):
@@ -94,22 +115,23 @@ def setup_middlewares(env: YouwolEnvironment):
     fastapi_app.add_middleware(
         AuthMiddleware,
         openid_infos=partial(get_remote_openid_infos, env),
-        predicate_public_path=lambda url:
-        url.path.startswith("/api/accounts/openid_rp/"),
+        predicate_public_path=lambda url: url.path.startswith(
+            "/api/accounts/openid_rp/"
+        ),
         jwt_providers=[JwtProviderPyYouwol(jwt_cache=jwt_cache)],
-        on_missing_token=lambda url:
-        redirect_to_login(url) if url.path.startswith('/applications')
-            else Response(content="Unauthenticated", status_code=403)
+        on_missing_token=lambda url: redirect_to_login(url)
+        if url.path.startswith("/applications")
+        else Response(content="Unauthenticated", status_code=403),
     )
 
     fastapi_app.add_middleware(
-        RootMiddleware,
-        logs_reporter=InMemoryReporter(),
-        data_reporter=WsDataStreamer()
+        RootMiddleware, logs_reporter=InMemoryReporter(), data_reporter=WsDataStreamer()
     )
 
     fastapi_app.include_router(native_backends.router)
-    fastapi_app.include_router(admin.router, prefix=api_configuration.base_path + "/admin")
+    fastapi_app.include_router(
+        admin.router, prefix=api_configuration.base_path + "/admin"
+    )
 
 
 async def create_app():
@@ -125,9 +147,11 @@ async def create_app():
     async def healthz():
         return {"status": "py-youwol ok"}
 
-    @fastapi_app.get(api_configuration.base_path + '/')
+    @fastapi_app.get(api_configuration.base_path + "/")
     async def home():
-        return RedirectResponse(status_code=308, url=f'/applications/@youwol/platform/latest')
+        return RedirectResponse(
+            status_code=308, url=f"/applications/@youwol/platform/latest"
+        )
 
     @fastapi_app.websocket(api_configuration.base_path + "/ws-logs")
     async def ws_logs(ws: WebSocket):
@@ -136,5 +160,6 @@ async def create_app():
     @fastapi_app.websocket(api_configuration.base_path + "/ws-data")
     async def ws_data(ws: WebSocket):
         await start_web_socket(ws, WsType.Data)
+
 
 asyncio.run(create_app())

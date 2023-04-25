@@ -3,8 +3,18 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from youwol.app.routers.projects.models_project import Artifact, Flow, Pipeline, PipelineStep, FileListing, JsBundle, Link
-from youwol.app.pipelines.pipeline_typescript_weback_npm import create_sub_pipelines_publish_cdn
+from youwol.app.routers.projects.models_project import (
+    Artifact,
+    Flow,
+    Pipeline,
+    PipelineStep,
+    FileListing,
+    JsBundle,
+    Link,
+)
+from youwol.app.pipelines.pipeline_typescript_weback_npm import (
+    create_sub_pipelines_publish_cdn,
+)
 from youwol.app.pipelines.pipeline_typescript_weback_npm.common import InitStep
 from youwol.app.pipelines.publish_cdn import PublishCdnLocalStep
 from youwol.utils.context import Context
@@ -16,28 +26,25 @@ class BuildStep(PipelineStep):
     run: str = "yarn build:prod"
     sources: FileListing = FileListing(
         include=["*", "**"],
-        ignore=['.yw_pipeline/**', 'cdn.zip', 'node_modules/**', '.template/**']
+        ignore=[".yw_pipeline/**", "cdn.zip", "node_modules/**", ".template/**"],
     )
 
     artifacts: List[Artifact] = [
         Artifact(
-            id='dist',
+            id="dist",
             files=FileListing(
                 include=["*", "**"],
-                ignore=['.yw_pipeline/**', 'cdn.zip', 'node_modules', '.template/**']
+                ignore=[".yw_pipeline/**", "cdn.zip", "node_modules", ".template/**"],
             ),
-            links=[
-                Link(
-                    name='bundle-analysis',
-                    url='./dist/bundle-analysis.html'
-                )
-            ]
+            links=[Link(name="bundle-analysis", url="./dist/bundle-analysis.html")],
         )
     ]
 
 
 class PipelineConfig(BaseModel):
-    target: JsBundle = JsBundle(links=[Link(name="bundle-analysis", url="dist/bundle-analysis.html")])
+    target: JsBundle = JsBundle(
+        links=[Link(name="bundle-analysis", url="dist/bundle-analysis.html")]
+    )
     customInitStep: Optional[PipelineStep] = None
     customBuildStep: Optional[PipelineStep] = None
 
@@ -49,9 +56,11 @@ async def pipeline(config: PipelineConfig, context: Context) -> Pipeline:
 
     init_step = config.customInitStep or InitStep()
     build_step = config.customBuildStep or BuildStep()
-    cdn_local_step = PublishCdnLocalStep(packagedArtifacts=['dist'])
+    cdn_local_step = PublishCdnLocalStep(packagedArtifacts=["dist"])
 
-    publish_remote_steps, dags = await create_sub_pipelines_publish_cdn(start_step=cdn_local_step.id, context=context)
+    publish_remote_steps, dags = await create_sub_pipelines_publish_cdn(
+        start_step=cdn_local_step.id, context=context
+    )
     return Pipeline(
         target=config.target,
         tags=["typescript", "webpack", "library", "npm", "external"],
@@ -60,16 +69,13 @@ async def pipeline(config: PipelineConfig, context: Context) -> Pipeline:
         steps=[
             init_step,
             build_step,
-            PublishCdnLocalStep(packagedArtifacts=['dist']),
-            *publish_remote_steps
+            PublishCdnLocalStep(packagedArtifacts=["dist"]),
+            *publish_remote_steps,
         ],
         flows=[
             Flow(
                 name="prod",
-                dag=[
-                    f"{init_step.id} > {build_step.id} > {cdn_local_step.id}",
-                    *dags
-                ]
+                dag=[f"{init_step.id} > {build_step.id} > {cdn_local_step.id}", *dags],
             )
-        ]
+        ],
     )

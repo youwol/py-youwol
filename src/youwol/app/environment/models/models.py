@@ -17,17 +17,18 @@ class IPipelineFactory:
     This class should not be used: instead use IPipelineFactory from youwol.app.environment.models_project.
     It is here for backward compatibility purpose & will disappear soon.
     """
+
     pass
 
 
 class ProjectsFinderHandler:
     """
-  Abstract class for ProjectsFinderHandler strategies.
+    Abstract class for ProjectsFinderHandler strategies.
 
-  Derived classes need to implement the **'initialize'**, **'refresh'** and **'release'** method.
-"""
+    Derived classes need to implement the **'initialize'**, **'refresh'** and **'release'** method.
+    """
+
     async def initialize(self):
-
         raise NotImplementedError()
 
     async def refresh(self):

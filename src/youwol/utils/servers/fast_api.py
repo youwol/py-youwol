@@ -3,7 +3,18 @@ import inspect
 import itertools
 import sys
 from dataclasses import dataclass
-from typing import List, Any, Type, Dict, Callable, Union, Awaitable, Optional, TypeVar, Generic
+from typing import (
+    List,
+    Any,
+    Type,
+    Dict,
+    Callable,
+    Union,
+    Awaitable,
+    Optional,
+    TypeVar,
+    Generic,
+)
 
 import uvicorn
 from fastapi import FastAPI, APIRouter
@@ -11,7 +22,7 @@ from pydantic import BaseModel, BaseConfig, create_model
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 
-from youwol.utils import (YouWolException, youwol_exception_handler, log_info)
+from youwol.utils import YouWolException, youwol_exception_handler, log_info
 from youwol.utils.context import ContextReporter, Context
 from youwol.utils.middlewares.root_middleware import RootMiddleware
 
@@ -22,20 +33,21 @@ BaseConfig.arbitrary_types_allowed = True
 
 class FastApiRouter(BaseModel):
     """
-Define a router using the fast-api library.
+    Define a router using the fast-api library.
 
-**Attributes**:
+    **Attributes**:
 
-- **router** an :class:`APIRouter` or a function returning an :class:`APIRouter` (eventually awaitable)
-Defines the :class:`APIRouter`, see fast-api documentation.
+    - **router** an :class:`APIRouter` or a function returning an :class:`APIRouter` (eventually awaitable)
+    Defines the :class:`APIRouter`, see fast-api documentation.
 
-- **base_path** :class:`str`
-Base path from which the router is served.
+    - **base_path** :class:`str`
+    Base path from which the router is served.
 
-*Default to empty string*
-"""
+    *Default to empty string*"""
 
-    router: Union[APIRouter, Callable[[Context], Union[APIRouter, Awaitable[APIRouter]]]]
+    router: Union[
+        APIRouter, Callable[[Context], Union[APIRouter, Awaitable[APIRouter]]]
+    ]
     base_path: Optional[str] = ""
     __pydantic_model__ = create_model("FastApiRouter")
 
@@ -73,29 +85,31 @@ class FastApiApp:
     server_options: ServerOptions
 
 
-def select_configuration_from_command_line(configs_map: Dict[str, Callable[[], Awaitable[AppConfiguration]]]) \
-        -> AppConfiguration:
-
+def select_configuration_from_command_line(
+    configs_map: Dict[str, Callable[[], Awaitable[AppConfiguration]]]
+) -> AppConfiguration:
     if len(sys.argv) < 2:
-        raise RuntimeError("The configuration name needs to be supplied as command line argument")
+        raise RuntimeError(
+            "The configuration name needs to be supplied as command line argument"
+        )
     config_name = sys.argv[1]
     if config_name not in configs_map:
         raise RuntimeError(f"The configuration {config_name} is not known")
 
     log_info(f"Use '{config_name}' configuration")
     config = configs_map[config_name]
-    selected_config: AppConfiguration = asyncio.get_event_loop().run_until_complete(config())
+    selected_config: AppConfiguration = asyncio.get_event_loop().run_until_complete(
+        config()
+    )
     return selected_config
 
 
-def serve(
-        app_data: FastApiApp
-):
-
+def serve(app_data: FastApiApp):
     app = FastAPI(
         title=app_data.title,
         description=app_data.description,
-        root_path=app_data.server_options.root_path)
+        root_path=app_data.server_options.root_path,
+    )
 
     @app.exception_handler(YouWolException)
     async def exception_handler(request: Request, exc: YouWolException):
@@ -107,13 +121,11 @@ def serve(
     app.add_middleware(
         RootMiddleware,
         logs_reporter=app_data.server_options.ctx_logger,
-        data_reporter=app_data.server_options.ctx_logger
+        data_reporter=app_data.server_options.ctx_logger,
     )
 
     app.include_router(
-        app_data.root_router.router,
-        prefix=app_data.server_options.base_path,
-        tags=[]
+        app_data.root_router.router, prefix=app_data.server_options.base_path, tags=[]
     )
     before = app_data.server_options.on_before_startup or (lambda: True)
     if inspect.iscoroutinefunction(before):

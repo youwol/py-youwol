@@ -1,4 +1,8 @@
-from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint, DispatchFunction
+from starlette.middleware.base import (
+    BaseHTTPMiddleware,
+    RequestResponseEndpoint,
+    DispatchFunction,
+)
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp
@@ -13,17 +17,14 @@ class BrowserCachingMiddleware(BaseHTTPMiddleware):
 
     cache = {}
 
-    def __init__(self, app: ASGIApp,
-                 dispatch: DispatchFunction = None,
-                 **_) -> None:
+    def __init__(self, app: ASGIApp, dispatch: DispatchFunction = None, **_) -> None:
         super().__init__(app, dispatch)
 
     async def dispatch(
-            self, request: Request, call_next: RequestResponseEndpoint
-            ) -> Response:
-
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
         response = await call_next(request)
-        if '/api/assets-gateway/raw/' in request.url.path and request.method == "GET":
+        if "/api/assets-gateway/raw/" in request.url.path and request.method == "GET":
             response.headers["Cache-Control"] = "no-cache, no-store"
 
         return response

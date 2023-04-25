@@ -1,7 +1,19 @@
-from youwol.app.environment import Configuration, System, LocalEnvironment, Projects, RecursiveProjectsFinder, \
-    Customization, CustomEndPoints, Command
-from youwol.app.environment.models.predefined_configs.py_youwol_tour.common import clone_project
-from youwol.app.environment.models.predefined_configs.py_youwol_tour.starter import init_working_folders
+from youwol.app.environment import (
+    Configuration,
+    System,
+    LocalEnvironment,
+    Projects,
+    RecursiveProjectsFinder,
+    Customization,
+    CustomEndPoints,
+    Command,
+)
+from youwol.app.environment.models.predefined_configs.py_youwol_tour.common import (
+    clone_project,
+)
+from youwol.app.environment.models.predefined_configs.py_youwol_tour.starter import (
+    init_working_folders,
+)
 
 root_folder, cache_folder, projects_folder, ecosystem_folder = init_working_folders()
 
@@ -13,8 +25,7 @@ Configuration(
     ),
     system=System(
         localEnvironment=LocalEnvironment(
-            dataDir=ecosystem_folder,
-            cacheDir=cache_folder
+            dataDir=ecosystem_folder, cacheDir=cache_folder
         )
     ),
     customization=Customization(
@@ -22,10 +33,13 @@ Configuration(
             commands=[
                 Command(
                     name="git-clone-todo-app-js",
-                    do_post=lambda body, ctx: clone_project(repo_name="todo-app-js", parent_folder=projects_folder,
-                                                            context=ctx)
+                    do_post=lambda body, ctx: clone_project(
+                        repo_name="todo-app-js",
+                        parent_folder=projects_folder,
+                        context=ctx,
+                    ),
                 ),
             ]
         )
-    )
+    ),
 )

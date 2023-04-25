@@ -9,5 +9,5 @@ def patch_files_name(files: List[JSON]):
     we recover the same name as we used first when posting objects
     """
     for file in files:
-        file["name"] = '/'.join(file["name"].split('/')[1:])
+        file["name"] = "/".join(file["name"].split("/")[1:])
     return files

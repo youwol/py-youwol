@@ -21,15 +21,21 @@ class Resource(BaseModel):
     app_version: str
 
 
-async def helm_list(namespace: Optional[str], kube_context: str, selector: Optional[Selector],
-                    context: Optional[Context]):
+async def helm_list(
+    namespace: Optional[str],
+    kube_context: str,
+    selector: Optional[Selector],
+    context: Optional[Context],
+):
     cmd = f"helm list --kube-context {kube_context}"
     if namespace:
         cmd += f" --namespace {namespace}"
     if selector and selector.name:
         cmd += f" --selector name={selector.name}"
 
-    return_code, outputs = await execute_shell_cmd(cmd=cmd, context=context, log_outputs=False)
+    return_code, outputs = await execute_shell_cmd(
+        cmd=cmd, context=context, log_outputs=False
+    )
 
     def to_resource(line):
         elements = line.split("\t")
@@ -40,50 +46,98 @@ async def helm_list(namespace: Optional[str], kube_context: str, selector: Optio
             updated=elements[3].strip(),
             status=elements[4].strip(),
             chart=elements[5].strip(),
-            app_version=elements[6]
-            )
+            app_version=elements[6],
+        )
+
     return [to_resource(line) for line in outputs[1:] if line]
 
 
-async def helm_dry_run(release_name: str, namespace: str, values_file: Path, chart_folder: Path,
-                       args="", context: Context = None):
-
+async def helm_dry_run(
+    release_name: str,
+    namespace: str,
+    values_file: Path,
+    chart_folder: Path,
+    args="",
+    context: Context = None,
+):
     async with context.start(action="helm_dry_run") as ctx:  # type: Context
-        cmd = f"helm upgrade --dry-run --install {release_name} --create-namespace --namespace {namespace} " + \
-              f" --values {str(values_file)} {str(chart_folder)} {args}"
+        cmd = (
+            f"helm upgrade --dry-run --install {release_name} --create-namespace --namespace {namespace} "
+            + f" --values {str(values_file)} {str(chart_folder)} {args}"
+        )
         return_code, outputs = await execute_shell_cmd(cmd, ctx)
 
     return return_code, cmd, outputs
 
 
-async def helm_install(release_name: str, kube_context: str, namespace: str, values_file: Path, chart_folder: Path,
-                       timeout=120, args="", context: Context = None):
-    return await helm_install_or_upgrade(release_name=release_name, namespace=namespace, values_file=values_file,
-                                         kube_context=kube_context, chart_folder=chart_folder, timeout=timeout,
-                                         args=args, context=context)
+async def helm_install(
+    release_name: str,
+    kube_context: str,
+    namespace: str,
+    values_file: Path,
+    chart_folder: Path,
+    timeout=120,
+    args="",
+    context: Context = None,
+):
+    return await helm_install_or_upgrade(
+        release_name=release_name,
+        namespace=namespace,
+        values_file=values_file,
+        kube_context=kube_context,
+        chart_folder=chart_folder,
+        timeout=timeout,
+        args=args,
+        context=context,
+    )
 
 
-async def helm_upgrade(release_name: str, kube_context: str, namespace: str, values_file: Path, chart_folder: Path,
-                       timeout=120, args="", context: Context = None):
+async def helm_upgrade(
+    release_name: str,
+    kube_context: str,
+    namespace: str,
+    values_file: Path,
+    chart_folder: Path,
+    timeout=120,
+    args="",
+    context: Context = None,
+):
+    return await helm_install_or_upgrade(
+        release_name=release_name,
+        namespace=namespace,
+        values_file=values_file,
+        kube_context=kube_context,
+        chart_folder=chart_folder,
+        timeout=timeout,
+        args=args,
+        context=context,
+    )
 
-    return await helm_install_or_upgrade(release_name=release_name, namespace=namespace, values_file=values_file,
-                                         kube_context=kube_context, chart_folder=chart_folder, timeout=timeout,
-                                         args=args, context=context)
 
-
-async def helm_uninstall(release_name: str, kube_context: str,  namespace: str, context: Context = None):
+async def helm_uninstall(
+    release_name: str, kube_context: str, namespace: str, context: Context = None
+):
     cmd = f"helm uninstall --namespace {namespace} --kube-context {kube_context} {release_name}"
     context and await context.info(text=cmd)
     await execute_shell_cmd(cmd, context)
 
 
-async def helm_install_or_upgrade(release_name: str, namespace: str, values_file: Path, chart_folder: Path,
-                                  kube_context: str, timeout=120, args="", context: Context = None):
-
+async def helm_install_or_upgrade(
+    release_name: str,
+    namespace: str,
+    values_file: Path,
+    chart_folder: Path,
+    kube_context: str,
+    timeout=120,
+    args="",
+    context: Context = None,
+):
     async with context.start(action="helm_install_or_upgrade") as ctx:  # type: Context
-        cmd = f"helm upgrade --install {release_name} --create-namespace --namespace {namespace} " + \
-              f"--kube-context {kube_context} --values {str(values_file)} --atomic " \
-              f"--timeout {timeout}s {str(chart_folder)} {args}"
+        cmd = (
+            f"helm upgrade --install {release_name} --create-namespace --namespace {namespace} "
+            + f"--kube-context {kube_context} --values {str(values_file)} --atomic "
+            f"--timeout {timeout}s {str(chart_folder)} {args}"
+        )
         return_code, outputs = await execute_shell_cmd(cmd, ctx)
 
     return return_code, cmd, outputs

@@ -36,21 +36,19 @@ def downloading_pbar(env: YouwolEnvironment):
 
 
 async def process_download_asset(
-        queue: asyncio.Queue,
-        factories: Dict[str, Any],
-        pbar: tqdm
-        ):
+    queue: asyncio.Queue, factories: Dict[str, Any], pbar: tqdm
+):
     async def on_error(text, data, _ctx: Context):
         log_error("Failed to download asset", data)
-        await _ctx.error(
-            text=text,
-            data=data
+        await _ctx.error(text=text, data=data)
+        await _ctx.send(
+            DownloadEvent(
+                kind=_ctx.with_attributes["kind"],
+                rawId=_ctx.with_attributes["rawId"],
+                type=DownloadEventType.failed,
+            )
         )
-        await _ctx.send(DownloadEvent(
-            kind=_ctx.with_attributes['kind'],
-            rawId=_ctx.with_attributes['rawId'],
-            type=DownloadEventType.failed
-        ))
+
     while True:
         url, kind, raw_id, context, headers = await queue.get()
 
@@ -78,46 +76,56 @@ async def process_download_asset(
 
         pbar.total = pbar.total + 1
         async with context.start(
-                action=f"Proceed download task",
-                with_attributes={"kind": kind, "rawId": raw_id}
+            action=f"Proceed download task",
+            with_attributes={"kind": kind, "rawId": raw_id},
         ) as ctx:  # types: Context
-
             cache_downloaded_ids.add(download_id)
             # log_info(f"Start asset install of kind {kind}: {download_id}")
             pbar.set_description(downloading_pbar(env), refresh=True)
             try:
-                await ctx.send(DownloadEvent(
-                    kind=kind,
-                    rawId=raw_id,
-                    type=DownloadEventType.started
-                ))
+                await ctx.send(
+                    DownloadEvent(
+                        kind=kind, rawId=raw_id, type=DownloadEventType.started
+                    )
+                )
                 await task.create_local_asset(context=ctx)
-                await ctx.send(DownloadEvent(
-                    kind=kind,
-                    rawId=raw_id,
-                    type=DownloadEventType.succeeded
-                ))
+                await ctx.send(
+                    DownloadEvent(
+                        kind=kind, rawId=raw_id, type=DownloadEventType.succeeded
+                    )
+                )
                 pbar.update(1)
                 # log_info(f"Done asset install of kind {kind}: {download_id}")
 
             except Exception as error:
-                await on_error("Error while installing the asset in local",  {
-                    "raw_id": raw_id,
-                    "asset_id": asset_id,
-                    "url": url,
-                    "kind": kind,
-                    "error": error.detail if isinstance(error, YouWolException) else str(error)
-                }, ctx)
+                await on_error(
+                    "Error while installing the asset in local",
+                    {
+                        "raw_id": raw_id,
+                        "asset_id": asset_id,
+                        "url": url,
+                        "kind": kind,
+                        "error": error.detail
+                        if isinstance(error, YouWolException)
+                        else str(error),
+                    },
+                    ctx,
+                )
             finally:
                 queue.task_done()
-                download_id in cache_downloaded_ids and cache_downloaded_ids.remove(download_id)
+                download_id in cache_downloaded_ids and cache_downloaded_ids.remove(
+                    download_id
+                )
                 pbar.set_description(downloading_pbar(env), refresh=True)
 
 
 class AssetDownloadThread(Thread):
-
     event_loop = asyncio.new_event_loop()
-    download_queue = asyncio.Queue(loop=event_loop) if sys.version_info.minor < 10 else asyncio.Queue()
+    download_queue = (
+        asyncio.Queue(loop=event_loop)
+        if sys.version_info.minor < 10
+        else asyncio.Queue()
+    )
 
     def is_downloading(self, url: str, kind: str, raw_id: str, env: YouwolEnvironment):
         if CACHE_DOWNLOADING_KEY not in env.cache_py_youwol:
@@ -129,7 +137,6 @@ class AssetDownloadThread(Thread):
         return task.download_id() in env.cache_py_youwol[CACHE_DOWNLOADING_KEY]
 
     def __init__(self, factories, worker_count: int):
-
         def start_loop(loop):
             asyncio.set_event_loop(loop)
             loop.run_forever()
@@ -144,35 +151,31 @@ class AssetDownloadThread(Thread):
         pbar = tqdm(total=0, colour="green")
         for _ in range(self.worker_count):
             coroutine = process_download_asset(
-                queue=self.download_queue,
-                factories=self.factories,
-                pbar=pbar
+                queue=self.download_queue, factories=self.factories, pbar=pbar
             )
             task = self.event_loop.create_task(coroutine)
             tasks.append(task)
 
-    def enqueue_asset(self, url: str, kind: str, raw_id: str, context: Context, headers):
-
+    def enqueue_asset(
+        self, url: str, kind: str, raw_id: str, context: Context, headers
+    ):
         async def enqueue_asset():
             async with context.start(
-                    action=f"Enqueue download task of type '{kind}'",
-                    with_attributes={
-                        'kind': kind,
-                        'raw_id': raw_id,
-                    },
-                    with_reporters=[LogsStreamer()]
+                action=f"Enqueue download task of type '{kind}'",
+                with_attributes={
+                    "kind": kind,
+                    "raw_id": raw_id,
+                },
+                with_reporters=[LogsStreamer()],
             ) as ctx:
-                await ctx.send(DownloadEvent(
-                    kind=kind,
-                    rawId=raw_id,
-                    type=DownloadEventType.enqueued
-                ))
+                await ctx.send(
+                    DownloadEvent(
+                        kind=kind, rawId=raw_id, type=DownloadEventType.enqueued
+                    )
+                )
                 self.download_queue.put_nowait((url, kind, raw_id, ctx, headers))
 
-        asyncio.run_coroutine_threadsafe(
-            enqueue_asset(),
-            self.event_loop
-            )
+        asyncio.run_coroutine_threadsafe(enqueue_asset(), self.event_loop)
 
     def join(self, timeout=0):
         async def stop_loop():

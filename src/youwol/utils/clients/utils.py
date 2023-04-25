@@ -13,25 +13,27 @@ class GroupInfo(NamedTuple):
 
 
 def to_group_id(group_path: Union[str, None]) -> str:
-    if group_path == 'private':
-        return 'private'
+    if group_path == "private":
+        return "private"
     b = str.encode(group_path)
     return base64.urlsafe_b64encode(b).decode()
 
 
 def group_info(group_id: str):
-    return GroupInfo(id=group_id, owner=to_group_owner(group_id), scope=to_group_scope(group_id))
+    return GroupInfo(
+        id=group_id, owner=to_group_owner(group_id), scope=to_group_scope(group_id)
+    )
 
 
 def to_group_scope(group_id: str) -> str:
     if "private" in group_id:
-        return 'private'
+        return "private"
     b = str.encode(group_id)
     return base64.urlsafe_b64decode(b).decode()
 
 
 def to_group_owner(group_id: str) -> Union[str, None]:
-    if 'private' in group_id:
+    if "private" in group_id:
         return None
     b = str.encode(group_id)
     return base64.urlsafe_b64decode(b).decode()
@@ -43,13 +45,13 @@ def is_child_group(child_group_id, parent_group_id):
 
     child_scope = to_group_scope(child_group_id)
     parent_scope = to_group_scope(parent_group_id)
-    if child_scope == 'private' or parent_scope == 'private':
+    if child_scope == "private" or parent_scope == "private":
         return child_group_id == parent_group_id
 
     if len(parent_scope) > len(child_scope):
         return False
 
-    return child_scope[0:len(parent_scope)] == parent_scope
+    return child_scope[0 : len(parent_scope)] == parent_scope
 
 
 def ancestors_group_id(group_id):
@@ -57,8 +59,8 @@ def ancestors_group_id(group_id):
     if scope == "private":
         return []
 
-    items = [scope for scope in scope.split('/') if scope != ""]
-    paths = ['/'.join([""] + items[0:i + 1]) for i, _ in enumerate(items)]
+    items = [scope for scope in scope.split("/") if scope != ""]
+    paths = ["/".join([""] + items[0 : i + 1]) for i, _ in enumerate(items)]
     ids = [to_group_id(p) for p in paths[0:-1]]
     ids.reverse()
     return ids
@@ -67,7 +69,7 @@ def ancestors_group_id(group_id):
 def aiohttp_resp_parameters(resp: ClientResponse):
     return {
         "real_url": str(resp.request_info.real_url),
-        "method": resp.request_info.method
+        "method": resp.request_info.method,
     }
 
 
@@ -76,11 +78,11 @@ def get_default_owner(headers: Mapping[str, str]):
 
 
 def get_valid_bucket_name(name):
-    return name.replace('_', "-")
+    return name.replace("_", "-")
 
 
 def get_valid_keyspace_name(name):
-    return name.replace('-', "_")
+    return name.replace("-", "_")
 
 
 def log_info(message, **kwargs):

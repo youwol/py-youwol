@@ -14,7 +14,6 @@ from youwol.utils.exceptions import raise_exception_from_response
 
 @dataclass(frozen=True)
 class AssetsGatewayClient:
-
     url_base: str
 
     headers: Dict[str, str] = field(default_factory=lambda: {})
@@ -24,19 +23,29 @@ class AssetsGatewayClient:
         return aiohttp.TCPConnector(verify_ssl=False)
 
     def get_assets_backend_router(self) -> AssetsClient:
-        return AssetsClient(url_base=f"{self.url_base}/assets-backend", headers=self.headers)
+        return AssetsClient(
+            url_base=f"{self.url_base}/assets-backend", headers=self.headers
+        )
 
     def get_treedb_backend_router(self) -> TreeDbClient:
-        return TreeDbClient(url_base=f"{self.url_base}/treedb-backend", headers=self.headers)
+        return TreeDbClient(
+            url_base=f"{self.url_base}/treedb-backend", headers=self.headers
+        )
 
     def get_files_backend_router(self) -> FilesClient:
-        return FilesClient(url_base=f"{self.url_base}/files-backend", headers=self.headers)
+        return FilesClient(
+            url_base=f"{self.url_base}/files-backend", headers=self.headers
+        )
 
     def get_flux_backend_router(self) -> FluxClient:
-        return FluxClient(url_base=f"{self.url_base}/flux-backend", headers=self.headers)
+        return FluxClient(
+            url_base=f"{self.url_base}/flux-backend", headers=self.headers
+        )
 
     def get_stories_backend_router(self) -> StoriesClient:
-        return StoriesClient(url_base=f"{self.url_base}/stories-backend", headers=self.headers)
+        return StoriesClient(
+            url_base=f"{self.url_base}/stories-backend", headers=self.headers
+        )
 
     def get_cdn_backend_router(self) -> CdnClient:
         return CdnClient(url_base=f"{self.url_base}/cdn-backend", headers=self.headers)
@@ -44,8 +53,8 @@ class AssetsGatewayClient:
     async def healthz(self, **kwargs):
         url = f"{self.url_base}/healthz"
         async with aiohttp.ClientSession(
-                connector=self.get_aiohttp_connector(),
-                headers=self.headers) as session:
+            connector=self.get_aiohttp_connector(), headers=self.headers
+        ) as session:
             async with await session.get(url=url, **kwargs) as resp:
                 if resp.status == 200:
                     return await resp.json()

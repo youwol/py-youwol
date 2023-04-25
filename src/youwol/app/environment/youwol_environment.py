@@ -9,15 +9,36 @@ from cowpy import cow
 from pydantic import BaseModel
 
 import youwol
-from youwol.app.environment import CloudEnvironment, Authentication, Command, Projects, ExplicitProjectsFinder
+from youwol.app.environment import (
+    CloudEnvironment,
+    Authentication,
+    Command,
+    Projects,
+    ExplicitProjectsFinder,
+)
 from youwol.app.environment.config_from_module import configuration_from_python
 from youwol.app.environment.errors_handling import (
-    ConfigurationLoadingStatus, ConfigurationLoadingException,
-    CheckSystemFolderWritable, CheckDatabasesFolderHealthy, ErrorResponse
+    ConfigurationLoadingStatus,
+    ConfigurationLoadingException,
+    CheckSystemFolderWritable,
+    CheckDatabasesFolderHealthy,
+    ErrorResponse,
 )
-from youwol.app.environment.models import Events, Configuration, CustomMiddleware, ApiConfiguration, Connection
-from youwol.app.environment.native_backends_config import BackendConfigurations, native_backends_config
-from youwol.app.environment.paths import PathsBook, ensure_config_file_exists_or_create_it
+from youwol.app.environment.models import (
+    Events,
+    Configuration,
+    CustomMiddleware,
+    ApiConfiguration,
+    Connection,
+)
+from youwol.app.environment.native_backends_config import (
+    BackendConfigurations,
+    native_backends_config,
+)
+from youwol.app.environment.paths import (
+    PathsBook,
+    ensure_config_file_exists_or_create_it,
+)
 from youwol.app.environment.paths import app_dirs
 from youwol.app.environment.projects_finders import auto_detect_projects
 from youwol.app.main_args import get_main_arguments, MainArguments
@@ -56,12 +77,10 @@ class YouwolEnvironment(BaseModel):
         self.cache_py_youwol = {}
 
     def get_remote_info(self) -> CloudEnvironment:
-
         env_id = self.currentConnection.envId
         return next(remote for remote in self.remotes if remote.envId == env_id)
 
     def get_authentication_info(self) -> Optional[Authentication]:
-
         remote = self.get_remote_info()
         auth_id = self.currentConnection.authId
         return next(auth for auth in remote.authentications if auth.authId == auth_id)
@@ -126,9 +145,7 @@ class YouwolEnvironmentFactory:
 
     @staticmethod
     async def load_from_file(path: Path):
-        conf = await safe_load(
-            path=path
-        )
+        conf = await safe_load(path=path)
         await YouwolEnvironmentFactory.trigger_on_load(config=conf)
         YouwolEnvironmentFactory.__cached_config = conf
         return conf
@@ -138,7 +155,7 @@ class YouwolEnvironmentFactory:
         cached = YouwolEnvironmentFactory.__cached_config
         conf = await safe_load(
             path=cached.pathsBook.config,
-            remote_connection=connection or cached.currentConnection
+            remote_connection=connection or cached.currentConnection,
         )
 
         await YouwolEnvironmentFactory.trigger_on_load(config=conf)
@@ -169,8 +186,8 @@ class YouwolEnvironmentFactory:
             backends_configuration=native_backends_config(
                 local_http_port=conf.httpPort,
                 local_storage=conf.pathsBook.local_storage,
-                local_nosql=conf.pathsBook.databases / 'docdb',
-            )
+                local_nosql=conf.pathsBook.databases / "docdb",
+            ),
         )
         YouwolEnvironmentFactory.__cached_config = new_conf
 
@@ -179,7 +196,7 @@ class YouwolEnvironmentFactory:
         context = ContextFactory.get_instance(
             logs_reporters=[InMemoryReporter()],
             data_reporters=[WsDataStreamer()],
-            request=None
+            request=None,
         )
         if config.events and config.events.onLoad:
             on_load_cb = config.events.onLoad(context)
@@ -195,8 +212,7 @@ async def yw_config() -> YouwolEnvironment:
 
 
 async def safe_load(
-        path: Path,
-        remote_connection: Optional[Connection] = None
+    path: Path, remote_connection: Optional[Connection] = None
 ) -> YouwolEnvironment:
     """
     Possible errors:
@@ -213,26 +229,26 @@ async def safe_load(
             checks=[
                 check_system_folder_writable,
                 check_database_folder_healthy,
-            ]
+            ],
         )
 
     config: Configuration = await configuration_from_python(path)
     system = config.system
     projects = config.projects
     customization = config.customization
-    data_dir = ensure_dir_exists(system.localEnvironment.dataDir, root_candidates=app_dirs.user_data_dir)
-    cache_dir = ensure_dir_exists(system.localEnvironment.cacheDir, root_candidates=app_dirs.user_cache_dir)
-
-    paths_book = PathsBook(
-        config=path,
-        databases=data_dir,
-        system=cache_dir
+    data_dir = ensure_dir_exists(
+        system.localEnvironment.dataDir, root_candidates=app_dirs.user_data_dir
     )
+    cache_dir = ensure_dir_exists(
+        system.localEnvironment.cacheDir, root_candidates=app_dirs.user_cache_dir
+    )
+
+    paths_book = PathsBook(config=path, databases=data_dir, system=cache_dir)
 
     if not os.access(paths_book.system.parent, os.W_OK):
         check_system_folder_writable.status = ErrorResponse(
             reason=f"Can not write in folder {str(paths_book.system.parent)}",
-            hints=[f"Ensure you have permission to write in {paths_book.system}."]
+            hints=[f"Ensure you have permission to write in {paths_book.system}."],
         )
         raise ConfigurationLoadingException(get_status(False))
 
@@ -244,7 +260,7 @@ async def safe_load(
     if not os.access(paths_book.system, os.W_OK):
         check_system_folder_writable.status = ErrorResponse(
             reason=f"Can not write in folder {str(paths_book.system)}",
-            hints=[f"Ensure you have permission to write in {paths_book.system}."]
+            hints=[f"Ensure you have permission to write in {paths_book.system}."],
         )
         raise ConfigurationLoadingException(get_status(False))
 
@@ -258,13 +274,16 @@ async def safe_load(
         #  5/12/2022: Backward compatibility code
         root = projects.finder
         projects.finder = ExplicitProjectsFinder(
-            fromPaths=lambda _: auto_detect_projects(paths_book=paths_book, root_folder=root)
+            fromPaths=lambda _: auto_detect_projects(
+                paths_book=paths_book, root_folder=root
+            )
         )
 
     return YouwolEnvironment(
         httpPort=system.httpPort,
         routers=customization.endPoints.routers,
-        currentConnection=remote_connection or system.cloudEnvironments.defaultConnection,
+        currentConnection=remote_connection
+        or system.cloudEnvironments.defaultConnection,
         events=customization.events,
         pathsBook=paths_book,
         projects=projects,
@@ -274,8 +293,8 @@ async def safe_load(
         backends_configuration=native_backends_config(
             local_http_port=system.httpPort,
             local_storage=paths_book.local_storage,
-            local_nosql=paths_book.databases / 'docdb',
-        )
+            local_nosql=paths_book.databases / "docdb",
+        ),
     )
 
 
@@ -286,19 +305,25 @@ async def get_yw_config_starter(main_args: MainArguments):
 
 
 def print_invite(conf: YouwolEnvironment, shutdown_script_path: Optional[Path]):
-    print(f"""{Fore.GREEN}Configuration loaded successfully{Style.RESET_ALL}.
-""")
+    print(
+        f"""{Fore.GREEN}Configuration loaded successfully{Style.RESET_ALL}.
+"""
+    )
     print(conf)
-    msg = cow.milk_random_cow(f"""
+    msg = cow.milk_random_cow(
+        f"""
 The desktop application is available at:
 http://localhost:{conf.httpPort}/applications/@youwol/platform/latest
 For a Py-YouWol interactive tour:
 http://localhost:{conf.httpPort}/applications/@youwol/stories/latest?id=9e664525-1dac-45af-83c6-f4b4ef3866af&mode=reader
-""")
+"""
+    )
     print(msg)
     if shutdown_script_path is not None:
         print()
-        print(f"Py-youwol will run in background. Use {shutdown_script_path} to stop it :")
+        print(
+            f"Py-youwol will run in background. Use {shutdown_script_path} to stop it :"
+        )
         print(f"$ sh {shutdown_script_path}")
 
 

@@ -2,7 +2,11 @@ from typing import List, Any, Union, Optional, Dict
 
 from pydantic import BaseModel
 
-from youwol.utils.http_clients.assets_backend import PermissionsResp, ReadPolicyEnum, SharePolicyEnum
+from youwol.utils.http_clients.assets_backend import (
+    PermissionsResp,
+    ReadPolicyEnum,
+    SharePolicyEnum,
+)
 
 
 class Group(BaseModel):

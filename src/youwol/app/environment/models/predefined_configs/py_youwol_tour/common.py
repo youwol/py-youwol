@@ -11,8 +11,9 @@ async def clone_project(repo_name: str, parent_folder: Path, context: Context):
     """
     async with context.start(action=f"clone repo {repo_name}") as ctx:  # type: Context
         url = f"https://github.com/youwol/{repo_name}.git"
-        return_code, outputs = await execute_shell_cmd(cmd=f"(cd {parent_folder} && git clone {url})",
-                                                       context=ctx)
+        return_code, outputs = await execute_shell_cmd(
+            cmd=f"(cd {parent_folder} && git clone {url})", context=ctx
+        )
         resp = {"returnCode": return_code, "outputs": outputs}
         if not (parent_folder / repo_name).exists():
             raise RuntimeError("Git repo not properly cloned")

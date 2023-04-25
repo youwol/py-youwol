@@ -4,7 +4,12 @@ from typing import List, Optional, Dict, Any, Mapping
 
 from pydantic import BaseModel
 
-from youwol.app.routers.projects.models_project import PipelineStepStatus, Manifest, Link, Project
+from youwol.app.routers.projects.models_project import (
+    PipelineStepStatus,
+    Manifest,
+    Link,
+    Project,
+)
 
 ArtifactId = str
 PipelineStepId = str
@@ -12,22 +17,22 @@ PipelineStepId = str
 
 class Failure(BaseModel):
     path: str
-    failure: str = 'generic'
+    failure: str = "generic"
     message: str
 
 
 class FailureNoPipeline(Failure):
-    failure: str = 'no_pipeline'
+    failure: str = "no_pipeline"
     message: str = "No pipeline in directory"
 
 
 class FailureEmptyDir(Failure):
-    failure: str = 'empty_dir'
+    failure: str = "empty_dir"
     message: str = "Directory is empty"
 
 
 class FailureSyntax(Failure):
-    failure: str = 'syntax'
+    failure: str = "syntax"
 
 
 class ListProjectsResponse(BaseModel):
@@ -93,9 +98,9 @@ class CdnResponse(BaseModel):
 
 
 class Event(Enum):
-    runStarted = 'runStarted'
-    runDone = 'runDone'
-    statusCheckStarted = 'statusCheckStarted'
+    runStarted = "runStarted"
+    runDone = "runDone"
+    statusCheckStarted = "statusCheckStarted"
 
 
 class PipelineStepEvent(BaseModel):

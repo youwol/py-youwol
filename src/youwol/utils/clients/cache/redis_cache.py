@@ -8,7 +8,6 @@ from youwol.utils.clients.cache import CacheClient, TTL
 
 @dataclass(frozen=False)
 class RedisCacheClient(CacheClient):
-
     def __init__(self, host: str, prefix: str):
         super().__init__(prefix)
         self.cache = redis.Redis(host=host)
@@ -30,8 +29,8 @@ class RedisCacheClient(CacheClient):
 
     def _impl_get_ttl(self, key: str) -> Optional[TTL]:
         exp = self.cache.ttl(key)
-        if exp == '-1':
+        if exp == "-1":
             return None
-        if exp == '-2':
+        if exp == "-2":
             raise Exception("Key not found")
         return TTL(exp)

@@ -1,12 +1,17 @@
 import base64
 import datetime
-from fastapi import APIRouter, Request as FastAPI_Request, Response as FastAPI_Response, status
+from fastapi import (
+    APIRouter,
+    Request as FastAPI_Request,
+    Response as FastAPI_Response,
+    status,
+)
 from starlette.responses import JSONResponse
 from typing import Dict, List
 
 from .models import Handler, status_200_OK, status_204_NoContent, Request, Body
 
-router = APIRouter(tags=['nock'])
+router = APIRouter(tags=["nock"])
 
 handlers: Dict[str, Handler] = dict()
 
@@ -51,7 +56,11 @@ async def setup_handler(handler: Handler, handler_id: str, public=False):
 @router.get("/admin/{handler_id}/{method}")
 async def get_handler(handler_id: str, method: str, public=False):
     handler = handlers.get(ref(method, handler_id, public))
-    return handler if handler is not None else FastAPI_Response(status_code=status.HTTP_404_NOT_FOUND)
+    return (
+        handler
+        if handler is not None
+        else FastAPI_Response(status_code=status.HTTP_404_NOT_FOUND)
+    )
 
 
 @router.delete("/admin/{handler_id}/{method}")
@@ -125,16 +134,22 @@ async def handle(method: str, handler_id: str, req: FastAPI_Request, public=Fals
         headers=headers,
         body=Body(
             mimeType=req.headers.get("content-type"),
-            contentBase64=base64.standard_b64encode(await req.body()).decode()
-        ) if req.method != "GET" else None
+            contentBase64=base64.standard_b64encode(await req.body()).decode(),
+        )
+        if req.method != "GET"
+        else None,
     )
 
     handler.history.append(request)
     if len(handler.history) > handler.historySize:
         handler.history.pop(0)
 
-    return FastAPI_Response(
-        base64.standard_b64decode(handler.response.body.contentBase64),
-        status_code=handler.response.status.code,
-        media_type=handler.response.body.mimeType,
-    ) if handler.response.body is not None else FastAPI_Response(status_code=handler.response.status.code)
+    return (
+        FastAPI_Response(
+            base64.standard_b64decode(handler.response.body.contentBase64),
+            status_code=handler.response.status.code,
+            media_type=handler.response.body.mimeType,
+        )
+        if handler.response.body is not None
+        else FastAPI_Response(status_code=handler.response.status.code)
+    )

@@ -1,18 +1,24 @@
 from pathlib import Path
 
-from youwol.app.environment import Configuration, System, LocalEnvironment, Projects, RecursiveProjectsFinder
+from youwol.app.environment import (
+    Configuration,
+    System,
+    LocalEnvironment,
+    Projects,
+    RecursiveProjectsFinder,
+)
 import youwol.app.pipelines.pipeline_typescript_weback_npm as pipeline_ts
 
 pipeline_ts.set_environment()
 
 
 def init_working_folders():
-    root = Path('/tmp/py-youwol-story-env')
+    root = Path("/tmp/py-youwol-story-env")
     root.mkdir(parents=True, exist_ok=True)
-    cache = root / 'cache'
-    projects = root / 'Projects'
+    cache = root / "cache"
+    projects = root / "Projects"
     projects.mkdir(exist_ok=True)
-    ecosystem = root / 'data'
+    ecosystem = root / "data"
 
     return root, cache, projects, ecosystem
 
@@ -27,8 +33,7 @@ Configuration(
     ),
     system=System(
         localEnvironment=LocalEnvironment(
-            dataDir=ecosystem_folder,
-            cacheDir=cache_folder
+            dataDir=ecosystem_folder, cacheDir=cache_folder
         )
-    )
+    ),
 )
