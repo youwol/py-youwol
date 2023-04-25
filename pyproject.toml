@@ -46,10 +46,24 @@ dev = [
 ]
 qa = [
     "coverage",
-    "pycodestyle",
     "pip-audit",
+    "pylint",
+    "pycodestyle",
+    "pydocstyle",
+    "isort",
+    "black",
     "tomli",
     "tomli-w",
+    "mypy",
+    "types-Pillow",
+    "types-PyYAML",
+    "types-appdirs",
+    "types-colorama",
+    "types-psutil",
+    "types-redis",
+    "types-setuptools",
+    "types-tqdm",
+    "types-ujson"
 ]
 publish = [
     "pdoc3",
@@ -100,3 +114,21 @@ branch = true
 relative_files = true
 data_file = "coverage.coverage"
 debug = "sys,config,pathmap"
+
+
+[tool.isort]
+profile = "black"
+lines_between_types = 1
+
+import_heading_stdlib = "standard library"
+
+known_typing = "typing"
+import_heading_typing = "typing"
+
+import_heading_thirdparty = "third parties"
+
+import_heading_firstparty = "Youwol"
+
+import_heading_localfolder = "relative"
+
+sections = ["FUTURE", "STDLIB", "TYPING", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
