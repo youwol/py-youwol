@@ -1,14 +1,20 @@
+# standard library
 import itertools
 import json as _json
 import os
 import shutil
+
 from dataclasses import dataclass
 from os import PathLike
 from pathlib import Path
-from typing import Union, cast, Mapping
 
+# typing
+from typing import Mapping, Union, cast
+
+# third parties
 from fastapi import HTTPException
 
+# Youwol utilities
 from youwol.utils.clients.storage.models import FileData
 from youwol.utils.clients.utils import get_default_owner
 from youwol.utils.exceptions import ResourcesNotFoundException

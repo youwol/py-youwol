@@ -1,15 +1,23 @@
+# standard library
 import shutil
+
 from pathlib import Path
+
+# Youwol backends
+from youwol.backends.cdn import get_api_key
+
+# Youwol utilities
+from youwol.utils.utils_paths import sed_inplace
+
+# Youwol pipelines
 from youwol.app.pipelines.pipeline_typescript_weback_npm.common import (
-    generate_package_json,
-    copy_files_folders,
-    generate_webpack_config,
     Dependencies,
     RunTimeDeps,
     Template,
+    copy_files_folders,
+    generate_package_json,
+    generate_webpack_config,
 )
-from youwol.backends.cdn import get_api_key
-from youwol.utils.utils_paths import sed_inplace
 
 
 def generate_template(input_template: Template):

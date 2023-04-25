@@ -1,17 +1,22 @@
+# typing
 from typing import List
 
+# third parties
 from pydantic import BaseModel
-from youwol.app.pipelines.pipeline_typescript_weback_npm.regular.setup_step import (
-    SetupStep,
-)
 
+# Youwol application
 from youwol.app.routers.projects.models_project import (
+    BrowserLibBundle,
+    BrowserTarget,
     Flow,
     Pipeline,
     parse_json,
-    BrowserTarget,
-    BrowserLibBundle,
 )
+
+# Youwol utilities
+from youwol.utils.context import Context
+
+# Youwol pipelines
 from youwol.app.pipelines.pipeline_typescript_weback_npm import (
     create_sub_pipelines_publish,
 )
@@ -26,12 +31,14 @@ from youwol.app.pipelines.pipeline_typescript_weback_npm.regular.dependencies_st
     DependenciesStep,
 )
 from youwol.app.pipelines.pipeline_typescript_weback_npm.regular.doc_step import DocStep
+from youwol.app.pipelines.pipeline_typescript_weback_npm.regular.setup_step import (
+    SetupStep,
+)
 from youwol.app.pipelines.pipeline_typescript_weback_npm.regular.test_step import (
-    TestStepConfig,
     TestStep,
+    TestStepConfig,
 )
 from youwol.app.pipelines.publish_cdn import PublishCdnLocalStep
-from youwol.utils.context import Context
 
 
 class PublishConfig(BaseModel):

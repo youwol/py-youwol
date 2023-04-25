@@ -1,26 +1,32 @@
+# standard library
 import functools
+
 from abc import ABC, abstractmethod
 from enum import Enum
 from pathlib import Path
+
+# typing
 from typing import (
-    List,
-    Union,
-    Set,
-    Dict,
     Any,
-    Callable,
     Awaitable,
+    Callable,
+    Dict,
     Iterable,
-    cast,
+    List,
     Optional,
+    Set,
+    Union,
+    cast,
 )
 
+# third parties
 from pydantic import BaseModel
 
-from youwol.app.environment import YouwolEnvironment, PathsBook
-from youwol.utils import JSON
-from youwol.utils import execute_shell_cmd, CommandException
-from youwol.utils import files_check_sum
+# Youwol application
+from youwol.app.environment import PathsBook, YouwolEnvironment
+
+# Youwol utilities
+from youwol.utils import JSON, CommandException, execute_shell_cmd, files_check_sum
 from youwol.utils.context import Context
 from youwol.utils.utils_paths import matching_files, parse_json
 

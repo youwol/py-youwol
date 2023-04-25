@@ -1,28 +1,38 @@
+# standard library
 import asyncio
-from itertools import groupby
-from typing import NamedTuple, List
 
+from itertools import groupby
+
+# typing
+from typing import List, NamedTuple
+
+# third parties
 from fastapi import HTTPException
 
-from youwol.app.environment import RemoteClients, LocalClients, YouwolEnvironment
+# Youwol application
+from youwol.app.environment import LocalClients, RemoteClients, YouwolEnvironment
 from youwol.app.routers.commons import Label
 from youwol.app.routers.environment.download_assets.common import create_asset_local
 from youwol.app.routers.local_cdn.models import (
     CheckUpdateResponse,
-    UpdateStatus,
-    PackageVersionInfo,
     DownloadedPackageResponse,
     DownloadPackageBody,
-    PackageEventResponse,
     Event,
+    PackageEventResponse,
+    PackageVersionInfo,
+    UpdateStatus,
 )
+
+# Youwol backends
 from youwol.backends.cdn import (
-    to_package_id,
-    list_versions,
     get_version_info_impl,
     library_model_from_doc,
+    list_versions,
+    to_package_id,
 )
 from youwol.backends.cdn.utils_indexing import get_version_number
+
+# Youwol utilities
 from youwol.utils import encode_id
 from youwol.utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from youwol.utils.context import Context

@@ -1,22 +1,29 @@
+# standard library
 import asyncio
 import json
+
+# typing
 from typing import Dict
 
+# third parties
 from fastapi import HTTPException
+from starlette.requests import Request
+
+# Youwol backends
 from youwol.backends.assets_gateway.configurations import Configuration
 from youwol.backends.assets_gateway.utils import (
+    AssetMeta,
     raw_id_to_asset_id,
     to_asset_resp,
-    AssetMeta,
 )
+
+# Youwol utilities
 from youwol.utils import ensure_group_permission
 from youwol.utils.context import Context
 from youwol.utils.http_clients.assets_gateway import (
     NewAssetResponse,
     PermissionsResponse,
 )
-
-from starlette.requests import Request
 
 
 async def assert_read_permissions_from_raw_id(

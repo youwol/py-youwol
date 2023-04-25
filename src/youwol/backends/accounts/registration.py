@@ -1,13 +1,18 @@
+# typing
 from typing import Optional
 
+# third parties
 from fastapi import Cookie, Depends
 from pydantic import BaseModel
 from starlette.datastructures import URL
 from starlette.requests import Request
-from starlette.responses import JSONResponse, Response, RedirectResponse
+from starlette.responses import JSONResponse, RedirectResponse, Response
 
+# Youwol backends
 from youwol.backends.accounts.configuration import Configuration, get_configuration
 from youwol.backends.accounts.root_paths import router
+
+# Youwol utilities
 from youwol.utils.clients.oidc.oidc_config import OidcConfig
 from youwol.utils.clients.oidc.users_management import KeycloakUsersManagement
 from youwol.utils.session_handler import SessionHandler

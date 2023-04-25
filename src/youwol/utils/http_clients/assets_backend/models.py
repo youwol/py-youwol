@@ -1,11 +1,16 @@
+# standard library
 from enum import Enum
 from pathlib import Path
-from typing import List, NamedTuple, Union, Dict, Optional, Mapping, Any
 
+# typing
+from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Union
+
+# third parties
 from pydantic import BaseModel
 
+# Youwol utilities
 from youwol.utils import TableBody
-from youwol.utils.clients.docdb.models import Column, TableOptions, OrderingClause
+from youwol.utils.clients.docdb.models import Column, OrderingClause, TableOptions
 
 
 class HealthzResponse(BaseModel):

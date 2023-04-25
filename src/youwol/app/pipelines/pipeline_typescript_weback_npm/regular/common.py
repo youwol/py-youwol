@@ -1,6 +1,10 @@
+# typing
 from typing import NamedTuple
 
+# Youwol application
 from youwol.app.routers.projects.models_project import Project
+
+# Youwol utilities
 from youwol.utils import parse_json
 
 

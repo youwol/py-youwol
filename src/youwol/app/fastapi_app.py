@@ -1,27 +1,32 @@
+# standard library
 import asyncio
+
 from functools import partial
 
-from fastapi import FastAPI, Depends, WebSocket
+# third parties
+from fastapi import Depends, FastAPI, WebSocket
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import RedirectResponse, Response
 from starlette.types import ASGIApp
 
+# Youwol application
 import youwol.app.middlewares.local_cloud_hybridizers as local_cloud_hybridizer
+
 from youwol.app.environment import (
     CustomMiddleware,
-    AssetDownloadThread,
-    yw_config,
-    api_configuration,
     YouwolEnvironment,
+    api_configuration,
+    yw_config,
 )
 from youwol.app.middlewares import (
     BrowserCachingMiddleware,
+    JwtProviderPyYouwol,
     LocalCloudHybridizerMiddleware,
     get_remote_openid_infos,
-    JwtProviderPyYouwol,
 )
-from youwol.app.routers import native_backends, admin
+from youwol.app.routers import admin, native_backends
+from youwol.app.routers.environment import AssetDownloadThread
 from youwol.app.routers.environment.download_assets import (
     DownloadDataTask,
     DownloadFluxProjectTask,
@@ -32,16 +37,17 @@ from youwol.app.routers.environment.download_assets.custom_asset import (
     DownloadCustomAssetTask,
 )
 from youwol.app.routers.projects import ProjectLoader
-from youwol.app.web_socket import start_web_socket, WsType
-from youwol.app.web_socket import WsDataStreamer
+from youwol.app.web_socket import WsDataStreamer, WsType, start_web_socket
+
+# Youwol utilities
 from youwol.utils import (
-    YouWolException,
-    youwol_exception_handler,
-    YouwolHeaders,
     CleanerThread,
+    YouWolException,
+    YouwolHeaders,
     factory_local_cache,
+    youwol_exception_handler,
 )
-from youwol.utils.context import ContextFactory, InMemoryReporter, Context
+from youwol.utils.context import Context, ContextFactory, InMemoryReporter
 from youwol.utils.middlewares import AuthMiddleware, redirect_to_login
 from youwol.utils.middlewares.root_middleware import RootMiddleware
 

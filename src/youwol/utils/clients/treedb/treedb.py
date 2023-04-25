@@ -1,8 +1,13 @@
+# standard library
 from dataclasses import dataclass, field
+
+# typing
 from typing import Dict
 
+# third parties
 import aiohttp
 
+# Youwol utilities
 from youwol.utils.exceptions import raise_exception_from_response
 
 

@@ -1,3 +1,4 @@
+# standard library
 import asyncio
 import base64
 import hashlib
@@ -6,48 +7,58 @@ import itertools
 import json
 import os
 import tempfile
-from pathlib import Path
-from typing import IO, Optional, Dict
-from typing import Union, List
 
+from pathlib import Path
+
+# typing
+from typing import IO, Dict, List, Optional, Union
+
+# third parties
 import brotli
 import semantic_version
+
 from fastapi import HTTPException
-from starlette.responses import Response
 from starlette.requests import Request
-from youwol.backends.cdn.configurations import Constants, Configuration
+from starlette.responses import Response
+
+# Youwol backends
+from youwol.backends.cdn.configurations import Configuration, Constants
 from youwol.backends.cdn.utils_indexing import (
     format_doc_db_record,
     get_version_number_str,
 )
-from youwol.utils import execute_shell_cmd, CommandException, extract_bytes_ranges
+
+# Youwol utilities
 from youwol.utils import (
-    generate_headers_downstream,
-    QueryBody,
+    CommandException,
     PublishPackageError,
-    get_content_type,
+    QueryBody,
     QueryIndexException,
+    execute_shell_cmd,
+    extract_bytes_ranges,
+    generate_headers_downstream,
+    get_content_type,
 )
 from youwol.utils.clients.cdn import files_check_sum
 from youwol.utils.clients.docdb.models import (
-    Query,
-    WhereClause,
     OrderingClause,
+    Query,
     SelectClause,
+    WhereClause,
 )
 from youwol.utils.context import Context
 from youwol.utils.http_clients.cdn_backend import (
-    FormData,
-    PublishResponse,
+    ExplorerResponse,
     FileResponse,
     FolderResponse,
-    ExplorerResponse,
-    ListVersionsResponse,
-    Release,
-    LibraryResolved,
+    FormData,
     Library,
-    get_exported_symbol,
+    LibraryResolved,
+    ListVersionsResponse,
+    PublishResponse,
+    Release,
     get_api_key,
+    get_exported_symbol,
 )
 from youwol.utils.http_clients.cdn_backend.utils import (
     is_fixed_version,

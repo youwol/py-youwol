@@ -1,17 +1,22 @@
+# standard library
 import urllib
-from typing import List, Optional, Union, Any
 
+# typing
+from typing import Any, List, Optional, Union
+
+# third parties
 from fastapi import HTTPException
 from jwt import InvalidTokenError
 from starlette.middleware.base import (
     BaseHTTPMiddleware,
-    RequestResponseEndpoint,
     DispatchFunction,
+    RequestResponseEndpoint,
 )
 from starlette.requests import Request
-from starlette.responses import Response, RedirectResponse
+from starlette.responses import RedirectResponse, Response
 from starlette.types import ASGIApp
 
+# Youwol utilities
 from youwol.utils import CacheClient
 from youwol.utils.clients.oidc.oidc_config import OidcConfig, OidcInfos
 from youwol.utils.context import Context, Label

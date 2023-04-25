@@ -1,10 +1,15 @@
+# standard library
 from pathlib import Path
+
+# typing
 from typing import Iterable, Optional
 
+# third parties
 from semantic_version import NpmSpec, Version
-from youwol.utils.utils_paths import write_json
 
+# Youwol utilities
 from youwol.utils.context import Context
+from youwol.utils.utils_paths import write_json
 
 
 def is_fixed_version(version: str):

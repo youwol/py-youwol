@@ -1,52 +1,57 @@
+# standard library
 import importlib.metadata
 import json
 import os
-from pathlib import Path
-from typing import Dict, Any, Optional, Awaitable, List
 
+from pathlib import Path
+
+# typing
+from typing import Any, Awaitable, Dict, List, Optional
+
+# third parties
 from colorama import Fore, Style
 from cowpy import cow
 from pydantic import BaseModel
 
+# Youwol
 import youwol
-from youwol.app.environment import (
-    CloudEnvironment,
-    Authentication,
-    Command,
-    Projects,
-    ExplicitProjectsFinder,
-)
-from youwol.app.environment.config_from_module import configuration_from_python
-from youwol.app.environment.errors_handling import (
-    ConfigurationLoadingStatus,
-    ConfigurationLoadingException,
-    CheckSystemFolderWritable,
-    CheckDatabasesFolderHealthy,
-    ErrorResponse,
-)
-from youwol.app.environment.models import (
-    Events,
-    Configuration,
-    CustomMiddleware,
-    ApiConfiguration,
-    Connection,
-)
-from youwol.app.environment.native_backends_config import (
-    BackendConfigurations,
-    native_backends_config,
-)
-from youwol.app.environment.paths import (
-    PathsBook,
-    ensure_config_file_exists_or_create_it,
-)
-from youwol.app.environment.paths import app_dirs
-from youwol.app.environment.projects_finders import auto_detect_projects
-from youwol.app.main_args import get_main_arguments, MainArguments
+
+# Youwol application
+from youwol.app.main_args import MainArguments, get_main_arguments
 from youwol.app.routers.custom_backends import install_routers
 from youwol.app.web_socket import WsDataStreamer
+
+# Youwol utilities
 from youwol.utils.context import ContextFactory, InMemoryReporter
 from youwol.utils.servers.fast_api import FastApiRouter
 from youwol.utils.utils_paths import ensure_dir_exists
+
+# relative
+from .config_from_module import configuration_from_python
+from .errors_handling import (
+    CheckDatabasesFolderHealthy,
+    CheckSystemFolderWritable,
+    ConfigurationLoadingException,
+    ConfigurationLoadingStatus,
+    ErrorResponse,
+)
+from .models import (
+    ApiConfiguration,
+    Configuration,
+    Connection,
+    CustomMiddleware,
+    Events,
+)
+from .models.models_config import (
+    Authentication,
+    CloudEnvironment,
+    Command,
+    ExplicitProjectsFinder,
+    Projects,
+)
+from .native_backends_config import BackendConfigurations, native_backends_config
+from .paths import PathsBook, app_dirs, ensure_config_file_exists_or_create_it
+from .projects_finders import auto_detect_projects
 
 
 class YouwolEnvironment(BaseModel):

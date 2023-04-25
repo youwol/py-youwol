@@ -1,14 +1,16 @@
+# third parties
 from fastapi import APIRouter
 
+# Youwol backends
 from youwol.backends.assets_gateway.all_icons_emojipedia import (
-    icons_smileys_people,
-    icons_animals,
-    icons_foods,
-    icons_flags,
-    icons_objects,
-    icons_travel,
     icons_activities,
+    icons_animals,
+    icons_flags,
+    icons_foods,
+    icons_objects,
+    icons_smileys_people,
     icons_symbols,
+    icons_travel,
 )
 
 router = APIRouter(tags=["assets-gateway.misc"])

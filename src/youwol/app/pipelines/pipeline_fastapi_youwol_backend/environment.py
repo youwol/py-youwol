@@ -1,7 +1,11 @@
+# typing
 from typing import Callable
 
+# third parties
 from pydantic import BaseModel
-from youwol.app.pipelines import HelmChartsTargets, DockerRepo
+
+# Youwol pipelines
+from youwol.app.pipelines import DockerRepo, HelmChartsTargets
 
 
 class Environment(BaseModel):

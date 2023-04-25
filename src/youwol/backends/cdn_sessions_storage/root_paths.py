@@ -1,12 +1,16 @@
+# third parties
 from fastapi import APIRouter, Depends, HTTPException
 from starlette.requests import Request
 
+# Youwol backends
 from youwol.backends.cdn_sessions_storage.configurations import (
     Configuration,
-    get_configuration,
     Constants,
+    get_configuration,
 )
 from youwol.backends.cdn_sessions_storage.utils import get_path
+
+# Youwol utilities
 from youwol.utils import JSON
 from youwol.utils.context import Context
 

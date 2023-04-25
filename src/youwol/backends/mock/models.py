@@ -1,5 +1,8 @@
-from pydantic import BaseModel
+# typing
 from typing import Dict, List, Optional
+
+# third parties
+from pydantic import BaseModel
 
 methods = ["GET", "POST", "PUT", "DELETE"]
 

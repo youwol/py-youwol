@@ -1,37 +1,44 @@
+# standard library
 import asyncio
 
-from fastapi import APIRouter, Depends, Query, HTTPException
+# third parties
+from fastapi import APIRouter, Depends, HTTPException, Query
 from starlette.requests import Request
 
+# Youwol backends
 from youwol.backends.assets_gateway.configurations import (
     Configuration,
     get_configuration,
 )
+
+# Youwol utilities
 from youwol.utils import ensure_group_permission
+from youwol.utils.context import Context
+from youwol.utils.http_clients.tree_db_backend import (
+    BorrowBody,
+    ChildrenResponse,
+    DefaultDriveResponse,
+    DriveBody,
+    DriveResponse,
+    DrivesResponse,
+    EntityResponse,
+    FolderBody,
+    FolderResponse,
+    HealthzResponse,
+    ItemBody,
+    ItemResponse,
+    ItemsResponse,
+    MoveItemBody,
+    MoveResponse,
+    PathResponse,
+    PurgeResponse,
+    RenameBody,
+)
+
+# relative
 from .files_backend import remove_file_impl
 from .flux_backend import delete_project_impl
 from .stories_backend import delete_story_impl
-from youwol.utils.context import Context
-from youwol.utils.http_clients.tree_db_backend import (
-    PurgeResponse,
-    ChildrenResponse,
-    EntityResponse,
-    MoveResponse,
-    MoveItemBody,
-    PathResponse,
-    ItemResponse,
-    RenameBody,
-    ItemBody,
-    FolderResponse,
-    DriveResponse,
-    DrivesResponse,
-    DriveBody,
-    FolderBody,
-    ItemsResponse,
-    HealthzResponse,
-    BorrowBody,
-    DefaultDriveResponse,
-)
 
 router = APIRouter(tags=["assets-gateway.flux-backend"])
 

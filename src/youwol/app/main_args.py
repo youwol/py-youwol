@@ -1,6 +1,10 @@
+# standard library
 import argparse
 import os
+
 from pathlib import Path
+
+# typing
 from typing import NamedTuple, Optional
 
 parser = argparse.ArgumentParser()

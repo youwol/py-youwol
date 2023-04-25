@@ -1,6 +1,10 @@
+# standard library
 from dataclasses import dataclass
-from typing import Dict, Callable, Union, Awaitable, Optional
 
+# typing
+from typing import Awaitable, Callable, Dict, Optional, Union
+
+# Youwol utilities
 from youwol.utils import get_valid_bucket_name
 from youwol.utils.http_clients.tree_db_backend import DocDbs
 

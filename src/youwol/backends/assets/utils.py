@@ -1,36 +1,44 @@
+# standard library
 import asyncio
 import base64
 import io
 import itertools
+
 from datetime import datetime
 from pathlib import Path
-from typing import Tuple, Union, List, Mapping, Any, Dict, Optional
 
-from PIL import Image
+# typing
+from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
+
+# third parties
 from fastapi import UploadFile
+from PIL import Image
 from starlette.requests import Request
 
+# Youwol backends
 from youwol.backends.assets.configurations import Configuration, Constants
+
+# Youwol utilities
 from youwol.utils import (
-    chunks,
-    Storage,
-    get_content_type,
-    user_info,
-    get_user_group_ids,
-    QueryBody,
-    DocDb,
-    log_info,
     JSON,
+    DocDb,
+    QueryBody,
+    Storage,
+    chunks,
+    get_content_type,
+    get_user_group_ids,
+    log_info,
+    user_info,
 )
 from youwol.utils.context import Context
 from youwol.utils.http_clients.assets_backend.models import (
-    ParsedFile,
-    FormData,
+    AccessPolicyResp,
     AssetResponse,
+    FormData,
     GroupAccess,
+    ParsedFile,
     ReadPolicyEnumFactory,
     SharePolicyEnumFactory,
-    AccessPolicyResp,
 )
 
 flatten = itertools.chain.from_iterable

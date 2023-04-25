@@ -1,9 +1,12 @@
+# Youwol backends
 from youwol.backends.flux.configurations import Constants
+
+# Youwol utilities
 from youwol.utils.http_clients.flux_backend import (
-    Project,
     DeprecatedData,
-    Module,
     FactoryId,
+    Module,
+    Project,
 )
 
 

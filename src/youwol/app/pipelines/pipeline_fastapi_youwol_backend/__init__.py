@@ -1,2 +1,3 @@
+# relative
+from .environment import Environment, set_environment
 from .pipeline import *
-from .environment import set_environment, Environment

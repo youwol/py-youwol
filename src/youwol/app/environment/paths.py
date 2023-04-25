@@ -1,9 +1,14 @@
+# standard library
 from pathlib import Path
-from typing import Union, Optional
 
+# typing
+from typing import Optional, Union
+
+# third parties
 from appdirs import AppDirs
 from pydantic import BaseModel
 
+# Youwol utilities
 from youwol.utils.utils_paths import existing_path_or_default
 
 docdb_filename = "data.json"

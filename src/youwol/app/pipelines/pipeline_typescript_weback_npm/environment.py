@@ -1,7 +1,13 @@
-from typing import List, Callable
+# typing
+from typing import Callable, List
 
+# third parties
 from pydantic import BaseModel
+
+# Youwol application
 from youwol.app.environment import UploadTargets
+
+# Youwol pipelines
 from youwol.app.pipelines import CdnTarget
 from youwol.app.pipelines.pipeline_typescript_weback_npm.common.models import NpmRepo
 

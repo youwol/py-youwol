@@ -1,16 +1,26 @@
+# standard library
 import json
+
+# typing
 from typing import Optional
 
+# third parties
 import aiohttp
+
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
-from starlette.responses import Response, JSONResponse
+from starlette.responses import JSONResponse, Response
 
+# Youwol application
 from youwol.app.environment import YouwolEnvironment
 from youwol.app.middlewares.local_cloud_hybridizers.abstract_local_cloud_dispatch import (
     AbstractLocalCloudDispatch,
 )
-from youwol.backends.cdn import resolve_loading_tree, Dependencies
+
+# Youwol backends
+from youwol.backends.cdn import Dependencies, resolve_loading_tree
+
+# Youwol utilities
 from youwol.utils import DependenciesError, YouwolHeaders
 from youwol.utils.context import Context
 from youwol.utils.http_clients.cdn_backend import LoadingGraphBody, patch_loading_graph

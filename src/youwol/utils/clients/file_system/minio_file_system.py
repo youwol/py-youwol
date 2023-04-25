@@ -1,18 +1,24 @@
+# standard library
 import io
+
 from dataclasses import dataclass
 from pathlib import Path
 
-from typing import Union, List, Tuple
+# typing
+from typing import List, Tuple, Union
+
+# third parties
 from minio import Minio, S3Error
 from minio.commonconfig import REPLACE, CopySource
 from minio.deleteobjects import DeleteObject
 
-from youwol.utils.exceptions import ResourcesNotFoundException, ServerError
+# Youwol utilities
 from youwol.utils.clients.file_system.interfaces import (
+    FileObject,
     FileSystemInterface,
     Metadata,
-    FileObject,
 )
+from youwol.utils.exceptions import ResourcesNotFoundException, ServerError
 
 
 @dataclass(frozen=True)

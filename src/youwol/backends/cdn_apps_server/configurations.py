@@ -1,5 +1,10 @@
+# standard library
 from dataclasses import dataclass
-from typing import Callable, Awaitable
+
+# typing
+from typing import Awaitable, Callable
+
+# Youwol utilities
 from youwol.utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 
 

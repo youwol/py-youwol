@@ -1,15 +1,19 @@
+# standard library
 import base64
 import datetime
-from fastapi import (
-    APIRouter,
-    Request as FastAPI_Request,
-    Response as FastAPI_Response,
-    status,
-)
-from starlette.responses import JSONResponse
+
+# typing
 from typing import Dict, List
 
-from .models import Handler, status_200_OK, status_204_NoContent, Request, Body
+# third parties
+from fastapi import APIRouter
+from fastapi import Request as FastAPI_Request
+from fastapi import Response as FastAPI_Response
+from fastapi import status
+from starlette.responses import JSONResponse
+
+# relative
+from .models import Body, Handler, Request, status_200_OK, status_204_NoContent
 
 router = APIRouter(tags=["nock"])
 

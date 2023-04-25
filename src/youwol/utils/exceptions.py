@@ -1,5 +1,7 @@
-from typing import Any, List, Dict
+# typing
+from typing import Any, Dict, List
 
+# third parties
 from aiohttp import ClientResponse, ContentTypeError
 from fastapi import HTTPException, Request
 from pydantic import BaseModel

@@ -1,13 +1,15 @@
+# standard library
 from dataclasses import dataclass
 from pathlib import Path
 
+# Youwol utilities
 from youwol.utils import (
-    StorageClient,
+    DocDb,
     DocDbClient,
     LocalStorageClient,
-    TableBody,
     Storage,
-    DocDb,
+    StorageClient,
+    TableBody,
     get_local_nosql_instance,
 )
 from youwol.utils.clients.docdb.models import Column

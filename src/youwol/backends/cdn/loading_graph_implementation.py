@@ -1,24 +1,30 @@
+# standard library
 import asyncio
 import itertools
-from typing import List, Callable, Union, Dict, Tuple
 
+# typing
+from typing import Callable, Dict, List, Tuple, Union
+
+# third parties
 from fastapi import HTTPException
 from pydantic import BaseModel
-from semantic_version import Version, NpmSpec
+from semantic_version import NpmSpec, Version
 
+# Youwol backends
 from youwol.backends.cdn.utils import (
     Configuration,
-    get_version_number_str,
     Constants,
+    get_version_number_str,
     list_versions,
     to_package_id,
 )
 
+# Youwol utilities
 from youwol.utils import CircularDependencies, DependenciesError
 from youwol.utils.context import Context
 from youwol.utils.http_clients.cdn_backend import (
-    LibraryResolved,
     LibraryQuery,
+    LibraryResolved,
     exportedSymbols,
     get_api_key,
 )

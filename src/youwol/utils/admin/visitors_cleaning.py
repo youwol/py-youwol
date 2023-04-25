@@ -1,12 +1,17 @@
+# standard library
 import asyncio
+
+# typing
 from typing import List
 
+# third parties
 from pydantic import BaseModel
 
+# Youwol utilities
 from youwol.utils.clients.oidc.oidc_config import (
     OidcConfig,
-    PrivateClient,
     OidcForClient,
+    PrivateClient,
 )
 from youwol.utils.clients.oidc.users_management import KeycloakUsersManagement, User
 from youwol.utils.clients.treedb.treedb import TreeDbClient

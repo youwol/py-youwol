@@ -1,11 +1,18 @@
+# standard library
 from dataclasses import dataclass
+
+# typing
 from typing import List, NamedTuple, Optional
 
+# third parties
 from fastapi import HTTPException
 from pydantic import BaseModel
 
+# Youwol application
 from youwol.app.environment import RemoteClients, YouwolEnvironment
 from youwol.app.routers.environment.upload_assets.models import UploadTask
+
+# Youwol utilities
 from youwol.utils import decode_id
 from youwol.utils.context import Context
 

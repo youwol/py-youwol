@@ -1,19 +1,25 @@
+# standard library
 import glob
 import io
 import os
 import shutil
+
 from dataclasses import dataclass
 from pathlib import Path
+
+# typing
 from typing import Union, cast
 
+# third parties
 from fastapi import HTTPException
 
+# Youwol utilities
 from youwol.utils.clients.file_system.interfaces import (
-    FileSystemInterface,
     FileObject,
+    FileSystemInterface,
     Metadata,
 )
-from youwol.utils.utils_paths import write_json, parse_json
+from youwol.utils.utils_paths import parse_json, write_json
 
 
 def create_dir_if_needed(full_path: Path):

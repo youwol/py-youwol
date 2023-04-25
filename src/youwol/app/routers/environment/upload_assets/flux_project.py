@@ -1,8 +1,14 @@
+# standard library
 from dataclasses import dataclass
 
-from youwol.app.environment import RemoteClients, LocalClients, YouwolEnvironment
+# Youwol application
+from youwol.app.environment import LocalClients, RemoteClients, YouwolEnvironment
 from youwol.app.routers.environment.upload_assets.models import UploadTask
+
+# Youwol backends
 from youwol.backends.flux import zip_project
+
+# Youwol utilities
 from youwol.utils import JSON
 from youwol.utils.context import Context
 

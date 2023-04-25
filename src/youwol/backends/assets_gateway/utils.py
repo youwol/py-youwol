@@ -1,17 +1,22 @@
+# standard library
 from datetime import datetime
-from typing import Dict, Any, List, Union, Optional
 
+# typing
+from typing import Any, Dict, List, Optional, Union
+
+# third parties
 from pydantic import BaseModel
 
-from youwol.utils import to_group_id, base64
+# Youwol utilities
+from youwol.utils import base64, to_group_id
 from youwol.utils.http_clients.assets_backend import (
     ReadPolicyEnumFactory,
     SharePolicyEnumFactory,
 )
 from youwol.utils.http_clients.assets_gateway import (
     AssetResponse,
-    GroupAccess,
     AssetWithPermissionResponse,
+    GroupAccess,
     PermissionsResponse,
 )
 

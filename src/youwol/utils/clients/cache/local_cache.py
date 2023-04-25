@@ -1,11 +1,17 @@
+# standard library
 import sys
 import time
-from threading import Thread, Event
+
+from threading import Event, Thread
+
+# typing
 from typing import Dict, List, Optional
 
+# third parties
 from pydantic import BaseModel
 
-from youwol.utils.clients.cache import CacheClient, TTL
+# Youwol utilities
+from youwol.utils.clients.cache import TTL, CacheClient
 
 
 class CacheEntry(BaseModel):

@@ -1,39 +1,44 @@
+# standard library
 import asyncio
 import itertools
 import random
-from typing import List, Optional, Dict
 
+# typing
+from typing import Dict, List, Optional
+
+# third parties
 import importlib_resources
+
 from cowpy import cow
 from fastapi import APIRouter, Depends
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from starlette.requests import Request
 
+# Youwol application
 from youwol.app.environment import (
-    FlowSwitcherMiddleware,
-    yw_config,
-    YouwolEnvironment,
-    YouwolEnvironmentFactory,
-    Connection,
-    DirectAuth,
     Command,
+    Connection,
+    CustomMiddleware,
+    DirectAuth,
+    FlowSwitcherMiddleware,
     PathsBook,
     Projects,
-    CustomMiddleware,
+    YouwolEnvironment,
+    YouwolEnvironmentFactory,
+    yw_config,
 )
 from youwol.app.middlewares import JwtProviderPyYouwol
-from youwol.app.routers.environment.models import (
-    LoginBody,
-    RemoteGatewayInfo,
-    CustomDispatchesResponse,
-    UserInfo,
-)
-from youwol.app.routers.environment.upload_assets.upload import upload_asset
 from youwol.app.routers.projects import ProjectLoader
 from youwol.app.web_socket import LogsStreamer
+
+# Youwol utilities
 from youwol.utils.clients.oidc.oidc_config import OidcConfig
 from youwol.utils.context import Context
+
+# relative
+from .models import CustomDispatchesResponse, LoginBody, RemoteGatewayInfo, UserInfo
+from .upload_assets.upload import upload_asset
 
 router = APIRouter()
 flatten = itertools.chain.from_iterable
@@ -99,6 +104,7 @@ async def load_predefined_config_file(request: Request, rest_of_path: str):
         request=request,
         with_reporters=[LogsStreamer()],
     ):
+        # Youwol application
         from youwol.app.environment import predefined_configs
 
         source = importlib_resources.files(predefined_configs).joinpath(rest_of_path)

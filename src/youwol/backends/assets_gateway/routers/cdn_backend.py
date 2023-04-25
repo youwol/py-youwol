@@ -1,25 +1,29 @@
+# third parties
 from fastapi import APIRouter, Depends, Query
 from starlette.requests import Request
 from starlette.responses import Response
 
-from youwol.backends.assets_gateway.utils import AssetMeta
-from youwol.backends.assets_gateway.routers.common import (
-    assert_write_permissions_folder_id,
-    assert_read_permissions_from_raw_id,
-    assert_write_permissions_from_raw_id,
-    create_asset,
-    delete_asset,
-)
-from youwol.utils.context import Context
+# Youwol backends
 from youwol.backends.assets_gateway.configurations import (
     Configuration,
     get_configuration,
 )
+from youwol.backends.assets_gateway.routers.common import (
+    assert_read_permissions_from_raw_id,
+    assert_write_permissions_folder_id,
+    assert_write_permissions_from_raw_id,
+    create_asset,
+    delete_asset,
+)
+from youwol.backends.assets_gateway.utils import AssetMeta
+
+# Youwol utilities
+from youwol.utils.context import Context
 from youwol.utils.http_clients.assets_gateway import NewAssetResponse
 from youwol.utils.http_clients.cdn_backend import (
     ListVersionsResponse,
-    LoadingGraphResponseV1,
     LoadingGraphBody,
+    LoadingGraphResponseV1,
 )
 
 router = APIRouter(tags=["assets-gateway.cdn-backend"])

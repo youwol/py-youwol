@@ -1,18 +1,25 @@
+# standard library
 from datetime import datetime
-from typing import Optional, List, Any, Dict
 
+# typing
+from typing import Any, Dict, List, Optional
+
+# third parties
 from pydantic import BaseModel
 from starlette.requests import Request
-from youwol.app.environment import (
-    AuthorizationProvider,
-    Authentication,
-    DirectAuth,
-    BrowserAuth,
-)
 
+# Youwol application
+from youwol.app.environment import (
+    Authentication,
+    AuthorizationProvider,
+    BrowserAuth,
+    DirectAuth,
+)
 from youwol.app.environment.youwol_environment import YouwolEnvironment
+
+# Youwol utilities
 from youwol.utils import CacheClient
-from youwol.utils.clients.oidc.oidc_config import OidcInfos, OidcConfig
+from youwol.utils.clients.oidc.oidc_config import OidcConfig, OidcInfos
 from youwol.utils.context import Context
 from youwol.utils.middlewares import JwtProvider, JwtProviderCookie
 

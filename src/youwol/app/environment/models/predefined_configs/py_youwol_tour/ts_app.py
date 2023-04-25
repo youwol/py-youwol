@@ -1,13 +1,14 @@
+# Youwol application
 from youwol.app.environment import (
+    Command,
     Configuration,
-    System,
+    CustomEndPoints,
+    Customization,
+    FlowSwitcherMiddleware,
     LocalEnvironment,
     Projects,
     RecursiveProjectsFinder,
-    Customization,
-    CustomEndPoints,
-    Command,
-    FlowSwitcherMiddleware,
+    System,
 )
 from youwol.app.environment.models.predefined_configs.py_youwol_tour.common import (
     clone_project,
@@ -15,10 +16,13 @@ from youwol.app.environment.models.predefined_configs.py_youwol_tour.common impo
 from youwol.app.environment.models.predefined_configs.py_youwol_tour.starter import (
     init_working_folders,
 )
+
+# Youwol pipelines
+import youwol.app.pipelines.pipeline_typescript_weback_npm as pipeline_ts
+
 from youwol.app.pipelines.pipeline_typescript_weback_npm.regular.webpack_dev_server_switch import (
     WebpackDevServerSwitch,
 )
-import youwol.app.pipelines.pipeline_typescript_weback_npm as pipeline_ts
 
 pipeline_ts.set_environment()
 

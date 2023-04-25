@@ -1,10 +1,16 @@
+# standard library
+import time
+
+# typing
 from typing import Optional
 
+# third parties
 import aiohttp
-import time
+
 from pydantic import BaseModel
 from starlette.datastructures import URL
 
+# Youwol utilities
 from youwol.utils.clients.oidc.oidc_config import OidcForClient
 
 TWELVE_HOURS = 12 * 60 * 60

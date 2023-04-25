@@ -1,35 +1,42 @@
+# standard library
 import asyncio
 import itertools
 import json
-from pathlib import Path
-from typing import Optional, cast, Mapping, List, Iterable
 
+from pathlib import Path
+
+# typing
+from typing import Iterable, List, Mapping, Optional, cast
+
+# third parties
 from fastapi import HTTPException
 from pydantic import BaseModel
 
+# Youwol application
 from youwol.app.environment import (
     CloudEnvironment,
     LocalClients,
-    RemoteClients,
     PathsBook,
+    RemoteClients,
     YouwolEnvironment,
 )
 from youwol.app.middlewares import JwtProviderPyYouwol
-
-from youwol.utils.http_clients.tree_db_backend import DefaultDriveResponse
-from youwol.app.routers.projects.models_project import (
-    PipelineStep,
-    Project,
-    Manifest,
-    PipelineStepStatus,
-    FlowId,
-    ExplicitNone,
-    BrowserApp,
-)
 from youwol.app.routers.environment.upload_assets.package import UploadPackageOptions
 from youwol.app.routers.environment.upload_assets.upload import upload_asset
-from youwol.utils import encode_id, files_check_sum, to_json, YouwolHeaders
+from youwol.app.routers.projects.models_project import (
+    BrowserApp,
+    ExplicitNone,
+    FlowId,
+    Manifest,
+    PipelineStep,
+    PipelineStepStatus,
+    Project,
+)
+
+# Youwol utilities
+from youwol.utils import YouwolHeaders, encode_id, files_check_sum, to_json
 from youwol.utils.context import Context
+from youwol.utils.http_clients.tree_db_backend import DefaultDriveResponse
 from youwol.utils.utils_paths import create_zip_file
 
 

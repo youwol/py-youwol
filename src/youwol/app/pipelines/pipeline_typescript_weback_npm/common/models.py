@@ -1,12 +1,19 @@
+# standard library
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional, Any
 
+# typing
+from typing import Any, Dict, List, Optional
+
+# third parties
 from pydantic import BaseModel
 
+# Youwol application
 from youwol.app.environment import UploadTarget, UploadTargets
 from youwol.app.routers.projects.models_project import Project
-from youwol.utils import execute_shell_cmd, CommandException
+
+# Youwol utilities
+from youwol.utils import CommandException, execute_shell_cmd
 from youwol.utils.context import Context
 
 

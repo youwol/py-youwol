@@ -1,32 +1,44 @@
+# standard library
 import functools
 import glob
 import itertools
 import shutil
-from pathlib import Path
-from typing import Dict, List, Union, NamedTuple, cast, Callable, Awaitable
 
+from pathlib import Path
+
+# typing
+from typing import Awaitable, Callable, Dict, List, NamedTuple, Union, cast
+
+# third parties
 import pyparsing
 import semantic_version
 
+# Youwol application
 from youwol.app.routers.projects.models_project import PipelineStep
+from youwol.app.routers.system.router import Log
+
+# Youwol backends
+from youwol.backends.cdn import get_api_key
+from youwol.backends.cdn.loading_graph_implementation import exportedSymbols
+
+# Youwol utilities
+from youwol.utils import JSON, parse_json, write_json
+from youwol.utils.context import Context
+from youwol.utils.utils_paths import sed_inplace
+from youwol.utils.utils_test import PyYouwolSession, TestFailureResult
+
+# Youwol pipelines
 from youwol.app.pipelines import PublishCdnRemoteStep
-from youwol.app.pipelines.pipeline_typescript_weback_npm.environment import (
-    get_environment,
-)
 from youwol.app.pipelines.pipeline_typescript_weback_npm.common import (
-    Template,
     PackageType,
+    Template,
 )
 from youwol.app.pipelines.pipeline_typescript_weback_npm.common.npm_step import (
     PublishNpmStep,
 )
-from youwol.app.routers.system.router import Log
-from youwol.backends.cdn import get_api_key
-from youwol.backends.cdn.loading_graph_implementation import exportedSymbols
-from youwol.utils import parse_json, write_json, JSON
-from youwol.utils.context import Context
-from youwol.utils.utils_paths import sed_inplace
-from youwol.utils.utils_test import PyYouwolSession, TestFailureResult
+from youwol.app.pipelines.pipeline_typescript_weback_npm.environment import (
+    get_environment,
+)
 
 
 class FileNames(NamedTuple):

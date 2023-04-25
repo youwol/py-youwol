@@ -1,13 +1,20 @@
+# standard library
 import uuid
-from typing import Optional, Any
 
+# typing
+from typing import Any, Optional
+
+# third parties
 from fastapi import Depends
 from fastapi.params import Cookie
 from pydantic import BaseModel
-from starlette.responses import Response, JSONResponse
+from starlette.responses import JSONResponse, Response
 
+# Youwol backends
 from youwol.backends.accounts.configuration import Configuration, get_configuration
 from youwol.backends.accounts.root_paths import router
+
+# Youwol utilities
 from youwol.utils.clients.oidc.oidc_config import OidcConfig
 from youwol.utils.session_handler import SessionHandler
 

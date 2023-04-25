@@ -1,7 +1,13 @@
+# standard library
 from enum import Enum
-from typing import List, Optional, Dict
 
+# typing
+from typing import Dict, List, Optional
+
+# third parties
 from pydantic import BaseModel
+
+# Youwol application
 from youwol.app.environment.errors_handling import ErrorResponse
 from youwol.app.environment.models.models_config import DispatchInfo
 

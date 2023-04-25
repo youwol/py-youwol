@@ -1,13 +1,18 @@
+# standard library
 from enum import Enum
 from pathlib import Path
-from typing import List, Optional, Dict, Any, Mapping
 
+# typing
+from typing import Any, Dict, List, Mapping, Optional
+
+# third parties
 from pydantic import BaseModel
 
+# Youwol application
 from youwol.app.routers.projects.models_project import (
-    PipelineStepStatus,
-    Manifest,
     Link,
+    Manifest,
+    PipelineStepStatus,
     Project,
 )
 

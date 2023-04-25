@@ -1,7 +1,11 @@
+# standard library
 import sys
 import traceback
+
+# typing
 from typing import List, Union
 
+# third parties
 from colorama import Fore, Style
 from pydantic import BaseModel
 

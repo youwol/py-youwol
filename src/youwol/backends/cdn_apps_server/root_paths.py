@@ -1,14 +1,22 @@
+# standard library
 import base64
+
+# typing
 from typing import List
 
+# third parties
 import aiohttp
+
 from fastapi import APIRouter
 from starlette.requests import Request
 from starlette.responses import Response
 
+# Youwol backends
+from youwol.backends.cdn_apps_server.configurations import get_configuration
+
+# Youwol utilities
 from youwol.utils import raise_exception_from_response
 from youwol.utils.context import Context
-from youwol.backends.cdn_apps_server.configurations import get_configuration
 
 router = APIRouter(tags=["cdn-apps-server"])
 

@@ -1,13 +1,13 @@
+# typing
 from typing import List, Optional
-from youwol.app.environment.models.defaults import (
-    default_auth_provider,
-    default_platform_host,
-)
-from youwol.app.environment.models.models_config import (
-    AuthorizationProvider,
-    CloudEnvironment,
-    BrowserAuth,
+
+# relative
+from .models.defaults import default_auth_provider, default_platform_host
+from .models.models_config import (
     Authentication,
+    AuthorizationProvider,
+    BrowserAuth,
+    CloudEnvironment,
 )
 
 

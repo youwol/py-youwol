@@ -1,6 +1,10 @@
+# standard library
 from dataclasses import dataclass
-from typing import Dict, Callable, Optional, Awaitable
 
+# typing
+from typing import Awaitable, Callable, Dict, Optional
+
+# Youwol utilities
 from youwol.utils import Storage
 
 

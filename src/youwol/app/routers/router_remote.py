@@ -1,10 +1,13 @@
+# third parties
 from fastapi import APIRouter
-
 from starlette.requests import Request
-from youwol.app.environment import YouwolEnvironment
-from youwol.utils.utils_requests import redirect_request
 
+# Youwol application
+from youwol.app.environment import YouwolEnvironment
+
+# Youwol utilities
 from youwol.utils.context import Context
+from youwol.utils.utils_requests import redirect_request
 
 router = APIRouter()
 

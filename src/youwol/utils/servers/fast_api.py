@@ -1,29 +1,36 @@
+# standard library
 import asyncio
 import inspect
 import itertools
 import sys
+
 from dataclasses import dataclass
+
+# typing
 from typing import (
-    List,
     Any,
-    Type,
-    Dict,
-    Callable,
-    Union,
     Awaitable,
-    Optional,
-    TypeVar,
+    Callable,
+    Dict,
     Generic,
+    List,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
 )
 
+# third parties
 import uvicorn
-from fastapi import FastAPI, APIRouter
-from pydantic import BaseModel, BaseConfig, create_model
+
+from fastapi import APIRouter, FastAPI
+from pydantic import BaseConfig, BaseModel, create_model
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 
-from youwol.utils import YouWolException, youwol_exception_handler, log_info
-from youwol.utils.context import ContextReporter, Context
+# Youwol utilities
+from youwol.utils import YouWolException, log_info, youwol_exception_handler
+from youwol.utils.context import Context, ContextReporter
 from youwol.utils.middlewares.root_middleware import RootMiddleware
 
 flatten = itertools.chain.from_iterable

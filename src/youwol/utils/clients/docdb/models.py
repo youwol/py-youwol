@@ -1,5 +1,7 @@
-from typing import List, Any, Dict
+# typing
+from typing import Any, Dict, List
 
+# third parties
 from pydantic import BaseModel
 
 

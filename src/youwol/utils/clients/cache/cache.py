@@ -1,7 +1,12 @@
+# standard library
 import json
+
 from dataclasses import dataclass
+
+# typing
 from typing import Optional, Union
 
+# Youwol utilities
 from youwol.utils.types import JSON
 
 

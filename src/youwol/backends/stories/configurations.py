@@ -1,17 +1,21 @@
+# standard library
 from dataclasses import dataclass
-from typing import Union, Callable, Type, Awaitable, Dict, Optional
 
+# typing
+from typing import Awaitable, Callable, Dict, Optional, Type, Union
+
+# Youwol utilities
 from youwol.utils import (
+    DocDbClient,
     LocalDocDbClient,
     LocalStorageClient,
-    DocDbClient,
     StorageClient,
 )
 from youwol.utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from youwol.utils.http_clients.stories_backend import (
     DOCUMENTS_TABLE,
-    STORIES_TABLE,
     DOCUMENTS_TABLE_BY_ID,
+    STORIES_TABLE,
     Content,
     GlobalContent,
 )

@@ -1,12 +1,19 @@
+# standard library
 import base64
 import json as _json
+
 from dataclasses import dataclass, field
 from pathlib import Path
+
+# typing
 from typing import Dict, Union
 
+# third parties
 import aiohttp
+
 from aiohttp import FormData
 
+# Youwol utilities
 from youwol.utils.clients.storage.models import FileData
 from youwol.utils.clients.storage.patches import patch_files_name
 from youwol.utils.exceptions import raise_exception_from_response

@@ -1,37 +1,44 @@
 from __future__ import annotations
 
+# standard library
 import asyncio
 import json
 import time
 import traceback
 import uuid
+
 from abc import ABC, abstractmethod
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from enum import Enum
+
+# typing
 from typing import (
-    Union,
-    NamedTuple,
-    Callable,
-    Awaitable,
-    Optional,
-    List,
-    TypeVar,
-    Dict,
-    cast,
     Any,
     AsyncContextManager,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    NamedTuple,
+    Optional,
     Set,
+    TypeVar,
+    Union,
+    cast,
 )
 
+# third parties
 import aiohttp
+
 from fastapi import HTTPException
 from pydantic import BaseModel
 from starlette.requests import Request
 from starlette.websockets import WebSocket
 
+# Youwol utilities
 from youwol.utils.types import JSON
-from youwol.utils.utils import to_json, generate_headers_downstream, YouwolHeaders
+from youwol.utils.utils import YouwolHeaders, generate_headers_downstream, to_json
 
 #  Can also be a JSON referencing BaseModel(s), etc
 #  At the end 'JsonLike' is anything that can be used in the function 'to_json'

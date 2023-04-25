@@ -1,18 +1,24 @@
+# standard library
 import json
 import shutil
+
 from dataclasses import dataclass, field
 from pathlib import Path
 from threading import Lock
-from typing import Mapping, Union, Dict, List, Any
 
+# typing
+from typing import Any, Dict, List, Mapping, Union
+
+# third parties
 from fastapi import HTTPException
 
+# Youwol utilities
 from youwol.utils.clients.docdb.models import (
-    TableBody,
-    QueryBody,
-    WhereClause,
     Query,
+    QueryBody,
     SecondaryIndex,
+    TableBody,
+    WhereClause,
 )
 from youwol.utils.clients.utils import get_default_owner
 from youwol.utils.http_clients.cdn_backend.utils import (

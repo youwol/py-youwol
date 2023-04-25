@@ -1,10 +1,15 @@
+# standard library
 from pathlib import Path
+
+# typing
 from typing import NamedTuple, Optional
 
+# third parties
 from pydantic.main import BaseModel
 
-from youwol.utils.utils_shell import execute_shell_cmd
+# Youwol utilities
 from youwol.utils.context import Context
+from youwol.utils.utils_shell import execute_shell_cmd
 
 
 class Selector(NamedTuple):

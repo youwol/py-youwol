@@ -1,12 +1,20 @@
+# standard library
 import asyncio
 import itertools
 import json
 import os
+
 from pathlib import Path
-from typing import Dict, Union, Any
+
+# typing
+from typing import Any, Dict, Union
+
+# third parties
+import semantic_version
 
 from fastapi import HTTPException
-import semantic_version
+
+# relative
 from .configurations import Constants
 
 skipped_dependencies = []

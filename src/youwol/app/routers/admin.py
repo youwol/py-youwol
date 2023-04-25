@@ -1,10 +1,13 @@
+# third parties
 from fastapi import APIRouter
 
+# Youwol application
 import youwol.app.routers.custom_commands.router as custom_commands
 import youwol.app.routers.environment.router as environment
 import youwol.app.routers.local_cdn.router as local_cdn
 import youwol.app.routers.projects.router as projects
 import youwol.app.routers.system.router as system
+
 from youwol.app.environment import api_configuration
 from youwol.app.routers import router_remote
 

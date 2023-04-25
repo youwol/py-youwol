@@ -1,26 +1,33 @@
+# standard library
 import asyncio
 import itertools
 import math
 import time
-from typing import Dict, List, Any
 
+# typing
+from typing import Any, Dict, List
+
+# third parties
 from fastapi import HTTPException
 
+# Youwol backends
 from youwol.backends.stories.configurations import Configuration, Constants
+
+# Youwol utilities
 from youwol.utils import (
-    log_info,
-    StorageClient,
-    QueryIndexException,
     DocDbClient,
+    QueryIndexException,
+    StorageClient,
     generate_headers_downstream,
+    log_info,
 )
 from youwol.utils.context import Context
 from youwol.utils.http_clients.cdn_backend import patch_loading_graph
 from youwol.utils.http_clients.stories_backend import (
+    DeleteResp,
     GetDocumentResp,
     Requirements,
     StoryResp,
-    DeleteResp,
 )
 
 zip_data_filename = "data.json"

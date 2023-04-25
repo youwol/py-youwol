@@ -1,6 +1,8 @@
+# typing
 from typing import Any, Union
 
-from youwol.utils import CacheClient, TTL
+# Youwol utilities
+from youwol.utils import TTL, CacheClient
 from youwol.utils.clients.oidc.oidc_config import (
     OidcConfig,
     PrivateClient,

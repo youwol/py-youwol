@@ -1,5 +1,7 @@
-from typing import Union, Optional, Callable, Awaitable
+# typing
+from typing import Awaitable, Callable, Optional, Union
 
+# Youwol utilities
 from youwol.utils.clients.cache import CacheClient
 from youwol.utils.clients.oidc.oidc_config import PrivateClient, PublicClient
 

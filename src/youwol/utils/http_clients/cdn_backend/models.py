@@ -1,14 +1,19 @@
+# standard library
 from pathlib import Path
-from typing import List, NamedTuple, Union, Dict, Any
 
+# typing
+from typing import Any, Dict, List, NamedTuple, Union
+
+# third parties
 from pydantic import BaseModel
 from semantic_version import Version
 
+# Youwol utilities
 from youwol.utils.clients.docdb.models import (
     Column,
-    TableOptions,
     OrderingClause,
     TableBody,
+    TableOptions,
 )
 
 

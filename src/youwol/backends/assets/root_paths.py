@@ -1,3 +1,4 @@
+# standard library
 import asyncio
 import io
 import itertools
@@ -6,68 +7,78 @@ import tempfile
 import time
 import uuid
 import zipfile
+
 from pathlib import Path
-from typing import Optional
 from zipfile import ZipFile
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+# typing
+from typing import Optional
+
+# third parties
+from fastapi import APIRouter, Depends, File, HTTPException
 from fastapi import Query as RequestQuery
+from fastapi import UploadFile
 from starlette.requests import Request
 from starlette.responses import Response
 
-from youwol.utils import (
-    user_info,
-    private_group_id,
-    to_group_id,
-    is_child_group,
-    ancestors_group_id,
-    QueryBody,
-    Query,
-    WhereClause,
-    get_leaf_group_ids,
-    FileData,
-    to_group_scope,
-    QueryIndexException,
-    get_content_type,
-    extract_bytes_ranges,
-)
+# Youwol backends
 from youwol.backends.assets.configurations import (
     Configuration,
-    get_configuration,
     Constants,
+    get_configuration,
+)
+
+# Youwol utilities
+from youwol.utils import (
+    FileData,
+    Query,
+    QueryBody,
+    QueryIndexException,
+    WhereClause,
+    ancestors_group_id,
+    extract_bytes_ranges,
+    get_content_type,
+    get_leaf_group_ids,
+    is_child_group,
+    private_group_id,
+    to_group_id,
+    to_group_scope,
+    user_info,
 )
 from youwol.utils.context import Context
 from youwol.utils.http_clients.assets_backend import (
-    AssetResponse,
-    NewAssetBody,
-    PostAssetBody,
-    SharePolicyEnum,
-    ReadPolicyEnum,
+    AccessInfoResp,
     AccessPolicyBody,
     AccessPolicyResp,
-    PermissionsResp,
-    HealthzResponse,
-    AccessInfoResp,
-    ConsumerInfo,
-    OwningGroup,
-    OwnerInfo,
-    ExposingGroup,
     AddFilesResponse,
+    AssetResponse,
+    ConsumerInfo,
+    ExposingGroup,
+    HealthzResponse,
+    NewAssetBody,
+    OwnerInfo,
+    OwningGroup,
+    PermissionsResp,
+    PostAssetBody,
+    ReadPolicyEnum,
+    SharePolicyEnum,
 )
+
+# relative
 from .utils import (
-    to_doc_db_id,
     access_policy_record_id,
+    db_delete,
+    db_get,
     db_post,
     format_asset,
-    db_get,
-    to_snake_case,
-    db_delete,
-    format_record_history,
     format_image,
-    get_thumbnail,
     format_policy,
+    format_record_history,
     get_file_path,
+    get_thumbnail,
     log_asset,
+    to_doc_db_id,
+    to_snake_case,
 )
 
 router = APIRouter(tags=["assets-backend"])

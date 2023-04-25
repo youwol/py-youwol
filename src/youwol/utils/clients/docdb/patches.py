@@ -1,4 +1,5 @@
-from typing import Dict, Any
+# typing
+from typing import Any, Dict
 
 
 def compare_schemas(left: Dict[str, any], right: Dict[str, any]):

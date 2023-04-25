@@ -1,11 +1,18 @@
+# standard library
 from enum import Enum
+
+# typing
 from typing import Awaitable
 
+# third parties
 from fastapi import APIRouter, Depends, HTTPException
 from starlette.requests import Request
 
-from youwol.app.environment import yw_config, YouwolEnvironment
+# Youwol application
+from youwol.app.environment import YouwolEnvironment, yw_config
 from youwol.app.web_socket import LogsStreamer
+
+# Youwol utilities
 from youwol.utils.context import Context
 
 router = APIRouter()

@@ -1,9 +1,12 @@
+# standard library
 from dataclasses import dataclass
-from typing import Callable, Union, Type, Awaitable, Dict, Optional
 
+# typing
+from typing import Awaitable, Callable, Dict, Optional, Type, Union
+
+# Youwol utilities
 from youwol.utils import CdnClient
 from youwol.utils.clients.assets.assets import AssetsClient
-
 from youwol.utils.clients.files import FilesClient
 from youwol.utils.clients.flux.flux import FluxClient
 from youwol.utils.clients.stories.stories import StoriesClient

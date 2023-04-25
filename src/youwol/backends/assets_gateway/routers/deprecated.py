@@ -1,26 +1,29 @@
-from typing import Union, Awaitable, Dict
+# typing
+from typing import Awaitable, Dict, Union
 
+# third parties
 import aiohttp
-from starlette.responses import Response
-
-from youwol.backends.assets_gateway.routers.common import (
-    assert_read_permissions_from_raw_id,
-)
-
 
 from fastapi import APIRouter, Depends
 from starlette.requests import Request
+from starlette.responses import Response
 
-from youwol.utils import (
-    raise_exception_from_response,
-    JSON,
-    aiohttp_to_starlette_response,
-)
-from youwol.utils.context import Context
+# Youwol backends
 from youwol.backends.assets_gateway.configurations import (
     Configuration,
     get_configuration,
 )
+from youwol.backends.assets_gateway.routers.common import (
+    assert_read_permissions_from_raw_id,
+)
+
+# Youwol utilities
+from youwol.utils import (
+    JSON,
+    aiohttp_to_starlette_response,
+    raise_exception_from_response,
+)
+from youwol.utils.context import Context
 
 router = APIRouter(tags=["assets-gateway.deprecated"])
 
