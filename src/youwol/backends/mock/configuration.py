@@ -2,7 +2,6 @@ from typing import Union, Callable, Awaitable
 
 
 class Configuration:
-
     def __init__(self):
         # No configuration for the moment
         pass

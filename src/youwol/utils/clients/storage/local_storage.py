@@ -25,7 +25,6 @@ def create_dir_if_needed(full_path: Path):
 
 @dataclass(frozen=True)
 class LocalStorageClient:
-
     root_path: Path
     bucket_name: str
 
@@ -46,8 +45,9 @@ class LocalStorageClient:
 
         return True
 
-    async def post_file(self, form: FileData, headers: Mapping[str, str] = None, **_kwargs):
-
+    async def post_file(
+        self, form: FileData, headers: Mapping[str, str] = None, **_kwargs
+    ):
         owner = form.owner
         if not headers:
             headers = {}
@@ -57,12 +57,17 @@ class LocalStorageClient:
         full_path = self.get_full_path(owner, form.objectName)
 
         create_dir_if_needed(full_path)
-        full_path.open('wb').write(form.objectData)
+        full_path.open("wb").write(form.objectData)
         return {}
 
-    async def post_object(self, path: Union[Path, str], content: bytes, owner: Union[str, None],
-                          headers: Mapping[str, str] = None, **_kwargs):
-
+    async def post_object(
+        self,
+        path: Union[Path, str],
+        content: bytes,
+        owner: Union[str, None],
+        headers: Mapping[str, str] = None,
+        **_kwargs,
+    ):
         if not headers:
             headers = {}
         if not owner:
@@ -75,11 +80,16 @@ class LocalStorageClient:
 
         full_path = self.get_full_path(owner, path)
         create_dir_if_needed(full_path)
-        full_path.open('wb').write(data)
+        full_path.open("wb").write(data)
 
-    async def post_json(self, path: Union[str, Path], json: JSON, owner: Union[str, None],
-                        headers: Mapping[str, str] = None, **_kwargs):
-
+    async def post_json(
+        self,
+        path: Union[str, Path],
+        json: JSON,
+        owner: Union[str, None],
+        headers: Mapping[str, str] = None,
+        **_kwargs,
+    ):
         if not headers:
             headers = {}
         if not owner:
@@ -87,12 +97,17 @@ class LocalStorageClient:
 
         full_path = self.get_full_path(owner, path)
         create_dir_if_needed(full_path)
-        full_path.open('w').write(_json.dumps(json, indent=4))
+        full_path.open("w").write(_json.dumps(json, indent=4))
         return {}
 
-    async def post_text(self, path: Union[str, Path], text, owner: Union[str, None], headers: Mapping[str, str] = None,
-                        **_kwargs):
-
+    async def post_text(
+        self,
+        path: Union[str, Path],
+        text,
+        owner: Union[str, None],
+        headers: Mapping[str, str] = None,
+        **_kwargs,
+    ):
         if not headers:
             headers = {}
         if not owner:
@@ -100,12 +115,16 @@ class LocalStorageClient:
 
         full_path = self.get_full_path(owner, path)
         create_dir_if_needed(full_path)
-        full_path.open('w').write(text)
+        full_path.open("w").write(text)
         return {}
 
-    async def delete_group(self, prefix: Union[Path, str], owner: Union[str, None], headers: Mapping[str, str] = None,
-                           **_kwargs):
-
+    async def delete_group(
+        self,
+        prefix: Union[Path, str],
+        owner: Union[str, None],
+        headers: Mapping[str, str] = None,
+        **_kwargs,
+    ):
         if not headers:
             headers = {}
         if not owner:
@@ -115,9 +134,13 @@ class LocalStorageClient:
         if path.exists():
             shutil.rmtree(path)
 
-    async def delete(self, path: Union[str, Path],  owner: Union[str, None], headers: Mapping[str, str] = None,
-                     **_kwargs):
-
+    async def delete(
+        self,
+        path: Union[str, Path],
+        owner: Union[str, None],
+        headers: Mapping[str, str] = None,
+        **_kwargs,
+    ):
         if not headers:
             headers = {}
         if not owner:
@@ -129,28 +152,40 @@ class LocalStorageClient:
             return
 
         if not full_path.exists():
-            raise HTTPException(status_code=404, detail=f"File {full_path.name} not found")
+            raise HTTPException(
+                status_code=404, detail=f"File {full_path.name} not found"
+            )
         os.remove(full_path)
 
         return {}
 
-    async def list_files(self, prefix: Union[str, Path], owner: Union[str, None], headers: Mapping[str, str] = None,
-                         **_kwargs):
-
+    async def list_files(
+        self,
+        prefix: Union[str, Path],
+        owner: Union[str, None],
+        headers: Mapping[str, str] = None,
+        **_kwargs,
+    ):
         if not headers:
             headers = {}
         if not owner:
             owner = get_default_owner(headers)
 
         owner = owner[1:]
-        results = [[(Path(root) / f).relative_to(self.bucket_path / owner) for f in files]
-                   for root, _, files in os.walk(self.bucket_path / owner / prefix)]
+        results = [
+            [(Path(root) / f).relative_to(self.bucket_path / owner) for f in files]
+            for root, _, files in os.walk(self.bucket_path / owner / prefix)
+        ]
 
         return [{"name": str(r)} for r in flatten(results)]
 
-    async def get_bytes(self, path: Union[str, Path], owner: Union[str, None], headers: Mapping[str, str] = None,
-                        **_kwargs):
-
+    async def get_bytes(
+        self,
+        path: Union[str, Path],
+        owner: Union[str, None],
+        headers: Mapping[str, str] = None,
+        **_kwargs,
+    ):
         if not headers:
             headers = {}
         if not owner:
@@ -160,14 +195,23 @@ class LocalStorageClient:
         if not full_path.is_file():
             raise ResourcesNotFoundException(path=str(full_path))
 
-        return full_path.open('rb').read()
+        return full_path.open("rb").read()
 
-    async def get_json(self, path: Union[str, Path], owner: Union[str, None], headers: Mapping[str, str] = None,
-                       **kwargs):
-
+    async def get_json(
+        self,
+        path: Union[str, Path],
+        owner: Union[str, None],
+        headers: Mapping[str, str] = None,
+        **kwargs,
+    ):
         return _json.loads(await self.get_bytes(path, owner, headers, **kwargs))
 
-    async def get_text(self, path: str, owner: Union[str, None], headers: Mapping[str, str] = None,
-                       **kwargs):
+    async def get_text(
+        self,
+        path: str,
+        owner: Union[str, None],
+        headers: Mapping[str, str] = None,
+        **kwargs,
+    ):
         raw = await self.get_bytes(path, owner, headers, **kwargs)
         return raw.decode("utf-8")

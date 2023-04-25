@@ -31,17 +31,11 @@ workflow_new_project = Workflow(
             configuration={
                 "title": "Root component",
                 "description": "This is the root component",
-                "data": {
-                    "html": html,
-                    "css": css
-                }
+                "data": {"html": html, "css": css},
             },
             moduleId="Component_root-component",
-            factoryId=FactoryId(
-                module="Component",
-                pack="@youwol/flux-core"
-            )
+            factoryId=FactoryId(module="Component", pack="@youwol/flux-core"),
         )
     ],
-    connections=[]
+    connections=[],
 )

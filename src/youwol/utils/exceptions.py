@@ -20,12 +20,8 @@ class YouWolException(HTTPException):
 class ServerError(YouWolException):
     exceptionType = "ServerError"
 
-    def __init__(self,  detail: Any, **kwargs):
-        YouWolException.__init__(
-            self,
-            status_code=500,
-            detail=detail,
-            **kwargs)
+    def __init__(self, detail: Any, **kwargs):
+        YouWolException.__init__(self, status_code=500, detail=detail, **kwargs)
         self.exceptionType = ServerError.exceptionType
         self.detail = detail
 
@@ -38,12 +34,8 @@ class PublishPackageError(YouWolException):
 
     def __init__(self, context: str, **kwargs):
         YouWolException.__init__(
-            self,
-            status_code=422,
-            detail={
-                "context": context
-            },
-            **kwargs)
+            self, status_code=422, detail={"context": context}, **kwargs
+        )
         self.exceptionType = PublishPackageError.exceptionType
         self.context = context
 
@@ -58,11 +50,9 @@ class PackagesNotFound(YouWolException):
         YouWolException.__init__(
             self,
             status_code=404,
-            detail={
-                "context": context,
-                "packages": packages
-            },
-            **kwargs)
+            detail={"context": context, "packages": packages},
+            **kwargs,
+        )
         self.exceptionType = PackagesNotFound.exceptionType
         self.packages = packages
         self.context = context
@@ -76,13 +66,8 @@ class IndirectPackagesNotFound(YouWolException):
 
     def __init__(self, context: str, paths: Dict[str, List[str]], **kwargs):
         YouWolException.__init__(
-            self,
-            status_code=404,
-            detail={
-                "context": context,
-                "paths": paths
-            },
-            **kwargs)
+            self, status_code=404, detail={"context": context, "paths": paths}, **kwargs
+        )
         self.exceptionType = IndirectPackagesNotFound.exceptionType
         self.paths = paths
         self.context = context
@@ -110,11 +95,9 @@ class DependenciesError(YouWolException):
         YouWolException.__init__(
             self,
             status_code=404,
-            detail={
-                "context": context,
-                "errors": [e for e in errors]
-            },
-            **kwargs)
+            detail={"context": context, "errors": [e for e in errors]},
+            **kwargs,
+        )
         self.exceptionType = DependenciesError.exceptionType
         self.context = context
 
@@ -129,11 +112,9 @@ class CircularDependencies(YouWolException):
         YouWolException.__init__(
             self,
             status_code=404,
-            detail={
-                "context": context,
-                "packages": packages
-            },
-            **kwargs)
+            detail={"context": context, "packages": packages},
+            **kwargs,
+        )
         self.exceptionType = CircularDependencies.exceptionType
         self.packages = packages
         self.context = context
@@ -149,11 +130,9 @@ class ProjectNotFound(YouWolException):
         YouWolException.__init__(
             self,
             status_code=404,
-            detail={
-                "context": context,
-                "project": project
-            },
-            **kwargs)
+            detail={"context": context, "project": project},
+            **kwargs,
+        )
         self.exceptionType = ProjectNotFound.exceptionType
         self.project = project
         self.context = context
@@ -169,12 +148,9 @@ class PipelineStepNotFound(YouWolException):
         YouWolException.__init__(
             self,
             status_code=404,
-            detail={
-                "context": context,
-                "project": project,
-                "step": step
-            },
-            **kwargs)
+            detail={"context": context, "project": project, "step": step},
+            **kwargs,
+        )
         self.exceptionType = PipelineStepNotFound.exceptionType
         self.project = project
         self.step = step
@@ -191,12 +167,9 @@ class PipelineFlowNotFound(YouWolException):
         YouWolException.__init__(
             self,
             status_code=404,
-            detail={
-                "context": context,
-                "project": project,
-                "flow": flow
-            },
-            **kwargs)
+            detail={"context": context, "project": project, "flow": flow},
+            **kwargs,
+        )
         self.exceptionType = PipelineFlowNotFound.exceptionType
         self.project = project
         self.flow = flow
@@ -213,11 +186,9 @@ class FolderNotFound(YouWolException):
         YouWolException.__init__(
             self,
             status_code=404,
-            detail={
-                "context": context,
-                "folder": folder
-            },
-            **kwargs)
+            detail={"context": context, "folder": folder},
+            **kwargs,
+        )
         self.exceptionType = FolderNotFound.exceptionType
         self.context = context
         self.folder = folder
@@ -231,13 +202,8 @@ class ResourcesNotFoundException(YouWolException):
 
     def __init__(self, path: str, detail: str = "", **kwargs):
         YouWolException.__init__(
-            self,
-            status_code=404,
-            detail={
-                "path": path,
-                "detail": detail
-            },
-            **kwargs)
+            self, status_code=404, detail={"path": path, "detail": detail}, **kwargs
+        )
         self.path = path
         self.exceptionType = ResourcesNotFoundException.exceptionType
 
@@ -250,19 +216,16 @@ class QueryIndexException(YouWolException):
 
     def __init__(self, query: str, error: Any, **kwargs):
         YouWolException.__init__(
-            self,
-            status_code=404,
-            detail={
-                "query": query,
-                "error": error
-            },
-            **kwargs)
+            self, status_code=404, detail={"query": query, "error": error}, **kwargs
+        )
         self.query = query
         self.error = error
         self.exceptionType = QueryIndexException.exceptionType
 
     def __str__(self):
-        return f"""The query '{self.query}' resolved to unexpected result: ${self.error}"""
+        return (
+            f"""The query '{self.query}' resolved to unexpected result: ${self.error}"""
+        )
 
 
 class InvalidInput(YouWolException):
@@ -270,12 +233,8 @@ class InvalidInput(YouWolException):
 
     def __init__(self, error: str, **kwargs):
         YouWolException.__init__(
-            self,
-            status_code=422,
-            detail={
-                "error": error
-            },
-            **kwargs)
+            self, status_code=422, detail={"error": error}, **kwargs
+        )
         self.error = error
         self.exceptionType = InvalidInput.exceptionType
 
@@ -288,15 +247,19 @@ class UpstreamResponseException(YouWolException):
 
     # do not change case in 'exceptionType': UpstreamResponseException needs to be
     # 'auto-constructable' from its details
-    def __init__(self, status: int, url: str, detail: Any, exceptionType: str, **kwargs):  # NOSONAR
-        super().__init__(status_code=status,
-                         detail={
-                             "url": url,
-                             "status": status,
-                             "exceptionType": exceptionType,
-                             "detail": detail,
-                         },
-                         **kwargs)
+    def __init__(
+        self, status: int, url: str, detail: Any, exceptionType: str, **kwargs
+    ):  # NOSONAR
+        super().__init__(
+            status_code=status,
+            detail={
+                "url": url,
+                "status": status,
+                "exceptionType": exceptionType,
+                "detail": detail,
+            },
+            **kwargs,
+        )
         self.exceptionType = UpstreamResponseException.exceptionType
 
     def __str__(self):
@@ -317,7 +280,7 @@ YouwolExceptions = [
     ResourcesNotFoundException,
     QueryIndexException,
     InvalidInput,
-    UpstreamResponseException
+    UpstreamResponseException,
 ]
 
 
@@ -327,10 +290,7 @@ async def youwol_exception_handler(request: Request, exc: YouWolException):
         "exceptionType": exc.exceptionType,
         "detail": exc.detail,
     }
-    return JSONResponse(
-        status_code=exc.status_code,
-        content=content
-    )
+    return JSONResponse(status_code=exc.status_code, content=content)
 
 
 async def raise_exception_from_response(raw_resp: ClientResponse, **kwargs):
@@ -340,27 +300,42 @@ async def raise_exception_from_response(raw_resp: ClientResponse, **kwargs):
     try:
         resp = await raw_resp.json()
         if resp and "exceptionType" in resp:
-            exception_type = next((e for e in YouwolExceptions if e.exceptionType == resp["exceptionType"]), None)
+            exception_type = next(
+                (
+                    e
+                    for e in YouwolExceptions
+                    if e.exceptionType == resp["exceptionType"]
+                ),
+                None,
+            )
             if exception_type:
                 upstream_exception0 = exception_type(**resp["detail"])
-                raise UpstreamResponseException(url=raw_resp.url.human_repr(),
-                                                status=upstream_exception0.status_code,
-                                                detail=upstream_exception0.detail,
-                                                exceptionType=upstream_exception0.exceptionType
-                                                )
+                raise UpstreamResponseException(
+                    url=raw_resp.url.human_repr(),
+                    status=upstream_exception0.status_code,
+                    detail=upstream_exception0.detail,
+                    exceptionType=upstream_exception0.exceptionType,
+                )
 
     except (ValueError, ContentTypeError):
         pass
 
-    detail = resp and (resp.get("detail", None) or resp.get("message", None) or raw_resp.reason)
+    detail = resp and (
+        resp.get("detail", None) or resp.get("message", None) or raw_resp.reason
+    )
     detail = detail if detail else await raw_resp.text()
 
-    raise UpstreamResponseException(url=raw_resp.url.human_repr(),
-                                    status=raw_resp.status,
-                                    detail=detail,
-                                    exceptionType="HTTP",
-                                    **{k: v for k, v in {**kwargs, **parameters}.items()
-                                       if k not in ['url', 'status', 'detail', 'exceptionType']})
+    raise UpstreamResponseException(
+        url=raw_resp.url.human_repr(),
+        status=raw_resp.status,
+        detail=detail,
+        exceptionType="HTTP",
+        **{
+            k: v
+            for k, v in {**kwargs, **parameters}.items()
+            if k not in ["url", "status", "detail", "exceptionType"]
+        },
+    )
 
 
 async def assert_response(raw_resp: ClientResponse):

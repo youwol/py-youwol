@@ -14,7 +14,7 @@ from youwol.app.web_socket import WsDataStreamer
 from youwol.utils import encode_id, log_info
 from youwol.utils.context import Context
 
-PROJECT_PIPELINE_DIRECTORY = '.yw_pipeline'
+PROJECT_PIPELINE_DIRECTORY = ".yw_pipeline"
 
 Result = Union[Project, Failure]
 
@@ -33,12 +33,18 @@ class ProjectLoader:
     @staticmethod
     async def sync_projects(update: (List[Path], List[Path]), env: YouwolEnvironment):
         # First element of the update is path of new projects, second is path of removed projects
-        new_maybe_projects = await load_projects(paths=update[0], env=env, context=ProjectLoader.context)
+        new_maybe_projects = await load_projects(
+            paths=update[0], env=env, context=ProjectLoader.context
+        )
         failed = [p for p in new_maybe_projects if not isinstance(p, Project)]
         if failed:
             log_info(f"{len(failed)} projects where not able to load properly")
         new_projects = [p for p in new_maybe_projects if isinstance(p, Project)]
-        remaining_projects = [p for p in ProjectLoader.projects_list if p.path not in update[0] + update[1]]
+        remaining_projects = [
+            p
+            for p in ProjectLoader.projects_list
+            if p.path not in update[0] + update[1]
+        ]
         projects = remaining_projects + new_projects
         ProjectLoader.projects_list = projects
         log_info(f"New projects count: {len(projects)}")
@@ -54,8 +60,7 @@ class ProjectLoader:
         ProjectLoader.stop()
 
         ProjectLoader.handler = env.projects.finder.handler(
-            paths_book=env.pathsBook,
-            on_projects_count_update=sync_projects
+            paths_book=env.pathsBook, on_projects_count_update=sync_projects
         )
 
         ProjectLoader.projects_list = []
@@ -63,7 +68,6 @@ class ProjectLoader:
 
     @staticmethod
     async def refresh(context: Context) -> List[Project]:
-
         async with context.start("ProjectLoader.refresh"):
             await ProjectLoader.handler.refresh()
             return ProjectLoader.projects_list
@@ -77,11 +81,10 @@ class ProjectLoader:
         ProjectLoader.handler and ProjectLoader.handler.release()
 
 
-async def load_projects(paths: List[Path], env: YouwolEnvironment, context: Context) -> List[Result]:
-    async with context.start(
-            action="load_projects"
-    ) as ctx:  # type: Context
-
+async def load_projects(
+    paths: List[Path], env: YouwolEnvironment, context: Context
+) -> List[Result]:
+    async with context.start(action="load_projects") as ctx:  # type: Context
         results: List[Result] = []
         for dir_candidate in paths:
             try:
@@ -100,27 +103,30 @@ async def load_projects(paths: List[Path], env: YouwolEnvironment, context: Cont
         return results
 
 
-async def get_project(project_path: Path,
-                      additional_python_src_paths: List[Path],
-                      env: YouwolEnvironment,
-                      context: Context) -> Project:
+async def get_project(
+    project_path: Path,
+    additional_python_src_paths: List[Path],
+    env: YouwolEnvironment,
+    context: Context,
+) -> Project:
     async with context.start(
-            action="get_project",
-            with_attributes={"folderName": project_path.name}
+        action="get_project", with_attributes={"folderName": project_path.name}
     ) as ctx:  # type: Context
         pipeline_factory = get_object_from_module(
-            module_absolute_path=project_path / PROJECT_PIPELINE_DIRECTORY / 'yw_pipeline.py',
-            object_or_class_name='PipelineFactory',
+            module_absolute_path=project_path
+            / PROJECT_PIPELINE_DIRECTORY
+            / "yw_pipeline.py",
+            object_or_class_name="PipelineFactory",
             object_type=IPipelineFactory,
-            additional_src_absolute_paths=additional_python_src_paths
+            additional_src_absolute_paths=additional_python_src_paths,
         )
         pipeline = await pipeline_factory.get(env, ctx)
         name = pipeline.projectName(project_path)
         return Project(
             name=name,
             id=encode_id(name),
-            publishName=name.split('~')[0],
+            publishName=name.split("~")[0],
             version=pipeline.projectVersion(project_path),
             pipeline=pipeline,
-            path=project_path
+            path=project_path,
         )

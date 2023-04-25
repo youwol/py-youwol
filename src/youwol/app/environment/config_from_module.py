@@ -12,8 +12,13 @@ from pathlib import Path
 from typing import Awaitable, Optional, cast
 
 from youwol.app.environment.paths import app_dirs
-from youwol.app.environment.errors_handling import CheckValidConfigurationFunction, ConfigurationLoadingStatus, \
-    ConfigurationLoadingException, format_unknown_error, ErrorResponse
+from youwol.app.environment.errors_handling import (
+    CheckValidConfigurationFunction,
+    ConfigurationLoadingStatus,
+    ConfigurationLoadingException,
+    format_unknown_error,
+    ErrorResponse,
+)
 from youwol.app.environment.models import Configuration
 from youwol.app.main_args import MainArguments, get_main_arguments
 from youwol.app.environment.python_dynamic_loader import get_object_from_module
@@ -21,7 +26,6 @@ from youwol.utils.utils_paths import PathException, existing_path_or_default
 
 
 class IConfigurationFactory(ABC):
-
     @abstractmethod
     async def get(self, _main_args: MainArguments) -> Configuration:
         return NotImplemented
@@ -40,7 +44,7 @@ def try_last_expression_as_config(config_path: Path) -> Optional[Configuration]:
     module = importlib.util.module_from_spec(spec)
     loader.exec_module(module)
     config_globals = {k: module.__getattribute__(k) for k in module.__dict__}
-    script = open(config_path, 'r').read()
+    script = open(config_path, "r").read()
     stmts = list(ast.iter_child_nodes(ast.parse(script)))
     if not stmts:
         return None
@@ -63,11 +67,11 @@ def try_last_expression_as_config(config_path: Path) -> Optional[Configuration]:
 
 
 async def configuration_from_python(path: Path) -> Configuration:
-    (final_path, exists) = existing_path_or_default(path,
-                                                    root_candidates=[Path().cwd(),
-                                                                     app_dirs.user_config_dir,
-                                                                     Path().home()],
-                                                    default_root=app_dirs.user_config_dir)
+    (final_path, exists) = existing_path_or_default(
+        path,
+        root_candidates=[Path().cwd(), app_dirs.user_config_dir, Path().home()],
+        default_root=app_dirs.user_config_dir,
+    )
 
     if not exists:
         raise PathException(f"{str(final_path)} does not exists")
@@ -83,19 +87,22 @@ async def configuration_from_python(path: Path) -> Configuration:
             validated=validated,
             checks=[
                 check_valid_conf_fct,
-            ]
+            ],
         )
 
     config = try_last_expression_as_config(final_path)
     if config:
         return config
 
-    factory = get_object_from_module(module_absolute_path=final_path,
-                                     object_or_class_name="ConfigurationFactory",
-                                     object_type=IConfigurationFactory,
-                                     additional_src_absolute_paths=[final_path.parent,
-                                                                    Path(app_dirs.user_data_dir) / "lib"]
-                                     )
+    factory = get_object_from_module(
+        module_absolute_path=final_path,
+        object_or_class_name="ConfigurationFactory",
+        object_type=IConfigurationFactory,
+        additional_src_absolute_paths=[
+            final_path.parent,
+            Path(app_dirs.user_data_dir) / "lib",
+        ],
+    )
     try:
         result = factory.get(get_main_arguments())
         config_data = await result if isinstance(result, Awaitable) else result
@@ -104,13 +111,17 @@ async def configuration_from_python(path: Path) -> Configuration:
         traceback.print_tb(tb)
         check_valid_conf_fct.status = format_unknown_error(
             reason=f"There was an exception calling 'IConfigurationFactory#get()'.",
-            error=err)
+            error=err,
+        )
         raise ConfigurationLoadingException(get_status(False))
 
     if not isinstance(config_data, Configuration):
         check_valid_conf_fct.status = ErrorResponse(
             reason=f"The function 'IConfigurationFactory#get()' must return an instance of type 'ConfigurationData'",
-            hints=[f"You can have a look at the default_config_yw.py located in 'py-youwol/system'"])
+            hints=[
+                f"You can have a look at the default_config_yw.py located in 'py-youwol/system'"
+            ],
+        )
         raise ConfigurationLoadingException(get_status(False))
 
     return config_data

@@ -21,24 +21,29 @@ from youwol.utils.clients.files import FilesClient
 from youwol.utils.clients.flux.flux import FluxClient
 from youwol.utils.clients.stories.stories import StoriesClient
 from youwol.utils.clients.treedb.treedb import TreeDbClient
-from youwol.utils.http_clients.assets_backend import ASSETS_TABLE, ACCESS_HISTORY, ACCESS_POLICY
+from youwol.utils.http_clients.assets_backend import (
+    ASSETS_TABLE,
+    ACCESS_HISTORY,
+    ACCESS_POLICY,
+)
 from youwol.utils.http_clients.flux_backend import PROJECTS_TABLE, COMPONENTS_TABLE
 from youwol.utils.http_clients.tree_db_backend import create_doc_dbs
 
 
 class BackendConfigurations:
-
-    def __init__(self,
-                 assets_backend: yw_assets_backend.Configuration,
-                 assets_gtw: yw_assets_gtw.Configuration,
-                 cdn_apps_server: yw_cdn_apps_server.Configuration,
-                 cdn_backend: yw_cdn_backend.Configuration,
-                 files_backend: yw_files_backend.Configuration,
-                 cdn_sessions_storage: yw_cdn_sessions_storage.Configuration,
-                 flux_backend: yw_flux_backend.Configuration,
-                 stories_backend: yw_stories_backend.Configuration,
-                 tree_db_backend: yw_tree_db_backend.Configuration,
-                 mock_backend: yw_mock_backend.Configuration):
+    def __init__(
+        self,
+        assets_backend: yw_assets_backend.Configuration,
+        assets_gtw: yw_assets_gtw.Configuration,
+        cdn_apps_server: yw_cdn_apps_server.Configuration,
+        cdn_backend: yw_cdn_backend.Configuration,
+        files_backend: yw_files_backend.Configuration,
+        cdn_sessions_storage: yw_cdn_sessions_storage.Configuration,
+        flux_backend: yw_flux_backend.Configuration,
+        stories_backend: yw_stories_backend.Configuration,
+        tree_db_backend: yw_tree_db_backend.Configuration,
+        mock_backend: yw_mock_backend.Configuration,
+    ):
         self.assets_backend = assets_backend
         self.assets_gtw = assets_gtw
         self.cdn_apps_server = cdn_apps_server
@@ -50,23 +55,30 @@ class BackendConfigurations:
         self.tree_db_backend = tree_db_backend
         self.mock_backend = mock_backend
         self.no_sql_databases = [
-            self.assets_backend.doc_db_asset, self.assets_backend.doc_db_access_policy,
+            self.assets_backend.doc_db_asset,
+            self.assets_backend.doc_db_access_policy,
             self.assets_backend.doc_db_access_history,
             self.cdn_backend.doc_db,
-            self.flux_backend.doc_db, self.flux_backend.doc_db_component,
-            self.stories_backend.doc_db_stories, self.stories_backend.doc_db_documents,
-            self.tree_db_backend.doc_dbs.items_db, self.tree_db_backend.doc_dbs.folders_db,
-            self.tree_db_backend.doc_dbs.drives_db, self.tree_db_backend.doc_dbs.deleted_db
+            self.flux_backend.doc_db,
+            self.flux_backend.doc_db_component,
+            self.stories_backend.doc_db_stories,
+            self.stories_backend.doc_db_documents,
+            self.tree_db_backend.doc_dbs.items_db,
+            self.tree_db_backend.doc_dbs.folders_db,
+            self.tree_db_backend.doc_dbs.drives_db,
+            self.tree_db_backend.doc_dbs.deleted_db,
         ]
         self.storage_folders = {
-            self.assets_backend.storage.bucket_path, self.assets_backend.file_system.root_path,
-            self.cdn_sessions_storage.storage.bucket_path, self.files_backend.file_system.root_path,
-            self.cdn_backend.file_system.root_path, self.flux_backend.storage.bucket_path,
-            self.stories_backend.storage.bucket_path
+            self.assets_backend.storage.bucket_path,
+            self.assets_backend.file_system.root_path,
+            self.cdn_sessions_storage.storage.bucket_path,
+            self.files_backend.file_system.root_path,
+            self.cdn_backend.file_system.root_path,
+            self.flux_backend.storage.bucket_path,
+            self.stories_backend.storage.bucket_path,
         }
 
     def reset_databases(self):
-
         for db in self.no_sql_databases:
             db.reset()
 
@@ -75,11 +87,8 @@ class BackendConfigurations:
 
 
 def native_backends_config(
-        local_http_port: int,
-        local_storage: Path,
-        local_nosql: Path
+    local_http_port: int, local_storage: Path, local_nosql: Path
 ):
-
     url_base = f"http://localhost:{local_http_port}/api"
 
     return BackendConfigurations(
@@ -89,102 +98,108 @@ def native_backends_config(
             stories_client=StoriesClient(url_base=f"{url_base}/stories-backend"),
             treedb_client=TreeDbClient(url_base=f"{url_base}/treedb-backend"),
             assets_client=AssetsClient(url_base=f"{url_base}/assets-backend"),
-            files_client=FilesClient(url_base=f"{url_base}/files-backend")
+            files_client=FilesClient(url_base=f"{url_base}/files-backend"),
         ),
         cdn_backend=yw_cdn_backend.Configuration(
             file_system=LocalFileSystem(
-                root_path=local_storage / yw_cdn_backend.Constants.namespace / 'youwol-users'
+                root_path=local_storage
+                / yw_cdn_backend.Constants.namespace
+                / "youwol-users"
             ),
             doc_db=get_local_nosql_instance(
                 root_path=local_nosql,
                 keyspace_name=yw_cdn_backend.Constants.namespace,
                 table_body=yw_cdn_backend.Constants.schema_docdb,
-                secondary_indexes=[])
+                secondary_indexes=[],
+            ),
         ),
         tree_db_backend=yw_tree_db_backend.Configuration(
             doc_dbs=create_doc_dbs(
-                factory_db=get_local_nosql_instance,
-                root_path=local_nosql
+                factory_db=get_local_nosql_instance, root_path=local_nosql
             )
         ),
         assets_backend=yw_assets_backend.Configuration(
             storage=LocalStorageClient(
                 root_path=local_storage,
-                bucket_name=yw_assets_backend.Constants.namespace
+                bucket_name=yw_assets_backend.Constants.namespace,
             ),
             doc_db_asset=get_local_nosql_instance(
                 root_path=local_nosql,
                 keyspace_name=yw_assets_backend.Constants.namespace,
                 table_body=ASSETS_TABLE,
-                secondary_indexes=[]
+                secondary_indexes=[],
             ),
             doc_db_access_history=get_local_nosql_instance(
                 root_path=local_nosql,
                 keyspace_name=yw_assets_backend.Constants.namespace,
                 table_body=ACCESS_HISTORY,
-                secondary_indexes=[]
+                secondary_indexes=[],
             ),
             doc_db_access_policy=get_local_nosql_instance(
                 root_path=local_nosql,
                 keyspace_name=yw_assets_backend.Constants.namespace,
                 table_body=ACCESS_POLICY,
-                secondary_indexes=[]
+                secondary_indexes=[],
             ),
             file_system=LocalFileSystem(
                 root_path=local_storage / yw_assets_backend.Constants.namespace
-            )
+            ),
         ),
         flux_backend=yw_flux_backend.Configuration(
             storage=LocalStorageClient(
-                root_path=local_storage,
-                bucket_name=yw_flux_backend.Constants.namespace),
+                root_path=local_storage, bucket_name=yw_flux_backend.Constants.namespace
+            ),
             doc_db=get_local_nosql_instance(
                 root_path=local_nosql,
                 keyspace_name=yw_flux_backend.Constants.namespace,
                 table_body=PROJECTS_TABLE,
-                secondary_indexes=[]
+                secondary_indexes=[],
             ),
             doc_db_component=get_local_nosql_instance(
                 root_path=local_nosql,
                 keyspace_name=yw_flux_backend.Constants.namespace,
                 table_body=COMPONENTS_TABLE,
-                secondary_indexes=[]
+                secondary_indexes=[],
             ),
-            assets_gtw_client=AssetsGatewayClient(url_base=f"{url_base}/assets-gateway"),
-            cdn_client=CdnClient(url_base=f"{url_base}/cdn-backend")
+            assets_gtw_client=AssetsGatewayClient(
+                url_base=f"{url_base}/assets-gateway"
+            ),
+            cdn_client=CdnClient(url_base=f"{url_base}/cdn-backend"),
         ),
         stories_backend=yw_stories_backend.Configuration(
             storage=LocalStorageClient(
                 root_path=local_storage,
-                bucket_name=yw_stories_backend.Constants.namespace
+                bucket_name=yw_stories_backend.Constants.namespace,
             ),
             doc_db_stories=get_local_nosql_instance(
                 root_path=local_nosql,
                 keyspace_name=yw_stories_backend.Constants.namespace,
                 table_body=yw_stories_backend.Constants.db_schema_stories,
-                secondary_indexes=[]
+                secondary_indexes=[],
             ),
             doc_db_documents=get_local_nosql_instance(
                 root_path=local_nosql,
                 keyspace_name=yw_stories_backend.Constants.namespace,
                 table_body=yw_stories_backend.Constants.db_schema_documents,
-                secondary_indexes=[yw_stories_backend.Constants.db_schema_doc_by_id]
+                secondary_indexes=[yw_stories_backend.Constants.db_schema_doc_by_id],
             ),
-            assets_gtw_client=AssetsGatewayClient(url_base=f"{url_base}/assets-gateway"),
+            assets_gtw_client=AssetsGatewayClient(
+                url_base=f"{url_base}/assets-gateway"
+            ),
         ),
         cdn_apps_server=yw_cdn_apps_server.Configuration(
-            assets_gtw_client=AssetsGatewayClient(url_base=f"{url_base}/assets-gateway"),
+            assets_gtw_client=AssetsGatewayClient(
+                url_base=f"{url_base}/assets-gateway"
+            ),
         ),
         cdn_sessions_storage=yw_cdn_sessions_storage.Configuration(
             storage=LocalStorageClient(
                 root_path=local_storage,
-                bucket_name=yw_cdn_sessions_storage.Constants.namespace
+                bucket_name=yw_cdn_sessions_storage.Constants.namespace,
             ),
         ),
         files_backend=yw_files_backend.Configuration(
-            file_system=LocalFileSystem(
-                root_path=local_storage
-            ),
+            file_system=LocalFileSystem(root_path=local_storage),
         ),
-        mock_backend=yw_mock_backend.Configuration()
+        mock_backend=yw_mock_backend.Configuration(),
     )

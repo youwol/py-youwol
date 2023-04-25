@@ -8,7 +8,11 @@ from typing import Union, cast
 
 from fastapi import HTTPException
 
-from youwol.utils.clients.file_system.interfaces import FileSystemInterface, FileObject, Metadata
+from youwol.utils.clients.file_system.interfaces import (
+    FileSystemInterface,
+    FileObject,
+    Metadata,
+)
 from youwol.utils.utils_paths import write_json, parse_json
 
 
@@ -20,7 +24,6 @@ def create_dir_if_needed(full_path: Path):
 
 @dataclass(frozen=True)
 class LocalFileSystem(FileSystemInterface):
-
     root_path: Path
 
     def get_full_path(self, path: Union[str, Path]) -> Path:
@@ -30,23 +33,28 @@ class LocalFileSystem(FileSystemInterface):
         #  Nothing to do here, the folder will be created on first object creation if needed
         pass
 
-    async def put_object(self, object_id: str, data: io.BytesIO, object_name: str, content_type: str,
-                         content_encoding: str, **kwargs):
-
+    async def put_object(
+        self,
+        object_id: str,
+        data: io.BytesIO,
+        object_name: str,
+        content_type: str,
+        content_encoding: str,
+        **kwargs,
+    ):
         path = self.get_full_path(object_id)
         create_dir_if_needed(path)
         content = data.read()
-        path.open('wb').write(content)
+        path.open("wb").write(content)
         metadata = {
-            'fileName': object_name,
-            'contentType': content_type,
-            'contentEncoding': content_encoding
+            "fileName": object_name,
+            "contentType": content_type,
+            "contentEncoding": content_encoding,
         }
         path_metadata = self.get_full_path(f"{object_id}.metadata.json")
         write_json(metadata, path_metadata)
 
     async def get_info(self, object_id: str, **kwargs):
-
         self.ensure_object_exist(object_id)
         path_metadata = self.get_full_path(f"{object_id}.metadata.json")
         if not path_metadata.exists():
@@ -55,28 +63,33 @@ class LocalFileSystem(FileSystemInterface):
         return {"metadata": metadata}
 
     async def set_metadata(self, object_id: str, metadata: Metadata, **kwargs):
-
         info = await self.get_info(object_id=object_id)
         path_metadata = self.get_full_path(f"{object_id}.metadata.json")
-        write_json({**info['metadata'], **{k: v for k, v in metadata.dict().items() if v}}, path_metadata)
+        write_json(
+            {**info["metadata"], **{k: v for k, v in metadata.dict().items() if v}},
+            path_metadata,
+        )
 
-    async def get_object(self, object_id: str, ranges_bytes: [int, int] = None, **kwargs):
-
+    async def get_object(
+        self, object_id: str, ranges_bytes: [int, int] = None, **kwargs
+    ):
         path = self.ensure_object_exist(object_id)
         if not path.exists():
-            raise HTTPException(status_code=404, detail=f"LocalFileSystem.get_object: Object '{path}' not found")
+            raise HTTPException(
+                status_code=404,
+                detail=f"LocalFileSystem.get_object: Object '{path}' not found",
+            )
 
         if not ranges_bytes:
             return path.read_bytes()
-        acc = b''
-        f = open(path, 'rb')
+        acc = b""
+        f = open(path, "rb")
         for range_byte in ranges_bytes:
             f.seek(range_byte[0], 0)
             acc += f.read(range_byte[1] - range_byte[0] + 1)
         return acc
 
     async def remove_object(self, object_id: str, **kwargs):
-
         path = self.ensure_object_exist(object_id)
 
         os.remove(path)
@@ -87,7 +100,10 @@ class LocalFileSystem(FileSystemInterface):
     async def remove_folder(self, prefix: str, raise_not_found, **kwargs):
         path = self.get_full_path(prefix)
         if raise_not_found and not path.is_dir():
-            raise HTTPException(status_code=404, detail=f"LocalFileSystem.remove_folder: Folder '{path}' not found")
+            raise HTTPException(
+                status_code=404,
+                detail=f"LocalFileSystem.remove_folder: Folder '{path}' not found",
+            )
         if not path.is_dir():
             return
         shutil.rmtree(path)
@@ -95,15 +111,22 @@ class LocalFileSystem(FileSystemInterface):
     def ensure_object_exist(self, object_id: str):
         path = self.get_full_path(object_id)
         if not path.exists():
-            raise HTTPException(status_code=404,
-                                detail=f"LocalFileSystem.ensure_object_exist: Object '{path}' not found")
+            raise HTTPException(
+                status_code=404,
+                detail=f"LocalFileSystem.ensure_object_exist: Object '{path}' not found",
+            )
         return path
 
     async def list_objects(self, prefix: str, recursive: bool, **kwargs):
         base_path = self.root_path / prefix
-        paths = [Path(p).relative_to(self.root_path)
-                 for p in glob.glob(pathname=str(base_path / "**" / "*"), recursive=recursive)
-                 if '.metadata.json' not in p and not Path(p).is_dir()]
+        paths = [
+            Path(p).relative_to(self.root_path)
+            for p in glob.glob(
+                pathname=str(base_path / "**" / "*"), recursive=recursive
+            )
+            if ".metadata.json" not in p and not Path(p).is_dir()
+        ]
         return (
-            FileObject(bucket_name=self.root_path.name, object_id=str(path)) for path in paths
+            FileObject(bucket_name=self.root_path.name, object_id=str(path))
+            for path in paths
         )

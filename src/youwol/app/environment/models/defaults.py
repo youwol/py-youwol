@@ -14,8 +14,8 @@ default_path_cache_dir: Path = Path("./system")
 default_path_projects_dir: Path = Path("Projects") / Path("youwol")
 default_port_range_start: int = 3000
 default_port_range_end: int = 4000
-default_jwt_source: str = 'config'
-default_ignored_paths = ["**/dist", '**/py-youwol', '**/node_modules', "**/.template"]
+default_jwt_source: str = "config"
+default_ignored_paths = ["**/dist", "**/py-youwol", "**/node_modules", "**/.template"]
 
 
 def default_auth_provider(platform_host=default_platform_host):
@@ -23,5 +23,5 @@ def default_auth_provider(platform_host=default_platform_host):
         "openidBaseUrl": f"https://{platform_host}/auth/realms/youwol",
         "openidClient": PublicClient(client_id=default_openid_client_id),
         "keycloakAdminBaseUrl": f"https://{platform_host}/auth/admin/realms/youwol",
-        "keycloakAdminClient": None
+        "keycloakAdminClient": None,
     }

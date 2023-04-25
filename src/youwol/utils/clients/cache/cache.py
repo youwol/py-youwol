@@ -22,7 +22,6 @@ class CacheClient:
         return json.loads(val) if val else None
 
     def set(self, name: str, content: JSON, expire: Union[TTL, AT, None] = None):
-
         key = self._name_to_key(name)
         value = json.dumps(content)
 

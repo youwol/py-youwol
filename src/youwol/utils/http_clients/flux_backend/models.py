@@ -236,7 +236,7 @@ class PublishApplicationBody(BaseModel):
 
 
 PROJECTS_TABLE = TableBody(
-    name='projects',
+    name="projects",
     version="0.0",
     columns=[
         Column(name="path", type="text"),
@@ -244,14 +244,14 @@ PROJECTS_TABLE = TableBody(
         Column(name="bucket", type="text"),
         Column(name="description", type="text"),
         Column(name="name", type="text"),
-        Column(name="packages", type="list<text>")
+        Column(name="packages", type="list<text>"),
     ],
     partition_key=["project_id"],
-    clustering_columns=[]
+    clustering_columns=[],
 )
 
 COMPONENTS_TABLE = TableBody(
-    name='entities',
+    name="entities",
     version="0.0",
     columns=[
         Column(name="path", type="text"),
@@ -260,10 +260,10 @@ COMPONENTS_TABLE = TableBody(
         Column(name="description", type="text"),
         Column(name="name", type="text"),
         Column(name="packages", type="list<text>"),
-        Column(name="has_view", type="boolean")
+        Column(name="has_view", type="boolean"),
     ],
     partition_key=["component_id"],
-    clustering_columns=[]
+    clustering_columns=[],
 )
 
 

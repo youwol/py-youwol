@@ -10,10 +10,10 @@ from youwol.backends.accounts.configuration import get_configuration, Configurat
 from youwol.utils import private_group_id, to_group_id, get_all_individual_groups
 from youwol.utils.session_handler import SessionHandler
 
-router = APIRouter(tags=['accounts'])
+router = APIRouter(tags=["accounts"])
 
 
-@router.get('/healthz')
+@router.get("/healthz")
 async def root():
     return JSONResponse(status_code=200, content={"status": "accounts backend ok"})
 
@@ -40,20 +40,23 @@ class SessionImpersonationDetails(SessionDetails):
 
 def user_info_from_json(json: Any):
     return SessionDetailsUserInfo(
-        name=json['name'] if 'name' in json else 'temporary user',
-        temp=json['temp'] if 'temp' in json else False,
-        groups=[SessionDetailsUserGroup(id=private_group_id(json), path="private")] +
-               [SessionDetailsUserGroup(id=str(to_group_id(g)), path=g)
-                for g in get_all_individual_groups(json["memberof"]) if g]
+        name=json["name"] if "name" in json else "temporary user",
+        temp=json["temp"] if "temp" in json else False,
+        groups=[SessionDetailsUserGroup(id=private_group_id(json), path="private")]
+        + [
+            SessionDetailsUserGroup(id=str(to_group_id(g)), path=g)
+            for g in get_all_individual_groups(json["memberof"])
+            if g
+        ],
     )
 
 
-@router.get('/session', response_model=SessionDetails)
+@router.get("/session", response_model=SessionDetails)
 async def get_session_details(
-        request: Request,
-        yw_jwt_t: Optional[str] = Cookie(default=None),
-        yw_login_hint: Optional[str] = Cookie(default=None),
-        conf: Configuration = Depends(get_configuration)
+    request: Request,
+    yw_jwt_t: Optional[str] = Cookie(default=None),
+    yw_login_hint: Optional[str] = Cookie(default=None),
+    conf: Configuration = Depends(get_configuration),
 ):
     """
         Return the details of the current session, as determined by AuthMiddleware
@@ -71,8 +74,10 @@ async def get_session_details(
     if yw_jwt_t:
         real_session = SessionHandler(jwt_cache=conf.jwt_cache, session_uuid=yw_jwt_t)
         real_user_info = user_info_from_json(real_session.get_access_token())
-        return SessionImpersonationDetails(userInfo=user_info,
-                                           realUserInfo=real_user_info,
-                                           remembered=yw_login_hint is not None)
+        return SessionImpersonationDetails(
+            userInfo=user_info,
+            realUserInfo=real_user_info,
+            remembered=yw_login_hint is not None,
+        )
     else:
         return SessionDetails(userInfo=user_info, remembered=yw_login_hint is not None)

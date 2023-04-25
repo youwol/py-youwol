@@ -6,17 +6,16 @@ from pathlib import Path
 from typing import Union, List, Type, cast, TypeVar, Optional
 
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def get_object_from_module(
-        module_absolute_path: Path,
-        object_or_class_name: str,
-        object_type: Type[T],
-        additional_src_absolute_paths: Optional[Union[Path, List[Path]]] = None,
-        **object_instantiation_kwargs
+    module_absolute_path: Path,
+    object_or_class_name: str,
+    object_type: Type[T],
+    additional_src_absolute_paths: Optional[Union[Path, List[Path]]] = None,
+    **object_instantiation_kwargs,
 ) -> T:
-
     if additional_src_absolute_paths is None:
         additional_src_absolute_paths = []
 
@@ -29,7 +28,9 @@ def get_object_from_module(
 
     def get_instance_from_module(imported_module):
         if not hasattr(imported_module, object_or_class_name):
-            raise NameError(f"{module_absolute_path} : Expected class '{object_or_class_name}' not found")
+            raise NameError(
+                f"{module_absolute_path} : Expected class '{object_or_class_name}' not found"
+            )
 
         maybe_class_or_var = imported_module.__getattribute__(object_or_class_name)
         return cast(object_type, maybe_class_or_var(**object_instantiation_kwargs))

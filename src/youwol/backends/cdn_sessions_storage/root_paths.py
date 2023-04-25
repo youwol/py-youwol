@@ -1,7 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
 from starlette.requests import Request
 
-from youwol.backends.cdn_sessions_storage.configurations import Configuration, get_configuration, Constants
+from youwol.backends.cdn_sessions_storage.configurations import (
+    Configuration,
+    get_configuration,
+    Constants,
+)
 from youwol.backends.cdn_sessions_storage.utils import get_path
 from youwol.utils import JSON
 from youwol.utils.context import Context
@@ -15,12 +19,12 @@ async def healthz():
 
 
 async def post_data_generic(
-        request: Request,
-        package: str,
-        name: str,
-        body: JSON,
-        namespace: str = None,
-        configuration: Configuration = Depends(get_configuration)
+    request: Request,
+    package: str,
+    name: str,
+    body: JSON,
+    namespace: str = None,
+    configuration: Configuration = Depends(get_configuration),
 ):
     """
 
@@ -36,101 +40,121 @@ async def post_data_generic(
         empty response '{}'
     """
     async with Context.start_ep(
-            request=request,
-            with_attributes={"name": name, "package": package}
+        request=request, with_attributes={"name": name, "package": package}
     ) as ctx:
         await configuration.storage.post_json(
-            path=get_path(request=request, package=package, name=name, namespace=namespace),
+            path=get_path(
+                request=request, package=package, name=name, namespace=namespace
+            ),
             json=body,
             owner=Constants.default_owner,
-            headers=ctx.headers()
+            headers=ctx.headers(),
         )
         return {}
 
 
 @router.post("/applications/{package}/{name}")
 async def post_data_no_namespace(
-        request: Request,
-        package: str,
-        name: str,
-        body: JSON,
-        configuration: Configuration = Depends(get_configuration)
+    request: Request,
+    package: str,
+    name: str,
+    body: JSON,
+    configuration: Configuration = Depends(get_configuration),
 ):
-    return await post_data_generic(request=request, package=package, name=name, body=body,
-                                   configuration=configuration)
+    return await post_data_generic(
+        request=request,
+        package=package,
+        name=name,
+        body=body,
+        configuration=configuration,
+    )
 
 
 @router.post("/applications/{namespace}/{package}/{name}")
 async def post_data_with_namespace(
-        request: Request,
-        namespace: str,
-        package: str,
-        name: str,
-        body: JSON,
-        configuration: Configuration = Depends(get_configuration)
+    request: Request,
+    namespace: str,
+    package: str,
+    name: str,
+    body: JSON,
+    configuration: Configuration = Depends(get_configuration),
 ):
-    return await post_data_generic(request=request, namespace=namespace, package=package, name=name, body=body,
-                                   configuration=configuration)
+    return await post_data_generic(
+        request=request,
+        namespace=namespace,
+        package=package,
+        name=name,
+        body=body,
+        configuration=configuration,
+    )
 
 
 async def delete_data_generic(
-        request: Request,
-        package: str,
-        name: str,
-        namespace: str = None,
-        configuration: Configuration = Depends(get_configuration)
+    request: Request,
+    package: str,
+    name: str,
+    namespace: str = None,
+    configuration: Configuration = Depends(get_configuration),
 ):
     async with Context.start_ep(
-            request=request,
-            with_attributes={"name": name, "package": package}
+        request=request, with_attributes={"name": name, "package": package}
     ) as ctx:
         await configuration.storage.delete(
-            path=get_path(request=request, package=package, name=name, namespace=namespace),
+            path=get_path(
+                request=request, package=package, name=name, namespace=namespace
+            ),
             owner=Constants.default_owner,
-            headers=ctx.headers()
+            headers=ctx.headers(),
         )
         return {}
 
 
 @router.delete("/applications/{package}/{name}")
 async def delete_data_no_namespace(
-        request: Request,
-        package: str,
-        name: str,
-        configuration: Configuration = Depends(get_configuration)
+    request: Request,
+    package: str,
+    name: str,
+    configuration: Configuration = Depends(get_configuration),
 ):
-    return await delete_data_generic(request=request, package=package, name=name, configuration=configuration)
+    return await delete_data_generic(
+        request=request, package=package, name=name, configuration=configuration
+    )
 
 
 @router.delete("/applications/{namespace}/{package}/{name}")
 async def delete_data_with_namespace(
-        request: Request,
-        namespace: str,
-        package: str,
-        name: str,
-        configuration: Configuration = Depends(get_configuration)
+    request: Request,
+    namespace: str,
+    package: str,
+    name: str,
+    configuration: Configuration = Depends(get_configuration),
 ):
-    return await delete_data_generic(request=request, namespace=namespace, package=package, name=name,
-                                     configuration=configuration)
+    return await delete_data_generic(
+        request=request,
+        namespace=namespace,
+        package=package,
+        name=name,
+        configuration=configuration,
+    )
 
 
 async def get_data_generic(
-        request: Request,
-        package: str,
-        name: str,
-        namespace: str = None,
-        configuration: Configuration = Depends(get_configuration)
+    request: Request,
+    package: str,
+    name: str,
+    namespace: str = None,
+    configuration: Configuration = Depends(get_configuration),
 ):
     async with Context.start_ep(
-            request=request,
-            with_attributes={"name": name, "package": package}
+        request=request, with_attributes={"name": name, "package": package}
     ) as ctx:
-
         try:
             return await configuration.storage.get_json(
-                path=get_path(request=request, package=package, name=name, namespace=namespace),
+                path=get_path(
+                    request=request, package=package, name=name, namespace=namespace
+                ),
                 owner=Constants.default_owner,
-                headers=ctx.headers()
+                headers=ctx.headers(),
             )
         except HTTPException as e:
             if e.status_code == 404:
@@ -139,21 +163,28 @@ async def get_data_generic(
 
 @router.get("/applications/{package}/{name}")
 async def get_data_no_namespace(
-        request: Request,
-        package: str,
-        name: str,
-        configuration: Configuration = Depends(get_configuration)
+    request: Request,
+    package: str,
+    name: str,
+    configuration: Configuration = Depends(get_configuration),
 ):
-    return await get_data_generic(request=request, package=package, name=name, configuration=configuration)
+    return await get_data_generic(
+        request=request, package=package, name=name, configuration=configuration
+    )
 
 
 @router.get("/applications/{namespace}/{package}/{name}")
 async def get_data_with_namespace(
-        request: Request,
-        namespace: str,
-        package: str,
-        name: str,
-        configuration: Configuration = Depends(get_configuration)
+    request: Request,
+    namespace: str,
+    package: str,
+    name: str,
+    configuration: Configuration = Depends(get_configuration),
 ):
-    return await get_data_generic(request=request, namespace=namespace, package=package, name=name,
-                                  configuration=configuration)
+    return await get_data_generic(
+        request=request,
+        namespace=namespace,
+        package=package,
+        name=name,
+        configuration=configuration,
+    )

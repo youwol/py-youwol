@@ -1,7 +1,15 @@
 from fastapi import APIRouter
 
-from youwol.app.environment import Configuration, System, LocalEnvironment, CustomEndPoints, Customization
-from youwol.app.environment.models.predefined_configs.py_youwol_tour.starter import init_working_folders
+from youwol.app.environment import (
+    Configuration,
+    System,
+    LocalEnvironment,
+    CustomEndPoints,
+    Customization,
+)
+from youwol.app.environment.models.predefined_configs.py_youwol_tour.starter import (
+    init_working_folders,
+)
 
 from youwol.utils.servers.fast_api import FastApiRouter
 
@@ -29,18 +37,14 @@ def backend_service():
 Configuration(
     system=System(
         localEnvironment=LocalEnvironment(
-            dataDir=ecosystem_folder,
-            cacheDir=cache_folder
+            dataDir=ecosystem_folder, cacheDir=cache_folder
         )
     ),
     customization=Customization(
         endPoints=CustomEndPoints(
             routers=[
-                FastApiRouter(
-                    base_path="/api/users-service",
-                    router=backend_service()
-                )
+                FastApiRouter(base_path="/api/users-service", router=backend_service())
             ]
         )
-    )
+    ),
 )

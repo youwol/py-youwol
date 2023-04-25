@@ -46,7 +46,6 @@ class Constants:
 
 @dataclass(frozen=True)
 class Configuration:
-
     storage: Storage
     doc_db: DocDb
     doc_db_component: DocDb

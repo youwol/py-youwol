@@ -5,7 +5,6 @@ from youwol.utils.clients.assets_gateway.assets_gateway import AssetsGatewayClie
 
 @dataclass(frozen=True)
 class Configuration:
-
     assets_gtw_client: AssetsGatewayClient
 
 

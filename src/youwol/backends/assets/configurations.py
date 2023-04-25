@@ -7,15 +7,16 @@ from youwol.utils import Storage, DocDb, FileSystemInterface
 @dataclass(frozen=True)
 class Constants:
     namespace: str = "assets"
-    public_owner = '/youwol-users'
+    public_owner = "/youwol-users"
 
 
-FileSystemImplementation = TypeVar('FileSystemImplementation', bound=FileSystemInterface)
+FileSystemImplementation = TypeVar(
+    "FileSystemImplementation", bound=FileSystemInterface
+)
 
 
 @dataclass(frozen=True)
 class Configuration:
-
     file_system: FileSystemImplementation
     storage: Storage
     doc_db_asset: DocDb

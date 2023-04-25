@@ -5,7 +5,9 @@ from typing import Union, Optional, Callable, Awaitable, TypeVar
 from youwol.utils.clients.docdb.docdb import DocDbClient as RemoteDocDb
 from youwol.utils.clients.docdb.local_docdb import LocalDocDbClient as LocalDocDb
 from youwol.utils.clients.file_system import FileSystemInterface
-from youwol.utils.clients.storage.local_storage import LocalStorageClient as LocalStorage
+from youwol.utils.clients.storage.local_storage import (
+    LocalStorageClient as LocalStorage,
+)
 from youwol.utils.clients.storage.storage import StorageClient as RemoteStorage
 from youwol.utils.http_clients.cdn_backend import LIBRARIES_TABLE
 
@@ -17,19 +19,20 @@ DocDb = Union[RemoteDocDb, LocalDocDb]
 class Constants:
     namespace: str = "cdn"
     owner: str = "/youwol-users"
-    allowed_prerelease = ['wip', 'alpha', 'alpha-wip', 'beta', 'beta-wip']
+    allowed_prerelease = ["wip", "alpha", "alpha-wip", "beta", "beta-wip"]
     schema_docdb = LIBRARIES_TABLE
 
 
-FileSystemImplementation = TypeVar('FileSystemImplementation', bound=FileSystemInterface)
+FileSystemImplementation = TypeVar(
+    "FileSystemImplementation", bound=FileSystemInterface
+)
 
 
 @dataclass(frozen=True)
 class Configuration:
-
     file_system: FileSystemImplementation
     doc_db: DocDb
-    required_libs:  Optional[Path] = None
+    required_libs: Optional[Path] = None
 
 
 class Dependencies:

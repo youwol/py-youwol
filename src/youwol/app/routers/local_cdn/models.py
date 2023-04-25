@@ -38,8 +38,8 @@ class CdnPackageResponse(CdnPackage):
 
 
 class UpdateStatus(Enum):
-    upToDate = 'upToDate'
-    mismatch = 'mismatch'
+    upToDate = "upToDate"
+    mismatch = "mismatch"
     remoteAhead = "remoteAhead"
     localAhead = "localAhead"
 
@@ -99,10 +99,10 @@ class DownloadedPackageResponse(BaseModel):
 
 
 class Event(Enum):
-    downloadStarted = 'downloadStarted'
-    downloadDone = 'downloadDone'
-    updateCheckStarted = 'updateCheckStarted'
-    updateCheckDone = 'updateCheckDone'
+    downloadStarted = "downloadStarted"
+    downloadDone = "downloadDone"
+    updateCheckStarted = "updateCheckStarted"
+    updateCheckDone = "updateCheckDone"
 
 
 class PackageEventResponse(BaseModel):

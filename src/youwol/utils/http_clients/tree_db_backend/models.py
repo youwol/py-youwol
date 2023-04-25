@@ -187,7 +187,7 @@ class GetRecordsBody(BaseModel):
 
 
 FILES_TABLE = TableBody(
-    name='items',
+    name="items",
     version="0.0",
     columns=[
         Column(name="item_id", type="text"),
@@ -197,22 +197,22 @@ FILES_TABLE = TableBody(
         Column(name="group_id", type="text"),
         Column(name="name", type="text"),
         Column(name="type", type="text"),
-        Column(name="metadata", type="text")
+        Column(name="metadata", type="text"),
     ],
     partition_key=["item_id"],
-    clustering_columns=[]
+    clustering_columns=[],
 )
 
 FILES_TABLE_PARENT_INDEX = SecondaryIndex(
-    name="items_by_parent",
-    identifier=IdentifierSI(column_name='folder_id'))
+    name="items_by_parent", identifier=IdentifierSI(column_name="folder_id")
+)
 
 FILES_TABLE_RELATED_INDEX = SecondaryIndex(
-    name="items_by_related",
-    identifier=IdentifierSI(column_name='related_id'))
+    name="items_by_related", identifier=IdentifierSI(column_name="related_id")
+)
 
 FOLDERS_TABLE = TableBody(
-    name='folders',
+    name="folders",
     version="0.0",
     columns=[
         Column(name="folder_id", type="text"),
@@ -221,35 +221,35 @@ FOLDERS_TABLE = TableBody(
         Column(name="group_id", type="text"),
         Column(name="name", type="text"),
         Column(name="type", type="text"),
-        Column(name="metadata", type="text")
+        Column(name="metadata", type="text"),
     ],
     partition_key=["folder_id"],
-    clustering_columns=[]
+    clustering_columns=[],
 )
 
 FOLDERS_TABLE_PARENT_INDEX = SecondaryIndex(
-    name="folders_by_parent",
-    identifier=IdentifierSI(column_name='parent_folder_id'))
+    name="folders_by_parent", identifier=IdentifierSI(column_name="parent_folder_id")
+)
 
 DRIVES_TABLE = TableBody(
-    name='drives',
+    name="drives",
     version="0.0",
     columns=[
         Column(name="drive_id", type="text"),
         Column(name="group_id", type="text"),
         Column(name="name", type="text"),
-        Column(name="metadata", type="text")
+        Column(name="metadata", type="text"),
     ],
     partition_key=["drive_id"],
-    clustering_columns=[]
+    clustering_columns=[],
 )
 
 DRIVES_TABLE_PARENT_INDEX = SecondaryIndex(
-    name="drives_by_parent",
-    identifier=IdentifierSI(column_name='group_id'))
+    name="drives_by_parent", identifier=IdentifierSI(column_name="group_id")
+)
 
 DELETED_TABLE = TableBody(
-    name='deleted',
+    name="deleted",
     version="0.0",
     columns=[
         Column(name="deleted_id", type="text"),
@@ -263,14 +263,14 @@ DELETED_TABLE = TableBody(
         Column(name="parent_folder_id", type="text"),
     ],
     partition_key=["deleted_id"],
-    clustering_columns=[]
+    clustering_columns=[],
 )
 
 DELETED_TABLE_DRIVE_INDEX = SecondaryIndex(
-    name="deleted_by_drive",
-    identifier=IdentifierSI(column_name='drive_id'))
+    name="deleted_by_drive", identifier=IdentifierSI(column_name="drive_id")
+)
 
-TDocDb = TypeVar('TDocDb')
+TDocDb = TypeVar("TDocDb")
 
 
 def create_doc_dbs(factory_db: TDocDb, **kwargs) -> DocDbs:
@@ -278,26 +278,35 @@ def create_doc_dbs(factory_db: TDocDb, **kwargs) -> DocDbs:
         keyspace_name=DocDbs.keyspace_name,
         table_body=FILES_TABLE,
         secondary_indexes=[FILES_TABLE_PARENT_INDEX, FILES_TABLE_RELATED_INDEX],
-        **kwargs)
+        **kwargs,
+    )
 
     folders_db = factory_db(
         keyspace_name=DocDbs.keyspace_name,
         table_body=FOLDERS_TABLE,
         secondary_indexes=[FOLDERS_TABLE_PARENT_INDEX],
-        **kwargs)
+        **kwargs,
+    )
 
     drives_db = factory_db(
         keyspace_name=DocDbs.keyspace_name,
         table_body=DRIVES_TABLE,
         secondary_indexes=[DRIVES_TABLE_PARENT_INDEX],
-        **kwargs)
+        **kwargs,
+    )
 
     deleted_db = factory_db(
         keyspace_name=DocDbs.keyspace_name,
         table_body=DELETED_TABLE,
         secondary_indexes=[DELETED_TABLE_DRIVE_INDEX],
-        **kwargs)
+        **kwargs,
+    )
 
-    doc_dbs = DocDbs(items_db=files_db, folders_db=folders_db, drives_db=drives_db, deleted_db=deleted_db)
+    doc_dbs = DocDbs(
+        items_db=files_db,
+        folders_db=folders_db,
+        drives_db=drives_db,
+        deleted_db=deleted_db,
+    )
 
     return doc_dbs

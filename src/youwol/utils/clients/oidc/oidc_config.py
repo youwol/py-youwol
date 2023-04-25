@@ -53,10 +53,12 @@ class OidcConfig:
 
     async def token_decode(self, token: str):
         jwks_client = await self.jwks_client()
-        token_data = jwt.decode(jwt=token,
-                                key=jwks_client.get_signing_key_from_jwt(token).key,
-                                algorithms=await self.jwt_algos(),
-                                options={"verify_aud": False})
+        token_data = jwt.decode(
+            jwt=token,
+            key=jwks_client.get_signing_key_from_jwt(token).key,
+            algorithms=await self.jwt_algos(),
+            options={"verify_aud": False},
+        )
         return token_data
 
     async def jwt_algos(self):
@@ -75,7 +77,9 @@ class OidcConfig:
             async with aiohttp.ClientSession() as session:
                 async with session.get(well_known_url) as resp:
                     if resp.status != 200:
-                        raise RuntimeError(f"Cannot fetch OpenId configuration at well-known URL '{well_known_url}'")
+                        raise RuntimeError(
+                            f"Cannot fetch OpenId configuration at well-known URL '{well_known_url}'"
+                        )
                     else:
                         json = await resp.json()
             self._openid_configuration = OpenIdConfiguration.parse_obj(json)
@@ -85,58 +89,61 @@ class OidcConfig:
 
 def random_code_verifier():
     choices = string.ascii_letters + string.digits + "-._~"
-    return ''.join((random.choice(choices) for _ in range(128)))
+    return "".join((random.choice(choices) for _ in range(128)))
 
 
 class OidcForClient:
-
     def __init__(self, config: OidcConfig, client: Client):
         self._config = config
         self._client = client
 
-    async def auth_flow_url(self, state: str, redirect_uri: str, login_hint: Optional[str]):
+    async def auth_flow_url(
+        self, state: str, redirect_uri: str, login_hint: Optional[str]
+    ):
         conf = await self._config.openid_configuration()
         url = URL(conf.authorization_endpoint)
         params = {
-            'response_type': 'code',
-            'client_id': self._client.client_id,
-            'state': state,
-            'scope': 'openid',
-            'nonce': str(uuid.uuid4()),
-            'redirect_uri': redirect_uri,
-            'response_mode': 'query'
+            "response_type": "code",
+            "client_id": self._client.client_id,
+            "state": state,
+            "scope": "openid",
+            "nonce": str(uuid.uuid4()),
+            "redirect_uri": redirect_uri,
+            "response_mode": "query",
         }
 
         if isinstance(self._client, PrivateClient):
-            params['client_secret'] = self._client.client_secret
+            params["client_secret"] = self._client.client_secret
 
         if login_hint:
-            params['login_hint'] = login_hint
+            params["login_hint"] = login_hint
 
         code_verifier = random_code_verifier()
-        code_challenge = hashlib.sha256(code_verifier.encode('ascii')).digest()
-        params['code_challenge'] = base64.urlsafe_b64encode(code_challenge).decode('ascii').replace('=', '')
-        params['code_challenge_method'] = 'S256'
+        code_challenge = hashlib.sha256(code_verifier.encode("ascii")).digest()
+        params["code_challenge"] = (
+            base64.urlsafe_b64encode(code_challenge).decode("ascii").replace("=", "")
+        )
+        params["code_challenge_method"] = "S256"
 
         return url.replace_query_params(**params), code_verifier
 
-    async def auth_flow_handle_cb(self, code: str, redirect_uri: str, code_verifier: str):
+    async def auth_flow_handle_cb(
+        self, code: str, redirect_uri: str, code_verifier: str
+    ):
         conf = await self._config.openid_configuration()
         params = {
-            'code': code,
-            'grant_type': 'authorization_code',
-            'client_id': self._client.client_id,
-            'redirect_uri': redirect_uri,
-            'code_verifier': code_verifier
+            "code": code,
+            "grant_type": "authorization_code",
+            "client_id": self._client.client_id,
+            "redirect_uri": redirect_uri,
+            "code_verifier": code_verifier,
         }
 
         if isinstance(self._client, PrivateClient):
-            params['client_secret'] = self._client.client_secret
+            params["client_secret"] = self._client.client_secret
 
         async with aiohttp.ClientSession() as session:
-            async with session.post(conf.token_endpoint,
-                                    data=params
-                                    ) as resp:
+            async with session.post(conf.token_endpoint, data=params) as resp:
                 status = resp.status
                 token = await resp.json()
                 if status != 200:
@@ -149,14 +156,12 @@ class OidcForClient:
             raise RuntimeError(f"Client {self._client.client_id} is public !")
         conf = await self._config.openid_configuration()
         params = {
-            'grant_type': 'client_credentials',
-            'client_id': self._client.client_id,
-            'client_secret': self._client.client_secret
+            "grant_type": "client_credentials",
+            "client_id": self._client.client_id,
+            "client_secret": self._client.client_secret,
         }
         async with aiohttp.ClientSession() as session:
-            async with session.post(conf.token_endpoint,
-                                    data=params
-                                    ) as resp:
+            async with session.post(conf.token_endpoint, data=params) as resp:
                 status = resp.status
                 tokens = await resp.json()
                 if status != 200:
@@ -168,20 +173,18 @@ class OidcForClient:
         conf = await self._config.openid_configuration()
 
         params = {
-            'grant_type': 'password',
-            'username': username,
-            'password': password,
-            'client_id': self._client.client_id,
-            'scope': 'openid'
+            "grant_type": "password",
+            "username": username,
+            "password": password,
+            "client_id": self._client.client_id,
+            "scope": "openid",
         }
 
         if isinstance(self._client, PrivateClient):
-            params['client_secret'] = self._client.client_secret
+            params["client_secret"] = self._client.client_secret
 
         async with aiohttp.ClientSession() as session:
-            async with session.post(conf.token_endpoint,
-                                    data=params
-                                    ) as resp:
+            async with session.post(conf.token_endpoint, data=params) as resp:
                 status = resp.status
                 token = await resp.json()
                 if status != 200:
@@ -190,24 +193,21 @@ class OidcForClient:
         return token
 
     async def token_exchange(self, requested_subject: str, subject_token: str):
-
         conf = await self._config.openid_configuration()
 
         params = {
-            'client_id': self._client.client_id,
-            'grant_type': 'urn:ietf:params:oauth:grant-type:token-exchange',
-            'subject_token': subject_token,
-            'requested_token_type': 'urn:ietf:params:oauth:token-type:access_token',
-            'requested_subject': requested_subject
+            "client_id": self._client.client_id,
+            "grant_type": "urn:ietf:params:oauth:grant-type:token-exchange",
+            "subject_token": subject_token,
+            "requested_token_type": "urn:ietf:params:oauth:token-type:access_token",
+            "requested_subject": requested_subject,
         }
 
         if isinstance(self._client, PrivateClient):
-            params['client_secret'] = self._client.client_secret
+            params["client_secret"] = self._client.client_secret
 
         async with aiohttp.ClientSession() as session:
-            async with session.post(conf.token_endpoint,
-                                    data=params
-                                    ) as resp:
+            async with session.post(conf.token_endpoint, data=params) as resp:
                 status = resp.status
                 token = await resp.json()
                 if status != 200:
@@ -219,18 +219,17 @@ class OidcForClient:
         conf = await self._config.openid_configuration()
 
         params = {
-            'client_id': self._client.client_id,
-            'grant_type': 'refresh_token',
-            'refresh_token': refresh_token,
-            'scope': 'openid'
+            "client_id": self._client.client_id,
+            "grant_type": "refresh_token",
+            "refresh_token": refresh_token,
+            "scope": "openid",
         }
 
         if isinstance(self._client, PrivateClient):
-            params['client_secret'] = self._client.client_secret
+            params["client_secret"] = self._client.client_secret
 
         async with aiohttp.ClientSession() as session:
-            async with session.post(conf.token_endpoint,
-                                    data=params) as resp:
+            async with session.post(conf.token_endpoint, data=params) as resp:
                 status = resp.status
                 tokens = await resp.json()
                 if status != 200:

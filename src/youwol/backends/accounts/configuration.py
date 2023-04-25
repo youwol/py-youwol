@@ -13,8 +13,16 @@ class Configuration:
     pkce_cache: CacheClient
     secure_cookies: bool
 
-    def __init__(self, openid_base_url: str, openid_client, keycloak_admin_base_url, admin_client, jwt_cache,
-                 pkce_cache, secure_cookies=True):
+    def __init__(
+        self,
+        openid_base_url: str,
+        openid_client,
+        keycloak_admin_base_url,
+        admin_client,
+        jwt_cache,
+        pkce_cache,
+        secure_cookies=True,
+    ):
         self.openid_base_url = openid_base_url
         self.openid_client = openid_client
         self.keycloak_admin_base_url = keycloak_admin_base_url

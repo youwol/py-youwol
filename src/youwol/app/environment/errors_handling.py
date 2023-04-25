@@ -45,17 +45,16 @@ class CheckDatabasesFolderHealthy(Check):
 
 
 class ConfigurationLoadingStatus(BaseModel):
-
     path: str
     validated: bool = False
     checks: List[Check]
 
 
 class ConfigurationLoadingException(Exception):
-
     def __init__(self, status: ConfigurationLoadingStatus):
-
-        self.failed_check = next(check for check in status.checks if isinstance(check.status, ErrorResponse))
+        self.failed_check = next(
+            check for check in status.checks if isinstance(check.status, ErrorResponse)
+        )
         self.status = status
 
     def __str__(self):
@@ -73,6 +72,5 @@ def format_unknown_error(reason: str, error: Exception):
     cl, exc, tb = sys.exc_info()
     line_number = traceback.extract_tb(tb)[-1][1]
     return ErrorResponse(
-        reason=reason,
-        hints=[f"{error_class} at line {line_number}: {detail}"]
+        reason=reason, hints=[f"{error_class} at line {line_number}: {detail}"]
     )

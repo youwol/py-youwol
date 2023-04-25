@@ -13,12 +13,13 @@ class Constants:
     namespace: str = "data"
 
 
-FileSystemImplementation = TypeVar('FileSystemImplementation', bound=FileSystemInterface)
+FileSystemImplementation = TypeVar(
+    "FileSystemImplementation", bound=FileSystemInterface
+)
 
 
 @dataclass(frozen=True)
 class Configuration(Generic[FileSystemImplementation]):
-
     file_system: FileSystemImplementation
     admin_headers: Optional[Dict[str, str]] = None
 

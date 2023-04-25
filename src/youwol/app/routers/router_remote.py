@@ -10,7 +10,6 @@ router = APIRouter()
 
 
 async def redirect_api_remote(request: Request, context: Context):
-
     async with context.start(action="redirect API in remote") as ctx:
         # One of the header item leads to a server error ... for now only provide authorization
         # headers = {k: v for k, v in request.headers.items()}
@@ -27,41 +26,25 @@ async def redirect_api_remote(request: Request, context: Context):
         )
 
 
-@router.get("/{rest_of_path:path}",
-            summary="return file content")
+@router.get("/{rest_of_path:path}", summary="return file content")
 async def get(request: Request):
-
-    async with Context.start_ep(
-            request=request
-    ) as ctx:
+    async with Context.start_ep(request=request) as ctx:
         return await redirect_api_remote(request=request, context=ctx)
 
 
-@router.post("/{rest_of_path:path}",
-             summary="return file content")
+@router.post("/{rest_of_path:path}", summary="return file content")
 async def post(request: Request):
-
-    async with Context.start_ep(
-            request=request
-    ) as ctx:
+    async with Context.start_ep(request=request) as ctx:
         return await redirect_api_remote(request=request, context=ctx)
 
 
-@router.put("/{rest_of_path:path}",
-            summary="return file content")
+@router.put("/{rest_of_path:path}", summary="return file content")
 async def put(request: Request):
-
-    async with Context.start_ep(
-            request=request
-    ) as ctx:
+    async with Context.start_ep(request=request) as ctx:
         return await redirect_api_remote(request=request, context=ctx)
 
 
-@router.delete("/{rest_of_path:path}",
-               summary="return file content")
+@router.delete("/{rest_of_path:path}", summary="return file content")
 async def delete(request: Request):
-
-    async with Context.start_ep(
-            request=request
-    ) as ctx:
+    async with Context.start_ep(request=request) as ctx:
         return await redirect_api_remote(request=request, context=ctx)

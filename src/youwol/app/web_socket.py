@@ -40,10 +40,7 @@ class WsType(Enum):
     Data = "Data"
 
 
-async def start_web_socket(
-        ws: WebSocket,
-        ws_type: WsType
-        ):
+async def start_web_socket(ws: WebSocket, ws_type: WsType):
     ws_store = web_sockets_store()
     channels = ws_store.data if ws_type == WsType.Data else ws_store.logs
     channels.append(ws)
@@ -54,6 +51,8 @@ async def start_web_socket(
         try:
             _ = await ws.receive_text()
         except WebSocketDisconnect:
-            log_info(f'{ws.scope["client"]} - "WebSocket {ws.scope["path"]}" [disconnected]')
+            log_info(
+                f'{ws.scope["client"]} - "WebSocket {ws.scope["path"]}" [disconnected]'
+            )
             channels.remove(ws)
             break

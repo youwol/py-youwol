@@ -11,14 +11,12 @@ from youwol.utils.clients.treedb.treedb import TreeDbClient
 
 
 class RemoteClients:
-
     @staticmethod
     async def get_assets_gateway_client(remote_host: str) -> AssetsGatewayClient:
         return AssetsGatewayClient(url_base=f"https://{remote_host}/api/assets-gateway")
 
 
 class LocalClients:
-
     @staticmethod
     def base_path(env: YouwolEnvironment):
         return f"http://localhost:{env.httpPort}/api"
@@ -79,7 +77,9 @@ class LocalClients:
         return StoriesClient(url_base=f"{base_path}/stories-backend")
 
     @staticmethod
-    def get_cdn_sessions_storage_client(env: YouwolEnvironment) -> CdnSessionsStorageClient:
+    def get_cdn_sessions_storage_client(
+        env: YouwolEnvironment,
+    ) -> CdnSessionsStorageClient:
         base_path = LocalClients.base_path(env)
         return CdnSessionsStorageClient(url_base=f"{base_path}/cdn-sessions-storage")
 

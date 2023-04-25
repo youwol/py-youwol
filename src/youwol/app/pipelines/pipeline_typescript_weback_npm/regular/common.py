@@ -12,8 +12,10 @@ class Paths(NamedTuple):
 
 def get_dependencies(project: Project):
     package_json = parse_json(project.path / Paths.package_json_file)
-    return set({
-                   **package_json.get("dependencies", {}),
-                   **package_json.get("peerDependencies", {}),
-                   **package_json.get("devDependencies", {})
-               }.keys())
+    return set(
+        {
+            **package_json.get("dependencies", {}),
+            **package_json.get("peerDependencies", {}),
+            **package_json.get("devDependencies", {}),
+        }.keys()
+    )

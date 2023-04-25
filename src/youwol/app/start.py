@@ -6,7 +6,11 @@ from typing import Optional
 import uvicorn
 
 from youwol.app.environment.errors_handling import ConfigurationLoadingException
-from youwol.app.environment.youwol_environment import YouwolEnvironmentFactory, print_invite, YouwolEnvironment
+from youwol.app.environment.youwol_environment import (
+    YouwolEnvironmentFactory,
+    print_invite,
+    YouwolEnvironment,
+)
 from youwol.app.fastapi_app import download_thread, fastapi_app, cleaner_thread
 from youwol.app.main_args import get_main_arguments
 from youwol.app.routers.projects import ProjectLoader
@@ -19,7 +23,7 @@ def assert_free_http_port(http_port: int):
 
 
 def start(shutdown_script_path: Optional[Path] = None):
-    uvicorn_log_level = 'info' if get_main_arguments().verbose else 'critical'
+    uvicorn_log_level = "info" if get_main_arguments().verbose else "critical"
 
     try:
         env: YouwolEnvironment = asyncio.run(YouwolEnvironmentFactory.get())
@@ -49,7 +53,12 @@ def start(shutdown_script_path: Optional[Path] = None):
     try:
         # app: incorrect type. More here: https://github.com/tiangolo/fastapi/issues/3927
         # noinspection PyTypeChecker
-        uvicorn.run(fastapi_app, host="localhost", port=env.httpPort, log_level=uvicorn_log_level)
+        uvicorn.run(
+            fastapi_app,
+            host="localhost",
+            port=env.httpPort,
+            log_level=uvicorn_log_level,
+        )
     except BaseException as e:
         print(traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__))
         raise e

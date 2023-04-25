@@ -9,13 +9,11 @@ from youwol.utils.exceptions import raise_exception_from_response
 
 @dataclass(frozen=True)
 class FilesClient:
-
     url_base: str
 
     headers: Dict[str, str] = field(default_factory=lambda: {})
 
     async def healthz(self, **kwargs):
-
         url = f"{self.url_base}/healthz"
 
         async with aiohttp.ClientSession(headers=self.headers) as session:
@@ -25,7 +23,6 @@ class FilesClient:
                 await raise_exception_from_response(resp, url=url, headers=self.headers)
 
     async def upload(self, data, **kwargs):
-
         url = f"{self.url_base}/files"
 
         async with aiohttp.ClientSession(headers=self.headers) as session:
@@ -35,7 +32,6 @@ class FilesClient:
                 await raise_exception_from_response(resp, url=url, headers=self.headers)
 
     async def get_info(self, file_id: str, **kwargs):
-
         url = f"{self.url_base}/files/{file_id}/info"
 
         async with aiohttp.ClientSession(headers=self.headers) as session:
@@ -45,7 +41,6 @@ class FilesClient:
                 await raise_exception_from_response(resp, url=url, headers=self.headers)
 
     async def update_metadata(self, file_id: str, body, **kwargs):
-
         url = f"{self.url_base}/files/{file_id}/metadata"
         metadata = {k: v for k, v in body.items() if v}
 
@@ -55,11 +50,17 @@ class FilesClient:
                     return await resp.json()
                 await raise_exception_from_response(resp, url=url, headers=self.headers)
 
-    async def get(self, file_id: str, reader: Callable[[ClientResponse], Awaitable[Any]] = None, **kwargs):
-
+    async def get(
+        self,
+        file_id: str,
+        reader: Callable[[ClientResponse], Awaitable[Any]] = None,
+        **kwargs,
+    ):
         url = f"{self.url_base}/files/{file_id}"
 
-        async with aiohttp.ClientSession(headers=self.headers, auto_decompress=False) as session:
+        async with aiohttp.ClientSession(
+            headers=self.headers, auto_decompress=False
+        ) as session:
             async with await session.get(url=url, **kwargs) as resp:
                 if resp.status == 200:
                     if reader:
@@ -68,7 +69,6 @@ class FilesClient:
                 await raise_exception_from_response(resp, url=url, headers=self.headers)
 
     async def remove(self, file_id: str, **kwargs):
-
         url = f"{self.url_base}/files/{file_id}"
 
         async with aiohttp.ClientSession(headers=self.headers) as session:

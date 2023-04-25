@@ -21,7 +21,11 @@ class LocalCacheClient(CacheClient):
         self._cache = {}
 
     def _impl_get(self, key: str) -> str:
-        return self._cache[key].value if key in self._cache and self._cache[key].expire_at > int(time.time()) else None
+        return (
+            self._cache[key].value
+            if key in self._cache and self._cache[key].expire_at > int(time.time())
+            else None
+        )
 
     def _impl_set(self, key: str, value: str):
         self._cache[key] = CacheEntry(value=value)
@@ -43,7 +47,11 @@ class LocalCacheClient(CacheClient):
             return TTL(int(expire_at - int(time.time())))
 
     def clear_expired(self):
-        for key in [key for key, entry in self._cache.items() if entry.expire_at < int(time.time())]:
+        for key in [
+            key
+            for key, entry in self._cache.items()
+            if entry.expire_at < int(time.time())
+        ]:
             self._cache.pop(key, None)
 
 

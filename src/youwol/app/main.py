@@ -11,12 +11,16 @@ from youwol.app.shut_down import shutdown_daemon_script
 def assert_python():
     print(f"Running with python:\n\t{sys.executable}\n\t{sys.version}")
     version_info = sys.version_info
-    if not ((version_info.major == 3 and version_info.minor == 10) or
-            (version_info.major == 3 and version_info.minor == 9) or
-            (version_info.major == 3 and version_info.minor == 8) or
-            (version_info.major == 3 and version_info.minor == 7)):
-        print(f"""Your version of python is not compatible with py-youwol:
-        Recommended: 3.9.x""")
+    if not (
+        (version_info.major == 3 and version_info.minor == 10)
+        or (version_info.major == 3 and version_info.minor == 9)
+        or (version_info.major == 3 and version_info.minor == 8)
+        or (version_info.major == 3 and version_info.minor == 7)
+    ):
+        print(
+            f"""Your version of python is not compatible with py-youwol:
+        Recommended: 3.9.x"""
+        )
         exit(1)
 
 
@@ -31,14 +35,18 @@ def main():
 
         # noinspection PyUnresolvedReferences
         with open("py-youwol.log", "x") as log:
-            with daemon.DaemonContext(pidfile=lockfile.FileLock("py-youwol"), stderr=log, stdout=log):
+            with daemon.DaemonContext(
+                pidfile=lockfile.FileLock("py-youwol"), stderr=log, stdout=log
+            ):
                 from youwol.app.start import start
+
                 shutdown_script_path.write_text(shutdown_daemon_script(pid=os.getpid()))
                 # app: incorrect type. More here: https://github.com/tiangolo/fastapi/issues/3927
                 # noinspection PyTypeChecker
                 start(shutdown_script_path)
     else:
         from youwol.app.start import start
+
         start()
 
 

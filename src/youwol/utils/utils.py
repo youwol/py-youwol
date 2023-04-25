@@ -20,10 +20,10 @@ flatten = itertools.chain.from_iterable
 
 class YouwolHeaders(NamedTuple):
     #  About tracing & headers: https://www.w3.org/TR/trace-context/
-    py_youwol_local_only = 'py-youwol-local-only'
-    youwol_origin = 'youwol-origin'
-    correlation_id = 'x-correlation-id'
-    trace_id = 'x-trace-id'
+    py_youwol_local_only = "py-youwol-local-only"
+    youwol_origin = "youwol-origin"
+    correlation_id = "x-correlation-id"
+    trace_id = "x-trace-id"
     muted_http_errors = "muted_http_errors"
 
     @staticmethod
@@ -41,11 +41,14 @@ class YouwolHeaders(NamedTuple):
     @staticmethod
     def get_muted_http_errors(request: Request) -> Set[int]:
         raw_header = request.headers.get(YouwolHeaders.muted_http_errors, None)
-        return set() if not raw_header else {int(s) for s in raw_header.split(',')}
+        return set() if not raw_header else {int(s) for s in raw_header.split(",")}
 
     @staticmethod
     def patch_request_mute_http_headers(request: Request, status_muted: Set[int]):
-        header = YouwolHeaders.muted_http_errors.encode(), ','.join(str(s) for s in status_muted).encode()
+        header = (
+            YouwolHeaders.muted_http_errors.encode(),
+            ",".join(str(s) for s in status_muted).encode(),
+        )
         request.headers.__dict__["_list"].append(header)
 
 
@@ -54,7 +57,7 @@ def user_info(request: Request):
 
 
 def get_user_id(request: Request):
-    return user_info(request)['sub']
+    return user_info(request)["sub"]
 
 
 def private_group_id(user):
@@ -74,17 +77,21 @@ def get_all_individual_groups(groups: List[str]) -> List[Union[str, None]]:
     def get_combinations(elements: List[str]):
         result = []
         for i in range(1, len(elements)):
-            result.append('/'.join(elements[0:i]))
+            result.append("/".join(elements[0:i]))
         return result
 
-    parts = [group.split('/') for group in groups if group]
+    parts = [group.split("/") for group in groups if group]
     parts_flat = flatten([get_combinations(part) for part in parts])
     parts_flat = [e for e in parts_flat if e] + cast(any, [None])
     return list(set(groups + parts_flat))
 
 
 def get_user_group_ids(user) -> List[Union[str, None]]:
-    group_ids = [to_group_id(g) for g in get_all_individual_groups(user["memberof"]) if g is not None]
+    group_ids = [
+        to_group_id(g)
+        for g in get_all_individual_groups(user["memberof"])
+        if g is not None
+    ]
     return [private_group_id(user)] + group_ids
 
 
@@ -102,7 +109,9 @@ def ensure_group_permission(request: Request, group_id: str):
 
 async def get_youwol_environment(port: int = 2000):
     url = f"http://localhost:{port}/admin/environment/configuration"
-    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
+    async with aiohttp.ClientSession(
+        connector=aiohttp.TCPConnector(verify_ssl=False)
+    ) as session:
         async with await session.post(url=url) as resp:
             if resp.status != 200:
                 raise HTTPException(status_code=resp.status, detail=await resp.read())
@@ -112,40 +121,54 @@ async def get_youwol_environment(port: int = 2000):
 
 async def reload_youwol_environment(port: int):
     url = f"http://localhost:{port}/admin/environment/configuration"
-    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
+    async with aiohttp.ClientSession(
+        connector=aiohttp.TCPConnector(verify_ssl=False)
+    ) as session:
         async with await session.post(url=url) as resp:
             if resp.status != 200:
                 raise HTTPException(status_code=resp.status, detail=await resp.read())
 
 
-def generate_headers_downstream(incoming_headers: Headers,
-                                from_req_fwd: Callable[[List[str]], List[str]] = lambda _keys: []):
+def generate_headers_downstream(
+    incoming_headers: Headers,
+    from_req_fwd: Callable[[List[str]], List[str]] = lambda _keys: [],
+):
     # the following headers are set when a request is sent anyway
-    black_list = ['content-type', 'content-length', 'content-encoding']
+    black_list = ["content-type", "content-length", "content-encoding"]
     headers_keys = [h.lower() for h in incoming_headers.keys()]
-    to_propagate = [h.lower() for h in from_req_fwd(headers_keys)] + \
-                   ['authorization', YouwolHeaders.py_youwol_local_only]
+    to_propagate = [h.lower() for h in from_req_fwd(headers_keys)] + [
+        "authorization",
+        YouwolHeaders.py_youwol_local_only,
+    ]
 
-    return {k: v for k, v in incoming_headers.items() if k.lower() in to_propagate and k.lower() not in black_list}
+    return {
+        k: v
+        for k, v in incoming_headers.items()
+        if k.lower() in to_propagate and k.lower() not in black_list
+    }
 
 
 def chunks(lst, n):
     """Yield successive n-sized chunks from lst."""
     for i in range(0, len(lst), n):
-        yield lst[i:i + n]
+        yield lst[i : i + n]
 
 
-def check_permission_or_raise(target_group: Union[str, None], allowed_groups: List[Union[None, str]]):
+def check_permission_or_raise(
+    target_group: Union[str, None], allowed_groups: List[Union[None, str]]
+):
     if not target_group:
         return
     compatible_groups = [g for g in allowed_groups if target_group in g]
     if len(compatible_groups) == 0:
-        raise HTTPException(status_code=401,
-                            detail=f"scope '{target_group}' not included in user groups")
+        raise HTTPException(
+            status_code=401,
+            detail=f"scope '{target_group}' not included in user groups",
+        )
 
 
 def get_content_type(file_name: Union[str, Path]):
-    extensions = Path(file_name).name.split('.')[1:]
+    extensions = Path(file_name).name.split(".")[1:]
     if "json" in extensions:
         return "application/json"
     if "yaml" in extensions:
@@ -156,23 +179,23 @@ def get_content_type(file_name: Union[str, Path]):
         return "text/css"
     if "woff2" in extensions:
         return "font/woff2"
-    if 'svg' in extensions:
+    if "svg" in extensions:
         return "image/svg+xml"
-    if 'png' in extensions:
+    if "png" in extensions:
         return "image/png"
-    if 'pdf' in extensions:
+    if "pdf" in extensions:
         return "application/pdf"
-    if 'txt' in extensions:
-        return 'text/plain'
-    if 'html' in extensions:
-        return 'text/html'
-    if 'wasm' in extensions:
-        return 'application/wasm'
+    if "txt" in extensions:
+        return "text/plain"
+    if "html" in extensions:
+        return "text/html"
+    if "wasm" in extensions:
+        return "application/wasm"
     return "application/octet-stream"
 
 
 def get_content_encoding(file_name: Union[str, Path]):
-    extension = Path(file_name).name.split('.')[-1]
+    extension = Path(file_name).name.split(".")[-1]
     if extension == "br":
         return "br"
     if extension == "gzip":
@@ -211,7 +234,12 @@ def to_serializable_json_leaf(v):
         v = list(v)
     if isinstance(v, datetime):
         return str(v)
-    if isinstance(v, int) or isinstance(v, float) or isinstance(v, str) or isinstance(v, bool):
+    if (
+        isinstance(v, int)
+        or isinstance(v, float)
+        or isinstance(v, str)
+        or isinstance(v, bool)
+    ):
         return v
     if v is None:
         return None
@@ -220,7 +248,11 @@ def to_serializable_json_leaf(v):
 
 
 def is_json_leaf(v):
-    return not isinstance(v, dict) and not isinstance(v, list) and not isinstance(v, BaseModel)
+    return (
+        not isinstance(v, dict)
+        and not isinstance(v, list)
+        and not isinstance(v, BaseModel)
+    )
 
 
 def to_json_rec(_obj: Union[Dict[str, Any], List[Any]]):
@@ -253,5 +285,9 @@ def to_json(obj: Union[BaseModel, Dict[str, Any]]) -> JSON:
 
 
 async def get_authorization_header(openid_infos: OidcInfos):
-    tokens = await OidcConfig(openid_infos.base_uri).for_client(openid_infos.client).client_credentials_flow()
-    return {'Authorization': f"Bearer {tokens['access_token']}"}
+    tokens = (
+        await OidcConfig(openid_infos.base_uri)
+        .for_client(openid_infos.client)
+        .client_credentials_flow()
+    )
+    return {"Authorization": f"Bearer {tokens['access_token']}"}

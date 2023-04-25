@@ -6,8 +6,7 @@ from youwol.app.pipelines import HelmChartsTargets, DockerRepo
 
 class Environment(BaseModel):
     dockerTarget: DockerRepo = DockerRepo(
-        name="gitlab-docker-repo",
-        host="registry.gitlab.com/youwol/platform"
+        name="gitlab-docker-repo", host="registry.gitlab.com/youwol/platform"
     )
     helmTargets: HelmChartsTargets = HelmChartsTargets()
 

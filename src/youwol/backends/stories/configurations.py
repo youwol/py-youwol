@@ -1,10 +1,20 @@
 from dataclasses import dataclass
 from typing import Union, Callable, Type, Awaitable, Dict, Optional
 
-from youwol.utils import LocalDocDbClient, LocalStorageClient, DocDbClient, StorageClient
+from youwol.utils import (
+    LocalDocDbClient,
+    LocalStorageClient,
+    DocDbClient,
+    StorageClient,
+)
 from youwol.utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
-from youwol.utils.http_clients.stories_backend import DOCUMENTS_TABLE, STORIES_TABLE, DOCUMENTS_TABLE_BY_ID, Content, \
-    GlobalContent
+from youwol.utils.http_clients.stories_backend import (
+    DOCUMENTS_TABLE,
+    STORIES_TABLE,
+    DOCUMENTS_TABLE_BY_ID,
+    Content,
+    GlobalContent,
+)
 from youwol.utils.middlewares import Middleware
 from youwol.utils.middlewares.authentication_local import AuthLocalMiddleware
 
@@ -17,8 +27,10 @@ AuthMiddleware = Union[Type[Middleware], Type[AuthLocalMiddleware]]
 class Constants:
     namespace: str = "stories"
     cache_prefix: str = "stories-backend_"
-    unprotected_paths: Callable[[str], bool] = lambda url: \
-        url.path.split("/")[-1] == "healthz" or url.path.split("/")[-1] == "openapi-docs"
+    unprotected_paths: Callable[[str], bool] = (
+        lambda url: url.path.split("/")[-1] == "healthz"
+        or url.path.split("/")[-1] == "openapi-docs"
+    )
     default_owner = "/youwol-users"
     text_content_type = "text/plain"
     db_schema_documents = DOCUMENTS_TABLE
@@ -40,23 +52,22 @@ return async () => ({
     getComponents: () => [],
     getBlocks: () => [BlockEx]
 })
-"""
+""",
     )
 
     @staticmethod
     def get_default_doc(document_id):
         return Content(
             html=f'<div id="{document_id}" '
-                 f'data-gjs-type="root" class="root" style="height:100%; width:100%; overflow:auto"></div>',
-            css='',
-            components='',
-            styles=''
+            f'data-gjs-type="root" class="root" style="height:100%; width:100%; overflow:auto"></div>',
+            css="",
+            components="",
+            styles="",
         )
 
 
 @dataclass(frozen=True)
 class Configuration:
-
     storage: Storage
     doc_db_stories: DocDb
     doc_db_documents: DocDb

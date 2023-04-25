@@ -11,6 +11,7 @@ class FileObject:
     """
     Subset of Minio's Object class used in youwol
     """
+
     bucket_name: str
     object_id: str
 
@@ -22,14 +23,20 @@ class Metadata(BaseModel):
 
 
 class FileSystemInterface(ABC):
-
     @abstractmethod
     async def ensure_bucket(self):
         raise NotImplementedError
 
     @abstractmethod
-    async def put_object(self, object_id: str, data: io.BytesIO, object_name: str, content_type: str,
-                         content_encoding: str, **kwargs):
+    async def put_object(
+        self,
+        object_id: str,
+        data: io.BytesIO,
+        object_name: str,
+        content_type: str,
+        content_encoding: str,
+        **kwargs,
+    ):
         raise NotImplementedError
 
     @abstractmethod
@@ -41,7 +48,9 @@ class FileSystemInterface(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_object(self, object_id: str, ranges_bytes: List[Tuple[int, int]] = None, **kwargs):
+    async def get_object(
+        self, object_id: str, ranges_bytes: List[Tuple[int, int]] = None, **kwargs
+    ):
         raise NotImplementedError
 
     @abstractmethod
@@ -53,5 +62,7 @@ class FileSystemInterface(ABC):
         pass
 
     @abstractmethod
-    async def list_objects(self, prefix: str, recursive: bool, **kwargs) -> Iterable[FileObject]:
+    async def list_objects(
+        self, prefix: str, recursive: bool, **kwargs
+    ) -> Iterable[FileObject]:
         pass
