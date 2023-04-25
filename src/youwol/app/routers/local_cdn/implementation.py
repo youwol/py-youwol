@@ -13,15 +13,6 @@ from fastapi import HTTPException
 from youwol.app.environment import LocalClients, RemoteClients, YouwolEnvironment
 from youwol.app.routers.commons import Label
 from youwol.app.routers.environment.download_assets.common import create_asset_local
-from youwol.app.routers.local_cdn.models import (
-    CheckUpdateResponse,
-    DownloadedPackageResponse,
-    DownloadPackageBody,
-    Event,
-    PackageEventResponse,
-    PackageVersionInfo,
-    UpdateStatus,
-)
 
 # Youwol backends
 from youwol.backends.cdn import (
@@ -38,6 +29,17 @@ from youwol.utils.clients.assets_gateway.assets_gateway import AssetsGatewayClie
 from youwol.utils.context import Context
 from youwol.utils.http_clients.cdn_backend import Library
 from youwol.utils.http_clients.cdn_backend.utils import resolve_version
+
+# relative
+from .models import (
+    CheckUpdateResponse,
+    DownloadedPackageResponse,
+    DownloadPackageBody,
+    Event,
+    PackageEventResponse,
+    PackageVersionInfo,
+    UpdateStatus,
+)
 
 
 class TargetPackage(NamedTuple):

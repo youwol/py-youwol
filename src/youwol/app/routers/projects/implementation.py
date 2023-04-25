@@ -7,22 +7,6 @@ from typing import List, Tuple
 
 # Youwol application
 from youwol.app.environment import PathsBook, YouwolEnvironment
-from youwol.app.routers.projects.models import (
-    ArtifactResponse,
-    Event,
-    PipelineStepEvent,
-    PipelineStepStatusResponse,
-)
-from youwol.app.routers.projects.models_project import (
-    Artifact,
-    Flow,
-    Link,
-    Manifest,
-    PipelineStep,
-    PipelineStepStatus,
-    Project,
-)
-from youwol.app.routers.projects.projects_loader import ProjectLoader
 
 # Youwol utilities
 from youwol.utils import (
@@ -34,6 +18,24 @@ from youwol.utils import (
 )
 from youwol.utils.context import Context
 from youwol.utils.utils_paths import matching_files, parse_json
+
+# relative
+from .models import (
+    ArtifactResponse,
+    Event,
+    PipelineStepEvent,
+    PipelineStepStatusResponse,
+)
+from .models_project import (
+    Artifact,
+    Flow,
+    Link,
+    Manifest,
+    PipelineStep,
+    PipelineStepStatus,
+    Project,
+)
+from .projects_loader import ProjectLoader
 
 
 def is_step_running(

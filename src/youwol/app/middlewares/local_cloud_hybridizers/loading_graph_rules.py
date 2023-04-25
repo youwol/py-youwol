@@ -13,9 +13,6 @@ from starlette.responses import JSONResponse, Response
 
 # Youwol application
 from youwol.app.environment import YouwolEnvironment
-from youwol.app.middlewares.local_cloud_hybridizers.abstract_local_cloud_dispatch import (
-    AbstractLocalCloudDispatch,
-)
 
 # Youwol backends
 from youwol.backends.cdn import Dependencies, resolve_loading_tree
@@ -24,6 +21,9 @@ from youwol.backends.cdn import Dependencies, resolve_loading_tree
 from youwol.utils import DependenciesError, YouwolHeaders
 from youwol.utils.context import Context
 from youwol.utils.http_clients.cdn_backend import LoadingGraphBody, patch_loading_graph
+
+# relative
+from .abstract_local_cloud_dispatch import AbstractLocalCloudDispatch
 
 
 class GetLoadingGraph(AbstractLocalCloudDispatch):

@@ -18,22 +18,16 @@ from starlette.responses import FileResponse, JSONResponse, Response
 # Youwol application
 from youwol.app.environment import PathsBook, YouwolEnvironment, yw_config
 from youwol.app.routers.commons import Label
-from youwol.app.routers.projects import (
-    ArtifactsResponse,
-    CdnResponse,
-    CdnVersionResponse,
-    CreateProjectFromTemplateBody,
-    CreateProjectFromTemplateResponse,
-    Event,
-    PipelineStatusResponse,
-    PipelineStepEvent,
-    PipelineStepStatusResponse,
-    ProjectsLoadingResults,
-    ProjectStatusResponse,
-    UpdateConfigurationResponse,
-)
-from youwol.app.routers.projects.dependencies import resolve_project_dependencies
-from youwol.app.routers.projects.implementation import (
+from youwol.app.web_socket import LogsStreamer
+
+# Youwol utilities
+from youwol.utils import CommandException, decode_id
+from youwol.utils.context import Context
+from youwol.utils.utils_paths import parse_json, write_json
+
+# relative
+from .dependencies import resolve_project_dependencies
+from .implementation import (
     create_artifacts,
     format_artifact_response,
     get_project_configuration,
@@ -41,18 +35,25 @@ from youwol.app.routers.projects.implementation import (
     get_project_step,
     get_status,
 )
-from youwol.app.routers.projects.models_project import (
+from .models import (
+    ArtifactsResponse,
+    CdnResponse,
+    CdnVersionResponse,
+    CreateProjectFromTemplateBody,
+    Event,
+    PipelineStatusResponse,
+    PipelineStepEvent,
+    PipelineStepStatusResponse,
+    ProjectStatusResponse,
+    UpdateConfigurationResponse,
+)
+from .models_project import (
+    CreateProjectFromTemplateResponse,
     Manifest,
     PipelineStepStatus,
     Project,
 )
-from youwol.app.routers.projects.projects_loader import ProjectLoader
-from youwol.app.web_socket import LogsStreamer
-
-# Youwol utilities
-from youwol.utils import CommandException, decode_id
-from youwol.utils.context import Context
-from youwol.utils.utils_paths import parse_json, write_json
+from .projects_loader import ProjectLoader, ProjectsLoadingResults
 
 router = APIRouter()
 flatten = itertools.chain.from_iterable

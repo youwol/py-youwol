@@ -8,13 +8,8 @@ from typing import Any, Dict, List, Mapping, Optional
 # third parties
 from pydantic import BaseModel
 
-# Youwol application
-from youwol.app.routers.projects.models_project import (
-    Link,
-    Manifest,
-    PipelineStepStatus,
-    Project,
-)
+# relative
+from .models_project import Link, Manifest, PipelineStepStatus, Project
 
 ArtifactId = str
 PipelineStepId = str

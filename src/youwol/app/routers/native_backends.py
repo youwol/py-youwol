@@ -7,21 +7,6 @@ from typing import List
 # third parties
 from fastapi import APIRouter
 
-# Youwol application
-from youwol.app.routers.native_backends_config import (
-    accounts_backend_config_py_youwol,
-    assets_backend_config_py_youwol,
-    assets_gtw_config_py_youwol,
-    cdn_apps_server_config_py_youwol,
-    cdn_config_py_youwol,
-    cdn_session_storage_config_py_youwol,
-    files_backend_config_py_youwol,
-    flux_backend_config_py_youwol,
-    mock_backend_config_py_youwol,
-    stories_config_py_youwol,
-    tree_db_config_py_youwol,
-)
-
 # Youwol backends
 import youwol.backends.accounts as accounts_backend
 import youwol.backends.assets as assets_backend
@@ -34,6 +19,21 @@ import youwol.backends.flux as flux_backend
 import youwol.backends.mock as mock_backend
 import youwol.backends.stories as stories_backend
 import youwol.backends.tree_db as tree_db_backend
+
+# relative
+from .native_backends_config import (
+    accounts_backend_config_py_youwol,
+    assets_backend_config_py_youwol,
+    assets_gtw_config_py_youwol,
+    cdn_apps_server_config_py_youwol,
+    cdn_config_py_youwol,
+    cdn_session_storage_config_py_youwol,
+    files_backend_config_py_youwol,
+    flux_backend_config_py_youwol,
+    mock_backend_config_py_youwol,
+    stories_config_py_youwol,
+    tree_db_config_py_youwol,
+)
 
 router = APIRouter()
 

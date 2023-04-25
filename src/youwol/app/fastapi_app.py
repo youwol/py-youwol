@@ -37,7 +37,6 @@ from youwol.app.routers.environment.download_assets.custom_asset import (
     DownloadCustomAssetTask,
 )
 from youwol.app.routers.projects import ProjectLoader
-from youwol.app.web_socket import WsDataStreamer, WsType, start_web_socket
 
 # Youwol utilities
 from youwol.utils import (
@@ -50,6 +49,9 @@ from youwol.utils import (
 from youwol.utils.context import Context, ContextFactory, InMemoryReporter
 from youwol.utils.middlewares import AuthMiddleware, redirect_to_login
 from youwol.utils.middlewares.root_middleware import RootMiddleware
+
+# relative
+from .web_socket import WsDataStreamer, WsType, start_web_socket
 
 fastapi_app = FastAPI(
     title="Local Dashboard",

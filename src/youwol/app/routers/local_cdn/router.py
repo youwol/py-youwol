@@ -12,13 +12,21 @@ from starlette.requests import Request
 
 # Youwol application
 from youwol.app.environment import LocalClients, YouwolEnvironment
-from youwol.app.routers.local_cdn.implementation import (
+from youwol.app.routers.projects.projects_loader import ProjectLoader
+from youwol.app.web_socket import LogsStreamer
+
+# Youwol utilities
+from youwol.utils import decode_id, encode_id
+from youwol.utils.context import Context
+
+# relative
+from .implementation import (
     check_updates_from_queue,
     download_packages_from_queue,
     get_latest_local_cdn_version,
     get_version_info,
 )
-from youwol.app.routers.local_cdn.models import (
+from .models import (
     CdnPackageLight,
     CdnPackageResponse,
     CdnStatusResponse,
@@ -35,12 +43,6 @@ from youwol.app.routers.local_cdn.models import (
     ResetCdnResponse,
     cdn_topic,
 )
-from youwol.app.routers.projects.projects_loader import ProjectLoader
-from youwol.app.web_socket import LogsStreamer
-
-# Youwol utilities
-from youwol.utils import decode_id, encode_id
-from youwol.utils.context import Context
 
 router = APIRouter()
 

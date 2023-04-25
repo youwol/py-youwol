@@ -7,14 +7,14 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp
 
-# Youwol application
-from youwol.app.middlewares.local_cloud_hybridizers.abstract_local_cloud_dispatch import (
-    AbstractLocalCloudDispatch,
-)
-
 # Youwol utilities
 from youwol.utils import YouWolException, youwol_exception_handler
 from youwol.utils.context import Context, Label
+
+# relative
+from .local_cloud_hybridizers.abstract_local_cloud_dispatch import (
+    AbstractLocalCloudDispatch,
+)
 
 
 class LocalCloudHybridizerMiddleware(BaseHTTPMiddleware):

@@ -12,11 +12,13 @@ from youwol.app.routers.projects.models import (
     ChildToParentConnections,
     DependenciesResponse,
 )
-from youwol.app.routers.projects.models_project import Project
-from youwol.app.routers.projects.projects_loader import ProjectLoader
 
 # Youwol utilities
 from youwol.utils.context import Context
+
+# relative
+from .models_project import Project
+from .projects_loader import ProjectLoader
 
 
 async def check_cyclic_dependency(
