@@ -32,11 +32,9 @@ from youwol.utils.context import Context
 from youwol.utils.utils_paths import copy_tree, list_files
 
 # Youwol pipelines
-from youwol.app.pipelines.pipeline_typescript_weback_npm.regular.build_step import (
-    BuildStep,
-)
-from youwol.app.pipelines.pipeline_typescript_weback_npm.regular.common import Paths
-from youwol.app.pipelines.pipeline_typescript_weback_npm.regular.models import (
+from youwol.pipelines.pipeline_typescript_weback_npm.regular.build_step import BuildStep
+from youwol.pipelines.pipeline_typescript_weback_npm.regular.common import Paths
+from youwol.pipelines.pipeline_typescript_weback_npm.regular.models import (
     InputDataDependency,
 )
 

@@ -67,7 +67,7 @@ the Py-YouWol configuration needs to be updated to include a `WebpackDevServerSw
 
 ```python
 from youwol.app.environment import *
-from youwol.app.pipelines.pipeline_typescript_weback_npm import WebpackDevServerSwitch
+from youwol.pipelines.pipeline_typescript_weback_npm import WebpackDevServerSwitch
 
 Configuration(
     customization = Customization(

@@ -18,9 +18,9 @@ from youwol.app.environment.models.predefined_configs.py_youwol_tour.starter imp
 )
 
 # Youwol pipelines
-import youwol.app.pipelines.pipeline_typescript_weback_npm as pipeline_ts
+import youwol.pipelines.pipeline_typescript_weback_npm as pipeline_ts
 
-from youwol.app.pipelines.pipeline_typescript_weback_npm.regular.webpack_dev_server_switch import (
+from youwol.pipelines.pipeline_typescript_weback_npm.regular.webpack_dev_server_switch import (
     WebpackDevServerSwitch,
 )
 

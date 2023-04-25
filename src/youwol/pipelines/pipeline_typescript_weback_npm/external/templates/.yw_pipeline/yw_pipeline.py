@@ -6,7 +6,7 @@ from youwol.app.routers.projects import IPipelineFactory, Pipeline
 from youwol.utils.context import Context
 
 # Youwol pipelines
-from youwol.app.pipelines.pipeline_typescript_weback_npm.external import (
+from youwol.pipelines.pipeline_typescript_weback_npm.external import (
     PipelineConfig,
     pipeline,
 )

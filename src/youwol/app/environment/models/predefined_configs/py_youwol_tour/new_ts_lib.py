@@ -12,10 +12,10 @@ from youwol.app.environment.models.predefined_configs.py_youwol_tour.starter imp
 )
 
 # Youwol pipelines
-import youwol.app.pipelines.pipeline_typescript_weback_npm as pipeline_ts
+import youwol.pipelines.pipeline_typescript_weback_npm as pipeline_ts
 
-from youwol.app.pipelines import CdnTarget
-from youwol.app.pipelines.pipeline_typescript_weback_npm import (
+from youwol.pipelines import CdnTarget
+from youwol.pipelines.pipeline_typescript_weback_npm import (
     PublicNpmRepo,
     lib_ts_webpack_template,
 )

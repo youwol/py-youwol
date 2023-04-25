@@ -1,6 +1,6 @@
 from youwol.app.environment import YouwolEnvironment
 from youwol.app.routers.projects import IPipelineFactory, BrowserApp, Execution, Link, BrowserAppGraphics
-from youwol.app.pipelines.pipeline_typescript_weback_npm import pipeline, PipelineConfig
+from youwol.pipelines.pipeline_typescript_weback_npm import pipeline, PipelineConfig
 from youwol.utils.context import Context
 
 

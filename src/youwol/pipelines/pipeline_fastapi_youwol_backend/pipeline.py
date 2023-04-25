@@ -31,7 +31,7 @@ from youwol.utils import execute_shell_cmd
 from youwol.utils.context import Context
 
 # Youwol pipelines
-from youwol.app.pipelines.docker_k8s_helm import (
+from youwol.pipelines.docker_k8s_helm import (
     InstallDryRunHelmStep,
     InstallHelmStep,
     InstallHelmStepConfig,
@@ -39,9 +39,7 @@ from youwol.app.pipelines.docker_k8s_helm import (
     PublishDockerStepConfig,
     get_helm_app_version,
 )
-from youwol.app.pipelines.pipeline_fastapi_youwol_backend.environment import (
-    get_environment,
-)
+from youwol.pipelines.pipeline_fastapi_youwol_backend.environment import get_environment
 
 
 def get_dependencies(project: Project) -> Set[str]:

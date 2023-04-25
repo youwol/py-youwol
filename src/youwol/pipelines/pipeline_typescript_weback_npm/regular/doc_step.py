@@ -10,7 +10,7 @@ from youwol.app.routers.projects.models_project import (
 )
 
 # Youwol pipelines
-from youwol.app.pipelines.pipeline_typescript_weback_npm.regular.common import Paths
+from youwol.pipelines.pipeline_typescript_weback_npm.regular.common import Paths
 
 
 class DocStep(PipelineStep):

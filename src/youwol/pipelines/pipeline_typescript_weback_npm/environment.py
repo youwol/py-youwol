@@ -8,8 +8,8 @@ from pydantic import BaseModel
 from youwol.app.environment import UploadTargets
 
 # Youwol pipelines
-from youwol.app.pipelines import CdnTarget
-from youwol.app.pipelines.pipeline_typescript_weback_npm.common.models import NpmRepo
+from youwol.pipelines import CdnTarget
+from youwol.pipelines.pipeline_typescript_weback_npm.common.models import NpmRepo
 
 upload_targets = List[UploadTargets]
 
