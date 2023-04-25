@@ -1,8 +1,13 @@
+# standard library
 import io
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Iterable, Tuple, List, Optional
 
+# typing
+from typing import Iterable, List, Optional, Tuple
+
+# third parties
 from pydantic import BaseModel
 
 

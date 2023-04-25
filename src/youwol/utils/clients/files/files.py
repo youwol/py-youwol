@@ -1,9 +1,15 @@
-from dataclasses import field, dataclass
-from typing import Dict, Callable, Awaitable, Any
+# standard library
+from dataclasses import dataclass, field
 
+# typing
+from typing import Any, Awaitable, Callable, Dict
+
+# third parties
 import aiohttp
+
 from aiohttp import ClientResponse
 
+# Youwol utilities
 from youwol.utils.exceptions import raise_exception_from_response
 
 

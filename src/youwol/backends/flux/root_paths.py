@@ -1,67 +1,70 @@
+# standard library
 import base64
+import io
 import itertools
 import json
 import os
-import io
 import tempfile
 import uuid
 import zipfile
-from pathlib import Path
-from typing import Union, Mapping
 
-from fastapi import (
-    APIRouter,
-    Depends,
-    UploadFile,
-    File,
-    HTTPException,
-    Query as QueryParam,
-)
+from pathlib import Path
+
+# typing
+from typing import Mapping, Union
+
+# third parties
+from fastapi import APIRouter, Depends, File, HTTPException
+from fastapi import Query as QueryParam
+from fastapi import UploadFile
 from starlette.responses import StreamingResponse
 
+# Youwol utilities
 from youwol.utils import (
-    Request,
-    user_info,
-    get_all_individual_groups,
-    to_group_id,
-    asyncio,
-    check_permission_or_raise,
-    RecordsResponse,
     GetRecordsBody,
-    RecordsTable,
-    RecordsKeyspace,
-    RecordsBucket,
-    RecordsDocDb,
-    RecordsStorage,
     Query,
     QueryBody,
+    RecordsBucket,
+    RecordsDocDb,
+    RecordsKeyspace,
+    RecordsResponse,
+    RecordsStorage,
+    RecordsTable,
+    Request,
+    asyncio,
+    check_permission_or_raise,
+    get_all_individual_groups,
+    to_group_id,
+    user_info,
 )
 from youwol.utils.context import Context
 from youwol.utils.http_clients.cdn_backend import PublishResponse, patch_loading_graph
-from youwol.utils.utils_paths import write_json
-from .configurations import Configuration, get_configuration, Constants
 from youwol.utils.http_clients.flux_backend import (
+    BuilderRendering,
+    Component,
+    EditMetadata,
+    LoadingGraph,
+    NewProject,
+    NewProjectResponse,
+    Project,
     Projects,
     ProjectSnippet,
-    Project,
-    NewProjectResponse,
-    NewProject,
-    BuilderRendering,
-    RunnerRendering,
-    Requirements,
-    LoadingGraph,
-    EditMetadata,
-    Component,
     PublishApplicationBody,
+    Requirements,
+    RunnerRendering,
 )
+from youwol.utils.utils_paths import write_json
+
+# relative
+from .configurations import Configuration, Constants, get_configuration
 from .utils import (
-    extract_zip_file,
-    retrieve_project,
-    update_project,
     create_project_from_json,
-    update_metadata,
-    update_component,
+    extract_zip_file,
     retrieve_component,
+    retrieve_project,
+    update_component,
+    update_metadata,
+    update_project,
 )
 from .workflow_new_project import workflow_new_project
 

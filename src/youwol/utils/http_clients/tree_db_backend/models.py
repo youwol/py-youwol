@@ -1,9 +1,12 @@
-from typing import NamedTuple, List, Union, TypeVar, Optional
+# typing
+from typing import List, NamedTuple, Optional, TypeVar, Union
 
+# third parties
 from pydantic import BaseModel
 
-from youwol.utils import TableBody, DocDb, get_valid_keyspace_name
-from youwol.utils.clients.docdb.models import Column, SecondaryIndex, IdentifierSI
+# Youwol utilities
+from youwol.utils import DocDb, TableBody, get_valid_keyspace_name
+from youwol.utils.clients.docdb.models import Column, IdentifierSI, SecondaryIndex
 
 namespace = "tree-db"
 

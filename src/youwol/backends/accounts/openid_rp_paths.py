@@ -1,13 +1,20 @@
+# standard library
 import uuid
+
+# typing
 from typing import Optional
 
+# third parties
 from fastapi import Depends
 from fastapi.params import Cookie
 from starlette.requests import Request
-from starlette.responses import RedirectResponse, JSONResponse
+from starlette.responses import JSONResponse, RedirectResponse
 
-from youwol.backends.accounts.configuration import get_configuration, Configuration
+# Youwol backends
+from youwol.backends.accounts.configuration import Configuration, get_configuration
 from youwol.backends.accounts.root_paths import router
+
+# Youwol utilities
 from youwol.utils import TTL
 from youwol.utils.clients.oidc.oidc_config import OidcConfig
 from youwol.utils.clients.oidc.users_management import KeycloakUsersManagement

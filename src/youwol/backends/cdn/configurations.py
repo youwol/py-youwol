@@ -1,7 +1,11 @@
+# standard library
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Union, Optional, Callable, Awaitable, TypeVar
 
+# typing
+from typing import Awaitable, Callable, Optional, TypeVar, Union
+
+# Youwol utilities
 from youwol.utils.clients.docdb.docdb import DocDbClient as RemoteDocDb
 from youwol.utils.clients.docdb.local_docdb import LocalDocDbClient as LocalDocDb
 from youwol.utils.clients.file_system import FileSystemInterface

@@ -1,21 +1,24 @@
+# standard library
 import asyncio
 import json
-from typing import Mapping, Dict, cast, Optional, Any
 
-from aiohttp import FormData, ClientSession
+# typing
+from typing import Any, Dict, Mapping, Optional, cast
+
+# third parties
+from aiohttp import ClientSession, FormData
 from fastapi import HTTPException
+
+# Youwol application
+from youwol.app.environment.clients import (
+    LocalClients,
+    RemoteClients,
+    YouwolEnvironment,
+)
+from youwol.app.routers.commons import Label, ensure_path, local_path
 from youwol.app.routers.environment.upload_assets.custom_asset import (
     UploadCustomAssetTask,
 )
-
-from youwol.utils.http_clients.tree_db_backend import PathResponse
-from youwol.app.environment.clients import (
-    RemoteClients,
-    LocalClients,
-    YouwolEnvironment,
-)
-from youwol.app.routers.commons import Label
-from youwol.app.routers.commons import local_path, ensure_path
 from youwol.app.routers.environment.upload_assets.data import UploadDataTask
 from youwol.app.routers.environment.upload_assets.flux_project import (
     UploadFluxProjectTask,
@@ -23,12 +26,14 @@ from youwol.app.routers.environment.upload_assets.flux_project import (
 from youwol.app.routers.environment.upload_assets.models import UploadTask
 from youwol.app.routers.environment.upload_assets.package import UploadPackageTask
 from youwol.app.routers.environment.upload_assets.story import UploadStoryTask
-from youwol.utils import decode_id
-from youwol.utils import to_json
+
+# Youwol utilities
+from youwol.utils import decode_id, to_json
 from youwol.utils.clients.assets.assets import AssetsClient
 from youwol.utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from youwol.utils.clients.treedb.treedb import TreeDbClient
 from youwol.utils.context import Context
+from youwol.utils.http_clients.tree_db_backend import PathResponse
 
 
 async def synchronize_permissions_metadata_symlinks(

@@ -1,29 +1,38 @@
+# standard library
 import functools
 import json
 import shutil
+
 from base64 import b64encode
 from pathlib import Path
+
+# typing
 from typing import Dict, NamedTuple
 
+# Youwol application
 from youwol.app.environment import ProjectTemplate
-from youwol.app.pipelines.pipeline_typescript_weback_npm import (
-    get_externals,
-    DevServer,
-    Bundles,
-    MainModule,
-)
-from youwol.app.pipelines.pipeline_typescript_weback_npm.common import (
-    Template,
-    generate_package_json,
-    copy_files_folders,
-    generate_webpack_config,
-    PackageType,
-    Dependencies,
-    RunTimeDeps,
-)
+
+# Youwol utilities
 from youwol.utils.context import Context
 from youwol.utils.http_clients.cdn_backend import get_api_key
 from youwol.utils.utils_paths import sed_inplace
+
+# Youwol pipelines
+from youwol.app.pipelines.pipeline_typescript_weback_npm import (
+    Bundles,
+    DevServer,
+    MainModule,
+    get_externals,
+)
+from youwol.app.pipelines.pipeline_typescript_weback_npm.common import (
+    Dependencies,
+    PackageType,
+    RunTimeDeps,
+    Template,
+    copy_files_folders,
+    generate_package_json,
+    generate_webpack_config,
+)
 
 #  Expose here for backward compatibility
 PackageType = PackageType

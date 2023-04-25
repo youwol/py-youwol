@@ -1,58 +1,65 @@
+# standard library
 import asyncio
 import itertools
 import json
 import uuid
-from typing import Set, Tuple, List, Coroutine, Optional, cast
 
-from fastapi import HTTPException, APIRouter, Depends
+# typing
+from typing import Coroutine, List, Optional, Set, Tuple, cast
+
+# third parties
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi import Query as QueryParam
 from starlette.requests import Request
 
-from youwol.utils import (
-    user_info,
-    get_all_individual_groups,
-    private_group_id,
-    to_group_id,
-    ensure_group_permission,
-)
-from youwol.utils.context import Context
+# Youwol backends
 from youwol.backends.tree_db.configurations import (
     Configuration,
-    get_configuration,
     Constants,
-)
-from youwol.utils.http_clients.tree_db_backend import (
-    GroupsResponse,
-    Group,
-    DriveResponse,
-    DriveBody,
-    DrivesResponse,
-    RenameBody,
-    FolderResponse,
-    FolderBody,
-    ItemResponse,
-    ItemBody,
-    ItemsResponse,
-    MoveResponse,
-    MoveItemBody,
-    EntityResponse,
-    ChildrenResponse,
-    PurgeResponse,
-    PathResponse,
-    BorrowBody,
-    DefaultDriveResponse,
+    get_configuration,
 )
 from youwol.backends.tree_db.utils import (
-    db_post,
-    db_get,
-    get_parent,
-    db_query,
     db_delete,
+    db_get,
+    db_post,
+    db_query,
     doc_to_drive_response,
     doc_to_folder,
     doc_to_item,
-    item_to_doc,
     folder_to_doc,
+    get_parent,
+    item_to_doc,
+)
+
+# Youwol utilities
+from youwol.utils import (
+    ensure_group_permission,
+    get_all_individual_groups,
+    private_group_id,
+    to_group_id,
+    user_info,
+)
+from youwol.utils.context import Context
+from youwol.utils.http_clients.tree_db_backend import (
+    BorrowBody,
+    ChildrenResponse,
+    DefaultDriveResponse,
+    DriveBody,
+    DriveResponse,
+    DrivesResponse,
+    EntityResponse,
+    FolderBody,
+    FolderResponse,
+    Group,
+    GroupsResponse,
+    ItemBody,
+    ItemResponse,
+    ItemsResponse,
+    MoveItemBody,
+    MoveResponse,
+    PathResponse,
+    PurgeResponse,
+    RenameBody,
 )
 
 router = APIRouter(tags=["treedb-backend"])

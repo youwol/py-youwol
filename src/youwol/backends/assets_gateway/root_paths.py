@@ -1,15 +1,17 @@
+# third parties
 from fastapi import APIRouter, Depends
 
+# Youwol backends
 from youwol.backends.assets_gateway.configurations import get_configuration
 from youwol.backends.assets_gateway.routers import (
-    stories_backend,
+    assets_backend,
     cdn_backend,
+    deprecated,
     files_backend,
     flux_backend,
-    treedb_backend,
-    assets_backend,
-    deprecated,
     misc,
+    stories_backend,
+    treedb_backend,
 )
 
 router = APIRouter(tags=["assets-gateway"])

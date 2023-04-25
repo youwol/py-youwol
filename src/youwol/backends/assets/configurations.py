@@ -1,7 +1,11 @@
+# standard library
 from dataclasses import dataclass
-from typing import Union, Callable, Awaitable, Dict, Optional, TypeVar
 
-from youwol.utils import Storage, DocDb, FileSystemInterface
+# typing
+from typing import Awaitable, Callable, Dict, Optional, TypeVar, Union
+
+# Youwol utilities
+from youwol.utils import DocDb, FileSystemInterface, Storage
 
 
 @dataclass(frozen=True)

@@ -1,4 +1,5 @@
-from .configuration import Dependencies, Configuration
+# relative
+from .configuration import Configuration, Dependencies
 from .impersonation_paths import *
 from .openid_rp_paths import *
 from .registration import *

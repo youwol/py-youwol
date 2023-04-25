@@ -1,6 +1,8 @@
-from typing import Union, Callable, Awaitable
+# typing
+from typing import Awaitable, Callable, Union
 
-from youwol.backends.accounts.configuration import Dependencies, Configuration
+# Youwol backends
+from youwol.backends.accounts.configuration import Configuration, Dependencies
 
 
 def get_router(
@@ -11,6 +13,7 @@ def get_router(
     Dependencies.get_configuration = (
         configuration if callable(configuration) else lambda: configuration
     )
+    # Youwol backends
     from youwol.backends.accounts.root_paths import router
 
     return router

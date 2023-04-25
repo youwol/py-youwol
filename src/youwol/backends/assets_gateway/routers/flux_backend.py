@@ -1,28 +1,33 @@
+# standard library
 import asyncio
 
+# third parties
 from fastapi import APIRouter, Depends, Query
 from starlette.requests import Request
 from starlette.responses import Response
 
+# Youwol backends
 from youwol.backends.assets_gateway.configurations import (
     Configuration,
     get_configuration,
 )
 from youwol.backends.assets_gateway.routers.common import (
-    assert_write_permissions_folder_id,
     assert_read_permissions_from_raw_id,
+    assert_write_permissions_folder_id,
     assert_write_permissions_from_raw_id,
     create_asset,
     delete_asset,
 )
 from youwol.backends.assets_gateway.utils import AssetMeta
+
+# Youwol utilities
 from youwol.utils import encode_id
 from youwol.utils.context import Context
 from youwol.utils.http_clients.assets_gateway import NewAssetResponse
 from youwol.utils.http_clients.flux_backend import (
-    Project,
-    NewProject,
     EditMetadata,
+    NewProject,
+    Project,
     ProjectSnippet,
     PublishApplicationBody,
 )

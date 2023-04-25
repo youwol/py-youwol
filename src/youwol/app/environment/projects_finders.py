@@ -1,9 +1,17 @@
+# standard library
 from pathlib import Path
-from typing import Union, List
 
+# typing
+from typing import List, Union
+
+# Youwol
 import youwol
-from youwol.app.environment.paths import PathsBook
+
+# Youwol utilities
 from youwol.utils.utils_paths import FileListing, matching_files
+
+# relative
+from .paths import PathsBook
 
 
 def auto_detect_projects(

@@ -1,11 +1,37 @@
+# standard library
 import functools
 import shutil
-from pathlib import Path
-from typing import List, Optional, Mapping
 
+from pathlib import Path
+
+# typing
+from typing import List, Mapping, Optional
+
+# third parties
 from deepdiff import DeepDiff
 
+# Youwol application
 from youwol.app.environment import PathsBook, YouwolEnvironment
+from youwol.app.routers.projects.implementation import get_project_configuration
+from youwol.app.routers.projects.models_project import (
+    Artifact,
+    CommandPipelineStep,
+    ExplicitNone,
+    FlowId,
+    Manifest,
+    PipelineStep,
+    PipelineStepStatus,
+    Project,
+    parse_json,
+)
+from youwol.app.routers.projects.projects_loader import ProjectLoader
+
+# Youwol utilities
+from youwol.utils import CommandException, execute_shell_cmd, files_check_sum, to_json
+from youwol.utils.context import Context
+from youwol.utils.utils_paths import copy_tree, list_files
+
+# Youwol pipelines
 from youwol.app.pipelines.pipeline_typescript_weback_npm.regular.build_step import (
     BuildStep,
 )
@@ -13,23 +39,6 @@ from youwol.app.pipelines.pipeline_typescript_weback_npm.regular.common import P
 from youwol.app.pipelines.pipeline_typescript_weback_npm.regular.models import (
     InputDataDependency,
 )
-from youwol.app.routers.projects.implementation import get_project_configuration
-from youwol.app.routers.projects.models_project import (
-    Manifest,
-    PipelineStepStatus,
-    ExplicitNone,
-    parse_json,
-    PipelineStep,
-    Artifact,
-    Project,
-    FlowId,
-    CommandPipelineStep,
-)
-from youwol.app.routers.projects.projects_loader import ProjectLoader
-from youwol.utils import files_check_sum, execute_shell_cmd, CommandException
-from youwol.utils import to_json
-from youwol.utils.context import Context
-from youwol.utils.utils_paths import copy_tree, list_files
 
 
 def flatten_dependencies(project: Project):

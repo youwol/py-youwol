@@ -1,15 +1,20 @@
+# standard library
 import shutil
 import tempfile
 import zipfile
+
 from dataclasses import dataclass
 from pathlib import Path
 
+# Youwol application
 from youwol.app.environment.clients import (
-    RemoteClients,
     LocalClients,
+    RemoteClients,
     YouwolEnvironment,
 )
 from youwol.app.routers.environment.upload_assets.models import UploadTask
+
+# Youwol utilities
 from youwol.utils import JSON
 from youwol.utils.context import Context
 from youwol.utils.utils_paths import write_json

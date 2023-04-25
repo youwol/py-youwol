@@ -1,41 +1,46 @@
-from fastapi import APIRouter, Depends, Query
+# third parties
+from fastapi import APIRouter, Depends
+from fastapi import Query
 from fastapi import Query as QueryParam
 from starlette.requests import Request
 from starlette.responses import Response
 
+# Youwol backends
 from youwol.backends.assets_gateway.configurations import (
     Configuration,
     get_configuration,
 )
 from youwol.backends.assets_gateway.routers.common import (
     assert_read_permissions_from_raw_id,
+    assert_write_permissions_folder_id,
     assert_write_permissions_from_raw_id,
     create_asset,
     delete_asset,
-    assert_write_permissions_folder_id,
 )
 from youwol.backends.assets_gateway.utils import AssetMeta
+
+# Youwol utilities
 from youwol.utils.context import Context
 from youwol.utils.http_clients.assets_gateway import NewAssetResponse
 from youwol.utils.http_clients.stories_backend import (
-    StoryResp,
-    GetGlobalContentResp,
-    PostGlobalContentBody,
-    MoveDocumentResp,
-    MoveDocumentBody,
-    GetDocumentResp,
-    PostDocumentBody,
-    PutDocumentBody,
-    GetChildrenResp,
-    PostStoryBody,
-    GetContentResp,
-    PostContentBody,
     DeleteResp,
-    PutStoryBody,
+    GetChildrenResp,
+    GetContentResp,
+    GetDocumentResp,
+    GetGlobalContentResp,
+    MoveDocumentBody,
+    MoveDocumentResp,
+    PostContentBody,
+    PostDocumentBody,
+    PostGlobalContentBody,
     PostPluginBody,
     PostPluginResponse,
-    UpgradePluginsResponse,
+    PostStoryBody,
+    PutDocumentBody,
+    PutStoryBody,
+    StoryResp,
     UpgradePluginsBody,
+    UpgradePluginsResponse,
 )
 
 router = APIRouter(tags=["assets-gateway.stories-backend"])

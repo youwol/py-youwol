@@ -1,11 +1,16 @@
+# standard library
 from enum import Enum
 
+# third parties
 from fastapi import HTTPException
 
-from youwol.app.environment import RemoteClients, LocalClients, YouwolEnvironment
+# Youwol application
+from youwol.app.environment import LocalClients, RemoteClients, YouwolEnvironment
+
+# Youwol utilities
 from youwol.utils import Context
 from youwol.utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
-from youwol.utils.http_clients.tree_db_backend import PathResponse, DriveResponse
+from youwol.utils.http_clients.tree_db_backend import DriveResponse, PathResponse
 
 
 class Label(Enum):

@@ -117,6 +117,19 @@ import_heading_thirdparty = "third parties"
 
 import_heading_firstparty = "Youwol"
 
+known_yw_app = "youwol.app"
+import_heading_yw_app = "Youwol application"
+
+known_yw_backends = "youwol.backends"
+import_heading_yw_backends = "Youwol backends"
+
+known_yw_utils = "youwol.utils"
+import_heading_yw_utils = "Youwol utilities"
+
+known_yw_pipelines = "youwol.app.pipelines"
+import_heading_yw_pipelines = "Youwol pipelines"
+
 import_heading_localfolder = "relative"
 
-sections = ["FUTURE", "STDLIB", "TYPING", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+sections = ["FUTURE", "STDLIB", "TYPING", "THIRDPARTY", "FIRSTPARTY", "YW_APP", "YW_BACKENDS", "YW_UTILS",
+    "YW_PIPELINES", "LOCALFOLDER"]

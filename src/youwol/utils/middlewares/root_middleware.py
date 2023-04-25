@@ -1,17 +1,22 @@
+# standard library
 import uuid
+
+# typing
 from typing import Optional
 
+# third parties
 from starlette.middleware.base import (
     BaseHTTPMiddleware,
-    RequestResponseEndpoint,
     DispatchFunction,
+    RequestResponseEndpoint,
 )
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp
 
+# Youwol utilities
 from youwol.utils import YouwolHeaders
-from youwol.utils.context import ContextFactory, Context, ContextReporter, Label
+from youwol.utils.context import Context, ContextFactory, ContextReporter, Label
 from youwol.utils.request_info_factory import request_info
 
 

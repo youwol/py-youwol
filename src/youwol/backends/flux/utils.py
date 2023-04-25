@@ -1,28 +1,36 @@
+# standard library
 import asyncio
 import itertools
 import json
 import os
 import tempfile
 import zipfile
+
 from pathlib import Path
-from typing import Union, List, Tuple, Coroutine, Mapping
 
-from fastapi import UploadFile, HTTPException
+# typing
+from typing import Coroutine, List, Mapping, Tuple, Union
 
+# third parties
+from fastapi import HTTPException, UploadFile
+
+# Youwol backends
 from youwol.backends.flux.backward_compatibility import (
     convert_project_to_current_version,
 )
 from youwol.backends.flux.configurations import Configuration, Constants
+
+# Youwol utilities
 from youwol.utils import JSON, DocDb, Storage, base64, log_info, write_json
 from youwol.utils.http_clients.cdn_backend import patch_loading_graph
 from youwol.utils.http_clients.flux_backend import (
-    Workflow,
     BuilderRendering,
-    RunnerRendering,
-    Project,
     Component,
-    Requirements,
     DeprecatedData,
+    Project,
+    Requirements,
+    RunnerRendering,
+    Workflow,
 )
 
 flatten = itertools.chain.from_iterable

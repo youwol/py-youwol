@@ -1,43 +1,53 @@
+# standard library
 import asyncio
 import shutil
 import tempfile
 import time
 import uuid
 import zipfile
-from http.client import HTTPException
-from signal import SIGKILL
-from typing import (
-    AsyncContextManager,
-    Union,
-    NamedTuple,
-    List,
-    Callable,
-    Tuple,
-    Awaitable,
-    Optional,
-)
+
 from contextlib import asynccontextmanager
 from datetime import datetime
+from http.client import HTTPException
 from pathlib import Path
+from signal import SIGKILL
 
+# typing
+from typing import (
+    AsyncContextManager,
+    Awaitable,
+    Callable,
+    List,
+    NamedTuple,
+    Optional,
+    Tuple,
+    Union,
+)
+
+# third parties
 import psutil
-from colorama import init as colorama_init
-from colorama import Fore
-from colorama import Style
 import websockets
+
+from colorama import Fore, Style
+from colorama import init as colorama_init
 from psutil import process_iter
 from websockets.exceptions import InvalidMessage
 
+# Youwol
 import youwol
+
+# Youwol application
 from youwol.app.environment import (
-    configuration_from_python,
-    RemoteClients,
-    default_auth_provider,
     AuthorizationProvider,
     Configuration,
+    RemoteClients,
+    configuration_from_python,
+    default_auth_provider,
 )
 from youwol.app.routers.system.router import Log
-from youwol.utils import execute_shell_cmd, Context, parse_json, write_json, OidcConfig
+
+# Youwol utilities
+from youwol.utils import Context, OidcConfig, execute_shell_cmd, parse_json, write_json
 
 colorama_init()
 

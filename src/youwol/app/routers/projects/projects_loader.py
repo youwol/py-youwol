@@ -1,16 +1,22 @@
 from __future__ import annotations
 
+# standard library
 from pathlib import Path
 
-from pydantic import BaseModel
-from typing import List, Union, Optional
+# typing
+from typing import List, Optional, Union
 
-from youwol.app.routers.projects.models import FailureSyntax, Failure
-from youwol.app.routers.projects.models_project import IPipelineFactory
-from youwol.app.environment import YouwolEnvironment, ProjectsFinderHandler
-from youwol.app.routers.projects.models_project import Project
+# third parties
+from pydantic import BaseModel
+
+# Youwol application
+from youwol.app.environment import ProjectsFinderHandler, YouwolEnvironment
 from youwol.app.environment.python_dynamic_loader import get_object_from_module
+from youwol.app.routers.projects.models import Failure, FailureSyntax
+from youwol.app.routers.projects.models_project import IPipelineFactory, Project
 from youwol.app.web_socket import WsDataStreamer
+
+# Youwol utilities
 from youwol.utils import encode_id, log_info
 from youwol.utils.context import Context
 

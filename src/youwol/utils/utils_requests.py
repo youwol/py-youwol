@@ -1,10 +1,16 @@
-from typing import Callable, Awaitable, Union, TypeVar, List, Tuple, Optional
+# standard library
 from urllib.error import URLError
 from urllib.request import urlopen
 
-from aiohttp import ClientSession, TCPConnector, ClientResponse
+# typing
+from typing import Awaitable, Callable, List, Optional, Tuple, TypeVar, Union
+
+# third parties
+from aiohttp import ClientResponse, ClientSession, TCPConnector
 from starlette.requests import Request
 from starlette.responses import Response
+
+# Youwol utilities
 from youwol.utils.exceptions import assert_response
 from youwol.utils.types import JSON
 

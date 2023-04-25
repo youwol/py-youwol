@@ -1,3 +1,4 @@
+# standard library
 import asyncio
 import functools
 import io
@@ -5,68 +6,74 @@ import itertools
 import tempfile
 import uuid
 import zipfile
+
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+# third parties
+from fastapi import APIRouter, Depends, File, HTTPException
 from fastapi import Query as QueryParam
+from fastapi import UploadFile
 from starlette.responses import StreamingResponse
 
+# Youwol backends
 from youwol.backends.stories.configurations import (
     Configuration,
-    get_configuration,
     Constants,
+    get_configuration,
 )
 from youwol.backends.stories.utils import (
-    query_document,
-    position_start,
-    position_next,
-    position_format,
+    create_default_global_contents,
+    delete_docdb_docs_from_page,
+    delete_from_page,
     format_document_resp,
-    get_requirements,
+    get_children_rec,
     get_document_path,
+    get_requirements,
+    get_story_impl,
+    position_format,
+    position_next,
+    position_start,
+    query_document,
     query_story,
     zip_data_filename,
-    zip_requirements_filename,
-    create_default_global_contents,
     zip_global_content_filename,
-    get_story_impl,
-    delete_from_page,
-    get_children_rec,
-    delete_docdb_docs_from_page,
+    zip_requirements_filename,
 )
+
+# Youwol utilities
 from youwol.utils import (
-    Request,
-    user_info,
-    generate_headers_downstream,
-    Query,
-    WhereClause,
     InvalidInput,
+    Query,
+    Request,
+    WhereClause,
+    generate_headers_downstream,
+    user_info,
 )
 from youwol.utils.clients.docdb.models import OrderingClause, QueryBody
 from youwol.utils.context import Context
 from youwol.utils.http_clients.stories_backend import (
-    StoryResp,
-    PutStoryBody,
-    GetDocumentResp,
-    GetChildrenResp,
-    PutDocumentBody,
     DeleteResp,
+    GetChildrenResp,
+    GetContentResp,
+    GetDocumentResp,
+    GetGlobalContentResp,
+    LoadingGraphResponse,
+    MoveDocumentBody,
+    MoveDocumentResp,
     PostContentBody,
     PostDocumentBody,
-    PostStoryBody,
-    GetContentResp,
+    PostGlobalContentBody,
     PostPluginBody,
     PostPluginResponse,
+    PostStoryBody,
+    PutDocumentBody,
+    PutStoryBody,
     Requirements,
-    LoadingGraphResponse,
-    GetGlobalContentResp,
-    PostGlobalContentBody,
-    MoveDocumentResp,
-    MoveDocumentBody,
-    UpgradePluginsResponse,
+    StoryResp,
     UpgradePluginsBody,
+    UpgradePluginsResponse,
 )
-from youwol.utils.utils_paths import parse_json, write_json, extract_zip_file
+from youwol.utils.utils_paths import extract_zip_file, parse_json, write_json
 
 router = APIRouter(tags=["stories-backend"])
 flatten = itertools.chain.from_iterable

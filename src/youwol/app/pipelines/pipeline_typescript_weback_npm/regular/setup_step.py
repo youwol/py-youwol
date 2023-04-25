@@ -1,5 +1,10 @@
-from youwol.app.routers.projects import PipelineStep, FlowId, Project
+# Youwol application
+from youwol.app.routers.projects import FlowId, PipelineStep, Project
+
+# Youwol utilities
 from youwol.utils import Context, files_check_sum
+
+# relative
 from .. import __pipeline_version__
 
 

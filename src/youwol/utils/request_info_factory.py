@@ -1,10 +1,16 @@
+# standard library
 import traceback
+
 from abc import ABC, abstractmethod
+
+# typing
 from typing import Dict, List, Optional, Union
 
+# third parties
 from pydantic import BaseModel
 from starlette.requests import Request
 
+# Youwol utilities
 from youwol.utils import decode_id
 from youwol.utils.context import Label
 

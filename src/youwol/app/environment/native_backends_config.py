@@ -1,18 +1,22 @@
+# standard library
 import shutil
+
 from pathlib import Path
 
-import youwol.backends.cdn as yw_cdn_backend
-import youwol.backends.tree_db as yw_tree_db_backend
+# Youwol backends
 import youwol.backends.assets as yw_assets_backend
-import youwol.backends.flux as yw_flux_backend
 import youwol.backends.assets_gateway as yw_assets_gtw
-import youwol.backends.stories as yw_stories_backend
+import youwol.backends.cdn as yw_cdn_backend
 import youwol.backends.cdn_apps_server as yw_cdn_apps_server
 import youwol.backends.cdn_sessions_storage as yw_cdn_sessions_storage
 import youwol.backends.files as yw_files_backend
+import youwol.backends.flux as yw_flux_backend
 import youwol.backends.mock as yw_mock_backend
+import youwol.backends.stories as yw_stories_backend
+import youwol.backends.tree_db as yw_tree_db_backend
 
-from youwol.utils import LocalStorageClient, CdnClient
+# Youwol utilities
+from youwol.utils import CdnClient, LocalStorageClient
 from youwol.utils.clients.assets.assets import AssetsClient
 from youwol.utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from youwol.utils.clients.docdb.local_docdb import get_local_nosql_instance
@@ -22,11 +26,11 @@ from youwol.utils.clients.flux.flux import FluxClient
 from youwol.utils.clients.stories.stories import StoriesClient
 from youwol.utils.clients.treedb.treedb import TreeDbClient
 from youwol.utils.http_clients.assets_backend import (
-    ASSETS_TABLE,
     ACCESS_HISTORY,
     ACCESS_POLICY,
+    ASSETS_TABLE,
 )
-from youwol.utils.http_clients.flux_backend import PROJECTS_TABLE, COMPONENTS_TABLE
+from youwol.utils.http_clients.flux_backend import COMPONENTS_TABLE, PROJECTS_TABLE
 from youwol.utils.http_clients.tree_db_backend import create_doc_dbs
 
 

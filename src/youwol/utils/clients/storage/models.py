@@ -1,4 +1,7 @@
+# standard library
 from pathlib import Path
+
+# typing
 from typing import NamedTuple, Union
 
 

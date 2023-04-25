@@ -1,14 +1,17 @@
-from typing import List, Optional, Dict
+# typing
+from typing import Dict, List, Optional
 
+# third parties
 from pydantic import BaseModel
 
+# Youwol utilities
 from youwol.utils.clients.docdb.models import (
-    TableBody,
     Column,
-    SecondaryIndex,
     IdentifierSI,
-    TableOptions,
     OrderingClause,
+    SecondaryIndex,
+    TableBody,
+    TableOptions,
 )
 
 

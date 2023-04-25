@@ -1,54 +1,60 @@
+# standard library
 import asyncio
 import io
 import json
-from typing import Optional, Dict, List
 
-from fastapi import UploadFile, File, HTTPException, Form, APIRouter, Depends
+# typing
+from typing import Dict, List, Optional
+
+# third parties
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from starlette.requests import Request
 from starlette.responses import Response
 
+# Youwol backends
 from youwol.backends.cdn.configurations import (
     Configuration,
     Constants,
     get_configuration,
 )
 from youwol.backends.cdn.loading_graph_implementation import (
-    resolve_dependencies_recursive,
-    loading_graph,
-    get_full_exported_symbol,
-    ResolvedQuery,
-    LibName,
     ExportedKey,
+    LibName,
     QueryKey,
+    ResolvedQuery,
     get_api_key,
+    get_full_exported_symbol,
+    loading_graph,
+    resolve_dependencies_recursive,
 )
-
 from youwol.backends.cdn.utils import (
+    fetch_resource,
+    get_path,
+    get_url,
+    library_model_from_doc,
+    list_versions,
+    publish_package,
+    resolve_explicit_version,
+    resolve_resource,
     to_package_id,
     to_package_name,
-    get_url,
-    publish_package,
-    list_versions,
-    fetch_resource,
-    resolve_resource,
-    get_path,
-    resolve_explicit_version,
-    library_model_from_doc,
 )
 from youwol.backends.cdn.utils_indexing import get_version_number_str
+
+# Youwol utilities
 from youwol.utils import PackagesNotFound
-from youwol.utils.clients.docdb.models import WhereClause, QueryBody, Query
+from youwol.utils.clients.docdb.models import Query, QueryBody, WhereClause
 from youwol.utils.context import Context
 from youwol.utils.http_clients.cdn_backend import (
-    PublishResponse,
-    ListVersionsResponse,
-    LoadingGraphResponseV1,
-    LoadingGraphBody,
-    Library,
-    ExplorerResponse,
     DeleteLibraryResponse,
+    ExplorerResponse,
+    Library,
     LibraryQuery,
     LibraryResolved,
+    ListVersionsResponse,
+    LoadingGraphBody,
+    LoadingGraphResponseV1,
+    PublishResponse,
 )
 from youwol.utils.http_clients.cdn_backend.utils import resolve_version
 

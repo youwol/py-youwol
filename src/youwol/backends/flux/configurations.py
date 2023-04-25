@@ -1,8 +1,11 @@
+# standard library
 from dataclasses import dataclass
-from typing import Union, Type, Callable, Awaitable, Optional, Dict
 
-from youwol.utils import Storage, DocDb, CdnClient
+# typing
+from typing import Awaitable, Callable, Dict, Optional, Type, Union
 
+# Youwol utilities
+from youwol.utils import CdnClient, DocDb, Storage
 from youwol.utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from youwol.utils.middlewares import Middleware
 from youwol.utils.middlewares.authentication_local import AuthLocalMiddleware

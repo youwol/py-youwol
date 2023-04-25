@@ -1,6 +1,10 @@
+# standard library
 from dataclasses import dataclass
-from typing import Union, Type, Callable, Awaitable, Optional, Dict, TypeVar, Generic
 
+# typing
+from typing import Awaitable, Callable, Dict, Generic, Optional, Type, TypeVar, Union
+
+# Youwol utilities
 from youwol.utils.clients.file_system.interfaces import FileSystemInterface
 from youwol.utils.middlewares import Middleware
 from youwol.utils.middlewares.authentication_local import AuthLocalMiddleware

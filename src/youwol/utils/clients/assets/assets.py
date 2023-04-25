@@ -1,12 +1,18 @@
+# standard library
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, Callable, Awaitable, Any, Union
 
+# typing
+from typing import Any, Awaitable, Callable, Dict, Union
+
+# third parties
 import aiohttp
-from aiohttp import FormData, ClientResponse
 
-from youwol.utils.utils_requests import extract_aiohttp_response
+from aiohttp import ClientResponse, FormData
+
+# Youwol utilities
 from youwol.utils.exceptions import raise_exception_from_response
+from youwol.utils.utils_requests import extract_aiohttp_response
 
 
 @dataclass(frozen=True)

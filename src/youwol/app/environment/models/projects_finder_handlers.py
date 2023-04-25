@@ -1,28 +1,36 @@
+# standard library
 import asyncio
 import fnmatch
 import itertools
 import time
 import traceback
+
 from pathlib import Path
 from threading import Thread
-from typing import List, Optional, Union, Callable
 
+# typing
+from typing import Callable, List, Optional, Union
+
+# third parties
 from watchdog.events import (
-    FileSystemEventHandler,
-    FileSystemEvent,
     DirCreatedEvent,
     DirDeletedEvent,
+    FileSystemEvent,
+    FileSystemEventHandler,
 )
 from watchdog.observers import Observer
 
+# Youwol application
 from youwol.app.environment.models.models import (
     ConfigPath,
-    ProjectsFinderHandler,
     OnProjectsCountUpdate,
+    ProjectsFinderHandler,
 )
-from youwol.app.environment.projects_finders import auto_detect_projects
 from youwol.app.environment.paths import PathsBook
+from youwol.app.environment.projects_finders import auto_detect_projects
 from youwol.app.web_socket import WsDataStreamer
+
+# Youwol utilities
 from youwol.utils import Context, log_info
 
 

@@ -1,11 +1,20 @@
+# standard library
 import asyncio
+
+# typing
 from typing import Awaitable, Protocol
 
+# third parties
 from fastapi import HTTPException
 
-from youwol.app.environment import RemoteClients, LocalClients, YouwolEnvironment
+# Youwol application
+from youwol.app.environment import LocalClients, RemoteClients, YouwolEnvironment
 from youwol.app.routers.native_backends_config import assets_backend_config_py_youwol
+
+# Youwol backends
 from youwol.backends.assets import put_access_policy_impl
+
+# Youwol utilities
 from youwol.utils import YouwolHeaders
 from youwol.utils.clients.assets.assets import AssetsClient
 from youwol.utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
@@ -13,9 +22,9 @@ from youwol.utils.clients.treedb.treedb import TreeDbClient
 from youwol.utils.context import Context
 from youwol.utils.http_clients.assets_backend import AccessPolicyBody
 from youwol.utils.http_clients.tree_db_backend import (
-    PathResponse,
-    ItemResponse,
     DriveResponse,
+    ItemResponse,
+    PathResponse,
 )
 
 

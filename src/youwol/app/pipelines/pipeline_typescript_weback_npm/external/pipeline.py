@@ -1,24 +1,33 @@
+# standard library
 from pathlib import Path
+
+# typing
 from typing import List, Optional
 
+# third parties
 from pydantic import BaseModel
 
+# Youwol application
 from youwol.app.routers.projects.models_project import (
     Artifact,
-    Flow,
-    Pipeline,
-    PipelineStep,
     FileListing,
+    Flow,
     JsBundle,
     Link,
+    Pipeline,
+    PipelineStep,
 )
+
+# Youwol utilities
+from youwol.utils.context import Context
+from youwol.utils.utils_paths import parse_json
+
+# Youwol pipelines
 from youwol.app.pipelines.pipeline_typescript_weback_npm import (
     create_sub_pipelines_publish_cdn,
 )
 from youwol.app.pipelines.pipeline_typescript_weback_npm.common import InitStep
 from youwol.app.pipelines.publish_cdn import PublishCdnLocalStep
-from youwol.utils.context import Context
-from youwol.utils.utils_paths import parse_json
 
 
 class BuildStep(PipelineStep):

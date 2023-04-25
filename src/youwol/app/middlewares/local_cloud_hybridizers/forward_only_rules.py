@@ -1,16 +1,22 @@
+# typing
+from typing import Optional
+
+# third parties
+from starlette.middleware.base import RequestResponseEndpoint
+from starlette.requests import Request
+from starlette.responses import Response
+
+# Youwol application
 from youwol.app.environment import YouwolEnvironment
 from youwol.app.middlewares.local_cloud_hybridizers.abstract_local_cloud_dispatch import (
     AbstractLocalCloudDispatch,
 )
 from youwol.app.routers.router_remote import redirect_api_remote
 
+# Youwol utilities
 from youwol.utils import YouwolHeaders
-from youwol.utils.request_info_factory import url_match
 from youwol.utils.context import Context
-from typing import Optional
-from starlette.middleware.base import RequestResponseEndpoint
-from starlette.requests import Request
-from starlette.responses import Response
+from youwol.utils.request_info_factory import url_match
 
 
 class ForwardOnly(AbstractLocalCloudDispatch):

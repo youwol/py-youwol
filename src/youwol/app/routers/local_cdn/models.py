@@ -1,8 +1,11 @@
+# standard library
 from enum import Enum
+
+# typing
 from typing import List
 
+# third parties
 from pydantic import BaseModel
-
 
 cdn_topic = "cdn"
 

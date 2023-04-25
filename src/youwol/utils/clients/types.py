@@ -1,10 +1,13 @@
-from typing import Union, List
+# typing
+from typing import List, Union
 
+# third parties
 from pydantic import BaseModel
 
+# Youwol utilities
 from youwol.utils.clients.cache import CacheClient, LocalCacheClient, RedisCacheClient
 from youwol.utils.clients.docdb import DocDbClient, LocalDocDbClient
-from youwol.utils.clients.storage import StorageClient, LocalStorageClient
+from youwol.utils.clients.storage import LocalStorageClient, StorageClient
 
 DocDb = Union[DocDbClient, LocalDocDbClient]
 Storage = Union[StorageClient, LocalStorageClient]

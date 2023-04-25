@@ -1,4 +1,4 @@
-from youwol.app.environment import YouwolEnvironment
+# Youwol utilities
 from youwol.utils import CdnClient
 from youwol.utils.clients.accounts.accounts import AccountsClient
 from youwol.utils.clients.assets.assets import AssetsClient
@@ -8,6 +8,9 @@ from youwol.utils.clients.files import FilesClient
 from youwol.utils.clients.flux.flux import FluxClient
 from youwol.utils.clients.stories.stories import StoriesClient
 from youwol.utils.clients.treedb.treedb import TreeDbClient
+
+# relative
+from .youwol_environment import YouwolEnvironment
 
 
 class RemoteClients:

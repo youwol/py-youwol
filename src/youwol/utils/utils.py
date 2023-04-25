@@ -1,17 +1,24 @@
+# standard library
 import base64
 import itertools
+
 from datetime import datetime
 from enum import Enum
 from pathlib import Path, PosixPath
-from typing import Union, List, cast, Callable, Iterable, Any, NamedTuple, Dict, Set
 
+# typing
+from typing import Any, Callable, Dict, Iterable, List, NamedTuple, Set, Union, cast
+
+# third parties
 import aiohttp
+
 from fastapi import HTTPException
 from pydantic import BaseModel
 from starlette.datastructures import Headers
 from starlette.requests import Request
 
-from youwol.utils.clients.oidc.oidc_config import OidcInfos, OidcConfig
+# Youwol utilities
+from youwol.utils.clients.oidc.oidc_config import OidcConfig, OidcInfos
 from youwol.utils.clients.utils import to_group_id
 from youwol.utils.types import JSON
 

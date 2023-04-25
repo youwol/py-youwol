@@ -1,45 +1,50 @@
+# standard library
 from pathlib import Path
-from typing import Union, Callable, Awaitable, Any, Dict, Tuple
 
-from youwol.app.environment.models.models import (
-    OnProjectsCountUpdate,
-    ProjectsFinderHandler,
-    ConfigPath,
-)
-from youwol.app.environment.models.projects_finder_handlers import (
-    RecursiveProjectFinderHandler,
-    ExplicitProjectsFinderHandler,
-)
-from youwol.app.environment.paths import PathsBook
-from youwol.app.environment.models.defaults import (
-    default_path_cache_dir,
-    default_path_data_dir,
-    default_http_port,
-    default_path_projects_dir,
-    default_platform_host,
-    default_auth_provider,
-    default_ignored_paths,
-)
-from youwol.utils.clients.oidc.oidc_config import PublicClient, PrivateClient
-from youwol.utils.servers.fast_api import FastApiRouter
-from typing import List, Optional
+# typing
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Union
 
+# third parties
 from aiohttp import ClientSession
 from pydantic import BaseModel
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
 
-from youwol.utils.utils_requests import redirect_request, is_server_http_alive
-from youwol.utils import (
-    Context,
-    encode_id,
-    YouWolException,
-    youwol_exception_handler,
-    ResourcesNotFoundException,
-    JSON,
+# Youwol application
+from youwol.app.environment.models.defaults import (
+    default_auth_provider,
+    default_http_port,
+    default_ignored_paths,
+    default_path_cache_dir,
+    default_path_data_dir,
+    default_path_projects_dir,
+    default_platform_host,
 )
+from youwol.app.environment.models.models import (
+    ConfigPath,
+    OnProjectsCountUpdate,
+    ProjectsFinderHandler,
+)
+from youwol.app.environment.models.projects_finder_handlers import (
+    ExplicitProjectsFinderHandler,
+    RecursiveProjectFinderHandler,
+)
+from youwol.app.environment.paths import PathsBook
+
+# Youwol utilities
+from youwol.utils import (
+    JSON,
+    Context,
+    ResourcesNotFoundException,
+    YouWolException,
+    encode_id,
+    youwol_exception_handler,
+)
+from youwol.utils.clients.oidc.oidc_config import PrivateClient, PublicClient
 from youwol.utils.context import Label
+from youwol.utils.servers.fast_api import FastApiRouter
+from youwol.utils.utils_requests import is_server_http_alive, redirect_request
 
 
 class Events(BaseModel):

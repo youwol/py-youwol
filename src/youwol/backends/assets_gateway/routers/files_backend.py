@@ -1,20 +1,28 @@
+# third parties
 from aiohttp import ClientResponse
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from starlette.requests import Request
 from starlette.responses import Response
 
+# Youwol backends
 from youwol.backends.assets_gateway.configurations import (
     Configuration,
     get_configuration,
 )
 from youwol.backends.assets_gateway.routers.common import (
+    assert_read_permissions_from_raw_id,
     assert_write_permissions_folder_id,
     create_asset,
-    assert_read_permissions_from_raw_id,
     delete_asset,
 )
-from youwol.backends.assets_gateway.utils import AssetMeta, AssetImg
-from youwol.backends.assets_gateway.utils import raw_id_to_asset_id, to_asset_resp
+from youwol.backends.assets_gateway.utils import (
+    AssetImg,
+    AssetMeta,
+    raw_id_to_asset_id,
+    to_asset_resp,
+)
+
+# Youwol utilities
 from youwol.utils.context import Context
 from youwol.utils.http_clients.assets_gateway import (
     NewAssetResponse,

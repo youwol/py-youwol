@@ -1,11 +1,18 @@
-from typing import Optional, List
+# typing
+from typing import List, Optional
 
+# third parties
 from starlette.requests import Request
 from starlette.responses import Response
 
+# Youwol application
 from youwol.app.environment import CdnSwitch, YouwolEnvironment
-from youwol.utils import Context, encode_id, ResourcesNotFoundException
+
+# Youwol backends
 import youwol.backends.cdn as cdn_backend
+
+# Youwol utilities
+from youwol.utils import Context, ResourcesNotFoundException, encode_id
 
 
 class WebpackDevServerSwitch(CdnSwitch):

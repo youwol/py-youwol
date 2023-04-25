@@ -1,15 +1,21 @@
+# standard library
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, Union, List, NamedTuple
 
+# typing
+from typing import Dict, List, NamedTuple, Union
+
+# third parties
 import aiohttp
+
 from aiohttp import ClientResponse
 
+# Youwol utilities
 from youwol.utils.clients.docdb.models import (
-    TableBody,
+    Query,
     QueryBody,
     SecondaryIndex,
-    Query,
+    TableBody,
     WhereClause,
 )
 from youwol.utils.clients.utils import aiohttp_resp_parameters

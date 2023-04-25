@@ -1,12 +1,13 @@
+# Youwol application
 from youwol.app.environment import (
+    Command,
     Configuration,
-    System,
+    CustomEndPoints,
+    Customization,
     LocalEnvironment,
     Projects,
     RecursiveProjectsFinder,
-    Customization,
-    CustomEndPoints,
-    Command,
+    System,
 )
 from youwol.app.environment.models.predefined_configs.py_youwol_tour.common import (
     clone_project,

@@ -1,12 +1,17 @@
+# standard library
 from dataclasses import dataclass
 
+# third parties
 from fastapi import HTTPException
 
+# Youwol application
 from youwol.app.environment import LocalClients, YouwolEnvironment
 from youwol.app.routers.commons import Label
 from youwol.app.routers.environment.download_assets.models import DownloadTask
 from youwol.app.routers.local_cdn.implementation import download_package
-from youwol.utils import CdnClient, decode_id, encode_id, Context
+
+# Youwol utilities
+from youwol.utils import CdnClient, Context, decode_id, encode_id
 
 
 @dataclass

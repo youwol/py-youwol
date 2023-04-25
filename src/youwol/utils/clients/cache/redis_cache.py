@@ -1,9 +1,14 @@
+# standard library
 from dataclasses import dataclass
+
+# typing
 from typing import Optional
 
+# third parties
 import redis
 
-from youwol.utils.clients.cache import CacheClient, TTL
+# Youwol utilities
+from youwol.utils.clients.cache import TTL, CacheClient
 
 
 @dataclass(frozen=False)

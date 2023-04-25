@@ -1,11 +1,16 @@
+# typing
 from typing import Optional
 
+# third parties
 from pydantic import BaseModel
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
+
+# Youwol application
 from youwol.app.environment import DispatchInfo
 
+# Youwol utilities
 from youwol.utils.context import Context
 
 

@@ -1,18 +1,28 @@
+# standard library
 import asyncio
 import sys
 import uuid
+
 from enum import Enum
 from threading import Thread
-from typing import Dict, Any
 
+# typing
+from typing import Any, Dict
+
+# third parties
 from pydantic import BaseModel
 from tqdm import tqdm
 
-from youwol.app.environment import YouwolEnvironment
-from youwol.app.routers.environment.download_assets.models import DownloadTask
+# Youwol application
+from youwol.app.environment.youwol_environment import YouwolEnvironment
 from youwol.app.web_socket import LogsStreamer
-from youwol.utils import encode_id, log_error, YouWolException
+
+# Youwol utilities
+from youwol.utils import YouWolException, encode_id, log_error
 from youwol.utils.context import Context
+
+# relative
+from .models import DownloadTask
 
 
 class DownloadEventType(Enum):

@@ -1,11 +1,15 @@
+# typing
 from typing import Optional
 
+# Youwol application
 from youwol.app.routers.projects.models_project import (
-    PipelineStep,
-    Project,
     Manifest,
+    PipelineStep,
     PipelineStepStatus,
+    Project,
 )
+
+# Youwol utilities
 from youwol.utils.context import Context
 
 

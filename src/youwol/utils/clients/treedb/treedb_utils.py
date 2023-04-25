@@ -1,5 +1,7 @@
-from typing import List, Dict
+# typing
+from typing import Dict, List
 
+# Youwol utilities
 from youwol.utils.clients.treedb.treedb import TreeDbClient
 
 

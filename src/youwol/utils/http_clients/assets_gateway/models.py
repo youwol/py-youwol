@@ -1,7 +1,10 @@
-from typing import List, Any, Union, Optional, Dict
+# typing
+from typing import Any, Dict, List, Optional, Union
 
+# third parties
 from pydantic import BaseModel
 
+# Youwol utilities
 from youwol.utils.http_clients.assets_backend import (
     PermissionsResp,
     ReadPolicyEnum,

@@ -1,8 +1,12 @@
+# standard library
 import base64
 import functools
 import json
-from typing import Mapping, Union, NamedTuple
 
+# typing
+from typing import Mapping, NamedTuple, Union
+
+# third parties
 from aiohttp import ClientResponse
 
 

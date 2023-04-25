@@ -1,8 +1,11 @@
-from typing import List, Dict, Union, Optional
+# typing
+from typing import Dict, List, Optional, Union
 
+# third parties
 from pydantic import BaseModel, Field
 
-from youwol.utils.clients.docdb.models import TableBody, Column
+# Youwol utilities
+from youwol.utils.clients.docdb.models import Column, TableBody
 
 
 class ProjectSnippetDeprecated(BaseModel):

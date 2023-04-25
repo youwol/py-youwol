@@ -1,10 +1,15 @@
+# standard library
 from dataclasses import dataclass, field
 from enum import Enum
+
+# typing
 from typing import List
 
+# third parties
 from starlette.websockets import WebSocket, WebSocketDisconnect
-from youwol.utils import log_info
 
+# Youwol utilities
+from youwol.utils import log_info
 from youwol.utils.context import WsContextReporter
 
 

@@ -1,22 +1,23 @@
+# standard library
 import base64
 import json
-from typing import Union, Mapping, List, Dict, Any
 
+# typing
+from typing import Any, Dict, List, Mapping, Union
+
+# third parties
 from fastapi import HTTPException
 
-from youwol.utils import (
-    DocDb,
-    get_all_individual_groups,
-    asyncio,
-    log_info,
-    decode_id,
-)
+# Youwol utilities
+from youwol.utils import DocDb, asyncio, decode_id, get_all_individual_groups, log_info
 from youwol.utils.context import Context
 from youwol.utils.http_clients.tree_db_backend import (
-    ItemResponse,
-    FolderResponse,
     DriveResponse,
+    FolderResponse,
+    ItemResponse,
 )
+
+# relative
 from .configurations import Configuration, Constants
 
 

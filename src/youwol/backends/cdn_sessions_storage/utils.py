@@ -1,7 +1,11 @@
+# third parties
 from starlette.requests import Request
 
-from youwol.utils import log_info, get_user_id
+# Youwol backends
 from youwol.backends.cdn_sessions_storage.configurations import Configuration
+
+# Youwol utilities
+from youwol.utils import get_user_id, log_info
 
 
 async def init_resources(config: Configuration):

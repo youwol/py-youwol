@@ -1,13 +1,18 @@
-from typing import Optional, List, Any
+# typing
+from typing import Any, List, Optional
 
-from fastapi import Depends, APIRouter
+# third parties
+from fastapi import APIRouter, Depends
 from fastapi.params import Cookie
 from pydantic import BaseModel
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from youwol.backends.accounts.configuration import get_configuration, Configuration
-from youwol.utils import private_group_id, to_group_id, get_all_individual_groups
+# Youwol backends
+from youwol.backends.accounts.configuration import Configuration, get_configuration
+
+# Youwol utilities
+from youwol.utils import get_all_individual_groups, private_group_id, to_group_id
 from youwol.utils.session_handler import SessionHandler
 
 router = APIRouter(tags=["accounts"])

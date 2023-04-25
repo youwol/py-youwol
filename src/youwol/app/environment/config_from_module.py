@@ -1,28 +1,37 @@
 from __future__ import annotations
 
+# standard library
 import ast
 import importlib
 import sys
 import traceback
+
 from _ast import mod
 from abc import ABC, abstractmethod
 from importlib.machinery import SourceFileLoader
 from importlib.util import spec_from_loader
 from pathlib import Path
+
+# typing
 from typing import Awaitable, Optional, cast
 
-from youwol.app.environment.paths import app_dirs
-from youwol.app.environment.errors_handling import (
-    CheckValidConfigurationFunction,
-    ConfigurationLoadingStatus,
-    ConfigurationLoadingException,
-    format_unknown_error,
-    ErrorResponse,
-)
-from youwol.app.environment.models import Configuration
+# Youwol application
 from youwol.app.main_args import MainArguments, get_main_arguments
-from youwol.app.environment.python_dynamic_loader import get_object_from_module
+
+# Youwol utilities
 from youwol.utils.utils_paths import PathException, existing_path_or_default
+
+# relative
+from .errors_handling import (
+    CheckValidConfigurationFunction,
+    ConfigurationLoadingException,
+    ConfigurationLoadingStatus,
+    ErrorResponse,
+    format_unknown_error,
+)
+from .models import Configuration
+from .paths import app_dirs
+from .python_dynamic_loader import get_object_from_module
 
 
 class IConfigurationFactory(ABC):

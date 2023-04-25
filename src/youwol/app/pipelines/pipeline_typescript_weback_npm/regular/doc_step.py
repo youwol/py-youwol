@@ -1,12 +1,16 @@
+# typing
 from typing import List
 
-from youwol.app.pipelines.pipeline_typescript_weback_npm.regular.common import Paths
+# Youwol application
 from youwol.app.routers.projects.models_project import (
-    PipelineStep,
-    FileListing,
     Artifact,
+    FileListing,
     Link,
+    PipelineStep,
 )
+
+# Youwol pipelines
+from youwol.app.pipelines.pipeline_typescript_weback_npm.regular.common import Paths
 
 
 class DocStep(PipelineStep):

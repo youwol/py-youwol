@@ -1,8 +1,13 @@
+# standard library
 import inspect
-from typing import List, cast, Callable, Union, Awaitable
 
+# typing
+from typing import Awaitable, Callable, List, Union, cast
+
+# third parties
 from fastapi import APIRouter, FastAPI
 
+# Youwol utilities
 from youwol.utils.context import Context
 from youwol.utils.servers.fast_api import FastApiRouter
 

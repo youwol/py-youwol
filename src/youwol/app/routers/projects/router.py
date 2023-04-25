@@ -1,52 +1,58 @@
+# standard library
 import asyncio
 import collections.abc
 import itertools
 import os
 import shutil
-from datetime import datetime
-from typing import Mapping, Any
 
-from fastapi import APIRouter, Depends, Query, HTTPException
+from datetime import datetime
+
+# typing
+from typing import Any, Mapping
+
+# third parties
+from fastapi import APIRouter, Depends, HTTPException, Query
 from starlette.requests import Request
 from starlette.responses import FileResponse, JSONResponse, Response
 
-from youwol.app.environment import yw_config, YouwolEnvironment, PathsBook
+# Youwol application
+from youwol.app.environment import PathsBook, YouwolEnvironment, yw_config
 from youwol.app.routers.commons import Label
 from youwol.app.routers.projects import (
-    PipelineStepStatusResponse,
-    PipelineStatusResponse,
     ArtifactsResponse,
-    ProjectStatusResponse,
     CdnResponse,
     CdnVersionResponse,
-    PipelineStepEvent,
-    Event,
     CreateProjectFromTemplateBody,
     CreateProjectFromTemplateResponse,
+    Event,
+    PipelineStatusResponse,
+    PipelineStepEvent,
+    PipelineStepStatusResponse,
     ProjectsLoadingResults,
+    ProjectStatusResponse,
     UpdateConfigurationResponse,
 )
 from youwol.app.routers.projects.dependencies import resolve_project_dependencies
 from youwol.app.routers.projects.implementation import (
     create_artifacts,
-    get_status,
-    get_project_step,
-    get_project_flow_steps,
     format_artifact_response,
     get_project_configuration,
+    get_project_flow_steps,
+    get_project_step,
+    get_status,
 )
 from youwol.app.routers.projects.models_project import (
-    Project,
     Manifest,
     PipelineStepStatus,
+    Project,
 )
 from youwol.app.routers.projects.projects_loader import ProjectLoader
 from youwol.app.web_socket import LogsStreamer
-from youwol.utils import CommandException
-from youwol.utils import decode_id
+
+# Youwol utilities
+from youwol.utils import CommandException, decode_id
 from youwol.utils.context import Context
-from youwol.utils.utils_paths import parse_json
-from youwol.utils.utils_paths import write_json
+from youwol.utils.utils_paths import parse_json, write_json
 
 router = APIRouter()
 flatten = itertools.chain.from_iterable

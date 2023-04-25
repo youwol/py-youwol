@@ -1,12 +1,16 @@
+# standard library
 from pathlib import Path
 
+# Youwol application
 from youwol.app.environment import (
     Configuration,
-    System,
     LocalEnvironment,
     Projects,
     RecursiveProjectsFinder,
+    System,
 )
+
+# Youwol pipelines
 import youwol.app.pipelines.pipeline_typescript_weback_npm as pipeline_ts
 
 pipeline_ts.set_environment()

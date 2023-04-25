@@ -1,4 +1,5 @@
-from typing import Union, Callable, Awaitable
+# typing
+from typing import Awaitable, Callable, Union
 
 
 class Configuration:

@@ -1,5 +1,10 @@
-import youwol.backends.accounts
+# Youwol application
 from youwol.app.environment.youwol_environment import yw_config
+
+# Youwol backends
+import youwol.backends.accounts
+
+# Youwol utilities
 from youwol.utils import CacheClient
 from youwol.utils.context import ContextFactory
 

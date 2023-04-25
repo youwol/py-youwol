@@ -1,15 +1,21 @@
+# standard library
 import os
 import time
-from pathlib import Path
-from typing import List, cast, Optional, Dict
 
+from pathlib import Path
+
+# typing
+from typing import Dict, List, Optional, cast
+
+# third parties
 from fastapi import APIRouter, Query
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from starlette.requests import Request
 
+# Youwol utilities
 from youwol.utils import JSON
-from youwol.utils.context import Context, LogEntry, LogLevel, InMemoryReporter
+from youwol.utils.context import Context, InMemoryReporter, LogEntry, LogLevel
 
 router = APIRouter()
 

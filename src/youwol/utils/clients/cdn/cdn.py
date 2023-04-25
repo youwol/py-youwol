@@ -1,11 +1,18 @@
+# standard library
 import hashlib
-from dataclasses import field, dataclass
-from pathlib import Path
-from typing import Dict, Union, List, Iterable, Callable, Awaitable, Any
 
+from dataclasses import dataclass, field
+from pathlib import Path
+
+# typing
+from typing import Any, Awaitable, Callable, Dict, Iterable, List, Union
+
+# third parties
 import aiohttp
+
 from aiohttp import ClientResponse, FormData
 
+# Youwol utilities
 from youwol.utils.exceptions import raise_exception_from_response
 from youwol.utils.utils_requests import extract_aiohttp_response
 

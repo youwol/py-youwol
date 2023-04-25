@@ -1,19 +1,24 @@
+# standard library
 import io
 import itertools
 import uuid
 
+# third parties
 from fastapi import APIRouter, Depends
 from starlette.requests import Request
 from starlette.responses import Response
 
+# Youwol backends
 from youwol.backends.files import Configuration
 from youwol.backends.files.configurations import get_configuration
-from youwol.utils import get_content_type, get_content_encoding
+
+# Youwol utilities
+from youwol.utils import get_content_encoding, get_content_type
 from youwol.utils.clients.file_system.interfaces import Metadata
 from youwol.utils.context import Context
 from youwol.utils.http_clients.files_backend import (
-    PostFileResponse,
     GetInfoResponse,
+    PostFileResponse,
     PostMetadataBody,
 )
 

@@ -1,13 +1,17 @@
+# standard library
 import base64
 import hashlib
 import random
 import string
 import uuid
-from typing import List, Union
-from typing import Optional
 
+# typing
+from typing import List, Optional, Union
+
+# third parties
 import aiohttp
 import jwt
+
 from jwt import PyJWKClient
 from pydantic import BaseModel
 from starlette.datastructures import URL

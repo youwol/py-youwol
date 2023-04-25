@@ -1,14 +1,21 @@
+# standard library
 from collections import defaultdict
-from typing import List, Dict
 
+# typing
+from typing import Dict, List
+
+# third parties
 from pydantic import BaseModel
 
-from youwol.app.routers.projects.models_project import Project
-from youwol.app.routers.projects.projects_loader import ProjectLoader
+# Youwol application
 from youwol.app.routers.projects.models import (
     ChildToParentConnections,
     DependenciesResponse,
 )
+from youwol.app.routers.projects.models_project import Project
+from youwol.app.routers.projects.projects_loader import ProjectLoader
+
+# Youwol utilities
 from youwol.utils.context import Context
 
 

@@ -1,19 +1,25 @@
+# standard library
 import glob
 import hashlib
 import itertools
 import json
 import os
+import re
 import shutil
 import tempfile
 import zipfile
+
 from fnmatch import fnmatch
 from os import PathLike
 from pathlib import Path
-from typing import cast, Union, List, Set, Iterable, Tuple, Optional, Callable, IO
 
+# typing
+from typing import IO, Callable, Iterable, List, Optional, Set, Tuple, Union, cast
+
+# third parties
 import aiohttp
 import yaml
-import re
+
 from pydantic import BaseModel
 
 

@@ -1,30 +1,36 @@
+# standard library
 import os
 import shutil
-from typing import Tuple, List
 
+# typing
+from typing import List, Tuple
+
+# Youwol application
+from youwol.app.environment import PathsBook, YouwolEnvironment
+from youwol.app.routers.projects.models import (
+    ArtifactResponse,
+    Event,
+    PipelineStepEvent,
+    PipelineStepStatusResponse,
+)
 from youwol.app.routers.projects.models_project import (
-    Project,
-    PipelineStep,
     Artifact,
     Flow,
     Link,
     Manifest,
+    PipelineStep,
     PipelineStepStatus,
+    Project,
 )
-from youwol.app.environment import PathsBook, YouwolEnvironment
 from youwol.app.routers.projects.projects_loader import ProjectLoader
-from youwol.app.routers.projects.models import (
-    PipelineStepStatusResponse,
-    ArtifactResponse,
-    PipelineStepEvent,
-    Event,
-)
+
+# Youwol utilities
 from youwol.utils import (
-    to_json,
+    PipelineFlowNotFound,
+    PipelineStepNotFound,
     ProjectNotFound,
     decode_id,
-    PipelineStepNotFound,
-    PipelineFlowNotFound,
+    to_json,
 )
 from youwol.utils.context import Context
 from youwol.utils.utils_paths import matching_files, parse_json

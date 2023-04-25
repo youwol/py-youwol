@@ -1,24 +1,34 @@
+# standard library
 import os
-from pathlib import Path
-from typing import Callable, Union, List, Optional, NamedTuple
 
+from pathlib import Path
+
+# typing
+from typing import Callable, List, NamedTuple, Optional, Union
+
+# third parties
 from pydantic import BaseModel
 
+# Youwol application
 from youwol.app.environment import UploadTarget, UploadTargets
 from youwol.app.routers.projects.models_project import (
-    PipelineStep,
-    Project,
     ExplicitNone,
-    FlowId,
-    RunImplicit,
-    Manifest,
-    PipelineStepStatus,
     FileListing,
+    FlowId,
+    Manifest,
+    PipelineStep,
+    PipelineStepStatus,
+    Project,
+    RunImplicit,
 )
-from youwol.app.pipelines.deploy_service import HelmPackage
-from youwol.utils import execute_shell_cmd, CommandException
+
+# Youwol utilities
+from youwol.utils import CommandException, execute_shell_cmd
 from youwol.utils.context import Context
 from youwol.utils.utils_paths import parse_yaml
+
+# Youwol pipelines
+from youwol.app.pipelines.deploy_service import HelmPackage
 
 
 class FileNames(NamedTuple):

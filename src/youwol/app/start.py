@@ -1,19 +1,27 @@
+# standard library
 import asyncio
 import traceback
+
 from pathlib import Path
+
+# typing
 from typing import Optional
 
+# third parties
 import uvicorn
 
+# Youwol application
 from youwol.app.environment.errors_handling import ConfigurationLoadingException
 from youwol.app.environment.youwol_environment import (
+    YouwolEnvironment,
     YouwolEnvironmentFactory,
     print_invite,
-    YouwolEnvironment,
 )
-from youwol.app.fastapi_app import download_thread, fastapi_app, cleaner_thread
+from youwol.app.fastapi_app import cleaner_thread, download_thread, fastapi_app
 from youwol.app.main_args import get_main_arguments
 from youwol.app.routers.projects import ProjectLoader
+
+# Youwol utilities
 from youwol.utils import is_server_http_alive
 
 
