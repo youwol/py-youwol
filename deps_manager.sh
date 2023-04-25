@@ -234,7 +234,7 @@ Once you have a virtual environment for this project, activate it before running
 "
 else
   echo "[venv]
-peth: ${VIRTUAL_ENV}"
+path: ${VIRTUAL_ENV}"
   echo
 fi
 
