@@ -8,6 +8,9 @@ from typing import Optional, Union
 from appdirs import AppDirs
 from pydantic import BaseModel
 
+# Youwol application
+from youwol.app.main_args import get_main_arguments
+
 # Youwol utilities
 from youwol.utils.utils_paths import existing_path_or_default
 
@@ -114,6 +117,11 @@ def ensure_config_file_exists_or_create_it(path: Optional[Path]) -> (Path, bool)
         default_root=app_dirs.user_config_dir,
     )
     if not exists:
+        args = get_main_arguments()
+        if args.config_path is not None and args.init is False:
+            msg = f"configuration file at '{final_path} does not exists. Pass the --init flag to create it"
+            raise RuntimeError(msg)
+
         final_path.parent.mkdir(parents=True, exist_ok=True)
         final_path.write_text(
             """

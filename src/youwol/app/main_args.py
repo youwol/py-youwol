@@ -18,6 +18,11 @@ parser.add_argument(
 parser.add_argument(
     "--verbose", help='Configure uvicorn logging to "info"', action="store_true"
 )
+parser.add_argument(
+    "--init",
+    help="Initialize configuration if the configuration path does not exists",
+    action="store_true",
+)
 
 args = parser.parse_args()
 
@@ -29,6 +34,7 @@ class MainArguments(NamedTuple):
     email: Optional[str] = None
     execution_folder = Path(os.getcwd())
     verbose: bool = False
+    init: bool = False
 
 
 def get_main_arguments() -> MainArguments:
@@ -38,4 +44,5 @@ def get_main_arguments() -> MainArguments:
         email=args.email if args.email else None,
         daemonize=args.daemonize if args.daemonize else False,
         verbose=args.verbose if args.verbose else False,
+        init=args.init if args.init else False,
     )
