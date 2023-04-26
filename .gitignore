@@ -18,6 +18,7 @@ tooling/test_install/**/*
 
 .virtual_envs
 .venv*
+.env*
 .publish_venv
 __pycache__
 /.idea/
