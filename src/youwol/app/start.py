@@ -39,7 +39,7 @@ def start(shutdown_script_path: Optional[Path] = None):
         env: YouwolEnvironment = asyncio.run(YouwolEnvironmentFactory.get())
     except ConfigurationLoadingException as e:
         print("Error while loading configuration")
-        print(e)
+        print("".join(traceback.format_exception(type(e), value=e, tb=e.__traceback__)))
         raise e
 
     assert_free_http_port(http_port=env.httpPort)
@@ -48,14 +48,14 @@ def start(shutdown_script_path: Optional[Path] = None):
         download_thread.go()
     except BaseException as e:
         print("Error while starting download thread")
-        print(traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__))
+        print("".join(traceback.format_exception(type(e), value=e, tb=e.__traceback__)))
         raise e
 
     try:
         cleaner_thread.go()
     except BaseException as e:
         print("Error while starting cleaner thread")
-        print(traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__))
+        print("".join(traceback.format_exception(type(e), value=e, tb=e.__traceback__)))
         raise e
 
     print_invite(conf=env, shutdown_script_path=shutdown_script_path)
@@ -70,7 +70,7 @@ def start(shutdown_script_path: Optional[Path] = None):
             log_level=uvicorn_log_level,
         )
     except BaseException as e:
-        print(traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__))
+        print("".join(traceback.format_exception(type(e), value=e, tb=e.__traceback__)))
         raise e
     finally:
         download_thread.join()
