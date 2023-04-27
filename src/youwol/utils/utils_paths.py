@@ -40,16 +40,16 @@ def list_files(folder: Path, rec=True) -> List[Path]:
 
 
 def parse_json(path: Union[str, Path]):
-    return json.loads(open(str(path)).read())
+    return json.load(open(str(path), encoding="UTF-8"))
 
 
 def parse_yaml(path: Union[str, Path]):
-    with open(path, "r") as stream:
+    with open(path, "r", encoding="UTF-8") as stream:
         return yaml.safe_load(stream)
 
 
 def write_json(data: json, path: Path):
-    open(str(path), "w").write(json.dumps(data, indent=4))
+    json.dump(data, open(path, "w", encoding="UTF-8"), indent=4)
 
 
 def copy_tree(source: Path, destination: Path, replace: bool = False):
@@ -205,7 +205,7 @@ def ensure_file_exists(
         if default_content:
             try:
                 final_path.parent.mkdir(parents=True, exist_ok=True)
-                final_path.write_text(default_content)
+                final_path.write_text(default_content, encoding="UTF-8")
             except Exception as e:
                 raise PathException(f"Error while creating '{str(final_path)}' : {e}")
         else:
@@ -292,7 +292,7 @@ def sed_inplace(filename, pattern, repl):
     # however, binary writing imposes non-trivial encoding constraints trivially
     # resolved by switching to text writing. Let's do that.
     with tempfile.NamedTemporaryFile(mode="w", delete=False) as tmp_file:
-        with open(filename) as src_file:
+        with open(filename, encoding="UTF-8") as src_file:
             for line in src_file:
                 tmp_file.write(pattern_compiled.sub(repl, line))
 

@@ -377,6 +377,7 @@ class System(BaseModel):
 
     *optional, default to LocalEnvironment()*
     """
+
     httpPort: Optional[int] = default_http_port
     cloudEnvironments: CloudEnvironments = CloudEnvironments(
         defaultConnection=Connection(envId="public-youwol", authId="browser"),

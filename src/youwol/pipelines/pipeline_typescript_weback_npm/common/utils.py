@@ -103,7 +103,7 @@ def generate_package_json(source: Path, working_path: Path, input_template: Temp
         {**package_json, **values, **(input_template.inPackageJson or {})},
         working_path / FileNames.package_json,
     )
-    with open(working_path / FileNames.package_json, "a") as file:
+    with open(working_path / FileNames.package_json, "a", encoding="UTF-8") as file:
         file.write("\n")
 
 
@@ -120,7 +120,7 @@ def get_imports_from_submodules(
 
     lines = []
     for file in files:
-        with open(file, "r") as fp:
+        with open(file, "r", encoding="UTF-8") as fp:
             content = fp.read()
             content = pyparsing.cppStyleComment.suppress().transformString(content)
 
