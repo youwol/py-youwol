@@ -37,7 +37,7 @@ class LocalCacheClient(CacheClient):
         self._cache[key] = CacheEntry(value=value)
 
     def _impl_set_expire_in(self, key: str, value: str, ttl: int):
-        self._cache[key] = CacheEntry(value=value, expire_at=(int(time.time()) + ttl))
+        self._cache[key] = CacheEntry(value=value, expire_at=int(time.time()) + ttl)
 
     def _impl_set_expire_at(self, key: str, value: str, unix_timestamp: int):
         self._cache[key] = CacheEntry(value=value, expire_at=unix_timestamp)
