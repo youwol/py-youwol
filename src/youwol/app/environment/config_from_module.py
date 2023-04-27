@@ -52,7 +52,7 @@ def try_last_expression_as_config(config_path: Path) -> Optional[Configuration]:
     spec = spec_from_loader(module_name, loader)
     module = importlib.util.module_from_spec(spec)
     loader.exec_module(module)
-    config_globals = {k: module.__getattribute__(k) for k in module.__dict__}
+    config_globals = {k: getattr(module, k) for k in module.__dict__}
     script = open(config_path, "r").read()
     stmts = list(ast.iter_child_nodes(ast.parse(script)))
     if not stmts:

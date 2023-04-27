@@ -465,7 +465,7 @@ class FlowSwitch(BaseModel):
 
     async def info(self) -> DispatchInfo:
         return DispatchInfo(
-            name=self.__str__(),
+            name=str(self),
             activated=True,
             parameters={
                 "description": "no description provided ('info' method not overriden)"

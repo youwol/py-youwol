@@ -17,7 +17,7 @@ from youwol.utils.context import Context
 class AbstractLocalCloudDispatch(BaseModel):
     async def info(self) -> DispatchInfo:
         return DispatchInfo(
-            name=self.__str__(),
+            name=str(self),
             activated=True,
             parameters={"description": "no 'status' method defined"},
         )
