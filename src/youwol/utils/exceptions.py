@@ -265,7 +265,7 @@ class UpstreamResponseException(YouWolException):
         self.exceptionType = UpstreamResponseException.exceptionType
 
     def __str__(self):
-        return f"""Upstream Exception"""
+        return """Upstream Exception"""
 
 
 YouwolExceptions = [

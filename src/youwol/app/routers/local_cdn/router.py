@@ -194,7 +194,7 @@ async def smooth_reset(request: Request, body: ResetCdnBody):
             projects = [p.name for p in await ProjectLoader.get_cached_projects()]
             packages = [p for p in packages if p["name"] not in projects]
             await ctx.info(
-                f"Filter out packages from local projects",
+                "Filter out packages from local projects",
                 data={"packages": [p["name"] for p in packages]},
             )
 

@@ -107,7 +107,7 @@ async def check_update(local_package: TargetPackage, context: Context):
                 await ctx.info(text=f"{name} does not exist in remote")
             raise e
         await ctx.info(
-            text=f"Retrieved remote info", data={"remote_package": remote_package}
+            text="Retrieved remote info", data={"remote_package": remote_package}
         )
 
         latest = remote_package["releases"][0]

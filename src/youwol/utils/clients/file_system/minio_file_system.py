@@ -170,7 +170,7 @@ class MinioFileSystem(FileSystemInterface):
             if raise_not_found and not delete_object_list:
                 raise ResourcesNotFoundException(
                     path=f"{self.bucket_name}:{prefix}",
-                    detail=f"MinioFileSystem.remove_folder",
+                    detail="MinioFileSystem.remove_folder",
                 )
 
             response = self.client.remove_objects(

@@ -301,12 +301,12 @@ async def publish_package(
             record = format_doc_db_record(
                 package_path=package_path, fingerprint=md5_stamp
             )
-            await context.info(text=f"Send record to docdb", data={"record": record})
+            await context.info(text="Send record to docdb", data={"record": record})
             await configuration.doc_db.create_document(
                 record, owner=Constants.owner, headers=headers
             )
 
-        await context.info(text=f"Create explorer data", data={"record": record})
+        await context.info(text="Create explorer data", data={"record": record})
         explorer_data = await create_explorer_data(
             dir_path=package_path.parent,
             root_path=base_path,
@@ -610,7 +610,7 @@ async def resolve_explicit_version(
     if not version:
         raise QueryIndexException(
             query=f"requesting version {input_version} for {package_name}",
-            error=f"No matching entries found",
+            error="No matching entries found",
         )
 
     return version

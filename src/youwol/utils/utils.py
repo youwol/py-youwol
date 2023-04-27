@@ -111,7 +111,7 @@ def ensure_group_permission(request: Request, group_id: str):
     user = user_info(request)
     allowed_groups = get_user_group_ids(user)
     if group_id not in allowed_groups:
-        raise HTTPException(status_code=401, detail=f"User can not get/post resource")
+        raise HTTPException(status_code=401, detail="User can not get/post resource")
 
 
 async def get_youwol_environment(port: int = 2000):

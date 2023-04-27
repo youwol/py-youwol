@@ -128,7 +128,7 @@ async def clean_visitors(body: CleanVisitorsBody, context: Context):
             )
             await ctx.info(text=f"Retrieved {len(impersonated_users)} users")
             if not impersonated_users:
-                await ctx.info(text=f"No more visitors, exit")
+                await ctx.info(text="No more visitors, exit")
                 return
 
             users_drives = await asyncio.gather(

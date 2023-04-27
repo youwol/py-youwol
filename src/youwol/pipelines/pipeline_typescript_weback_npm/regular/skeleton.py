@@ -290,7 +290,7 @@ async def generate_ts_webpack_project(
 ):
     async with context.start("Generate ts webpack project"):
         if Keys.name not in parameters:
-            raise RuntimeError(f"Expect 'name' in parameters")
+            raise RuntimeError("Expect 'name' in parameters")
         name = parameters[Keys.name]
         project_folder = folder / name
 

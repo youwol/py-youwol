@@ -596,7 +596,7 @@ async def purge_drive(
         original_items = [item for item in resp["items"] if not item["borrowed"]]
         await ctx.info(text=f"Found {len(original_items)} to purge")
         for to_delete in original_items:
-            await ctx.info(text=f"Delete item", data=to_delete)
+            await ctx.info(text="Delete item", data=to_delete)
 
             if to_delete["kind"] not in factory:
                 await ctx.info(

@@ -1036,7 +1036,7 @@ async def get_file(
             media_type=stats["metadata"]["contentType"],
             headers={
                 "Content-Encoding": stats["metadata"]["contentEncoding"],
-                "cache-control": f"public, max-age=0",
+                "cache-control": "public, max-age=0",
             },
         )
 
@@ -1076,7 +1076,7 @@ async def get_zip_files(
             asset_id=asset_id, kind=asset["kind"], file_path=""
         )
         objects = await filesystem.list_objects(prefix=base_arc_name, recursive=True)
-        await ctx.info(text=f"Objects list iterators retrieved successfully")
+        await ctx.info(text="Objects list iterators retrieved successfully")
         with tempfile.TemporaryDirectory() as tmp_folder:
             base_path = Path(tmp_folder)
             zipper = zipfile.ZipFile(

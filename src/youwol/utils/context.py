@@ -219,7 +219,7 @@ class Context(NamedTuple):
                 data={
                     "detail": e.detail
                     if isinstance(e, HTTPException)
-                    else f"No detail available",
+                    else "No detail available",
                     "traceback": traceback.format_exc().split("\n"),
                 },
                 labels=[Label.EXCEPTION, Label.FAILED],

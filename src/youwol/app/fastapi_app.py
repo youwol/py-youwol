@@ -158,7 +158,7 @@ async def create_app():
     @fastapi_app.get(api_configuration.base_path + "/")
     async def home():
         return RedirectResponse(
-            status_code=308, url=f"/applications/@youwol/platform/latest"
+            status_code=308, url="/applications/@youwol/platform/latest"
         )
 
     @fastapi_app.websocket(api_configuration.base_path + "/ws-logs")
