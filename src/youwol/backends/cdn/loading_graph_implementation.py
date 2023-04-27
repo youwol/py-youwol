@@ -355,8 +355,7 @@ async def resolve_dependencies_version_queries(
             errors=[
                 resp
                 for resp in resolved_versions
-                if isinstance(resp, LibraryNotFound)
-                or isinstance(resp, LibraryException)
+                if isinstance(resp, (LibraryNotFound, LibraryException))
             ],
             context=ctx,
         )

@@ -275,7 +275,7 @@ async def safe_load(
     if not paths_book.packages_cache_path.exists():
         open(paths_book.packages_cache_path, "w").write(json.dumps({}))
 
-    if isinstance(projects.finder, str) or isinstance(projects.finder, Path):
+    if isinstance(projects.finder, (str, Path)):
         #  5/12/2022: Backward compatibility code
         root = projects.finder
         projects.finder = ExplicitProjectsFinder(

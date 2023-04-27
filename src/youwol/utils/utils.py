@@ -241,12 +241,7 @@ def to_serializable_json_leaf(v):
         v = list(v)
     if isinstance(v, datetime):
         return str(v)
-    if (
-        isinstance(v, int)
-        or isinstance(v, float)
-        or isinstance(v, str)
-        or isinstance(v, bool)
-    ):
+    if isinstance(v, (int, float, str, bool)):
         return v
     if v is None:
         return None
