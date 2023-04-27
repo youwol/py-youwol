@@ -34,7 +34,7 @@ dependencies = [
     "pyjwt[crypto]>=2.4.0,<3.0.0",
     "redis>=4.3.4,<5.0.0",
     "tqdm>=4.64.1,<5.0.0",
-    "uvicorn>=0.18.2,<0.19.0",
+    "uvicorn",
     "websockets>=10.3,<11",
     "semantic_version>=2.10.0,<3.0.0",
     "watchdog>=2.1.9,<3.0.0",
@@ -45,6 +45,7 @@ dev = [
     "pip-tools",
 ]
 qa = [
+    "asgiref",
     "coverage",
     "pip-audit",
     "pylint",
@@ -133,3 +134,7 @@ import_heading_localfolder = "relative"
 
 sections = ["FUTURE", "STDLIB", "TYPING", "THIRDPARTY", "FIRSTPARTY", "YW_APP", "YW_BACKENDS", "YW_UTILS",
     "YW_PIPELINES", "LOCALFOLDER"]
+
+[tool.mypy]
+mypy_path = ".typing_stubs"
+files = "src"
