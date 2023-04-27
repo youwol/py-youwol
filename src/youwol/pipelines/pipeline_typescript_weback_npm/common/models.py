@@ -79,7 +79,7 @@ class MainModule(BaseModel):
     """
 
     entryFile: str
-    loadDependencies: List[str]
+    loadDependencies: List[str] = []
 
 
 class AuxiliaryModule(MainModule):
@@ -98,20 +98,6 @@ class AuxiliaryModule(MainModule):
     """
 
     name: str
-
-
-class MainModule(BaseModel):
-    """
-       This class defines the main bundle of the package
-
-    Attributes:
-
-    - **entryFile** : :class:`str` file entry point relative to the 'src' folder
-    - **loadDependencies** : :class:`List[str]` the dependencies required to load the module.
-    """
-
-    entryFile: str
-    loadDependencies: List[str] = []
 
 
 class Bundles(BaseModel):

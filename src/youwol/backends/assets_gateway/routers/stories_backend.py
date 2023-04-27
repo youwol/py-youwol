@@ -446,7 +446,7 @@ async def add_plugin(
     response_model=UpgradePluginsResponse,
     summary="update a document",
 )
-async def add_plugin(
+async def upgrade_plugin(
     request: Request,
     story_id: str,
     body: UpgradePluginsBody,

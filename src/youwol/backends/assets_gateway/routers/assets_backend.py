@@ -335,7 +335,7 @@ async def get_permissions(
     response_model=AccessInfoResp,
     summary="permissions of the user on the asset",
 )
-async def get_permissions(
+async def get_access_info(
     request: Request,
     asset_id: str,
     configuration: Configuration = Depends(get_configuration),
