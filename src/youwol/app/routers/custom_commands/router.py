@@ -67,7 +67,7 @@ async def execute_command(
 
 
 @router.post("/{command_name}", summary="execute a POST custom command")
-async def execute_command(
+async def execute_post_command(
     request: Request, command_name: str, env: YouwolEnvironment = Depends(yw_config)
 ):
     async with Context.start_ep(
@@ -86,7 +86,7 @@ async def execute_command(
 
 
 @router.put("/{command_name}", summary="execute a PUT custom command")
-async def execute_command(
+async def execute_put_command(
     request: Request, command_name: str, env: YouwolEnvironment = Depends(yw_config)
 ):
     async with Context.start_ep(
@@ -105,7 +105,7 @@ async def execute_command(
 
 
 @router.delete("/{command_name}", summary="execute a DELETE custom command")
-async def execute_command(
+async def execute_delete_command(
     request: Request, command_name: str, env: YouwolEnvironment = Depends(yw_config)
 ):
     async with Context.start_ep(
