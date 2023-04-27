@@ -1,7 +1,5 @@
 # third parties
-from fastapi import APIRouter, Depends
-from fastapi import Query
-from fastapi import Query as QueryParam
+from fastapi import APIRouter, Depends, Query
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -167,8 +165,8 @@ async def get_children(
     request: Request,
     story_id: str,
     document_id: str,
-    from_position: float = QueryParam(0, alias="from-position"),
-    count: int = QueryParam(1000),
+    from_position: float = Query(0, alias="from-position"),
+    count: int = Query(1000),
     configuration: Configuration = Depends(get_configuration),
 ):
     async with Context.start_ep(request=request) as ctx:
