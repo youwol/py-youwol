@@ -8,17 +8,19 @@ from typing import List
 from fastapi import APIRouter
 
 # Youwol backends
-import youwol.backends.accounts as accounts_backend
-import youwol.backends.assets as assets_backend
-import youwol.backends.assets_gateway as assets_gtw
-import youwol.backends.cdn as cdn_backend
-import youwol.backends.cdn_apps_server as cdn_apps_server
-import youwol.backends.cdn_sessions_storage as cdn_sessions_storage
-import youwol.backends.files as files_backend
-import youwol.backends.flux as flux_backend
-import youwol.backends.mock as mock_backend
-import youwol.backends.stories as stories_backend
-import youwol.backends.tree_db as tree_db_backend
+from youwol.backends import (
+    accounts,
+    assets,
+    assets_gateway,
+    cdn,
+    cdn_apps_server,
+    cdn_sessions_storage,
+    files,
+    flux,
+    mock,
+    stories,
+    tree_db,
+)
 
 # relative
 from .native_backends_config import (
@@ -49,17 +51,17 @@ backends = [
     BackendPlugin(
         prefix="/api/stories-backend",
         tags=["Stories"],
-        router=stories_backend.get_router(stories_config_py_youwol),
+        router=stories.get_router(stories_config_py_youwol),
     ),
     BackendPlugin(
         prefix="/api/cdn-backend",
         tags=["CDN"],
-        router=cdn_backend.get_router(cdn_config_py_youwol),
+        router=cdn.get_router(cdn_config_py_youwol),
     ),
     BackendPlugin(
         prefix="/api/assets-gateway",
         tags=["Assets gateway"],
-        router=assets_gtw.get_router(assets_gtw_config_py_youwol),
+        router=assets_gateway.get_router(assets_gtw_config_py_youwol),
     ),
     BackendPlugin(
         prefix="/applications",
@@ -69,17 +71,17 @@ backends = [
     BackendPlugin(
         prefix="/api/treedb-backend",
         tags=["treedb"],
-        router=tree_db_backend.get_router(tree_db_config_py_youwol),
+        router=tree_db.get_router(tree_db_config_py_youwol),
     ),
     BackendPlugin(
         prefix="/api/assets-backend",
         tags=["assets"],
-        router=assets_backend.get_router(assets_backend_config_py_youwol),
+        router=assets.get_router(assets_backend_config_py_youwol),
     ),
     BackendPlugin(
         prefix="/api/flux-backend",
         tags=["flux"],
-        router=flux_backend.get_router(flux_backend_config_py_youwol),
+        router=flux.get_router(flux_backend_config_py_youwol),
     ),
     BackendPlugin(
         prefix="/api/cdn-sessions-storage",
@@ -89,17 +91,17 @@ backends = [
     BackendPlugin(
         prefix="/api/files-backend",
         tags=["files"],
-        router=files_backend.get_router(files_backend_config_py_youwol),
+        router=files.get_router(files_backend_config_py_youwol),
     ),
     BackendPlugin(
         prefix="/api/accounts",
         tags=["accounts"],
-        router=accounts_backend.get_router(accounts_backend_config_py_youwol),
+        router=accounts.get_router(accounts_backend_config_py_youwol),
     ),
     BackendPlugin(
         prefix="/api/fake",
         tags=["fake"],
-        router=mock_backend.get_router(mock_backend_config_py_youwol),
+        router=mock.get_router(mock_backend_config_py_youwol),
     ),
 ]
 
