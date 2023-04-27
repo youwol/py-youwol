@@ -59,7 +59,7 @@ class WhereClause(BaseModel):
         }
         target = self.term
         value = doc[self.column]
-        if isinstance(value, float) or isinstance(value, int):
+        if isinstance(value, (float, int)):
             target = float(target)
         return factory_clauses[self.relation](value, target)
 
