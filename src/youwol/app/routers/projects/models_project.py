@@ -196,7 +196,7 @@ class PipelineStep(BaseModel):
             Callable[["PipelineStep", "Project", str, Context], Awaitable[str]],
             self.run,
         )
-        await context.info(f"Run custom function")
+        await context.info("Run custom function")
         run_cmd = run(self, project, flow_id, context)
         run_cmd = await run_cmd if isinstance(run_cmd, Awaitable) else run_cmd
         return await PipelineStep.__execute_run_cmd(
@@ -402,7 +402,7 @@ class Project(BaseModel):
             )
             await ctx.info(text=f"Target folder: {folder}")
             if not folder.exists() or not folder.is_dir():
-                await ctx.error(text=f"Target folder does not exist")
+                await ctx.error(text="Target folder does not exist")
                 return []
             files = [Path(p) for p in folder.glob("**/*") if Path(p).is_file()]
             await ctx.info(

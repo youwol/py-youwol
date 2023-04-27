@@ -43,7 +43,7 @@ async def check_cyclic_dependency(
     errors = [p for p in dependencies if p.name in forbidden]
     if errors:
         raise RuntimeError(
-            f"Cyclic dependencies detected:\n "
+            "Cyclic dependencies detected:\n "
             + f"{'=>'.join(forbidden[1:] + [project_name] + [errors[0].name])}"
             ""
         )

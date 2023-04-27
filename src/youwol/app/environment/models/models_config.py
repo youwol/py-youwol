@@ -357,7 +357,7 @@ class LocalEnvironment(BaseModel):
 
 
 class System(BaseModel):
-    f"""
+    """
     Specification of local & remote environments.
 
     **Attributes**:
@@ -520,7 +520,7 @@ class FlowSwitcherMiddleware(CustomMiddleware):
                 raise RuntimeError("Multiple flow-switches match the incoming request")
 
             if not matches:
-                await ctx.info(f"No match from the flow-switcher")
+                await ctx.info("No match from the flow-switcher")
                 return await call_next(incoming_request)
 
             try:
@@ -530,7 +530,7 @@ class FlowSwitcherMiddleware(CustomMiddleware):
             except YouWolException as e:
                 return await youwol_exception_handler(incoming_request, e)
 
-            await ctx.info(f"Got response from a flow-switcher")
+            await ctx.info("Got response from a flow-switcher")
             return response
 
 
@@ -607,7 +607,7 @@ class CdnSwitch(FlowSwitch):
             text=f"CdnSwitch[{self}]: Error status while dispatching",
             data={"origin": incoming_request.url.path, "path": rest_of_path},
         )
-        raise ResourcesNotFoundException(path=rest_of_path, detail=f"No resource found")
+        raise ResourcesNotFoundException(path=rest_of_path, detail="No resource found")
 
     async def _forward_request(
         self, rest_of_path: str, headers: Dict[str, str]
@@ -690,7 +690,7 @@ class RedirectSwitch(FlowSwitch):
             headers=headers,
         )
         await context.info(
-            f"Got response from dispatch",
+            "Got response from dispatch",
             data={
                 "headers": {k: v for k, v in resp.headers.items()},
                 "status": resp.status_code,

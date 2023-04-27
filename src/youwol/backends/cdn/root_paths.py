@@ -291,7 +291,7 @@ async def resolve_loading_tree(
     full_data_cache: Dict[ExportedKey, LibraryResolved] = {}
     resolutions_cache: Dict[QueryKey, ResolvedQuery] = {}
     async with Context.start_ep(request=request, body=body) as ctx:  # type: Context
-        await ctx.info(text=f"Start resolving loading graph", data=body)
+        await ctx.info(text="Start resolving loading graph", data=body)
         root_name = "!!root!!"
         # This is for backward compatibility when single lib version download were assumed
         dependencies = (

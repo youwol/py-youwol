@@ -86,7 +86,7 @@ async def process_download_asset(
 
         pbar.total = pbar.total + 1
         async with context.start(
-            action=f"Proceed download task",
+            action="Proceed download task",
             with_attributes={"kind": kind, "rawId": raw_id},
         ) as ctx:  # types: Context
             cache_downloaded_ids.add(download_id)

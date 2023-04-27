@@ -119,16 +119,16 @@ async def configuration_from_python(path: Path) -> Configuration:
         ex_type, ex, tb = sys.exc_info()
         traceback.print_tb(tb)
         check_valid_conf_fct.status = format_unknown_error(
-            reason=f"There was an exception calling 'IConfigurationFactory#get()'.",
+            reason="There was an exception calling 'IConfigurationFactory#get()'.",
             error=err,
         )
         raise ConfigurationLoadingException(get_status(False))
 
     if not isinstance(config_data, Configuration):
         check_valid_conf_fct.status = ErrorResponse(
-            reason=f"The function 'IConfigurationFactory#get()' must return an instance of type 'ConfigurationData'",
+            reason="The function 'IConfigurationFactory#get()' must return an instance of type 'ConfigurationData'",
             hints=[
-                f"You can have a look at the default_config_yw.py located in 'py-youwol/system'"
+                "You can have a look at the default_config_yw.py located in 'py-youwol/system'"
             ],
         )
         raise ConfigurationLoadingException(get_status(False))

@@ -22,7 +22,7 @@ def assert_python():
         or (version_info.major == 3 and version_info.minor == 7)
     ):
         print(
-            f"""Your version of python is not compatible with py-youwol:
+            """Your version of python is not compatible with py-youwol:
         Recommended: 3.9.x"""
         )
         exit(1)

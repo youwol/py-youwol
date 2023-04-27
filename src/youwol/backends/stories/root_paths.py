@@ -109,9 +109,9 @@ async def publish_story(
                 )
                 raise InvalidInput(error="Bad zip file")
 
-            await ctx.info(f"Zip file extracted successfully")
+            await ctx.info("Zip file extracted successfully")
             data = parse_json(dir_path / zip_data_filename)
-            await ctx.info(f"Story data recovered", data=data)
+            await ctx.info("Story data recovered", data=data)
             story = data["story"]
             story_id = story["story_id"]
             documents = data["documents"]
@@ -129,11 +129,11 @@ async def publish_story(
                 doc["document_id"]: parse_json(dir_path / (doc["content_id"] + ".json"))
                 for doc in documents
             }
-            await ctx.info(f"Story contents recovered", data=contents)
+            await ctx.info("Story contents recovered", data=contents)
             requirements = parse_json(dir_path / zip_requirements_filename)
-            await ctx.info(f"Story requirements recovered", data=requirements)
+            await ctx.info("Story requirements recovered", data=requirements)
             global_content = parse_json(dir_path / zip_global_content_filename)
-            await ctx.info(f"Global contents recovered", data=requirements)
+            await ctx.info("Global contents recovered", data=requirements)
             await asyncio.gather(
                 doc_db_stories.create_document(
                     doc=story, owner=owner, headers=ctx.headers()

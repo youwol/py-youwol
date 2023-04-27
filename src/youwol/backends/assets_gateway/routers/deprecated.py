@@ -114,7 +114,7 @@ async def groups(
     request: Request, configuration: Configuration = Depends(get_configuration)
 ):
     resp = await forward_deprecated_get(
-        request=request, forward_path=f"accounts/session", configuration=configuration
+        request=request, forward_path="accounts/session", configuration=configuration
     )
     return resp["userInfo"]
 

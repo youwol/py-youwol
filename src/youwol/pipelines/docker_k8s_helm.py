@@ -68,7 +68,7 @@ class PublishDockerStep(PipelineStep):
     id: str = "publish-docker"
     imageVersion: Union[str, Callable[[Project, Context], str]] = "latest"
 
-    sources: FileListing = FileListing(include=[f"src", "Dockerfile"])
+    sources: FileListing = FileListing(include=["src", "Dockerfile"])
 
     run: RunImplicit = lambda self, p, flow, ctx: self.docker_build_command(p, ctx)
 

@@ -276,7 +276,7 @@ class DocDbClient:
                 print(
                     f"Table '{self.table_name}' needs minor update, apply auto update ({str(update)})"
                 )
-                raise NotImplementedError(f"Auto update not implemented")
+                raise NotImplementedError("Auto update not implemented")
 
             if update.type == UpdateType.NONE:
                 print(f"Table '{self.table_name}' schema up-to-date")
