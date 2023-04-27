@@ -128,6 +128,7 @@ def ensure_config_file_exists_or_create_it(path: Optional[Path]) -> (Path, bool)
 from youwol.app.environment import Configuration
 
 Configuration()
-"""
+""",
+            encoding="UTF-8",
         )
     return final_path, exists

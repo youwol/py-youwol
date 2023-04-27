@@ -145,7 +145,7 @@ class SyncHelmDeps(PipelineStep):
         last_manifest: Optional[Manifest],
         context: Context,
     ) -> PipelineStepStatus:
-        with open(project.path / "chart" / "Chart.yaml") as f:
+        with open(project.path / "chart" / "Chart.yaml", encoding="UTF-8") as f:
             data = yaml.load(f, Loader=yaml.FullLoader)
             expected_charts = [
                 f"{d['name']}-{d['version']}.tgz" for d in data["dependencies"]

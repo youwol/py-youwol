@@ -39,7 +39,7 @@ def main():
         import daemon
 
         # noinspection PyUnresolvedReferences
-        with open("py-youwol.log", "x") as log:
+        with open("py-youwol.log", "x", encoding="UTF-8") as log:
             with daemon.DaemonContext(
                 pidfile=lockfile.FileLock("py-youwol"), stderr=log, stdout=log
             ):

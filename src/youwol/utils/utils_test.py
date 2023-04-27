@@ -226,7 +226,9 @@ class TestSession:
                 }
             )
 
-            Path(self.result_folder / filename).write_text("".join(outputs))
+            Path(self.result_folder / filename).write_text(
+                "".join(outputs), encoding="UTF-8"
+            )
             print(f"Error writen in {filename}")
             self.counter = self.counter.with_ko()
         else:

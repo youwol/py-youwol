@@ -219,7 +219,7 @@ async def publish_package(
             )
 
         try:
-            package_json = json.loads(open(package_path).read())
+            package_json = json.load(open(package_path, encoding="UTF-8"))
         except ValueError:
             raise PublishPackageError(
                 "Error while loading the json file 'package.json' -> valid json file?"

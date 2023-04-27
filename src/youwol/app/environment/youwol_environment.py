@@ -273,7 +273,7 @@ async def safe_load(
         os.mkdir(paths_book.store_node_modules)
 
     if not paths_book.packages_cache_path.exists():
-        open(paths_book.packages_cache_path, "w").write(json.dumps({}))
+        json.dump({}, open(paths_book.packages_cache_path, "w", encoding="UTF-8"))
 
     if isinstance(projects.finder, (str, Path)):
         #  5/12/2022: Backward compatibility code
