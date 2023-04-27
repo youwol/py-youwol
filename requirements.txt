@@ -14,6 +14,8 @@ anyio==3.6.1
     # via starlette
 appdirs==1.4.4
     # via youwol (pyproject.toml)
+asgiref==3.6.0
+    # via youwol (pyproject.toml)
 astroid==2.15.4
     # via pylint
 async-timeout==4.0.2
@@ -284,7 +286,7 @@ urllib3==1.26.9
     #   minio
     #   requests
     #   twine
-uvicorn==0.18.2
+uvicorn==0.21.1
     # via youwol (pyproject.toml)
 watchdog==2.1.9
     # via youwol (pyproject.toml)
