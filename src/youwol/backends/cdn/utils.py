@@ -72,7 +72,7 @@ flatten = itertools.chain.from_iterable
 async def fetch(request, path, file_id, storage):
     headers = generate_headers_downstream(request.headers)
     return await storage.get_bytes(
-        path="{}/{}".format(path, file_id), owner=Constants.owner, headers=headers
+        path=f"{path}/{file_id}", owner=Constants.owner, headers=headers
     )
 
 

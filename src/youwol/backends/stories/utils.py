@@ -87,7 +87,7 @@ def position_next(index: str):
 
 
 def position_format(index: float):
-    decimal = "{:.6f}".format(index)
+    decimal = f"{index:.6f}"
     return (6 - len(decimal.split(".")[0])) * "0" + decimal
 
 

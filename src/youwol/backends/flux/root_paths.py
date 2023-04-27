@@ -353,17 +353,17 @@ async def post_metadata(
 
         actual_requirements, workflow, description = await asyncio.gather(
             storage.get_json(
-                path="projects/{}/requirements.json".format(project_id),
+                path=f"projects/{project_id}/requirements.json",
                 owner=owner,
                 headers=ctx.headers(),
             ),
             storage.get_json(
-                path="projects/{}/workflow.json".format(project_id),
+                path=f"projects/{project_id}/workflow.json",
                 owner=owner,
                 headers=ctx.headers(),
             ),
             storage.get_json(
-                path="projects/{}/description.json".format(project_id),
+                path=f"projects/{project_id}/description.json",
                 owner=owner,
                 headers=ctx.headers(),
             ),
@@ -547,7 +547,7 @@ async def delete_component(
 
         owner = Constants.default_owner
 
-        base_path = "components/{}".format(component_id)
+        base_path = f"components/{component_id}"
         storage = configuration.storage
         await asyncio.gather(
             docdb.delete_document(

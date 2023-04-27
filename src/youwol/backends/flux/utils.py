@@ -162,7 +162,7 @@ def update_metadata(
     }
     post_files_request = [
         storage.post_json(
-            path="{}/requirements.json".format(base_path),
+            path=f"{base_path}/requirements.json",
             json=requirements.dict(),
             owner=owner,
             headers=headers,
@@ -170,7 +170,7 @@ def update_metadata(
         if requirements
         else None,
         storage.post_json(
-            path="{}/description.json".format(base_path),
+            path=f"{base_path}/description.json",
             json=description,
             owner=owner,
             headers=headers,
@@ -204,27 +204,27 @@ async def retrieve_project(
         description,
     ) = await asyncio.gather(
         storage.get_json(
-            path="projects/{}/workflow.json".format(project_id),
+            path=f"projects/{project_id}/workflow.json",
             owner=owner,
             headers=headers,
         ),
         storage.get_json(
-            path="projects/{}/builderRendering.json".format(project_id),
+            path=f"projects/{project_id}/builderRendering.json",
             owner=owner,
             headers=headers,
         ),
         storage.get_json(
-            path="projects/{}/runnerRendering.json".format(project_id),
+            path=f"projects/{project_id}/runnerRendering.json",
             owner=owner,
             headers=headers,
         ),
         storage.get_json(
-            path="projects/{}/requirements.json".format(project_id),
+            path=f"projects/{project_id}/requirements.json",
             owner=owner,
             headers=headers,
         ),
         storage.get_json(
-            path="projects/{}/description.json".format(project_id),
+            path=f"projects/{project_id}/description.json",
             owner=owner,
             headers=headers,
         ),
@@ -262,7 +262,7 @@ async def update_component(
     doc_db_component: DocDb,
     headers: Mapping[str, str],
 ) -> any:
-    base_path = "components/{}".format(component_id)
+    base_path = f"components/{component_id}"
     description = {
         "description": component.description,
         "name": component.name,
@@ -270,25 +270,25 @@ async def update_component(
     }
     futures = [
         storage.post_json(
-            path="{}/workflow.json".format(base_path),
+            path=f"{base_path}/workflow.json",
             json=component.workflow.dict(),
             owner=owner,
             headers=headers,
         ),
         storage.post_json(
-            path="{}/builderRendering.json".format(base_path),
+            path=f"{base_path}/builderRendering.json",
             json=component.builderRendering.dict(),
             owner=owner,
             headers=headers,
         ),
         storage.post_json(
-            path="{}/requirements.json".format(base_path),
+            path=f"{base_path}/requirements.json",
             json={"fluxPacks": component.fluxPacks},
             owner=owner,
             headers=headers,
         ),
         storage.post_json(
-            path="{}/description.json".format(base_path),
+            path=f"{base_path}/description.json",
             json=description,
             owner=owner,
             headers=headers,
@@ -297,7 +297,7 @@ async def update_component(
     if component.runnerRendering:
         futures.append(
             storage.post_json(
-                path="{}/runnerRendering.json".format(base_path),
+                path=f"{base_path}/runnerRendering.json",
                 json=component.runnerRendering.dict(),
                 owner=owner,
                 headers=headers,
@@ -336,7 +336,7 @@ async def retrieve_component(
     if not doc_db_response["documents"]:
         raise HTTPException(status_code=404, detail="component not found")
 
-    base_path = "components/{}".format(component_id)
+    base_path = f"components/{component_id}"
     futures = [
         storage.get_json(
             path=Constants.workflow_path(base_path), owner=owner, headers=headers
