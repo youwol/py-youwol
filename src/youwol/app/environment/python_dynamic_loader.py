@@ -35,7 +35,7 @@ def get_object_from_module(
                 f"{module_absolute_path} : Expected class '{object_or_class_name}' not found"
             )
 
-        maybe_class_or_var = imported_module.__getattribute__(object_or_class_name)
+        maybe_class_or_var = getattr(imported_module, object_or_class_name)
         return cast(object_type, maybe_class_or_var(**object_instantiation_kwargs))
         # Need to be re-pluged ASAP. The problem is for now pipeline in 'yw_pipeline.py' use the deprecated
         # type youwol.app.environment.models.IPipelineFactory
