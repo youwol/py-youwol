@@ -3,12 +3,12 @@ import asyncio
 import itertools
 import random
 
+from importlib import resources
+
 # typing
 from typing import Dict, List, Optional
 
 # third parties
-import importlib_resources
-
 from cowpy import cow
 from fastapi import APIRouter, Depends
 from fastapi.responses import PlainTextResponse
@@ -64,7 +64,9 @@ class EnvironmentStatusResponse(BaseModel):
 @router.get("/cow-say", response_class=PlainTextResponse, summary="status")
 async def cow_say():
     #  https://github.com/bmc/fortunes/
-    quotes = importlib_resources.files().joinpath("fortunes.txt").read_text().split("%")
+    quotes = (
+        resources.files(__package__).joinpath("fortunes.txt").read_text().split("%")
+    )
     return cow.milk_random_cow(random.choice(quotes))
 
 
@@ -107,8 +109,8 @@ async def load_predefined_config_file(request: Request, rest_of_path: str):
         # Youwol application
         from youwol.app.environment import predefined_configs
 
-        source = importlib_resources.files(predefined_configs).joinpath(rest_of_path)
-        with importlib_resources.as_file(source) as path:
+        source = resources.files(predefined_configs).joinpath(rest_of_path)
+        with resources.as_file(source) as path:
             env = await YouwolEnvironmentFactory.load_from_file(path)
             asyncio.ensure_future(ProjectLoader.initialize(env=env))
             return await status(request, env)
