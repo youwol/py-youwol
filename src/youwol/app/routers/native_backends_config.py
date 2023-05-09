@@ -58,7 +58,3 @@ async def accounts_backend_config_py_youwol():
         pkce_cache=pkce_cache,
         secure_cookies=False,
     )
-
-
-async def mock_backend_config_py_youwol():
-    return (await yw_config()).backends_configuration.mock_backend

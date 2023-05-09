@@ -17,7 +17,6 @@ from youwol.backends import (
     cdn_sessions_storage,
     files,
     flux,
-    mock,
     stories,
     tree_db,
 )
@@ -32,7 +31,6 @@ from .native_backends_config import (
     cdn_session_storage_config_py_youwol,
     files_backend_config_py_youwol,
     flux_backend_config_py_youwol,
-    mock_backend_config_py_youwol,
     stories_config_py_youwol,
     tree_db_config_py_youwol,
 )
@@ -97,11 +95,6 @@ backends = [
         prefix="/api/accounts",
         tags=["accounts"],
         router=accounts.get_router(accounts_backend_config_py_youwol),
-    ),
-    BackendPlugin(
-        prefix="/api/fake",
-        tags=["fake"],
-        router=mock.get_router(mock_backend_config_py_youwol),
     ),
 ]
 
