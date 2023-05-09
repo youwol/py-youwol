@@ -73,13 +73,18 @@ publish = [
 ]
 
 [project.scripts]
-youwol = "youwol.app:main"
+youwol = "youwol.app.main:main"
 
 [build-system]
 requires = [
-    "setuptools",
+    "setuptools>=67.7.2",
 ]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["youwol.app*", "youwol.backends*", "youwol.utils*", "youwol.pipelines*"]
+exclude = ["youwol.backends.*.main*", "youwol.backends.mock*"]
 
 [tool.setuptools.package-data]
 "youwol.app.routers.environment" = ["fortunes.txt"]

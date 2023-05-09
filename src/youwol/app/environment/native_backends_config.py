@@ -11,7 +11,6 @@ import youwol.backends.cdn_apps_server as yw_cdn_apps_server
 import youwol.backends.cdn_sessions_storage as yw_cdn_sessions_storage
 import youwol.backends.files as yw_files_backend
 import youwol.backends.flux as yw_flux_backend
-import youwol.backends.mock as yw_mock_backend
 import youwol.backends.stories as yw_stories_backend
 import youwol.backends.tree_db as yw_tree_db_backend
 
@@ -46,7 +45,6 @@ class BackendConfigurations:
         flux_backend: yw_flux_backend.Configuration,
         stories_backend: yw_stories_backend.Configuration,
         tree_db_backend: yw_tree_db_backend.Configuration,
-        mock_backend: yw_mock_backend.Configuration,
     ):
         self.assets_backend = assets_backend
         self.assets_gtw = assets_gtw
@@ -57,7 +55,6 @@ class BackendConfigurations:
         self.flux_backend = flux_backend
         self.stories_backend = stories_backend
         self.tree_db_backend = tree_db_backend
-        self.mock_backend = mock_backend
         self.no_sql_databases = [
             self.assets_backend.doc_db_asset,
             self.assets_backend.doc_db_access_policy,
@@ -205,5 +202,4 @@ def native_backends_config(
         files_backend=yw_files_backend.Configuration(
             file_system=LocalFileSystem(root_path=local_storage),
         ),
-        mock_backend=yw_mock_backend.Configuration(),
     )
