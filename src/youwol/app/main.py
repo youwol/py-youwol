@@ -17,6 +17,7 @@ def assert_python():
     version_info = sys.version_info
     if not (
         (version_info.major == 3 and version_info.minor == 10)
+        or (version_info.major == 3 and version_info.minor == 11)
         or (version_info.major == 3 and version_info.minor == 9)
         or (version_info.major == 3 and version_info.minor == 8)
         or (version_info.major == 3 and version_info.minor == 7)
