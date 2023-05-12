@@ -50,7 +50,8 @@ async def accounts_backend_config_py_youwol():
         admin_client=config.get_remote_info().authProvider.keycloakAdminClient,
         keycloak_admin_base_url=config.get_remote_info().authProvider.keycloakAdminBaseUrl,
         jwt_cache=jwt_cache,
-        pkce_cache=pkce_cache
+        pkce_cache=pkce_cache,
+        secure_cookies=False
     )
 
 
