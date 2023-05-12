@@ -108,14 +108,14 @@ async def authorization_flow_callback(
     response.set_cookie(
         'yw_jwt',
         session.get_uuid(),
-        secure=True,
+        secure=conf.secure_cookies,
         httponly=True,
         max_age=session.get_remaining_time()
     )
     response.set_cookie(
         'yw_login_hint',
         f"user:{username}",
-        secure=True,
+        secure=conf.secure_cookies,
         httponly=True,
         expires=ONE_YEAR_IN_SECONDS
     )
@@ -161,7 +161,7 @@ async def login_as_temp_user(
     response.set_cookie(
         'yw_jwt',
         session.get_uuid(),
-        secure=True,
+        secure=conf.secure_cookies,
         httponly=True,
         max_age=session.get_remaining_time()
     )
@@ -203,11 +203,11 @@ async def logout(
         real_session.delete()
 
     response = RedirectResponse(url=url, status_code=307)
-    response.set_cookie('yw_jwt', 'DELETED', secure=True, httponly=True, expires=0)
+    response.set_cookie('yw_jwt', 'DELETED', secure=conf.secure_cookies, httponly=True, expires=0)
     if forget_me:
-        response.set_cookie('yw_login_hint', 'DELETED', secure=True, httponly=True, expires=0)
+        response.set_cookie('yw_login_hint', 'DELETED', secure=conf.secure_cookies, httponly=True, expires=0)
     if yw_jwt_t:
-        response.set_cookie('yw_jwt_t', 'DELETED', secure=True, httponly=True, expires=0)
+        response.set_cookie('yw_jwt_t', 'DELETED', secure=conf.secure_cookies, httponly=True, expires=0)
     return response
 
 
