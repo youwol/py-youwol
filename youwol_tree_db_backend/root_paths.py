@@ -479,36 +479,6 @@ async def get_items_by_asset_id(
         return response
 
 
-@router.get("/items/{item_id}/path",
-            summary="get the path of an item",
-            response_model=PathResponse)
-async def get_path(
-        request: Request,
-        item_id: str,
-        configuration: Configuration = Depends(get_configuration)
-):
-    response: Optional[PathResponse] = None
-    async with Context.start_ep(
-            request=request,
-            action="get_path",
-            with_attributes={"item_id": item_id},
-            response=lambda: response
-    ) as ctx:  # type: Context
-
-        item = await _get_item(item_id=item_id, configuration=configuration, context=ctx)
-        drive = await _get_drive(drive_id=item.driveId, configuration=configuration, context=ctx)
-
-        folders = [await _get_folder(folder_id=item.folderId, configuration=configuration,
-                                     context=ctx)]
-        while folders[0].parentFolderId != folders[0].driveId:
-            folders = [await _get_folder(folder_id=folders[0].parentFolderId,
-                                         configuration=configuration, context=ctx)] \
-                      + folders
-
-        response = PathResponse(item=item, folders=folders, drive=drive)
-        return response
-
-
 async def get_folders_rec(folder_id: str, drive_id: str, configuration: Configuration, context: Context):
 
     drive = await _get_drive(drive_id=drive_id, configuration=configuration, context=context)
