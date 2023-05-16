@@ -106,7 +106,7 @@ exclude = ["youwol.backends.*.main*", "youwol.backends.mock*"]
 branch = true
 relative_files = true
 data_file = "coverage.coverage"
-debug = "sys,config,pathmap"
+debug = ["sys","config","pathmap"]
 
 
 [tool.isort]
