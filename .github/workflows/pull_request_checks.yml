@@ -1,4 +1,4 @@
-name: Pull Request Checks
+name: Continuous Integration
 
 on:
   workflow_dispatch:
@@ -27,11 +27,13 @@ on:
           Default to 'main'
         default: main
 
-      only:
-        description: >
-          Only run specified integrations.
-          Default to 'http-clients local-youwol-client cdn-client'
-        default: 'http-clients local-youwol-client cdn-client'
+      skip:
+        description: |
+          List of check to skip : local-youwol-client, http-clients, cdn-client, pipeline-ts, build, version_monotony, 
+          audit, pep8, cleanness, dep_manager
+        required: false
+        default: ''
+
 
   pull_request:
     branches:
@@ -39,115 +41,40 @@ on:
 
 jobs:
   integration_local-youwol-client:
-    name: Integration with local-youwol-client
-    if: inputs.only == '' || contains(inputs.only, 'local-youwol-client')
-    runs-on: ubuntu-latest
-    steps:
-      - name: Prepare repository
-        id: prepare
-        uses: youwol/nestor/py/prepare@v1
-
-      - name: Prepare local-youwol-client
-        id: prepare_local-youwol-client
-        uses: youwol/nestor/ts/prepare@v1
-        with:
-          repository: youwol/local-youwol-client
-          ref: ${{ inputs.local-youwol-client_ref }}
-          path: ${{ runner.temp }}/local-youwol-client
-
-      - name: Run local-youwol-client tests
-        id: tests_local-youwol-client
-        uses: youwol/nestor/ts/tests_coverage@v1
-        with:
-          path: ${{ runner.temp }}/local-youwol-client
-          py-youwol_path: ${{ github.workspace }}
-          py-youwol_conf_path: ${{ runner.temp }}/local-youwol-client/src/tests/yw_config/yw_config.py
-          coverage_omit: '*/src/tests/*/yw_pipeline.py'
-          USERNAME_INTEGRATION_TESTS: ${{ secrets.USERNAME_INTEGRATION_TESTS }}
-          PASSWORD_INTEGRATION_TESTS: ${{ secrets.PASSWORD_INTEGRATION_TESTS }}
-          USERNAME_INTEGRATION_TESTS_BIS: ${{ secrets.USERNAME_INTEGRATION_TESTS_BIS }}
-          PASSWORD_INTEGRATION_TESTS_BIS: ${{ secrets.PASSWORD_INTEGRATION_TESTS_BIS }}
-
-      - name: On Tests Failure
-        id: on_tests_failure
-        if: steps.tests_local-youwol-client.outputs.result == 'failure'
-        uses: actions/github-script@v6
-        with:
-          script: core.setFailed("Job failed because tests has failed, see job logs and annotations.")
+    name: Integration local-youwol-client
+    if: "! contains(inputs.skip, 'local-youwol-client')"
+    uses: youwol/nestor/.github/workflows/integration-tests.yaml@v3
+    with:
+      pyYouwolCoverage: true
+      tsRepository: youwol/local-youwol-client
+      tsRef: ${{ inputs.local-youwol-client_ref }}
+      confRepository: youwol/local-youwol-client
+      confRef: ${{ inputs.local-youwol-client_ref }}
+      confPath: src/tests/yw_config/yw_config.py
+      name: local-youwol-client
+    secrets: inherit
 
   integration_cdn-client:
-    name: Integration with cdn-client
-    if: inputs.only == '' || contains(inputs.only, 'cdn-client')
-    runs-on: ubuntu-latest
-    steps:
-      - name: Prepare repository
-        id: prepare
-        uses: youwol/nestor/py/prepare@v1
-
-      - name: Prepare cdn-client
-        id: prepare_cdn-client
-        uses: youwol/nestor/ts/prepare@v1
-        with:
-          repository: youwol/cdn-client
-          ref: ${{ inputs.cdn-client_ref }}
-          path: ${{ runner.temp }}/cdn-client
-
-      - name: Run cdn-client tests
-        id: tests_cdn-client
-        uses: youwol/nestor/ts/tests_coverage@v1
-        with:
-          path: ${{ runner.temp }}/cdn-client
-          py-youwol_path: ${{ github.workspace }}
-          py-youwol_conf_path: yw_config_IT.py
-          py-youwol_conf_repository: youwol/integrations-tests-conf
-          USERNAME_INTEGRATION_TESTS: ${{ secrets.USERNAME_INTEGRATION_TESTS }}
-          PASSWORD_INTEGRATION_TESTS: ${{ secrets.PASSWORD_INTEGRATION_TESTS }}
-          USERNAME_INTEGRATION_TESTS_BIS: ${{ secrets.USERNAME_INTEGRATION_TESTS_BIS }}
-          PASSWORD_INTEGRATION_TESTS_BIS: ${{ secrets.PASSWORD_INTEGRATION_TESTS_BIS }}
-
-      - name: On Tests Failure
-        id: on_tests_failure
-        if: steps.tests_cdn-client.outputs.result == 'failure'
-        uses: actions/github-script@v6
-        with:
-          script: core.setFailed("Job failed because tests has failed, see job logs and annotations.")
+    name: Integration cdn-client
+    if: "! contains(inputs.skip, 'cdn-client')"
+    uses: youwol/nestor/.github/workflows/integration-tests.yaml@v3
+    with:
+      pyYouwolCoverage: true
+      tsRepository: youwol/cdn-client
+      tsRef: ${{ inputs.cdn-client_ref }}
+      name: cdn-client
+    secrets: inherit
 
   integration_http-clients:
-    name: Integration with http-clients
-    if: inputs.only == '' || contains(inputs.only, 'http-clients')
-    runs-on: ubuntu-latest
-    steps:
-      - name: Prepare repository
-        id: prepare
-        uses: youwol/nestor/py/prepare@v1
-
-      - name: Prepare http-clients
-        id: prepare_http-clients
-        uses: youwol/nestor/ts/prepare@v1
-        with:
-          repository: youwol/http-clients
-          ref: ${{ inputs.http-clients_ref }}
-          path: ${{ runner.temp }}/http-clients
-
-      - name: Run http-clients tests
-        id: tests_http-clients
-        uses: youwol/nestor/ts/tests_coverage@v1
-        with:
-          path: ${{ runner.temp }}/http-clients
-          py-youwol_path: ${{ github.workspace }}
-          py-youwol_conf_path: yw_config_IT.py
-          py-youwol_conf_repository: youwol/integrations-tests-conf
-          USERNAME_INTEGRATION_TESTS: ${{ secrets.USERNAME_INTEGRATION_TESTS }}
-          PASSWORD_INTEGRATION_TESTS: ${{ secrets.PASSWORD_INTEGRATION_TESTS }}
-          USERNAME_INTEGRATION_TESTS_BIS: ${{ secrets.USERNAME_INTEGRATION_TESTS_BIS }}
-          PASSWORD_INTEGRATION_TESTS_BIS: ${{ secrets.PASSWORD_INTEGRATION_TESTS_BIS }}
-
-      - name: On Tests Failure
-        id: on_tests_failure
-        if: steps.tests_http-clients.outputs.result == 'failure'
-        uses: actions/github-script@v6
-        with:
-          script: core.setFailed("Job failed because tests has failed, see job logs and annotations.")
+    name: Integration http-clients
+    if: "! contains(inputs.skip, 'http-clients')"
+    uses: youwol/nestor/.github/workflows/integration-tests.yaml@v3
+    with:
+      pyYouwolCoverage: true
+      tsRepository: youwol/http-clients
+      tsRef: ${{ inputs.http-clients_ref }}
+      name: http-clients
+    secrets: inherit
 
   combine_coverages:
     name: Combine Coverages
@@ -157,158 +84,40 @@ jobs:
       - integration_cdn-client
       - integration_http-clients
     steps:
-      - name: Download artifacts
-        id: download_artifacts
-        uses: actions/download-artifact@v3
-        with:
-          path: ${{ runner.temp }}/artifacts
-
-      - name: Prepare py-youwol
-        uses: youwol/nestor/py/prepare@v1
-        with:
-          requirements: requirements-qa.txt
-
-      - name: Setup Coverage configuration
-        env:
-          ARTIFACT_DIR: ${{ runner.temp }}/artifacts
-        run: |
-          # Set up coverage conf
-          cat  << _coverage_rc > ".coveragerc"
-            [run]
-            branch = True
-            data_file = coverage.coverage
-            relative_files = True
-            debug = sys,config,pathmap
-          _coverage_rc
-
-      - name: Combine coverages
-        id: combine_coverages
-        env:
-          COVERAGE_DEBUG_FILE: coverage.debug
-          ARTIFACT_DIR: ${{ runner.temp }}/artifacts
-        run: |
-          title="Combine Coverage"
-          msg="Coverage Combine failed. See job logs"
-          coverage combine --keep $ARTIFACT_DIR/*/coverage.coverage > coverage.log 2>&1 || echo "::error title=$title::$msg"
-
-      - name: Coverage HTML Report
-        id: coverage_html_report
-        env:
-          COVERAGE_DEBUG_FILE: coverage_html.debug
-          ARTIFACT_DIR: ${{ runner.temp }}/artifacts
-        run: |
-          title="Coverage report HTML"
-          msg="HTML report generation failed. See job logs"
-          coverage html > coverage_html.log 2>&1 || echo "::error title=$title::$msg"
-          mv coverage_html.debug $ARTIFACT_DIR || echo "::error title=$title::coverage_html.debug not found"
-          mv coverage_html.log  $ARTIFACT_DIR || echo "::error title=$title::coverage_html.log not found"
-          mv htmlcov $ARTIFACT_DIR || echo "::error title=$title::htmlcov not found"
-
-      - name: Coverage XML Report
-        id: coverage_xml_report
-        env:
-          COVERAGE_DEBUG_FILE: coverage_xml.debug
-          ARTIFACT_DIR: ${{ runner.temp }}/artifacts
-        run: |
-          title="Coverage report XML"
-          msg="XML report generation failed. See job logs"
-          coverage xml > coverage_xml.log 2>&1 || echo "::error title=$title::$msg"
-          mv coverage_xml.debug $ARTIFACT_DIR || echo "::error title=$title::coverage_xml.debug not found"
-          mv coverage_xml.log  $ARTIFACT_DIR || echo "::error title=$title::coverage_xml.log not found"
-          mv coverage.xml $ARTIFACT_DIR || echo "::error title=$title::coverage.xml not found"
-
-      - name: Move Combined Coverage artifacts
-        id: mv_combined_coverage_artifacts
-        env:
-          ARTIFACT_DIR: ${{ runner.temp }}/artifacts
-        run: |
-          title="Move combined coverage artifacts"
-          mv .coveragerc $ARTIFACT_DIR || echo "::error title=$title::.covergarc not found"
-          mv coverage.debug $ARTIFACT_DIR || echo "::error title=$title::coverage.debug not found"
-          mv coverage.log $ARTIFACT_DIR || echo "::error title=$title::coverage.log not found"
-          mv coverage.coverage $ARTIFACT_DIR || echo "::error title=$title::coverage.coverage not found"
-
-      - name: Upload artifacts
-        id: upload_artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: py-youwol_logs
-          path: ${{ runner.temp }}/artifacts/
+      - name: Combine
+        id: combine
+        uses: youwol/nestor/py-youwol/combine-coverages@v3
 
   pipeline_ts:
-    name: Pipeline_ts
+    name: Pipeline Typescript
+    if: "! contains(inputs.skip, 'pipeline-ts')"
     runs-on: ubuntu-latest
     steps:
       - name: Prepare repository
         id: prepare
-        uses: youwol/nestor/py/prepare@v1
+        uses: youwol/nestor/py-youwol/prepare@v3
 
-      - name: Prepare todo-app-ts
+      - name: Prepare todo-app-ts repository
         id: prepare_todo-app-ts
-        uses: youwol/nestor/ts/prepare@v1
+        uses: youwol/nestor/ts/prepare@v3
         with:
           repository: youwol/todo-app-ts
           ref: ${{ inputs.todo-app-ts_ref }}
           path: ${{ runner.temp }}/todo-app-ts
 
-      - name: Py-youwol templating
-        id: autogen
-        working-directory: ${{ runner.temp }}/todo-app-ts
-        env:
-          PYTHONPATH: ${{ github.workspace }}
-        run: yarn auto-gen || echo "result=failure" >> $GITHUB_OUTPUT
-
-      - name: Build
-        id: build
-        working-directory: ${{ runner.temp }}/todo-app-ts
-        run: yarn build || echo "result=failure" >> $GITHUB_OUTPUT
-
-      - name: Check repository cleanness
-        id: git_cleanness
-        working-directory: ${{ runner.temp }}/todo-app-ts
-        run: |
-          git_status=$(git status -s)
-          [ -z "$git_status" ] || ( echo "$git_status" ; echo "result=failure" >> $GITHUB_OUTPUT )
-
-      - name: On Py-youwol templating Failure
-        id: autogen_failure
-        if: steps.autogen.outputs.result == 'failure'
-        uses: actions/github-script@v6
+      - name: Build todo-app-ts
+        id: build_todo-app-ts
+        uses: youwol/nestor/ts/build@v3
         with:
-          script: core.setFailed("Job failed because py-youwol templating failed, see job logs and annotations.")
-
-      - name: On Build Failure
-        id: build_failure
-        if: steps.build.outputs.result == 'failure'
-        uses: actions/github-script@v6
-        with:
-          script: core.setFailed("Job failed because build failed, see job logs and annotations.")
-
-      - name: On Repository dirty
-        id: git_cleanness_dirty
-        if: steps.git_cleanness.outputs.result == 'failure'
-        uses: actions/github-script@v6
-        with:
-          script: core.setFailed("Job failed because some files were modified or untracked, see job logs and annotations.")
+          skip: ${{ inputs.skip }}
 
   static_analysis:
-    name: Static Analysis
+    name: Static Analysis & Build
     runs-on: ubuntu-latest
     steps:
       - name: Prepare repository
         id: prepare
-        uses: youwol/nestor/py/prepare@v1
-        with:
-          requirements: requirements-qa.txt
-
-      - name: Compile dependencies
-        id: deps_compile
-        run: |
-          python -m venv venv
-          . venv/bin/activate
-          pip install -r requirements-dev.txt
-          sh deps_manager.sh compile
-          rm -r venv
+        uses: youwol/nestor/py-youwol/prepare@v3
 
       - name: Checkout main branch
         id: checkout_main_branch
@@ -317,114 +126,13 @@ jobs:
           ref: main
           path: .py-youwol_main
 
-      - name: Get main branch version
-        id: get_main_version
-        env:
-          CHECKOUT_DIR: .py-youwol_main
-        run: |
-          cur_dir=$(pwd)
-          cd $CHECKOUT_DIR
-          main_version=$(python3 "${cur_dir}"/version_management.py get_current)
-          echo "main_version=${main_version}" > $GITHUB_OUTPUT
-          cd "${cur_dir}"
-          rm -fr "${CHECKOUT_DIR}"
-
-      - name: Check version monotony
-        id: version_monotony
-        env:
-          MAIN_VERSION: ${{ steps.get_main_version.outputs.main_version }}
-        run: |
-          branch_version=$(python3.9 version_management.py get_current)
-          echo "::notice title=Versions::branch version is ${branch_version}, main version is ${MAIN_VERSION}"
-          python3.9 version_management.py check ${MAIN_VERSION} || echo "result=failure" >> $GITHUB_OUTPUT
-
-      - name: Audit requirements with PyPI
-        id: audit_requirements_pypi
-        run: |
-          pip-audit --vulnerability-service pypi \
-            --require-hashes \
-            --requirement requirements-dev.txt \
-            --requirement requirements-docker.txt \
-            --requirement requirements-qa.txt \
-            --requirement requirements-publish.txt \
-            || echo "result=failure" > $GITHUB_OUTPUT
-
-      - name: Audit requirements with OSV
-        id: audit_requirements_osv
-        run: |
-          pip-audit --vulnerability-service osv \
-            --requirement requirements-dev.txt \
-            --requirement requirements-docker.txt \
-            --requirement requirements-qa.txt \
-            --requirement requirements-publish.txt \
-            || echo "result=failure" > $GITHUB_OUTPUT
-
-      - name: Audit project with PyPI
-        id: audit_project_pypi
-        run: pip-audit --vulnerability-service pypi ./ || echo "result=failure" > $GITHUB_OUTPUT
-
-      - name: Audit project with OSV
-        id: audit_project_osv
-        run: pip-audit --vulnerability-service osv ./ || echo "result=failure" > $GITHUB_OUTPUT
-
-      - name: PEP 8
-        id: pep8
-        env:
-          line_length: 120
-          format: '::error file=%(path)s,line=%(row)d,col=%(col)d,title=PEP8 %(code)s::%(text)s'
-        run: pycodestyle --max-line-length=$line_length --format="$format" . || echo "result=failure" >> $GITHUB_OUTPUT
-
-      - name: Check repository cleanness
-        id: git_cleanness
-        run: |
-          git_status=$(git status -s)
-          [ -z "$git_status" ] || ( echo "$git_status" ; echo "result=failure" >> $GITHUB_OUTPUT )
-
-      - name: On version monotony failure
-        id: version_monotony_failure
-        if: steps.version_monotony.outputs.result == 'failure'
-        uses: actions/github-script@v6
+      - name: Static Analysis
+        id: static_analysis
+        uses: youwol/nestor/py-youwol/static-analysis@v3
         with:
-          script: core.setFailed("Job failed because branch version is incorrect, see job logs and annotations.")
+          skip: ${{ inputs.skip }}
 
-      - name: On Audit requirements with PyPI failure
-        id: audit_requirements_pypi_failure
-        if: steps.audit_requirements_pypi.outputs.result == 'failure'
-        uses: actions/github-script@v6
-        with:
-          script: core.setFailed("Job failed because auditing requirements with PyPI failed, see job logs and annotations.")
-
-      - name: On Audit requirements with OSV failure
-        id: audit_requirements_osv_failure
-        if: steps.audit_requirements_osv.outputs.result == 'failure'
-        uses: actions/github-script@v6
-        with:
-          script: core.setFailed("Job failed because auditing requirements with OSV failed, see job logs and annotations.")
-
-      - name: On Audit project with PyPI failure
-        id: audit_project_pypi_failure
-        if: steps.audit_project_pypi.outputs.result == 'failure'
-        uses: actions/github-script@v6
-        with:
-          script: core.setFailed("Job failed because auditing project with PyPI failed, see job logs and annotations.")
-
-      - name: On Audit project with OSV failure
-        id: audit_project_osv_failure
-        if: steps.audit_project_osv.outputs.result == 'failure'
-        uses: actions/github-script@v6
-        with:
-          script: core.setFailed("Job failed because auditing project with PyPI failed, see job logs and annotations.")
-
-      - name: On PEP 8 failure
-        id: pep8_failure
-        if: steps.pep8.outputs.result == 'failure'
-        uses: actions/github-script@v6
-        with:
-          script: core.setFailed("Job failed because source is badly formatted, see job logs and annotations.")
-
-      - name: On Repository dirty
-        id: git_cleanness_dirty
-        if: steps.git_cleanness.outputs.result == 'failure'
-        uses: actions/github-script@v6
-        with:
-          script: core.setFailed("Job failed because some files were modified or untracked, see job logs and annotations.")
+      - name: Build
+        if: "! contains(inputs.skip, 'build')"
+        id: build
+        uses: youwol/nestor/py-youwol/build@v3
