@@ -125,7 +125,7 @@ jobs:
           skip: ${{ inputs.skip }}
 
   static_analysis:
-    name: Static Analysis & Build
+    name: Static Analysis
     runs-on: ubuntu-latest
     steps:
       - name: Prepare repository
@@ -145,7 +145,22 @@ jobs:
         with:
           skip: ${{ inputs.skip }}
 
+
+  build:
+    name: Build
+    needs:
+      - integration_local-youwol-client
+      - integration_cdn-client
+      - integration_http-clients
+      - static_analysis
+      - pipeline_ts
+    runs-on: ubuntu-latest
+    if: "! contains(inputs.skip, 'build')"
+    steps:
+      - name: Prepare repository
+        id: prepare
+        uses: youwol/nestor/py-youwol/prepare@v3
+
       - name: Build
-        if: "! contains(inputs.skip, 'build')"
         id: build
         uses: youwol/nestor/py-youwol/build@v3
