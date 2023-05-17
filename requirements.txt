@@ -284,7 +284,7 @@ urllib3==1.26.9
     #   minio
     #   requests
     #   twine
-uvicorn==0.21.1
+uvicorn==0.22.0
     # via youwol (pyproject.toml)
 watchdog==2.1.9
     # via youwol (pyproject.toml)
