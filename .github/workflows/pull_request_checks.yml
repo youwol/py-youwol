@@ -57,6 +57,7 @@ jobs:
       confRepository: youwol/local-youwol-client
       confRef: ${{ inputs.local-youwol-client_ref }}
       confPath: src/tests/yw_config/yw_config.py
+      coverageOmit: '*/src/tests/*/yw_pipeline.py'
       name: local-youwol-client
     secrets: inherit
 
