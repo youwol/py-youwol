@@ -33,6 +33,10 @@ set -e
 # Uncomment next line to trace commands execution
 # set -x
 
+pip_compile_default_opts=""
+pip_compile_default_opts="${pip_compile_default_opts} --allow-unsafe"
+pip_compile_default_opts="${pip_compile_default_opts} --resolver=backtracking"
+
 self_name=$(basename $0)
 export CUSTOM_COMPILE_COMMAND="sh ${self_name} compile"
 # Either 'compile', 'upgrade' or 'upgrade'
@@ -91,7 +95,7 @@ pip_compile() {
   extras=$2
   no_hashes=$3
 
-  opts="--allow-unsafe"
+  opts="${pip_compile_default_opts}"
 
   if [ -z "${no_hashes}" ]; then
     opts="${opts} --generate-hashes"
@@ -136,7 +140,7 @@ pip_upgrade_all() {
   extras=$2
   no_hashes=$3
 
-  opts="--upgrade --allow-unsafe"
+  opts="--upgrade ${pip_compile_default_opts}"
 
   if [ -z "${no_hashes}" ]; then
     opts="${opts} --generate-hashes"
@@ -182,7 +186,7 @@ pip_upgrade_package() {
   extras=$3
   no_hashes=$4
 
-  opts="--upgrade-package ${package} --allow-unsafe"
+  opts="--upgrade-package ${package} ${pip_compile_default_opts}"
 
   if [ -z "${no_hashes}" ]; then
     opts="${opts} --generate-hashes"
@@ -234,7 +238,7 @@ Once you have a virtual environment for this project, activate it before running
 "
 else
   echo "[venv]
-peth: ${VIRTUAL_ENV}"
+path: ${VIRTUAL_ENV}"
   echo
 fi
 

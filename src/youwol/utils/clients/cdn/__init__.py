@@ -1,0 +1,2 @@
+# relative
+from .cdn import *

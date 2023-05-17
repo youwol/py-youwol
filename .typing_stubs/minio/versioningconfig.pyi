@@ -1,0 +1,16 @@
+from .commonconfig import DISABLED as DISABLED, ENABLED as ENABLED
+from .xml import Element as Element, SubElement as SubElement, findtext as findtext
+from _typeshed import Incomplete
+
+OFF: str
+SUSPENDED: str
+
+class VersioningConfig:
+    def __init__(self, status: Incomplete | None = ..., mfa_delete: Incomplete | None = ...) -> None: ...
+    @property
+    def status(self): ...
+    @property
+    def mfa_delete(self): ...
+    @classmethod
+    def fromxml(cls, element): ...
+    def toxml(self, element): ...

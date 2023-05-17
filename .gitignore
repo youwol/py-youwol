@@ -17,7 +17,8 @@ tooling/test_install/**/*
 !test_install/README.md
 
 .virtual_envs
-.venv_*
+.venv*
+.env*
 .publish_venv
 __pycache__
 /.idea/

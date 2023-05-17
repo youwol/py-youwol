@@ -23,7 +23,6 @@ dependencies = [
     "cowpy>=1.1.5,<2.0.0",
     "deepdiff>=5.8.1,<6.0.0",
     "fastapi>=0.92.0,<0.93.0",
-    "importlib-resources>=5.10.2,<5.11.0",
     "minio>=7.1.9,<8.0.0",
     "Pillow>=9.3.0,<10.0.0",
     "psutil>=5.9.1,<6.0.0",
@@ -34,7 +33,7 @@ dependencies = [
     "pyjwt[crypto]>=2.4.0,<3.0.0",
     "redis>=4.3.4,<5.0.0",
     "tqdm>=4.64.1,<5.0.0",
-    "uvicorn>=0.18.2,<0.19.0",
+    "uvicorn>=0.22.0,<0.23.0",
     "websockets>=10.3,<11",
     "semantic_version>=2.10.0,<3.0.0",
     "watchdog>=2.1.9,<3.0.0",
@@ -45,11 +44,26 @@ dev = [
     "pip-tools",
 ]
 qa = [
+    "asgiref",
     "coverage",
-    "pycodestyle",
     "pip-audit",
+    "pylint",
+    "pycodestyle",
+    "pydocstyle",
+    "isort",
+    "black",
     "tomli",
     "tomli-w",
+    "mypy",
+    "types-Pillow",
+    "types-PyYAML",
+    "types-appdirs",
+    "types-colorama",
+    "types-psutil",
+    "types-redis",
+    "types-setuptools",
+    "types-tqdm",
+    "types-ujson"
 ]
 publish = [
     "pdoc3",
@@ -59,29 +73,22 @@ publish = [
 ]
 
 [project.scripts]
-youwol = "youwol.main:main"
+youwol = "youwol.app.main:main"
 
 [build-system]
 requires = [
-    "setuptools",
+    "setuptools>=67.7.2",
 ]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-where = [
-    "./",
-]
-include = [
-    "youwol*",
-]
+where = ["src"]
+include = ["youwol.app*", "youwol.backends*", "youwol.utils*", "youwol.pipelines*"]
+exclude = ["youwol.backends.*.main*", "youwol.backends.mock*"]
 
 [tool.setuptools.package-data]
-"youwol.routers.environment" = [
-    "fortunes.txt",
-]
-youwol_flux_backend = [
-    "bundle_app_template/*",
-]
+"youwol.app.routers.environment" = ["fortunes.txt"]
+"youwol.backends.flux" = ["bundle_app_template/*"]
 "youwol.pipelines.pipeline_typescript_weback_npm.regular" = [
     "templates/.*",
     "templates/*",
@@ -99,4 +106,39 @@ youwol_flux_backend = [
 branch = true
 relative_files = true
 data_file = "coverage.coverage"
-debug = "sys,config,pathmap"
+debug = ["sys","config","pathmap"]
+
+
+[tool.isort]
+profile = "black"
+lines_between_types = 1
+
+import_heading_stdlib = "standard library"
+
+known_typing = "typing"
+import_heading_typing = "typing"
+
+import_heading_thirdparty = "third parties"
+
+import_heading_firstparty = "Youwol"
+
+known_yw_app = "youwol.app"
+import_heading_yw_app = "Youwol application"
+
+known_yw_backends = "youwol.backends"
+import_heading_yw_backends = "Youwol backends"
+
+known_yw_utils = "youwol.utils"
+import_heading_yw_utils = "Youwol utilities"
+
+known_yw_pipelines = "youwol.pipelines"
+import_heading_yw_pipelines = "Youwol pipelines"
+
+import_heading_localfolder = "relative"
+
+sections = ["FUTURE", "STDLIB", "TYPING", "THIRDPARTY", "FIRSTPARTY", "YW_APP", "YW_BACKENDS", "YW_UTILS",
+    "YW_PIPELINES", "LOCALFOLDER"]
+
+[tool.mypy]
+mypy_path = ".typing_stubs"
+files = "src"
