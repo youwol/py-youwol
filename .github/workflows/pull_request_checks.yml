@@ -93,6 +93,10 @@ jobs:
       - integration_cdn-client
       - integration_http-clients
     steps:
+      - name: Prepare repository
+        id: prepare
+        uses: youwol/nestor/py-youwol/prepare@v3
+
       - name: Combine
         id: combine
         uses: youwol/nestor/py-youwol/combine-coverages@v3
