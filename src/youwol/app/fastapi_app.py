@@ -1,8 +1,6 @@
 # standard library
 import asyncio
 
-from functools import partial
-
 # third parties
 from fastapi import Depends, FastAPI, WebSocket
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
@@ -23,7 +21,6 @@ from youwol.app.middlewares import (
     BrowserCachingMiddleware,
     JwtProviderPyYouwol,
     LocalCloudHybridizerMiddleware,
-    get_remote_openid_infos,
 )
 from youwol.app.routers import admin, native_backends
 from youwol.app.routers.environment import AssetDownloadThread
@@ -41,13 +38,18 @@ from youwol.app.routers.projects import ProjectLoader
 # Youwol utilities
 from youwol.utils import (
     CleanerThread,
+    OidcInfos,
     YouWolException,
     YouwolHeaders,
     factory_local_cache,
     youwol_exception_handler,
 )
 from youwol.utils.context import Context, ContextFactory, InMemoryReporter
-from youwol.utils.middlewares import AuthMiddleware, redirect_to_login
+from youwol.utils.middlewares import (
+    AuthMiddleware,
+    JwtProviderCookie,
+    redirect_to_login,
+)
 from youwol.utils.middlewares.root_middleware import RootMiddleware
 
 # relative
@@ -72,14 +74,12 @@ download_thread = AssetDownloadThread(
 
 cleaner_thread = CleanerThread()
 
-jwt_cache = factory_local_cache(cleaner_thread, "jwt_cache")
-accounts_pkce_cache = factory_local_cache(cleaner_thread, "pkce_cache")
+auth_cache = factory_local_cache(cleaner_thread, "auth_cache")
 ContextFactory.with_static_data = {
     "env": lambda: yw_config(),
     "download_thread": download_thread,
     "cleaner_thread": cleaner_thread,
-    "accounts_pkce_cache": accounts_pkce_cache,
-    "jwt_cache": jwt_cache,
+    "auth_cache": auth_cache,
     "fastapi_app": lambda: fastapi_app,
 }
 
@@ -122,11 +122,20 @@ def setup_middlewares(env: YouwolEnvironment):
     fastapi_app.add_middleware(BrowserCachingMiddleware)
     fastapi_app.add_middleware(
         AuthMiddleware,
-        openid_infos=partial(get_remote_openid_infos, env),
+        openid_base_uri=env.get_remote_info().authProvider.openidBaseUrl,
         predicate_public_path=lambda url: url.path.startswith(
             "/api/accounts/openid_rp/"
         ),
-        jwt_providers=[JwtProviderPyYouwol(jwt_cache=jwt_cache)],
+        jwt_providers=[
+            JwtProviderCookie(
+                auth_cache=auth_cache,
+                openid_infos=OidcInfos(
+                    base_uri=env.get_remote_info().authProvider.openidBaseUrl,
+                    client=env.get_remote_info().authProvider.openidClient,
+                ),
+            ),
+            JwtProviderPyYouwol(),
+        ],
         on_missing_token=lambda url: redirect_to_login(url)
         if url.path.startswith("/applications")
         else Response(content="Unauthenticated", status_code=403),

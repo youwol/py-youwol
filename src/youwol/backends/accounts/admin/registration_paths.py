@@ -4,18 +4,19 @@ from typing import Optional
 # third parties
 from fastapi import Cookie, Depends
 from pydantic import BaseModel
-from starlette.datastructures import URL
 from starlette.requests import Request
 from starlette.responses import JSONResponse, RedirectResponse, Response
 
-# Youwol backends
-from youwol.backends.accounts.configuration import Configuration, get_configuration
-from youwol.backends.accounts.root_paths import router
-
 # Youwol utilities
 from youwol.utils.clients.oidc.oidc_config import OidcConfig
+from youwol.utils.clients.oidc.tokens import restore_tokens
 from youwol.utils.clients.oidc.users_management import KeycloakUsersManagement
-from youwol.utils.session_handler import SessionHandler
+
+# relative
+from ..configuration import Configuration, get_configuration
+from ..root_paths import router
+
+ONE_YEAR_IN_SECONDS = 365 * 24 * 60 * 60
 
 
 class RegistrationDetails(BaseModel):
@@ -36,14 +37,13 @@ async def register_from_temp_user(
             content={"forbidden": "no administration right on the server side"},
         )
 
-    session = SessionHandler(jwt_cache=conf.jwt_cache, session_uuid=yw_jwt)
     if "temp" not in request.state.user_info:
         return JSONResponse(
             status_code=400, content={"invalid request": "not a temporary user"}
         )
 
     params = {"target_uri": details.target_uri, "session_id": yw_jwt}
-    redirect_uri = URL(request.url_for("registration_finalizer")).include_query_params(
+    redirect_uri = request.url_for("registration_finalizer").include_query_params(
         **params
     )
 
@@ -61,13 +61,18 @@ async def register_from_temp_user(
     except Exception as e:
         return JSONResponse(status_code=400, content={"message": str(e.args[0])})
 
-    client = OidcConfig(conf.openid_base_url).for_client(conf.openid_client)
-    session.store(await client.refresh(session.get_refresh_token()))
+    tokens = restore_tokens(
+        tokens_id=yw_jwt,
+        cache=conf.auth_cache,
+        oidc_client=OidcConfig(conf.openid_base_url).for_client(conf.openid_client),
+    )
+
+    await tokens.refresh()
 
     return Response(status_code=202)
 
 
-@router.get("/openid_rp/finalize_registration")
+@router.get("/registration")
 async def registration_finalizer(
     target_uri: str, session_id: str, conf: Configuration = Depends(get_configuration)
 ):
@@ -77,32 +82,33 @@ async def registration_finalizer(
             content={"forbidden": "no administration right on the server side"},
         )
 
-    session = SessionHandler(jwt_cache=conf.jwt_cache, session_uuid=session_id)
-
     oidc_config = OidcConfig(conf.openid_base_url)
     client_admin = oidc_config.for_client(conf.admin_client)
     users_management = KeycloakUsersManagement(
         conf.keycloak_admin_base_url, client_admin
     )
-    token_data = await oidc_config.token_decode(session.get_id_token())
-    await users_management.finalize_user(sub=token_data["sub"])
+    tokens = restore_tokens(
+        session_id,
+        cache=conf.auth_cache,
+        oidc_client=oidc_config.for_client(conf.openid_client),
+    )
+    await users_management.finalize_user(sub=await tokens.sub())
 
-    client = oidc_config.for_client(conf.openid_client)
-    session.store(await client.refresh(session.get_refresh_token()))
-    id_token_data = await oidc_config.token_decode(session.get_id_token())
+    await tokens.refresh()
+
     response = RedirectResponse(target_uri, status_code=307)
     response.set_cookie(
         "yw_jwt",
-        session.get_uuid(),
+        tokens.id(),
         secure=True,
         httponly=True,
-        max_age=session.get_remaining_time(),
+        max_age=tokens.remaining_time(),
     )
     response.set_cookie(
         "yw_login_hint",
-        f"user:{id_token_data['upn']}",
+        f"user:{await tokens.username()}",
         secure=True,
         httponly=True,
-        max_age=session.get_remaining_time(),
+        max_age=ONE_YEAR_IN_SECONDS,
     )
     return response

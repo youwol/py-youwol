@@ -241,9 +241,14 @@ class OidcForClient:
 
         return tokens
 
-    async def logout_url(self, redirect_uri: str):
+    async def logout_url(self, redirect_uri: str, state: str):
         conf = await self._config.openid_configuration()
         url = URL(conf.end_session_endpoint)
         return url.replace_query_params(
-            post_logout_redirect_uri=redirect_uri, client_id=self._client.client_id
+            post_logout_redirect_uri=redirect_uri,
+            client_id=self._client.client_id,
+            state=state,
         )
+
+    async def token_decode(self, token: str):
+        return await self._config.token_decode(token)

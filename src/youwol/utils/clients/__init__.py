@@ -1,6 +1,5 @@
 # relative
 from .accounts import *
-from .auth import *
 from .cache import *
 from .cdn import *
 from .docdb import *

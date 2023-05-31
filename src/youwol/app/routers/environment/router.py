@@ -28,7 +28,7 @@ from youwol.app.environment import (
     YouwolEnvironmentFactory,
     yw_config,
 )
-from youwol.app.middlewares import JwtProviderPyYouwol
+from youwol.app.middlewares import get_connected_local_tokens
 from youwol.app.routers.projects import ProjectLoader
 from youwol.app.web_socket import LogsStreamer
 
@@ -198,15 +198,16 @@ async def login(request: Request, body: LoginBody):
             Connection(authId=body.authId, envId=body.envId)
         )
         await status(request, env)
-        auth_provider = env.get_remote_info().authProvider
-        auth_token = await JwtProviderPyYouwol.get_auth_token(
-            auth_provider=auth_provider,
-            authentication=env.get_authentication_info(),
-            context=ctx,
-        )
-        data = await OidcConfig(auth_provider.openidBaseUrl).token_decode(auth_token)
+        tokens = await get_connected_local_tokens(context=ctx)
+        access_token = await tokens.access_token()
+        access_token_decoded = await OidcConfig(
+            env.get_remote_info().authProvider.openidBaseUrl
+        ).token_decode(access_token)
         return UserInfo(
-            id=data["upn"], name=data["username"], email=data["email"], memberOf=[]
+            id=access_token_decoded["upn"],
+            name=access_token_decoded["username"],
+            email=access_token_decoded["email"],
+            memberOf=[],
         )
 
 

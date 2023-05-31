@@ -10,13 +10,13 @@ from fastapi.params import Cookie
 from pydantic import BaseModel
 from starlette.responses import JSONResponse, Response
 
-# Youwol backends
-from youwol.backends.accounts.configuration import Configuration, get_configuration
-from youwol.backends.accounts.root_paths import router
-
 # Youwol utilities
 from youwol.utils.clients.oidc.oidc_config import OidcConfig
-from youwol.utils.session_handler import SessionHandler
+from youwol.utils.clients.oidc.tokens import restore_tokens, save_tokens
+
+# relative
+from ..configuration import Configuration, get_configuration
+from ..root_paths import router
 
 
 class ImpersonationDetails(BaseModel):
@@ -58,33 +58,42 @@ async def start_impersonate(
 
     response = Response(status_code=201)
 
-    real_session = SessionHandler(jwt_cache=conf.jwt_cache, session_uuid=yw_jwt)
+    client = OidcConfig(conf.openid_base_url).for_client(conf.openid_client)
+    real_tokens = restore_tokens(
+        tokens_id=yw_jwt,
+        cache=conf.auth_cache,
+        oidc_client=client,
+    )
     if details.hidden:
-        real_session.delete()
+        await real_tokens.delete()
     else:
         response.set_cookie(
             "yw_jwt_t",
-            real_session.get_uuid(),
+            real_tokens.id(),
             secure=True,
             httponly=True,
-            max_age=real_session.get_remaining_time(),
+            max_age=real_tokens.remaining_time(),
         )
 
     admin_client = OidcConfig(conf.openid_base_url).for_client(conf.admin_client)
-    tokens = await admin_client.token_exchange(
-        details.userId, real_session.get_access_token()
+    impersonation_tokens_data = await admin_client.token_exchange(
+        details.userId, real_tokens.access_token()
     )
 
-    session_uuid = yw_jwt if details.hidden else str(uuid.uuid4())
-    session = SessionHandler(conf.jwt_cache, session_uuid=session_uuid)
-    session.store(tokens)
+    impersonation_tokens_id = yw_jwt if details.hidden else str(uuid.uuid4())
+    impersonation_tokens = await save_tokens(
+        **impersonation_tokens_data,
+        cache=conf.auth_cache,
+        oidc_client=client,
+        tokens_id=impersonation_tokens_id,
+    )
 
     response.set_cookie(
         "yw_jwt",
-        session.get_uuid(),
+        impersonation_tokens.id(),
         secure=True,
         httponly=True,
-        max_age=session.get_remaining_time(),
+        max_age=impersonation_tokens.remaining_time(),
     )
     return response
 
@@ -106,16 +115,24 @@ async def stop_impersonation(
             status_code=400, content={"invalid request": "Not impersonating"}
         )
 
-    real_session = SessionHandler(jwt_cache=conf.jwt_cache, session_uuid=yw_jwt_t)
-    SessionHandler(jwt_cache=conf.jwt_cache, session_uuid=yw_jwt).delete()
-
+    impersonation_tokens = restore_tokens(
+        tokens_id=yw_jwt,
+        cache=conf.auth_cache,
+        oidc_client=OidcConfig(conf.openid_base_url).for_client(conf.openid_client),
+    )
+    await impersonation_tokens.delete()
+    real_tokens = restore_tokens(
+        tokens_id=yw_jwt_t,
+        cache=conf.auth_cache,
+        oidc_client=OidcConfig(conf.openid_base_url).for_client(conf.openid_client),
+    )
     response = Response(status_code=204)
     response.set_cookie(
         "yw_jwt",
-        yw_jwt_t,
+        real_tokens.id(),
         secure=True,
         httponly=True,
-        max_age=real_session.get_remaining_time(),
+        max_age=real_tokens.remaining_time(),
     )
     response.set_cookie("yw_jwt_t", "DELETED", secure=True, httponly=True, expires=0)
     return response

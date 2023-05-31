@@ -2,14 +2,10 @@
 from dataclasses import dataclass
 
 # typing
-from typing import Awaitable, Callable, Dict, Generic, Optional, Type, TypeVar, Union
+from typing import Awaitable, Callable, Dict, Generic, Optional, TypeVar
 
 # Youwol utilities
 from youwol.utils.clients.file_system.interfaces import FileSystemInterface
-from youwol.utils.middlewares import Middleware
-from youwol.utils.middlewares.authentication_local import AuthLocalMiddleware
-
-AuthMiddleware = Union[Type[Middleware], Type[AuthLocalMiddleware]]
 
 
 @dataclass(frozen=True)

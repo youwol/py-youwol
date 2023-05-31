@@ -8,6 +8,9 @@ import youwol.backends.accounts
 from youwol.utils import CacheClient
 from youwol.utils.context import ContextFactory
 
+# relative
+from ..middlewares.local_auth import local_tokens_id
+
 
 async def cdn_config_py_youwol():
     return (await yw_config()).backends_configuration.cdn_backend
@@ -47,14 +50,17 @@ async def files_backend_config_py_youwol():
 
 async def accounts_backend_config_py_youwol():
     config = await yw_config()
-    pkce_cache: CacheClient = ContextFactory.with_static_data["accounts_pkce_cache"]
-    jwt_cache: CacheClient = ContextFactory.with_static_data["jwt_cache"]
+    auth_cache: CacheClient = ContextFactory.with_static_data["auth_cache"]
+
     return youwol.backends.accounts.Configuration(
         openid_base_url=config.get_remote_info().authProvider.openidBaseUrl,
         openid_client=config.get_remote_info().authProvider.openidClient,
         admin_client=config.get_remote_info().authProvider.keycloakAdminClient,
         keycloak_admin_base_url=config.get_remote_info().authProvider.keycloakAdminBaseUrl,
-        jwt_cache=jwt_cache,
-        pkce_cache=pkce_cache,
+        auth_cache=auth_cache,
         secure_cookies=False,
+        tokens_id_generator=lambda: local_tokens_id(
+            auth_provider=config.get_remote_info().authProvider,
+            auth_infos=config.get_authentication_info(),
+        ),
     )

@@ -12,8 +12,13 @@ from starlette.responses import JSONResponse
 from youwol.backends.accounts.configuration import Configuration, get_configuration
 
 # Youwol utilities
-from youwol.utils import get_all_individual_groups, private_group_id, to_group_id
-from youwol.utils.session_handler import SessionHandler
+from youwol.utils import (
+    OidcConfig,
+    get_all_individual_groups,
+    private_group_id,
+    to_group_id,
+)
+from youwol.utils.clients.oidc.tokens import restore_tokens
 
 router = APIRouter(tags=["accounts"])
 
@@ -76,9 +81,13 @@ async def get_session_details(
 
     user_info = user_info_from_json(request.state.user_info)
 
+    oidc_client = OidcConfig(conf.openid_base_url).for_client(conf.openid_client)
     if yw_jwt_t:
-        real_session = SessionHandler(jwt_cache=conf.jwt_cache, session_uuid=yw_jwt_t)
-        real_user_info = user_info_from_json(real_session.get_access_token())
+        tokens = restore_tokens(
+            yw_jwt_t, cache=conf.auth_cache, oidc_client=oidc_client
+        )
+        access_token = await tokens.access_token()
+        real_user_info = user_info_from_json(access_token)
         return SessionImpersonationDetails(
             userInfo=user_info,
             realUserInfo=real_user_info,

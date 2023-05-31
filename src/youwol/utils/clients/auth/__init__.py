@@ -1,2 +1,0 @@
-# relative
-from .auth import *
