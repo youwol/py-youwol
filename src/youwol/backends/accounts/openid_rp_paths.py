@@ -65,7 +65,7 @@ async def authorization_flow(
     return RedirectResponse(url, status_code=307)
 
 
-@router.get("/openid_rp/cb")
+@router.get("/openid_rp/auth/cb")
 async def authorization_flow_callback(
     request: Request,
     state: str,
