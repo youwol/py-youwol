@@ -31,8 +31,8 @@ class WebpackDevServerSwitch(CdnSwitch):
 
     - **notServedResources** :class: `List[str]`
     Paths of resources (or folder of resources) that exists in the CDN database but are not part of
-    the webpack dev-server scope. This is typically artifacts included  into the CDN database during the publication step
-    (which may not exist in the project's working directory).
+    the webpack dev-server scope. This is typically artifacts included  into the CDN database during the publication
+    step (which may not exist in the project's working directory).
 
     Default to `[".yw_metadata.json", "dist/docs", "coverage"]`."""
 

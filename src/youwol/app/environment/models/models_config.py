@@ -111,7 +111,8 @@ class ProjectTemplate(BaseModel):
 
     The generator called to create the template project, arguments are:
 
-    1 - First argument is the folder's path in which the project needs to be created (parent folder of the created project).
+    1 - First argument is the folder's path in which the project needs to be created (parent folder
+        of the created project).
 
     2 - Second argument is the value of the parameters the user supplied.
 
@@ -239,8 +240,8 @@ class Authentication(BaseModel):
 
 class BrowserAuth(Authentication):
     """
-    Authentication using the browser using cookies: the browser automatically handle authentication (eventually redirecting
-    to the login page if needed).
+    Authentication using the browser using cookies: the browser automatically handle authentication (eventually
+    redirecting to the login page if needed).
 
       **Attributes**:
 
@@ -631,8 +632,8 @@ class CdnSwitch(FlowSwitch):
 
 class RedirectSwitch(FlowSwitch):
     """
-    Redirect switch target requests with url that starts with a predefined 'origin', in this case the request is redirected
-    to a corresponding 'destination' (the rest of the path appended to it).
+    Redirect switch target requests with url that starts with a predefined 'origin', in this case the request is
+    redirected to a corresponding 'destination' (the rest of the path appended to it).
 
     **Attributes**:
 
