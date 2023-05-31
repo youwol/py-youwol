@@ -244,4 +244,6 @@ class OidcForClient:
     async def logout_url(self, redirect_uri: str):
         conf = await self._config.openid_configuration()
         url = URL(conf.end_session_endpoint)
-        return url.replace_query_params(redirect_uri=redirect_uri)
+        return url.replace_query_params(
+            post_logout_redirect_uri=redirect_uri, client_id=self._client.client_id
+        )
