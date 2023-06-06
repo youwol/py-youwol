@@ -5,7 +5,9 @@
 #    sh deps_manager.sh compile
 #
 aiohttp==3.8.1
-    # via youwol (pyproject.toml)
+    # via
+    #   black
+    #   youwol (pyproject.toml)
 aiosignal==1.2.0
     # via aiohttp
 aiostream==0.4.4
@@ -24,7 +26,7 @@ async-timeout==4.0.2
     #   redis
 attrs==21.4.0
     # via aiohttp
-black==23.3.0
+black[d]==23.3.0
     # via youwol (pyproject.toml)
 bleach==6.0.0
     # via readme-renderer
