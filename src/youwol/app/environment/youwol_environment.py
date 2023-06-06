@@ -85,7 +85,7 @@ class YouwolEnvironment(BaseModel):
         env_id = self.currentConnection.envId
         return next(remote for remote in self.remotes if remote.envId == env_id)
 
-    def get_authentication_info(self) -> Optional[Authentication]:
+    def get_authentication_info(self) -> Authentication:
         remote = self.get_remote_info()
         auth_id = self.currentConnection.authId
         return next(auth for auth in remote.authentications if auth.authId == auth_id)
