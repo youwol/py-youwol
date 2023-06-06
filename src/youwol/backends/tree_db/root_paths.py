@@ -595,7 +595,9 @@ async def get_items_by_asset_id(
 async def get_folders_rec(
     folder_id: str, drive_id: str, configuration: Configuration, context: Context
 ):
-    drive = await _get_drive(drive_id=drive_id, configuration=configuration, context=context)
+    drive = await _get_drive(
+        drive_id=drive_id, configuration=configuration, context=context
+    )
 
     folders = [
         await _get_folder(
