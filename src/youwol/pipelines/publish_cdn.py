@@ -135,7 +135,7 @@ class PublishCdnLocalStep(PipelineStep):
 
     packagedArtifacts: List[str]
 
-    packagedFolders: List[str]
+    packagedFolders: List[str] = []
 
     run: ExplicitNone = ExplicitNone()
 
