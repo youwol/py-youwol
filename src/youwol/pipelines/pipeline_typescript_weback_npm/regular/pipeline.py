@@ -37,6 +37,7 @@ from youwol.pipelines.publish_cdn import PublishCdnLocalStep
 
 class PublishConfig(BaseModel):
     packagedArtifacts: List[str] = ["dist", "docs", "test-coverage"]
+    packagedFolders: List[str] = []
 
 
 class PipelineConfig(BaseModel):
@@ -74,7 +75,8 @@ async def pipeline(config: PipelineConfig, context: Context):
                     artifacts=config.testConfig.artifacts,
                 ),
                 PublishCdnLocalStep(
-                    packagedArtifacts=config.publishConfig.packagedArtifacts
+                    packagedArtifacts=config.publishConfig.packagedArtifacts,
+                    packagedFolders=config.publishConfig.packagedFolders
                 ),
                 *publish_remote_steps,
             ],

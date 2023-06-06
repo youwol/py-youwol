@@ -1,5 +1,6 @@
 # standard library
 import asyncio
+import glob
 import itertools
 import json
 
@@ -53,8 +54,20 @@ async def create_cdn_zip(
         artifacts_flow_path = paths.artifacts_flow(
             project_name=project.name, flow_id=flow_id
         )
+
+        def arc_name(path: Path):
+            """
+            CDN files can be:
+            *  related to an artifacts, under `artifacts_flow_path`
+            *  related to a project file, under `project.path`
+            """
+            try:
+                return path.relative_to(artifacts_flow_path).parts[2:]
+            except ValueError:
+                return path.relative_to(project.path).parts
+
         zip_files = [
-            (f, "/".join(f.relative_to(artifacts_flow_path).parts[2:])) for f in files
+            (f, "/".join(arc_name(f))) for f in files
         ]
         await ctx.info(
             text="create CDN zip: files recovered",
@@ -122,10 +135,13 @@ class PublishCdnLocalStep(PipelineStep):
 
     packagedArtifacts: List[str]
 
+    packagedFolders: List[str]
+
     run: ExplicitNone = ExplicitNone()
 
     async def packaged_files(self, project: Project, flow_id: str, context: Context):
-        files = await asyncio.gather(
+        flatten = itertools.chain.from_iterable
+        files_artifacts = await asyncio.gather(
             *[
                 project.get_artifact_files(
                     flow_id=flow_id, artifact_id=artifact_id, context=context
@@ -133,7 +149,8 @@ class PublishCdnLocalStep(PipelineStep):
                 for artifact_id in self.packagedArtifacts
             ]
         )
-        return list(itertools.chain.from_iterable(files))
+        files_folders = [Path(p) for folder in self.packagedFolders for p in glob.glob(f"{project.path / folder}/*.*")]
+        return list(flatten(files_artifacts)) + files_folders
 
     async def get_sources(
         self, project: Project, flow_id: FlowId, context: Context
@@ -198,6 +215,8 @@ class PublishCdnLocalStep(PipelineStep):
                         "saved manifest's fingerprint": last_manifest.fingerprint,
                     },
                 )
+                return PipelineStepStatus.outdated
+
             if last_manifest.cmdOutputs["srcFilesFingerprint"] != src_files_fingerprint:
                 await context.info(
                     text="Mismatch between actual src files fingerprint and saved manifest's srcFilesFingerprint",
@@ -275,7 +294,7 @@ class PublishCdnLocalStep(PipelineStep):
                 project_name=project.name, flow_id=flow_id
             )
             resp["srcBasePath"] = str(base_path)
-            resp["srcFiles"] = [str(f.relative_to(base_path)) for f in files]
+            resp["srcFiles"] = [str(f) for f in files]
             return resp
 
 
