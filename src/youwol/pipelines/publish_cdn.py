@@ -66,9 +66,7 @@ async def create_cdn_zip(
             except ValueError:
                 return path.relative_to(project.path).parts
 
-        zip_files = [
-            (f, "/".join(arc_name(f))) for f in files
-        ]
+        zip_files = [(f, "/".join(arc_name(f))) for f in files]
         await ctx.info(
             text="create CDN zip: files recovered",
             data={"files": [f"{name} -> {str(path)}" for path, name in zip_files]},
@@ -149,7 +147,11 @@ class PublishCdnLocalStep(PipelineStep):
                 for artifact_id in self.packagedArtifacts
             ]
         )
-        files_folders = [Path(p) for folder in self.packagedFolders for p in glob.glob(f"{project.path / folder}/*.*")]
+        files_folders = [
+            Path(p)
+            for folder in self.packagedFolders
+            for p in glob.glob(f"{project.path / folder}/*.*")
+        ]
         return list(flatten(files_artifacts)) + files_folders
 
     async def get_sources(

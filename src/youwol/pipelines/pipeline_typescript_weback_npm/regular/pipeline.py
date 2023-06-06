@@ -76,7 +76,7 @@ async def pipeline(config: PipelineConfig, context: Context):
                 ),
                 PublishCdnLocalStep(
                     packagedArtifacts=config.publishConfig.packagedArtifacts,
-                    packagedFolders=config.publishConfig.packagedFolders
+                    packagedFolders=config.publishConfig.packagedFolders,
                 ),
                 *publish_remote_steps,
             ],
