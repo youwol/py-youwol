@@ -87,7 +87,7 @@ Additional information on the `Configuration` class can be found in the "Configu
 [Py-YouWol guide](https://l.youwol.com/doc/py-youwol).
 
 Once Py-YouWol is running with the updated configuration,
-the application can be accessed from [here](http://localhost:2000/applications/@youwol/todo-app-ts/latest)
+the application can be accessed from [here](http://localhost:2000/applications/{{name}}/latest)
 (providing py-youwol running using the default port `2000`).
 
 ---
