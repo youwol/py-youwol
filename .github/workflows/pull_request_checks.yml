@@ -25,7 +25,7 @@ on:
         description: >
           Branch, tag or SHA for todo-app-ts checkout.
           Default to 'main'
-        default: main
+        default: feature/sync-pipeline-ts
 
       conf_ref:
         description:
