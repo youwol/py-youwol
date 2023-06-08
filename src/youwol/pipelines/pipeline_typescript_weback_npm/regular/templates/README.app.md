@@ -75,7 +75,7 @@ Configuration(
             FlowSwitcherMiddleware(
                 name = 'front-end dev-servers',
                 oneOf = [
-                    WebpackDevServerSwitch(packageName="@youwol/todo-app-ts", port={{devServer.port}}),
+                    WebpackDevServerSwitch(packageName="{{name}}", port={{devServer.port}}),
                 ]
             )
         ]
