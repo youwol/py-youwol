@@ -18,7 +18,6 @@ from starlette.datastructures import Headers
 from starlette.requests import Request
 
 # Youwol utilities
-from youwol.utils.clients.oidc.oidc_config import OidcConfig, OidcInfos
 from youwol.utils.clients.utils import to_group_id
 from youwol.utils.types import JSON
 
@@ -67,7 +66,7 @@ def get_user_id(request: Request):
     return user_info(request)["sub"]
 
 
-def private_group_id(user):
+def private_group_id(user) -> str:
     return f"private_{user['sub']}"
 
 
@@ -284,12 +283,3 @@ def to_json_rec(_obj: Union[Dict[str, Any], List[Any]]):
 def to_json(obj: Union[BaseModel, Dict[str, Any]]) -> JSON:
     base = obj.dict() if isinstance(obj, BaseModel) else obj
     return to_json_rec(base)
-
-
-async def get_authorization_header(openid_infos: OidcInfos):
-    tokens = (
-        await OidcConfig(openid_infos.base_uri)
-        .for_client(openid_infos.client)
-        .client_credentials_flow()
-    )
-    return {"Authorization": f"Bearer {tokens['access_token']}"}

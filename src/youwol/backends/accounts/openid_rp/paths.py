@@ -8,12 +8,8 @@ from typing import Annotated, Optional
 from fastapi import Depends
 from fastapi.params import Cookie, Form
 from starlette.requests import Request
-from starlette.responses import JSONResponse, RedirectResponse
+from starlette.responses import JSONResponse, RedirectResponse, Response
 from starlette.status import HTTP_204_NO_CONTENT
-
-# Youwol utilities
-from youwol.utils.clients.oidc.oidc_config import OidcConfig
-from youwol.utils.clients.oidc.users_management import KeycloakUsersManagement
 
 # relative
 from ..configuration import Configuration, get_configuration
@@ -28,9 +24,9 @@ FIVE_MINUTES_IN_SECONDS = 5 * 60
 async def authorization_flow(
     request: Request,
     target_uri: str,
-    yw_login_hint: Optional[str] = Cookie(default=None),
+    yw_login_hint: Annotated[Optional[str], Cookie()] = None,
     conf: Configuration = Depends(get_configuration),
-):
+) -> Response:
     """
         Initiate an Authorization Code Grant authentification.
         Could be call directly or by /openid_rp/login endpoint
@@ -49,7 +45,7 @@ async def authorization_flow(
     login_hint = (
         yw_login_hint[5:] if yw_login_hint and yw_login_hint[:5] == "user:" else None
     )
-    redirect_uri = await conf.authorization.init_authorization_flow(
+    redirect_uri = await conf.openid_flows.init_authorization_flow(
         target_uri=target_uri,
         login_hint=login_hint,
         callback_uri=str(request.url_for("authorization_flow_callback")),
@@ -64,7 +60,7 @@ async def authorization_flow_callback(
     state: str,
     code: str,
     conf: Configuration = Depends(get_configuration),
-):
+) -> Response:
     """
         Callback for an ongoing Authorization Code Grant authentification.
         Shall be called by an interactive User Agent after the Identity Provider redirect it.
@@ -84,7 +80,7 @@ async def authorization_flow_callback(
         (
             tokens,
             target_uri,
-        ) = await conf.authorization.handle_authorization_flow_callback(
+        ) = await conf.openid_flows.handle_authorization_flow_callback(
             flow_uuid=state,
             code=code,
             callback_uri=str(request.url_for("authorization_flow_callback")),
@@ -120,7 +116,7 @@ async def logout(
     target_uri: str,
     forget_me: bool = False,
     conf: Configuration = Depends(get_configuration),
-):
+) -> Response:
     """
         Logout user.
         Must be call by an interactive User Agent.
@@ -136,7 +132,7 @@ async def logout(
     :param conf:
     :return:
     """
-    redirect_uri = await conf.authorization.init_logout_flow(
+    redirect_uri = await conf.openid_flows.init_logout_flow(
         target_uri=target_uri,
         forget_me=forget_me,
         callback_uri=str(request.url_for("logout_cb")),
@@ -149,8 +145,8 @@ async def logout(
 async def logout_cb(
     state: str,
     conf: Configuration = Depends(get_configuration),
-):
-    target_uri, forget_me = conf.authorization.handle_logout_flow_callback(
+) -> Response:
+    target_uri, forget_me = conf.openid_flows.handle_logout_flow_callback(
         flow_uuid=state
     )
 
@@ -179,8 +175,8 @@ async def logout_cb(
 async def back_channel_logout(
     logout_token: Annotated[str, Form()],
     conf: Configuration = Depends(get_configuration),
-):
-    await conf.authorization.handle_logout_back_channel(logout_token=logout_token)
+) -> None:
+    await conf.openid_flows.handle_logout_back_channel(logout_token=logout_token)
 
 
 @router.get("/openid_rp/login")
@@ -188,9 +184,9 @@ async def login(
     request: Request,
     target_uri: str,
     flow: str = "auto",
-    yw_login_hint: Optional[str] = Cookie(default=None),
+    yw_login_hint: Annotated[Optional[str], Cookie()] = None,
     conf: Configuration = Depends(get_configuration),
-):
+) -> Response:
     """
         Log in user.
         Must be call by an interactive User Agent.
@@ -211,7 +207,11 @@ async def login(
     :return:
     """
     if flow == "auto":
-        flow = "user" if (yw_login_hint or conf.admin_client is None) else "temp"
+        flow = (
+            "user"
+            if (yw_login_hint or conf.keycloak_users_management is None)
+            else "temp"
+        )
 
     if flow == "user":
         return await authorization_flow(request, target_uri, yw_login_hint, conf)
@@ -219,12 +219,14 @@ async def login(
     if flow == "temp":
         return await login_as_temp_user(target_uri, conf)
 
+    return JSONResponse(status_code=400, content={"invalid request", "unknown flow"})
+
 
 @router.get("/openid_rp/temp_user")
 async def login_as_temp_user(
     target_uri: str = "/",
     conf: Configuration = Depends(get_configuration),
-):
+) -> Response:
     """
         Create a temporary user and get an access token for it.
         Could be call directly or by /openid_rp/login endpoint
@@ -236,22 +238,17 @@ async def login_as_temp_user(
     :param conf:
     :return:
     """
-    if conf.admin_client is None:
+    if conf.keycloak_users_management is None:
         return JSONResponse(
             status_code=403,
             content={"forbidden": "No administration right on the server side"},
         )
 
-    client_admin = OidcConfig(conf.openid_base_url).for_client(conf.admin_client)
-
-    users_management = KeycloakUsersManagement(
-        conf.keycloak_admin_base_url, client_admin
-    )
     user_name = f"{uuid.uuid4()}@temp.youwol.com"
     password = str(uuid.uuid4())
-    await users_management.create_user(user_name, password)
+    await conf.keycloak_users_management.create_user(user_name, password)
 
-    tokens = await conf.authorization.direct_auth_flow(
+    tokens = await conf.openid_flows.direct_auth_flow(
         username=user_name, password=password
     )
 

@@ -2,17 +2,13 @@
 import uuid
 
 # typing
-from typing import Any, Optional
+from typing import Annotated, Optional
 
 # third parties
 from fastapi import Depends
 from fastapi.params import Cookie
 from pydantic import BaseModel
 from starlette.responses import JSONResponse, Response
-
-# Youwol utilities
-from youwol.utils.clients.oidc.oidc_config import OidcConfig
-from youwol.utils.clients.oidc.tokens import restore_tokens, save_tokens
 
 # relative
 from ..configuration import Configuration, get_configuration
@@ -27,10 +23,10 @@ class ImpersonationDetails(BaseModel):
 @router.put("/impersonation")
 async def start_impersonate(
     details: ImpersonationDetails,
-    yw_jwt: Optional[str] = Cookie(default=None),
-    yw_jwt_t: Any = Cookie(default=None),
+    yw_jwt: Annotated[Optional[str], Cookie()] = None,
+    yw_jwt_t: Annotated[Optional[str], Cookie()] = None,
     conf: Configuration = Depends(get_configuration),
-):
+) -> Response:
     """
         Create a new session impersonating user, if current user has the correct role.
         user_id can be the sub or the login name af the user to impersonate
@@ -45,25 +41,31 @@ async def start_impersonate(
     :return:
     """
 
-    if conf.admin_client is None:
+    if conf.oidc_admin_client is None:
         return JSONResponse(
             status_code=403,
             content={"forbidden": "no administration right on the server side"},
         )
 
-    if yw_jwt_t:
+    if yw_jwt_t is not None:
         return JSONResponse(
             status_code=400, content={"invalid request": "Already impersonating"}
         )
 
+    if yw_jwt is None:
+        return JSONResponse(status_code=403, content="missing cookie")
+
     response = Response(status_code=201)
 
-    client = OidcConfig(conf.openid_base_url).for_client(conf.openid_client)
-    real_tokens = restore_tokens(
+    real_tokens = conf.tokens_manager.restore_tokens(
         tokens_id=yw_jwt,
-        cache=conf.auth_cache,
-        oidc_client=client,
     )
+
+    if real_tokens is None:
+        return JSONResponse(
+            status_code=400, content={"invalid request": "No real tokens"}
+        )
+
     if details.hidden:
         await real_tokens.delete()
     else:
@@ -75,17 +77,15 @@ async def start_impersonate(
             max_age=real_tokens.remaining_time(),
         )
 
-    admin_client = OidcConfig(conf.openid_base_url).for_client(conf.admin_client)
-    impersonation_tokens_data = await admin_client.token_exchange(
-        details.userId, real_tokens.access_token()
+    real_access_token = await real_tokens.access_token()
+    impersonation_tokens_data = await conf.oidc_admin_client.token_exchange(
+        details.userId, real_access_token
     )
 
     impersonation_tokens_id = yw_jwt if details.hidden else str(uuid.uuid4())
-    impersonation_tokens = await save_tokens(
-        **impersonation_tokens_data,
-        cache=conf.auth_cache,
-        oidc_client=client,
+    impersonation_tokens = await conf.tokens_manager.save_tokens(
         tokens_id=impersonation_tokens_id,
+        tokens_data=impersonation_tokens_data,
     )
 
     response.set_cookie(
@@ -100,11 +100,11 @@ async def start_impersonate(
 
 @router.delete("/impersonation")
 async def stop_impersonation(
-    yw_jwt: Optional[str] = Cookie(default=None),
-    yw_jwt_t: Optional[str] = Cookie(default=None),
+    yw_jwt: Annotated[Optional[str], Cookie()] = None,
+    yw_jwt_t: Annotated[Optional[str], Cookie()] = None,
     conf: Configuration = Depends(get_configuration),
-):
-    if conf.admin_client is None:
+) -> Response:
+    if conf.oidc_admin_client is None:
         return JSONResponse(
             status_code=403,
             content={"forbidden": "no administration right on the server side"},
@@ -115,17 +115,23 @@ async def stop_impersonation(
             status_code=400, content={"invalid request": "Not impersonating"}
         )
 
-    impersonation_tokens = restore_tokens(
+    if yw_jwt is None:
+        return JSONResponse(status_code=403, content="missing cookie")
+
+    impersonation_tokens = conf.tokens_manager.restore_tokens(
         tokens_id=yw_jwt,
-        cache=conf.auth_cache,
-        oidc_client=OidcConfig(conf.openid_base_url).for_client(conf.openid_client),
     )
-    await impersonation_tokens.delete()
-    real_tokens = restore_tokens(
+
+    real_tokens = conf.tokens_manager.restore_tokens(
         tokens_id=yw_jwt_t,
-        cache=conf.auth_cache,
-        oidc_client=OidcConfig(conf.openid_base_url).for_client(conf.openid_client),
     )
+
+    if impersonation_tokens is None or real_tokens is None:
+        return JSONResponse(
+            status_code=400, content={"invalid state": "no tokens found"}
+        )
+
+    await impersonation_tokens.delete()
     response = Response(status_code=204)
     response.set_cookie(
         "yw_jwt",

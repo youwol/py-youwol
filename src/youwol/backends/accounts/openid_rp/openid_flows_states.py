@@ -5,27 +5,32 @@ from dataclasses import dataclass
 from typing import Any, ClassVar
 
 # Youwol utilities
-from youwol.utils import CacheClient
+from youwol.utils import TTL, CacheClient
 
 
 @dataclass(frozen=True)
 class AbstractSharedState:
     _CACHE_KEY_PREFIX: ClassVar[str] = "state"
+    _CACHE_TTL_FIVE_MINUTES = 60 * 5
 
     uuid: str
     cache: CacheClient
 
     @classmethod
-    def cache_key(cls, uuid: str):
+    def cache_key(cls, uuid: str) -> str:
         return f"{cls._CACHE_KEY_PREFIX}_{uuid}"
 
-    def save(self):
-        self.cache.set(self.cache_key(self.uuid), {"uuid": self.uuid, **self._save()})
+    def save(self) -> None:
+        self.cache.set(
+            self.cache_key(self.uuid),
+            {"uuid": self.uuid, **self._save()},
+            TTL(self._CACHE_TTL_FIVE_MINUTES),
+        )
 
     def _save(self) -> dict[str, Any]:
         return {}
 
-    def delete(self):
+    def delete(self) -> None:
         self.cache.delete(self.cache_key(self.uuid))
 
 

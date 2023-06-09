@@ -30,7 +30,6 @@ class Configuration:
     treedb_client: TreeDbClient
     assets_client: AssetsClient
     files_client: FilesClient
-    admin_headers: Optional[Dict[str, str]] = None
     deployed: bool = False
 
 

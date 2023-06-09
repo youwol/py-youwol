@@ -8,17 +8,12 @@ from typing import Optional
 from starlette.requests import Request
 
 # Youwol application
-from youwol.app.environment import (
-    Authentication,
-    AuthorizationProvider,
-    BrowserAuth,
-    DirectAuth,
-)
+from youwol.app.environment import Authentication, AuthorizationProvider, DirectAuth
 from youwol.app.environment.youwol_environment import YouwolEnvironment
 
 # Youwol utilities
 from youwol.utils.clients.oidc.oidc_config import OidcConfig
-from youwol.utils.clients.oidc.tokens import Tokens, restore_tokens, save_tokens
+from youwol.utils.clients.oidc.tokens_manager import Tokens, TokensManager
 from youwol.utils.context import Context, ContextFactory
 from youwol.utils.middlewares import JwtProvider
 
@@ -65,10 +60,13 @@ async def get_local_tokens(
     oidc_client = OidcConfig(auth_provider.openidBaseUrl).for_client(
         auth_provider.openidClient
     )
-    result = restore_tokens(
+
+    tokens_manager = TokensManager(
+        cache=ContextFactory.with_static_data["auth_cache"], oidc_client=oidc_client
+    )
+
+    result = tokens_manager.restore_tokens(
         tokens_id=tokens_id,
-        cache=ContextFactory.with_static_data["auth_cache"],
-        oidc_client=oidc_client,
     )
 
     if result is None:
@@ -76,11 +74,9 @@ async def get_local_tokens(
             tokens_data = await oidc_client.direct_flow(
                 username=auth_infos.userName, password=auth_infos.password
             )
-            result = await save_tokens(
+            result = await tokens_manager.save_tokens(
                 tokens_id=tokens_id,
-                oidc_client=oidc_client,
-                cache=ContextFactory.with_static_data["auth_cache"],
-                **tokens_data,
+                tokens_data=tokens_data,
             )
         else:
             raise NeedInteractiveSession()

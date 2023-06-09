@@ -17,7 +17,6 @@ class Constants:
 @dataclass(frozen=True)
 class Configuration:
     storage: Storage
-    admin_headers: Optional[Dict[str, str]] = None
 
 
 class Dependencies:

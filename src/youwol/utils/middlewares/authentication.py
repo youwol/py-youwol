@@ -18,7 +18,7 @@ from starlette.types import ASGIApp
 # Youwol utilities
 from youwol.utils import CacheClient
 from youwol.utils.clients.oidc.oidc_config import OidcConfig, OidcInfos
-from youwol.utils.clients.oidc.tokens import restore_tokens
+from youwol.utils.clients.oidc.tokens_manager import TokensManager
 from youwol.utils.context import Context, Label
 
 
@@ -55,12 +55,14 @@ class JwtProviderCookie(JwtProvider):
             await context.info("No cookie yw_jwt")
             return None
 
-        tokens = restore_tokens(
-            tokens_id=tokens_id,
+        client = OidcConfig(self.openid_infos.base_uri).for_client(
+            self.openid_infos.client
+        )
+        tokens = TokensManager(
             cache=self.__cache,
-            oidc_client=OidcConfig(self.openid_infos.base_uri).for_client(
-                self.openid_infos.client
-            ),
+            oidc_client=client,
+        ).restore_tokens(
+            tokens_id=tokens_id,
         )
 
         if tokens is None:

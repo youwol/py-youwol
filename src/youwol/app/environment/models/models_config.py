@@ -222,7 +222,7 @@ class Projects(BaseModel):
 class AuthorizationProvider(BaseModel):
     openidBaseUrl: str
     openidClient: Union[PublicClient, PrivateClient]
-    keycloakAdminBaseUrl: str
+    keycloakAdminBaseUrl: Optional[str] = None
     keycloakAdminClient: Optional[PrivateClient] = None
 
 

@@ -20,7 +20,7 @@ async def redirect_request(
     origin_base_path: str,
     destination_base_path: str,
     headers=None,
-):
+) -> Response:
     rest_of_path = incoming_request.url.path.split(origin_base_path)[1].strip("/")
     headers = (
         {k: v for k, v in incoming_request.headers.items()} if not headers else headers
