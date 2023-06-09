@@ -25,7 +25,7 @@ on:
         description: >
           Branch, tag or SHA for todo-app-ts checkout.
           Default to 'main'
-        default: feature/sync-pipeline-ts
+        default: main
 
       conf_ref:
         description:
@@ -115,7 +115,7 @@ jobs:
         uses: youwol/nestor/ts/prepare@v3
         with:
           repository: youwol/todo-app-ts
-          ref: ${{ inputs.todo-app-ts_ref }}
+          ref: feature/sync-pipeline-ts
           path: ${{ runner.temp }}/todo-app-ts
 
       - name: Build todo-app-ts
