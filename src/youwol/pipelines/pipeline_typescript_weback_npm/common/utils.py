@@ -116,10 +116,8 @@ def get_imports_from_submodules(
     def clean_import_name(name):
         return name.replace("'", "").replace(";", "").replace('"', "").replace("\n", "")
 
-    files = [f for f in glob.glob(str(base_path / "**" / "*.ts"), recursive=True)]
-
     lines = []
-    for file in files:
+    for file in glob.glob(str(base_path / "**" / "*.ts"), recursive=True):
         with open(file, "r", encoding="UTF-8") as fp:
             content = fp.read()
             content = pyparsing.cppStyleComment.suppress().transformString(content)
@@ -212,7 +210,7 @@ def get_externals(input_template: Template):
             externals[import_path] = {
                 "commonjs": import_path,
                 "commonjs2": import_path,
-                "root": [symbol_name, *[p for p in parts[1:]]],
+                "root": [symbol_name, *parts[1:]],
             }
         else:
             symbol_name = externals[sub_module["package"]]

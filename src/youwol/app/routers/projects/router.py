@@ -146,7 +146,7 @@ async def flow_status(request: Request, project_id: str, flow_id: str):
             ]
         )
         response = PipelineStatusResponse(
-            projectId=project_id, steps=[s for s in steps_status]
+            projectId=project_id, steps=list(steps_status)
         )
         await ctx.send(response)
         return response

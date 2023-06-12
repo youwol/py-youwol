@@ -77,7 +77,7 @@ class RootMiddleware(BaseHTTPMiddleware):
 
             await ctx.info(
                 f"{request.method} {request.url.path}: {response.status_code}",
-                data={"headers": {k: v for k, v in response.headers.items()}},
+                data={"headers": dict(response.headers.items())},
             )
             # Even for a very broad definition of failure, there are many « not failure »
             # status code (i.e. 204,308, etc.)

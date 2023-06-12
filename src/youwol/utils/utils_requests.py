@@ -22,14 +22,12 @@ async def redirect_request(
     headers=None,
 ) -> Response:
     rest_of_path = incoming_request.url.path.split(origin_base_path)[1].strip("/")
-    headers = (
-        {k: v for k, v in incoming_request.headers.items()} if not headers else headers
-    )
+    headers = dict(incoming_request.headers.items()) if not headers else headers
     redirect_url = f"{destination_base_path}/{rest_of_path}"
 
     async def forward_response(response):
         await assert_response(response)
-        headers_resp = {k: v for k, v in response.headers.items()}
+        headers_resp = dict(response.headers.items())
         content = await response.read()
         return Response(
             status_code=response.status, content=content, headers=headers_resp
@@ -75,7 +73,7 @@ async def aiohttp_to_starlette_response(resp: ClientResponse) -> Response:
     return Response(
         status_code=resp.status,
         content=await resp.read(),
-        headers={k: v for k, v in resp.headers.items()},
+        headers=dict(resp.headers.items()),
     )
 
 

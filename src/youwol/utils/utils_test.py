@@ -275,7 +275,6 @@ async def publish_files(
 ):
     with tempfile.TemporaryDirectory() as tmp_folder:
         base_path = Path(tmp_folder)
-        files = [x for x in files]
         zipper = zipfile.ZipFile(base_path / "asset.zip", "w", zipfile.ZIP_DEFLATED)
         for file in files:
             shutil.copy(result_folder / file, base_path / file)

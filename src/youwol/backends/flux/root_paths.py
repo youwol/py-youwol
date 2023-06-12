@@ -399,7 +399,7 @@ async def post_metadata(
                     for name, version in libraries.items()
                     if name in used_packages
                 },
-                "using": {name: version for name, version in libraries.items()},
+                "using": dict(libraries.items()),
             }
             loading_graph = (
                 await assets_gtw.get_cdn_backend_router().query_loading_graph(

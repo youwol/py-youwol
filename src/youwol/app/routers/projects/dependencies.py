@@ -163,9 +163,7 @@ async def resolve_project_dependencies(project: Project, context: Context):
             ChildToParentConnections(id=child_name, parentIds=[project.name])
             for child_name in below
         ],
-        ChildToParentConnections(
-            id=project.name, parentIds=[parent_name for parent_name in above]
-        ),
+        ChildToParentConnections(id=project.name, parentIds=list(above)),
         *[
             ChildToParentConnections(id=parent_name, parentIds=[])
             for parent_name in above

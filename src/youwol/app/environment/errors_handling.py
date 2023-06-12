@@ -66,7 +66,7 @@ class ConfigurationLoadingException(Exception):
         The configuration file is located at {self.status.path}
         The first failing step is:
             {self.failed_check.name}: {Fore.LIGHTYELLOW_EX}{self.failed_check.status.reason}{Style.RESET_ALL}
-            hints: {'/n'.join([hint for hint in self.failed_check.status.hints])}
+            hints: {'/n'.join(self.failed_check.status.hints)}
         """
 
 

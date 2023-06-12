@@ -77,7 +77,7 @@ def matching_files(
         return [pattern]
 
     patterns = (
-        FileListing(include=[p for p in patterns], ignore=[])
+        FileListing(include=patterns, ignore=[])
         if isinstance(patterns, list)
         else patterns
     )

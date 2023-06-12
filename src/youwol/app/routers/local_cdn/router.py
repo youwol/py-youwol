@@ -242,7 +242,7 @@ async def hard_reset(request: Request):
     ) as ctx:  # type: Context
         env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
         cdn_packages = env.backends_configuration.cdn_backend.doc_db.data
-        packages = [p for p in cdn_packages["documents"]]
+        packages = list(cdn_packages["documents"])
         asset_ids_to_delete = [
             encode_id(encode_id(p["library_name"])) for p in packages
         ]

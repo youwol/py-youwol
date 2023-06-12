@@ -102,7 +102,7 @@ def format_message(entry: LogEntry):
     return {
         "level": entry.level.name,
         "attributes": entry.attributes,
-        "labels": [label for label in entry.labels],
+        "labels": entry.labels,
         "text": entry.text,
         "data": entry.data,
         "contextId": entry.context_id,

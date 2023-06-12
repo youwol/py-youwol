@@ -527,7 +527,7 @@ async def get_children(
         owner=Constants.default_owner,
         headers=headers,
     )
-    documents = [d for d in documents_resp["documents"]]
+    documents = list(documents_resp["documents"])
 
     return GetChildrenResp(
         documents=[

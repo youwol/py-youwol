@@ -71,7 +71,7 @@ class GetLoadingGraph(AbstractLocalCloudDispatch):
                     async with await session.post(
                         url=url, json=body.dict(), headers=ctx.headers()
                     ) as resp:
-                        headers_resp = {k: v for k, v in resp.headers.items()}
+                        headers_resp = dict(resp.headers.items())
                         headers_resp[
                             YouwolHeaders.youwol_origin
                         ] = env.get_remote_info().host

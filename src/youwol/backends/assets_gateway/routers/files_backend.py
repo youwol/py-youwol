@@ -180,9 +180,7 @@ async def get_file(
 ):
     async def reader(resp: ClientResponse):
         resp_bytes = await resp.read()
-        return Response(
-            content=resp_bytes, headers={k: v for k, v in resp.headers.items()}
-        )
+        return Response(content=resp_bytes, headers=dict(resp.headers.items()))
 
     async with Context.start_ep(request=request) as ctx:  # type: Context
         await assert_read_permissions_from_raw_id(

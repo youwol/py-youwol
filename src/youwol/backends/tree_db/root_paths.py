@@ -1288,10 +1288,10 @@ async def get_items_rec(
     )
 
     folders = [folder.folderId for folder in resp.folders] + list(
-        flatten([[folder for folder in folders] for items, folders in children_folders])
+        flatten([list(folders) for items, folders in children_folders])
     )
     items = [item.itemId for item in resp.items] + list(
-        flatten([[item for item in items] for items, folders in children_folders])
+        flatten([list(items) for items, folders in children_folders])
     )
 
     return items, folders

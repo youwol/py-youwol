@@ -97,7 +97,7 @@ class DependenciesError(YouWolException):
         YouWolException.__init__(
             self,
             status_code=404,
-            detail={"context": context, "errors": [e for e in errors]},
+            detail={"context": context, "errors": errors},
             **kwargs,
         )
         self.exceptionType = DependenciesError.exceptionType
