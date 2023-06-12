@@ -252,8 +252,6 @@ class BrowserAuth(Authentication):
     Credential's password
     """
 
-    pass
-
 
 class DirectAuth(Authentication):
     """
