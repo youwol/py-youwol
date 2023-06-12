@@ -216,7 +216,7 @@ async def run_upstream_steps(
                 request=request,
                 project_id=project.id,
                 flow_id=flow_id,
-                parent_step_id=parent_step_id,
+                step_id=parent_step_id,
                 run_upstream=True,
             )
         # Do we need to check for KOs in previous run and raise exception ?

@@ -115,7 +115,7 @@ async def clean_visitors(body: CleanVisitorsBody, context: Context):
         )
         openid_client = openid_config.for_client(private_client)
         users_manager = KeycloakUsersManagement(
-            realm_url=body.admin_url, client=openid_client
+            realm_url=body.admin_url, oidc_client=openid_client, cache=None
         )
 
         while True:

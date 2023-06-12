@@ -222,9 +222,7 @@ class RecursiveProjectFinderHandler(ProjectsFinderHandler):
             self.thread.go()
         except RuntimeError as e:
             print("Error while starting projects RecursiveProjectsFinderThread")
-            print(
-                traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__)
-            )
+            traceback.print_exception(type(e), value=e, tb=e.__traceback__)
             raise e
 
     async def refresh(self):
