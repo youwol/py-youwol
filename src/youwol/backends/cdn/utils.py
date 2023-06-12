@@ -654,7 +654,7 @@ async def fetch_resource(
 
     return format_response(
         content=content,
-        partial_content=True if range_bytes else False,
+        partial_content=bool(range_bytes),
         file_id=path.split("/")[-1],
         max_age=max_age,
     )
