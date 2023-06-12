@@ -35,10 +35,9 @@ async def is_asset_in_local(asset_id: str, context: Context):
         await local_assets.get(asset_id=asset_id, headers=context.headers())
         return True
     except HTTPException as e:
-        if e.status_code == 404:
-            return False
-        else:
+        if e.status_code != 404:
             raise e
+        return False
 
 
 async def ensure_local_path(

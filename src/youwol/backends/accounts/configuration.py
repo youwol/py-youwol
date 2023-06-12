@@ -75,8 +75,7 @@ async def get_configuration() -> Configuration:
 
     if isinstance(conf, Configuration):
         return conf
-    else:
-        return await conf
+    return await conf
 
 
 def default_tokens_id_generator() -> str:

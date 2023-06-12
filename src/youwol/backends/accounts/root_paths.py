@@ -75,18 +75,19 @@ async def get_session_details(
 
     user_info = user_info_from_json(request.state.user_info)
 
-    impersonating_tokens = None
+    real_user_info = None
 
     if yw_jwt_t:
         impersonating_tokens = conf.tokens_manager.restore_tokens(yw_jwt_t)
+        if impersonating_tokens is not None:
+            access_token = await impersonating_tokens.access_token()
+            real_user_info = user_info_from_json(access_token)
 
-    if impersonating_tokens is not None:
-        access_token = await impersonating_tokens.access_token()
-        real_user_info = user_info_from_json(access_token)
+    if real_user_info is not None:
         return SessionImpersonationDetails(
             userInfo=user_info,
             realUserInfo=real_user_info,
             remembered=yw_login_hint is not None,
         )
-    else:
-        return SessionDetails(userInfo=user_info, remembered=yw_login_hint is not None)
+
+    return SessionDetails(userInfo=user_info, remembered=yw_login_hint is not None)

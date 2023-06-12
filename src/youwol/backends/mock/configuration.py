@@ -17,5 +17,4 @@ async def get_configuration():
 
     if isinstance(conf, Configuration):
         return conf
-    else:
-        return await conf
+    return await conf

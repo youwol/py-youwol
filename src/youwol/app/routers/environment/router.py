@@ -28,10 +28,10 @@ from youwol.app.environment import (
     YouwolEnvironmentFactory,
     yw_config,
 )
+from youwol.app.environment.models import predefined_configs
 from youwol.app.middlewares import get_connected_local_tokens
 from youwol.app.routers.projects import ProjectLoader
 from youwol.app.web_socket import LogsStreamer
-from youwol.app.environment.models import predefined_configs
 
 # Youwol utilities
 from youwol.utils.clients.oidc.oidc_config import OidcConfig

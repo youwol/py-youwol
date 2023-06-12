@@ -97,8 +97,7 @@ class YouwolEnvironment(BaseModel):
 - list of middlewares:
 {chr(10).join([f"  * {redirection}" for redirection in self.customMiddlewares])}
 """
-            else:
-                return "- no redirections configured"
+            return "- no redirections configured"
 
         def str_commands():
             if len(self.commands.keys()) != 0:
@@ -107,8 +106,7 @@ class YouwolEnvironment(BaseModel):
 {chr(10).join([f"  * http://localhost:{self.httpPort}/admin/custom-commands/{command}"
                for command in self.commands.keys()])}
 """
-            else:
-                return "- no custom command configured"
+            return "- no custom command configured"
 
         def str_routers():
             if self.routers:
@@ -117,8 +115,7 @@ class YouwolEnvironment(BaseModel):
 {chr(10).join([f"  * {router.base_path}"
                for router in self.routers])}
 """
-            else:
-                return "- no custom command configured"
+            return "- no custom command configured"
 
         version = ""
         try:

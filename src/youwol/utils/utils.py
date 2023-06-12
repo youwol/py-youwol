@@ -262,10 +262,9 @@ def to_json_rec(_obj: Union[Dict[str, Any], List[Any]]):
     def process_value(value):
         if is_json_leaf(value):
             return to_serializable_json_leaf(value)
-        elif isinstance(k, BaseModel):
+        if isinstance(k, BaseModel):
             return to_json_rec(value.dict())
-        else:
-            return to_json_rec(value)
+        return to_json_rec(value)
 
     if isinstance(_obj, dict):
         result = {}
