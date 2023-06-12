@@ -186,9 +186,10 @@ class Context(NamedTuple):
             else self.logs_reporters + with_reporters
         )
         muted_http_errors = self.muted_http_errors.union(muted_http_errors or set())
-        self.request and YouwolHeaders.patch_request_mute_http_headers(
-            request=self.request, status_muted=muted_http_errors
-        )
+        if self.request:
+            YouwolHeaders.patch_request_mute_http_headers(
+                request=self.request, status_muted=muted_http_errors
+            )
         ctx = Context(
             logs_reporters=logs_reporters,
             data_reporters=self.data_reporters,
@@ -265,12 +266,16 @@ class Context(NamedTuple):
         )
 
         async def on_exit_fct(ctx):
-            await ctx.info("Response", data=response()) if response else None
-            on_exit and await on_exit(ctx)
+            if response:
+                await ctx.info("Response", data=response())
+            if on_exit:
+                await on_exit(ctx)
 
         async def on_enter_fct(ctx):
-            await ctx.info("Body", data=body) if body else None
-            on_enter and await on_enter(ctx)
+            if body:
+                await ctx.info("Body", data=body)
+            if on_enter:
+                await on_enter(ctx)
 
         return context.start(
             action=action,

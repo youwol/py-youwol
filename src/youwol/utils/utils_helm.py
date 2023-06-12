@@ -121,7 +121,8 @@ async def helm_uninstall(
     release_name: str, kube_context: str, namespace: str, context: Context = None
 ):
     cmd = f"helm uninstall --namespace {namespace} --kube-context {kube_context} {release_name}"
-    context and await context.info(text=cmd)
+    if context:
+        await context.info(text=cmd)
     await execute_shell_cmd(cmd, context)
 
 

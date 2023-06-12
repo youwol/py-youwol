@@ -123,9 +123,8 @@ async def process_download_asset(
                 )
             finally:
                 queue.task_done()
-                download_id in cache_downloaded_ids and cache_downloaded_ids.remove(
-                    download_id
-                )
+                if download_id in cache_downloaded_ids:
+                    cache_downloaded_ids.remove(download_id)
                 pbar.set_description(downloading_pbar(env), refresh=True)
 
 

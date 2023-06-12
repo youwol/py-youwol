@@ -105,13 +105,12 @@ async def resolve_workspace_dependencies(context: Context) -> ResolvedDependenci
     projects = await ProjectLoader.get_cached_projects()
 
     parent_ids = defaultdict(lambda: [])
-    [
-        parent_ids[d.name].append(project.name)
-        for project in projects
+    for project in projects:
         for d in await project.get_dependencies(
             recursive=False, projects=projects, context=context
-        )
-    ]
+        ):
+            parent_ids[d.name].append(project.name)
+
     for p in projects:
         if p.name not in parent_ids:
             parent_ids[p.name] = []
