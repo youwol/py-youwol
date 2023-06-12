@@ -34,12 +34,6 @@ from youwol.pipelines.pipeline_typescript_weback_npm.common import (
     generate_webpack_config,
 )
 
-#  Expose here for backward compatibility
-PackageType = PackageType
-Dependencies = Dependencies
-RunTimeDeps = RunTimeDeps
-Template = Template
-
 auto_generated_filename = "auto-generated.ts"
 
 
