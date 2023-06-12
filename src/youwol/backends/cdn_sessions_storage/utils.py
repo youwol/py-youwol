@@ -1,11 +1,8 @@
 # third parties
 from starlette.requests import Request
 
-# Youwol backends
-from youwol.backends.cdn_sessions_storage.configurations import Configuration
-
 # Youwol utilities
-from youwol.utils import get_user_id, log_info
+from youwol.utils import get_user_id
 
 
 def get_path(request: Request, package: str, name: str, namespace: str = None):

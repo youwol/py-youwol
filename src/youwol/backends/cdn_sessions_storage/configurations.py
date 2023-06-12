@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 
 # typing
-from typing import Awaitable, Callable, Dict, Optional
+from typing import Awaitable, Callable
 
 # Youwol utilities
 from youwol.utils import Storage

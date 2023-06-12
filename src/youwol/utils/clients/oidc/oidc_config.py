@@ -3,7 +3,6 @@ import base64
 import hashlib
 import random
 import string
-import sys
 import uuid
 
 from dataclasses import dataclass
