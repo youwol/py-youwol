@@ -23,7 +23,7 @@ status_204_NoContent = Status(code=204, string="No Content")
 
 class Response(BaseModel):
     status: Status = status_200_OK
-    headers: Dict[str, List[str]] = dict()
+    headers: Dict[str, List[str]] = {}
     body: Body = Body(mimeType="application/json", contentBase64="eyJzdGF0dXMiOiJvayJ9")
 
 

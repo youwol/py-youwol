@@ -17,7 +17,7 @@ from .models import Body, Handler, Request, status_200_OK, status_204_NoContent
 
 router = APIRouter(tags=["nock"])
 
-handlers: Dict[str, Handler] = dict()
+handlers: Dict[str, Handler] = {}
 
 
 def ref(method: str, handler_id: str, public: bool):
@@ -126,7 +126,7 @@ async def handle(method: str, handler_id: str, req: FastAPI_Request, public=Fals
     if handler is None:
         return FastAPI_Response(status_code=status.HTTP_404_NOT_FOUND)
 
-    headers: Dict[str, List[str]] = dict()
+    headers: Dict[str, List[str]] = {}
     for key in req.headers.keys():
         headers[key] = req.headers.getlist(key)
 
