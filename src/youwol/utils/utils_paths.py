@@ -140,8 +140,8 @@ def create_zip_file(
     with_data: List[Tuple[str, Union[str, bytes]]] = None,
 ):
     zipper = zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED)
-    for path, name in files_to_zip:
-        zipper.write(filename=path, arcname=name)
+    for path_file, name in files_to_zip:
+        zipper.write(filename=path_file, arcname=name)
     if with_data:
         for arc_name, raw in with_data:
             zipper.writestr(arc_name, data=raw)
