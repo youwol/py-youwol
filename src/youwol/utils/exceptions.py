@@ -11,7 +11,7 @@ from starlette.responses import JSONResponse
 class YouWolException(HTTPException):
     exceptionType = "YouWolException"
 
-    def __init__(self, status_code: int, detail: Any, **kwargs):
+    def __init__(self, status_code: int, detail: Any, **_):
         HTTPException.__init__(self, status_code=status_code, detail=detail)
         self.exceptionType = YouWolException.exceptionType
 
