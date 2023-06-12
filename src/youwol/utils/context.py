@@ -227,9 +227,10 @@ class Context(NamedTuple):
             )
             await Context.__execute_block(ctx, on_exception, e)
             await Context.__execute_block(ctx, on_exit)
-            if not (
-                isinstance(e, HTTPException) and e.status_code in self.muted_http_errors
-            ):
+            muted = False
+            if isinstance(e, HTTPException):
+                muted = e.status_code in self.muted_http_errors
+            if not muted:
                 traceback.print_exc()
             if self.request.state:
                 self.request.state.context = self

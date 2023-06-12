@@ -178,9 +178,9 @@ mv {self.outputDir}/{to_module_name(project.name)}/* {self.outputDir}
 
 class DocStep(PipelineStep):
     config: DocStepConfig
-    id = "doc"
+    id: str = "doc"
 
-    run: RunImplicit = lambda self, project, flow_id, ctx: self.conf.cmd(project)
+    run: RunImplicit = lambda self, project, flow_id, ctx: self.config.cmd(project)
 
     sources: SourcesFctImplicit = lambda self, project, flow_id, step_id: FileListing(
         include=[f"src/{project.name.replace('-', '_')}"]

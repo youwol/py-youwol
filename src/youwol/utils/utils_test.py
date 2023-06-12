@@ -26,12 +26,12 @@ from typing import (
 
 # third parties
 import psutil
-import websockets
 
 from colorama import Fore, Style
 from colorama import init as colorama_init
 from psutil import process_iter
 from websockets.exceptions import InvalidMessage
+from websockets.legacy.client import connect as ws_connect
 
 # Youwol
 import youwol
@@ -61,7 +61,7 @@ async def wait_py_youwol_ready(port: int):
 
     while True:
         try:
-            async with websockets.connect(f"ws://localhost:{port}/ws-data") as ws:
+            async with ws_connect(f"ws://localhost:{port}/ws-data") as ws:
                 await handler(ws)
             break
         except (ConnectionResetError, ConnectionRefusedError, InvalidMessage):
