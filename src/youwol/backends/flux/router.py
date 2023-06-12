@@ -2,7 +2,7 @@
 from typing import Awaitable, Callable, Union
 
 # Youwol backends
-from youwol.backends.flux import Configuration, Dependencies
+from youwol.backends.flux import Configuration, Dependencies, router
 
 
 def get_router(
@@ -13,7 +13,5 @@ def get_router(
     Dependencies.get_configuration = (
         configuration if callable(configuration) else lambda: configuration
     )
-    # Youwol backends
-    from youwol.backends.flux.root_paths import router
 
     return router

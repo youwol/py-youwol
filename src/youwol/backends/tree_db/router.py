@@ -3,6 +3,7 @@ from typing import Awaitable, Callable, Union
 
 # Youwol backends
 from youwol.backends.tree_db import Configuration, Dependencies
+from youwol.backends.tree_db.root_paths import router
 
 
 def get_router(
@@ -13,7 +14,5 @@ def get_router(
     Dependencies.get_configuration = (
         configuration if callable(configuration) else lambda: configuration
     )
-    # Youwol backends
-    from youwol.backends.tree_db.root_paths import router
 
     return router

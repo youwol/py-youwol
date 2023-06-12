@@ -3,6 +3,7 @@ from typing import Awaitable, Callable, Union
 
 # relative
 from .configuration import Configuration, Dependencies
+from .root_paths import router
 
 
 def get_router(
@@ -13,7 +14,5 @@ def get_router(
     Dependencies.get_configuration = (
         configuration if callable(configuration) else lambda: configuration
     )
-    # Youwol backends
-    from youwol.backends.mock.root_paths import router
 
     return router
