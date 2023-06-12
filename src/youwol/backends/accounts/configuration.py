@@ -19,6 +19,10 @@ from youwol.utils.clients.oidc.users_management import KeycloakUsersManagement
 from .openid_rp.openid_flows_service import OpenidFlowsService
 
 
+def default_tokens_id_generator() -> str:
+    return str(uuid.uuid4())
+
+
 class Configuration:
     oidc_client: OidcForClient
     oidc_admin_client: Optional[OidcForClient]
@@ -35,9 +39,7 @@ class Configuration:
         admin_client: Optional[PrivateClient],
         auth_cache: CacheClient,
         secure_cookies: bool = True,
-        tokens_id_generator: Callable[[], str] = (
-            lambda: default_tokens_id_generator()
-        ),
+        tokens_id_generator: Callable[[], str] = default_tokens_id_generator,
     ):
         self.oidc_client = OidcConfig(openid_base_url).for_client(openid_client)
         self.oidc_admin_client = (
@@ -76,7 +78,3 @@ async def get_configuration() -> Configuration:
     if isinstance(conf, Configuration):
         return conf
     return await conf
-
-
-def default_tokens_id_generator() -> str:
-    return str(uuid.uuid4())

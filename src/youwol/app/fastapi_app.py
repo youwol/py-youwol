@@ -76,7 +76,7 @@ cleaner_thread = CleanerThread()
 
 auth_cache = factory_local_cache(cleaner_thread, "auth_cache")
 ContextFactory.with_static_data = {
-    "env": lambda: yw_config(),
+    "env": yw_config,
     "download_thread": download_thread,
     "cleaner_thread": cleaner_thread,
     "auth_cache": auth_cache,

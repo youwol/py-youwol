@@ -291,7 +291,7 @@ async def pipeline(config: PipelineConfig, context: Context):
             target=MicroService(),
             tags=["python", "microservice", "fastapi"],
             projectName=lambda path: Path(path).name,
-            projectVersion=lambda path: get_helm_app_version(path),
+            projectVersion=get_helm_app_version,
             dependencies=lambda project, _ctx: get_dependencies(project),
             steps=[
                 PreconditionChecksStep(),

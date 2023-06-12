@@ -326,8 +326,8 @@ async def run_pipeline_step_implementation(
         action="Run pipeline-step",
         with_labels=[str(Label.RUN_PIPELINE_STEP), str(Label.PIPELINE_STEP_RUNNING)],
         with_attributes={"projectId": project_id, "flowId": flow_id, "stepId": step_id},
-        on_enter=lambda ctx_enter: on_enter(ctx_enter),
-        on_exit=lambda ctx_exit: on_exit(ctx_exit),
+        on_enter=on_enter,
+        on_exit=on_exit,
         with_reporters=[LogsStreamer()],
     ) as ctx:
         env = await ctx.get("env", YouwolEnvironment)
