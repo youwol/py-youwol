@@ -439,9 +439,6 @@ class ContextFactory:
 class DeployedContextReporter(ContextReporter):
     errors = set()
 
-    def __init__(self):
-        super().__init__()
-
     async def log(self, entry: LogEntry):
         prefix = ""
         if str(Label.STARTED) in entry.labels:
@@ -473,9 +470,6 @@ class DeployedContextReporter(ContextReporter):
 
 
 class ConsoleContextReporter(ContextReporter):
-    def __init__(self):
-        super().__init__()
-
     async def log(self, entry: LogEntry):
         base = {
             "message": entry.text,
@@ -524,9 +518,6 @@ class InMemoryReporter(ContextReporter):
     leaf_logs: List[LogEntry] = []
 
     errors = set()
-
-    def __init__(self):
-        super().__init__()
 
     def clear(self):
         self.root_node_logs = []
