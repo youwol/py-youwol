@@ -18,7 +18,7 @@ from youwol.utils.context import Label
 def url_match(request: Request, pattern: str):
     method, regex = pattern.split(":")
 
-    if method != "*" and method != request.method:
+    if method not in ("*", request.method):
         return False, None
 
     replaced = []
