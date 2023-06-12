@@ -26,7 +26,7 @@ def assert_python():
             """Your version of python is not compatible with py-youwol:
         Recommended: 3.9.x"""
         )
-        exit(1)
+        sys.exit(1)
 
 
 def main():
