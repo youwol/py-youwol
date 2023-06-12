@@ -151,10 +151,8 @@ class SyncHelmDeps(PipelineStep):
                 f"{d['name']}-{d['version']}.tgz" for d in data["dependencies"]
             ]
             all_here = all(
-                [
-                    (project.path / "chart" / "charts" / c).exists()
-                    for c in expected_charts
-                ]
+                (project.path / "chart" / "charts" / c).exists()
+                for c in expected_charts
             )
             return PipelineStepStatus.OK if all_here else PipelineStepStatus.outdated
 

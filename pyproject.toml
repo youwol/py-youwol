@@ -148,7 +148,6 @@ disable = [
 	'C0116', 'C0114','C0115', # missing docstrings
     'design',
     #### TODO: correct the following
-    'R1728','R1729', # Use generator
     'R1721', # Unnecessary comprehension
     'R1732', # 'with' resource ollocation
     'W0707', # re-raise exceptions

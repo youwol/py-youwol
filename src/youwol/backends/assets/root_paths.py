@@ -401,10 +401,8 @@ async def get_permissions_implementation(
     )
     #  watch for owner case with read access
     if any(
-        [
-            is_child_group(child_group_id=group_id, parent_group_id=asset["group_id"])
-            for group_id in group_ids
-        ]
+        is_child_group(child_group_id=group_id, parent_group_id=asset["group_id"])
+        for group_id in group_ids
     ):
         return PermissionsResp(write=True, read=True, share=True, expiration=None)
 

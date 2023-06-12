@@ -5,8 +5,8 @@ from typing import Any, Dict
 def compare_schemas(left: Dict[str, any], right: Dict[str, any]):
     left_dict = {c["name"]: c["type"] for c in left["columns"]}
     right_dict = {c["name"]: c["type"] for c in right["columns"]}
-    left_ok = all([right_dict.get(k, None) == v for k, v in left_dict.items()])
-    right_ok = all([left_dict.get(k, None) == v for k, v in right_dict.items()])
+    left_ok = all(right_dict.get(k, None) == v for k, v in left_dict.items())
+    right_ok = all(left_dict.get(k, None) == v for k, v in right_dict.items())
 
     partition_key_ok = str(left["partition_key"]) == str(right["partition_key"])
     clustering_ok = str(left["clustering_columns"]) == str(right["clustering_columns"])

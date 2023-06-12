@@ -778,7 +778,7 @@ async def move(
             )
             all_items = list(flatten([r.items for r in results]))
             return MoveResponse(
-                foldersCount=1 + sum([r.foldersCount for r in results]), items=all_items
+                foldersCount=1 + sum(r.foldersCount for r in results), items=all_items
             )
 
         doc = {

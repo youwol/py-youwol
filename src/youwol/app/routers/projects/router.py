@@ -442,7 +442,7 @@ async def cdn_status(
             storage_cdn_path = config.pathsBook.local_cdn_storage
             folder_path = storage_cdn_path / doc["path"]
             bundle_path = folder_path / doc["bundle"]
-            files_count = sum([len(files) for r, d, files in os.walk(folder_path)])
+            files_count = sum(len(files) for r, d, files in os.walk(folder_path))
             bundle_size = bundle_path.stat().st_size
             return CdnVersionResponse(
                 name=doc["library_name"],

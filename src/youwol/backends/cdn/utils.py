@@ -226,7 +226,7 @@ async def publish_package(
             )
 
         mandatory_fields = ["name", "version"]
-        if any([field not in package_json for field in mandatory_fields]):
+        if any(field not in package_json for field in mandatory_fields):
             raise PublishPackageError(
                 f"The package.json file needs to define the attributes {str(mandatory_fields)}"
             )
@@ -352,7 +352,7 @@ async def create_explorer_data(
     dir_path: Path, root_path: Path, forms: List[FormData], context: Context
 ) -> Dict[str, ExplorerResponse]:
     def compute_attributes_rec(content: ExplorerResponse, all_data, result):
-        size_files = sum([file.size for file in content.files])
+        size_files = sum(file.size for file in content.files)
         attributes = [
             compute_attributes_rec(all_data[folder.path], all_data, result)
             for folder in content.folders
