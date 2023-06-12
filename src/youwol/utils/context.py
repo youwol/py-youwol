@@ -9,7 +9,6 @@ import uuid
 
 from abc import ABC, abstractmethod
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
 from enum import Enum
 
 # typing
@@ -418,15 +417,12 @@ CallableBlockException = Callable[[Exception, Context], Union[Awaitable, None]]
 LabelsGetter = Callable[[], Set[str]]
 
 
-@dataclass
 class ContextFactory:
-    with_static_data: Optional[Dict[str, DataType]] = None
-    with_static_labels: Optional[Dict[str, LabelsGetter]] = None
+    with_static_data: Dict[str, DataType] = {}
+    with_static_labels: Dict[str, LabelsGetter] = {}
 
     @staticmethod
     def add_labels(key: str, labels: Union[Set[str], LabelsGetter]):
-        if not ContextFactory.with_static_labels:
-            ContextFactory.with_static_labels = {}
         ContextFactory.with_static_labels[key] = (
             labels if callable(labels) else lambda: labels
         )
