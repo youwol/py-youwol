@@ -198,12 +198,10 @@ async def smooth_reset(request: Request, body: ResetCdnBody):
                 data={"packages": [p["name"] for p in packages]},
             )
 
-        """
-        The current user may not have the permissions to delete the package as it can belong to a 'forbidden' group
-        for him (still, we want to proceed as it is the local version of YouWol and such things are expected).
-        To skip permissions checks, we use 'LocalClients.get_cdn_client' and not 'LocalClients.get_gtw_cdn_client'.
-        Because of this, the 'asset' must be explicitly deleted using 'assets_client.delete_asset'.
-        """
+        # The current user may not have the permissions to delete the package as it can belong to a 'forbidden' group
+        # for him (still, we want to proceed as it is the local version of YouWol and such things are expected).
+        # To skip permissions checks, we use 'LocalClients.get_cdn_client' and not 'LocalClients.get_gtw_cdn_client'.
+        # Because of this, the 'asset' must be explicitly deleted using 'assets_client.delete_asset'.
         cdn_client = LocalClients.get_cdn_client(env)
         assets_client = LocalClients.get_assets_client(env)
         for package in packages:

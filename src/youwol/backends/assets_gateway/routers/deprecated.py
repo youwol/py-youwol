@@ -65,11 +65,9 @@ async def get_raw_package(
         )
 
 
-"""
-Following deprecated end points are used in flux-projects including modules providing access
-to the files in the YouWol environment (like 'Drive', 'FilePicker', etc).
-The libraries are '@youwol/flux-youwol-essentials' & '@youwol/youwol-essentials'.
-"""
+# Following deprecated end points are used in flux-projects including modules providing access
+# to the files in the YouWol environment (like 'Drive', 'FilePicker', etc).
+# The libraries are '@youwol/flux-youwol-essentials' & '@youwol/youwol-essentials'.
 
 
 async def forward_deprecated_get(
