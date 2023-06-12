@@ -234,14 +234,13 @@ class Context(NamedTuple):
             if self.request.state:
                 self.request.state.context = self
             raise e
-        else:
-            await ctx.info(
-                text=f"{action} in {int(1000 * (time.time() - start))} ms",
-                labels=[Label.DONE],
-            )
-            if self.request:
-                self.request.state.context = self
-            await self.__execute_block(ctx, on_exit)
+        await ctx.info(
+            text=f"{action} in {int(1000 * (time.time() - start))} ms",
+            labels=[Label.DONE],
+        )
+        if self.request:
+            self.request.state.context = self
+        await self.__execute_block(ctx, on_exit)
 
     @staticmethod
     def start_ep(

@@ -157,8 +157,7 @@ class OidcConfig:
                         raise RuntimeError(
                             f"Cannot fetch OpenId configuration at well-known URL '{well_known_url}'"
                         )
-                    else:
-                        json = await resp.json()
+                    json = await resp.json()
             self._openid_configuration = OpenIdConfiguration.parse_obj(json)
 
         return self._openid_configuration
