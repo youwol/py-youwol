@@ -504,7 +504,7 @@ async def post_component(
     configuration: Configuration = Depends(get_configuration),
 ):
     async with Context.start_ep(request=request) as ctx:  # type: Context
-        storage, docdb = configuration.storage, configuration.doc_db_component
+        _, docdb = configuration.storage, configuration.doc_db_component
         owner = Constants.default_owner
 
         await update_component(

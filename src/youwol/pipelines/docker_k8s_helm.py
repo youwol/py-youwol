@@ -90,7 +90,7 @@ class PublishDockerStep(PipelineStep):
             return PipelineStepStatus.outdated
 
         docker_url = self.dockerRepo.get_project_url(project, context)
-        return_code, outputs = await execute_shell_cmd(
+        _, outputs = await execute_shell_cmd(
             cmd=f"docker manifest inspect {docker_url}:{project.version}",
             context=context,
         )
@@ -217,7 +217,7 @@ class InstallHelmStep(PipelineStep):
             action="InstallHelmStep.get_status",
             with_attributes={"namespace": self.config.namespace},
         ) as ctx:
-            exit_code, outputs = await execute_shell_cmd(
+            _, outputs = await execute_shell_cmd(
                 cmd=f"helm get manifest {project.name} -n {self.config.namespace} "
                 f"--kube-context {self.k8sTarget.context}",
                 context=ctx,
@@ -254,7 +254,7 @@ class InstallDryRunHelmStep(PipelineStep):
                 config=self.config, project=project, context=context
             )
 
-            return_code, cmd, outputs_bash = await helm_package.dry_run(context=ctx)
+            _, cmd, outputs_bash = await helm_package.dry_run(context=ctx)
             outputs = outputs + [cmd] + outputs_bash
 
         return outputs

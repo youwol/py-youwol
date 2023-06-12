@@ -357,7 +357,7 @@ async def _create_folder(
     context: Context,
 ):
     async with context.start(action="_create_folder") as ctx:  # type: Context
-        folders_db, drives_db = (
+        folders_db, _ = (
             configuration.doc_dbs.folders_db,
             configuration.doc_dbs.drives_db,
         )
@@ -1027,7 +1027,7 @@ async def queue_delete_item(
         request=request, action="queue_delete_item", with_attributes={"itemId": item_id}
     ) as ctx:  # type: Context
         dbs = configuration.doc_dbs
-        items_db, folders_db, drives_db, deleted_db = (
+        items_db, _, _, deleted_db = (
             dbs.items_db,
             dbs.folders_db,
             dbs.drives_db,
@@ -1073,7 +1073,7 @@ async def queue_delete_folder(
         with_attributes={"itemId": folder_id},
     ) as ctx:  # type: Context
         dbs = configuration.doc_dbs
-        folders_db, drives_db, deleted_db = (
+        folders_db, _, deleted_db = (
             dbs.folders_db,
             dbs.drives_db,
             dbs.deleted_db,

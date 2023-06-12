@@ -167,7 +167,7 @@ async def project_artifacts(request: Request, project_id: str, flow_id: str):
         env = await ctx.get("env", YouwolEnvironment)
         paths: PathsBook = env.pathsBook
 
-        project, flow, steps = await get_project_flow_steps(
+        project, _, steps = await get_project_flow_steps(
             project_id=project_id, flow_id=flow_id, context=ctx
         )
         eventual_artifacts = [
@@ -489,9 +489,7 @@ async def new_project_from_template(
             raise RuntimeError(f"Can not find a template of type {body.type}")
 
         await ctx.info(text="Found template generator", data=template)
-        name, project_folder = await template.generator(
-            template.folder, body.parameters, ctx
-        )
+        name, _ = await template.generator(template.folder, body.parameters, ctx)
 
         response = ProjectsLoadingResults(results=await ProjectLoader.refresh(ctx))
         await ctx.send(response)
@@ -513,7 +511,7 @@ async def pipeline_step_view(
     async with Context.from_request(request).start(
         action="new_project_from_template"
     ) as ctx:
-        project, step = await get_project_step(project_id, step_id, ctx)
+        _, step = await get_project_step(project_id, step_id, ctx)
         if not step.view:
             raise HTTPException(
                 status_code=404, detail="The step has no view definition associated"

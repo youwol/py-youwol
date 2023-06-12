@@ -513,7 +513,7 @@ def md5_from_file(filename: Union[str, Path]):
 
 def md5_from_folder(dir_path: Path):
     paths = []
-    for subdir, dirs, files in os.walk(dir_path):
+    for subdir, _, files in os.walk(dir_path):
         for filename in files:
             paths.append(Path(subdir) / filename)
     md5_stamp = files_check_sum(paths)

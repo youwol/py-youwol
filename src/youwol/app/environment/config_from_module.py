@@ -116,7 +116,7 @@ async def configuration_from_python(path: Path) -> Configuration:
         result = factory.get(get_main_arguments())
         config_data = await result if isinstance(result, Awaitable) else result
     except Exception as err:
-        ex_type, ex, tb = sys.exc_info()
+        _, _, tb = sys.exc_info()
         traceback.print_tb(tb)
         check_valid_conf_fct.status = format_unknown_error(
             reason="There was an exception calling 'IConfigurationFactory#get()'.",

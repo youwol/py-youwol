@@ -38,9 +38,7 @@ async def helm_list(
     if selector and selector.name:
         cmd += f" --selector name={selector.name}"
 
-    return_code, outputs = await execute_shell_cmd(
-        cmd=cmd, context=context, log_outputs=False
-    )
+    _, outputs = await execute_shell_cmd(cmd=cmd, context=context, log_outputs=False)
 
     def to_resource(line):
         elements = line.split("\t")

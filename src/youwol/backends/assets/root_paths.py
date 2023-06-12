@@ -794,7 +794,7 @@ async def post_image(
     configuration: Configuration = Depends(get_configuration),
 ):
     async with Context.start_ep(request=request) as ctx:  # type: Context
-        storage, doc_db = configuration.storage, configuration.doc_db_asset
+        storage, _ = configuration.storage, configuration.doc_db_asset
 
         asset = await db_get(
             asset_id=asset_id, configuration=configuration, context=ctx
@@ -873,7 +873,7 @@ async def remove_image(
     configuration: Configuration = Depends(get_configuration),
 ):
     async with Context.start_ep(request=request) as ctx:  # type: Context
-        storage, doc_db = configuration.storage, configuration.doc_db_asset
+        storage, _ = configuration.storage, configuration.doc_db_asset
 
         asset = await db_get(
             asset_id=asset_id, configuration=configuration, context=ctx

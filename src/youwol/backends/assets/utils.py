@@ -146,7 +146,7 @@ def format_download_form(file_path: Path, base_path: Path, dir_path: Path) -> Fo
 async def post_storage_by_chunk(
     storage: Storage, forms: List[FormData], count: int, headers: Dict[str, str]
 ):
-    for i, chunk in enumerate(chunks(forms, count)):
+    for _, chunk in enumerate(chunks(forms, count)):
         await asyncio.gather(
             *[storage.post_file(form=form, headers=headers) for form in chunk]
         )

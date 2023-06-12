@@ -301,7 +301,7 @@ async def safe_load(
 
 
 async def get_yw_config_starter(main_args: MainArguments):
-    (conf_path, exists) = ensure_config_file_exists_or_create_it(main_args.config_path)
+    conf_path, _ = ensure_config_file_exists_or_create_it(main_args.config_path)
 
     return conf_path
 
