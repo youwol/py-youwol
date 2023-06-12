@@ -6,7 +6,9 @@ from fastapi import APIRouter
 
 # Youwol backends
 from youwol.backends.accounts.configuration import Configuration, Dependencies
-from youwol.backends.accounts.root_paths import router
+
+# relative
+from .root_paths import router
 
 
 def get_router(

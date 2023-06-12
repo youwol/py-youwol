@@ -3,7 +3,9 @@ from typing import Awaitable, Callable, Union
 
 # Youwol backends
 from youwol.backends.assets import Configuration, Dependencies
-from youwol.backends.assets.root_paths import router
+
+# relative
+from .root_paths import router
 
 
 def get_router(

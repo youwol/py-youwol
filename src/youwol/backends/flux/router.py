@@ -2,7 +2,10 @@
 from typing import Awaitable, Callable, Union
 
 # Youwol backends
-from youwol.backends.flux import Configuration, Dependencies, router
+from youwol.backends.flux import Configuration, Dependencies
+
+# relative
+from .root_paths import router
 
 
 def get_router(
