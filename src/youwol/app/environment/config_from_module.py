@@ -64,11 +64,11 @@ def try_last_expression_as_config(config_path: Path) -> Optional[Configuration]:
         if len(stmts) > 1:
             ast_module: mod = ast.Module(body=stmts[:-1], type_ignores=[])
             compiled = compile(ast_module, filename="<ast>", mode="exec")
-            exec(compiled, config_globals)
+            exec(compiled, config_globals)  # pylint: disable=exec-used
         # then we eval the last one
         ast_expression: mod = ast.Expression(body=last_expr.value, type_ignores=[])
         compiled = compile(ast_expression, filename="<ast>", mode="eval")
-        value = eval(compiled, config_globals)
+        value = eval(compiled, config_globals)  # pylint: disable=eval-used
         if isinstance(value, Configuration):
             return value
 

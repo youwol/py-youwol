@@ -142,3 +142,30 @@ sections = ["FUTURE", "STDLIB", "TYPING", "THIRDPARTY", "FIRSTPARTY", "YW_APP", 
 [tool.mypy]
 mypy_path = ".typing_stubs"
 files = "src"
+
+[tool.pylint]
+disable = [
+	'C0116', 'C0114','C0115', # missing docstrings
+    'design',
+    #### TODO: correct the following
+    'R1728','R1729', # Use generator
+    'R1721', # Unnecessary comprehension
+    'R1732', # 'with' resource ollocation
+    'W0707', # re-raise exceptions
+    'C0103', # Variables name convention
+    'W0511', # to do
+    'W0719', 'W0718', # Too general exception
+    'C0302', # Too many lines in module
+    'E1102', # Not callable
+    'E0110', # Abstract class instantiated
+]
+max-line-length = 120
+
+[tool.pylint.'MESSAGES CONTROL']
+extension-pkg-whitelist = "pydantic" # see https://github.com/pydantic/pydantic/issues/1961
+
+[tool.pylint.exceptions]
+overgeneral-exceptions = [
+    'builtins.BaseException', 'builtins.Exception', # default
+    'builtins.RuntimeError'
+]

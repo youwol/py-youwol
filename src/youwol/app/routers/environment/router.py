@@ -31,6 +31,7 @@ from youwol.app.environment import (
 from youwol.app.middlewares import get_connected_local_tokens
 from youwol.app.routers.projects import ProjectLoader
 from youwol.app.web_socket import LogsStreamer
+from youwol.app.environment.models import predefined_configs
 
 # Youwol utilities
 from youwol.utils.clients.oidc.oidc_config import OidcConfig
@@ -106,9 +107,6 @@ async def load_predefined_config_file(request: Request, rest_of_path: str):
         request=request,
         with_reporters=[LogsStreamer()],
     ):
-        # Youwol application
-        from youwol.app.environment import predefined_configs
-
         source = resources.files(predefined_configs).joinpath(rest_of_path)
         with resources.as_file(source) as path:
             env = await YouwolEnvironmentFactory.load_from_file(path)

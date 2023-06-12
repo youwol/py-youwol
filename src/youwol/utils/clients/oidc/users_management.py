@@ -3,7 +3,7 @@ import datetime
 import time
 
 # typing
-from typing import List, Optional
+from typing import List
 
 # third parties
 import aiohttp
@@ -13,12 +13,7 @@ from starlette.datastructures import URL
 
 # Youwol utilities
 from youwol.utils import AT, CacheClient
-from youwol.utils.clients.oidc.oidc_config import OidcForClient, SessionlessTokensData
-from youwol.utils.clients.oidc.tokens_manager import (
-    Tokens,
-    TokensExpiredError,
-    TokensManager,
-)
+from youwol.utils.clients.oidc.oidc_config import OidcForClient
 
 TWELVE_HOURS = 12 * 60 * 60
 
@@ -53,7 +48,7 @@ class KeycloakUsersManagement(UsersManagement):
         token_data = self.__cache.get(
             KeycloakUsersManagement.__KEYCLOAK_USERS_MANAGEMENT_TOKEN_CACHE_KEY
         )
-        if token_data is None or token_data["expires_at"] < int(now):
+        if token_data is None or int(token_data["expires_at"]) < int(now):
             sessionless_tokens_data = await self.__oidc_client.client_credentials_flow()
             expires_at = (
                 int(now)
@@ -70,7 +65,7 @@ class KeycloakUsersManagement(UsersManagement):
                 AT(expires_at),
             )
 
-        return token_data["access_token"]
+        return str(token_data["access_token"])
 
     async def get_temporary_users(self) -> List[User]:
         token = await self.__get_access_token()
