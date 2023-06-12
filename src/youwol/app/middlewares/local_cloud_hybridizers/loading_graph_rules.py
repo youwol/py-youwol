@@ -28,18 +28,21 @@ from .abstract_local_cloud_dispatch import AbstractLocalCloudDispatch
 
 class GetLoadingGraph(AbstractLocalCloudDispatch):
     async def apply(
-        self, request: Request, call_next: RequestResponseEndpoint, context: Context
+        self,
+        incoming_request: Request,
+        call_next: RequestResponseEndpoint,
+        context: Context,
     ) -> Optional[Response]:
         if (
             "/api/assets-gateway/cdn-backend/queries/loading-graph"
-            not in request.url.path
+            not in incoming_request.url.path
         ):
             return None
 
         async with context.start(
             action="GetLoadingGraphDispatch.apply", muted_http_errors={404}
         ) as ctx:
-            body_raw = await request.body()
+            body_raw = await incoming_request.body()
 
             body = LoadingGraphBody(**(json.loads(body_raw.decode("utf8"))))
             await ctx.info("Loading graph body", data=body)
@@ -47,17 +50,19 @@ class GetLoadingGraph(AbstractLocalCloudDispatch):
 
             env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
             try:
-                resp = await resolve_loading_tree(request, body, cdn_conf)
+                resp = await resolve_loading_tree(incoming_request, body, cdn_conf)
                 return JSONResponse(
                     resp.dict(),
-                    headers={YouwolHeaders.youwol_origin: request.url.hostname},
+                    headers={
+                        YouwolHeaders.youwol_origin: incoming_request.url.hostname
+                    },
                 )
             except DependenciesError as e:
                 await ctx.warning(
                     text="Loading tree can not be resolved locally, proceed to remote platform",
                     data=e.detail,
                 )
-                url = f"https://{env.get_remote_info().host}{request.url.path}"
+                url = f"https://{env.get_remote_info().host}{incoming_request.url.path}"
 
                 async with aiohttp.ClientSession(
                     connector=aiohttp.TCPConnector(verify_ssl=False),

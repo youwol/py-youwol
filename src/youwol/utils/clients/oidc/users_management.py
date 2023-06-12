@@ -30,7 +30,7 @@ class UsersManagement:
     async def create_user(self, username: str, password: str) -> None:
         raise NotImplementedError()
 
-    async def delete_user(self, username: str) -> None:
+    async def delete_user(self, user_id: str) -> None:
         raise NotImplementedError()
 
 

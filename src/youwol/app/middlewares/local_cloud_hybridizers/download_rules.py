@@ -24,7 +24,10 @@ from .abstract_local_cloud_dispatch import AbstractLocalCloudDispatch
 
 class Download(AbstractLocalCloudDispatch):
     async def apply(
-        self, request: Request, call_next: RequestResponseEndpoint, context: Context
+        self,
+        incoming_request: Request,
+        call_next: RequestResponseEndpoint,
+        context: Context,
     ) -> Optional[Response]:
         # Caution: download should be triggered only when fetching raw data of the asset
         # not metadata (e.g. do not catch /assets-backend/assets/**).
@@ -41,7 +44,9 @@ class Download(AbstractLocalCloudDispatch):
             ("package", "GET:/api/assets-gateway/raw/package/*/**"),
             ("flux-project", "GET:/api/assets-gateway/raw/flux-project/*/**"),
         ]
-        matches = [(kind, url_match(request, pattern)) for kind, pattern in patterns]
+        matches = [
+            (kind, url_match(incoming_request, pattern)) for kind, pattern in patterns
+        ]
         match = next(((kind, match[1]) for kind, match in matches if match[0]), None)
         if not match:
             return None
@@ -57,24 +62,26 @@ class Download(AbstractLocalCloudDispatch):
         ) as ctx:
             download_thread = await ctx.get("download_thread", AssetDownloadThread)
             is_downloading = download_thread.is_downloading(
-                url=request.url.path, kind=kind, raw_id=raw_id, env=env
+                url=incoming_request.url.path, kind=kind, raw_id=raw_id, env=env
             )
             # if downloading => do not try fetching the asset from local-db (the asset can be in invalid state).
             if is_downloading:
-                resp = await redirect_api_remote(request, ctx)
+                resp = await redirect_api_remote(incoming_request, ctx)
                 resp.headers[YouwolHeaders.youwol_origin] = env.get_remote_info().host
                 return resp
 
-            resp = await call_next(request)
+            resp = await call_next(incoming_request)
             if resp.status_code == 404:
                 await ctx.info(
                     "Raw data can not be locally retrieved, proceed to remote platform"
                 )
-                headers = {"Authorization": request.headers.get("authorization")}
-                resp = await redirect_api_remote(request, ctx)
+                headers = {
+                    "Authorization": incoming_request.headers.get("authorization")
+                }
+                resp = await redirect_api_remote(incoming_request, ctx)
                 resp.headers[YouwolHeaders.youwol_origin] = env.get_remote_info().host
                 is_downloading = download_thread.is_downloading(
-                    url=request.url.path, kind=kind, raw_id=raw_id, env=env
+                    url=incoming_request.url.path, kind=kind, raw_id=raw_id, env=env
                 )
                 # if by the time the remote api call responded the asset is already downloading
                 # => do not enqueue download
@@ -82,12 +89,12 @@ class Download(AbstractLocalCloudDispatch):
                     return resp
                 await ctx.info("~> schedule asset download")
                 download_thread.enqueue_asset(
-                    url=request.url.path,
+                    url=incoming_request.url.path,
                     kind=kind,
                     raw_id=raw_id,
                     context=ctx,
                     headers=headers,
                 )
                 return resp
-            resp.headers[YouwolHeaders.youwol_origin] = request.url.hostname
+            resp.headers[YouwolHeaders.youwol_origin] = incoming_request.url.hostname
             return resp

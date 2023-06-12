@@ -21,7 +21,10 @@ from .abstract_local_cloud_dispatch import AbstractLocalCloudDispatch
 
 class ForwardOnly(AbstractLocalCloudDispatch):
     async def apply(
-        self, request: Request, call_next: RequestResponseEndpoint, context: Context
+        self,
+        incoming_request: Request,
+        call_next: RequestResponseEndpoint,
+        context: Context,
     ) -> Optional[Response]:
         patterns = [
             "GET:/api/assets-gateway/assets/**",
@@ -29,7 +32,7 @@ class ForwardOnly(AbstractLocalCloudDispatch):
             "GET:/api/assets-gateway/assets-backend/assets/**",
             "GET:/api/assets-gateway/treedb-backend/items/**",
         ]
-        matches = [url_match(request, pattern) for pattern in patterns]
+        matches = [url_match(incoming_request, pattern) for pattern in patterns]
         match = next((match for match in matches if match[0]), None)
         if not match:
             return None
@@ -38,14 +41,14 @@ class ForwardOnly(AbstractLocalCloudDispatch):
         async with context.start(
             action="ForwardOnlyDispatch.apply", muted_http_errors={404}
         ) as ctx:
-            resp = await call_next(request)
+            resp = await call_next(incoming_request)
             if resp.status_code == 404:
                 await ctx.info(
                     "Forward request to remote as it can not proceed locally "
                 )
-                resp = await redirect_api_remote(request=request, context=ctx)
+                resp = await redirect_api_remote(request=incoming_request, context=ctx)
                 resp.headers[YouwolHeaders.youwol_origin] = env.get_remote_info().host
                 return resp
 
-            resp.headers[YouwolHeaders.youwol_origin] = request.url.hostname
+            resp.headers[YouwolHeaders.youwol_origin] = incoming_request.url.hostname
             return resp
