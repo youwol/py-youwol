@@ -64,15 +64,15 @@ class PathsBook(BaseModel):
     def node_modules(target_folder: Union[Path, str]) -> Path:
         return Path(target_folder) / "node_modules"
 
-    @staticmethod
+    @classmethod
     def node_module_dependency(
-        self, target_folder: Union[Path, str], dependency_name: str
+        cls, target_folder: Union[Path, str], dependency_name: str
     ) -> Path:
         if "/" in dependency_name:
             namespace, name = dependency_name.split("/")
-            return self.node_modules(target_folder) / namespace / name
+            return cls.node_modules(target_folder) / namespace / name
 
-        return self.node_modules(target_folder) / dependency_name
+        return cls.node_modules(target_folder) / dependency_name
 
     def artifacts_flow(self, project_name: str, flow_id: str) -> Path:
         return self.system / project_name / flow_id
