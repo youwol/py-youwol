@@ -284,7 +284,7 @@ async def run_pipeline_step_implementation(
                 stepId=step_id,
                 event=Event.runStarted,
             )
-        ),
+        )
 
     async def on_exit(ctx_exit):
         env_exit = await ctx_exit.get("env", YouwolEnvironment)
@@ -303,7 +303,7 @@ async def run_pipeline_step_implementation(
                     stepId=step_id,
                     event=Event.runDone,
                 )
-            ),
+            )
 
             _project: Project = next(p for p in projects if p.id == project_id)
 
