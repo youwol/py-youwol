@@ -162,15 +162,20 @@ class TokensManager:
         self,
         tokens_id: str,
     ) -> Optional[Tokens]:
-        tokens_data = self.__cache.get(Tokens.cache_token_key(tokens_id))
+        cache_token_key = Tokens.cache_token_key(tokens_id)
+        tokens_data = self.__cache.get(cache_token_key)
         if tokens_data is None:
             return None
-        return Tokens(
-            tokens_id=tokens_id,
-            cache=self.__cache,
-            oidc_client=self.__oidc_client,
-            **tokens_data,
-        )
+        try:
+            return Tokens(
+                tokens_id=tokens_id,
+                cache=self.__cache,
+                oidc_client=self.__oidc_client,
+                **tokens_data,
+            )
+        except KeyError:
+            self.__cache.delete(cache_token_key)
+            return None
 
     def restore_tokens_from_session_id(
         self,
