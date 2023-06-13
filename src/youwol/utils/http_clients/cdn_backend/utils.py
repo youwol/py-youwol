@@ -14,7 +14,7 @@ from youwol.utils.utils_paths import write_json
 
 def is_fixed_version(version: str):
     base = version.split("-")[0].replace("x", "*").replace("latest", "*")
-    fixed = not any([c in base for c in [">", "<", "*", "^", "~"]])
+    fixed = not any(c in base for c in [">", "<", "*", "^", "~"])
     return fixed
 
 

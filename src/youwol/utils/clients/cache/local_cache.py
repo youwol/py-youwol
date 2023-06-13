@@ -10,8 +10,8 @@ from typing import Dict, List, Optional
 # third parties
 from pydantic import BaseModel
 
-# Youwol utilities
-from youwol.utils.clients.cache import TTL, CacheClient
+# relative
+from .cache import TTL, CacheClient
 
 
 class CacheEntry(BaseModel):
@@ -49,8 +49,7 @@ class LocalCacheClient(CacheClient):
         expire_at = self._cache[key].expire_at
         if expire_at == sys.maxsize:
             return None
-        else:
-            return TTL(int(expire_at - int(time.time())))
+        return TTL(int(expire_at - int(time.time())))
 
     def clear_expired(self):
         for key in [

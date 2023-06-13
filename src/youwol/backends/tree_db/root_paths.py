@@ -357,7 +357,7 @@ async def _create_folder(
     context: Context,
 ):
     async with context.start(action="_create_folder") as ctx:  # type: Context
-        folders_db, drives_db = (
+        folders_db, _ = (
             configuration.doc_dbs.folders_db,
             configuration.doc_dbs.drives_db,
         )
@@ -778,7 +778,7 @@ async def move(
             )
             all_items = list(flatten([r.items for r in results]))
             return MoveResponse(
-                foldersCount=1 + sum([r.foldersCount for r in results]), items=all_items
+                foldersCount=1 + sum(r.foldersCount for r in results), items=all_items
             )
 
         doc = {
@@ -1027,7 +1027,7 @@ async def queue_delete_item(
         request=request, action="queue_delete_item", with_attributes={"itemId": item_id}
     ) as ctx:  # type: Context
         dbs = configuration.doc_dbs
-        items_db, folders_db, drives_db, deleted_db = (
+        items_db, _, _, deleted_db = (
             dbs.items_db,
             dbs.folders_db,
             dbs.drives_db,
@@ -1073,7 +1073,7 @@ async def queue_delete_folder(
         with_attributes={"itemId": folder_id},
     ) as ctx:  # type: Context
         dbs = configuration.doc_dbs
-        folders_db, drives_db, deleted_db = (
+        folders_db, _, deleted_db = (
             dbs.folders_db,
             dbs.drives_db,
             dbs.deleted_db,
@@ -1288,10 +1288,10 @@ async def get_items_rec(
     )
 
     folders = [folder.folderId for folder in resp.folders] + list(
-        flatten([[folder for folder in folders] for items, folders in children_folders])
+        flatten([list(folders) for items, folders in children_folders])
     )
     items = [item.itemId for item in resp.items] + list(
-        flatten([[item for item in items] for items, folders in children_folders])
+        flatten([list(items) for items, folders in children_folders])
     )
 
     return items, folders

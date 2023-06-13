@@ -60,7 +60,7 @@ async def process_download_asset(
         )
 
     while True:
-        url, kind, raw_id, context, headers = await queue.get()
+        url, kind, raw_id, context, _ = await queue.get()
 
         env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
         asset_id = encode_id(raw_id)
@@ -123,9 +123,8 @@ async def process_download_asset(
                 )
             finally:
                 queue.task_done()
-                download_id in cache_downloaded_ids and cache_downloaded_ids.remove(
-                    download_id
-                )
+                if download_id in cache_downloaded_ids:
+                    cache_downloaded_ids.remove(download_id)
                 pbar.set_description(downloading_pbar(env), refresh=True)
 
 

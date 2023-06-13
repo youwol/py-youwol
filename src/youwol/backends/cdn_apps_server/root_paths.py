@@ -49,7 +49,7 @@ async def get_raw_resource(
             if resp.status < 400:
                 return Response(
                     content=await resp.read(),
-                    headers={**{k: v for k, v in resp.headers.items()}, **cors_headers},
+                    headers={**dict(resp.headers.items()), **cors_headers},
                 )
             await raise_exception_from_response(resp)
 

@@ -151,10 +151,8 @@ class SyncHelmDeps(PipelineStep):
                 f"{d['name']}-{d['version']}.tgz" for d in data["dependencies"]
             ]
             all_here = all(
-                [
-                    (project.path / "chart" / "charts" / c).exists()
-                    for c in expected_charts
-                ]
+                (project.path / "chart" / "charts" / c).exists()
+                for c in expected_charts
             )
             return PipelineStepStatus.OK if all_here else PipelineStepStatus.outdated
 
@@ -178,9 +176,9 @@ mv {self.outputDir}/{to_module_name(project.name)}/* {self.outputDir}
 
 class DocStep(PipelineStep):
     config: DocStepConfig
-    id = "doc"
+    id: str = "doc"
 
-    run: RunImplicit = lambda self, project, flow_id, ctx: self.conf.cmd(project)
+    run: RunImplicit = lambda self, project, flow_id, ctx: self.config.cmd(project)
 
     sources: SourcesFctImplicit = lambda self, project, flow_id, step_id: FileListing(
         include=[f"src/{project.name.replace('-', '_')}"]
@@ -291,7 +289,7 @@ async def pipeline(config: PipelineConfig, context: Context):
             target=MicroService(),
             tags=["python", "microservice", "fastapi"],
             projectName=lambda path: Path(path).name,
-            projectVersion=lambda path: get_helm_app_version(path),
+            projectVersion=get_helm_app_version,
             dependencies=lambda project, _ctx: get_dependencies(project),
             steps=[
                 PreconditionChecksStep(),

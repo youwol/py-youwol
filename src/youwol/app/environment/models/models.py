@@ -21,8 +21,6 @@ class IPipelineFactory:
     It is here for backward compatibility purpose & will disappear soon.
     """
 
-    pass
-
 
 class ProjectsFinderHandler:
     """

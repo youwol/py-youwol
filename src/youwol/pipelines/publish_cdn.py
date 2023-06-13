@@ -21,7 +21,7 @@ from youwol.app.environment import (
     RemoteClients,
     YouwolEnvironment,
 )
-from youwol.app.middlewares import JwtProviderPyYouwol
+from youwol.app.middlewares.local_auth import get_local_tokens
 from youwol.app.routers.environment.upload_assets.package import UploadPackageOptions
 from youwol.app.routers.environment.upload_assets.upload import upload_asset
 from youwol.app.routers.projects.models_project import (
@@ -129,7 +129,7 @@ async def get_default_drive(context: Context) -> DefaultDriveResponse:
 
 
 class PublishCdnLocalStep(PipelineStep):
-    id = "cdn-local"
+    id: str = "cdn-local"
 
     packagedArtifacts: List[str]
 
@@ -307,7 +307,7 @@ class CdnTarget(BaseModel):
 
 
 class PublishCdnRemoteStep(PipelineStep):
-    id = "cdn-remote"
+    id: str = "cdn-remote"
     cdnTarget: CdnTarget
     run: ExplicitNone = ExplicitNone()
 
@@ -325,13 +325,14 @@ class PublishCdnRemoteStep(PipelineStep):
             )
             raise e
 
-        token = await JwtProviderPyYouwol.get_auth_token(
+        tokens = await get_local_tokens(
             auth_provider=self.cdnTarget.cloudTarget.authProvider,
-            authentication=authentication,
-            context=context,
+            auth_infos=authentication,
         )
 
-        return f"Bearer {token}"
+        access_token = await tokens.access_token()
+
+        return f"Bearer {access_token}"
 
     async def get_status(
         self,

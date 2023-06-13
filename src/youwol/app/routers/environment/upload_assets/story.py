@@ -37,12 +37,14 @@ def zip_local_story(raw_id: str, config: YouwolEnvironment) -> bytes:
                 storage_stories / doc["content_id"], base_path / doc["content_id"]
             )
 
-        zipper = zipfile.ZipFile(base_path / "story.zip", "w", zipfile.ZIP_DEFLATED)
-        for filename in ["data.json"] + [
-            doc["content_id"] for doc in data["documents"]
-        ]:
-            zipper.write(base_path / filename, arcname=filename)
-        zipper.close()
+        with zipfile.ZipFile(
+            base_path / "story.zip", "w", zipfile.ZIP_DEFLATED
+        ) as zipper:
+            for filename in [
+                "data.json",
+                *[doc["content_id"] for doc in data["documents"]],
+            ]:
+                zipper.write(base_path / filename, arcname=filename)
         return (Path(tmp_folder) / "story.zip").read_bytes()
 
 

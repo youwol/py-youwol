@@ -25,10 +25,13 @@ from .abstract_local_cloud_dispatch import AbstractLocalCloudDispatch
 
 class PostMetadataDeprecated(AbstractLocalCloudDispatch):
     async def apply(
-        self, request: Request, call_next: RequestResponseEndpoint, context: Context
+        self,
+        incoming_request: Request,
+        call_next: RequestResponseEndpoint,
+        context: Context,
     ) -> Optional[Response]:
         match, replaced = url_match(
-            request=request, pattern="POST:/api/assets-gateway/assets/*"
+            request=incoming_request, pattern="POST:/api/assets-gateway/assets/*"
         )
         if not match:
             return None
@@ -48,13 +51,15 @@ class PostMetadataDeprecated(AbstractLocalCloudDispatch):
                 await ctx.info(
                     "Asset found in local store, only this version is updated"
                 )
-                return await call_next(request)
+                return await call_next(incoming_request)
             except HTTPException as e:
                 if e.status_code != 404:
                     raise e
 
             await ctx.info("Asset not found in local store, proceed to remote platform")
-            resp_remote = await redirect_api_remote(request=request, context=ctx)
+            resp_remote = await redirect_api_remote(
+                request=incoming_request, context=ctx
+            )
 
             if resp_remote.status_code == 404:
                 raise HTTPException(
@@ -71,10 +76,14 @@ class PostMetadataDeprecated(AbstractLocalCloudDispatch):
 
 class CreateAssetDeprecated(AbstractLocalCloudDispatch):
     async def apply(
-        self, request: Request, call_next: RequestResponseEndpoint, context: Context
+        self,
+        incoming_request: Request,
+        call_next: RequestResponseEndpoint,
+        context: Context,
     ) -> Optional[Response]:
         match, replaced = url_match(
-            request=request, pattern="PUT:/api/assets-gateway/assets/*/location/*"
+            request=incoming_request,
+            pattern="PUT:/api/assets-gateway/assets/*/location/*",
         )
         if not match:
             return None
@@ -85,7 +94,7 @@ class CreateAssetDeprecated(AbstractLocalCloudDispatch):
         ) as ctx:
             folder_id = replaced[-1]
             await ensure_local_path(folder_id=folder_id, env=env, context=ctx)
-            resp = await call_next(request)
+            resp = await call_next(incoming_request)
             binary = b""
             async for data in cast(Any, resp).body_iterator:
                 binary += data

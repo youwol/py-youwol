@@ -201,7 +201,7 @@ async def resolve_version(
         pre_release = "-".join(version.split("-")[1:])
         version_spec = base if len(version.split("-")) == 1 else f"{base}-{pre_release}"
         selector = NpmSpec(version_spec)
-        fixed = not any([c in base for c in [">", "<", "*", "^", "~"]])
+        fixed = not any(c in base for c in [">", "<", "*", "^", "~"])
         try:
             versions = await list_all_versions_with_cache(
                 library=dependency,
@@ -472,7 +472,7 @@ def retrieve_dependency_paths(
     parents = [
         lib
         for lib in known_libraries
-        if any([get_key(dependency) == from_package for dependency in lib.dependencies])
+        if any(get_key(dependency) == from_package for dependency in lib.dependencies)
     ]
     if not parents:
         return [f"{from_package} > {suffix}"]

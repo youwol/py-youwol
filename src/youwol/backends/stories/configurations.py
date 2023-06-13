@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 
 # typing
-from typing import Awaitable, Callable, Dict, Optional, Type, Union
+from typing import Awaitable, Callable, Dict, Optional, Union
 
 # Youwol utilities
 from youwol.utils import (
@@ -19,12 +19,9 @@ from youwol.utils.http_clients.stories_backend import (
     Content,
     GlobalContent,
 )
-from youwol.utils.middlewares import Middleware
-from youwol.utils.middlewares.authentication_local import AuthLocalMiddleware
 
 DocDb = Union[DocDbClient, LocalDocDbClient]
 Storage = Union[StorageClient, LocalStorageClient]
-AuthMiddleware = Union[Type[Middleware], Type[AuthLocalMiddleware]]
 
 
 @dataclass(frozen=True)

@@ -53,26 +53,27 @@ def try_last_expression_as_config(config_path: Path) -> Optional[Configuration]:
     module = importlib.util.module_from_spec(spec)
     loader.exec_module(module)
     config_globals = {k: getattr(module, k) for k in module.__dict__}
-    script = open(config_path, "r", encoding="UTF-8").read()
-    stmts = list(ast.iter_child_nodes(ast.parse(script)))
-    if not stmts:
+    with open(config_path, "r", encoding="UTF-8") as fp:
+        script = fp.read()
+        stmts = list(ast.iter_child_nodes(ast.parse(script)))
+        if not stmts:
+            return None
+
+        if isinstance(stmts[-1], ast.Expr):
+            last_expr: ast.Expr = cast(ast.Expr, stmts[-1])
+
+            if len(stmts) > 1:
+                ast_module: mod = ast.Module(body=stmts[:-1], type_ignores=[])
+                compiled = compile(ast_module, filename="<ast>", mode="exec")
+                exec(compiled, config_globals)  # pylint: disable=exec-used
+            # then we eval the last one
+            ast_expression: mod = ast.Expression(body=last_expr.value, type_ignores=[])
+            compiled = compile(ast_expression, filename="<ast>", mode="eval")
+            value = eval(compiled, config_globals)  # pylint: disable=eval-used
+            if isinstance(value, Configuration):
+                return value
+
         return None
-
-    if isinstance(stmts[-1], ast.Expr):
-        last_expr: ast.Expr = cast(ast.Expr, stmts[-1])
-
-        if len(stmts) > 1:
-            ast_module: mod = ast.Module(body=stmts[:-1], type_ignores=[])
-            compiled = compile(ast_module, filename="<ast>", mode="exec")
-            exec(compiled, config_globals)
-        # then we eval the last one
-        ast_expression: mod = ast.Expression(body=last_expr.value, type_ignores=[])
-        compiled = compile(ast_expression, filename="<ast>", mode="eval")
-        value = eval(compiled, config_globals)
-        if isinstance(value, Configuration):
-            return value
-
-    return None
 
 
 async def configuration_from_python(path: Path) -> Configuration:
@@ -116,7 +117,7 @@ async def configuration_from_python(path: Path) -> Configuration:
         result = factory.get(get_main_arguments())
         config_data = await result if isinstance(result, Awaitable) else result
     except Exception as err:
-        ex_type, ex, tb = sys.exc_info()
+        _, _, tb = sys.exc_info()
         traceback.print_tb(tb)
         check_valid_conf_fct.status = format_unknown_error(
             reason="There was an exception calling 'IConfigurationFactory#get()'.",

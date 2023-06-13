@@ -8,10 +8,6 @@ from fastapi import APIRouter, Depends
 from starlette.requests import Request
 from starlette.responses import Response
 
-# Youwol backends
-from youwol.backends.files import Configuration
-from youwol.backends.files.configurations import get_configuration
-
 # Youwol utilities
 from youwol.utils import get_content_encoding, get_content_type
 from youwol.utils.clients.file_system.interfaces import Metadata
@@ -21,6 +17,9 @@ from youwol.utils.http_clients.files_backend import (
     PostFileResponse,
     PostMetadataBody,
 )
+
+# relative
+from .configurations import Configuration, get_configuration
 
 router = APIRouter(tags=["files-backend"])
 flatten = itertools.chain.from_iterable

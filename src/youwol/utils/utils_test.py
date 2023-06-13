@@ -26,12 +26,12 @@ from typing import (
 
 # third parties
 import psutil
-import websockets
 
 from colorama import Fore, Style
 from colorama import init as colorama_init
 from psutil import process_iter
 from websockets.exceptions import InvalidMessage
+from websockets.legacy.client import connect as ws_connect
 
 # Youwol
 import youwol
@@ -61,7 +61,7 @@ async def wait_py_youwol_ready(port: int):
 
     while True:
         try:
-            async with websockets.connect(f"ws://localhost:{port}/ws-data") as ws:
+            async with ws_connect(f"ws://localhost:{port}/ws-data") as ws:
                 await handler(ws)
             break
         except (ConnectionResetError, ConnectionRefusedError, InvalidMessage):
@@ -275,7 +275,6 @@ async def publish_files(
 ):
     with tempfile.TemporaryDirectory() as tmp_folder:
         base_path = Path(tmp_folder)
-        files = [x for x in files]
         zipper = zipfile.ZipFile(base_path / "asset.zip", "w", zipfile.ZIP_DEFLATED)
         for file in files:
             shutil.copy(result_folder / file, base_path / file)

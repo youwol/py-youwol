@@ -276,7 +276,7 @@ async def db_query(
             headers=ctx.headers(),
         )
 
-        return [d for d in r["documents"]]
+        return list(r["documents"])
 
 
 async def db_delete(docdb: DocDb, doc: Dict[str, Any], context: Context):

@@ -146,7 +146,7 @@ async def flow_status(request: Request, project_id: str, flow_id: str):
             ]
         )
         response = PipelineStatusResponse(
-            projectId=project_id, steps=[s for s in steps_status]
+            projectId=project_id, steps=list(steps_status)
         )
         await ctx.send(response)
         return response
@@ -167,7 +167,7 @@ async def project_artifacts(request: Request, project_id: str, flow_id: str):
         env = await ctx.get("env", YouwolEnvironment)
         paths: PathsBook = env.pathsBook
 
-        project, flow, steps = await get_project_flow_steps(
+        project, _, steps = await get_project_flow_steps(
             project_id=project_id, flow_id=flow_id, context=ctx
         )
         eventual_artifacts = [
@@ -216,7 +216,7 @@ async def run_upstream_steps(
                 request=request,
                 project_id=project.id,
                 flow_id=flow_id,
-                parent_step_id=parent_step_id,
+                step_id=parent_step_id,
                 run_upstream=True,
             )
         # Do we need to check for KOs in previous run and raise exception ?
@@ -284,7 +284,7 @@ async def run_pipeline_step_implementation(
                 stepId=step_id,
                 event=Event.runStarted,
             )
-        ),
+        )
 
     async def on_exit(ctx_exit):
         env_exit = await ctx_exit.get("env", YouwolEnvironment)
@@ -303,7 +303,7 @@ async def run_pipeline_step_implementation(
                     stepId=step_id,
                     event=Event.runDone,
                 )
-            ),
+            )
 
             _project: Project = next(p for p in projects if p.id == project_id)
 
@@ -326,8 +326,8 @@ async def run_pipeline_step_implementation(
         action="Run pipeline-step",
         with_labels=[str(Label.RUN_PIPELINE_STEP), str(Label.PIPELINE_STEP_RUNNING)],
         with_attributes={"projectId": project_id, "flowId": flow_id, "stepId": step_id},
-        on_enter=lambda ctx_enter: on_enter(ctx_enter),
-        on_exit=lambda ctx_exit: on_exit(ctx_exit),
+        on_enter=on_enter,
+        on_exit=on_exit,
         with_reporters=[LogsStreamer()],
     ) as ctx:
         env = await ctx.get("env", YouwolEnvironment)
@@ -442,7 +442,7 @@ async def cdn_status(
             storage_cdn_path = config.pathsBook.local_cdn_storage
             folder_path = storage_cdn_path / doc["path"]
             bundle_path = folder_path / doc["bundle"]
-            files_count = sum([len(files) for r, d, files in os.walk(folder_path)])
+            files_count = sum(len(files) for r, d, files in os.walk(folder_path))
             bundle_size = bundle_path.stat().st_size
             return CdnVersionResponse(
                 name=doc["library_name"],
@@ -489,9 +489,7 @@ async def new_project_from_template(
             raise RuntimeError(f"Can not find a template of type {body.type}")
 
         await ctx.info(text="Found template generator", data=template)
-        name, project_folder = await template.generator(
-            template.folder, body.parameters, ctx
-        )
+        name, _ = await template.generator(template.folder, body.parameters, ctx)
 
         response = ProjectsLoadingResults(results=await ProjectLoader.refresh(ctx))
         await ctx.send(response)
@@ -513,7 +511,7 @@ async def pipeline_step_view(
     async with Context.from_request(request).start(
         action="new_project_from_template"
     ) as ctx:
-        project, step = await get_project_step(project_id, step_id, ctx)
+        _, step = await get_project_step(project_id, step_id, ctx)
         if not step.view:
             raise HTTPException(
                 status_code=404, detail="The step has no view definition associated"

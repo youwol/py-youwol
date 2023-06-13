@@ -19,25 +19,17 @@ class WebSocketsStore:
     data: List[WebSocket] = field(default_factory=list)
 
 
-global_ws_store = None
-
-
-def web_sockets_store():
-    global global_ws_store
-    if global_ws_store:
-        return global_ws_store
-    global_ws_store = WebSocketsStore()
-    return global_ws_store
+global_ws_store = WebSocketsStore()
 
 
 class LogsStreamer(WsContextReporter):
     def __init__(self):
-        super().__init__(lambda: web_sockets_store().logs, mute_exceptions=True)
+        super().__init__(lambda: global_ws_store.logs, mute_exceptions=True)
 
 
 class WsDataStreamer(WsContextReporter):
     def __init__(self):
-        super().__init__(lambda: web_sockets_store().data, mute_exceptions=False)
+        super().__init__(lambda: global_ws_store.data, mute_exceptions=False)
 
 
 class WsType(Enum):
@@ -46,8 +38,7 @@ class WsType(Enum):
 
 
 async def start_web_socket(ws: WebSocket, ws_type: WsType):
-    ws_store = web_sockets_store()
-    channels = ws_store.data if ws_type == WsType.Data else ws_store.logs
+    channels = global_ws_store.data if ws_type == WsType.Data else global_ws_store.logs
     channels.append(ws)
 
     await ws.accept()

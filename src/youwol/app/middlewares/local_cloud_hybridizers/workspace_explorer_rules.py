@@ -50,9 +50,12 @@ class GetChildrenDispatch(AbstractLocalCloudDispatch):
         return params[0] if match else None
 
     async def apply(
-        self, request: Request, call_next: RequestResponseEndpoint, context: Context
+        self,
+        incoming_request: Request,
+        call_next: RequestResponseEndpoint,
+        context: Context,
     ) -> Optional[Response]:
-        folder_id = GetChildrenDispatch.is_matching(request=request)
+        folder_id = GetChildrenDispatch.is_matching(request=incoming_request)
         if not folder_id:
             return None
         await context.info(text="GetChildrenDispatch matching incoming request")
@@ -164,11 +167,15 @@ class GetChildrenDispatch(AbstractLocalCloudDispatch):
 
 class MoveBorrowInRemoteFolderDispatch(AbstractLocalCloudDispatch):
     async def apply(
-        self, request: Request, call_next: RequestResponseEndpoint, context: Context
+        self,
+        incoming_request: Request,
+        call_next: RequestResponseEndpoint,
+        context: Context,
     ) -> Optional[Response]:
         env = await context.get("env", YouwolEnvironment)
         match, replaced = url_match(
-            request=request, pattern="POST:/api/assets-gateway/treedb-backend/**"
+            request=incoming_request,
+            pattern="POST:/api/assets-gateway/treedb-backend/**",
         )
         if not match or replaced[0][-1] not in ["move", "borrow"]:
             return None
@@ -176,7 +183,7 @@ class MoveBorrowInRemoteFolderDispatch(AbstractLocalCloudDispatch):
         async with context.start(
             action="MoveBorrowInRemoteFolderDispatch.apply", muted_http_errors={404}
         ) as ctx:
-            body = await request.json()
+            body = await incoming_request.json()
             folder_id = body["destinationFolderId"]
             await ensure_local_path(folder_id=folder_id, env=env, context=ctx)
             explorer_db = LocalClients.get_assets_gateway_client(

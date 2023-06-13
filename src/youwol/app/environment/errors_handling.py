@@ -66,14 +66,14 @@ class ConfigurationLoadingException(Exception):
         The configuration file is located at {self.status.path}
         The first failing step is:
             {self.failed_check.name}: {Fore.LIGHTYELLOW_EX}{self.failed_check.status.reason}{Style.RESET_ALL}
-            hints: {'/n'.join([hint for hint in self.failed_check.status.hints])}
+            hints: {'/n'.join(self.failed_check.status.hints)}
         """
 
 
 def format_unknown_error(reason: str, error: Exception):
     detail = error.args[0]
     error_class = error.__class__.__name__
-    cl, exc, tb = sys.exc_info()
+    _, _, tb = sys.exc_info()
     line_number = traceback.extract_tb(tb)[-1][1]
     return ErrorResponse(
         reason=reason, hints=[f"{error_class} at line {line_number}: {detail}"]

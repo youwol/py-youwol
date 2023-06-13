@@ -19,12 +19,12 @@ from youwol.app.routers.projects.models_project import (
 from youwol.utils import CommandException, execute_shell_cmd
 from youwol.utils.context import Context
 
-# Youwol pipelines
-from youwol.pipelines.pipeline_typescript_weback_npm.common import NpmRepo
+# relative
+from .models import NpmRepo
 
 
 async def get_shasum_published(project: Project, context: Context):
-    exit_code, outputs = await execute_shell_cmd(
+    _, outputs = await execute_shell_cmd(
         cmd=f"npm view {project.name}@{project.version} dist.shasum", context=context
     )
     return outputs[0].replace("\n", "")
@@ -32,7 +32,7 @@ async def get_shasum_published(project: Project, context: Context):
 
 async def get_shasum_local(project: Project, context: Context):
     shasum_prefix = "shasum:"
-    exit_code, outputs = await execute_shell_cmd(
+    _, outputs = await execute_shell_cmd(
         cmd=f"(cd {project.path} && npm publish --dry-run)", context=context
     )
     shasum_line = next(line for line in outputs if shasum_prefix in line)

@@ -165,21 +165,22 @@ async def format_download_form(
             if return_code > 0:
                 raise CommandException(command=cmd, outputs=outputs)
 
-    data = open(str(file_path), "rb").read()
-    path_bucket = (
-        base_path / file_path.relative_to(dir_path)
-        if not rename
-        else base_path / rename
-    )
+    with open(str(file_path), "rb") as fp:
+        data = fp.read()
+        path_bucket = (
+            base_path / file_path.relative_to(dir_path)
+            if not rename
+            else base_path / rename
+        )
 
-    return FormData(
-        objectName=path_bucket,
-        objectData=data,
-        owner=Constants.owner,
-        objectSize=len(data),
-        content_type=get_content_type(file_path.name),
-        content_encoding=get_content_encoding(file_path.name),
-    )
+        return FormData(
+            objectName=path_bucket,
+            objectData=data,
+            owner=Constants.owner,
+            objectSize=len(data),
+            content_type=get_content_type(file_path.name),
+            content_encoding=get_content_encoding(file_path.name),
+        )
 
 
 async def publish_package(
@@ -219,14 +220,15 @@ async def publish_package(
             )
 
         try:
-            package_json = json.load(open(package_path, encoding="UTF-8"))
+            with open(package_path, encoding="UTF-8") as fp:
+                package_json = json.load(fp)
         except ValueError:
             raise PublishPackageError(
                 "Error while loading the json file 'package.json' -> valid json file?"
             )
 
         mandatory_fields = ["name", "version"]
-        if any([field not in package_json for field in mandatory_fields]):
+        if any(field not in package_json for field in mandatory_fields):
             raise PublishPackageError(
                 f"The package.json file needs to define the attributes {str(mandatory_fields)}"
             )
@@ -352,7 +354,7 @@ async def create_explorer_data(
     dir_path: Path, root_path: Path, forms: List[FormData], context: Context
 ) -> Dict[str, ExplorerResponse]:
     def compute_attributes_rec(content: ExplorerResponse, all_data, result):
-        size_files = sum([file.size for file in content.files])
+        size_files = sum(file.size for file in content.files)
         attributes = [
             compute_attributes_rec(all_data[folder.path], all_data, result)
             for folder in content.folders
@@ -513,7 +515,7 @@ def md5_from_file(filename: Union[str, Path]):
 
 def md5_from_folder(dir_path: Path):
     paths = []
-    for subdir, dirs, files in os.walk(dir_path):
+    for subdir, _, files in os.walk(dir_path):
         for filename in files:
             paths.append(Path(subdir) / filename)
     md5_stamp = files_check_sum(paths)
@@ -654,7 +656,7 @@ async def fetch_resource(
 
     return format_response(
         content=content,
-        partial_content=True if range_bytes else False,
+        partial_content=bool(range_bytes),
         file_id=path.split("/")[-1],
         max_age=max_age,
     )

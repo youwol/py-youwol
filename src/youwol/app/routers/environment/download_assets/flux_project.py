@@ -61,10 +61,9 @@ class DownloadFluxProjectTask(DownloadTask):
             )
             return True
         except HTTPException as e:
-            if e.status_code == 404:
-                return False
-            else:
+            if e.status_code != 404:
                 raise e
+            return False
 
     async def create_local_asset(self, context: Context):
         await create_asset_local(

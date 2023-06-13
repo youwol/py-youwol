@@ -16,7 +16,7 @@ from starlette.types import ASGIApp
 
 # Youwol utilities
 from youwol.utils import YouwolHeaders
-from youwol.utils.context import Context, ContextFactory, ContextReporter, Label
+from youwol.utils.context import ContextFactory, ContextReporter, Label
 from youwol.utils.request_info_factory import request_info
 
 
@@ -61,7 +61,7 @@ class RootMiddleware(BaseHTTPMiddleware):
             action=info.message,
             with_attributes={**info.attributes, "traceId": context.trace_uid},
             with_labels=[Label.API_GATEWAY, *info.labels],
-        ) as ctx:  # type: Context
+        ) as ctx:
             await ctx.info(
                 text="Root middleware => incoming request",
                 data={
@@ -77,7 +77,7 @@ class RootMiddleware(BaseHTTPMiddleware):
 
             await ctx.info(
                 f"{request.method} {request.url.path}: {response.status_code}",
-                data={"headers": {k: v for k, v in response.headers.items()}},
+                data={"headers": dict(response.headers.items())},
             )
             # Even for a very broad definition of failure, there are many « not failure »
             # status code (i.e. 204,308, etc.)

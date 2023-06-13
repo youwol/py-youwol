@@ -26,7 +26,7 @@ def assert_python():
             """Your version of python is not compatible with py-youwol:
         Recommended: 3.9.x"""
         )
-        exit(1)
+        sys.exit(1)
 
 
 def main():
@@ -37,23 +37,25 @@ def main():
         # noinspection PyPackageRequirements
         # Installing daemon fails on Windows -> not in requirements
         # third parties
-        import daemon
+        import daemon  # pylint: disable=import-outside-toplevel
 
         # noinspection PyUnresolvedReferences
         with open("py-youwol.log", "x", encoding="UTF-8") as log:
             with daemon.DaemonContext(
                 pidfile=lockfile.FileLock("py-youwol"), stderr=log, stdout=log
             ):
-                # Youwol application
-                from youwol.app.start import start
-
                 shutdown_script_path.write_text(shutdown_daemon_script(pid=os.getpid()))
                 # app: incorrect type. More here: https://github.com/tiangolo/fastapi/issues/3927
                 # noinspection PyTypeChecker
+                # Youwol application
+                from youwol.app.start import (  # pylint: disable=import-outside-toplevel
+                    start,
+                )
+
                 start(shutdown_script_path)
     else:
         # Youwol application
-        from youwol.app.start import start
+        from youwol.app.start import start  # pylint: disable=import-outside-toplevel
 
         start()
 

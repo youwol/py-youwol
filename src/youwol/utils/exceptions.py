@@ -11,7 +11,7 @@ from starlette.responses import JSONResponse
 class YouWolException(HTTPException):
     exceptionType = "YouWolException"
 
-    def __init__(self, status_code: int, detail: Any, **kwargs):
+    def __init__(self, status_code: int, detail: Any, **_):
         HTTPException.__init__(self, status_code=status_code, detail=detail)
         self.exceptionType = YouWolException.exceptionType
 
@@ -97,7 +97,7 @@ class DependenciesError(YouWolException):
         YouWolException.__init__(
             self,
             status_code=404,
-            detail={"context": context, "errors": [e for e in errors]},
+            detail={"context": context, "errors": errors},
             **kwargs,
         )
         self.exceptionType = DependenciesError.exceptionType

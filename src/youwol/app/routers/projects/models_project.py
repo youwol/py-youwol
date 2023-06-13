@@ -413,7 +413,7 @@ class Project(BaseModel):
 
     def get_flow_steps(self, flow_id: str) -> List[PipelineStep]:
         flow = next(f for f in self.pipeline.flows if f.name == flow_id)
-        involved_steps = set([step.strip() for b in flow.dag for step in b.split(">")])
+        involved_steps = set(step.strip() for b in flow.dag for step in b.split(">"))
         steps = [step for step in self.pipeline.steps if step.id in involved_steps]
 
         return steps

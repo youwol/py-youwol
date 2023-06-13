@@ -149,10 +149,9 @@ class MinioFileSystem(FileSystemInterface):
     async def remove_object(self, object_id: str, **kwargs):
         object_id = self.get_object_path(object_id)
         try:
-            response = self.client.remove_object(
+            self.client.remove_object(
                 bucket_name=self.bucket_name, object_name=object_id
             )
-            return response
         except S3Error as e:
             raise ServerError(
                 status_code=500, detail=f"MinioFileSystem.remove_object: {e.message}"

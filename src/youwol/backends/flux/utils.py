@@ -411,17 +411,18 @@ def zip_project(project) -> bytes:
             data=project["builderRendering"], path=base_path / "builderRendering.json"
         )
 
-        zipper = zipfile.ZipFile(base_path / "story.zip", "w", zipfile.ZIP_DEFLATED)
+        with zipfile.ZipFile(
+            base_path / "story.zip", "w", zipfile.ZIP_DEFLATED
+        ) as zipper:
+            for filename in [
+                "requirements.json",
+                "description.json",
+                "workflow.json",
+                "runnerRendering.json",
+                "builderRendering.json",
+            ]:
+                zipper.write(base_path / filename, arcname=filename)
 
-        for filename in [
-            "requirements.json",
-            "description.json",
-            "workflow.json",
-            "runnerRendering.json",
-            "builderRendering.json",
-        ]:
-            zipper.write(base_path / filename, arcname=filename)
-        zipper.close()
         return (Path(tmp_folder) / "story.zip").read_bytes()
 
 

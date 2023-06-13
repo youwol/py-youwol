@@ -222,7 +222,7 @@ class Projects(BaseModel):
 class AuthorizationProvider(BaseModel):
     openidBaseUrl: str
     openidClient: Union[PublicClient, PrivateClient]
-    keycloakAdminBaseUrl: str
+    keycloakAdminBaseUrl: Optional[str] = None
     keycloakAdminClient: Optional[PrivateClient] = None
 
 
@@ -251,8 +251,6 @@ class BrowserAuth(Authentication):
     - **password** :class:`string`
     Credential's password
     """
-
-    pass
 
 
 class DirectAuth(Authentication):
@@ -623,7 +621,7 @@ class CdnSwitch(FlowSwitch):
                     return Response(
                         status_code=resp.status,
                         content=content,
-                        headers={k: v for k, v in resp.headers.items()},
+                        headers=dict(resp.headers.items()),
                     )
 
     def __str__(self):
@@ -676,7 +674,7 @@ class RedirectSwitch(FlowSwitch):
         self, incoming_request: Request, context: Context
     ) -> Optional[Response]:
         headers = {
-            **{k: v for k, v in incoming_request.headers.items()},
+            **dict(incoming_request.headers.items()),
             **context.headers(),
         }
 
@@ -694,7 +692,7 @@ class RedirectSwitch(FlowSwitch):
         await context.info(
             "Got response from dispatch",
             data={
-                "headers": {k: v for k, v in resp.headers.items()},
+                "headers": dict(resp.headers.items()),
                 "status": resp.status_code,
             },
         )

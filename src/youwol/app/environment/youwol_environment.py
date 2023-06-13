@@ -85,7 +85,7 @@ class YouwolEnvironment(BaseModel):
         env_id = self.currentConnection.envId
         return next(remote for remote in self.remotes if remote.envId == env_id)
 
-    def get_authentication_info(self) -> Optional[Authentication]:
+    def get_authentication_info(self) -> Authentication:
         remote = self.get_remote_info()
         auth_id = self.currentConnection.authId
         return next(auth for auth in remote.authentications if auth.authId == auth_id)
@@ -97,8 +97,7 @@ class YouwolEnvironment(BaseModel):
 - list of middlewares:
 {chr(10).join([f"  * {redirection}" for redirection in self.customMiddlewares])}
 """
-            else:
-                return "- no redirections configured"
+            return "- no redirections configured"
 
         def str_commands():
             if len(self.commands.keys()) != 0:
@@ -107,8 +106,7 @@ class YouwolEnvironment(BaseModel):
 {chr(10).join([f"  * http://localhost:{self.httpPort}/admin/custom-commands/{command}"
                for command in self.commands.keys()])}
 """
-            else:
-                return "- no custom command configured"
+            return "- no custom command configured"
 
         def str_routers():
             if self.routers:
@@ -117,8 +115,7 @@ class YouwolEnvironment(BaseModel):
 {chr(10).join([f"  * {router.base_path}"
                for router in self.routers])}
 """
-            else:
-                return "- no custom command configured"
+            return "- no custom command configured"
 
         version = ""
         try:
@@ -273,7 +270,8 @@ async def safe_load(
         os.mkdir(paths_book.store_node_modules)
 
     if not paths_book.packages_cache_path.exists():
-        json.dump({}, open(paths_book.packages_cache_path, "w", encoding="UTF-8"))
+        with open(paths_book.packages_cache_path, "w", encoding="UTF-8") as fp:
+            json.dump({}, fp)
 
     if isinstance(projects.finder, (str, Path)):
         #  5/12/2022: Backward compatibility code
@@ -304,7 +302,7 @@ async def safe_load(
 
 
 async def get_yw_config_starter(main_args: MainArguments):
-    (conf_path, exists) = ensure_config_file_exists_or_create_it(main_args.config_path)
+    conf_path, _ = ensure_config_file_exists_or_create_it(main_args.config_path)
 
     return conf_path
 

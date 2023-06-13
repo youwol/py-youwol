@@ -131,22 +131,23 @@ def to_snake_case(key: str):
 
 
 def format_download_form(file_path: Path, base_path: Path, dir_path: Path) -> FormData:
-    data = open(str(file_path), "rb").read()
-    path_bucket = base_path / file_path.relative_to(dir_path)
+    with open(str(file_path), "rb") as fp:
+        data = fp.read()
+        path_bucket = base_path / file_path.relative_to(dir_path)
 
-    return FormData(
-        objectName=path_bucket,
-        objectData=data,
-        objectSize=len(data),
-        content_type=get_content_type(file_path.name),
-        content_encoding="",
-    )
+        return FormData(
+            objectName=path_bucket,
+            objectData=data,
+            objectSize=len(data),
+            content_type=get_content_type(file_path.name),
+            content_encoding="",
+        )
 
 
 async def post_storage_by_chunk(
     storage: Storage, forms: List[FormData], count: int, headers: Dict[str, str]
 ):
-    for i, chunk in enumerate(chunks(forms, count)):
+    for _, chunk in enumerate(chunks(forms, count)):
         await asyncio.gather(
             *[storage.post_file(form=form, headers=headers) for form in chunk]
         )

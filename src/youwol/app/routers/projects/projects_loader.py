@@ -86,7 +86,8 @@ class ProjectLoader:
 
     @staticmethod
     def stop():
-        ProjectLoader.handler and ProjectLoader.handler.release()
+        if ProjectLoader.handler:
+            ProjectLoader.handler.release()
 
 
 async def load_projects(

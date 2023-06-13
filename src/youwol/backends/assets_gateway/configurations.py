@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 
 # typing
-from typing import Awaitable, Callable, Dict, Optional, Type, Union
+from typing import Awaitable, Callable
 
 # Youwol utilities
 from youwol.utils import CdnClient
@@ -11,10 +11,6 @@ from youwol.utils.clients.files import FilesClient
 from youwol.utils.clients.flux.flux import FluxClient
 from youwol.utils.clients.stories.stories import StoriesClient
 from youwol.utils.clients.treedb.treedb import TreeDbClient
-from youwol.utils.middlewares import Middleware
-from youwol.utils.middlewares.authentication_local import AuthLocalMiddleware
-
-AuthMiddleware = Union[Type[Middleware], Type[AuthLocalMiddleware]]
 
 
 @dataclass(frozen=True)
@@ -34,7 +30,6 @@ class Configuration:
     treedb_client: TreeDbClient
     assets_client: AssetsClient
     files_client: FilesClient
-    admin_headers: Optional[Dict[str, str]] = None
     deployed: bool = False
 
 

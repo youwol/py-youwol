@@ -76,4 +76,5 @@ def start(shutdown_script_path: Optional[Path] = None):
         download_thread.join()
         cleaner_thread.join()
         ProjectLoader.stop()
-        shutdown_script_path and shutdown_script_path.unlink(missing_ok=True)
+        if shutdown_script_path is not None:
+            shutdown_script_path.unlink(missing_ok=True)

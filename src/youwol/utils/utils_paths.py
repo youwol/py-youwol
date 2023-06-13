@@ -49,7 +49,8 @@ def parse_yaml(path: Union[str, Path]):
 
 
 def write_json(data: json, path: Path):
-    json.dump(data, open(path, "w", encoding="UTF-8"), indent=4)
+    with open(path, "w", encoding="UTF-8") as fp:
+        json.dump(data, fp, indent=4)
 
 
 def copy_tree(source: Path, destination: Path, replace: bool = False):
@@ -77,7 +78,7 @@ def matching_files(
         return [pattern]
 
     patterns = (
-        FileListing(include=[p for p in patterns], ignore=[])
+        FileListing(include=patterns, ignore=[])
         if isinstance(patterns, list)
         else patterns
     )
@@ -139,13 +140,12 @@ def create_zip_file(
     files_to_zip: List[Tuple[Path, str]],
     with_data: List[Tuple[str, Union[str, bytes]]] = None,
 ):
-    zipper = zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED)
-    for path, name in files_to_zip:
-        zipper.write(filename=path, arcname=name)
-    if with_data:
-        for arc_name, raw in with_data:
-            zipper.writestr(arc_name, data=raw)
-    zipper.close()
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as zipper:
+        for path_file, name in files_to_zip:
+            zipper.write(filename=path_file, arcname=name)
+        if with_data:
+            for arc_name, raw in with_data:
+                zipper.writestr(arc_name, data=raw)
 
 
 class PathException(RuntimeError):

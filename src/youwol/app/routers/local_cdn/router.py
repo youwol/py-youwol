@@ -198,12 +198,10 @@ async def smooth_reset(request: Request, body: ResetCdnBody):
                 data={"packages": [p["name"] for p in packages]},
             )
 
-        """
-        The current user may not have the permissions to delete the package as it can belong to a 'forbidden' group
-        for him (still, we want to proceed as it is the local version of YouWol and such things are expected).
-        To skip permissions checks, we use 'LocalClients.get_cdn_client' and not 'LocalClients.get_gtw_cdn_client'.
-        Because of this, the 'asset' must be explicitly deleted using 'assets_client.delete_asset'.
-        """
+        # The current user may not have the permissions to delete the package as it can belong to a 'forbidden' group
+        # for him (still, we want to proceed as it is the local version of YouWol and such things are expected).
+        # To skip permissions checks, we use 'LocalClients.get_cdn_client' and not 'LocalClients.get_gtw_cdn_client'.
+        # Because of this, the 'asset' must be explicitly deleted using 'assets_client.delete_asset'.
         cdn_client = LocalClients.get_cdn_client(env)
         assets_client = LocalClients.get_assets_client(env)
         for package in packages:
@@ -244,7 +242,7 @@ async def hard_reset(request: Request):
     ) as ctx:  # type: Context
         env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
         cdn_packages = env.backends_configuration.cdn_backend.doc_db.data
-        packages = [p for p in cdn_packages["documents"]]
+        packages = list(cdn_packages["documents"])
         asset_ids_to_delete = [
             encode_id(encode_id(p["library_name"])) for p in packages
         ]

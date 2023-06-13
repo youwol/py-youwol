@@ -9,7 +9,6 @@ import uuid
 
 from abc import ABC, abstractmethod
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
 from enum import Enum
 
 # typing
@@ -103,7 +102,7 @@ def format_message(entry: LogEntry):
     return {
         "level": entry.level.name,
         "attributes": entry.attributes,
-        "labels": [label for label in entry.labels],
+        "labels": entry.labels,
         "text": entry.text,
         "data": entry.data,
         "contextId": entry.context_id,
@@ -186,9 +185,10 @@ class Context(NamedTuple):
             else self.logs_reporters + with_reporters
         )
         muted_http_errors = self.muted_http_errors.union(muted_http_errors or set())
-        self.request and YouwolHeaders.patch_request_mute_http_headers(
-            request=self.request, status_muted=muted_http_errors
-        )
+        if self.request:
+            YouwolHeaders.patch_request_mute_http_headers(
+                request=self.request, status_muted=muted_http_errors
+            )
         ctx = Context(
             logs_reporters=logs_reporters,
             data_reporters=self.data_reporters,
@@ -226,21 +226,21 @@ class Context(NamedTuple):
             )
             await Context.__execute_block(ctx, on_exception, e)
             await Context.__execute_block(ctx, on_exit)
-            if not (
-                isinstance(e, HTTPException) and e.status_code in self.muted_http_errors
-            ):
+            muted = False
+            if isinstance(e, HTTPException):
+                muted = e.status_code in self.muted_http_errors
+            if not muted:
                 traceback.print_exc()
             if self.request.state:
                 self.request.state.context = self
             raise e
-        else:
-            await ctx.info(
-                text=f"{action} in {int(1000 * (time.time() - start))} ms",
-                labels=[Label.DONE],
-            )
-            if self.request:
-                self.request.state.context = self
-            await self.__execute_block(ctx, on_exit)
+        await ctx.info(
+            text=f"{action} in {int(1000 * (time.time() - start))} ms",
+            labels=[Label.DONE],
+        )
+        if self.request:
+            self.request.state.context = self
+        await self.__execute_block(ctx, on_exit)
 
     @staticmethod
     def start_ep(
@@ -265,12 +265,16 @@ class Context(NamedTuple):
         )
 
         async def on_exit_fct(ctx):
-            await ctx.info("Response", data=response()) if response else None
-            on_exit and await on_exit(ctx)
+            if response:
+                await ctx.info("Response", data=response())
+            if on_exit:
+                await on_exit(ctx)
 
         async def on_enter_fct(ctx):
-            await ctx.info("Body", data=body) if body else None
-            on_enter and await on_enter(ctx)
+            if body:
+                await ctx.info("Body", data=body)
+            if on_enter:
+                await on_enter(ctx)
 
         return context.start(
             action=action,
@@ -413,15 +417,12 @@ CallableBlockException = Callable[[Exception, Context], Union[Awaitable, None]]
 LabelsGetter = Callable[[], Set[str]]
 
 
-@dataclass
 class ContextFactory:
-    with_static_data: Optional[Dict[str, DataType]] = None
-    with_static_labels: Optional[Dict[str, LabelsGetter]] = None
+    with_static_data: Dict[str, DataType] = {}
+    with_static_labels: Dict[str, LabelsGetter] = {}
 
     @staticmethod
     def add_labels(key: str, labels: Union[Set[str], LabelsGetter]):
-        if not ContextFactory.with_static_labels:
-            ContextFactory.with_static_labels = {}
         ContextFactory.with_static_labels[key] = (
             labels if callable(labels) else lambda: labels
         )
@@ -438,9 +439,6 @@ class ContextFactory:
 
 class DeployedContextReporter(ContextReporter):
     errors = set()
-
-    def __init__(self):
-        super().__init__()
 
     async def log(self, entry: LogEntry):
         prefix = ""
@@ -473,9 +471,6 @@ class DeployedContextReporter(ContextReporter):
 
 
 class ConsoleContextReporter(ContextReporter):
-    def __init__(self):
-        super().__init__()
-
     async def log(self, entry: LogEntry):
         base = {
             "message": entry.text,
@@ -524,9 +519,6 @@ class InMemoryReporter(ContextReporter):
     leaf_logs: List[LogEntry] = []
 
     errors = set()
-
-    def __init__(self):
-        super().__init__()
 
     def clear(self):
         self.root_node_logs = []

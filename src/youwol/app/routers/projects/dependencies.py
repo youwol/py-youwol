@@ -7,16 +7,11 @@ from typing import Dict, List
 # third parties
 from pydantic import BaseModel
 
-# Youwol application
-from youwol.app.routers.projects.models import (
-    ChildToParentConnections,
-    DependenciesResponse,
-)
-
 # Youwol utilities
 from youwol.utils.context import Context
 
 # relative
+from .models import ChildToParentConnections, DependenciesResponse
 from .models_project import Project
 from .projects_loader import ProjectLoader
 
@@ -105,13 +100,12 @@ async def resolve_workspace_dependencies(context: Context) -> ResolvedDependenci
     projects = await ProjectLoader.get_cached_projects()
 
     parent_ids = defaultdict(lambda: [])
-    [
-        parent_ids[d.name].append(project.name)
-        for project in projects
+    for project in projects:
         for d in await project.get_dependencies(
             recursive=False, projects=projects, context=context
-        )
-    ]
+        ):
+            parent_ids[d.name].append(project.name)
+
     for p in projects:
         if p.name not in parent_ids:
             parent_ids[p.name] = []
@@ -164,9 +158,7 @@ async def resolve_project_dependencies(project: Project, context: Context):
             ChildToParentConnections(id=child_name, parentIds=[project.name])
             for child_name in below
         ],
-        ChildToParentConnections(
-            id=project.name, parentIds=[parent_name for parent_name in above]
-        ),
+        ChildToParentConnections(id=project.name, parentIds=list(above)),
         *[
             ChildToParentConnections(id=parent_name, parentIds=[])
             for parent_name in above

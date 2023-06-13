@@ -2,7 +2,7 @@
 import uuid
 
 # typing
-from typing import Any, Optional
+from typing import Annotated, Optional
 
 # third parties
 from fastapi import Depends
@@ -10,13 +10,9 @@ from fastapi.params import Cookie
 from pydantic import BaseModel
 from starlette.responses import JSONResponse, Response
 
-# Youwol backends
-from youwol.backends.accounts.configuration import Configuration, get_configuration
-from youwol.backends.accounts.root_paths import router
-
-# Youwol utilities
-from youwol.utils.clients.oidc.oidc_config import OidcConfig
-from youwol.utils.session_handler import SessionHandler
+# relative
+from ..configuration import Configuration, get_configuration
+from ..root_paths import router
 
 
 class ImpersonationDetails(BaseModel):
@@ -27,10 +23,10 @@ class ImpersonationDetails(BaseModel):
 @router.put("/impersonation")
 async def start_impersonate(
     details: ImpersonationDetails,
-    yw_jwt: Optional[str] = Cookie(default=None),
-    yw_jwt_t: Any = Cookie(default=None),
+    yw_jwt: Annotated[Optional[str], Cookie()] = None,
+    yw_jwt_t: Annotated[Optional[str], Cookie()] = None,
     conf: Configuration = Depends(get_configuration),
-):
+) -> Response:
     """
         Create a new session impersonating user, if current user has the correct role.
         user_id can be the sub or the login name af the user to impersonate
@@ -45,57 +41,70 @@ async def start_impersonate(
     :return:
     """
 
-    if conf.admin_client is None:
+    if conf.oidc_admin_client is None:
         return JSONResponse(
             status_code=403,
             content={"forbidden": "no administration right on the server side"},
         )
 
-    if yw_jwt_t:
+    if yw_jwt_t is not None:
         return JSONResponse(
             status_code=400, content={"invalid request": "Already impersonating"}
         )
 
+    if yw_jwt is None:
+        return JSONResponse(status_code=403, content="missing cookie")
+
     response = Response(status_code=201)
 
-    real_session = SessionHandler(jwt_cache=conf.jwt_cache, session_uuid=yw_jwt)
+    real_tokens = conf.tokens_manager.restore_tokens(
+        tokens_id=yw_jwt,
+    )
+
+    if real_tokens is None:
+        return JSONResponse(
+            status_code=400, content={"invalid request": "No real tokens"}
+        )
+
     if details.hidden:
-        real_session.delete()
+        await real_tokens.delete()
     else:
         response.set_cookie(
             "yw_jwt_t",
-            real_session.get_uuid(),
+            real_tokens.id(),
             secure=True,
             httponly=True,
-            max_age=real_session.get_remaining_time(),
+            max_age=real_tokens.remaining_time(),
         )
 
-    admin_client = OidcConfig(conf.openid_base_url).for_client(conf.admin_client)
-    tokens = await admin_client.token_exchange(
-        details.userId, real_session.get_access_token()
+    real_access_token = await real_tokens.access_token()
+    impersonation_tokens_data = await conf.oidc_admin_client.token_exchange(
+        details.userId, real_access_token
     )
 
-    session_uuid = yw_jwt if details.hidden else str(uuid.uuid4())
-    session = SessionHandler(conf.jwt_cache, session_uuid=session_uuid)
-    session.store(tokens)
+    impersonation_tokens_id = yw_jwt if details.hidden else str(uuid.uuid4())
+    impersonation_tokens = await conf.tokens_manager.save_tokens(
+        tokens_id=impersonation_tokens_id,
+        tokens_data=impersonation_tokens_data,
+    )
 
     response.set_cookie(
         "yw_jwt",
-        session.get_uuid(),
+        impersonation_tokens.id(),
         secure=True,
         httponly=True,
-        max_age=session.get_remaining_time(),
+        max_age=impersonation_tokens.remaining_time(),
     )
     return response
 
 
 @router.delete("/impersonation")
 async def stop_impersonation(
-    yw_jwt: Optional[str] = Cookie(default=None),
-    yw_jwt_t: Optional[str] = Cookie(default=None),
+    yw_jwt: Annotated[Optional[str], Cookie()] = None,
+    yw_jwt_t: Annotated[Optional[str], Cookie()] = None,
     conf: Configuration = Depends(get_configuration),
-):
-    if conf.admin_client is None:
+) -> Response:
+    if conf.oidc_admin_client is None:
         return JSONResponse(
             status_code=403,
             content={"forbidden": "no administration right on the server side"},
@@ -106,16 +115,30 @@ async def stop_impersonation(
             status_code=400, content={"invalid request": "Not impersonating"}
         )
 
-    real_session = SessionHandler(jwt_cache=conf.jwt_cache, session_uuid=yw_jwt_t)
-    SessionHandler(jwt_cache=conf.jwt_cache, session_uuid=yw_jwt).delete()
+    if yw_jwt is None:
+        return JSONResponse(status_code=403, content="missing cookie")
 
+    impersonation_tokens = conf.tokens_manager.restore_tokens(
+        tokens_id=yw_jwt,
+    )
+
+    real_tokens = conf.tokens_manager.restore_tokens(
+        tokens_id=yw_jwt_t,
+    )
+
+    if impersonation_tokens is None or real_tokens is None:
+        return JSONResponse(
+            status_code=400, content={"invalid state": "no tokens found"}
+        )
+
+    await impersonation_tokens.delete()
     response = Response(status_code=204)
     response.set_cookie(
         "yw_jwt",
-        yw_jwt_t,
+        real_tokens.id(),
         secure=True,
         httponly=True,
-        max_age=real_session.get_remaining_time(),
+        max_age=real_tokens.remaining_time(),
     )
     response.set_cookie("yw_jwt_t", "DELETED", secure=True, httponly=True, expires=0)
     return response

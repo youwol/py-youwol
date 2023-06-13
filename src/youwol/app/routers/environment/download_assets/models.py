@@ -22,5 +22,5 @@ class DownloadTask(ABC):
         pass
 
     @abstractmethod
-    async def download_id(self):
+    def download_id(self):
         pass

@@ -89,10 +89,10 @@ class LocalFileSystem(FileSystemInterface):
         if not ranges_bytes:
             return path.read_bytes()
         acc = b""
-        f = open(path, "rb")
-        for range_byte in ranges_bytes:
-            f.seek(range_byte[0], 0)
-            acc += f.read(range_byte[1] - range_byte[0] + 1)
+        with open(path, "rb") as fp:
+            for range_byte in ranges_bytes:
+                fp.seek(range_byte[0], 0)
+                acc += fp.read(range_byte[1] - range_byte[0] + 1)
         return acc
 
     async def remove_object(self, object_id: str, **kwargs):

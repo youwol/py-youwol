@@ -2,15 +2,11 @@
 from dataclasses import dataclass
 
 # typing
-from typing import Awaitable, Callable, Dict, Optional, Type, Union
+from typing import Awaitable, Callable, Dict, Optional
 
 # Youwol utilities
 from youwol.utils import CdnClient, DocDb, Storage
 from youwol.utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
-from youwol.utils.middlewares import Middleware
-from youwol.utils.middlewares.authentication_local import AuthLocalMiddleware
-
-AuthMiddleware = Union[Type[Middleware], Type[AuthLocalMiddleware]]
 
 
 @dataclass(frozen=True)

@@ -93,7 +93,7 @@ class LocalDocDbClient:
         **kwargs,
     ):
         valid_for_indexes = [
-            all([k in partition_keys for k in self.table_body.partition_key])
+            all(k in partition_keys for k in self.table_body.partition_key)
         ] + [
             len(partition_keys.keys()) == 1
             and index.identifier.column_name == list(partition_keys.keys())[0]

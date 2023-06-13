@@ -5,7 +5,7 @@ from youwol.app.routers.projects import FlowId, PipelineStep, Project
 from youwol.utils import Context, files_check_sum
 
 # relative
-from .. import __pipeline_version__
+from ..version import __pipeline_version__
 
 
 class SetupStep(PipelineStep):

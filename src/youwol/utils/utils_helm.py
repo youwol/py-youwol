@@ -38,9 +38,7 @@ async def helm_list(
     if selector and selector.name:
         cmd += f" --selector name={selector.name}"
 
-    return_code, outputs = await execute_shell_cmd(
-        cmd=cmd, context=context, log_outputs=False
-    )
+    _, outputs = await execute_shell_cmd(cmd=cmd, context=context, log_outputs=False)
 
     def to_resource(line):
         elements = line.split("\t")
@@ -123,7 +121,8 @@ async def helm_uninstall(
     release_name: str, kube_context: str, namespace: str, context: Context = None
 ):
     cmd = f"helm uninstall --namespace {namespace} --kube-context {kube_context} {release_name}"
-    context and await context.info(text=cmd)
+    if context:
+        await context.info(text=cmd)
     await execute_shell_cmd(cmd, context)
 
 
