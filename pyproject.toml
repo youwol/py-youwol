@@ -154,6 +154,7 @@ disable = [
                      'W0511', # to do
                      'C0302', # Too many lines in module
     'C0116', 'C0114','C0115', # missing docstrings
+                    'duplicate-code',
                     'design',
 ]
 max-line-length = 120
