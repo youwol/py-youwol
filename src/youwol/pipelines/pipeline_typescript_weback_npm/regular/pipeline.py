@@ -17,22 +17,18 @@ from youwol.app.routers.projects.models_project import (
 from youwol.utils.context import Context
 
 # Youwol pipelines
-from youwol.pipelines.pipeline_typescript_weback_npm import create_sub_pipelines_publish
-from youwol.pipelines.pipeline_typescript_weback_npm.regular.build_step import BuildStep
-from youwol.pipelines.pipeline_typescript_weback_npm.regular.common import (
-    Paths,
-    get_dependencies,
-)
-from youwol.pipelines.pipeline_typescript_weback_npm.regular.dependencies_step import (
-    DependenciesStep,
-)
-from youwol.pipelines.pipeline_typescript_weback_npm.regular.doc_step import DocStep
-from youwol.pipelines.pipeline_typescript_weback_npm.regular.setup_step import SetupStep
-from youwol.pipelines.pipeline_typescript_weback_npm.regular.test_step import (
-    TestStep,
-    TestStepConfig,
+from youwol.pipelines.pipeline_typescript_weback_npm.common import (
+    create_sub_pipelines_publish,
 )
 from youwol.pipelines.publish_cdn import PublishCdnLocalStep
+
+# relative
+from .build_step import BuildStep
+from .common import Paths, get_dependencies
+from .dependencies_step import DependenciesStep
+from .doc_step import DocStep
+from .setup_step import SetupStep
+from .test_step import TestStep, TestStepConfig
 
 
 class PublishConfig(BaseModel):

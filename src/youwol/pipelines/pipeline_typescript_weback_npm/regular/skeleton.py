@@ -18,20 +18,18 @@ from youwol.utils.http_clients.cdn_backend import get_api_key
 from youwol.utils.utils_paths import sed_inplace
 
 # Youwol pipelines
-from youwol.pipelines.pipeline_typescript_weback_npm import (
+from youwol.pipelines.pipeline_typescript_weback_npm.common import (
     Bundles,
+    Dependencies,
     DevServer,
     MainModule,
-    get_externals,
-)
-from youwol.pipelines.pipeline_typescript_weback_npm.common import (
-    Dependencies,
     PackageType,
     RunTimeDeps,
     Template,
     copy_files_folders,
     generate_package_json,
     generate_webpack_config,
+    get_externals,
 )
 
 auto_generated_filename = "auto-generated.ts"

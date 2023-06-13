@@ -19,8 +19,8 @@ from youwol.app.routers.projects.models_project import (
 from youwol.utils import CommandException, execute_shell_cmd
 from youwol.utils.context import Context
 
-# Youwol pipelines
-from youwol.pipelines.pipeline_typescript_weback_npm.common import NpmRepo
+# relative
+from .models import NpmRepo
 
 
 async def get_shasum_published(project: Project, context: Context):

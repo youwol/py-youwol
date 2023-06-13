@@ -1,10 +1,8 @@
 # typing
 from typing import Awaitable, Callable, Union
 
-# Youwol backends
-from youwol.backends.assets import Configuration, Dependencies
-
 # relative
+from .configurations import Configuration, Dependencies
 from .root_paths import router
 
 

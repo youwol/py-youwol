@@ -7,8 +7,8 @@ from typing import Optional
 # third parties
 import redis
 
-# Youwol utilities
-from youwol.utils.clients.cache import TTL, CacheClient
+# relative
+from .cache import TTL, CacheClient
 
 
 @dataclass(frozen=False)

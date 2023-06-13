@@ -7,16 +7,11 @@ from typing import Dict, List
 # third parties
 from pydantic import BaseModel
 
-# Youwol application
-from youwol.app.routers.projects.models import (
-    ChildToParentConnections,
-    DependenciesResponse,
-)
-
 # Youwol utilities
 from youwol.utils.context import Context
 
 # relative
+from .models import ChildToParentConnections, DependenciesResponse
 from .models_project import Project
 from .projects_loader import ProjectLoader
 

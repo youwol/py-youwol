@@ -29,11 +29,11 @@ from youwol.utils.utils_test import PyYouwolSession, TestFailureResult
 
 # Youwol pipelines
 from youwol.pipelines import PublishCdnRemoteStep
-from youwol.pipelines.pipeline_typescript_weback_npm.common import PackageType, Template
-from youwol.pipelines.pipeline_typescript_weback_npm.common.npm_step import (
-    PublishNpmStep,
-)
 from youwol.pipelines.pipeline_typescript_weback_npm.environment import get_environment
+
+# relative
+from .models import PackageType, Template
+from .npm_step import PublishNpmStep
 
 
 class FileNames(NamedTuple):
