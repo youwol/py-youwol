@@ -165,21 +165,22 @@ async def format_download_form(
             if return_code > 0:
                 raise CommandException(command=cmd, outputs=outputs)
 
-    data = open(str(file_path), "rb").read()
-    path_bucket = (
-        base_path / file_path.relative_to(dir_path)
-        if not rename
-        else base_path / rename
-    )
+    with open(str(file_path), "rb") as fp:
+        data = fp.read()
+        path_bucket = (
+            base_path / file_path.relative_to(dir_path)
+            if not rename
+            else base_path / rename
+        )
 
-    return FormData(
-        objectName=path_bucket,
-        objectData=data,
-        owner=Constants.owner,
-        objectSize=len(data),
-        content_type=get_content_type(file_path.name),
-        content_encoding=get_content_encoding(file_path.name),
-    )
+        return FormData(
+            objectName=path_bucket,
+            objectData=data,
+            owner=Constants.owner,
+            objectSize=len(data),
+            content_type=get_content_type(file_path.name),
+            content_encoding=get_content_encoding(file_path.name),
+        )
 
 
 async def publish_package(
@@ -219,7 +220,8 @@ async def publish_package(
             )
 
         try:
-            package_json = json.load(open(package_path, encoding="UTF-8"))
+            with open(package_path, encoding="UTF-8") as fp:
+                package_json = json.load(fp)
         except ValueError:
             raise PublishPackageError(
                 "Error while loading the json file 'package.json' -> valid json file?"

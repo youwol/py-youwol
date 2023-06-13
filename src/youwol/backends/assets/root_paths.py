@@ -1077,18 +1077,18 @@ async def get_zip_files(
         await ctx.info(text="Objects list iterators retrieved successfully")
         with tempfile.TemporaryDirectory() as tmp_folder:
             base_path = Path(tmp_folder)
-            zipper = zipfile.ZipFile(
+            with zipfile.ZipFile(
                 base_path / "asset_files.zip", "w", zipfile.ZIP_DEFLATED
-            )
-            for obj in objects:
-                path = obj.object_id
-                await ctx.info(text=f"Zip file {path}")
-                content = await filesystem.get_object(object_id=path)
-                (base_path / path).parent.mkdir(exist_ok=True, parents=True)
-                open(base_path / path, "wb").write(content)
-                arc_name = Path(path).relative_to(base_arc_name)
-                zipper.write(base_path / path, arcname=arc_name)
+            ) as zipper:
+                for obj in objects:
+                    path = obj.object_id
+                    await ctx.info(text=f"Zip file {path}")
+                    content = await filesystem.get_object(object_id=path)
+                    (base_path / path).parent.mkdir(exist_ok=True, parents=True)
+                    with open(base_path / path, "wb") as fp:
+                        fp.write(content)
+                    arc_name = Path(path).relative_to(base_arc_name)
+                    zipper.write(base_path / path, arcname=arc_name)
 
-            zipper.close()
             content = (Path(tmp_folder) / "asset_files.zip").read_bytes()
             return Response(content=content, media_type="application/zip")

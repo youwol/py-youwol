@@ -278,28 +278,27 @@ async def download_zip(
 
         with tempfile.TemporaryDirectory() as tmp_folder:
             base_path = Path(tmp_folder)
-            zipper = zipfile.ZipFile(
+            with zipfile.ZipFile(
                 base_path / "flux-project.zip", "w", zipfile.ZIP_DEFLATED
-            )
-            for file in [
-                "workflow",
-                "runnerRendering",
-                "requirements",
-                "description",
-                "builderRendering",
-            ]:
-                if file == "description":
-                    description = {
-                        "description": project["description"],
-                        "name": project["name"],
-                        "schemaVersion": project["schemaVersion"],
-                    }
-                    write_json(data=description, path=base_path / f"{file}.json")
-                else:
-                    write_json(data=project[file], path=base_path / f"{file}.json")
-                zipper.write(base_path / f"{file}.json", arcname=f"{file}.json")
+            ) as zipper:
+                for file in [
+                    "workflow",
+                    "runnerRendering",
+                    "requirements",
+                    "description",
+                    "builderRendering",
+                ]:
+                    if file == "description":
+                        description = {
+                            "description": project["description"],
+                            "name": project["name"],
+                            "schemaVersion": project["schemaVersion"],
+                        }
+                        write_json(data=description, path=base_path / f"{file}.json")
+                    else:
+                        write_json(data=project[file], path=base_path / f"{file}.json")
+                    zipper.write(base_path / f"{file}.json", arcname=f"{file}.json")
 
-            zipper.close()
             content_bytes = (Path(tmp_folder) / "flux-project.zip").read_bytes()
             return StreamingResponse(
                 io.BytesIO(content_bytes), media_type="application/zip"

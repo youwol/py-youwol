@@ -145,17 +145,16 @@ files = "src"
 
 [tool.pylint]
 disable = [
-	'C0116', 'C0114','C0115', # missing docstrings
-    'design',
-    #### TODO: correct the following
-    'R1732', # 'with' resource ollocation
-    'W0707', # re-raise exceptions
-    'C0103', # Variables name convention
-    'W0511', # to do
-    'W0719', 'W0718', # Too general exception
-    'C0302', # Too many lines in module
-    'E1102', # Not callable
-    'E0110', # Abstract class instantiated
+    ########################### TODO: correct the following
+                     'E1102', # Not callable
+                     'E0110', # Abstract class instantiated
+                     'W0707', # re-raise exceptions
+            'W0719', 'W0718', # Too general exception
+                     'C0103', # Variables name convention
+                     'W0511', # to do
+                     'C0302', # Too many lines in module
+    'C0116', 'C0114','C0115', # missing docstrings
+                    'design',
 ]
 max-line-length = 120
 

@@ -115,7 +115,7 @@ def extract_bytes_ranges(request: Request) -> Optional[List[Tuple[int, int]]]:
 
 def is_server_http_alive(url: str):
     try:
-        urlopen(url)
-        return True
+        with urlopen(url):
+            return True
     except URLError:
         return False

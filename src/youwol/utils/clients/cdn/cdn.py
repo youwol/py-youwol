@@ -165,15 +165,16 @@ class CdnClient:
                 await raise_exception_from_response(resp, url=url, headers=self.headers)
 
     async def publish_libraries(self, zip_path: Union[Path, str], **kwargs):
-        files = {"file": open(zip_path, "rb")}
-
         async with aiohttp.ClientSession(headers=self.headers) as session:
-            async with await session.post(self.push_url, data=files, **kwargs) as resp:
-                if resp.status == 200:
-                    return await resp.json()
-                await raise_exception_from_response(
-                    resp, url=self.push_url, headers=self.headers
-                )
+            with open(zip_path, "rb") as fp:
+                async with await session.post(
+                    self.push_url, data={"file": fp}, **kwargs
+                ) as resp:
+                    if resp.status == 200:
+                        return await resp.json()
+                    await raise_exception_from_response(
+                        resp, url=self.push_url, headers=self.headers
+                    )
 
     async def delete_library(self, library_id: str, **kwargs):
         url = f"{self.url_base}/libraries/{library_id}"
