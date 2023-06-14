@@ -1,6 +1,6 @@
 [project]
 name = "youwol"
-version = "0.1.1.dev"
+version = "0.1.1rc"
 authors = [
     { name = "G. Reinisch", email = "greinisch@youwol.com" },
     { name = "J. Decharne", email = "jdecharne@youwol.com" },
@@ -63,7 +63,7 @@ qa = [
     "types-redis",
     "types-setuptools",
     "types-tqdm",
-    "types-ujson"
+    "types-ujson",
 ]
 publish = [
     "pdoc3",
@@ -82,13 +82,27 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-where = ["src"]
-include = ["youwol.app*", "youwol.backends*", "youwol.utils*", "youwol.pipelines*"]
-exclude = ["youwol.backends.*.main*", "youwol.backends.mock*"]
+where = [
+    "src",
+]
+include = [
+    "youwol.app*",
+    "youwol.backends*",
+    "youwol.utils*",
+    "youwol.pipelines*",
+]
+exclude = [
+    "youwol.backends.*.main*",
+    "youwol.backends.mock*",
+]
 
 [tool.setuptools.package-data]
-"youwol.app.routers.environment" = ["fortunes.txt"]
-"youwol.backends.flux" = ["bundle_app_template/*"]
+"youwol.app.routers.environment" = [
+    "fortunes.txt",
+]
+"youwol.backends.flux" = [
+    "bundle_app_template/*",
+]
 "youwol.pipelines.pipeline_typescript_weback_npm.regular" = [
     "templates/.*",
     "templates/*",
@@ -106,38 +120,41 @@ exclude = ["youwol.backends.*.main*", "youwol.backends.mock*"]
 branch = true
 relative_files = true
 data_file = "coverage.coverage"
-debug = ["sys","config","pathmap"]
-
+debug = [
+    "sys",
+    "config",
+    "pathmap",
+]
 
 [tool.isort]
 profile = "black"
 lines_between_types = 1
-
 import_heading_stdlib = "standard library"
-
 known_typing = "typing"
 import_heading_typing = "typing"
-
 import_heading_thirdparty = "third parties"
-
 import_heading_firstparty = "Youwol"
-
 known_yw_app = "youwol.app"
 import_heading_yw_app = "Youwol application"
-
 known_yw_backends = "youwol.backends"
 import_heading_yw_backends = "Youwol backends"
-
 known_yw_utils = "youwol.utils"
 import_heading_yw_utils = "Youwol utilities"
-
 known_yw_pipelines = "youwol.pipelines"
 import_heading_yw_pipelines = "Youwol pipelines"
-
 import_heading_localfolder = "relative"
-
-sections = ["FUTURE", "STDLIB", "TYPING", "THIRDPARTY", "FIRSTPARTY", "YW_APP", "YW_BACKENDS", "YW_UTILS",
-    "YW_PIPELINES", "LOCALFOLDER"]
+sections = [
+    "FUTURE",
+    "STDLIB",
+    "TYPING",
+    "THIRDPARTY",
+    "FIRSTPARTY",
+    "YW_APP",
+    "YW_BACKENDS",
+    "YW_UTILS",
+    "YW_PIPELINES",
+    "LOCALFOLDER",
+]
 
 [tool.mypy]
 mypy_path = ".typing_stubs"
@@ -145,25 +162,28 @@ files = "src"
 
 [tool.pylint]
 disable = [
-    ########################### TODO: correct the following
-                     'E1102', # Not callable
-                     'E0110', # Abstract class instantiated
-                     'W0707', # re-raise exceptions
-            'W0719', 'W0718', # Too general exception
-                     'C0103', # Variables name convention
-                     'W0511', # to do
-                     'C0302', # Too many lines in module
-    'C0116', 'C0114','C0115', # missing docstrings
-                    'duplicate-code',
-                    'design',
+    "E1102",
+    "E0110",
+    "W0707",
+    "W0719",
+    "W0718",
+    "C0103",
+    "W0511",
+    "C0302",
+    "C0116",
+    "C0114",
+    "C0115",
+    "duplicate-code",
+    "design",
 ]
 max-line-length = 120
 
-[tool.pylint.'MESSAGES CONTROL']
-extension-pkg-whitelist = "pydantic" # see https://github.com/pydantic/pydantic/issues/1961
+[tool.pylint."MESSAGES CONTROL"]
+extension-pkg-whitelist = "pydantic"
 
 [tool.pylint.exceptions]
 overgeneral-exceptions = [
-    'builtins.BaseException', 'builtins.Exception', # default
-    'builtins.RuntimeError'
+    "builtins.BaseException",
+    "builtins.Exception",
+    "builtins.RuntimeError",
 ]
