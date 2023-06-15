@@ -79,15 +79,12 @@ async def start_impersonate(
         )
 
     real_access_token = await real_tokens.access_token()
-    impersonation_tokens_data = await conf.oidc_admin_client.token_exchange(
-        details.userId, real_access_token
+    impersonation_tokens_data = await conf.oidc_admin_client.impersonation(
+        requested_subject=details.userId, subject_token=real_access_token
     )
 
-    impersonation_tokens_id = (
-        yw_jwt if details.hidden else default_tokens_id_generator()
-    )
     impersonation_tokens = await conf.tokens_manager.save_tokens(
-        tokens_id=impersonation_tokens_id,
+        tokens_id=(yw_jwt if details.hidden else default_tokens_id_generator()),
         tokens_data=impersonation_tokens_data,
     )
 
