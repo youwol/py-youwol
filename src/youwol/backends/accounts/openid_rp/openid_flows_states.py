@@ -46,9 +46,14 @@ class AuthorizationFlow(Flow):
 
     target_uri: str
     code_verifier: str
+    nonce: str
 
     def _save(self) -> dict[str, Any]:
-        return {"target_uri": self.target_uri, "code_verifier": self.code_verifier}
+        return {
+            "target_uri": self.target_uri,
+            "code_verifier": self.code_verifier,
+            "nonce": self.nonce,
+        }
 
 
 @dataclass(frozen=True)

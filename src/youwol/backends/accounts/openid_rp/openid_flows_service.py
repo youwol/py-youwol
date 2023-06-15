@@ -39,7 +39,7 @@ class OpenidFlowsService:
     ) -> str:
         auth_flow_ref = Flow.random_ref()
 
-        url, code_verifier = await self.__oidc_client.auth_flow_url(
+        url, code_verifier, nonce = await self.__oidc_client.auth_flow_url(
             state=auth_flow_ref, redirect_uri=callback_uri, login_hint=login_hint
         )
 
@@ -48,6 +48,7 @@ class OpenidFlowsService:
             cache=self.__cache,
             target_uri=target_uri,
             code_verifier=code_verifier,
+            nonce=nonce,
         )
         auth_flow.save()
 
@@ -68,7 +69,10 @@ class OpenidFlowsService:
         flow_state.delete()
 
         tokens_data = await self.__oidc_client.auth_flow_handle_cb(
-            code=code, code_verifier=code_verifier, redirect_uri=callback_uri
+            code=code,
+            code_verifier=code_verifier,
+            redirect_uri=callback_uri,
+            nonce=flow_state.nonce,
         )
 
         tokens = await self.__tokens_manager.save_tokens(

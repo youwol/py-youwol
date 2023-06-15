@@ -194,7 +194,7 @@ class OidcForClient:
 
     async def auth_flow_url(
         self, state: str, redirect_uri: str, login_hint: Optional[str]
-    ) -> Tuple[str, str]:
+    ) -> Tuple[str, str, str]:
         """OpenId Authorization Code Flow request URL
 
         See:
@@ -213,6 +213,7 @@ class OidcForClient:
             Tuple[str, str, str]:
                 * the URL to request End-User authentication
                 * the code verifier for PKCE
+                * the ID token nonce for mitigating replay attacks
         """
 
         conf = await self.__config.openid_configuration()
@@ -228,12 +229,18 @@ class OidcForClient:
             .replace("=", "")
         )
 
+        # Nonce, to be checked in ID token.
+        # See https://openid.net/specs/openid-connect-core-1_0.html#NonceNotes
+        nonce = secrets.token_urlsafe(DEFAULT_LENGTH_RANDOM_TOKEN)
+
         params = self.__params_with_client_id(
             response_type="code",
             state=state,
             scope="openid",
             redirect_uri=redirect_uri,
             login_hint=login_hint,
+            # Nonce
+            nonce=nonce,
             # PKCE
             code_challenge_method="S256",
             code_challenge=code_challenge,
@@ -241,10 +248,10 @@ class OidcForClient:
         # Remove login_hint if None
         params = {k: v for k, v in params.items() if v is not None}
 
-        return str(url.replace_query_params(**params)), code_verifier
+        return str(url.replace_query_params(**params)), code_verifier, nonce
 
     async def auth_flow_handle_cb(
-        self, code: str, redirect_uri: str, code_verifier: str
+        self, code: str, redirect_uri: str, code_verifier: str, nonce: str
     ) -> TokensData:
         """Authorization Code Flow callback handler
 
@@ -258,6 +265,7 @@ class OidcForClient:
             code (str): passed as query param by the Authorization Server
             redirect_uri (str): must match the redirect_uri used in Authorization Code Flow request URL
             code_verifier (str): the code verifier for PKCE
+            nonce (str): the ID token nonce for mitigating replay attacks
 
         Returns:
             TokensData: representation of tokens issued by the Authorization Server
@@ -270,6 +278,12 @@ class OidcForClient:
             code_verifier=code_verifier,
         )
         result = tokens_data(data)
+
+        # Check ID token nonce
+        # See https://openid.net/specs/openid-connect-core-1_0.html#NonceNotes
+        id_token_decoded = await self.token_decode(result.id_token)
+        if id_token_decoded["nonce"] != nonce:
+            raise RuntimeError("Invalid nonce in ID token")
 
         return result
 
