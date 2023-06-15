@@ -81,7 +81,7 @@ async def authorization_flow_callback(
             tokens,
             target_uri,
         ) = await conf.openid_flows.handle_authorization_flow_callback(
-            flow_uuid=state,
+            flow_ref=state,
             code=code,
             callback_uri=str(request.url_for("authorization_flow_callback")),
         )
@@ -147,7 +147,7 @@ async def logout_cb(
     conf: Configuration = Depends(get_configuration),
 ) -> Response:
     target_uri, forget_me = conf.openid_flows.handle_logout_flow_callback(
-        flow_uuid=state
+        flow_ref=state
     )
     response = RedirectResponse(url=target_uri, status_code=307)
 

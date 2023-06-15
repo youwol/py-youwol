@@ -54,9 +54,9 @@ class OpenidFlowsService:
         return url
 
     async def handle_authorization_flow_callback(
-        self, flow_uuid: str, code: str, callback_uri: str
+        self, flow_ref: str, code: str, callback_uri: str
     ) -> Tuple[Tokens, str]:
-        flow_state_data = self.__cache.get(AuthorizationFlow.cache_key(flow_uuid))
+        flow_state_data = self.__cache.get(AuthorizationFlow.cache_key(flow_ref))
 
         if flow_state_data is None:
             raise FlowStateNotFound()
@@ -106,8 +106,8 @@ class OpenidFlowsService:
 
         return url
 
-    def handle_logout_flow_callback(self, flow_uuid: str) -> Tuple[str, bool]:
-        flow_state_data = self.__cache.get(LogoutFlow.cache_key(flow_uuid))
+    def handle_logout_flow_callback(self, flow_ref: str) -> Tuple[str, bool]:
+        flow_state_data = self.__cache.get(LogoutFlow.cache_key(flow_ref))
 
         if flow_state_data is None:
             raise FlowStateNotFound()
