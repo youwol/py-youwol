@@ -1,6 +1,3 @@
-# standard library
-import uuid
-
 # typing
 from typing import Annotated, Optional
 
@@ -11,7 +8,11 @@ from pydantic import BaseModel
 from starlette.responses import JSONResponse, Response
 
 # relative
-from ..configuration import Configuration, get_configuration
+from ..configuration import (
+    Configuration,
+    default_tokens_id_generator,
+    get_configuration,
+)
 from ..root_paths import router
 
 
@@ -82,7 +83,9 @@ async def start_impersonate(
         details.userId, real_access_token
     )
 
-    impersonation_tokens_id = yw_jwt if details.hidden else str(uuid.uuid4())
+    impersonation_tokens_id = (
+        yw_jwt if details.hidden else default_tokens_id_generator()
+    )
     impersonation_tokens = await conf.tokens_manager.save_tokens(
         tokens_id=impersonation_tokens_id,
         tokens_data=impersonation_tokens_data,

@@ -1,4 +1,6 @@
 # standard library
+import secrets
+
 from dataclasses import dataclass
 
 # typing
@@ -9,21 +11,25 @@ from youwol.utils import TTL, CacheClient
 
 
 @dataclass(frozen=True)
-class AbstractSharedState:
-    _CACHE_KEY_PREFIX: ClassVar[str] = "state"
-    _CACHE_TTL_FIVE_MINUTES = 60 * 5
+class Flow:
+    _CACHE_KEY_PREFIX: ClassVar[str] = "flow"
+    _CACHE_TTL_FIVE_MINUTES: ClassVar[int] = 60 * 5
 
-    uuid: str
+    ref: str
     cache: CacheClient
 
     @classmethod
     def cache_key(cls, uuid: str) -> str:
         return f"{cls._CACHE_KEY_PREFIX}_{uuid}"
 
+    @staticmethod
+    def random_ref() -> str:
+        return secrets.token_urlsafe()
+
     def save(self) -> None:
         self.cache.set(
-            self.cache_key(self.uuid),
-            {"uuid": self.uuid, **self._save()},
+            self.cache_key(self.ref),
+            {"ref": self.ref, **self._save()},
             TTL(self._CACHE_TTL_FIVE_MINUTES),
         )
 
@@ -31,11 +37,11 @@ class AbstractSharedState:
         return {}
 
     def delete(self) -> None:
-        self.cache.delete(self.cache_key(self.uuid))
+        self.cache.delete(self.cache_key(self.ref))
 
 
 @dataclass(frozen=True)
-class AuthorizationFlow(AbstractSharedState):
+class AuthorizationFlow(Flow):
     _CACHE_KEY_PREFIX: ClassVar[str] = "auth_flow_state"
 
     target_uri: str
@@ -46,7 +52,7 @@ class AuthorizationFlow(AbstractSharedState):
 
 
 @dataclass(frozen=True)
-class LogoutFlow(AbstractSharedState):
+class LogoutFlow(Flow):
     _CACHE_KEY_PREFIX: ClassVar[str] = "logout_flow_state"
 
     target_uri: str

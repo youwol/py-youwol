@@ -2,8 +2,8 @@
 import base64
 import hashlib
 import random
+import secrets
 import string
-import uuid
 
 from dataclasses import dataclass
 
@@ -17,6 +17,8 @@ import jwt
 from jwt import PyJWKClient
 from pydantic import BaseModel
 from starlette.datastructures import URL
+
+DEFAULT_LENGTH_RANDOM_TOKEN = 64
 
 
 class PrivateClient(BaseModel):
@@ -183,7 +185,7 @@ class OidcForClient:
             "client_id": self._client.client_id,
             "state": state,
             "scope": "openid",
-            "nonce": str(uuid.uuid4()),
+            "nonce": secrets.token_urlsafe(DEFAULT_LENGTH_RANDOM_TOKEN),
             "redirect_uri": redirect_uri,
             "response_mode": "query",
         }
@@ -194,7 +196,7 @@ class OidcForClient:
         if login_hint:
             params["login_hint"] = login_hint
 
-        code_verifier = random_code_verifier()
+        code_verifier = secrets.token_urlsafe(DEFAULT_LENGTH_RANDOM_TOKEN)
         code_challenge = hashlib.sha256(code_verifier.encode("ascii")).digest()
         params["code_challenge"] = (
             base64.urlsafe_b64encode(code_challenge).decode("ascii").replace("=", "")

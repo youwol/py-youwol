@@ -1,6 +1,3 @@
-# standard library
-import uuid
-
 # typing
 from typing import Callable, Optional, Tuple
 
@@ -10,7 +7,7 @@ from youwol.utils.clients.oidc.oidc_config import OidcForClient
 from youwol.utils.clients.oidc.tokens_manager import Tokens, TokensManager
 
 # relative
-from .openid_flows_states import AuthorizationFlow, LogoutFlow
+from .openid_flows_states import AuthorizationFlow, Flow, LogoutFlow
 
 
 class FlowStateNotFound(RuntimeError):
@@ -35,19 +32,19 @@ class OpenidFlowsService:
     async def init_authorization_flow(
         self, target_uri: str, login_hint: Optional[str], callback_uri: str
     ) -> str:
-        flow_uuid = str(uuid.uuid4())
+        auth_flow_ref = Flow.random_ref()
 
         url, code_verifier = await self.__oidc_client.auth_flow_url(
-            state=flow_uuid, redirect_uri=callback_uri, login_hint=login_hint
+            state=auth_flow_ref, redirect_uri=callback_uri, login_hint=login_hint
         )
 
-        flow_state = AuthorizationFlow(
-            uuid=flow_uuid,
+        auth_flow = AuthorizationFlow(
+            ref=auth_flow_ref,
             cache=self.__cache,
             target_uri=target_uri,
             code_verifier=code_verifier,
         )
-        flow_state.save()
+        auth_flow.save()
 
         return url
 
@@ -89,16 +86,17 @@ class OpenidFlowsService:
     async def init_logout_flow(
         self, target_uri: str, forget_me: bool, callback_uri: str
     ) -> str:
-        logout_flow_state = LogoutFlow(
-            uuid=str(uuid.uuid4()),
+        logout_flow_ref = Flow.random_ref()
+        logout_flow = LogoutFlow(
+            ref=logout_flow_ref,
             target_uri=target_uri,
             forget_me=forget_me,
             cache=self.__cache,
         )
-        logout_flow_state.save()
+        logout_flow.save()
 
         url = await self.__oidc_client.logout_url(
-            state=logout_flow_state.uuid, redirect_uri=callback_uri
+            state=logout_flow.ref, redirect_uri=callback_uri
         )
 
         return url
