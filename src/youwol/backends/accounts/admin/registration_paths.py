@@ -8,6 +8,9 @@ from pydantic import BaseModel
 from starlette.requests import Request
 from starlette.responses import JSONResponse, RedirectResponse, Response
 
+# Youwol utilities
+from youwol.utils.clients.oidc.service_account_client import UnexpectedResponseStatus
+
 # relative
 from ..configuration import Configuration, get_configuration
 from ..root_paths import router
@@ -49,8 +52,8 @@ async def register_from_temp_user(
             client_id=conf.oidc_client.client_id(),
             target_uri=str(redirect_uri),
         )
-    except Exception as e:
-        return JSONResponse(status_code=400, content={"message": str(e.args[0])})
+    except UnexpectedResponseStatus as e:
+        return JSONResponse(status_code=e.actual, content=e.content)
 
     return Response(status_code=202)
 
@@ -79,7 +82,10 @@ async def registration_finalizer(
             status_code=400, content={"invalid state": "no tokens found"}
         )
 
-    await conf.keycloak_users_management.finalize_user(sub=await tokens.sub())
+    try:
+        await conf.keycloak_users_management.finalize_user(sub=await tokens.sub())
+    except UnexpectedResponseStatus as e:
+        return JSONResponse(status_code=e.actual, content=e.content)
 
     await tokens.refresh()
 
