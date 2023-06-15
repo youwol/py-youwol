@@ -10,6 +10,11 @@ from youwol.utils.clients.oidc.tokens_manager import Tokens, TokensManager
 from .openid_flows_states import AuthorizationFlow, Flow, LogoutFlow
 
 
+class InvalidLogoutToken(RuntimeError):
+    def __init__(self, msg: str) -> None:
+        super().__init__(f"Logout token is invalid: {msg}")
+
+
 class FlowStateNotFound(RuntimeError):
     def __init__(self) -> None:
         super().__init__("Flow state not found")
@@ -116,7 +121,20 @@ class OpenidFlowsService:
 
     async def handle_logout_back_channel(self, logout_token: str) -> None:
         logout_token_decoded = await self.__oidc_client.token_decode(logout_token)
-        # TODO : validate logout token (see https://openid.net/specs/openid-connect-backchannel-1_0.html#Validation)
+
+        # See https://openid.net/specs/openid-connect-backchannel-1_0.html#Validation
+        expected_events_claim = "http://schemas.openid.net/event/backchannel-logout"
+        if "sid" not in logout_token_decoded:
+            raise InvalidLogoutToken("no 'sid' claim")
+        if "events" not in logout_token_decoded:
+            raise InvalidLogoutToken("no 'events' claim")
+        if expected_events_claim not in logout_token_decoded["events"]:
+            raise InvalidLogoutToken(
+                f"'events' claim does not contain member name '{expected_events_claim}'"
+            )
+        if "nonce" in logout_token_decoded:
+            raise InvalidLogoutToken("found 'nonce' claim")
+
         tokens = self.__tokens_manager.restore_tokens_from_session_id(
             session_id=logout_token_decoded["sid"],
         )
