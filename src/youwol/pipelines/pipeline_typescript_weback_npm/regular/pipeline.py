@@ -10,8 +10,8 @@ from youwol.app.routers.projects.models_project import (
     BrowserTarget,
     Flow,
     Pipeline,
-    parse_json,
     PipelineStep,
+    parse_json,
 )
 
 # Youwol utilities
