@@ -104,6 +104,10 @@ exclude = [
     "bundle_app_template/*",
 ]
 "youwol.pipelines.pipeline_typescript_weback_npm.regular" = [
+    "views/.*",
+    "views/*",
+    "views/**/*",
+    "views/.**/*",
     "templates/.*",
     "templates/*",
     "templates/**/*",
