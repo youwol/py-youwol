@@ -11,6 +11,7 @@ from youwol.app.routers.projects.models_project import (
     Flow,
     Pipeline,
     parse_json,
+    PipelineStep,
 )
 
 # Youwol utilities
@@ -41,6 +42,7 @@ class PipelineConfig(BaseModel):
     with_tags: List[str] = []
     testConfig: TestStepConfig = TestStepConfig()
     publishConfig: PublishConfig = PublishConfig()
+    overridenSteps: List[PipelineStep] = []
 
 
 async def pipeline(config: PipelineConfig, context: Context):
@@ -50,7 +52,27 @@ async def pipeline(config: PipelineConfig, context: Context):
         publish_remote_steps, dags = await create_sub_pipelines_publish(
             start_step="cdn-local", context=ctx
         )
-
+        default_steps = [
+            SetupStep(),
+            DependenciesStep(),
+            BuildStep(id="build-dev", run="yarn build:dev"),
+            BuildStep(id="build-prod", run="yarn build:prod"),
+            DocStep(),
+            TestStep(
+                id="test",
+                run="yarn test-coverage",
+                artifacts=config.testConfig.artifacts,
+            ),
+            PublishCdnLocalStep(
+                packagedArtifacts=config.publishConfig.packagedArtifacts,
+                packagedFolders=config.publishConfig.packagedFolders,
+            ),
+            *publish_remote_steps,
+        ]
+        overriden_steps = {step.id: step for step in config.overridenSteps}
+        steps_dict = {
+            step.id: overriden_steps.get(step.id, step) for step in default_steps
+        }
         return Pipeline(
             target=config.target,
             tags=["typescript", "webpack", "npm"] + config.with_tags,
@@ -59,23 +81,7 @@ async def pipeline(config: PipelineConfig, context: Context):
                 "version"
             ],
             dependencies=lambda project, _ctx: get_dependencies(project),
-            steps=[
-                SetupStep(),
-                DependenciesStep(),
-                BuildStep(id="build-dev", run="yarn build:dev"),
-                BuildStep(id="build-prod", run="yarn build:prod"),
-                DocStep(),
-                TestStep(
-                    id="test",
-                    run="yarn test-coverage",
-                    artifacts=config.testConfig.artifacts,
-                ),
-                PublishCdnLocalStep(
-                    packagedArtifacts=config.publishConfig.packagedArtifacts,
-                    packagedFolders=config.publishConfig.packagedFolders,
-                ),
-                *publish_remote_steps,
-            ],
+            steps=list(steps_dict.values()),
             flows=[
                 Flow(
                     name="prod",
