@@ -74,6 +74,7 @@ publish = [
 
 [project.scripts]
 youwol = "youwol.app.main:main"
+python-yw = "youwol.app.wrapper:main"
 
 [build-system]
 requires = [
