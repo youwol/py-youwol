@@ -1,6 +1,3 @@
-# standard library
-import datetime
-
 # typing
 from typing import Any, Dict, Optional
 
@@ -10,8 +7,9 @@ import aiohttp
 from starlette.datastructures import URL
 
 # Youwol utilities
-from youwol.utils import AT, CacheClient
+from youwol.utils import CacheClient
 from youwol.utils.clients.oidc.oidc_config import OidcForClient
+from youwol.utils.clients.oidc.tokens_manager import SessionLessTokenManager
 
 
 class UnexpectedResponseStatus(RuntimeError):
@@ -22,7 +20,6 @@ class UnexpectedResponseStatus(RuntimeError):
 
 
 class ServiceAccountClient:
-    _SESSIONLESS_TOKEN_EXPIRES_AT_THRESHOLD = 15
     _SERVICE_ACCOUNT_TOKEN_CACHE_KEY = "keycloak_user_management_token"
 
     def __init__(
@@ -32,30 +29,14 @@ class ServiceAccountClient:
         base_url: Optional[str] = None,
     ):
         self.__base_url = base_url
-        self.__oidc_client = oidc_client
-        self.__cache = cache
+        self.__session_less_token_manager = SessionLessTokenManager(
+            cache=cache,
+            oidc_client=oidc_client,
+            cache_key=self._SERVICE_ACCOUNT_TOKEN_CACHE_KEY,
+        )
 
     async def __get_access_token(self) -> str:
-        now = datetime.datetime.now().timestamp()
-        token_data = self.__cache.get(self._SERVICE_ACCOUNT_TOKEN_CACHE_KEY)
-        if token_data is None or int(token_data["expires_at"]) < int(now):
-            sessionless_tokens_data = await self.__oidc_client.client_credentials_flow()
-            expires_at = (
-                int(now)
-                + sessionless_tokens_data.expires_in
-                - self._SESSIONLESS_TOKEN_EXPIRES_AT_THRESHOLD
-            )
-            token_data = {
-                "access_token": sessionless_tokens_data.access_token,
-                "expires_at": expires_at,
-            }
-            self.__cache.set(
-                self._SERVICE_ACCOUNT_TOKEN_CACHE_KEY,
-                token_data,
-                AT(expires_at),
-            )
-
-        return str(token_data["access_token"])
+        return await self.__session_less_token_manager.get_access_token()
 
     async def __request(
         self,

@@ -186,3 +186,41 @@ class TokensManager:
             return None
 
         return self.restore_tokens(tokens_id=tokens_id)
+
+
+class SessionLessTokenManager:
+    __TOKEN_EXPIRES_AT_THRESHOLD = 15
+
+    def __init__(
+        self,
+        cache_key: str,
+        cache: CacheClient,
+        oidc_client: OidcForClient,
+        expires_at_threshold=__TOKEN_EXPIRES_AT_THRESHOLD,
+    ) -> None:
+        self.__cache_key = cache_key
+        self.__cache = cache
+        self.__oidc_client = oidc_client
+        self.__expires_at_threshold = expires_at_threshold
+
+    async def get_access_token(self) -> str:
+        now = datetime.datetime.now().timestamp()
+        token_data = self.__cache.get(self.__cache_key)
+        if token_data is None or int(token_data["expires_at"]) < int(now):
+            sessionless_tokens_data = await self.__oidc_client.client_credentials_flow()
+            expires_at = (
+                int(now)
+                + sessionless_tokens_data.expires_in
+                - self.__expires_at_threshold
+            )
+            token_data = {
+                "access_token": sessionless_tokens_data.access_token,
+                "expires_at": expires_at,
+            }
+            self.__cache.set(
+                self.__cache_key,
+                token_data,
+                AT(expires_at),
+            )
+
+        return str(token_data["access_token"])
