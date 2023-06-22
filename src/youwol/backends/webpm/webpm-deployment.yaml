@@ -27,7 +27,7 @@ spec:
             readOnlyRootFilesystem: true
           env:
             - name: VERSION
-              value: "20230622171405" # TODO: use backend version
+              value: "0.1.0" # TODO: use backend version
             - name: CONFIG_ID
               valueFrom:
                 configMapKeyRef:
@@ -61,7 +61,7 @@ spec:
                 secretKeyRef:
                   key: client_secret
                   name: webpm
-          image: registry.gitlab.com/youwol/platform/webpm:testing # TODO: use backend version
+          image: registry.gitlab.com/youwol/platform/webpm:0.1.0 # TODO: use backend version
           imagePullPolicy: Always
           readinessProbe:
             httpGet:
