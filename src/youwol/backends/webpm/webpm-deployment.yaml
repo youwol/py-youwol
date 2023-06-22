@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webpm
+  namespace: apps
+  labels:
+    app: webpm
+spec:
+  replicas: 2
+
+  selector:
+    matchLabels:
+      app: webpm
+
+  template:
+
+    metadata:
+      name: webpm
+      labels:
+        app: webpm
+    spec:
+      imagePullSecrets:
+        - name: gitlab-docker
+      containers:
+        - name: main
+          securityContext:
+            readOnlyRootFilesystem: true
+          env:
+            - name: VERSION
+              value: "20230622171405" # TODO: use backend version
+            - name: CONFIG_ID
+              valueFrom:
+                configMapKeyRef:
+                  key: configID
+                  name: webpm
+            - name: HOST
+              value: "https://testing.webpm.org"
+            - name: OIDC_ISSUER
+              valueFrom:
+                configMapKeyRef:
+                  key: oidc_issuer
+                  name: webpm
+            - name: ASSETS_GATEWAY_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: assets-gatewayBaseUrl
+                  name: webpm
+            - name: DEFAULT_CDN_CLIENT_VERSION
+              valueFrom:
+                configMapKeyRef:
+                  key: default_cdn_client_version
+                  name: webpm
+
+            - name: CLIENT_ID
+              valueFrom:
+                configMapKeyRef:
+                  key: client_id
+                  name: webpm
+            - name: CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: client_secret
+                  name: webpm
+          image: registry.gitlab.com/youwol/platform/webpm:testing # TODO: use backend version
+          imagePullPolicy: Always
+          readinessProbe:
+            httpGet:
+              port: 8000
+              path: /observability/readiness
+          livenessProbe:
+            httpGet:
+              port: 8000
+              path: /observability/liveness
+          startupProbe:
+            httpGet:
+              port: 8000
+              path: /observability/startup
+      restartPolicy: Always

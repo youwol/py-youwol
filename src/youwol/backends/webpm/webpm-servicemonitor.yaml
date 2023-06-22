@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: webpm
+  namespace: apps
+spec:
+  endpoints:
+    - honorLabels: true
+      path: /
+      port: monitor
+      scheme: http
+  jobLabel: webpm
+  namespaceSelector:
+    matchNames:
+      - apps
+  selector:
+    matchLabels:
+      monitor: webpm
