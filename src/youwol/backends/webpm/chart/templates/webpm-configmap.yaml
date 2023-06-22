@@ -1,0 +1,3 @@
+{{- $values := .Files.Get "config.yaml" }}
+{{- $args := dict "root" . "name" "webpm" "values" $values }}
+{{- include "lib-configuration.config-map" $args }}

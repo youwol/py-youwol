@@ -1,0 +1,6 @@
+assets-gatewayBaseUrl: "http://assets-gateway.apps.svc.cluster.local"
+default_cdn_client_version: "latest"
+oidc_issuer: "https://platform.int.youwol.com/auth/realms/youwol"
+client_id: "webpm"
+configID: "webpm-testing"
+host: "https://testing.webpm.org"

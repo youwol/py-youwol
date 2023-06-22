@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: webpm
-  namespace: apps
   labels:
     app: webpm
 spec:
@@ -27,14 +26,17 @@ spec:
             readOnlyRootFilesystem: true
           env:
             - name: VERSION
-              value: "0.1.0" # TODO: use backend version
+              value: {{ .Chart.AppVersion }}
             - name: CONFIG_ID
               valueFrom:
                 configMapKeyRef:
                   key: configID
                   name: webpm
             - name: HOST
-              value: "https://testing.webpm.org"
+              valueFrom:
+                configMapKeyRef:
+                  key: host
+                  name: webpm
             - name: OIDC_ISSUER
               valueFrom:
                 configMapKeyRef:
@@ -61,7 +63,7 @@ spec:
                 secretKeyRef:
                   key: client_secret
                   name: webpm
-          image: registry.gitlab.com/youwol/platform/webpm:0.1.0 # TODO: use backend version
+          image: {{ printf "registry.gitlab.com/youwol/platform/webpm:%s" .Chart.AppVersion }}
           imagePullPolicy: Always
           readinessProbe:
             httpGet:

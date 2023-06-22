@@ -1,0 +1,6 @@
+dependencies:
+- name: lib-configuration
+  repository: https://gitlab.com/api/v4/projects/15166395/packages/helm/stable/
+  version: 0.0.1
+digest: sha256:5678e385472ff10014d52f7abd95e01ae461a2d1878ff17690ca076bf2b73d2a
+generated: "2023-06-22T18:07:22.899618619+02:00"
