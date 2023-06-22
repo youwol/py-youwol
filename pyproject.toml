@@ -96,6 +96,8 @@ include = [
 exclude = [
     "youwol.backends.*.main*",
     "youwol.backends.mock*",
+    "youwol.backends.common*",
+    "youwol.backends.webpm*"
 ]
 
 [tool.setuptools.package-data]
