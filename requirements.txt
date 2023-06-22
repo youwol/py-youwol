@@ -170,6 +170,8 @@ platformdirs==3.2.0
     # via
     #   black
     #   pylint
+prometheus-client==0.17.0
+    # via youwol (pyproject.toml)
 psutil==5.9.1
     # via youwol (pyproject.toml)
 pycodestyle==2.10.0

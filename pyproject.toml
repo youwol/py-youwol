@@ -37,6 +37,7 @@ dependencies = [
     "websockets>=10.3,<11",
     "semantic_version>=2.10.0,<3.0.0",
     "watchdog>=2.1.9,<3.0.0",
+    "prometheus-client",
 ]
 
 [project.optional-dependencies]
