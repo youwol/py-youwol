@@ -1,9 +1,0 @@
-apiVersion: v2
-name: webpm
-version: 1.0.0
-appVersion: 0.1.0
-
-dependencies:
-  - name: lib-configuration
-    version: 0.0.1
-    repository: https://gitlab.com/api/v4/projects/15166395/packages/helm/stable/
