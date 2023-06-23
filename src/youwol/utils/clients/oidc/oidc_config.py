@@ -1,9 +1,7 @@
 # standard library
 import base64
 import hashlib
-import random
-import string
-import uuid
+import secrets
 
 from dataclasses import dataclass
 
@@ -14,9 +12,12 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import aiohttp
 import jwt
 
+from aiohttp import BasicAuth
 from jwt import PyJWKClient
 from pydantic import BaseModel
 from starlette.datastructures import URL
+
+DEFAULT_LENGTH_RANDOM_TOKEN = 64
 
 
 class PrivateClient(BaseModel):
@@ -163,170 +164,226 @@ class OidcConfig:
         return self._openid_configuration
 
 
-def random_code_verifier() -> str:
-    choices = string.ascii_letters + string.digits + "-._~"
-    return "".join((random.choice(choices) for _ in range(128)))
-
-
 class OidcForClient:
-    def __init__(self, config: OidcConfig, client: Client):
-        self._config = config
-        self._client = client
+    def __init__(self, config: OidcConfig, client: Client) -> None:
+        self.__config = config
+        self.__client = client
+
+    async def __post_token_endpoint(self, **params) -> Any:
+        conf = await self.__config.openid_configuration()
+        auth = None
+        if isinstance(self.__client, PrivateClient):
+            auth = BasicAuth(
+                login=self.__client.client_id, password=self.__client.client_secret
+            )
+        else:
+            params = self.__params_with_client_id(**params)
+        async with aiohttp.ClientSession(auth=auth) as session:
+            async with session.post(url=conf.token_endpoint, data=params) as resp:
+                status = resp.status
+                if status != 200:
+                    if resp.content_type == "application/json":
+                        content = await resp.json()
+                    else:
+                        content = await resp.text()
+                    raise RuntimeError(f"Unexpected HTTP status {status} : {content}")
+                return await resp.json()
+
+    def __params_with_client_id(self, **params) -> Dict[str, Any]:
+        return {**params, "client_id": self.__client.client_id}
 
     async def auth_flow_url(
         self, state: str, redirect_uri: str, login_hint: Optional[str]
-    ) -> Tuple[str, str]:
-        conf = await self._config.openid_configuration()
+    ) -> Tuple[str, str, str]:
+        """OpenId Authorization Code Flow request URL
+
+        See:
+            * OpenId Authorization Code Flow : https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth
+            * Authentication Request : https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest
+            * Proof Key for Code Exchange : https://datatracker.ietf.org/doc/html/rfc7636
+            * Nonce implementations notes : https://openid.net/specs/openid-connect-core-1_0.html#NonceNotes
+
+        Args:
+            state (str): opaque value, to maintain state between this request ond the callback
+            redirect_uri (str): the callback URL where the response will be send (by redirecting the User Agent once
+                                User is authenticated)
+            login_hint (Union[None, None, None, str, None, None]): username to pre-fill login form.
+
+        Returns:
+            Tuple[str, str, str]:
+                * the URL to request End-User authentication
+                * the code verifier for PKCE
+                * the ID token nonce for mitigating replay attacks
+        """
+
+        conf = await self.__config.openid_configuration()
         url = URL(conf.authorization_endpoint)
-        params = {
-            "response_type": "code",
-            "client_id": self._client.client_id,
-            "state": state,
-            "scope": "openid",
-            "nonce": str(uuid.uuid4()),
-            "redirect_uri": redirect_uri,
-            "response_mode": "query",
-        }
 
-        if isinstance(self._client, PrivateClient):
-            params["client_secret"] = self._client.client_secret
-
-        if login_hint:
-            params["login_hint"] = login_hint
-
-        code_verifier = random_code_verifier()
-        code_challenge = hashlib.sha256(code_verifier.encode("ascii")).digest()
-        params["code_challenge"] = (
-            base64.urlsafe_b64encode(code_challenge).decode("ascii").replace("=", "")
+        # PKCE (Proof Key for Code Exchange)
+        # See https://datatracker.ietf.org/doc/html/rfc7636
+        code_verifier = secrets.token_urlsafe(DEFAULT_LENGTH_RANDOM_TOKEN)
+        hash_code_verifier = hashlib.sha256(code_verifier.encode("ascii")).digest()
+        code_challenge = (
+            base64.urlsafe_b64encode(hash_code_verifier)
+            .decode("ascii")
+            .replace("=", "")
         )
-        params["code_challenge_method"] = "S256"
 
-        return str(url.replace_query_params(**params)), code_verifier
+        # Nonce, to be checked in ID token.
+        # See https://openid.net/specs/openid-connect-core-1_0.html#NonceNotes
+        nonce = secrets.token_urlsafe(DEFAULT_LENGTH_RANDOM_TOKEN)
+
+        params = self.__params_with_client_id(
+            response_type="code",
+            state=state,
+            scope="openid",
+            redirect_uri=redirect_uri,
+            login_hint=login_hint,
+            # Nonce
+            nonce=nonce,
+            # PKCE
+            code_challenge_method="S256",
+            code_challenge=code_challenge,
+        )
+        # Remove login_hint if None
+        params = {k: v for k, v in params.items() if v is not None}
+
+        return str(url.replace_query_params(**params)), code_verifier, nonce
 
     async def auth_flow_handle_cb(
-        self, code: str, redirect_uri: str, code_verifier: str
+        self, code: str, redirect_uri: str, code_verifier: str, nonce: str
     ) -> TokensData:
-        conf = await self._config.openid_configuration()
-        params = {
-            "code": code,
-            "grant_type": "authorization_code",
-            "client_id": self._client.client_id,
-            "redirect_uri": redirect_uri,
-            "code_verifier": code_verifier,
-        }
+        """Authorization Code Flow callback handler
 
-        if isinstance(self._client, PrivateClient):
-            params["client_secret"] = self._client.client_secret
+        See:
+            * OpenId Authorization Code Flow : https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth
+            * Token Request : https://openid.net/specs/openid-connect-core-1_0.html#TokenRequest
+            * Proof Key for Code Exchange : https://datatracker.ietf.org/doc/html/rfc7636
+            * Nonce implementations notes : https://openid.net/specs/openid-connect-core-1_0.html#NonceNotes
 
-        async with aiohttp.ClientSession() as session:
-            async with session.post(conf.token_endpoint, data=params) as resp:
-                status = resp.status
-                token = await resp.json()
-                if status != 200:
-                    raise RuntimeError(f"Failed to get token : {token}")
+        Args:
+            code (str): passed as query param by the Authorization Server
+            redirect_uri (str): must match the redirect_uri used in Authorization Code Flow request URL
+            code_verifier (str): the code verifier for PKCE
+            nonce (str): the ID token nonce for mitigating replay attacks
 
-        return tokens_data(token)
+        Returns:
+            TokensData: representation of tokens issued by the Authorization Server
+        """
+        data = await self.__post_token_endpoint(
+            code=code,
+            grant_type="authorization_code",
+            redirect_uri=redirect_uri,
+            # PKCE
+            code_verifier=code_verifier,
+        )
+        result = tokens_data(data)
+
+        # Check ID token nonce
+        # See https://openid.net/specs/openid-connect-core-1_0.html#NonceNotes
+        id_token_decoded = await self.token_decode(result.id_token)
+        if id_token_decoded["nonce"] != nonce:
+            raise RuntimeError("Invalid nonce in ID token")
+
+        return result
 
     async def client_credentials_flow(self) -> SessionlessTokensData:
-        if isinstance(self._client, PublicClient):
-            raise RuntimeError(f"Client {self._client.client_id} is public !")
-        conf = await self._config.openid_configuration()
-        params = {
-            "grant_type": "client_credentials",
-            "client_id": self._client.client_id,
-            "client_secret": self._client.client_secret,
-        }
-        async with aiohttp.ClientSession() as session:
-            async with session.post(conf.token_endpoint, data=params) as resp:
-                status = resp.status
-                tokens = await resp.json()
-                if status != 200:
-                    raise RuntimeError(f"Failed to get token : {tokens}")
+        """Client Credentials flow
 
-        return sessionless_tokens_data(tokens)
+        See https://datatracker.ietf.org/doc/html/rfc6749#section-4.4
+
+        Raises:
+            RuntimeError, if the client is public
+
+        Returns:
+            SessionlessTokensData: representation of access token issued by the Authorization Server
+        """
+        if isinstance(self.__client, PublicClient):
+            raise RuntimeError(f"Client {self.__client.client_id} is public !")
+        data = await self.__post_token_endpoint(grant_type="client_credentials")
+        return sessionless_tokens_data(data)
 
     async def direct_flow(self, username: str, password: str) -> TokensData:
-        conf = await self._config.openid_configuration()
+        """Direct Authentication flow
 
-        params = {
-            "grant_type": "password",
-            "username": username,
-            "password": password,
-            "client_id": self._client.client_id,
-            "scope": "openid",
-        }
+            See https://datatracker.ietf.org/doc/html/rfc6749#section-4.3
 
-        if isinstance(self._client, PrivateClient):
-            params["client_secret"] = self._client.client_secret
+        Args:
+            username (str): the username
+            password (str): the password
 
-        async with aiohttp.ClientSession() as session:
-            async with session.post(conf.token_endpoint, data=params) as resp:
-                status = resp.status
-                token = await resp.json()
-                if status != 200:
-                    raise RuntimeError(f"Failed to get token : {token}")
-        return tokens_data(token)
+        Returns:
+            TokensData: representation of tokens issued by the Authorization Server
+        """
+        data = await self.__post_token_endpoint(
+            grant_type="password", username=username, password=password, scope="openid"
+        )
+        return tokens_data(data)
 
-    async def token_exchange(
+    async def impersonation(
         self, requested_subject: str, subject_token: str
     ) -> TokensData:
-        conf = await self._config.openid_configuration()
+        """Token exchange for impersonation
 
-        params = {
-            "client_id": self._client.client_id,
-            "grant_type": "urn:ietf:params:oauth:grant-type:token-exchange",
-            "subject_token": subject_token,
-            "requested_token_type": "urn:ietf:params:oauth:token-type:access_token",
-            "requested_subject": requested_subject,
-        }
+        See https://www.keycloak.org/docs/latest/securing_apps/#impersonation
 
-        if isinstance(self._client, PrivateClient):
-            params["client_secret"] = self._client.client_secret
+        Args:
+            requested_subject (str): the sub of the User to impersonate
+            subject_token (str): access token for the real User
 
-        async with aiohttp.ClientSession() as session:
-            async with session.post(conf.token_endpoint, data=params) as resp:
-                status = resp.status
-                token = await resp.json()
-                if status != 200:
-                    raise RuntimeError(f"Failed to exchange token : {token}")
+        Returns:
+           TokensData: representation of tokens issued by the Authorization Server
+        """
+        data = await self.__post_token_endpoint(
+            grant_type="urn:ietf:params:oauth:grant-type:token-exchange",
+            subject_token=subject_token,
+            requested_subject=requested_subject,
+            requested_token_type="urn:ietf:params:oauth:token-type:access_token",
+        )
 
-        return tokens_data(token)
+        return tokens_data(data)
 
     async def refresh(self, refresh_token: str) -> TokensData:
-        conf = await self._config.openid_configuration()
+        """Refresh tokens
 
-        params = {
-            "client_id": self._client.client_id,
-            "grant_type": "refresh_token",
-            "refresh_token": refresh_token,
-            "scope": "openid",
-        }
+        See https://openid.net/specs/openid-connect-core-1_0.html#RefreshTokens
 
-        if isinstance(self._client, PrivateClient):
-            params["client_secret"] = self._client.client_secret
+        Args:
+            refresh_token (str): the refresh token
 
-        async with aiohttp.ClientSession() as session:
-            async with session.post(conf.token_endpoint, data=params) as resp:
-                status = resp.status
-                tokens = await resp.json()
-                if status != 200:
-                    raise RuntimeError(f"Failed to refresh token : {tokens}")
+        Returns:
+           TokensData: representation of tokens issued by the Authorization Server
+        """
+        data = await self.__post_token_endpoint(
+            grant_type="refresh_token", scope="openid", refresh_token=refresh_token
+        )
 
-        return tokens_data(tokens)
+        return tokens_data(data)
 
     async def logout_url(self, redirect_uri: str, state: str) -> str:
-        conf = await self._config.openid_configuration()
+        """RP-Initiated Logout URL
+
+        See https://openid.net/specs/openid-connect-rpinitiated-1_0.html#RPLogout
+
+        Args:
+            redirect_uri (str): the callback URI to which redirect the User Agent after log-out has been performed
+            state (str): opaque value, to maintain state between this request ond the callback
+
+        Returns:
+            str: the log-out URL
+        """
+        conf = await self.__config.openid_configuration()
         url = URL(conf.end_session_endpoint)
         return str(
             url.replace_query_params(
-                post_logout_redirect_uri=redirect_uri,
-                client_id=self._client.client_id,
-                state=state,
+                **self.__params_with_client_id(
+                    post_logout_redirect_uri=redirect_uri, state=state
+                )
             )
         )
 
     async def token_decode(self, token: str) -> Dict[str, Any]:
-        return await self._config.token_decode(token)
+        return await self.__config.token_decode(token)
 
     def client_id(self) -> str:
-        return self._client.client_id
+        return self.__client.client_id

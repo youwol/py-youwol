@@ -26,7 +26,7 @@ dependencies = [
     "minio>=7.1.9,<8.0.0",
     "Pillow>=9.3.0,<10.0.0",
     "psutil>=5.9.1,<6.0.0",
-    "pyparsing==3.0.9",
+    "pyparsing==3.0.9", # Pinned for now, because some breaking changes
     "python-daemon>=2.3.0,<3.0.0",
     "python-multipart>=0.0.5,<0.0.6",
     "pyyaml>=6.0,<7.0",
@@ -37,6 +37,7 @@ dependencies = [
     "websockets>=10.3,<11",
     "semantic_version>=2.10.0,<3.0.0",
     "watchdog>=2.1.9,<3.0.0",
+    "prometheus-client",
 ]
 
 [project.optional-dependencies]
@@ -95,6 +96,8 @@ include = [
 exclude = [
     "youwol.backends.*.main*",
     "youwol.backends.mock*",
+    "youwol.backends.common*",
+    "youwol.backends.webpm*"
 ]
 
 [tool.setuptools.package-data]

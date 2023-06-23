@@ -131,7 +131,8 @@ async def process_download_asset(
 class AssetDownloadThread(Thread):
     event_loop = asyncio.new_event_loop()
     download_queue = (
-        asyncio.Queue(loop=event_loop)
+        # TODO: Remove once python 3.9 support is dropped
+        asyncio.Queue(loop=event_loop)  # pylint: disable=unexpected-keyword-arg
         if sys.version_info.minor < 10
         else asyncio.Queue()
     )

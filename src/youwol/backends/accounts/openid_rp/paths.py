@@ -5,7 +5,7 @@ import uuid
 from typing import Annotated, Optional
 
 # third parties
-from fastapi import Depends
+from fastapi import Depends, status
 from fastapi.params import Cookie, Form
 from starlette.requests import Request
 from starlette.responses import JSONResponse, RedirectResponse, Response
@@ -14,7 +14,7 @@ from starlette.status import HTTP_204_NO_CONTENT
 # relative
 from ..configuration import Configuration, get_configuration
 from ..root_paths import router
-from .openid_flows_service import FlowStateNotFound
+from .openid_flows_service import FlowStateNotFound, InvalidLogoutToken
 
 ONE_YEAR_IN_SECONDS = 365 * 24 * 60 * 60
 FIVE_MINUTES_IN_SECONDS = 5 * 60
@@ -81,7 +81,7 @@ async def authorization_flow_callback(
             tokens,
             target_uri,
         ) = await conf.openid_flows.handle_authorization_flow_callback(
-            flow_uuid=state,
+            flow_ref=state,
             code=code,
             callback_uri=str(request.url_for("authorization_flow_callback")),
         )
@@ -147,9 +147,8 @@ async def logout_cb(
     conf: Configuration = Depends(get_configuration),
 ) -> Response:
     target_uri, forget_me = conf.openid_flows.handle_logout_flow_callback(
-        flow_uuid=state
+        flow_ref=state
     )
-
     response = RedirectResponse(url=target_uri, status_code=307)
 
     response.set_cookie(
@@ -174,9 +173,14 @@ async def logout_cb(
 @router.post("/openid_rp/logout/back_channel", status_code=HTTP_204_NO_CONTENT)
 async def back_channel_logout(
     logout_token: Annotated[str, Form()],
+    response: Response,
     conf: Configuration = Depends(get_configuration),
 ) -> None:
-    await conf.openid_flows.handle_logout_back_channel(logout_token=logout_token)
+    try:
+        await conf.openid_flows.handle_logout_back_channel(logout_token=logout_token)
+    except InvalidLogoutToken as e:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        response.content = str(e)
 
 
 @router.get("/openid_rp/login")
