@@ -11,7 +11,7 @@ spec:
   jobLabel: webpm
   namespaceSelector:
     matchNames:
-      - apps
+      - {{ .Release.Namespace }}
   selector:
     matchLabels:
       monitor: webpm
