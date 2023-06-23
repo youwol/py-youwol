@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Header, Request
 from fastapi.responses import StreamingResponse
 from prometheus_client import Counter, Gauge
 from pydantic import BaseModel
-from starlette.responses import Response
+from starlette.responses import RedirectResponse, Response
 from typing_extensions import Annotated
 
 # Youwol backends
@@ -58,6 +58,7 @@ gauge_concurrent_streaming = Gauge(
     name="webpm_concurrent_streaming",
     documentation="Nb of concurrent resources streaming",
 )
+count_root_redirection = Counter("webpm_root_redirection", "Nb of redirection from /")
 
 
 async def client_response_to_streaming_response(
@@ -184,3 +185,11 @@ async def get_cdn_client_config(
         pathLoadingGraph="/loading-graph",
         pathResource="/resource",
     )
+
+
+@router.get("/")
+async def root_redirection(
+    deps: Dependencies = Depends(dependenciesFactory),
+) -> RedirectResponse:
+    count_root_redirection.inc()
+    return RedirectResponse(url=deps.configuration.root_redirection, status_code=301)

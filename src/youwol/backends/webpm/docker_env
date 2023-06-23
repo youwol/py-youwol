@@ -7,3 +7,4 @@ ASSETS_GATEWAY_BASE_URL=https://platform.int.youwol.com/api/assets-gateway
 CONFIG_ID=local-testing
 HOST=http://localhost:7000
 DEFAULT_CDN_CLIENT_VERSION=latest
+ROOT_REDIRECTION=https://platform.int.youwol.com/applications/@youwol/webpm/latest

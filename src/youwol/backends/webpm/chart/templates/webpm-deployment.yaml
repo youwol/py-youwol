@@ -25,6 +25,11 @@ spec:
           securityContext:
             readOnlyRootFilesystem: true
           env:
+            - name: ROOT_REDIRECTION
+              valueFrom:
+                configMapKeyRef:
+                  key: root_redirection
+                  name: webpm
             - name: VERSION
               value: {{ .Chart.AppVersion }}
             - name: CONFIG_ID

@@ -55,6 +55,7 @@ class Configuration:
     config_id: str
     origin: ConfigurationOrigin
     default_cdn_client_version: str
+    root_redirection: str
 
 
 class ConfigurationFactory:

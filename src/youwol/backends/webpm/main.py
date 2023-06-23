@@ -26,6 +26,7 @@ ConfigurationFactory.set(
     config_id=os.environ.get("CONFIG_ID"),
     origin=config_origin_from_host(os.environ.get("HOST")),
     default_cdn_client_version=os.environ.get("DEFAULT_CDN_CLIENT_VERSION"),
+    root_redirection=os.environ.get("ROOT_REDIRECTION"),
 )
 
 
