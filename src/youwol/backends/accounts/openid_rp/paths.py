@@ -94,14 +94,14 @@ async def authorization_flow_callback(
         response.set_cookie(
             "yw_jwt",
             tokens.id(),
-            secure=conf.secure_cookies,
+            secure=conf.https,
             httponly=True,
             max_age=tokens.remaining_time(),
         )
         response.set_cookie(
             "yw_login_hint",
             f"user:{await tokens.username()}",
-            secure=conf.secure_cookies,
+            secure=conf.https,
             httponly=True,
             expires=ONE_YEAR_IN_SECONDS,
         )
@@ -152,17 +152,17 @@ async def logout_cb(
     response = RedirectResponse(url=target_uri, status_code=307)
 
     response.set_cookie(
-        "yw_jwt", "DELETED", secure=conf.secure_cookies, httponly=True, expires=0
+        "yw_jwt", "DELETED", secure=conf.https, httponly=True, expires=0
     )
     response.set_cookie(
-        "yw_jwt_t", "DELETED", secure=conf.secure_cookies, httponly=True, expires=0
+        "yw_jwt_t", "DELETED", secure=conf.https, httponly=True, expires=0
     )
 
     if forget_me:
         response.set_cookie(
             "yw_login_hint",
             "DELETED",
-            secure=conf.secure_cookies,
+            secure=conf.https,
             httponly=True,
             expires=0,
         )
@@ -260,7 +260,7 @@ async def login_as_temp_user(
     response.set_cookie(
         "yw_jwt",
         tokens.id(),
-        secure=conf.secure_cookies,
+        secure=conf.https,
         httponly=True,
         max_age=tokens.remaining_time(),
     )
