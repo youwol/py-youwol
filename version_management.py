@@ -1,11 +1,19 @@
+# standard library
+import json
 import subprocess
 import sys
 
-import tomli
-import tomli_w
+# typing
+from typing import List
+
+# third parties
+import tomlkit
+
 from packaging import version
 
 PYPROJECT_TOML = "pyproject.toml"
+PYTHON_VERSION_PREFIX = "3."
+CLASSIFIER_PYTHON_VERSION = f"Programming Language :: Python :: {PYTHON_VERSION_PREFIX}"
 
 
 def debug(msg: str):
@@ -14,31 +22,39 @@ def debug(msg: str):
 
 def write_version(v: str):
     pyproject_dict = None
-    with open(PYPROJECT_TOML, "rb") as f_r:
-        pyproject_dict = tomli.load(f_r)
+    with open(PYPROJECT_TOML, "r", encoding="utf8") as f_r:
+        pyproject_dict = tomlkit.load(f_r)
 
-    with open(PYPROJECT_TOML, "wb") as f_w:
+    with open(PYPROJECT_TOML, "w", encoding="utf8") as f_w:
         pyproject_dict.get("project")["version"] = v
-        tomli_w.dump(pyproject_dict, f_w)
+        tomlkit.dump(pyproject_dict, f_w)
         debug(f"written : {v}")
 
     debug(f"canonical version : {get_current_version()}")
 
 
 def git_commit(msg: str):
-    subprocess.run("git add pyproject.toml", shell=True)
-    subprocess.run(f"git commit -m '{msg}'", shell=True)
+    subprocess.run("git add pyproject.toml", shell=True, check=True)
+    subprocess.run(f"git commit -m '{msg}'", shell=True, check=True)
 
 
 def get_current_version():
-    with open("pyproject.toml", "rb") as f:
-        pyproject_dict = tomli.load(f)
+    with open(PYPROJECT_TOML, "r", encoding="utf8") as f:
+        pyproject_dict = tomlkit.load(f)
         v = version.parse(pyproject_dict.get("project").get("version"))
-        # if isinstance(v, version.LegacyVersion):
-        #     raise ValueError(f"{v} is a legacy version string")
         if v.is_postrelease:
             raise ValueError(f"{v} is a post version")
         return v
+
+
+def get_classifiers_python_version() -> List[str]:
+    with open(PYPROJECT_TOML, "r", encoding="utf8") as fd:
+        metadata = tomlkit.load(fd)
+        return [
+            f"{PYTHON_VERSION_PREFIX}{classifier[len(CLASSIFIER_PYTHON_VERSION):]}"
+            for classifier in metadata["project"]["classifiers"]
+            if classifier.startswith(CLASSIFIER_PYTHON_VERSION)
+        ]
 
 
 def get_target_version():
@@ -46,9 +62,11 @@ def get_target_version():
         raise RuntimeError("Missing param target version")
     arg = sys.argv[2]
     parsed_version = version.parse(arg)
-    # if isinstance(parsed_version, version.LegacyVersion):
-    #     raise ValueError(f"{parsed_version} is a legacy version string")
-    if parsed_version.is_prerelease or parsed_version.is_devrelease or parsed_version.is_postrelease:
+    if (
+        parsed_version.is_prerelease
+        or parsed_version.is_devrelease
+        or parsed_version.is_postrelease
+    ):
         raise ValueError(f"Version is not final : {arg}")
     return parsed_version
 
@@ -57,16 +75,18 @@ def cmd_prepare_release_candidate():
     check()
     target_version = get_target_version()
     if target_version <= current_version:
-        raise ValueError(f"target version {target_version} is not after current version {current_version}")
+        raise ValueError(
+            f"target version {target_version} is not after current version {current_version}"
+        )
 
     major = target_version.major
     minor = target_version.minor
     micro = target_version.micro
-    rc = 'rc'
+    rc = "rc"
     if current_version.pre is not None:
         rc_nb = int(current_version.pre[1])
         if rc_nb > 0:
-            rc = 'rc' + str(rc_nb)
+            rc = "rc" + str(rc_nb)
 
     target = f"{major}.{minor}.{micro}{rc}"
     write_version(target)
@@ -79,11 +99,11 @@ def cmd_restore_dev():
     major = current_version.major
     minor = current_version.minor
     micro = current_version.micro
-    rc = ''
+    rc = ""
 
     if current_version.is_prerelease:
         rc_nb = int(current_version.pre[1]) + 1
-        rc = 'rc' + str(rc_nb)
+        rc = "rc" + str(rc_nb)
     else:
         micro = str(int(micro) + 1)
 
@@ -119,15 +139,28 @@ def cmd_check():
             raise ValueError(f"{current_version} is before {parsed_version}")
 
 
+def cmd_python_versions():
+    check()
+    result = json.dumps(get_classifiers_python_version())
+    print(result)
+
+
 def check():
     if not current_version.is_devrelease:
         raise ValueError(f"{current_version} is not a dev version")
 
 
-cmds = {'prepare_rc': cmd_prepare_release_candidate, 'restore_dev': cmd_restore_dev, 'prepare_final': cmd_prepare_final,
-        'get_final': cmd_get_final_version, 'get_current': cmd_get_current, 'check': cmd_check}
+cmds = {
+    "prepare_rc": cmd_prepare_release_candidate,
+    "restore_dev": cmd_restore_dev,
+    "prepare_final": cmd_prepare_final,
+    "get_final": cmd_get_final_version,
+    "get_current": cmd_get_current,
+    "check": cmd_check,
+    "python_versions": cmd_python_versions,
+}
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     current_version = get_current_version()
     debug(f"current version : {current_version}")
 

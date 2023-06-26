@@ -249,11 +249,10 @@ tomli==2.0.1
     #   mypy
     #   pylint
     #   pyproject-hooks
-    #   youwol (pyproject.toml)
-tomli-w==1.0.0
-    # via youwol (pyproject.toml)
 tomlkit==0.11.7
-    # via pylint
+    # via
+    #   pylint
+    #   youwol (pyproject.toml)
 tqdm==4.64.1
     # via youwol (pyproject.toml)
 twine==4.0.2

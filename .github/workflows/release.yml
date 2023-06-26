@@ -19,18 +19,27 @@ on:
         type: boolean
         default: false
 
+  pull_request:
+    paths:
+      - '.github/workflows/release.yml'
+
 permissions:
   contents: write
 
 jobs:
   build-candidate:
-    name: Build & Publish py-youwol
+    name: Build Release Candidate
     runs-on: ubuntu-latest
+    outputs:
+      python_versions: ${{ steps.job-output.outputs.python_versions }}
+      install_from: ${{ steps.job-output.outputs.install_from }}
+      version: ${{ steps.bump_version_rc.outputs.version }}
+      artifact: ${{ steps.bump_version_rc.outputs.artifact }}
 
     steps:
       - name: Only main if actual release
         id: only_main_actual_release
-        if: "github.ref != 'refs/heads/main' && ! inputs.dry-run"
+        if: "github.event_name != 'pull_request' && github.ref != 'refs/heads/main' && ! inputs.dry-run"
         uses: actions/github-script@v6
         with:
           script: core.setFailed("Job failed because it is not a dry-run and branch is not main")
@@ -41,11 +50,11 @@ jobs:
         with:
           token: ${{ secrets.PAT_NESTOR_PYYOUWOL_PUSH }}
 
-      - name: Prepare Python 3.9
+      - name: Prepare Python 3.10
         id: prepare_python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: '3.10'
           cache: 'pip'
 
       - name: Install Publish Requirements
@@ -59,23 +68,19 @@ jobs:
         with:
           secret: ${{ secrets.NESTOR_GPG_PRIV }}
 
-      - name: Job Parameters
-        id: job_params
-        env:
-          VERSION: ${{ inputs.version }}
-        run: |
-          final=$(python version_management.py get_final)
-          echo final-version=${VERSION:-$final} >> $GITHUB_OUTPUT
-        shell: sh
-
       - name: Bump Version to Release Candidate
         id: bump_version_rc
         env:
+          VERSION: ${{ inputs.version }}
           GNUPGHOME: ${{ steps.set_up_gpg.outputs.gnupghome }}
         run: |
-          python version_management.py prepare_rc ${{ steps.job_params.outputs.final-version }}
-          echo version=$(python version_management.py get_current) >> $GITHUB_OUTPUT
-          echo commit=$(git log -1 --pretty=%h) >> $GITHUB_OUTPUT
+          default_final_version=$(python version_management.py get_final)
+          python version_management.py prepare_rc ${VERSION:-$default_final_version}
+          version=$(python version_management.py get_current)
+          commit=$(git log -1 --pretty=%h)
+          echo version=${version} >> $GITHUB_OUTPUT
+          echo commit=${commit} >> $GITHUB_OUTPUT
+          echo artifact="youwol-${version}-${commit}"  >> $GITHUB_OUTPUT
         shell: sh
 
       - name: Build Release Candidate
@@ -87,8 +92,8 @@ jobs:
         id: upload_artifact_rc
         uses: actions/upload-artifact@v3
         with:
-          name: youwol-${{ steps.bump_version_rc.outputs.version }}-${{ steps.bump_version_rc.outputs.commit }}
-          path: dist/youwol-${{ steps.bump_version_rc.outputs.version }}-*
+          name: ${{ steps.bump_version_rc.outputs.artifact }}
+          path: dist/youwol-${{ steps.bump_version_rc.outputs.version }}*
 
       - name: Bump Version to Next
         id: bump_version_next_release_candidate
@@ -98,7 +103,7 @@ jobs:
         shell: sh
 
       - name: Publish Release Candidate
-        if: "! inputs.dry-run"
+        if: "github.event_name != 'pull_request' && ! inputs.dry-run"
         id: publish_rc
         env:
           GNUPGHOME: ${{ steps.set_up_gpg.outputs.gnupghome }}
@@ -116,11 +121,43 @@ jobs:
           git push --follow-tags
         shell: sh
 
-      - name: Wait for release availability
-        if: "! inputs.dry-run"
-        id: wait_for_release_candidate
+      - name: Job Output
+        id: job-output
         env:
-          VERSION: ${{ steps.bump_version_rc.outputs.version }}
+          IS_DRY_RUN: ${{ github.event_name == 'pull_request' || inputs.dry-run }}
+        run: |
+          versions_json=$(python version_management.py python_versions)
+          echo python_versions=${versions_json} >> $GITHUB_OUTPUT
+          if [ "${IS_DRY_RUN}" == "true" ]; then
+            echo install_from='["sources", "wheel"]' >> $GITHUB_OUTPUT
+          else
+            echo install_from='["release", "sources", "wheel"]' >> $GITHUB_OUTPUT
+          fi
+          
+        
+
+  test-candidate:
+    name: Test Release Candidate
+    runs-on: ubuntu-latest
+    needs: build-candidate
+    strategy:
+      max-parallel: 1
+      matrix:
+        python_version: ${{ fromJson(needs.build-candidate.outputs.python_versions) }}
+        install_from: ${{ fromJson(needs.build-candidate.outputs.install_from)  }}
+
+    steps:
+      - name: Prepare Python ${{ matrix.python_version }}
+        id: prepare_python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python_version }}
+
+      - name: Install from release
+        if: ${{ contains(matrix.install_from, 'release') }}
+        id: install_release
+        env:
+          VERSION: ${{ needs.build-candidate.outputs.version }}
         run: |
           for i in $(seq 1 1 10); do
             echo "try $i/10"
@@ -133,11 +170,23 @@ jobs:
           done
           exit 1
 
-      - name: Install from local
-        if: inputs.dry-run
-        id: install_local
+      - name: Download artifact
+        id: download_artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ needs.build-candidate.outputs.artifact }}
+
+      - name: Install from wheel
+        if: ${{ contains(matrix.install_from, 'wheel') }}
+        id: install_wheel
         run: |
-          python3.9 -m pip install ./
+          python -m pip install ./youwol-*.whl
+
+      - name: Install from sources
+        if: ${{ contains(matrix.install_from, 'sources') }}
+        id: install_sources
+        run: |
+          python -m pip install ./youwol*.tar.gz
 
       - name: Prepare http-clients
         id: prepare_http-clients
@@ -246,41 +295,72 @@ jobs:
           instance: ${{ steps.start_py-youwol_lyc_conf.outputs.instance }}
           artifact: py-youwol_log_lyc_conf
 
+
+  build-release:
+    name: Build release
+    runs-on: ubuntu-latest
+    needs: test-candidate
+    if: inputs.final
+
+    steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.PAT_NESTOR_PYYOUWOL_PUSH }}
+
+      - name: Prepare Python 3.10
+        id: prepare_python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install Publish Requirements
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-publish.txt
+
+      - name: Set up GPG
+        id: set_up_gpg
+        uses: youwol/nestor/gpg/set_up@v2
+        with:
+          secret: ${{ secrets.NESTOR_GPG_PRIV }}
+
       - name: Bump version to Release
         id: bump_version_release
-        if: inputs.final
         env:
+          VERSION: ${{ inputs.version }}
           GNUPGHOME: ${{ steps.set_up_gpg.outputs.gnupghome }}
         run: |
+          default_final_version=$(python version_management.py get_final)
           python version_management.py prepare_final
           echo version=$(python version_management.py get_current) >> $GITHUB_OUTPUT
           echo commit=$(git log -1 --pretty=%h) >> $GITHUB_OUTPUT
+          echo artifact="youwol-${version}-${commit}" >> $GITHUB_OUTPUT
         shell: sh
 
       - name: Build Release
         id: build_release
-        if: inputs.final
         run: python -m build
         shell: sh
 
       - name: Upload Artifact
         id: upload_artifact
-        if: inputs.final
         uses: actions/upload-artifact@v3
         with:
-          name: youwol-${{ steps.bump_version_release.outputs.version }}-${{ steps.bump_version_release.outputs.commit }}
+          name: ${{ steps.bump_version_release.outputs.artifact }}
           path: dist/youwol-${{ steps.bump_version_release.outputs.version }}-*
 
       - name: Bump version to Next
         id: bump_version_next
-        if: inputs.final
         env:
           GNUPGHOME: ${{ steps.set_up_gpg.outputs.gnupghome }}
         run: python version_management.py restore_dev
         shell: sh
 
       - name: Publish Release
-        if: "! inputs.dry-run && inputs.final"
+        if: "! inputs.dry-run"
         id: publish_release
         env:
           GNUPGHOME: ${{ steps.set_up_gpg.outputs.gnupghome }}
