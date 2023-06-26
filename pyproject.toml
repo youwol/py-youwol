@@ -53,9 +53,8 @@ qa = [
     "pydocstyle",
     "isort",
     "black[d]",
-    "tomli",
-    "tomli-w",
     "mypy",
+    "tomlkit",
     "types-Pillow",
     "types-PyYAML",
     "types-appdirs",
@@ -69,8 +68,8 @@ qa = [
 publish = [
     "pdoc3",
     "build",
+    "tomlkit",
     "twine",
-    "tomli-w",
 ]
 
 [project.scripts]

@@ -3,8 +3,7 @@ import subprocess
 import sys
 
 # third parties
-import tomli
-import tomli_w
+import tomlkit
 
 from packaging import version
 
@@ -17,12 +16,12 @@ def debug(msg: str):
 
 def write_version(v: str):
     pyproject_dict = None
-    with open(PYPROJECT_TOML, "rb") as f_r:
-        pyproject_dict = tomli.load(f_r)
+    with open(PYPROJECT_TOML, "r", encoding="utf8") as f_r:
+        pyproject_dict = tomlkit.load(f_r)
 
-    with open(PYPROJECT_TOML, "wb") as f_w:
+    with open(PYPROJECT_TOML, "w", encoding="utf8") as f_w:
         pyproject_dict.get("project")["version"] = v
-        tomli_w.dump(pyproject_dict, f_w)
+        tomlkit.dump(pyproject_dict, f_w)
         debug(f"written : {v}")
 
     debug(f"canonical version : {get_current_version()}")
@@ -34,8 +33,8 @@ def git_commit(msg: str):
 
 
 def get_current_version():
-    with open("pyproject.toml", "rb") as f:
-        pyproject_dict = tomli.load(f)
+    with open(PYPROJECT_TOML, "r", encoding="utf8") as f:
+        pyproject_dict = tomlkit.load(f)
         v = version.parse(pyproject_dict.get("project").get("version"))
         if v.is_postrelease:
             raise ValueError(f"{v} is a post version")
