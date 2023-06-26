@@ -19,6 +19,10 @@ on:
         type: boolean
         default: false
 
+  pull_request:
+    paths:
+      - '.github/workflows/release.yml'
+
 permissions:
   contents: write
 
@@ -35,7 +39,7 @@ jobs:
     steps:
       - name: Only main if actual release
         id: only_main_actual_release
-        if: "github.ref != 'refs/heads/main' && ! inputs.dry-run"
+        if: "github.event_name != 'pull_request' && github.ref != 'refs/heads/main' && ! inputs.dry-run"
         uses: actions/github-script@v6
         with:
           script: core.setFailed("Job failed because it is not a dry-run and branch is not main")
@@ -99,7 +103,7 @@ jobs:
         shell: sh
 
       - name: Publish Release Candidate
-        if: "! inputs.dry-run"
+        if: "github.event_name != 'pull_request' && ! inputs.dry-run"
         id: publish_rc
         env:
           GNUPGHOME: ${{ steps.set_up_gpg.outputs.gnupghome }}
@@ -120,7 +124,7 @@ jobs:
       - name: Job Output
         id: job-output
         env:
-          IS_DRY_RUN: ${{ inputs.dry-run }}
+          IS_DRY_RUN: ${{ github.event_name == 'pull_request' || inputs.dry-run }}
         run: |
           versions_json=$(python version_management.py python_versions)
           echo python_versions=${versions_json} >> $GITHUB_OUTPUT
