@@ -29,7 +29,7 @@ class Configuration:
     keycloak_users_management: Optional[KeycloakUsersManagement]
     openid_flows: OpenidFlowsService
     tokens_manager: TokensManager
-    secure_cookies: bool
+    https: bool
 
     def __init__(
         self,
@@ -38,7 +38,7 @@ class Configuration:
         keycloak_admin_base_url: str,
         admin_client: Optional[PrivateClient],
         auth_cache: CacheClient,
-        secure_cookies: bool = True,
+        https: bool = True,
         tokens_id_generator: Callable[[], str] = default_tokens_id_generator,
     ):
         self.oidc_client = OidcConfig(openid_base_url).for_client(openid_client)
@@ -65,7 +65,7 @@ class Configuration:
         self.tokens_manager = TokensManager(
             cache=auth_cache, oidc_client=self.oidc_client
         )
-        self.secure_cookies = secure_cookies
+        self.https = https
 
 
 class Dependencies:

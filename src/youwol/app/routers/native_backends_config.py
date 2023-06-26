@@ -58,7 +58,7 @@ async def accounts_backend_config_py_youwol():
         admin_client=config.get_remote_info().authProvider.keycloakAdminClient,
         keycloak_admin_base_url=config.get_remote_info().authProvider.keycloakAdminBaseUrl,
         auth_cache=auth_cache,
-        secure_cookies=False,
+        https=False,
         tokens_id_generator=lambda: local_tokens_id(
             auth_provider=config.get_remote_info().authProvider,
             auth_infos=config.get_authentication_info(),
