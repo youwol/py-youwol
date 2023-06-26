@@ -1,6 +1,10 @@
 # standard library
+import json
 import subprocess
 import sys
+
+# typing
+from typing import List
 
 # third parties
 import tomlkit
@@ -8,6 +12,8 @@ import tomlkit
 from packaging import version
 
 PYPROJECT_TOML = "pyproject.toml"
+PYTHON_VERSION_PREFIX = "3."
+CLASSIFIER_PYTHON_VERSION = f"Programming Language :: Python :: {PYTHON_VERSION_PREFIX}"
 
 
 def debug(msg: str):
@@ -39,6 +45,16 @@ def get_current_version():
         if v.is_postrelease:
             raise ValueError(f"{v} is a post version")
         return v
+
+
+def get_classifiers_python_version() -> List[str]:
+    with open(PYPROJECT_TOML, "r", encoding="utf8") as fd:
+        metadata = tomlkit.load(fd)
+        return [
+            f"{PYTHON_VERSION_PREFIX}{classifier[len(CLASSIFIER_PYTHON_VERSION):]}"
+            for classifier in metadata["project"]["classifiers"]
+            if classifier.startswith(CLASSIFIER_PYTHON_VERSION)
+        ]
 
 
 def get_target_version():
@@ -123,6 +139,12 @@ def cmd_check():
             raise ValueError(f"{current_version} is before {parsed_version}")
 
 
+def cmd_python_versions():
+    check()
+    result = json.dumps(get_classifiers_python_version())
+    print(result)
+
+
 def check():
     if not current_version.is_devrelease:
         raise ValueError(f"{current_version} is not a dev version")
@@ -135,6 +157,7 @@ cmds = {
     "get_final": cmd_get_final_version,
     "get_current": cmd_get_current,
     "check": cmd_check,
+    "python_versions": cmd_python_versions,
 }
 
 if __name__ == "__main__":
