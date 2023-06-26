@@ -14,6 +14,7 @@ from youwol.utils.clients.oidc.service_account_client import UnexpectedResponseS
 # relative
 from ..configuration import Configuration, get_configuration
 from ..root_paths import router
+from ..utils import url_for
 
 ONE_YEAR_IN_SECONDS = 365 * 24 * 60 * 60
 
@@ -41,8 +42,11 @@ async def register_from_temp_user(
         )
 
     params = {"target_uri": details.target_uri}
-    redirect_uri = request.url_for("registration_finalizer").include_query_params(
-        **params
+    redirect_uri = url_for(
+        request=request,
+        function_name="registration_finalizer",
+        https=conf.https,
+        **params,
     )
 
     try:
@@ -50,7 +54,7 @@ async def register_from_temp_user(
             sub=request.state.user_info["sub"],
             email=details.email,
             client_id=conf.oidc_client.client_id(),
-            target_uri=str(redirect_uri),
+            target_uri=redirect_uri,
         )
     except UnexpectedResponseStatus as e:
         return JSONResponse(status_code=e.actual, content=e.content)

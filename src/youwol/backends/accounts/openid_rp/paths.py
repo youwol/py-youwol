@@ -14,6 +14,7 @@ from starlette.status import HTTP_204_NO_CONTENT
 # relative
 from ..configuration import Configuration, get_configuration
 from ..root_paths import router
+from ..utils import url_for
 from .openid_flows_service import FlowStateNotFound, InvalidLogoutToken
 
 ONE_YEAR_IN_SECONDS = 365 * 24 * 60 * 60
@@ -48,7 +49,11 @@ async def authorization_flow(
     redirect_uri = await conf.openid_flows.init_authorization_flow(
         target_uri=target_uri,
         login_hint=login_hint,
-        callback_uri=str(request.url_for("authorization_flow_callback")),
+        callback_uri=url_for(
+            request=request,
+            function_name="authorization_flow_callback",
+            https=conf.https,
+        ),
     )
 
     return RedirectResponse(redirect_uri, status_code=307)
@@ -83,7 +88,11 @@ async def authorization_flow_callback(
         ) = await conf.openid_flows.handle_authorization_flow_callback(
             flow_ref=state,
             code=code,
-            callback_uri=str(request.url_for("authorization_flow_callback")),
+            callback_uri=url_for(
+                request=request,
+                function_name="authorization_flow_callback",
+                https=conf.https,
+            ),
         )
         if tokens is None:
             return JSONResponse(
@@ -135,7 +144,9 @@ async def logout(
     redirect_uri = await conf.openid_flows.init_logout_flow(
         target_uri=target_uri,
         forget_me=forget_me,
-        callback_uri=str(request.url_for("logout_cb")),
+        callback_uri=url_for(
+            request=request, function_name="logout_cb", https=conf.https
+        ),
     )
 
     return RedirectResponse(url=redirect_uri, status_code=307)
