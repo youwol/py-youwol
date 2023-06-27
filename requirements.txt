@@ -178,7 +178,7 @@ pycodestyle==2.10.0
     # via youwol (pyproject.toml)
 pycparser==2.21
     # via cffi
-pydantic==1.9.1
+pydantic==1.10.9
     # via fastapi
 pydocstyle==6.3.0
     # via youwol (pyproject.toml)
