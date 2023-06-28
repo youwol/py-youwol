@@ -171,6 +171,7 @@ jobs:
           exit 1
 
       - name: Download artifact
+        if: ${{ ! contains(matrix.install_from, 'release') }}
         id: download_artifact
         uses: actions/download-artifact@v3
         with:
