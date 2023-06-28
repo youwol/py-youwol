@@ -64,7 +64,7 @@ jobs:
 
       - name: Set up GPG
         id: set_up_gpg
-        uses: youwol/nestor/gpg/set_up@v2
+        uses: youwol/nestor/gpg/set_up@v3
         with:
           secret: ${{ secrets.NESTOR_GPG_PRIV }}
 
@@ -199,7 +199,7 @@ jobs:
 
       - name: Prepare http-clients
         id: prepare_http-clients
-        uses: youwol/nestor/ts/prepare@v2
+        uses: youwol/nestor/ts/prepare@v3
         with:
           repository: youwol/http-clients
           ref: main
@@ -207,7 +207,7 @@ jobs:
 
       - name: Prepare cdn-client
         id: prepare_cdn-client
-        uses: youwol/nestor/ts/prepare@v2
+        uses: youwol/nestor/ts/prepare@v3
         with:
           repository: youwol/cdn-client
           ref: main
@@ -215,7 +215,7 @@ jobs:
 
       - name: Prepare local-youwol-client
         id: prepare_local-youwol-client
-        uses: youwol/nestor/ts/prepare@v2
+        uses: youwol/nestor/ts/prepare@v3
         with:
           repository: youwol/local-youwol-client
           ref: main
@@ -227,22 +227,24 @@ jobs:
         with:
           name: config_integration-tests
 
-      - name: Make dir py-youwol run
-        id: mkdir_py-youwol_run
-        run: mkdir ${{ runner.temp }}/py-youwol_run
+      - name: Setup env for py-youwol running
+        id: setup_env
+        run: |
+          echo "PY_YOUWOL_BIN=$(which youwol)" >> "$GITHUB_ENV"
         shell: sh
 
-      - name: Start py-youwol with int conf
-        id: start_py-youwol_int_conf
-        uses: youwol/nestor/py-youwol/start@v2
-        with:
-          path: ${{ runner.temp }}/py-youwol_run
-          custom_start_cmd: 'youwol'
-          conf_path: ${{ steps.download_config_integration.outputs.download-path }}/yw_config.py
+      - name: Run py-youwol with int conf
+        id: run_py-youwol_int_conf
+        uses: youwol/nestor/py-youwol/run@v3
+        env:
           USERNAME_INTEGRATION_TESTS: ${{ secrets.USERNAME_INTEGRATION_TESTS }}
           PASSWORD_INTEGRATION_TESTS: ${{ secrets.PASSWORD_INTEGRATION_TESTS }}
           USERNAME_INTEGRATION_TESTS_BIS: ${{ secrets.USERNAME_INTEGRATION_TESTS_BIS }}
           PASSWORD_INTEGRATION_TESTS_BIS: ${{ secrets.PASSWORD_INTEGRATION_TESTS_BIS }}
+        with:
+          coverage: false
+          conf: ${{ steps.download_config_integration.outputs.download-path }}/yw_config.py
+          name: release_tests
 
       - name: Tests http-clients
         id: tests_http-clients
@@ -264,13 +266,6 @@ jobs:
         run: |
           yarn -s test --reporters=default --reporters=github-actions
         shell: sh
-
-      - name: Stop py-youwol with local-youwol-client conf
-        id: stop_py-youwol_lyc_conf
-        uses: youwol/nestor/py-youwol/stop@v2
-        with:
-          instance: ${{ steps.start_py-youwol_lyc_conf.outputs.instance }}
-          artifact: py-youwol_log_lyc_conf
 
 
   build-release:
@@ -300,7 +295,7 @@ jobs:
 
       - name: Set up GPG
         id: set_up_gpg
-        uses: youwol/nestor/gpg/set_up@v2
+        uses: youwol/nestor/gpg/set_up@v3
         with:
           secret: ${{ secrets.NESTOR_GPG_PRIV }}
 
