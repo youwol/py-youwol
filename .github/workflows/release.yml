@@ -121,6 +121,14 @@ jobs:
           git push --follow-tags
         shell: sh
 
+      - name: Upload Artifact for configuration integration tests
+        id: upload_artifact_conf_integration
+        uses: actions/upload-artifact@v3
+        with:
+          name: config_integration-tests
+          path: integrations/
+          retention-days: 1
+
       - name: Job Output
         id: job-output
         env:
@@ -213,18 +221,11 @@ jobs:
           ref: main
           path: ${{ runner.temp }}/local-youwol-client
 
-      - name: Checkout configuration repository
-        id: checkout_conf
-        uses: actions/checkout@v3
+      - name: Download configuration for integration tests
+        id: download_config_integration
+        uses: actions/download-artifact@v3
         with:
-          repository: youwol/integrations-tests-conf
-          ref: main
-          path: integration_tests_conf
-
-      - name: Move configuration
-        id: move_conf
-        run: mv integration_tests_conf ${{ runner.temp }}/int_tests_conf
-        shell: sh
+          name: config_integration-tests
 
       - name: Make dir py-youwol run
         id: mkdir_py-youwol_run
@@ -237,8 +238,7 @@ jobs:
         with:
           path: ${{ runner.temp }}/py-youwol_run
           custom_start_cmd: 'youwol'
-          conf_repository: youwol/integrations-tests-conf
-          conf_path: yw_config_IT.py
+          conf_path: ${{ steps.download_config_integration.outputs.download-path }}/yw_config.py
           USERNAME_INTEGRATION_TESTS: ${{ secrets.USERNAME_INTEGRATION_TESTS }}
           PASSWORD_INTEGRATION_TESTS: ${{ secrets.PASSWORD_INTEGRATION_TESTS }}
           USERNAME_INTEGRATION_TESTS_BIS: ${{ secrets.USERNAME_INTEGRATION_TESTS_BIS }}
@@ -257,30 +257,6 @@ jobs:
         run: |
           yarn -s test --reporters=default --reporters=github-actions
         shell: sh
-
-      - name: Stop py-youwol with integration conf
-        id: stop_py-youwol_int_conf
-        uses: youwol/nestor/py-youwol/stop@v2
-        with:
-          instance: ${{ steps.start_py-youwol_int_conf.outputs.instance }}
-          artifact: py-youwol_log_int_conf
-
-      - name: Clean dir py-youwol run
-        id: clean_py-youwol_run
-        run: rm -r ${{ runner.temp }}/py-youwol_run/*
-        shell: sh
-
-      - name: Start py-youwol with local-youwol-client conf
-        id: start_py-youwol_lyc_conf
-        uses: youwol/nestor/py-youwol/start@v2
-        with:
-          path: ${{ runner.temp }}/py-youwol_run
-          custom_start_cmd: 'youwol'
-          conf_path: ${{ runner.temp }}/local-youwol-client/src/tests/yw_config/yw_config.py
-          USERNAME_INTEGRATION_TESTS: ${{ secrets.USERNAME_INTEGRATION_TESTS }}
-          PASSWORD_INTEGRATION_TESTS: ${{ secrets.PASSWORD_INTEGRATION_TESTS }}
-          USERNAME_INTEGRATION_TESTS_BIS: ${{ secrets.USERNAME_INTEGRATION_TESTS_BIS }}
-          PASSWORD_INTEGRATION_TESTS_BIS: ${{ secrets.PASSWORD_INTEGRATION_TESTS_BIS }}
 
       - name: Tests local-youwol-client
         id: tests_local_youwol_client
