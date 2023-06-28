@@ -161,10 +161,10 @@ jobs:
         run: |
           for i in $(seq 1 1 10); do
             echo "try $i/10"
-            python3.9 -m pip install \
+            pipx install youwol==$VERSION \
               --index-url https://test.pypi.org/simple/ \
-              --extra-index-url https://pypi.org/simple/ \
-              youwol==$VERSION && exit 0
+              --pip-args='--extra-index-url https://pypi.org/simple/' \
+              && exit 0
             echo "no release $VERSION"
             sleep 10
           done
@@ -180,13 +180,13 @@ jobs:
         if: ${{ contains(matrix.install_from, 'wheel') }}
         id: install_wheel
         run: |
-          python -m pip install ./youwol-*.whl
+          pipx install ./youwol-*.whl
 
       - name: Install from sources
         if: ${{ contains(matrix.install_from, 'sources') }}
         id: install_sources
         run: |
-          python -m pip install ./youwol*.tar.gz
+          pipx install ./youwol*.tar.gz
 
       - name: Prepare http-clients
         id: prepare_http-clients
