@@ -38,11 +38,10 @@ import youwol
 
 # Youwol application
 from youwol.app.environment import (
-    AuthorizationProvider,
     Configuration,
-    RemoteClients,
     configuration_from_python,
-    default_auth_provider,
+    LocalClients,
+    YouwolEnvironment,
 )
 from youwol.app.routers.system.router import Log
 
@@ -137,48 +136,44 @@ Test = str
 PyYwLogsGetter = Callable[[PyYouwolSession, File, Test], Awaitable[List[Log]]]
 
 
-class Publication(NamedTuple):
-    remote_host: str
-    client_id: str
-    client_secret: str
-
-
 class TestSession:
     result_folder: Path
     session_id: str
-    publication: Publication
     asset_id: Optional[str] = None
     counter = TestCounter()
 
-    def __init__(self, result_folder: Path, publication: Publication):
+    def __init__(self, result_folder: Path):
         self.result_folder = result_folder
         self.result_folder.mkdir()
         self.summary_path = self.result_folder / "summary.json"
         self.summary_path.write_text('{"results":[]}')
         self.session_id = str(datetime.now())
-        self.publication = publication
 
-    async def create_asset(self):
-        gtw = await RemoteClients.get_assets_gateway_client(
-            remote_host=self.publication.remote_host
-        )
-        headers = await get_headers(self.publication)
-        default_drive = await gtw.get_treedb_backend_router().get_default_user_drive(
-            headers=headers
-        )
-        asset_resp = await gtw.get_assets_backend_router().create_asset(
-            body={
+    async def create_asset(self, context: Context):
+        async with context.start("TestSession.create_asset") as ctx:  # type: Context
+            env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
+            body = {
                 "rawId": self.session_id,
                 "kind": "py-youwol-consistency-testing",
                 "name": f"Consistency_{self.session_id}.tests",
                 "description": "Logs of IT executed with py-youwol",
                 "tags": ["py-youwol", "test", "logs"],
-            },
-            params=[("folder-id", default_drive["homeFolderId"])],
-            headers=headers,
-        )
-        self.asset_id = asset_resp["assetId"]
-        print("Asset created successfully", asset_resp)
+            }
+            await ctx.info(text="Create asset", data=body)
+            gtw = LocalClients.get_assets_gateway_client(env=env)
+
+            default_drive = (
+                await gtw.get_treedb_backend_router().get_default_user_drive(
+                    headers=ctx.headers()
+                )
+            )
+            asset_resp = await gtw.get_assets_backend_router().create_asset(
+                body=body,
+                params=[("folder-id", default_drive["homeFolderId"])],
+                headers=ctx.headers(),
+            )
+            self.asset_id = asset_resp["assetId"]
+            await ctx.info(text="Asset created successfully", data=asset_resp)
 
     async def execute(
         self,
@@ -267,37 +262,27 @@ class TestSession:
         return return_code, outputs
 
 
-async def get_headers(publication: Publication):
-    auth_provider = AuthorizationProvider(
-        **default_auth_provider(platform_host=publication.remote_host)
-    )
-    token = (
-        await OidcConfig(auth_provider.openidBaseUrl)
-        .for_client(auth_provider.openidClient)
-        .direct_flow(username=publication.client_id, password=publication.client_secret)
-    )
-    return {"authorization": f'Bearer {token["access_token"]}'}
-
-
 async def publish_files(
-    result_folder: Path, files: List[str], asset_id: str, publication: Publication
+    result_folder: Path,
+    files: List[str],
+    asset_id: str,
+    context: Context,
 ):
-    with tempfile.TemporaryDirectory() as tmp_folder:
-        base_path = Path(tmp_folder)
-        zipper = zipfile.ZipFile(base_path / "asset.zip", "w", zipfile.ZIP_DEFLATED)
-        for file in files:
-            shutil.copy(result_folder / file, base_path / file)
-            zipper.write(base_path / file, arcname=file)
+    async with context.start("publish_files") as ctx:  # type: Context
+        env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
+        with tempfile.TemporaryDirectory() as tmp_folder:
+            base_path = Path(tmp_folder)
+            zipper = zipfile.ZipFile(base_path / "asset.zip", "w", zipfile.ZIP_DEFLATED)
+            for file in files:
+                shutil.copy(result_folder / file, base_path / file)
+                zipper.write(base_path / file, arcname=file)
 
-        zipper.close()
-        data = (Path(tmp_folder) / "asset.zip").read_bytes()
+            zipper.close()
+            data = (Path(tmp_folder) / "asset.zip").read_bytes()
 
-    gtw = await RemoteClients.get_assets_gateway_client(
-        remote_host=publication.remote_host
-    )
-    headers = await get_headers(publication)
+        gtw = LocalClients.get_assets_gateway_client(env=env)
 
-    upload_resp = await gtw.get_assets_backend_router().add_zip_files(
-        asset_id=asset_id, data=data, headers=headers
-    )
-    print("Files uploaded", upload_resp)
+        upload_resp = await gtw.get_assets_backend_router().add_zip_files(
+            asset_id=asset_id, data=data, headers=ctx.headers()
+        )
+        await ctx.info(text="Files uploaded successfully", data=upload_resp)
