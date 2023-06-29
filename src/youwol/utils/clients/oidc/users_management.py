@@ -72,6 +72,7 @@ class KeycloakUsersManagement(ServiceAccountClient):
                 },
                 "groups": ["youwol-users"],
             },
+            parse_response=False,
         )
         await self._put(
             path=f"/users/{sub}/execute-actions-email",
@@ -81,6 +82,7 @@ class KeycloakUsersManagement(ServiceAccountClient):
                 "lifespan": TWELVE_HOURS,
             },
             json=["UPDATE_PROFILE", "UPDATE_PASSWORD"],
+            parse_response=False,
         )
 
     async def finalize_user(self, sub: str) -> None:
