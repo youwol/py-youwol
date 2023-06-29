@@ -30,11 +30,11 @@ from .models_project import (
     Artifact,
     Flow,
     Link,
+    LinkKind,
     Manifest,
     PipelineStep,
     PipelineStepStatus,
     Project,
-    LinkKind,
 )
 from .projects_loader import ProjectLoader
 

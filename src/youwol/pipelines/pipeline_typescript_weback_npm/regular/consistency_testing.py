@@ -3,41 +3,41 @@
 # Following environment variables are required:
 # USERNAME_INTEGRATION_TESTS PASSWORD_INTEGRATION_TESTS USERNAME_INTEGRATION_TESTS_BIS PASSWORD_INTEGRATION_TESTS_BIS
 #
+# standard library
 import base64
-
 import shutil
 
 from pathlib import Path
-from typing import cast, List
 
+# typing
+from typing import List, cast
+
+# third parties
 import aiohttp
 
+# Youwol application
 from youwol.app.routers.projects import get_project_configuration
 from youwol.app.routers.projects.models_project import (
-    FileListing,
-    PipelineStep,
-    Project,
-    FlowId,
-    ExplicitNone,
     Artifact,
+    ExplicitNone,
+    FileListing,
+    FlowId,
     Link,
     LinkKind,
+    PipelineStep,
+    Project,
 )
+from youwol.app.routers.system.router import LeafLogResponse, Log, NodeLogResponse
+from youwol.app.test.utils_test import PyYouwolSession, TestSession, py_youwol_session
 
-from youwol.app.routers.system.router import Log, NodeLogResponse, LeafLogResponse
-from .common import Paths
+# Youwol utilities
+from youwol.utils import Context, ContextReporter, LogEntry, execute_shell_cmd
+
+# Youwol pipelines
 from youwol.pipelines.pipeline_typescript_weback_npm.common import yarn_errors_formatter
-from youwol.utils import (
-    execute_shell_cmd,
-    ContextReporter,
-    LogEntry,
-    Context,
-)
-from youwol.app.test.utils_test import (
-    TestSession,
-    py_youwol_session,
-    PyYouwolSession,
-)
+
+# relative
+from .common import Paths
 
 
 class Reporter(ContextReporter):

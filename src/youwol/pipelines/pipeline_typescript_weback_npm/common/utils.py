@@ -16,6 +16,7 @@ import semantic_version
 # Youwol application
 from youwol.app.routers.projects.models_project import PipelineStep
 from youwol.app.routers.system.router import Log
+from youwol.app.test.utils_test import PyYouwolSession, TestFailureResult
 
 # Youwol backends
 from youwol.backends.cdn import get_api_key
@@ -25,7 +26,6 @@ from youwol.backends.cdn.loading_graph_implementation import exportedSymbols
 from youwol.utils import JSON, parse_json, write_json
 from youwol.utils.context import Context
 from youwol.utils.utils_paths import sed_inplace
-from youwol.app.test.utils_test import PyYouwolSession, TestFailureResult
 
 # Youwol pipelines
 from youwol.pipelines import PublishCdnRemoteStep

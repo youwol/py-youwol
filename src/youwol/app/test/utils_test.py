@@ -39,9 +39,9 @@ import youwol
 # Youwol application
 from youwol.app.environment import (
     Configuration,
-    configuration_from_python,
     LocalClients,
     YouwolEnvironment,
+    configuration_from_python,
 )
 from youwol.app.middlewares import get_connected_local_tokens
 from youwol.app.routers.system.router import Log
