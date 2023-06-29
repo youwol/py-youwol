@@ -25,7 +25,7 @@ from youwol.backends.cdn.loading_graph_implementation import exportedSymbols
 from youwol.utils import JSON, parse_json, write_json
 from youwol.utils.context import Context
 from youwol.utils.utils_paths import sed_inplace
-from youwol.utils.utils_test import PyYouwolSession, TestFailureResult
+from youwol.app.test.utils_test import PyYouwolSession, TestFailureResult
 
 # Youwol pipelines
 from youwol.pipelines import PublishCdnRemoteStep
