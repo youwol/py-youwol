@@ -78,6 +78,7 @@ class ServiceAccountClient:
         self,
         path: str,
         json: Any,
+        parse_response: bool = True,
         params: Optional[Dict[str, Any]] = None,
         expected_status: int = 204,
     ):
@@ -87,6 +88,7 @@ class ServiceAccountClient:
             params=params,
             json=json,
             expected_status=expected_status,
+            parse_response=parse_response,
         )
 
     async def _post(
