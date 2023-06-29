@@ -179,87 +179,95 @@ class TestSession:
         self,
         py_yw_session: PyYouwolSession,
         title: str,
-        action: Callable[[], Awaitable[Tuple[int, List[str]]]],
+        action: Callable[[Context], Awaitable[Tuple[int, List[str]]]],
         errors_formatter: Callable[
             [PyYouwolSession, List[str], PyYwLogsGetter],
             Awaitable[List[TestFailureResult]],
         ],
         py_yw_logs_getter: PyYwLogsGetter,
+        context: Context,
     ):
         if not self.asset_id:
-            await self.create_asset()
+            await self.create_asset(context=context)
 
-        run_id = str(datetime.now())
-        start = time.time()
-        return_code, outputs = await action()
-        end = time.time()
-        data = parse_json(self.summary_path)
-        to_publish = []
-        if return_code != 0:
-            print(f"{Fore.RED}ERROR while executing test{Style.RESET_ALL}")
+        async with context.start("TestSession.execute") as ctx:  # type: Context
+            run_id = str(datetime.now())
+            start = time.time()
+            await ctx.info(f"Run started @{start}")
+            return_code, outputs = await action(ctx)
+            end = time.time()
+            await ctx.info(f"Run ended @{end}")
 
-            errors = await errors_formatter(py_yw_session, outputs, py_yw_logs_getter)
+            data = parse_json(self.summary_path)
+            await ctx.info("Run summary", data=data)
+            to_publish = []
+            if return_code != 0:
+                print(f"{Fore.RED}ERROR while executing test{Style.RESET_ALL}")
 
-            def to_logs_path():
-                return self.result_folder / f"logs_{uuid.uuid4()}.json"
+                errors = await errors_formatter(
+                    py_yw_session, outputs, py_yw_logs_getter
+                )
 
-            errors_output_file = [to_logs_path() for _ in errors]
-            for error, path in zip(errors, errors_output_file):
-                logs = await error.py_youwol_logs
-                write_json(data={"nodes": [log.dict() for log in logs]}, path=path)
-                to_publish.append(path.name)
+                def to_logs_path():
+                    return self.result_folder / f"logs_{uuid.uuid4()}.json"
 
-            filename = f"full_outputs{run_id}.txt"
-            to_publish.append(filename)
-            data["results"].append(
-                {
-                    "runId": run_id,
-                    "title": title,
-                    "status": "KO",
-                    "executionDate": run_id,
-                    "duration": end - start,
-                    "fullOutput": filename,
-                    "errors": [
-                        {
-                            "name": error.name,
-                            "outputSummary": error.output_summary,
-                            "logsFile": str(path.relative_to(self.result_folder)),
-                        }
-                        for error, path in zip(errors, errors_output_file)
-                    ],
-                }
-            )
+                errors_output_file = [to_logs_path() for _ in errors]
+                for error, path in zip(errors, errors_output_file):
+                    logs = await error.py_youwol_logs
+                    write_json(data={"nodes": [log.dict() for log in logs]}, path=path)
+                    to_publish.append(path.name)
 
-            Path(self.result_folder / filename).write_text(
-                "".join(outputs), encoding="UTF-8"
-            )
-            print(f"Error writen in {filename}")
-            self.counter = self.counter.with_ko()
-        else:
-            data["results"].append(
-                {
-                    "title": title,
-                    "status": "OK",
-                    "executionDate": run_id,
-                    "duration": end - start,
-                }
-            )
-            print(f"{Fore.GREEN}SUCCESS while executing test{Style.RESET_ALL}")
-            self.counter = self.counter.with_ok()
+                filename = f"full_outputs{run_id}.txt"
+                to_publish.append(filename)
+                data["results"].append(
+                    {
+                        "runId": run_id,
+                        "title": title,
+                        "status": "KO",
+                        "executionDate": run_id,
+                        "duration": end - start,
+                        "fullOutput": filename,
+                        "errors": [
+                            {
+                                "name": error.name,
+                                "outputSummary": error.output_summary,
+                                "logsFile": str(path.relative_to(self.result_folder)),
+                            }
+                            for error, path in zip(errors, errors_output_file)
+                        ],
+                    }
+                )
 
-        print(self.counter)
-        write_json(data, self.summary_path)
-        to_publish.append(self.summary_path.name)
-        try:
-            await publish_files(
-                result_folder=self.result_folder,
-                files=to_publish,
-                asset_id=self.asset_id,
-                publication=self.publication,
-            )
-        except HTTPException:
-            print(f"{Fore.RED}FAILED TO PUBLISH FILES{Style.RESET_ALL}")
-        return return_code, outputs
+                Path(self.result_folder / filename).write_text(
+                    "".join(outputs), encoding="UTF-8"
+                )
+                print(f"Error writen in {filename}")
+                self.counter = self.counter.with_ko()
+            else:
+                data["results"].append(
+                    {
+                        "title": title,
+                        "status": "OK",
+                        "executionDate": run_id,
+                        "duration": end - start,
+                    }
+                )
+                print(f"{Fore.GREEN}SUCCESS while executing test{Style.RESET_ALL}")
+                self.counter = self.counter.with_ok()
+
+            print(self.counter)
+            write_json(data, self.summary_path)
+            to_publish.append(self.summary_path.name)
+            try:
+                await publish_files(
+                    result_folder=self.result_folder,
+                    files=to_publish,
+                    asset_id=self.asset_id,
+                    context=ctx,
+                )
+            except HTTPException:
+                print(f"{Fore.RED}FAILED TO PUBLISH FILES{Style.RESET_ALL}")
+            return return_code, outputs
 
 
 async def publish_files(
