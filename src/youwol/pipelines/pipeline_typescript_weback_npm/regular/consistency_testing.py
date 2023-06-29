@@ -3,6 +3,8 @@
 # Following environment variables are required:
 # USERNAME_INTEGRATION_TESTS PASSWORD_INTEGRATION_TESTS USERNAME_INTEGRATION_TESTS_BIS PASSWORD_INTEGRATION_TESTS_BIS
 #
+import base64
+
 import shutil
 
 from pathlib import Path
@@ -17,6 +19,8 @@ from youwol.app.routers.projects.models_project import (
     FlowId,
     ExplicitNone,
     Artifact,
+    Link,
+    LinkKind,
 )
 
 from youwol.app.routers.system.router import Log, NodeLogResponse, LeafLogResponse
@@ -63,6 +67,7 @@ async def get_logs(session: PyYouwolSession, file: str, test: str):
 
 
 class ConsistencyTestStep(PipelineStep):
+    asset_raw_id = "consistency-testing"
     id: str
 
     run: ExplicitNone = ExplicitNone()
@@ -81,6 +86,14 @@ class ConsistencyTestStep(PipelineStep):
             files=FileListing(
                 include=["consistency-testing"],
             ),
+            links=[
+                Link(
+                    name="report",
+                    url=f"/applications/@youwol/logs-explorer/latest?"
+                    f"id={base64.b64encode(asset_raw_id.encode('ascii')).decode()}",
+                    kind=LinkKind.plainUrl,
+                )
+            ],
         )
     ]
 
@@ -95,7 +108,9 @@ class ConsistencyTestStep(PipelineStep):
                 shutil.rmtree(
                     results_folder,
                 )
-            consistency_testing = TestSession(result_folder=results_folder)
+            consistency_testing = TestSession(
+                result_folder=results_folder, raw_id=self.asset_raw_id
+            )
             for i in range(count):
                 async with ctx.start(
                     action=f"Start run #{i}"
