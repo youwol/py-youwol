@@ -14,7 +14,7 @@ import aiohttp
 from youwol.pipelines.pipeline_typescript_weback_npm import yarn_errors_formatter
 from youwol.app.routers.system.router import Log, NodeLogResponse, LeafLogResponse
 from youwol.utils import execute_shell_cmd, ContextReporter, LogEntry, Context
-from youwol.utils.utils_test import (
+from youwol.app.test.utils_test import (
     TestSession,
     Publication,
     py_youwol_session,
