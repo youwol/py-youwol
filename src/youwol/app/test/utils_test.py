@@ -47,7 +47,7 @@ from youwol.app.environment import (
 from youwol.app.routers.system.router import Log
 
 # Youwol utilities
-from youwol.utils import Context, OidcConfig, execute_shell_cmd, parse_json, write_json
+from youwol.utils import Context, execute_shell_cmd, parse_json, write_json
 
 colorama_init()
 
@@ -55,17 +55,24 @@ colorama_init()
 no_log_context = Context(logs_reporters=[], data_reporters=[])
 
 
-async def wait_py_youwol_ready(port: int):
+async def wait_py_youwol_ready(port: int, context: Context):
     async def handler(websocket):
         await websocket.recv()
 
+    count = 1
     while True:
+        await asyncio.sleep(1)
+        await context.info(f"Try ping #{count}")
         try:
             async with ws_connect(f"ws://localhost:{port}/ws-data") as ws:
                 await handler(ws)
             break
         except (ConnectionResetError, ConnectionRefusedError, InvalidMessage):
-            pass
+            count = count + 1
+            if count > 9:
+                raise RuntimeError(
+                    f"Can not connect to py-youwol on port {port} after {count}s"
+                )
 
 
 def stop_py_youwol(port: int):
@@ -84,22 +91,24 @@ class PyYouwolSession(NamedTuple):
 
 @asynccontextmanager
 async def py_youwol_session(
-    config_path: Union[Path, str]
+    config_path: Union[Path, str], context: Context
 ) -> AsyncContextManager[PyYouwolSession]:
-    config = await configuration_from_python(Path(config_path))
-    port = config.system.httpPort
+    async with context.start(action="Start py-youwol session") as ctx:  # Type: Context
+        await ctx.info(f"Use config file {config_path}")
+        config = await configuration_from_python(Path(config_path))
+        port = config.system.httpPort
 
-    asyncio.ensure_future(
-        execute_shell_cmd(
-            cmd=f"python {youwol.__path__[0]}/main.py --conf={config_path}",
-            context=no_log_context,
+        asyncio.ensure_future(
+            execute_shell_cmd(
+                cmd=f"python {youwol.__path__[0]}/app/main.py --conf={config_path}",
+                context=no_log_context,
+            )
         )
-    )
-    try:
-        await wait_py_youwol_ready(port=port)
-        yield PyYouwolSession(configuration=config)
-    finally:
-        stop_py_youwol(port=port)
+        try:
+            await wait_py_youwol_ready(port=port, context=ctx)
+            yield PyYouwolSession(configuration=config)
+        finally:
+            stop_py_youwol(port=port)
 
 
 class TestFailureResult(NamedTuple):
