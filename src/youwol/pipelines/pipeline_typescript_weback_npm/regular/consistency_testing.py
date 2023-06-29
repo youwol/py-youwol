@@ -15,7 +15,10 @@ from typing import List, cast
 # third parties
 import aiohttp
 
+from fastapi import HTTPException
+
 # Youwol application
+from youwol.app.environment import LocalClients, YouwolEnvironment
 from youwol.app.routers.projects import get_project_configuration
 from youwol.app.routers.projects.models_project import (
     Artifact,
@@ -109,6 +112,7 @@ class ConsistencyTestStep(PipelineStep):
                 shutil.rmtree(
                     results_folder,
                 )
+            await self._delete_asset(context=ctx)
             consistency_testing = TestSession(
                 result_folder=results_folder, raw_id=self.asset_raw_id
             )
@@ -132,3 +136,23 @@ class ConsistencyTestStep(PipelineStep):
                             py_yw_logs_getter=get_logs,
                             context=ctx_run,
                         )
+
+    async def _delete_asset(self, context: Context):
+        env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
+        explorer_client = LocalClients.get_assets_gateway_client(
+            env
+        ).get_treedb_backend_router()
+        asset_id = base64.b64encode(self.asset_raw_id.encode("ascii")).decode()
+        try:
+            resp = await explorer_client.get_item(
+                item_id=asset_id, headers=context.headers()
+            )
+        except HTTPException as e:
+            if e.status_code == 404:
+                return
+            raise e
+
+        await explorer_client.remove_item(item_id=asset_id, headers=context.headers())
+        await explorer_client.purge_drive(
+            drive_id=resp["driveId"], headers=context.headers()
+        )
