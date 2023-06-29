@@ -33,6 +33,11 @@ from youwol.utils.utils_paths import matching_files, parse_json
 FlowId = str
 
 
+class LinkKind(Enum):
+    artifactFile = "artifactFile"
+    plainUrl = "plainUrl"
+
+
 class FileListing(BaseModel):
     include: List[str]
     ignore: List[str] = []
@@ -41,6 +46,7 @@ class FileListing(BaseModel):
 class Link(BaseModel):
     name: str
     url: str
+    kind: LinkKind = LinkKind.artifactFile
 
 
 class Artifact(BaseModel):
