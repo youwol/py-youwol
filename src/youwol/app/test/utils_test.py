@@ -142,18 +142,19 @@ class TestSession:
     asset_id: Optional[str] = None
     counter = TestCounter()
 
-    def __init__(self, result_folder: Path):
+    def __init__(self, result_folder: Path, raw_id: str = None):
         self.result_folder = result_folder
         self.result_folder.mkdir()
         self.summary_path = self.result_folder / "summary.json"
         self.summary_path.write_text('{"results":[]}')
         self.session_id = str(datetime.now())
+        self.raw_id = raw_id
 
     async def create_asset(self, context: Context):
         async with context.start("TestSession.create_asset") as ctx:  # type: Context
             env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
             body = {
-                "rawId": self.session_id,
+                "rawId": self.session_id if not self.raw_id else self.raw_id,
                 "kind": "py-youwol-consistency-testing",
                 "name": f"Consistency_{self.session_id}.tests",
                 "description": "Logs of IT executed with py-youwol",
