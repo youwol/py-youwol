@@ -46,9 +46,6 @@ class Reporter(ContextReporter):
             print(entry.text.replace("\n", ""))
 
 
-context = Context(logs_reporters=[Reporter()], data_reporters=[])
-
-
 async def get_logs(session: PyYouwolSession, file: str, test: str):
     http_port = session.configuration.system.httpPort
 
