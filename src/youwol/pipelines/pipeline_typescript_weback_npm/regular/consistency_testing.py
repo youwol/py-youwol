@@ -12,6 +12,7 @@ from typing import cast, List
 
 import aiohttp
 
+from youwol.app.routers.projects import get_project_configuration
 from youwol.app.routers.projects.models_project import (
     FileListing,
     PipelineStep,
@@ -96,13 +97,16 @@ class ConsistencyTestStep(PipelineStep):
             ],
         )
     ]
+    view: str = Path(__file__).parent / "views" / "consistency.view.js"
 
     async def execute_run(self, project: Project, flow_id: FlowId, context: Context):
         async with context.start(
             action="run ConsistencyTestStep.execute_run", with_reporters=[Reporter()]
         ) as ctx:
-            # count = 2 while WIP, will be retrieved from a configuration's view
-            count = 2
+            config = await get_project_configuration(
+                project_id=project.id, flow_id=flow_id, step_id=self.id, context=ctx
+            )
+            count = config["count"]
             results_folder = Path(f"{project.path}/consistency-testing")
             if results_folder.exists():
                 shutil.rmtree(
@@ -117,8 +121,7 @@ class ConsistencyTestStep(PipelineStep):
                 ) as ctx_run:  # type: Context
                     # Environment variables required by the following conf must be maid available
                     async with py_youwol_session(
-                        # config_path hard coded while WIP, will be retrieved from a configuration's view
-                        config_path="/home/greinisch/Projects/youwol-open-source/python/py-youwol/integrations/yw_config.py",
+                        config_path=config["configPath"],
                         context=ctx_run,
                     ) as py_yw_session:
                         await consistency_testing.execute(
