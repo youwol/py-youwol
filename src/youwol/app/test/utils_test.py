@@ -43,6 +43,7 @@ from youwol.app.environment import (
     LocalClients,
     YouwolEnvironment,
 )
+from youwol.app.middlewares import get_connected_local_tokens
 from youwol.app.routers.system.router import Log
 
 # Youwol utilities
@@ -290,8 +291,12 @@ async def publish_files(
             data = (Path(tmp_folder) / "asset.zip").read_bytes()
 
         gtw = LocalClients.get_assets_gateway_client(env=env)
+        tokens = await get_connected_local_tokens(context=context)
+        auth_token = await tokens.access_token()
 
         upload_resp = await gtw.get_assets_backend_router().add_zip_files(
-            asset_id=asset_id, data=data, headers=ctx.headers()
+            asset_id=asset_id,
+            data=data,
+            headers={**ctx.headers(), "authorization": f"Bearer {auth_token}"},
         )
         await ctx.info(text="Files uploaded successfully", data=upload_resp)
