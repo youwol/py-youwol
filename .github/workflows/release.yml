@@ -275,11 +275,20 @@ jobs:
     if: github.event_name == 'pull_request' || inputs.final
 
     steps:
-      - name: Checkout
-        id: checkout
+      - name: Checkout triggering commit
+        if: github.event_name == 'pull_request' || inputs.dry-run
+        id: checkout_commit
         uses: actions/checkout@v3
         with:
           token: ${{ secrets.PAT_NESTOR_PYYOUWOL_PUSH }}
+
+      - name: Checkout main branch
+        if: "github.event_name != 'pull_request' && ! inputs.dry-run"
+        id: checkout_main
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.PAT_NESTOR_PYYOUWOL_PUSH }}
+          ref: main
 
       - name: Prepare Python 3.10
         id: prepare_python
