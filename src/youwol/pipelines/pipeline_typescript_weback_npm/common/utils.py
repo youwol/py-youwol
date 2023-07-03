@@ -120,7 +120,7 @@ def get_imports_from_submodules(
     for file in glob.glob(str(base_path / "**" / "*.ts"), recursive=True):
         with open(file, "r", encoding="UTF-8") as fp:
             content = fp.read()
-            content = pyparsing.cppStyleComment.suppress().transformString(content)
+            content = pyparsing.cppStyleComment.suppress().transform_string(content)
 
             lines = lines + [
                 line
