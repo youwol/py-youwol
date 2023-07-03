@@ -30,6 +30,7 @@ from .models_project import (
     Artifact,
     Flow,
     Link,
+    LinkKind,
     Manifest,
     PipelineStep,
     PipelineStepStatus,
@@ -139,7 +140,13 @@ def format_artifact_response(
     return ArtifactResponse(
         id=artifact.id,
         links=[
-            Link(name=link.name, url=f"{path}/{link.url}") for link in artifact.links
+            Link(
+                name=link.name,
+                url=link.url
+                if link.kind == LinkKind.plainUrl
+                else f"/admin/system/file/{path}/{link.url}",
+            )
+            for link in artifact.links
         ],
         path=path,
     )
