@@ -62,6 +62,6 @@ def get_object_from_module(
     except SyntaxError as e:
         raise SyntaxError(f"{module_absolute_path} : Syntax error '{e}'")
     except NameError as e:
-        raise NameError(f"{module_absolute_path} :Name error '{e}")
+        raise NameError(e)
 
     return instance
