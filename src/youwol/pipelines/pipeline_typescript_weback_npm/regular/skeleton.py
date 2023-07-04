@@ -1,6 +1,7 @@
 # standard library
 import functools
 import json
+import re
 import shutil
 
 from base64 import b64encode
@@ -40,6 +41,23 @@ class Files(NamedTuple):
     pipeline_file = ".yw_pipeline/yw_pipeline.py"
     pipeline_file_template_lib = ".yw_pipeline/yw_pipeline.lib.txt"
     pipeline_file_template_app = ".yw_pipeline/yw_pipeline.app.txt"
+
+
+async def user_inputs_sanity_checks(parameters: Dict[str, str], context: Context):
+    async with context.start("user_inputs_sanity_checks") as ctx:  # type: Context
+        if Keys.name not in parameters:
+            raise RuntimeError("Expect 'name' in parameters")
+        await ctx.info("Required parameters found")
+        # Regular expression pattern to match NPM package name
+        # taken from https://github.com/dword-design/package-name-regex/blob/master/src/index.js
+        pattern = r"^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$"
+
+        match = re.match(pattern, parameters["name"])
+        if not match:
+            raise RuntimeError(
+                f"The provided name '{parameters['name']}' does not conform to NPM requirements"
+            )
+        await ctx.info("Parameters 'name' follow NPM semantic for project name")
 
 
 def generate_template(input_template: Template):
@@ -281,9 +299,9 @@ async def generate_ts_webpack_project(
     package_type: PackageType,
     context: Context,
 ):
-    async with context.start("Generate ts webpack project"):
-        if Keys.name not in parameters:
-            raise RuntimeError("Expect 'name' in parameters")
+    async with context.start("Generate ts webpack project") as ctx:  # type: Context
+        await user_inputs_sanity_checks(parameters, ctx)
+
         name = parameters[Keys.name]
         project_folder = folder / name
 
