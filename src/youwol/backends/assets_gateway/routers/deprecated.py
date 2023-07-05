@@ -39,6 +39,8 @@ async def get_raw_package(
     configuration: Configuration = Depends(get_configuration),
 ):
     """
+    ⚠️ Deprecated, use :func:`youwol.backends.assets_gateway.routers.cdn_backend.get_resource`.
+
     This end point is deprecated, it is used in following circumstances (only related to cdn):
         - in @youwol/cdn-client/client.ts: the url constructed to fetch cdn files use:
          `/api/assets-gateway/raw/package/${cdn_url}`
