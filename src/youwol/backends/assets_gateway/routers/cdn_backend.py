@@ -18,6 +18,7 @@ from youwol.backends.assets_gateway.routers.common import (
 from youwol.backends.assets_gateway.utils import AssetMeta
 
 # Youwol utilities
+from youwol.utils import aiohttp_to_starlette_response
 from youwol.utils.context import Context
 from youwol.utils.http_clients.assets_gateway import NewAssetResponse
 from youwol.utils.http_clients.cdn_backend import (
@@ -222,7 +223,9 @@ async def get_resource(
             library_id=library_id,
             version=version,
             rest_of_path=rest_of_path,
-            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys),
+            reader=aiohttp_to_starlette_response,
+            auto_decompress=False,
+            headers=ctx.headers(),
         )
 
 
