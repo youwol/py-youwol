@@ -11,6 +11,7 @@ from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
 from youwol.app.environment import (
+    AuthorizationProvider,
     CdnSwitch,
     CloudEnvironment,
     CloudEnvironments,
@@ -29,7 +30,6 @@ from youwol.app.environment import (
     RemoteClients,
     System,
     YouwolEnvironment,
-    get_standard_auth_provider,
 )
 from youwol.app.main_args import MainArguments
 from youwol.app.routers.projects import ProjectLoader
@@ -41,6 +41,7 @@ from youwol.pipelines.pipeline_typescript_weback_npm import (
 from youwol.utils import (
     ContextFactory,
     InMemoryReporter,
+    PrivateClient,
     execute_shell_cmd,
     parse_json,
     sed_inplace,
@@ -62,7 +63,13 @@ direct_auths = [
 cloud_env = CloudEnvironment(
     envId="prod",
     host="platform.int.youwol.com",
-    authProvider=get_standard_auth_provider("platform.int.youwol.com"),
+    authProvider=AuthorizationProvider(
+        openidClient=PrivateClient(
+            client_id="integration-tests",
+            client_secret=os.getenv("CLIENT_SECRET_INTEGRATION_TESTS"),
+        ),
+        openidBaseUrl="https://platform.int.youwol.com/auth/realms/youwol/",
+    ),
     authentications=direct_auths,
 )
 
