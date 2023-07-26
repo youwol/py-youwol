@@ -1,4 +1,5 @@
 # standard library
+from abc import ABC, abstractmethod
 from pathlib import Path
 
 # typing
@@ -19,6 +20,7 @@ from youwol.app.environment.models.defaults import (
     default_path_cache_dir,
     default_path_data_dir,
     default_path_projects_dir,
+    default_path_tokens_storage,
     default_platform_host,
 )
 from youwol.app.environment.models.models import (
@@ -42,7 +44,8 @@ from youwol.utils import (
     youwol_exception_handler,
 )
 from youwol.utils.clients.oidc.oidc_config import PrivateClient, PublicClient
-from youwol.utils.context import Label
+from youwol.utils.clients.oidc.tokens_manager import TokensStorageCache
+from youwol.utils.context import ContextFactory, Label
 from youwol.utils.servers.fast_api import FastApiRouter
 from youwol.utils.utils_requests import is_server_http_alive, redirect_request
 
@@ -355,6 +358,29 @@ class LocalEnvironment(BaseModel):
     cacheDir: ConfigPath = default_path_cache_dir
 
 
+class TokensStorage(ABC):
+    @abstractmethod
+    async def get_tokens_storage(self):
+        pass
+
+
+class TokensStorageKeyring(TokensStorage):
+    async def get_tokens_storage(self):
+        raise NotImplementedError("TokensStorageKeyring not implemented")
+
+
+class TokensStoragePath(TokensStorage):
+    path: Optional[Union[str, Path]] = default_path_tokens_storage
+
+    async def get_tokens_storage(self):
+        raise NotImplementedError("TokensStoargePath not implemented")
+
+
+class TokensStorageInMemory(TokensStorage):
+    async def get_tokens_storage(self):
+        return TokensStorageCache(cache=ContextFactory.with_static_data["auth_cache"])
+
+
 class System(BaseModel):
     """
     Specification of local & remote environments.
@@ -378,6 +404,7 @@ class System(BaseModel):
     """
 
     httpPort: Optional[int] = default_http_port
+    tokens_storage: Optional[TokensStorage] = TokensStorageKeyring()
     cloudEnvironments: CloudEnvironments = CloudEnvironments(
         defaultConnection=Connection(envId="public-youwol", authId="browser"),
         environments=[

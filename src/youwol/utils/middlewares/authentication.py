@@ -16,8 +16,7 @@ from starlette.responses import RedirectResponse, Response
 from starlette.types import ASGIApp
 
 # Youwol utilities
-from youwol.utils import CacheClient
-from youwol.utils.clients.oidc.oidc_config import OidcConfig, OidcInfos
+from youwol.utils.clients.oidc.oidc_config import OidcConfig
 from youwol.utils.clients.oidc.tokens_manager import TokensManager
 from youwol.utils.context import Context, Label
 
@@ -44,9 +43,11 @@ class JwtProviderBearer(JwtProvider):
 
 
 class JwtProviderCookie(JwtProvider):
-    def __init__(self, auth_cache: CacheClient, openid_infos: OidcInfos):
-        self.__cache = auth_cache
-        self.openid_infos = openid_infos
+    def __init__(
+        self,
+        tokens_manager: TokensManager,
+    ):
+        self.__tokens_manager = tokens_manager
 
     async def get_token(self, request: Request, context: Context) -> Optional[str]:
         tokens_id = request.cookies.get("yw_jwt")
@@ -55,13 +56,7 @@ class JwtProviderCookie(JwtProvider):
             await context.info("No cookie yw_jwt")
             return None
 
-        client = OidcConfig(self.openid_infos.base_uri).for_client(
-            self.openid_infos.client
-        )
-        tokens = TokensManager(
-            cache=self.__cache,
-            oidc_client=client,
-        ).restore_tokens(
+        tokens = await self.__tokens_manager.restore_tokens(
             tokens_id=tokens_id,
         )
 

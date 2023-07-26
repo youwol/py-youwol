@@ -58,7 +58,7 @@ async def start_impersonate(
 
     response = Response(status_code=201)
 
-    real_tokens = conf.tokens_manager.restore_tokens(
+    real_tokens = await conf.tokens_manager.restore_tokens(
         tokens_id=yw_jwt,
     )
 
@@ -118,11 +118,11 @@ async def stop_impersonation(
     if yw_jwt is None:
         return JSONResponse(status_code=403, content="missing cookie")
 
-    impersonation_tokens = conf.tokens_manager.restore_tokens(
+    impersonation_tokens = await conf.tokens_manager.restore_tokens(
         tokens_id=yw_jwt,
     )
 
-    real_tokens = conf.tokens_manager.restore_tokens(
+    real_tokens = await conf.tokens_manager.restore_tokens(
         tokens_id=yw_jwt_t,
     )
 

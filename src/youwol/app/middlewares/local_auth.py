@@ -13,8 +13,12 @@ from youwol.app.environment.youwol_environment import YouwolEnvironment
 
 # Youwol utilities
 from youwol.utils.clients.oidc.oidc_config import OidcConfig
-from youwol.utils.clients.oidc.tokens_manager import Tokens, TokensManager
-from youwol.utils.context import Context, ContextFactory
+from youwol.utils.clients.oidc.tokens_manager import (
+    Tokens,
+    TokensManager,
+    TokensStorage,
+)
+from youwol.utils.context import Context
 from youwol.utils.middlewares import JwtProvider
 
 
@@ -48,10 +52,12 @@ async def get_connected_local_tokens(context: Context) -> Tokens:
     return await get_local_tokens(
         auth_provider=env.get_remote_info().authProvider,
         auth_infos=env.get_authentication_info(),
+        tokens_storage=env.tokens_storage,
     )
 
 
 async def get_local_tokens(
+    tokens_storage: TokensStorage,
     auth_provider: AuthorizationProvider,
     auth_infos: Authentication,
 ) -> Tokens:
@@ -62,10 +68,11 @@ async def get_local_tokens(
     )
 
     tokens_manager = TokensManager(
-        cache=ContextFactory.with_static_data["auth_cache"], oidc_client=oidc_client
+        storage=tokens_storage,
+        oidc_client=oidc_client,
     )
 
-    result = tokens_manager.restore_tokens(
+    result = await tokens_manager.restore_tokens(
         tokens_id=tokens_id,
     )
 

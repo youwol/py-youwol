@@ -22,6 +22,7 @@ from youwol.app.routers.custom_backends import install_routers
 from youwol.app.web_socket import WsDataStreamer
 
 # Youwol utilities
+from youwol.utils.clients.oidc.tokens_manager import TokensStorage
 from youwol.utils.context import ContextFactory, InMemoryReporter
 from youwol.utils.servers.fast_api import FastApiRouter
 from youwol.utils.utils_paths import ensure_dir_exists
@@ -73,6 +74,8 @@ class YouwolEnvironment(BaseModel):
 
     cache_user: Dict[str, Any] = {}
     cache_py_youwol: Dict[str, Any] = {}
+
+    tokens_storage: TokensStorage
 
     def reset_databases(self):
         self.backends_configuration.reset_databases()
@@ -190,6 +193,7 @@ class YouwolEnvironmentFactory:
                 local_storage=conf.pathsBook.local_storage,
                 local_nosql=conf.pathsBook.databases / "docdb",
             ),
+            tokens_storage=conf.tokens_storage,
         )
         YouwolEnvironmentFactory.__cached_config = new_conf
 
@@ -282,6 +286,8 @@ async def safe_load(
             )
         )
 
+    tokens_storage = await config.system.tokens_storage.get_tokens_storage()
+
     return YouwolEnvironment(
         httpPort=system.httpPort,
         routers=customization.endPoints.routers,
@@ -298,6 +304,7 @@ async def safe_load(
             local_storage=paths_book.local_storage,
             local_nosql=paths_book.databases / "docdb",
         ),
+        tokens_storage=tokens_storage,
     )
 
 

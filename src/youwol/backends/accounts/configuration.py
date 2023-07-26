@@ -12,7 +12,7 @@ from youwol.utils.clients.oidc.oidc_config import (
     PrivateClient,
     PublicClient,
 )
-from youwol.utils.clients.oidc.tokens_manager import TokensManager
+from youwol.utils.clients.oidc.tokens_manager import TokensManager, TokensStorage
 from youwol.utils.clients.oidc.users_management import KeycloakUsersManagement
 
 # relative
@@ -38,6 +38,7 @@ class Configuration:
         keycloak_admin_base_url: str,
         admin_client: Optional[PrivateClient],
         auth_cache: CacheClient,
+        tokens_storage: TokensStorage,
         https: bool = True,
         tokens_id_generator: Callable[[], str] = default_tokens_id_generator,
     ):
@@ -59,11 +60,12 @@ class Configuration:
         )
         self.openid_flows = OpenidFlowsService(
             cache=auth_cache,
+            tokens_storage=tokens_storage,
             oidc_client=self.oidc_client,
             tokens_id_generator=tokens_id_generator,
         )
         self.tokens_manager = TokensManager(
-            cache=auth_cache, oidc_client=self.oidc_client
+            storage=tokens_storage, oidc_client=self.oidc_client
         )
         self.https = https
 

@@ -78,7 +78,7 @@ async def get_session_details(
     real_user_info = None
 
     if yw_jwt_t:
-        impersonating_tokens = conf.tokens_manager.restore_tokens(yw_jwt_t)
+        impersonating_tokens = await conf.tokens_manager.restore_tokens(yw_jwt_t)
         if impersonating_tokens is not None:
             access_token = await impersonating_tokens.access_token()
             real_user_info = user_info_from_json(access_token)

@@ -4,7 +4,11 @@ from typing import Callable, Optional, Tuple
 # Youwol utilities
 from youwol.utils import CacheClient
 from youwol.utils.clients.oidc.oidc_config import OidcForClient
-from youwol.utils.clients.oidc.tokens_manager import Tokens, TokensManager
+from youwol.utils.clients.oidc.tokens_manager import (
+    Tokens,
+    TokensManager,
+    TokensStorage,
+)
 
 # relative
 from .openid_flows_states import AuthorizationFlow, Flow, LogoutFlow
@@ -24,13 +28,14 @@ class OpenidFlowsService:
     def __init__(
         self,
         cache: CacheClient,
+        tokens_storage: TokensStorage,
         oidc_client: OidcForClient,
         tokens_id_generator: Callable[[], str],
     ):
         self.__cache = cache
         self.__oidc_client = oidc_client
         self.__tokens_manager = TokensManager(
-            cache=self.__cache, oidc_client=self.__oidc_client
+            storage=tokens_storage, oidc_client=self.__oidc_client
         )
         self.__tokens_id_generator = tokens_id_generator
 
@@ -139,7 +144,7 @@ class OpenidFlowsService:
         if "nonce" in logout_token_decoded:
             raise InvalidLogoutToken("found 'nonce' claim")
 
-        tokens = self.__tokens_manager.restore_tokens_from_session_id(
+        tokens = await self.__tokens_manager.restore_tokens_from_session_id(
             session_id=logout_token_decoded["sid"],
         )
 

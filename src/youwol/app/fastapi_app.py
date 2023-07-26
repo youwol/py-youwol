@@ -38,12 +38,13 @@ from youwol.app.routers.projects import ProjectLoader
 # Youwol utilities
 from youwol.utils import (
     CleanerThread,
-    OidcInfos,
+    OidcConfig,
     YouWolException,
     YouwolHeaders,
     factory_local_cache,
     youwol_exception_handler,
 )
+from youwol.utils.clients.oidc.tokens_manager import TokensManager
 from youwol.utils.context import Context, ContextFactory, InMemoryReporter
 from youwol.utils.middlewares import (
     AuthMiddleware,
@@ -128,10 +129,11 @@ def setup_middlewares(env: YouwolEnvironment):
         ),
         jwt_providers=[
             JwtProviderCookie(
-                auth_cache=auth_cache,
-                openid_infos=OidcInfos(
-                    base_uri=env.get_remote_info().authProvider.openidBaseUrl,
-                    client=env.get_remote_info().authProvider.openidClient,
+                tokens_manager=TokensManager(
+                    storage=env.tokens_storage,
+                    oidc_client=OidcConfig(
+                        base_url=env.get_remote_info().authProvider.openidBaseUrl,
+                    ).for_client(env.get_remote_info().authProvider.openidClient),
                 ),
             ),
             JwtProviderPyYouwol(),

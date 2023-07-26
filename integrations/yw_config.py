@@ -29,6 +29,7 @@ from youwol.app.environment import (
     Projects,
     RemoteClients,
     System,
+    TokensStorageInMemory,
     YouwolEnvironment,
 )
 from youwol.app.main_args import MainArguments
@@ -310,6 +311,7 @@ class ConfigurationFactory(IConfigurationFactory):
         return Configuration(
             system=System(
                 httpPort=2001,
+                tokens_storage=TokensStorageInMemory(),
                 cloudEnvironments=CloudEnvironments(
                     defaultConnection=Connection(
                         envId="prod", authId=direct_auths[0].authId
