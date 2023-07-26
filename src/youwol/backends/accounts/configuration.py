@@ -8,7 +8,6 @@ from typing import Awaitable, Callable, Optional, Union
 from youwol.utils.clients.cache import CacheClient
 from youwol.utils.clients.oidc.oidc_config import (
     OidcConfig,
-    OidcForClient,
     PrivateClient,
     PublicClient,
 )
@@ -24,13 +23,6 @@ def default_tokens_id_generator() -> str:
 
 
 class Configuration:
-    oidc_client: OidcForClient
-    oidc_admin_client: Optional[OidcForClient]
-    keycloak_users_management: Optional[KeycloakUsersManagement]
-    openid_flows: OpenidFlowsService
-    tokens_manager: TokensManager
-    https: bool
-
     def __init__(
         self,
         openid_base_url: str,
@@ -41,6 +33,7 @@ class Configuration:
         tokens_storage: TokensStorage,
         https: bool = True,
         tokens_id_generator: Callable[[], str] = default_tokens_id_generator,
+        logout_url: Optional[str] = None,
     ):
         self.oidc_client = OidcConfig(openid_base_url).for_client(openid_client)
         self.oidc_admin_client = (
@@ -68,6 +61,7 @@ class Configuration:
             storage=tokens_storage, oidc_client=self.oidc_client
         )
         self.https = https
+        self.logout_url = logout_url
 
 
 class Dependencies:

@@ -14,6 +14,9 @@ from youwol.backends.accounts.configuration import Configuration, get_configurat
 # Youwol utilities
 from youwol.utils import get_all_individual_groups, private_group_id, to_group_id
 
+# relative
+from .utils import url_for
+
 router = APIRouter(tags=["accounts"])
 
 
@@ -35,6 +38,7 @@ class SessionDetailsUserInfo(BaseModel):
 
 class SessionDetails(BaseModel):
     userInfo: SessionDetailsUserInfo
+    logoutUrl: str
     remembered: bool
 
 
@@ -77,6 +81,12 @@ async def get_session_details(
 
     real_user_info = None
 
+    logout_url = (
+        conf.logout_url
+        if conf.logout_url
+        else url_for(request=request, function_name="logout", https=conf.https)
+    )
+
     if yw_jwt_t:
         impersonating_tokens = await conf.tokens_manager.restore_tokens(yw_jwt_t)
         if impersonating_tokens is not None:
@@ -88,6 +98,11 @@ async def get_session_details(
             userInfo=user_info,
             realUserInfo=real_user_info,
             remembered=yw_login_hint is not None,
+            logoutUrl=logout_url,
         )
 
-    return SessionDetails(userInfo=user_info, remembered=yw_login_hint is not None)
+    return SessionDetails(
+        userInfo=user_info,
+        remembered=yw_login_hint is not None,
+        logoutUrl=logout_url,
+    )
