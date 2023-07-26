@@ -39,6 +39,7 @@ class SessionDetailsUserInfo(BaseModel):
 class SessionDetails(BaseModel):
     userInfo: SessionDetailsUserInfo
     logoutUrl: str
+    accountManagerUrl: str
     remembered: bool
 
 
@@ -87,6 +88,12 @@ async def get_session_details(
         else url_for(request=request, function_name="logout", https=conf.https)
     )
 
+    account_manager_url = (
+        conf.account_manager_url
+        if conf.account_manager_url
+        else f"{conf.keycloak_base_url}/account/"
+    )
+
     if yw_jwt_t:
         impersonating_tokens = await conf.tokens_manager.restore_tokens(yw_jwt_t)
         if impersonating_tokens is not None:
@@ -99,10 +106,12 @@ async def get_session_details(
             realUserInfo=real_user_info,
             remembered=yw_login_hint is not None,
             logoutUrl=logout_url,
+            accountManagerUrl=account_manager_url,
         )
 
     return SessionDetails(
         userInfo=user_info,
         remembered=yw_login_hint is not None,
         logoutUrl=logout_url,
+        accountManagerUrl=account_manager_url,
     )

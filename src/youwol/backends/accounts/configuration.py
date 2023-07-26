@@ -34,6 +34,7 @@ class Configuration:
         https: bool = True,
         tokens_id_generator: Callable[[], str] = default_tokens_id_generator,
         logout_url: Optional[str] = None,
+        account_manager_url: Optional[str] = None,
     ):
         self.oidc_client = OidcConfig(openid_base_url).for_client(openid_client)
         self.oidc_admin_client = (
@@ -62,6 +63,8 @@ class Configuration:
         )
         self.https = https
         self.logout_url = logout_url
+        self.account_manager_url = account_manager_url
+        self.keycloak_base_url = openid_base_url
 
 
 class Dependencies:
