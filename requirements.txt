@@ -104,8 +104,10 @@ jeepney==0.8.0
     # via
     #   keyring
     #   secretstorage
-keyring==23.13.1
-    # via twine
+keyring==24.2.0
+    # via
+    #   twine
+    #   youwol (pyproject.toml)
 lazy-object-proxy==1.9.0
     # via astroid
 lockfile==0.12.2
