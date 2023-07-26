@@ -49,6 +49,7 @@ from .models.models_config import (
     Command,
     ExplicitProjectsFinder,
     Projects,
+    TokensStoragePath,
 )
 from .native_backends_config import BackendConfigurations, native_backends_config
 from .paths import PathsBook, app_dirs, ensure_config_file_exists_or_create_it
@@ -129,7 +130,7 @@ class YouwolEnvironment(BaseModel):
         return f"""Running with youwol {version}: {youwol}
 Configuration loaded from '{self.pathsBook.config}'
 - authentication: {self.get_authentication_info()}
-- remote : { self.get_remote_info().envId } (on {self.get_remote_info().host})
+- remote : {self.get_remote_info().envId} (on {self.get_remote_info().host})
 - paths: {self.pathsBook}
 - cdn packages count: {len(self.backends_configuration.cdn_backend.doc_db.data['documents'])}
 - assets count: {len(self.backends_configuration.assets_backend.doc_db_asset.data['documents'])}
@@ -286,7 +287,16 @@ async def safe_load(
             )
         )
 
-    tokens_storage = await config.system.tokens_storage.get_tokens_storage()
+    tokens_storage_conf = config.system.tokens_storage
+    if (
+        isinstance(tokens_storage_conf, TokensStoragePath)
+        and not Path(tokens_storage_conf.path).is_absolute()
+    ):
+        tokens_storage_conf = TokensStoragePath(
+            path=(cache_dir / tokens_storage_conf.path)
+        )
+
+    tokens_storage = await tokens_storage_conf.get_tokens_storage()
 
     return YouwolEnvironment(
         httpPort=system.httpPort,

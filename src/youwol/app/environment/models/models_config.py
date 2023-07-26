@@ -32,6 +32,7 @@ from youwol.app.environment.models.projects_finder_handlers import (
     ExplicitProjectsFinderHandler,
     RecursiveProjectFinderHandler,
 )
+from youwol.app.environment.models.tokens_storage import TokensStorageFile
 from youwol.app.environment.paths import PathsBook
 
 # Youwol utilities
@@ -369,11 +370,11 @@ class TokensStorageKeyring(TokensStorage):
         raise NotImplementedError("TokensStorageKeyring not implemented")
 
 
-class TokensStoragePath(TokensStorage):
+class TokensStoragePath(TokensStorage, BaseModel):
     path: Optional[Union[str, Path]] = default_path_tokens_storage
 
     async def get_tokens_storage(self):
-        raise NotImplementedError("TokensStoargePath not implemented")
+        return TokensStorageFile(self.path)
 
 
 class TokensStorageInMemory(TokensStorage):
