@@ -1,4 +1,5 @@
 # standard library
+import datetime
 import json
 import threading
 
@@ -7,6 +8,9 @@ from pathlib import Path
 
 # typing
 from typing import Dict, Optional
+
+# third parties
+import keyring
 
 # Youwol utilities
 from youwol.utils import TokensData
@@ -95,3 +99,46 @@ class TokensStorageFile(TokensStorage):
     async def __write_empty(self):
         with self.__path.open(mode="w") as fp:
             fp.write("{}")
+
+
+class TokensStorageKeyring(TokensStorage):
+    def __init__(self, service: str):
+        self.__service = service
+
+    async def get(self, tokens_id: str) -> Optional[TokensData]:
+        data = self.__get_pass(tokens_id)
+        if data is None:
+            return None
+        result = TokensData(**json.loads(data))
+        if result.refresh_expires_at < datetime.datetime.now().timestamp():
+            await self.delete(tokens_id, result.session_state)
+            return None
+        return result
+
+    async def delete(self, tokens_id: str, session_id: str) -> None:
+        if self.__get_pass(tokens_id) is not None:
+            self.__set_pass(tokens_id)
+        if self.__get_pass(session_id) is not None:
+            self.__set_pass(session_id)
+
+    async def get_by_sid(
+        self, session_id: str
+    ) -> (Optional[str], Optional[TokensData]):
+        tokens_id = self.__get_pass(session_id)
+        if tokens_id is None:
+            return None, None
+        return tokens_id, await self.get(tokens_id)
+
+    async def store(self, tokens_id: str, data: TokensData) -> None:
+        session_id = data.session_state
+        self.__set_pass(tokens_id, json.dumps(data.__dict__))
+        self.__set_pass(session_id, tokens_id)
+
+    def __get_pass(self, key: str) -> Optional[str]:
+        return keyring.get_password(self.__service, key)
+
+    def __set_pass(self, key: str, content: Optional[str] = None):
+        if content:
+            keyring.set_password(self.__service, key, content)
+        else:
+            keyring.delete_password(self.__service, key)

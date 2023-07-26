@@ -32,7 +32,10 @@ from youwol.app.environment.models.projects_finder_handlers import (
     ExplicitProjectsFinderHandler,
     RecursiveProjectFinderHandler,
 )
-from youwol.app.environment.models.tokens_storage import TokensStorageFile
+from youwol.app.environment.models.tokens_storage import (
+    TokensStorageFile,
+    TokensStorageKeyring,
+)
 from youwol.app.environment.paths import PathsBook
 
 # Youwol utilities
@@ -365,9 +368,11 @@ class TokensStorage(ABC):
         pass
 
 
-class TokensStorageKeyring(TokensStorage):
+class TokensStorageSystemKeyring(TokensStorage, BaseModel):
+    service: str = "py-youwol"
+
     async def get_tokens_storage(self):
-        raise NotImplementedError("TokensStorageKeyring not implemented")
+        return TokensStorageKeyring(service=self.service)
 
 
 class TokensStoragePath(TokensStorage, BaseModel):
@@ -405,7 +410,7 @@ class System(BaseModel):
     """
 
     httpPort: Optional[int] = default_http_port
-    tokens_storage: Optional[TokensStorage] = TokensStorageKeyring()
+    tokens_storage: Optional[TokensStorage] = TokensStorageSystemKeyring()
     cloudEnvironments: CloudEnvironments = CloudEnvironments(
         defaultConnection=Connection(envId="public-youwol", authId="browser"),
         environments=[
