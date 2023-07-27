@@ -27,14 +27,12 @@ class TokensStorageFile(TokensStorage):
 
     async def get(self, tokens_id: str) -> Optional[TokensData]:
         with atomic_access:
-            await self.__load_data()
             if tokens_id not in self.__tokens_data:
                 return None
             return self.__tokens_data[tokens_id]
 
     async def delete(self, tokens_id: str, session_id: str) -> None:
         with atomic_access:
-            await self.__load_data()
             if tokens_id in self.__tokens_data:
                 del self.__tokens_data[tokens_id]
             if session_id in self.__session_ids:
@@ -45,7 +43,6 @@ class TokensStorageFile(TokensStorage):
         self, session_id: str
     ) -> (Optional[str], Optional[TokensData]):
         with atomic_access:
-            await self.__load_data()
             if session_id not in self.__session_ids:
                 return None, None
             tokens_id = self.__session_ids[session_id]
@@ -55,12 +52,11 @@ class TokensStorageFile(TokensStorage):
 
     async def store(self, tokens_id: str, data: TokensData) -> None:
         with atomic_access:
-            await self.__load_data()
             self.__tokens_data[tokens_id] = data
             self.__session_ids[data.session_state] = tokens_id
             await self.__save_data()
 
-    async def __load_data(self):
+    async def load_data(self):
         if not self.__path.exists():
             await self.__write_empty()
         with self.__path.open(mode="r") as fp:
@@ -94,7 +90,6 @@ class TokensStorageFile(TokensStorage):
                 "session_ids": self.__session_ids,
             }
             json.dump(data, fp)
-            print("done")
 
     async def __write_empty(self):
         with self.__path.open(mode="w") as fp:
