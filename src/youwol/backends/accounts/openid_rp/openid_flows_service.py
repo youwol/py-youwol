@@ -98,7 +98,7 @@ class OpenidFlowsService:
         )
 
     async def init_logout_flow(
-        self, target_uri: str, forget_me: bool, callback_uri: str
+        self, target_uri: str, forget_me: bool, callback_uri: str, tokens_id: str
     ) -> str:
         logout_flow_ref = Flow.random_ref()
         logout_flow = LogoutFlow(
@@ -109,8 +109,12 @@ class OpenidFlowsService:
         )
         logout_flow.save()
 
+        tokens = await self.__tokens_manager.restore_tokens(tokens_id=tokens_id)
+
         url = await self.__oidc_client.logout_url(
-            state=logout_flow.ref, redirect_uri=callback_uri
+            state=logout_flow.ref,
+            redirect_uri=callback_uri,
+            id_token_hint=tokens.id_token(),
         )
 
         return url

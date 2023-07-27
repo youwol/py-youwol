@@ -363,7 +363,9 @@ class OidcForClient:
 
         return tokens_data(data)
 
-    async def logout_url(self, redirect_uri: str, state: str) -> str:
+    async def logout_url(
+        self, redirect_uri: str, state: str, id_token_hint: Optional[str] = None
+    ) -> str:
         """RP-Initiated Logout URL
 
         See https://openid.net/specs/openid-connect-rpinitiated-1_0.html#RPLogout
@@ -380,7 +382,9 @@ class OidcForClient:
         return str(
             url.replace_query_params(
                 **self.__params_with_client_id(
-                    post_logout_redirect_uri=redirect_uri, state=state
+                    post_logout_redirect_uri=redirect_uri,
+                    state=state,
+                    id_token_hint=id_token_hint,
                 )
             )
         )

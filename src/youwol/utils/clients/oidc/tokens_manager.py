@@ -70,6 +70,10 @@ class Tokens:
 
         return self.__data.access_token
 
+    def id_token(self) -> str:
+        self.__assert_refresh_not_expired()
+        return self.__data.id_token
+
     def __assert_refresh_not_expired(self) -> None:
         if self.__data.refresh_expires_at < self.__now():
             raise TokensExpiredError()
