@@ -184,7 +184,7 @@ pydantic==1.10.9
     # via fastapi
 pydocstyle==6.3.0
     # via youwol (pyproject.toml)
-pygments==2.14.0
+pygments==2.15.1
     # via
     #   readme-renderer
     #   rich
