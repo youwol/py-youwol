@@ -22,6 +22,7 @@ from youwol.app.routers.custom_backends import install_routers
 from youwol.app.web_socket import WsDataStreamer
 
 # Youwol utilities
+from youwol.utils.clients.oidc.tokens_manager import TokensStorage
 from youwol.utils.context import ContextFactory, InMemoryReporter
 from youwol.utils.servers.fast_api import FastApiRouter
 from youwol.utils.utils_paths import ensure_dir_exists
@@ -48,6 +49,7 @@ from .models.models_config import (
     Command,
     ExplicitProjectsFinder,
     Projects,
+    TokensStoragePath,
 )
 from .native_backends_config import BackendConfigurations, native_backends_config
 from .paths import PathsBook, app_dirs, ensure_config_file_exists_or_create_it
@@ -73,6 +75,8 @@ class YouwolEnvironment(BaseModel):
 
     cache_user: Dict[str, Any] = {}
     cache_py_youwol: Dict[str, Any] = {}
+
+    tokens_storage: TokensStorage
 
     def reset_databases(self):
         self.backends_configuration.reset_databases()
@@ -126,7 +130,7 @@ class YouwolEnvironment(BaseModel):
         return f"""Running with youwol {version}: {youwol}
 Configuration loaded from '{self.pathsBook.config}'
 - authentication: {self.get_authentication_info()}
-- remote : { self.get_remote_info().envId } (on {self.get_remote_info().host})
+- remote : {self.get_remote_info().envId} (on {self.get_remote_info().host})
 - paths: {self.pathsBook}
 - cdn packages count: {len(self.backends_configuration.cdn_backend.doc_db.data['documents'])}
 - assets count: {len(self.backends_configuration.assets_backend.doc_db_asset.data['documents'])}
@@ -190,6 +194,7 @@ class YouwolEnvironmentFactory:
                 local_storage=conf.pathsBook.local_storage,
                 local_nosql=conf.pathsBook.databases / "docdb",
             ),
+            tokens_storage=conf.tokens_storage,
         )
         YouwolEnvironmentFactory.__cached_config = new_conf
 
@@ -282,6 +287,17 @@ async def safe_load(
             )
         )
 
+    tokens_storage_conf = config.system.tokens_storage
+    if (
+        isinstance(tokens_storage_conf, TokensStoragePath)
+        and not Path(tokens_storage_conf.path).is_absolute()
+    ):
+        tokens_storage_conf = TokensStoragePath(
+            path=(cache_dir / tokens_storage_conf.path)
+        )
+
+    tokens_storage = await tokens_storage_conf.get_tokens_storage()
+
     return YouwolEnvironment(
         httpPort=system.httpPort,
         routers=customization.endPoints.routers,
@@ -298,6 +314,7 @@ async def safe_load(
             local_storage=paths_book.local_storage,
             local_nosql=paths_book.databases / "docdb",
         ),
+        tokens_storage=tokens_storage,
     )
 
 

@@ -312,6 +312,7 @@ class PublishCdnRemoteStep(PipelineStep):
     run: ExplicitNone = ExplicitNone()
 
     async def get_access_token(self, context: Context):
+        env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
         try:
             authentication = next(
                 auth
@@ -326,6 +327,7 @@ class PublishCdnRemoteStep(PipelineStep):
             raise e
 
         tokens = await get_local_tokens(
+            tokens_storage=env.tokens_storage,
             auth_provider=self.cdnTarget.cloudTarget.authProvider,
             auth_infos=authentication,
         )

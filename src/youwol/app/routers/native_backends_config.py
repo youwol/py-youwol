@@ -63,4 +63,5 @@ async def accounts_backend_config_py_youwol():
             auth_provider=config.get_remote_info().authProvider,
             auth_infos=config.get_authentication_info(),
         ),
+        tokens_storage=config.tokens_storage,
     )

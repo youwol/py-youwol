@@ -77,7 +77,7 @@ async def registration_finalizer(
     if yw_jwt is None:
         return JSONResponse(status_code=403, content="no cookie")
 
-    tokens = conf.tokens_manager.restore_tokens(
+    tokens = await conf.tokens_manager.restore_tokens(
         tokens_id=yw_jwt,
     )
 

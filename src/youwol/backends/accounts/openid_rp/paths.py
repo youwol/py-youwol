@@ -124,6 +124,7 @@ async def logout(
     request: Request,
     target_uri: str,
     forget_me: bool = False,
+    yw_jwt: Annotated[Optional[str], Cookie()] = None,
     conf: Configuration = Depends(get_configuration),
 ) -> Response:
     """
@@ -141,12 +142,17 @@ async def logout(
     :param conf:
     :return:
     """
+    if yw_jwt is None:
+        return JSONResponse(
+            status_code=400, content={"invalid auth": "not authenticated"}
+        )
     redirect_uri = await conf.openid_flows.init_logout_flow(
         target_uri=target_uri,
         forget_me=forget_me,
         callback_uri=url_for(
             request=request, function_name="logout_cb", https=conf.https
         ),
+        tokens_id=yw_jwt,
     )
 
     return RedirectResponse(url=redirect_uri, status_code=307)

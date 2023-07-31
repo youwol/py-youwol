@@ -4,7 +4,7 @@
 #
 #    sh deps_manager.sh compile
 #
-aiohttp==3.8.4
+aiohttp==3.8.5
     # via
     #   black
     #   youwol (pyproject.toml)
@@ -38,7 +38,7 @@ build==0.10.0
     #   youwol (pyproject.toml)
 cachecontrol[filecache]==0.12.11
     # via pip-audit
-certifi==2022.12.7
+certifi==2023.7.22
     # via
     #   minio
     #   requests
@@ -59,7 +59,7 @@ coverage==6.5.0
     # via youwol (pyproject.toml)
 cowpy==1.1.5
     # via youwol (pyproject.toml)
-cryptography==41.0.1
+cryptography==41.0.2
     # via
     #   pyjwt
     #   secretstorage
@@ -104,8 +104,10 @@ jeepney==0.8.0
     # via
     #   keyring
     #   secretstorage
-keyring==23.13.1
-    # via twine
+keyring==24.2.0
+    # via
+    #   twine
+    #   youwol (pyproject.toml)
 lazy-object-proxy==1.9.0
     # via astroid
 lockfile==0.12.2
@@ -182,7 +184,7 @@ pydantic==1.10.9
     # via fastapi
 pydocstyle==6.3.0
     # via youwol (pyproject.toml)
-pygments==2.14.0
+pygments==2.15.1
     # via
     #   readme-renderer
     #   rich

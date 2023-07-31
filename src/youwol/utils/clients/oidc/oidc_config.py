@@ -1,5 +1,6 @@
 # standard library
 import base64
+import datetime
 import hashlib
 import secrets
 
@@ -18,6 +19,7 @@ from pydantic import BaseModel
 from starlette.datastructures import URL
 
 DEFAULT_LENGTH_RANDOM_TOKEN = 64
+EXPIRATION_THRESHOLD = 60
 
 
 class PrivateClient(BaseModel):
@@ -47,8 +49,8 @@ class TokensData:
     id_token: str
     access_token: str
     refresh_token: str
-    expires_in: int
-    refresh_expires_in: int
+    expires_at: float
+    refresh_expires_at: float
     session_state: str
 
 
@@ -73,12 +75,13 @@ def tokens_data(data: Any) -> TokensData:
     if token_type != "Bearer":
         raise InvalidTokensData(f"not a Bearer token ('type': '{token_type}'))")
 
+    now = datetime.datetime.now().timestamp()
     return TokensData(
         id_token=str(data["id_token"]),
         access_token=str(data["access_token"]),
         refresh_token=str(data["refresh_token"]),
-        expires_in=int(data["expires_in"]),
-        refresh_expires_in=int(data["refresh_expires_in"]),
+        expires_at=now - EXPIRATION_THRESHOLD + int(data["expires_in"]),
+        refresh_expires_at=now - EXPIRATION_THRESHOLD + int(data["refresh_expires_in"]),
         session_state=str(data["session_state"]),
     )
 
@@ -360,7 +363,9 @@ class OidcForClient:
 
         return tokens_data(data)
 
-    async def logout_url(self, redirect_uri: str, state: str) -> str:
+    async def logout_url(
+        self, redirect_uri: str, state: str, id_token_hint: Optional[str] = None
+    ) -> str:
         """RP-Initiated Logout URL
 
         See https://openid.net/specs/openid-connect-rpinitiated-1_0.html#RPLogout
@@ -377,7 +382,9 @@ class OidcForClient:
         return str(
             url.replace_query_params(
                 **self.__params_with_client_id(
-                    post_logout_redirect_uri=redirect_uri, state=state
+                    post_logout_redirect_uri=redirect_uri,
+                    state=state,
+                    id_token_hint=id_token_hint,
                 )
             )
         )

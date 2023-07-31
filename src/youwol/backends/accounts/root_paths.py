@@ -14,6 +14,9 @@ from youwol.backends.accounts.configuration import Configuration, get_configurat
 # Youwol utilities
 from youwol.utils import get_all_individual_groups, private_group_id, to_group_id
 
+# relative
+from .utils import url_for
+
 router = APIRouter(tags=["accounts"])
 
 
@@ -35,6 +38,8 @@ class SessionDetailsUserInfo(BaseModel):
 
 class SessionDetails(BaseModel):
     userInfo: SessionDetailsUserInfo
+    logoutUrl: str
+    accountManagerUrl: str
     remembered: bool
 
 
@@ -77,8 +82,20 @@ async def get_session_details(
 
     real_user_info = None
 
+    logout_url = (
+        conf.logout_url
+        if conf.logout_url
+        else url_for(request=request, function_name="logout", https=conf.https)
+    )
+
+    account_manager_url = (
+        conf.account_manager_url
+        if conf.account_manager_url
+        else f"{conf.keycloak_base_url}/account/"
+    )
+
     if yw_jwt_t:
-        impersonating_tokens = conf.tokens_manager.restore_tokens(yw_jwt_t)
+        impersonating_tokens = await conf.tokens_manager.restore_tokens(yw_jwt_t)
         if impersonating_tokens is not None:
             access_token = await impersonating_tokens.access_token()
             real_user_info = user_info_from_json(access_token)
@@ -88,6 +105,13 @@ async def get_session_details(
             userInfo=user_info,
             realUserInfo=real_user_info,
             remembered=yw_login_hint is not None,
+            logoutUrl=logout_url,
+            accountManagerUrl=account_manager_url,
         )
 
-    return SessionDetails(userInfo=user_info, remembered=yw_login_hint is not None)
+    return SessionDetails(
+        userInfo=user_info,
+        remembered=yw_login_hint is not None,
+        logoutUrl=logout_url,
+        accountManagerUrl=account_manager_url,
+    )

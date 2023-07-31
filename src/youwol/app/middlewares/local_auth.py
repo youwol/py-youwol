@@ -1,8 +1,10 @@
 # standard library
 import base64
 
+from abc import ABC, abstractmethod
+
 # typing
-from typing import Optional
+from typing import Optional, Tuple
 
 # third parties
 from starlette.requests import Request
@@ -13,9 +15,13 @@ from youwol.app.environment.youwol_environment import YouwolEnvironment
 
 # Youwol utilities
 from youwol.utils.clients.oidc.oidc_config import OidcConfig
-from youwol.utils.clients.oidc.tokens_manager import Tokens, TokensManager
-from youwol.utils.context import Context, ContextFactory
-from youwol.utils.middlewares import JwtProvider
+from youwol.utils.clients.oidc.tokens_manager import (
+    Tokens,
+    TokensManager,
+    TokensStorage,
+)
+from youwol.utils.context import Context
+from youwol.utils.middlewares import JwtProvider, JwtProviderBearer, JwtProviderCookie
 
 
 class NeedInteractiveSession(RuntimeError):
@@ -23,8 +29,52 @@ class NeedInteractiveSession(RuntimeError):
         super().__init__("User need to be authenticated via authorization flow")
 
 
-class JwtProviderPyYouwol(JwtProvider):
-    async def get_token(self, request: Request, context: Context) -> Optional[str]:
+class JwtProviderDynmaicIssuer(JwtProvider, ABC):
+    @abstractmethod
+    async def _get_token(self, request: Request, context: Context) -> Optional[str]:
+        raise NotImplementedError()
+
+    async def get_token_and_openid_base_url(
+        self, request: Request, context: Context
+    ) -> Tuple[Optional[str], str]:
+        env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
+        token = await self._get_token(request=request, context=context)
+        if token is None:
+            return None, ""
+        openid_base_url = env.get_remote_info().authProvider.openidBaseUrl
+        return token, openid_base_url
+
+
+class JwtProviderDelegatingDynmaicIssuer(JwtProviderDynmaicIssuer, ABC):
+    async def _get_token(self, request: Request, context: Context) -> Optional[str]:
+        return (
+            await self._get_delegate().get_token_and_openid_base_url(
+                request=request, context=context
+            )
+        )[0]
+
+    @abstractmethod
+    def _get_delegate(self) -> JwtProvider:
+        raise NotImplementedError()
+
+
+class JwtProviderBearerDynamicIssuer(JwtProviderDelegatingDynmaicIssuer):
+    def _get_delegate(self) -> JwtProvider:
+        return JwtProviderBearer(openid_base_url="")
+
+
+class JwtProviderCookieDynamicIssuer(JwtProviderDelegatingDynmaicIssuer):
+    def __init__(self, tokens_manager: TokensManager):
+        self.__delegate = JwtProviderCookie(
+            tokens_manager=tokens_manager, openid_base_url=""
+        )
+
+    def _get_delegate(self) -> JwtProvider:
+        return self.__delegate
+
+
+class JwtProviderPyYouwol(JwtProviderDynmaicIssuer):
+    async def _get_token(self, request: Request, context: Context) -> Optional[str]:
         try:
             tokens = await get_connected_local_tokens(context=context)
             access_token = await tokens.access_token()
@@ -48,10 +98,12 @@ async def get_connected_local_tokens(context: Context) -> Tokens:
     return await get_local_tokens(
         auth_provider=env.get_remote_info().authProvider,
         auth_infos=env.get_authentication_info(),
+        tokens_storage=env.tokens_storage,
     )
 
 
 async def get_local_tokens(
+    tokens_storage: TokensStorage,
     auth_provider: AuthorizationProvider,
     auth_infos: Authentication,
 ) -> Tokens:
@@ -62,10 +114,11 @@ async def get_local_tokens(
     )
 
     tokens_manager = TokensManager(
-        cache=ContextFactory.with_static_data["auth_cache"], oidc_client=oidc_client
+        storage=tokens_storage,
+        oidc_client=oidc_client,
     )
 
-    result = tokens_manager.restore_tokens(
+    result = await tokens_manager.restore_tokens(
         tokens_id=tokens_id,
     )
 

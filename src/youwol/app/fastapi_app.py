@@ -19,6 +19,8 @@ from youwol.app.environment import (
 )
 from youwol.app.middlewares import (
     BrowserCachingMiddleware,
+    JwtProviderBearerDynamicIssuer,
+    JwtProviderCookieDynamicIssuer,
     JwtProviderPyYouwol,
     LocalCloudHybridizerMiddleware,
 )
@@ -38,18 +40,15 @@ from youwol.app.routers.projects import ProjectLoader
 # Youwol utilities
 from youwol.utils import (
     CleanerThread,
-    OidcInfos,
+    OidcConfig,
     YouWolException,
     YouwolHeaders,
     factory_local_cache,
     youwol_exception_handler,
 )
+from youwol.utils.clients.oidc.tokens_manager import TokensManager
 from youwol.utils.context import Context, ContextFactory, InMemoryReporter
-from youwol.utils.middlewares import (
-    AuthMiddleware,
-    JwtProviderCookie,
-    redirect_to_login,
-)
+from youwol.utils.middlewares import AuthMiddleware, redirect_to_login
 from youwol.utils.middlewares.root_middleware import RootMiddleware
 
 # relative
@@ -122,23 +121,24 @@ def setup_middlewares(env: YouwolEnvironment):
     fastapi_app.add_middleware(BrowserCachingMiddleware)
     fastapi_app.add_middleware(
         AuthMiddleware,
-        openid_base_uri=env.get_remote_info().authProvider.openidBaseUrl,
         predicate_public_path=lambda url: url.path.startswith(
             "/api/accounts/openid_rp/"
         ),
         jwt_providers=[
-            JwtProviderCookie(
-                auth_cache=auth_cache,
-                openid_infos=OidcInfos(
-                    base_uri=env.get_remote_info().authProvider.openidBaseUrl,
-                    client=env.get_remote_info().authProvider.openidClient,
+            JwtProviderBearerDynamicIssuer(),
+            JwtProviderCookieDynamicIssuer(
+                tokens_manager=TokensManager(
+                    storage=env.tokens_storage,
+                    oidc_client=OidcConfig(
+                        base_url=env.get_remote_info().authProvider.openidBaseUrl,
+                    ).for_client(env.get_remote_info().authProvider.openidClient),
                 ),
             ),
             JwtProviderPyYouwol(),
         ],
-        on_missing_token=lambda url: redirect_to_login(url)
+        on_missing_token=lambda url, text: redirect_to_login(url)
         if url.path.startswith("/applications")
-        else Response(content="Unauthenticated", status_code=403),
+        else Response(content=f"Authentication failure : {text}", status_code=403),
     )
 
     fastapi_app.add_middleware(
