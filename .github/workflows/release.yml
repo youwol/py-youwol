@@ -3,52 +3,64 @@ name: Release
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: the version of this release
-        type: string
-
-      dry-run:
+      final_version:
         description: |
-          Dry run : do not publish any release
-        type: boolean
-        default: true
+          The final version. A corresponding release branch must exist.
+        type: string
 
       final:
         description: |
-          Final release : also build the final version, and published it (if not a dry run)
+          Build a final release, not a candidate.
         type: boolean
         default: false
 
-  pull_request:
-    paths:
-      - '.github/workflows/release.yml'
+      dry-run:
+        description: |
+          Do not publish anything.
+        type: boolean
+        default: true
+
+  workflow_call:
+    inputs:
+      final_version:
+        description: |
+          The final version. A corresponding release branch must exist.
+        type: string
+
+      final:
+        description: |
+          Build a final release, not a candidate
+        type: boolean
+        default: false
+
+      dry-run:
+        description: |
+          Do not publish anything. False by default when reusing this workflow.
+        type: boolean
+        default: false
 
 permissions:
   contents: write
 
 jobs:
-  build-candidate:
-    name: Build Candidate
+  build:
+    name: Build
     runs-on: ubuntu-latest
     outputs:
       python_versions: ${{ steps.job-output.outputs.python_versions }}
       install_from: ${{ steps.job-output.outputs.install_from }}
-      version: ${{ steps.bump_version_rc.outputs.version }}
-      artifact: ${{ steps.bump_version_rc.outputs.artifact }}
+      version: ${{ steps.bump_version.outputs.version }}
+      commit: ${{ steps.bump_version.outputs.commit }}
+      artifact: ${{ steps.bump_version.outputs.artifact }}
 
     steps:
-      - name: Only main if actual release
-        id: only_main_actual_release
-        if: "github.event_name != 'pull_request' && github.ref != 'refs/heads/main' && ! inputs.dry-run"
-        uses: actions/github-script@v6
-        with:
-          script: core.setFailed("Job failed because it is not a dry-run and branch is not main")
 
       - name: Checkout
         id: checkout
         uses: actions/checkout@v3
         with:
           token: ${{ secrets.PAT_NESTOR_PYYOUWOL_PUSH }}
+          ref: release/${{ inputs.final_version }}
 
       - name: Prepare Python 3.10
         id: prepare_python
@@ -68,14 +80,18 @@ jobs:
         with:
           secret: ${{ secrets.NESTOR_GPG_PRIV }}
 
-      - name: Bump Version to Release Candidate
-        id: bump_version_rc
+      - name: Bump Version to Release
+        id: bump_version
         env:
-          VERSION: ${{ inputs.version }}
+          FINAL_VERSION: ${{ inputs.final_version }}
+          FINAL: ${{ inputs.final }}
           GNUPGHOME: ${{ steps.set_up_gpg.outputs.gnupghome }}
         run: |
-          default_final_version=$(python version_management.py get_final)
-          python version_management.py prepare_rc ${VERSION:-$default_final_version}
+          if [ "x${FINAL}" == "xtrue" ]; then
+            python version_management.py prepare_final
+          else
+            python version_management.py prepare_rc ${FINAL_VERSION}
+          fi
           version=$(python version_management.py get_current)
           commit=$(git log -1 --pretty=%h)
           echo version=${version} >> $GITHUB_OUTPUT
@@ -83,17 +99,10 @@ jobs:
           echo artifact="youwol-${version}-${commit}"  >> $GITHUB_OUTPUT
         shell: sh
 
-      - name: Build Release Candidate
-        id: build_rc
+      - name: Build Release
+        id: build
         run: python -m build
         shell: sh
-
-      - name: Upload Artifact for Release Candidate
-        id: upload_artifact_rc
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ steps.bump_version_rc.outputs.artifact }}
-          path: dist/youwol-${{ steps.bump_version_rc.outputs.version }}*
 
       - name: Bump Version to Next
         id: bump_version_next_release_candidate
@@ -102,24 +111,12 @@ jobs:
         run: python version_management.py restore_dev
         shell: sh
 
-      - name: Publish Release Candidate
-        if: "github.event_name != 'pull_request' && ! inputs.dry-run"
-        id: publish_rc
-        env:
-          GNUPGHOME: ${{ steps.set_up_gpg.outputs.gnupghome }}
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.TESTPYPI_NESTOR_UPLOAD_YOUWOL }}
-          TWINE_REPOSITORY: testpypi
-          TWINE_NON_INTERACTIVE: batch
-          VERSION: ${{ steps.bump_version_rc.outputs.version }}
-          COMMIT: ${{ steps.bump_version_rc.outputs.commit }}
-        run: |
-          tag_msg_1st_line="Published release candidate $VERSION on test.pypi.org"
-          tag_msg_2nd_line="https://test.pypi.org/project/youwol/$VERSION/"
-          twine upload -s -i nestor@youwol.com --verbose dist/youwol-$VERSION-*
-          git tag -a "v$VERSION" -m "${tag_msg_1st_line}" -m "${tag_msg_2nd_line}" $COMMIT
-          git push --follow-tags
-        shell: sh
+      - name: Upload Artifact for Release Candidate
+        id: upload_artifact_rc
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.bump_version.outputs.artifact }}
+          path: dist/youwol-${{ steps.bump_version.outputs.version }}*
 
       - name: Upload Artifact for configuration integration tests
         id: upload_artifact_conf_integration
@@ -129,30 +126,30 @@ jobs:
           path: integrations/
           retention-days: 1
 
+      - name: Push
+        if: "! ${{ inputs.dry-run }}"
+        id: publish_test_pypi
+        run: |
+          git push
+        shell: sh
+
       - name: Job Output
         id: job-output
-        env:
-          IS_DRY_RUN: ${{ github.event_name == 'pull_request' || inputs.dry-run }}
         run: |
           versions_json=$(python version_management.py python_versions)
           echo python_versions=${versions_json} >> $GITHUB_OUTPUT
-          if [ "${IS_DRY_RUN}" == "true" ]; then
-            echo install_from='["sources", "wheel"]' >> $GITHUB_OUTPUT
-          else
-            echo install_from='["release", "sources", "wheel"]' >> $GITHUB_OUTPUT
-          fi
           
         
 
-  test-candidate:
-    name: Tests
+  tests:
+    name: Test ${{ needs.build.outputs.version }} on Python ${{ matrix.python_version }} (${{ matrix.install_from }})
     runs-on: ubuntu-latest
-    needs: build-candidate
+    needs: build
     strategy:
       max-parallel: 1
       matrix:
-        python_version: ${{ fromJson(needs.build-candidate.outputs.python_versions) }}
-        install_from: ${{ fromJson(needs.build-candidate.outputs.install_from)  }}
+        python_version: ${{ fromJson(needs.build.outputs.python_versions) }}
+        install_from: ['sources', 'wheel']
 
     steps:
       - name: Prepare Python ${{ matrix.python_version }}
@@ -161,29 +158,11 @@ jobs:
         with:
           python-version: ${{ matrix.python_version }}
 
-      - name: Install from release
-        if: ${{ contains(matrix.install_from, 'release') }}
-        id: install_release
-        env:
-          VERSION: ${{ needs.build-candidate.outputs.version }}
-        run: |
-          for i in $(seq 1 1 10); do
-            echo "try $i/10"
-            pipx install youwol==$VERSION \
-              --index-url https://test.pypi.org/simple/ \
-              --pip-args='--extra-index-url https://pypi.org/simple/' \
-              && exit 0
-            echo "no release $VERSION"
-            sleep 10
-          done
-          exit 1
-
       - name: Download artifact
-        if: ${{ ! contains(matrix.install_from, 'release') }}
         id: download_artifact
         uses: actions/download-artifact@v3
         with:
-          name: ${{ needs.build-candidate.outputs.artifact }}
+          name: ${{ needs.build.outputs.artifact }}
 
       - name: Install from wheel
         if: ${{ contains(matrix.install_from, 'wheel') }}
@@ -241,10 +220,11 @@ jobs:
           PASSWORD_INTEGRATION_TESTS: ${{ secrets.PASSWORD_INTEGRATION_TESTS }}
           USERNAME_INTEGRATION_TESTS_BIS: ${{ secrets.USERNAME_INTEGRATION_TESTS_BIS }}
           PASSWORD_INTEGRATION_TESTS_BIS: ${{ secrets.PASSWORD_INTEGRATION_TESTS_BIS }}
+          CLIENT_SECRET_INTEGRATION_TESTS: ${{ secrets.CLIENT_SECRET_INTEGRATION_TESTS }}
         with:
           coverage: false
           conf: ${{ steps.download_config_integration.outputs.download-path }}/yw_config.py
-          name: release_tests
+          name: tests_${{ matrix.python_version }}_${{ matrix.install_from}}
 
       - name: Tests http-clients
         id: tests_http-clients
@@ -268,27 +248,21 @@ jobs:
         shell: sh
 
 
-  build-release:
-    name: Build Release
+  publish:
+    name: Publish ${{ needs.build.outputs.version }}
     runs-on: ubuntu-latest
-    needs: test-candidate
-    if: github.event_name == 'pull_request' || inputs.final
+    needs:
+      - build
+      - tests
 
     steps:
-      - name: Checkout triggering commit
-        if: github.event_name == 'pull_request' || inputs.dry-run
-        id: checkout_commit
+      - name: Checkout release branch
+        id: checkout
         uses: actions/checkout@v3
         with:
           token: ${{ secrets.PAT_NESTOR_PYYOUWOL_PUSH }}
-
-      - name: Checkout main branch
-        if: "github.event_name != 'pull_request' && ! inputs.dry-run"
-        id: checkout_main
-        uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.PAT_NESTOR_PYYOUWOL_PUSH }}
-          ref: main
+          ref: release/${{ inputs.final_version }}
+          fetch-depth: 2
 
       - name: Prepare Python 3.10
         id: prepare_python
@@ -308,73 +282,42 @@ jobs:
         with:
           secret: ${{ secrets.NESTOR_GPG_PRIV }}
 
-      - name: Bump version to Release Candidate
-        id: bump_version_rc
-        if: github.event_name == 'pull_request' || inputs.dry-run
-        env:
-          VERSION: ${{ inputs.version }}
-          GNUPGHOME: ${{ steps.set_up_gpg.outputs.gnupghome }}
-        run: |
-          default_final_version=$(python version_management.py get_final)
-          python version_management.py prepare_rc ${VERSION:-$default_final_version}
-        shell: sh
-
-      - name: Bump Version to Next
-        id: bump_version_next_release_candidate
-        if: github.event_name == 'pull_request' || inputs.dry-run
-        env:
-          GNUPGHOME: ${{ steps.set_up_gpg.outputs.gnupghome }}
-        run: python version_management.py restore_dev
-        shell: sh
-
-      - name: Bump version to Release
-        id: bump_version_release
-        env:
-          VERSION: ${{ inputs.version }}
-          GNUPGHOME: ${{ steps.set_up_gpg.outputs.gnupghome }}
-        run: |
-          python version_management.py prepare_final
-          version=$(python version_management.py get_current)
-          commit=$(git log -1 --pretty=%h)
-          echo version=${version} >> $GITHUB_OUTPUT
-          echo commit=${commit} >> $GITHUB_OUTPUT
-          echo artifact="youwol-${version}-${commit}" >> $GITHUB_OUTPUT
-        shell: sh
-
-      - name: Build Release
-        id: build_release
-        run: python -m build
-        shell: sh
-
-      - name: Upload Artifact
-        id: upload_artifact
-        uses: actions/upload-artifact@v3
+      - name: Download artifact
+        id: download_artifact
+        uses: actions/download-artifact@v3
         with:
-          name: ${{ steps.bump_version_release.outputs.artifact }}
-          path: dist/youwol-${{ steps.bump_version_release.outputs.version }}*
+          name: ${{ needs.build.outputs.artifact }}
 
-      - name: Bump version to Next
-        id: bump_version_next
-        env:
-          GNUPGHOME: ${{ steps.set_up_gpg.outputs.gnupghome }}
-        run: python version_management.py restore_dev
-        shell: sh
-
-      - name: Publish Release
-        if: "github.event_name != 'pull_request' && ! inputs.dry-run"
-        id: publish_release
+      - name: Publish
+        if: "! ${{ inputs.dry-run }}"
+        id: publish
         env:
           GNUPGHOME: ${{ steps.set_up_gpg.outputs.gnupghome }}
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_NESTOR_UPLOAD_YOUWOL }}
           TWINE_REPOSITORY: pypi
           TWINE_NON_INTERACTIVE: batch
-          VERSION: ${{ steps.bump_version_release.outputs.version }}
-          COMMIT: ${{ steps.bump_version_release.outputs.commit }}
+          VERSION: ${{ needs.build.outputs.version }}
+          COMMIT: ${{ needs.build.outputs.commit }}
         run: |
           tag_msg_1st_line="Published release $VERSION on pypi.org"
           tag_msg_2nd_line="https://pypi.org/project/youwol/$VERSION/"
-          twine upload -s -i nestor@youwol.com --verbose dist/youwol-$VERSION-*
+          twine upload --verbose youwol-$VERSION*
           git tag -a "v$VERSION" -m "${tag_msg_1st_line}" -m "${tag_msg_2nd_line}" $COMMIT
           git push --follow-tags
         shell: sh
+
+      - name: Create Pull Request
+        if: "! ${{ inputs.dry-run }}"
+        id: create_pr
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+          COMMIT: ${{ needs.build.outputs.commit }}
+          GH_TOKEN: ${{ secrets.PAT_NESTOR_PYYOUWOL_PUSH }}
+        run: |
+          branch="ci_cd/merge_back/tags/v$VERSION"
+          git checkout $COMMIT
+          git branch $branch
+          git switch $branch
+          git push -u origin $branch
+          gh pr create --title="Merge back tag v$VERSION to main" --body="" --no-maintainer-edit --assignee @me

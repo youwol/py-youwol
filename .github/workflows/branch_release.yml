@@ -1,0 +1,78 @@
+name: Create Branch Release
+
+on:
+  - workflow_dispatch
+
+permissions:
+  contents: write
+
+jobs:
+  create_branch_release:
+    name: Create Branch Release
+    runs-on: ubuntu-latest
+    outputs:
+      final_version: ${{ steps.params.outputs.final_version }}
+
+    steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.PAT_NESTOR_PYYOUWOL_PUSH }}
+          ref: main
+
+      - name: Prepare Python 3.10
+        id: prepare_python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Set up GPG
+        id: set_up_gpg
+        uses: youwol/nestor/gpg/set_up@v3
+        with:
+          secret: ${{ secrets.NESTOR_GPG_PRIV }}
+
+      - name: Install Publish Requirements
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-publish.txt
+
+      - name: Job Parameters
+        id: params
+        run: |
+          final_version=$(python version_management.py get_final)
+          echo final_version=${final_version} >> $GITHUB_OUTPUT
+
+      - name: Create branch release
+        id: create_branch_release
+        env:
+          FINAL_VERSION: ${{ steps.params.outputs.final_version }}
+        run: |
+          git branch release/${FINAL_VERSION}
+        shell: sh
+
+      - name: Increment main version
+        id: inc_version
+        env:
+          GNUPGHOME: ${{ steps.set_up_gpg.outputs.gnupghome }}
+        run: |
+          python version_management.py next_dev
+        shell: sh
+
+      - name: Push all
+        id: push_all
+        run: |
+          git push --all --follow-tags origin
+        shell: sh
+
+
+  build_first_release_candidate:
+    name: First Release
+    uses: ./.github/workflows/release.yml
+    needs: create_branch_release
+    with:
+      final_version: ${{ needs.create_branch_release.outputs.final_version }}
+      final: false
+    secrets: inherit

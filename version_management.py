@@ -113,6 +113,21 @@ def cmd_restore_dev():
     git_commit(f"🔖 prepare for next version {next_version}")
 
 
+def cmd_next_dev():
+    if not current_version.is_devrelease:
+        raise ValueError(f"{current_version} is not a dev version")
+    major = current_version.major
+    minor = current_version.minor
+    micro = current_version.micro
+
+    micro = str(int(micro) + 1)
+
+    next_version = f"{major}.{minor}.{micro}"
+    dev_version = f"{next_version}.dev"
+    write_version(dev_version)
+    git_commit(f"🔖 prepare for next version {next_version}")
+
+
 def cmd_prepare_final():
     check()
     if current_version.pre is None:
@@ -151,6 +166,7 @@ def check():
 
 
 cmds = {
+    "next_dev": cmd_next_dev,
     "prepare_rc": cmd_prepare_release_candidate,
     "restore_dev": cmd_restore_dev,
     "prepare_final": cmd_prepare_final,
