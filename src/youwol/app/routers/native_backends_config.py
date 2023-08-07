@@ -5,7 +5,7 @@ from youwol.app.environment.youwol_environment import yw_config
 import youwol.backends.accounts
 
 # Youwol utilities
-from youwol.utils import CacheClient
+from youwol.utils import CacheClient, OidcConfig
 from youwol.utils.context import ContextFactory
 
 # relative
@@ -52,10 +52,18 @@ async def accounts_backend_config_py_youwol():
     config = await yw_config()
     auth_cache: CacheClient = ContextFactory.with_static_data["auth_cache"]
 
+    oidc_config = OidcConfig(
+        base_url=config.get_remote_info().authProvider.openidBaseUrl
+    )
+
     return youwol.backends.accounts.Configuration(
-        openid_base_url=config.get_remote_info().authProvider.openidBaseUrl,
-        openid_client=config.get_remote_info().authProvider.openidClient,
-        admin_client=config.get_remote_info().authProvider.keycloakAdminClient,
+        openid_base_url=oidc_config.base_url,
+        openid_client=oidc_config.for_client(
+            config.get_remote_info().authProvider.openidClient
+        ),
+        admin_client=oidc_config.for_client(
+            config.get_remote_info().authProvider.keycloakAdminClient
+        ),
         keycloak_admin_base_url=config.get_remote_info().authProvider.keycloakAdminBaseUrl,
         auth_cache=auth_cache,
         https=False,
