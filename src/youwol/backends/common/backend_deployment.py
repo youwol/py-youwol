@@ -1,8 +1,11 @@
+# standard library
+from abc import ABC, abstractmethod
+
 # typing
 from typing import List
 
 # third parties
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 from prometheus_client import start_http_server
 from pydantic import BaseModel
 from starlette.middleware.base import RequestResponseEndpoint
@@ -10,11 +13,20 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.routing import Route
 
+# Youwol utilities
+from youwol.utils.servers.fast_api import FastApiMiddleware
 
-class BackendDeployment:
+
+class BackendDeployment(ABC):
+    @abstractmethod
+    def router(self) -> APIRouter:
+        raise NotImplementedError()
+
+    @abstractmethod
     def version(self) -> str:
         raise NotImplementedError()
 
+    @abstractmethod
     def name(self) -> str:
         raise NotImplementedError()
 
@@ -26,6 +38,12 @@ class BackendDeployment:
 
     async def alive(self) -> bool:
         pass
+
+    def prefix(self) -> str:
+        return ""
+
+    def middlewares(self) -> List[FastApiMiddleware]:
+        return []
 
 
 class ProbeFailure(RuntimeError):
