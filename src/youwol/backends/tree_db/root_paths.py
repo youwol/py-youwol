@@ -763,6 +763,9 @@ async def move(
                     targetId=item.itemId, destinationFolderId=target["folder_id"]
                 )
                 for item in to_move.items
+                # For now only 'original' assets can be moved (no 'symlinks'), related to change in authorisation policy
+                # (handled by assets-gtw.treedb-backend)
+                if not item.borrowed
             ] + [
                 MoveItemBody(
                     targetId=item.folderId, destinationFolderId=target["folder_id"]
