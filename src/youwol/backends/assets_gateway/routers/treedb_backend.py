@@ -341,6 +341,7 @@ async def move(
     body: MoveItemBody,
     configuration: Configuration = Depends(get_configuration),
 ):
+    asset_client = configuration.assets_client
     async with Context.start_ep(request=request) as ctx:
         treedb_client = configuration.treedb_client
         entity, folder = await asyncio.gather(
@@ -349,13 +350,27 @@ async def move(
                 folder_id=body.destinationFolderId, headers=ctx.headers()
             ),
         )
-        ensure_group_permission(request=request, group_id=entity["entity"]["groupId"])
-        ensure_group_permission(request=request, group_id=folder["groupId"])
-
-        return await configuration.treedb_client.move(
+        from_group_id = entity["entity"]["groupId"]
+        to_group_id = folder["groupId"]
+        ensure_group_permission(request=request, group_id=from_group_id)
+        ensure_group_permission(request=request, group_id=to_group_id)
+        headers = ctx.headers(lambda header_keys: header_keys)
+        moved_items = await configuration.treedb_client.move(
             body=body.dict(),
-            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys),
+            headers=headers,
         )
+        if from_group_id != to_group_id:
+            # In this path (change in owning group), we synchronize the owning group of the related assets
+            for item in moved_items["items"]:
+                asset = await asset_client.get_asset(
+                    asset_id=item["assetId"], headers=headers
+                )
+                await asset_client.update_asset(
+                    asset_id=asset["assetId"],
+                    body={"groupId": item["groupId"]},
+                    headers=headers,
+                )
+        return moved_items
 
 
 @router.post(
