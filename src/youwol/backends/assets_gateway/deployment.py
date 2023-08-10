@@ -33,7 +33,9 @@ class AssetsGatewayDeployment(BackendDeployment):
                 stories_client=StoriesClient(
                     url_base="http://stories-backend/api/stories"
                 ),
-                treedb_client=TreeDbClient(url_base="http://treedb-backend"),
+                treedb_client=TreeDbClient(
+                    url_base="http://treedb-backend/api/tree-db"
+                ),
             )
         )
 
