@@ -350,7 +350,7 @@ class PublishCdnRemoteStep(PipelineStep):
             with_headers={
                 "Authorization": access_token,
             },
-        ) as ctx:
+        ) as ctx:  # type: Context
             env = await context.get("env", YouwolEnvironment)
             local_cdn = LocalClients.get_cdn_client(env=env)
             remote_gtw = await RemoteClients.get_assets_gateway_client(
