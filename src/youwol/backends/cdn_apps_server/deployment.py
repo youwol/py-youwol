@@ -8,24 +8,18 @@ from fastapi import APIRouter
 from youwol.backends.cdn_apps_server import Configuration, get_router
 from youwol.backends.common import BackendDeployment
 from youwol.backends.common.app import get_fastapi_app
+from youwol.backends.common.clients import assets_gateway_client
 from youwol.backends.common.use_auth_middleware_with_cookie import (
     get_auth_middleware_with_cookie,
 )
 
 # Youwol utilities
-from youwol.utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from youwol.utils.servers.fast_api import FastApiMiddleware
 
 
 class CdnAppsServerDeployment(BackendDeployment):
     def router(self) -> APIRouter:
-        return get_router(
-            Configuration(
-                assets_gtw_client=AssetsGatewayClient(
-                    url_base="http://assets-gateway/api/assets-gateway"
-                )
-            )
-        )
+        return get_router(Configuration(assets_gtw_client=assets_gateway_client))
 
     def prefix(self) -> str:
         return "/applications"

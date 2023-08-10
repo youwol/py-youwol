@@ -8,12 +8,12 @@ from fastapi import APIRouter
 from youwol.backends.assets_gateway import Configuration, get_router
 from youwol.backends.common import BackendDeployment
 from youwol.backends.common.app import get_fastapi_app
+from youwol.backends.common.clients import cdn_client
 from youwol.backends.common.use_auth_middleware_with_cookie import (
     get_auth_middleware_with_cookie,
 )
 
 # Youwol utilities
-from youwol.utils import CdnClient
 from youwol.utils.clients.assets.assets import AssetsClient
 from youwol.utils.clients.files import FilesClient
 from youwol.utils.clients.flux.flux import FluxClient
@@ -27,9 +27,9 @@ class AssetsGatewayDeployment(BackendDeployment):
         return get_router(
             Configuration(
                 assets_client=AssetsClient(url_base="http://assets-backend/api/assets"),
-                cdn_client=CdnClient(url_base="http://cdn-backend/api/cdn"),
+                cdn_client=cdn_client,
                 files_client=FilesClient(url_base="http://files-backend/api/files"),
-                flux_client=FluxClient("http://flux-backend"),
+                flux_client=FluxClient("http://flux-backend/api/flux"),
                 stories_client=StoriesClient(url_base="http://stories-backend"),
                 treedb_client=TreeDbClient(url_base="http://treedb-backend"),
             )
