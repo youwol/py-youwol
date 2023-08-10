@@ -393,6 +393,11 @@ class Context(NamedTuple):
             **self.with_headers,
         }
 
+    def local_headers(self, from_req_fwd: HeadersFwdSelector = lambda _keys: []):
+        headers = self.headers(from_req_fwd)
+        headers.pop("authorization")
+        return headers
+
     def cookies(self):
         cookies = self.request.cookies if self.request else {}
         return {**cookies, **self.cookies}
