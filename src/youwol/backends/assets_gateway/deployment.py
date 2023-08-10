@@ -27,7 +27,7 @@ class AssetsGatewayDeployment(BackendDeployment):
         return get_router(
             Configuration(
                 assets_client=AssetsClient(url_base="http://assets-backend/api/assets"),
-                cdn_client=CdnClient(url_base="http://cdn-backend"),
+                cdn_client=CdnClient(url_base="http://cdn-backend/api/cdn"),
                 files_client=FilesClient(url_base="http://files-backend"),
                 flux_client=FluxClient("http://flux-backend"),
                 stories_client=StoriesClient(url_base="http://stories-backend"),

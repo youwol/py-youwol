@@ -8,7 +8,7 @@ from fastapi import APIRouter
 from youwol.backends.assets import Configuration, Constants, get_router
 from youwol.backends.common import BackendDeployment
 from youwol.backends.common.app import get_fastapi_app
-from youwol.backends.common.use_jwt_provider_bearer import jwt_provider_bearer
+from youwol.backends.common.use_auth_middleware import auth_middleware
 from youwol.backends.common.use_minio import minio
 
 # Youwol utilities
@@ -19,7 +19,6 @@ from youwol.utils.http_clients.assets_backend import (
     ACCESS_POLICY,
     ASSETS_TABLE,
 )
-from youwol.utils.middlewares import AuthMiddleware
 from youwol.utils.servers.fast_api import FastApiMiddleware
 
 
@@ -66,19 +65,7 @@ class AssetsDeployment(BackendDeployment):
         return "assets"
 
     def middlewares(self) -> List[FastApiMiddleware]:
-        return [
-            FastApiMiddleware(
-                AuthMiddleware,
-                {
-                    "predicate_public_path": lambda url: url.path.startswith(
-                        "/observability"
-                    ),
-                    "jwt_providers": [
-                        jwt_provider_bearer,
-                    ],
-                },
-            )
-        ]
+        return [auth_middleware]
 
 
 app = get_fastapi_app(AssetsDeployment())

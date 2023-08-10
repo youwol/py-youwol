@@ -8,7 +8,7 @@ from typing import Optional
 from starlette.responses import Response
 
 # Youwol backends
-from youwol.backends.common.use_jwt_provider_bearer import jwt_provider_bearer
+from youwol.backends.common.use_auth_middleware import jwt_provider_bearer
 from youwol.backends.common.use_openid_base_url import openid_base_url
 from youwol.backends.common.use_openid_client import oidc_client
 
