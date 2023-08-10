@@ -350,7 +350,7 @@ class PublishCdnRemoteStep(PipelineStep):
             with_headers={
                 "Authorization": access_token,
             },
-        ) as ctx:
+        ) as ctx:  # type: Context
             env = await context.get("env", YouwolEnvironment)
             local_cdn = LocalClients.get_cdn_client(env=env)
             remote_gtw = await RemoteClients.get_assets_gateway_client(
@@ -362,7 +362,9 @@ class PublishCdnRemoteStep(PipelineStep):
 
             local_info, remote_info = await asyncio.gather(
                 local_cdn.get_version_info(
-                    library_id=library_id, version=project.version, headers=headers
+                    library_id=library_id,
+                    version=project.version,
+                    headers=ctx.local_headers(),
                 ),
                 remote_cdn.get_version_info(
                     library_id=library_id, version=project.version, headers=headers
@@ -427,7 +429,7 @@ class PublishCdnRemoteStep(PipelineStep):
             resp = await local_cdn.get_version_info(
                 library_id=encode_id(project.publishName),
                 version=project.version,
-                headers=ctx.headers(),
+                headers=ctx.local_headers(),
             )
             # # (ii) this one is brittle in terms of eventual consistency
             # # resp = await remote_gtw.cdn_get_package(library_name=project.name, version=project.version,

@@ -390,8 +390,13 @@ class Context(NamedTuple):
             YouwolHeaders.muted_http_errors: ",".join(
                 str(s) for s in self.muted_http_errors
             ),
-            **self.with_headers,
+            **{k.lower(): v for k, v in self.with_headers.items()},
         }
+
+    def local_headers(self, from_req_fwd: HeadersFwdSelector = lambda _keys: []):
+        headers = self.headers(from_req_fwd)
+        headers.pop("authorization")
+        return headers
 
     def cookies(self):
         cookies = self.request.cookies if self.request else {}
