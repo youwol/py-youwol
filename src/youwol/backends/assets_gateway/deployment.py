@@ -28,7 +28,7 @@ class AssetsGatewayDeployment(BackendDeployment):
             Configuration(
                 assets_client=AssetsClient(url_base="http://assets-backend/api/assets"),
                 cdn_client=CdnClient(url_base="http://cdn-backend/api/cdn"),
-                files_client=FilesClient(url_base="http://files-backend"),
+                files_client=FilesClient(url_base="http://files-backend/api/files"),
                 flux_client=FluxClient("http://flux-backend"),
                 stories_client=StoriesClient(url_base="http://stories-backend"),
                 treedb_client=TreeDbClient(url_base="http://treedb-backend"),
