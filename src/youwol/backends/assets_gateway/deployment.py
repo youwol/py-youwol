@@ -36,6 +36,7 @@ class AssetsGatewayDeployment(BackendDeployment):
                 treedb_client=TreeDbClient(
                     url_base="http://treedb-backend/api/tree-db"
                 ),
+                https=True,
             )
         )
 

@@ -76,11 +76,9 @@ async def forward_deprecated_get(
     request, forward_path, configuration: Configuration, to_json=True
 ) -> Union[Awaitable[JSON], Union[Awaitable[bytes], Dict[str, str]]]:
     async with Context.start_ep(request=request) as ctx:
-        url = (
-            f"http://{forward_path}"
-            if configuration.deployed
-            else f"{request.base_url}api/{forward_path}"
-        )
+        url = f"{request.base_url}api/{forward_path}"
+        if configuration.https:
+            url = url.replace("http://", "https://")
         await ctx.info(f"Deprecated GET end-point => redirect to GET:{url}")
         headers = ctx.headers()
         async with aiohttp.ClientSession() as session:
