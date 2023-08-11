@@ -30,7 +30,7 @@ class AccountsDeployment(BackendDeployment):
             Configuration(
                 openid_client=oidc_client,
                 openid_base_url=openid_base_url,
-                admin_client=keycloak_admin_client,
+                keycloak_admin_client=keycloak_admin_client,
                 keycloak_admin_base_url=keycloak_admin_base_url,
                 auth_cache=auth_cache,
                 tokens_storage=tokens_storage,

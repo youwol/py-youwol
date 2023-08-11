@@ -26,21 +26,21 @@ class Configuration:
         tokens_storage: TokensStorage,
         auth_cache: CacheClient,
         keycloak_admin_base_url: Optional[str],
-        admin_client: Optional[OidcForClient],
+        keycloak_admin_client: Optional[OidcForClient],
         https: bool = True,
         tokens_id_generator: Callable[[], str] = default_tokens_id_generator,
         logout_url: Optional[str] = None,
         account_manager_url: Optional[str] = None,
     ):
         self.oidc_client = openid_client
-        self.oidc_admin_client = admin_client
+        self.keycloak_admin_client = keycloak_admin_client
         self.keycloak_users_management = (
             KeycloakUsersManagement(
                 realm_url=keycloak_admin_base_url,
                 cache=auth_cache,
-                oidc_client=self.oidc_admin_client,
+                oidc_client=self.keycloak_admin_client,
             )
-            if self.oidc_admin_client is not None
+            if self.keycloak_admin_client is not None
             and keycloak_admin_base_url is not None
             else None
         )
