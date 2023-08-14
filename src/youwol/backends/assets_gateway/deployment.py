@@ -26,16 +26,12 @@ class AssetsGatewayDeployment(BackendDeployment):
     def router(self) -> APIRouter:
         return get_router(
             Configuration(
-                assets_client=AssetsClient(url_base="http://assets-backend/api/assets"),
+                assets_client=AssetsClient(url_base="http://assets/api/assets"),
                 cdn_client=cdn_client,
-                files_client=FilesClient(url_base="http://files-backend/api/files"),
-                flux_client=FluxClient("http://flux-backend/api/flux"),
-                stories_client=StoriesClient(
-                    url_base="http://stories-backend/api/stories"
-                ),
-                treedb_client=TreeDbClient(
-                    url_base="http://treedb-backend/api/tree-db"
-                ),
+                files_client=FilesClient(url_base="http://files/api/files"),
+                flux_client=FluxClient("http://flux/api/flux"),
+                stories_client=StoriesClient(url_base="http://stories/api/stories"),
+                treedb_client=TreeDbClient(url_base="http://treedb/api/tree-db"),
                 https=True,
             )
         )
