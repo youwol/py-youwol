@@ -7,6 +7,7 @@ from typing import Annotated, Optional
 # third parties
 from fastapi import Depends, status
 from fastapi.params import Cookie, Form
+from prometheus_client import Counter
 from starlette.requests import Request
 from starlette.responses import JSONResponse, RedirectResponse, Response
 from starlette.status import HTTP_204_NO_CONTENT
@@ -19,6 +20,11 @@ from .openid_flows_service import FlowStateNotFound, InvalidLogoutToken
 
 ONE_YEAR_IN_SECONDS = 365 * 24 * 60 * 60
 FIVE_MINUTES_IN_SECONDS = 5 * 60
+
+counter_login_start = Counter("accounts_login_start", "Nb login started")
+counter_login_completed = Counter("accounts_login_completed", "Nb login completed")
+counter_login_failure = Counter("accounts_login_failure", "Nb login failed")
+counter_anonymous = Counter("accounts_visitors_created", "Nb visitor profiles created")
 
 
 @router.get("/openid_rp/auth")
@@ -46,6 +52,7 @@ async def authorization_flow(
     login_hint = (
         yw_login_hint[5:] if yw_login_hint and yw_login_hint[:5] == "user:" else None
     )
+
     redirect_uri = await conf.openid_flows.init_authorization_flow(
         target_uri=target_uri,
         login_hint=login_hint,
@@ -55,6 +62,8 @@ async def authorization_flow(
             https=conf.https,
         ),
     )
+
+    counter_login_start.inc()
 
     return RedirectResponse(redirect_uri, status_code=307)
 
@@ -114,8 +123,10 @@ async def authorization_flow_callback(
             httponly=True,
             expires=ONE_YEAR_IN_SECONDS,
         )
+        counter_login_completed.inc()
         return response
     except FlowStateNotFound:
+        counter_login_failure.inc()
         return JSONResponse(status_code=400, content={"invalid param": "Invalid state"})
 
 
@@ -281,4 +292,5 @@ async def login_as_temp_user(
         httponly=True,
         max_age=tokens.remaining_time(),
     )
+    counter_anonymous.inc()
     return response

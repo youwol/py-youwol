@@ -42,7 +42,7 @@ async def start_impersonate(
     :return:
     """
 
-    if conf.oidc_admin_client is None:
+    if conf.keycloak_admin_client is None:
         return JSONResponse(
             status_code=403,
             content={"forbidden": "no administration right on the server side"},
@@ -79,7 +79,7 @@ async def start_impersonate(
         )
 
     real_access_token = await real_tokens.access_token()
-    impersonation_tokens_data = await conf.oidc_admin_client.impersonation(
+    impersonation_tokens_data = await conf.keycloak_admin_client.impersonation(
         requested_subject=details.userId, subject_token=real_access_token
     )
 
@@ -104,7 +104,7 @@ async def stop_impersonation(
     yw_jwt_t: Annotated[Optional[str], Cookie()] = None,
     conf: Configuration = Depends(get_configuration),
 ) -> Response:
-    if conf.oidc_admin_client is None:
+    if conf.keycloak_admin_client is None:
         return JSONResponse(
             status_code=403,
             content={"forbidden": "no administration right on the server side"},

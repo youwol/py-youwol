@@ -6,11 +6,7 @@ from typing import Awaitable, Callable, Optional, Union
 
 # Youwol utilities
 from youwol.utils.clients.cache import CacheClient
-from youwol.utils.clients.oidc.oidc_config import (
-    OidcConfig,
-    PrivateClient,
-    PublicClient,
-)
+from youwol.utils.clients.oidc.oidc_config import OidcForClient
 from youwol.utils.clients.oidc.tokens_manager import TokensManager, TokensStorage
 from youwol.utils.clients.oidc.users_management import KeycloakUsersManagement
 
@@ -26,29 +22,25 @@ class Configuration:
     def __init__(
         self,
         openid_base_url: str,
-        openid_client: Union[PrivateClient, PublicClient],
-        keycloak_admin_base_url: str,
-        admin_client: Optional[PrivateClient],
-        auth_cache: CacheClient,
+        openid_client: OidcForClient,
         tokens_storage: TokensStorage,
+        auth_cache: CacheClient,
+        keycloak_admin_base_url: Optional[str],
+        keycloak_admin_client: Optional[OidcForClient],
         https: bool = True,
         tokens_id_generator: Callable[[], str] = default_tokens_id_generator,
         logout_url: Optional[str] = None,
         account_manager_url: Optional[str] = None,
     ):
-        self.oidc_client = OidcConfig(openid_base_url).for_client(openid_client)
-        self.oidc_admin_client = (
-            OidcConfig(openid_base_url).for_client(admin_client)
-            if admin_client is not None
-            else None
-        )
+        self.oidc_client = openid_client
+        self.keycloak_admin_client = keycloak_admin_client
         self.keycloak_users_management = (
             KeycloakUsersManagement(
                 realm_url=keycloak_admin_base_url,
                 cache=auth_cache,
-                oidc_client=self.oidc_admin_client,
+                oidc_client=self.keycloak_admin_client,
             )
-            if self.oidc_admin_client is not None
+            if self.keycloak_admin_client is not None
             and keycloak_admin_base_url is not None
             else None
         )

@@ -2,7 +2,7 @@
 import os
 
 # third parties
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
@@ -36,6 +36,9 @@ class WebpmDeployment(BackendDeployment):
 
     def version(self) -> str:
         return ConfigurationFactory.get().version
+
+    def router(self) -> APIRouter:
+        return router
 
 
 app = FastAPI(lifespan=lifespan)

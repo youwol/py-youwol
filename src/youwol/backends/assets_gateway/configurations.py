@@ -30,7 +30,7 @@ class Configuration:
     treedb_client: TreeDbClient
     assets_client: AssetsClient
     files_client: FilesClient
-    deployed: bool = False
+    https: bool = False
 
 
 class Dependencies:

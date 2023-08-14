@@ -5,7 +5,7 @@ from youwol.app.environment.youwol_environment import yw_config
 import youwol.backends.accounts
 
 # Youwol utilities
-from youwol.utils import CacheClient
+from youwol.utils import CacheClient, OidcConfig
 from youwol.utils.context import ContextFactory
 
 # relative
@@ -52,11 +52,29 @@ async def accounts_backend_config_py_youwol():
     config = await yw_config()
     auth_cache: CacheClient = ContextFactory.with_static_data["auth_cache"]
 
+    auth_provider = config.get_remote_info().authProvider
+
+    oidc_config = OidcConfig(auth_provider.openidBaseUrl)
+
+    keycloak_admin_client = None
+    keycloak_admin_base_url = None
+
+    if (
+        auth_provider.keycloakAdminClient is not None
+        and auth_provider.keycloakAdminBaseUrl is not None
+    ):
+        keycloak_admin_client = oidc_config.for_client(
+            auth_provider.keycloakAdminClient
+        )
+        keycloak_admin_base_url = auth_provider.keycloakAdminBaseUrl
+
     return youwol.backends.accounts.Configuration(
-        openid_base_url=config.get_remote_info().authProvider.openidBaseUrl,
-        openid_client=config.get_remote_info().authProvider.openidClient,
-        admin_client=config.get_remote_info().authProvider.keycloakAdminClient,
-        keycloak_admin_base_url=config.get_remote_info().authProvider.keycloakAdminBaseUrl,
+        openid_base_url=oidc_config.base_url,
+        openid_client=oidc_config.for_client(
+            config.get_remote_info().authProvider.openidClient
+        ),
+        keycloak_admin_client=keycloak_admin_client,
+        keycloak_admin_base_url=keycloak_admin_base_url,
         auth_cache=auth_cache,
         https=False,
         tokens_id_generator=lambda: local_tokens_id(

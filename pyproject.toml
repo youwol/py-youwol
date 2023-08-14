@@ -95,7 +95,7 @@ include = [
     "youwol.pipelines*",
 ]
 exclude = [
-    "youwol.backends.*.main*",
+    "youwol.backends.*.deployment*",
     "youwol.backends.mock*",
     "youwol.backends.common*",
     "youwol.backends.webpm*"
