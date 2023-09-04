@@ -10,7 +10,12 @@ from typing import Optional, Tuple
 from starlette.requests import Request
 
 # Youwol application
-from youwol.app.environment import Authentication, AuthorizationProvider, DirectAuth
+from youwol.app.environment import (
+    Authentication,
+    AuthorizationProvider,
+    BrowserAuth,
+    DirectAuth,
+)
 from youwol.app.environment.youwol_environment import YouwolEnvironment
 
 # Youwol utilities
@@ -75,7 +80,11 @@ class JwtProviderCookieDynamicIssuer(JwtProviderDelegatingDynamicIssuer):
 
 class JwtProviderPyYouwol(JwtProviderDynamicIssuer):
     async def _get_token(self, request: Request, context: Context) -> Optional[str]:
+        env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
         try:
+            if isinstance(env.get_authentication_info(), BrowserAuth):
+                return None
+
             tokens = await get_connected_local_tokens(context=context)
             access_token = await tokens.access_token()
             return access_token
