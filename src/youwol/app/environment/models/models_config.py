@@ -379,7 +379,8 @@ class TokensStoragePath(TokensStorage, BaseModel):
     path: Optional[Union[str, Path]] = default_path_tokens_storage
 
     async def get_tokens_storage(self):
-        result = TokensStorageFile(self.path)
+        path = self.path if isinstance(self.path, Path) else Path(self.path)
+        result = TokensStorageFile(path)
         await result.load_data()
         return result
 
@@ -400,6 +401,14 @@ class System(BaseModel):
 
     *optional, default to 2000*
 
+    - **tokensStorage** :class:'TokensStorage'
+    How to store JWT tokens:
+    * TokensStorageSystemKeyring() : use system keyring
+    * TokensStoragePath() : store in file
+    * TokensStorageInMemory() : store in memory
+
+    *optional, default to TokensStorageSystemKeyring()*
+
     - **cloudEnvironments** :class:`CloudEnvironments`
     Specify remote environment(s) from where data can be collected.
 
@@ -412,7 +421,7 @@ class System(BaseModel):
     """
 
     httpPort: Optional[int] = default_http_port
-    tokens_storage: Optional[TokensStorage] = TokensStorageSystemKeyring()
+    tokensStorage: Optional[TokensStorage] = TokensStorageSystemKeyring()
     cloudEnvironments: CloudEnvironments = CloudEnvironments(
         defaultConnection=Connection(envId="public-youwol", authId="browser"),
         environments=[

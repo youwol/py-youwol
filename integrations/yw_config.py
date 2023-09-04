@@ -311,7 +311,7 @@ class ConfigurationFactory(IConfigurationFactory):
         return Configuration(
             system=System(
                 httpPort=2001,
-                tokens_storage=TokensStorageInMemory(),
+                tokensStorage=TokensStorageInMemory(),
                 cloudEnvironments=CloudEnvironments(
                     defaultConnection=Connection(
                         envId="prod", authId=direct_auths[0].authId

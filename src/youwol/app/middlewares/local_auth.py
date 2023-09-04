@@ -10,7 +10,12 @@ from typing import Optional, Tuple
 from starlette.requests import Request
 
 # Youwol application
-from youwol.app.environment import Authentication, AuthorizationProvider, DirectAuth
+from youwol.app.environment import (
+    Authentication,
+    AuthorizationProvider,
+    BrowserAuth,
+    DirectAuth,
+)
 from youwol.app.environment.youwol_environment import YouwolEnvironment
 
 # Youwol utilities
@@ -29,7 +34,7 @@ class NeedInteractiveSession(RuntimeError):
         super().__init__("User need to be authenticated via authorization flow")
 
 
-class JwtProviderDynmaicIssuer(JwtProvider, ABC):
+class JwtProviderDynamicIssuer(JwtProvider, ABC):
     @abstractmethod
     async def _get_token(self, request: Request, context: Context) -> Optional[str]:
         raise NotImplementedError()
@@ -45,7 +50,7 @@ class JwtProviderDynmaicIssuer(JwtProvider, ABC):
         return token, openid_base_url
 
 
-class JwtProviderDelegatingDynmaicIssuer(JwtProviderDynmaicIssuer, ABC):
+class JwtProviderDelegatingDynamicIssuer(JwtProviderDynamicIssuer, ABC):
     async def _get_token(self, request: Request, context: Context) -> Optional[str]:
         return (
             await self._get_delegate().get_token_and_openid_base_url(
@@ -58,12 +63,12 @@ class JwtProviderDelegatingDynmaicIssuer(JwtProviderDynmaicIssuer, ABC):
         raise NotImplementedError()
 
 
-class JwtProviderBearerDynamicIssuer(JwtProviderDelegatingDynmaicIssuer):
+class JwtProviderBearerDynamicIssuer(JwtProviderDelegatingDynamicIssuer):
     def _get_delegate(self) -> JwtProvider:
         return JwtProviderBearer(openid_base_url="")
 
 
-class JwtProviderCookieDynamicIssuer(JwtProviderDelegatingDynmaicIssuer):
+class JwtProviderCookieDynamicIssuer(JwtProviderDelegatingDynamicIssuer):
     def __init__(self, tokens_manager: TokensManager):
         self.__delegate = JwtProviderCookie(
             tokens_manager=tokens_manager, openid_base_url=""
@@ -73,9 +78,13 @@ class JwtProviderCookieDynamicIssuer(JwtProviderDelegatingDynmaicIssuer):
         return self.__delegate
 
 
-class JwtProviderPyYouwol(JwtProviderDynmaicIssuer):
+class JwtProviderPyYouwol(JwtProviderDynamicIssuer):
     async def _get_token(self, request: Request, context: Context) -> Optional[str]:
+        env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
         try:
+            if isinstance(env.get_authentication_info(), BrowserAuth):
+                return None
+
             tokens = await get_connected_local_tokens(context=context)
             access_token = await tokens.access_token()
             return access_token
