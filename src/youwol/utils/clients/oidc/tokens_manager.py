@@ -126,12 +126,20 @@ class TokensManager:
         tokens_data = await self.__storage.get(tokens_id)
         if tokens_data is None:
             return None
-        return Tokens(
+        result = Tokens(
             tokens_id=tokens_id,
             storage=self.__storage,
             oidc_client=self.__oidc_client,
             tokens_data=tokens_data,
         )
+        try:
+            await result.access_token()
+        except RuntimeError:
+            await self.__storage.delete(
+                tokens_id=tokens_id, session_id=tokens_data.session_state
+            )
+            result = None
+        return result
 
     async def restore_tokens_from_session_id(
         self,
@@ -140,12 +148,7 @@ class TokensManager:
         tokens_id, tokens_data = await self.__storage.get_by_sid(session_id)
         if tokens_id is None or tokens_data is None:
             return None
-        return Tokens(
-            tokens_id=tokens_id,
-            storage=self.__storage,
-            oidc_client=self.__oidc_client,
-            tokens_data=tokens_data,
-        )
+        return self.restore_tokens(tokens_id)
 
 
 class TokensStorageCache(TokensStorage):
