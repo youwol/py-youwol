@@ -401,6 +401,14 @@ class System(BaseModel):
 
     *optional, default to 2000*
 
+    - **tokensStorage** :class:'TokensStorage'
+    How to store JWT tokens:
+    * TokensStorageSystemKeyring() : use system keyring
+    * TokensStoragePath() : store in file
+    * TokensStorageInMemory() : store in memory
+
+    *optional, default to TokensStorageSystemKeyring()*
+
     - **cloudEnvironments** :class:`CloudEnvironments`
     Specify remote environment(s) from where data can be collected.
 
