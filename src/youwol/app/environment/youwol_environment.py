@@ -287,7 +287,7 @@ async def safe_load(
             )
         )
 
-    tokens_storage_conf = config.system.tokens_storage
+    tokens_storage_conf = config.system.tokensStorage
     if (
         isinstance(tokens_storage_conf, TokensStoragePath)
         and not Path(tokens_storage_conf.path).is_absolute()

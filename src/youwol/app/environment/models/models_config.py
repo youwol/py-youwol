@@ -412,7 +412,7 @@ class System(BaseModel):
     """
 
     httpPort: Optional[int] = default_http_port
-    tokens_storage: Optional[TokensStorage] = TokensStorageSystemKeyring()
+    tokensStorage: Optional[TokensStorage] = TokensStorageSystemKeyring()
     cloudEnvironments: CloudEnvironments = CloudEnvironments(
         defaultConnection=Connection(envId="public-youwol", authId="browser"),
         environments=[
