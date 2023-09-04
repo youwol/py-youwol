@@ -379,7 +379,8 @@ class TokensStoragePath(TokensStorage, BaseModel):
     path: Optional[Union[str, Path]] = default_path_tokens_storage
 
     async def get_tokens_storage(self):
-        result = TokensStorageFile(self.path)
+        path = self.path if isinstance(self.path, Path) else Path(self.path)
+        result = TokensStorageFile(path)
         await result.load_data()
         return result
 
