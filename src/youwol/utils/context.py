@@ -402,7 +402,7 @@ class Context(NamedTuple):
 
     def local_headers(self, from_req_fwd: HeadersFwdSelector = lambda _keys: []):
         headers = self.headers(from_req_fwd)
-        if "original_access_token" in headers["authorization"]:
+        if "original_access_token" in headers:
             # Hot-fix hiding a bigger problem regarding authorization using context; see #1481
             headers["authorization"] = self.with_headers["original_access_token"]
         return headers
