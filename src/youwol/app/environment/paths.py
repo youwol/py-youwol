@@ -117,17 +117,16 @@ def ensure_config_file_exists_or_create_it(path: Optional[Path]) -> (Path, bool)
         default_root=app_dirs.user_config_dir,
     )
     if not exists:
-        path_config_to_create = final_path
         args = get_main_arguments()
 
         if args.config_path is not None:
-            path_config_to_create = args.config_path
+            final_path = args.config_path
             if args.init is False:
-                msg = f"configuration file '{path_config_to_create}' does not exists. Pass the --init flag to create it"
+                msg = f"configuration file '{final_path}' does not exists. Pass the --init flag to create it"
                 raise RuntimeError(msg)
 
-        path_config_to_create.parent.mkdir(parents=True, exist_ok=True)
-        path_config_to_create.write_text(
+        final_path.parent.mkdir(parents=True, exist_ok=True)
+        final_path.write_text(
             """
 from youwol.app.environment import Configuration
 
