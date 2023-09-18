@@ -250,6 +250,7 @@ class PublishCdnLocalStep(PipelineStep):
 
             local_treedb = LocalClients.get_treedb_client(env=env)
             local_cdn = LocalClients.get_gtw_cdn_client(env=env)
+            local_asset = LocalClients.get_gtw_assets_client(env=env)
             package_id = encode_id(project.publishName)
             asset_id = encode_id(package_id)
 
@@ -275,10 +276,15 @@ class PublishCdnLocalStep(PipelineStep):
                     context=ctx,
                 )
 
-            resp = await local_cdn.get_version_info(
-                library_id=encode_id(project.publishName),
-                version=project.version,
-                headers=ctx.headers(),
+            [resp, asset, access, explorer_item] = await asyncio.gather(
+                local_cdn.get_version_info(
+                    library_id=package_id,
+                    version=project.version,
+                    headers=ctx.headers(),
+                ),
+                local_asset.get_asset(asset_id=asset_id, headers=ctx.headers()),
+                local_asset.get_access_info(asset_id=asset_id, headers=ctx.headers()),
+                local_treedb.get_item(item_id=asset_id, headers=ctx.headers()),
             )
             await ctx.info(text="Package retrieved from local cdn", data=resp)
             resp["srcFilesFingerprint"] = files_check_sum(files)
@@ -287,6 +293,9 @@ class PublishCdnLocalStep(PipelineStep):
             )
             resp["srcBasePath"] = str(base_path)
             resp["srcFiles"] = [str(f) for f in files]
+            resp["asset"] = asset
+            resp["access"] = access
+            resp["explorerItem"] = explorer_item
             return resp
 
     @staticmethod
