@@ -299,7 +299,9 @@ class PublishCdnLocalStep(PipelineStep):
             return resp
 
     @staticmethod
-    async def _retrieve_publish_folder_id(project_name, asset_id, context):
+    async def _retrieve_publish_folder_id(
+        project_name: str, asset_id: str, context: Context
+    ):
         """
         Retrieve the parent folder id to publish the package, it eventually creates the asset.
         Rules are as follows:
