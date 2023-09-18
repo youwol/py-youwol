@@ -24,6 +24,7 @@ from youwol.app.environment import (
 from youwol.app.middlewares.local_auth import get_local_tokens
 from youwol.app.routers.environment.upload_assets.package import UploadPackageOptions
 from youwol.app.routers.environment.upload_assets.upload import upload_asset
+from youwol.app.routers.local_cdn import download_package
 from youwol.app.routers.projects.models_project import (
     BrowserApp,
     ExplicitNone,
@@ -234,7 +235,7 @@ class PublishCdnLocalStep(PipelineStep):
 
     async def execute_run(self, project: Project, flow_id: str, context: Context):
         async with context.start(action="PublishCdnLocalStep.execute_run") as ctx:
-            env = await ctx.get("env", YouwolEnvironment)
+            env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
 
             await ctx.info(text="create 'cdn.zip' in project")
             files = await self.packaged_files(project, flow_id, ctx)
@@ -249,24 +250,14 @@ class PublishCdnLocalStep(PipelineStep):
 
             local_treedb = LocalClients.get_treedb_client(env=env)
             local_cdn = LocalClients.get_gtw_cdn_client(env=env)
+            local_asset = LocalClients.get_gtw_assets_client(env=env)
             package_id = encode_id(project.publishName)
             asset_id = encode_id(package_id)
-            try:
-                item = await local_treedb.get_item(
-                    item_id=asset_id,
-                    headers={**ctx.headers(), YouwolHeaders.muted_http_errors: "404"},
-                )
-                folder_id = item["folderId"]
-            except HTTPException as e:
-                if e.status_code == 404:
-                    await ctx.info(
-                        "The package has not been published yet, start creation"
-                    )
-                    drive: DefaultDriveResponse = await get_default_drive(context=ctx)
-                    folder_id = drive.downloadFolderId
-                else:
-                    raise e
 
+            folder_id = await self._retrieve_publish_folder_id(
+                asset_id=asset_id, project_name=project.name, context=ctx
+            )
+            # If the folder_id is coming from the remote env & the user do not belong to it, the next publish will fail.
             resp = await local_cdn.publish(
                 zip_content=zip_path.read_bytes(),
                 params={"folder-id": folder_id},
@@ -285,10 +276,15 @@ class PublishCdnLocalStep(PipelineStep):
                     context=ctx,
                 )
 
-            resp = await local_cdn.get_version_info(
-                library_id=encode_id(project.publishName),
-                version=project.version,
-                headers=ctx.headers(),
+            [resp, asset, access, explorer_item] = await asyncio.gather(
+                local_cdn.get_version_info(
+                    library_id=package_id,
+                    version=project.version,
+                    headers=ctx.headers(),
+                ),
+                local_asset.get_asset(asset_id=asset_id, headers=ctx.headers()),
+                local_asset.get_access_info(asset_id=asset_id, headers=ctx.headers()),
+                local_treedb.get_item(item_id=asset_id, headers=ctx.headers()),
             )
             await ctx.info(text="Package retrieved from local cdn", data=resp)
             resp["srcFilesFingerprint"] = files_check_sum(files)
@@ -297,7 +293,83 @@ class PublishCdnLocalStep(PipelineStep):
             )
             resp["srcBasePath"] = str(base_path)
             resp["srcFiles"] = [str(f) for f in files]
+            resp["asset"] = asset
+            resp["access"] = access
+            resp["explorerItem"] = explorer_item
             return resp
+
+    @staticmethod
+    async def _retrieve_publish_folder_id(
+        project_name: str, asset_id: str, context: Context
+    ):
+        """
+        Retrieve the parent folder id to publish the package, it eventually creates the asset.
+        Rules are as follows:
+        *  if a parent folder for the asset can be found locally, it is used
+        *  if not and the asset exists in the twin remote environment, the asset is downloaded in local and the parent
+         folder is retrieved
+        *  if none of the above, the `download` folder of the user's private drive is used.
+
+        :param project_name: name of the project
+        :param asset_id: corresponding asset_id
+        :param context: context
+        :return:
+        """
+        async with context.start(
+            action="PublishCdnLocalStep._retrieve_publish_folder_id"
+        ) as ctx:
+            env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
+            local_treedb = LocalClients.get_treedb_client(env=env)
+            try:
+                item = await local_treedb.get_item(
+                    item_id=asset_id,
+                    headers={
+                        **ctx.headers(),
+                        YouwolHeaders.muted_http_errors: "404",
+                    },
+                )
+                folder_id = item["folderId"]
+                await ctx.info(
+                    "Found item in explorer, proceed by publishing packages",
+                    {"folderId": folder_id},
+                )
+            except HTTPException as e:
+                if e.status_code == 404:
+                    await ctx.info(
+                        "The package has not been published yet, start creation. Attempt to download latest version "
+                        "from remote environment..."
+                    )
+                    # At first publication in local env, attempt to download the asset to get it with consistent
+                    # locations & metadata as defined in the remote environment
+                    [resp] = await asyncio.gather(
+                        download_package(
+                            package_name=project_name,
+                            version="latest",
+                            check_update_status=False,
+                            context=ctx,
+                        ),
+                        return_exceptions=True,
+                    )
+                    if isinstance(resp, HTTPException):
+                        await ctx.info(
+                            "The package can not be downloaded from remote environment => "
+                            "publish package in 'download' folder of default drive"
+                        )
+                        drive: DefaultDriveResponse = await get_default_drive(
+                            context=ctx
+                        )
+                        folder_id = drive.downloadFolderId
+                    else:
+                        await ctx.info(
+                            "The package has been found in remote environment, location & metadata downloaded"
+                        )
+                        item = await local_treedb.get_item(
+                            item_id=asset_id, headers=ctx.headers()
+                        )
+                        folder_id = item["folderId"]
+                else:
+                    raise e
+            return folder_id
 
 
 class CdnTarget(BaseModel):
