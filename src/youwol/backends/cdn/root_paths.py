@@ -301,6 +301,7 @@ async def resolve_loading_tree(
                     id="",
                     type="",
                     exportedSymbol=root_name,
+                    aliases=[root_name],
                     apiKey=get_api_key("1.0.0-does-not-matter"),
                     fingerprint="",
                     bundle="",

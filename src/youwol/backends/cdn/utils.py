@@ -299,9 +299,9 @@ async def publish_package(
                 ]
                 await asyncio.gather(*post_requests)
 
-        async with context.start(action="Create record in docdb"):
-            record = format_doc_db_record(
-                package_path=package_path, fingerprint=md5_stamp
+        async with context.start(action="Create record in docdb") as ctx:
+            record = await format_doc_db_record(
+                package_path=package_path, fingerprint=md5_stamp, context=ctx
             )
             await context.info(text="Send record to docdb", data={"record": record})
             await configuration.doc_db.create_document(
@@ -676,5 +676,6 @@ def library_model_from_doc(d: Dict[str, str]):
         type=d["type"],
         fingerprint=d["fingerprint"],
         exportedSymbol=get_exported_symbol(d["library_name"]),
+        aliases=d.get("aliases", []),
         apiKey=get_api_key(d["version"]),
     )
