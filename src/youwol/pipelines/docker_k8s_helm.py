@@ -1,10 +1,11 @@
 # standard library
+import functools
 import os
 
 from pathlib import Path
 
 # typing
-from typing import Callable, List, NamedTuple, Optional, Union
+from typing import Callable, Dict, List, NamedTuple, Optional, Union
 
 # third parties
 from pydantic import BaseModel
@@ -41,6 +42,9 @@ class PublishDockerStepConfig(BaseModel):
         str, Callable[[Project, Context], str]
     ] = lambda project, _ctx: get_helm_app_version(project.path)
     sources: Optional[FileListing] = None
+    dockerFilePath: Optional[Path] = None
+    dockerBuildContextPath: Optional[Path] = None
+    buildArgs: Dict[str, str] = {}
 
 
 class DockerRepo(UploadTarget):
@@ -71,6 +75,11 @@ class PublishDockerStep(PipelineStep):
     sources: FileListing = FileListing(include=["src", "Dockerfile"])
 
     run: RunImplicit = lambda self, p, flow, ctx: self.docker_build_command(p, ctx)
+
+    dockerBuildContextPath: Optional[Path] = None
+    dockerFilePath: Optional[Path] = None
+
+    buildArgs: Dict[str, str] = {}
 
     async def get_status(
         self,
@@ -111,16 +120,29 @@ class PublishDockerStep(PipelineStep):
         docker_url = self.dockerRepo.get_project_url(project, context)
 
         image_version = self.get_image_version(project, context)
+        dockerfile_path = self.dockerFilePath or "./Dockerfile"
+        docker_build_context_path = self.dockerBuildContextPath or "."
+        build_args = functools.reduce(
+            lambda acc, e: acc + f" --build-arg {e[0]}={e[1]}",
+            self.buildArgs.items(),
+            "",
+        )
         return (
-            f"docker build -t {project.name} ."
+            f"(cd {docker_build_context_path}"
+            f" && docker build {build_args} -t {project.name} -f {dockerfile_path} ."
             f" && docker tag {project.name}:latest {docker_url}:latest"
             f" && docker tag {project.name}:latest {docker_url}:{image_version}"
             f" && docker push {docker_url}:latest"
             f" && docker push {docker_url}:{image_version}"
+            f")"
         )
 
 
 chart_filename = "Chart.yaml"
+
+
+def get_helm_app_name(path: Path):
+    return parse_yaml(path / chart_filename)["name"]
 
 
 def get_helm_version(path: Path):
@@ -165,10 +187,10 @@ def get_helm_package(config: InstallHelmStepConfig, project: Project, context: C
         if config.overridingHelmValues
         else {}
     )
-    chart_path = project.path / "chart"
-
+    chart_path = config.chartPath(project, context)
+    name = get_helm_app_name(chart_path)
     return HelmPackage(
-        name=project.name,
+        name=name,
         namespace=config.namespace,
         chart_folder=chart_path,
         with_values=with_values,
