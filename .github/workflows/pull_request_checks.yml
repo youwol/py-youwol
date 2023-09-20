@@ -59,7 +59,7 @@ jobs:
     with:
       pyYouwolCoverage: true
       tsRepository: youwol/cdn-client
-      tsRef: feature/aliases
+      tsRef: ${{ inputs.cdn-client_ref }}
       name: cdn-client
     secrets: inherit
 
@@ -104,7 +104,7 @@ jobs:
         uses: youwol/nestor/ts/prepare@v3
         with:
           repository: youwol/todo-app-ts
-          ref: feature/sync-pipeline-ts
+          ref: ${{ inputs.todo-app-ts_ref }}
           path: ${{ runner.temp }}/todo-app-ts
 
       - name: Build todo-app-ts
