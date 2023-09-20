@@ -67,6 +67,7 @@ from youwol.utils.http_clients.cdn_backend.utils import (
 from youwol.utils.utils_paths import extract_zip_file
 
 flatten = itertools.chain.from_iterable
+original_zip_file = "__original.zip"
 
 
 async def fetch(request, path, file_id, storage):
@@ -112,7 +113,7 @@ async def prepare_files_to_post(
             dir_path=package_path.parent,
             use_os_brotli=use_os_brotli,
             compress=need_compression,
-            rename="__original.zip",
+            rename=original_zip_file,
             context=ctx,
         )
         forms = await asyncio.gather(
@@ -398,7 +399,7 @@ async def create_explorer_data(
                 ],
             )
         data[""].files.append(
-            FileResponse(name="__original.zip", **forms_data_dict["__original.zip"])
+            FileResponse(name=original_zip_file, **forms_data_dict[original_zip_file])
         )
         results = {}
         compute_attributes_rec(data[""], data, results)

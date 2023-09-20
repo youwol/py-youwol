@@ -27,13 +27,13 @@ flatten = itertools.chain.from_iterable
 def get_files(path: Union[Path, str]):
     path = str(path)
     p = ["", ""]
-    minimized = [o for o in os.listdir(path) if o[-6:] == "min.js"]
+    minimized = [o for o in os.listdir(path) if o.endswith("min.js")]
     if len(minimized) == 1:
         p[0] = minimized[0]
     if len(minimized) > 1:
         raise RuntimeError("multiple min.js found", path)
 
-    normal = [o for o in os.listdir(path) if o[-3:] == ".js" and ".min.js" not in o]
+    normal = [o for o in os.listdir(path) if o.endswith(".js") and ".min.js" not in o]
     if len(normal) == 1:
         p[1] = normal[0]
     return p
