@@ -82,6 +82,8 @@ class PublishDockerStep(PipelineStep):
         fingerprint, _ = await self.get_fingerprint(
             project=project, flow_id=flow_id, context=context
         )
+        if last_manifest is None:
+            return PipelineStepStatus.none
         if last_manifest.fingerprint != fingerprint:
             await context.info(
                 text="Source code outdated",
