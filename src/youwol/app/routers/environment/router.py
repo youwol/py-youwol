@@ -66,7 +66,10 @@ class EnvironmentStatusResponse(BaseModel):
 async def cow_say():
     #  https://github.com/bmc/fortunes/
     quotes = (
-        resources.files(__package__).joinpath("fortunes.txt").read_text().split("%")
+        resources.files(__package__)
+        .joinpath("fortunes.txt")
+        .read_text(encoding="UTF-8")
+        .split("%")
     )
     return cow.milk_random_cow(random.choice(quotes))
 
