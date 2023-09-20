@@ -228,6 +228,8 @@ class PipelineStep(BaseModel):
                 data={f"files ({len(files)})": [str(f) for f in files[0:1000]]},
             )
             checksum = files_check_sum(files)
+            await ctx.info(text=f"fingerprint retrieved: {checksum}")
+
             return checksum, files
 
     @staticmethod
