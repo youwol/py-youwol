@@ -120,12 +120,15 @@ class PublishDockerStep(PipelineStep):
         )
 
 
+chart_filename = "Chart.yaml"
+
+
 def get_helm_version(path: Path):
-    return parse_yaml(path / "chart" / "Chart.yaml")["version"]
+    return parse_yaml(path / chart_filename)["version"]
 
 
 def get_helm_app_version(path: Path):
-    return parse_yaml(path / "chart" / "Chart.yaml")["appVersion"]
+    return parse_yaml(path / chart_filename)["appVersion"]
 
 
 def get_chart_explorer(chart_folder: Path):
