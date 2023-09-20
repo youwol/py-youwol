@@ -59,7 +59,7 @@ jobs:
     with:
       pyYouwolCoverage: true
       tsRepository: youwol/cdn-client
-      tsRef: feature/aliases
+      tsRef: ${{ inputs.cdn-client_ref }}
       name: cdn-client
     secrets: inherit
 
