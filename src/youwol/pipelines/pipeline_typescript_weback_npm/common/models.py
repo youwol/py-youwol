@@ -80,6 +80,7 @@ class MainModule(BaseModel):
 
     entryFile: str
     loadDependencies: List[str] = []
+    aliases: List[str] = []
 
 
 class AuxiliaryModule(MainModule):
