@@ -134,7 +134,9 @@ class Library(BaseModel):
     namespace: str
     type: str
     fingerprint: str
+    # exportedSymbol is deprecated, use 'aliases' instead
     exportedSymbol: str
+    aliases: List[str]
     apiKey: str
 
 
