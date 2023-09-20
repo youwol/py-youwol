@@ -422,6 +422,7 @@ async def get_data(
             name=name,
             version=version,
             exportedSymbol=exportedSymbols[name] if name in exportedSymbols else name,
+            aliases=data.get("aliases", []),
             apiKey=get_api_key(version),
             fingerprint=data["fingerprint"],
             namespace=data["namespace"],

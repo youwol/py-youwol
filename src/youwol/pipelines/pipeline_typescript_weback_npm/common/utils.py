@@ -91,7 +91,10 @@ def generate_package_json(source: Path, working_path: Path, input_template: Temp
                 else package_json_app["devDependencies"]
             ),
         },
-        "youwol": {"cdnDependencies": load_main_externals},
+        "webpm": {
+            "dependencies": load_main_externals,
+            "aliases": input_template.bundles.mainModule.aliases,
+        },
     }
     if input_template.type == PackageType.Application:
         package_json["scripts"] = {

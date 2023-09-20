@@ -67,6 +67,7 @@ from youwol.utils.http_clients.cdn_backend.utils import (
 from youwol.utils.utils_paths import extract_zip_file
 
 flatten = itertools.chain.from_iterable
+original_zip_file = "__original.zip"
 
 
 async def fetch(request, path, file_id, storage):
@@ -112,7 +113,7 @@ async def prepare_files_to_post(
             dir_path=package_path.parent,
             use_os_brotli=use_os_brotli,
             compress=need_compression,
-            rename="__original.zip",
+            rename=original_zip_file,
             context=ctx,
         )
         forms = await asyncio.gather(
@@ -299,9 +300,9 @@ async def publish_package(
                 ]
                 await asyncio.gather(*post_requests)
 
-        async with context.start(action="Create record in docdb"):
-            record = format_doc_db_record(
-                package_path=package_path, fingerprint=md5_stamp
+        async with context.start(action="Create record in docdb") as ctx:
+            record = await format_doc_db_record(
+                package_path=package_path, fingerprint=md5_stamp, context=ctx
             )
             await context.info(text="Send record to docdb", data={"record": record})
             await configuration.doc_db.create_document(
@@ -398,7 +399,7 @@ async def create_explorer_data(
                 ],
             )
         data[""].files.append(
-            FileResponse(name="__original.zip", **forms_data_dict["__original.zip"])
+            FileResponse(name=original_zip_file, **forms_data_dict[original_zip_file])
         )
         results = {}
         compute_attributes_rec(data[""], data, results)
@@ -676,5 +677,6 @@ def library_model_from_doc(d: Dict[str, str]):
         type=d["type"],
         fingerprint=d["fingerprint"],
         exportedSymbol=get_exported_symbol(d["library_name"]),
+        aliases=d.get("aliases", []),
         apiKey=get_api_key(d["version"]),
     )
