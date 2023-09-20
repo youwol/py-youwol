@@ -68,6 +68,8 @@ class PreconditionChecksStep(PipelineStep):
 
 
 class PublishYwBackendDockerStep(PublishDockerStep):
+    backend: str
+
     async def get_sources(
         self, project: "Project", flow_id: FlowId, context: Context
     ) -> Optional[Iterable[Path]]:
@@ -78,7 +80,7 @@ class PublishYwBackendDockerStep(PublishDockerStep):
                 "images/Dockerfile",
                 "src/youwol/utils",
                 "src/youwol/backends/common",
-                "src/youwol/backends/cdn",
+                f"src/youwol/backends/{self.backend}",
             ],
             ignore=["**/__pycache__"],
         )
@@ -145,6 +147,7 @@ async def _pipeline(config: PipelineConfig, context: Context):
                     dockerFilePath=config.dockerConfig.dockerFilePath,
                     dockerBuildContextPath=config.dockerConfig.dockerBuildContextPath,
                     buildArgs=config.dockerConfig.buildArgs,
+                    backend=config.dockerConfig.buildArgs["backend"],
                 ),
                 # SyncHelmDeps(),
                 InstallDryRunHelmStep(config=dry_run_config),
