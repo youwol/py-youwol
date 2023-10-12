@@ -9,16 +9,14 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 EXPOSE 8080
-WORKDIR /root
+WORKDIR /opt
 
-COPY /requirements-docker.txt /root/
+COPY /requirements-docker.txt /opt/
 RUN pip3 install --no-cache-dir --upgrade -r "requirements-docker.txt"
 
-COPY /src/youwol/utils /root/youwol/utils
-COPY /src/youwol/backends/common /root/youwol/backends/common
+COPY /images/entry_point.sh /
+COPY /src/youwol/utils /opt/youwol/utils
+COPY /src/youwol/backends /opt/youwol/backends/
 
-ARG backend
-COPY /src/youwol/backends/$backend /root/youwol/backends/$backend
-
-ENV backend=$backend
-ENTRYPOINT uvicorn youwol.backends.$backend.deployment:app --host=0.0.0.0 --no-server-header --port=8080
+ENV YOUWOL_SOURCES_PATH=/opt
+ENTRYPOINT ["sh", "/entry_point.sh"]

@@ -138,9 +138,11 @@ async def status(request: Request, config: YouwolEnvironment = Depends(yw_config
             users=users,
             userInfo=(
                 UserInfo(
-                    id=data["upn"],
-                    name=data["username"],
+                    id=data["sub"],
+                    # Does not make sense, see comments on UserInfo
+                    name=data["email"],
                     email=data["email"],
+                    # Does not make sense, see comments on UserInfo
                     memberOf=[],
                 )
             ),
@@ -205,9 +207,11 @@ async def login(request: Request, body: LoginBody):
             env.get_remote_info().authProvider.openidBaseUrl
         ).token_decode(access_token)
         return UserInfo(
-            id=access_token_decoded["upn"],
-            name=access_token_decoded["username"],
+            id=access_token_decoded["sub"],
+            # Does not make sense, see comments on UserInfo
+            name=access_token_decoded["email"],
             email=access_token_decoded["email"],
+            # Does not make sense, see comments on UserInfo
             memberOf=[],
         )
 
