@@ -13,9 +13,15 @@ from youwol.app.environment.models.models_config import DispatchInfo
 
 
 class UserInfo(BaseModel):
+    """Most of these informations does not make sense …"""
+
+    # id should be the subject of a token , as use everywhere to uniquely identify an user
     id: str
+    # There is no 'name' for an user, either there is her first / last name (her civil name) or
+    # her login, which is the same as the email
     name: str
     email: str
+    # Is empty everywhere in the code …
     memberOf: List[str]
 
 
