@@ -219,6 +219,10 @@ brotli==1.0.9 \
     --hash=sha256:ec1947eabbaf8e0531e8e899fc1d9876c179fc518989461f5d24e2223395a9e3 \
     --hash=sha256:f909bbbc433048b499cb9db9e713b5d8d949e8c109a2a548502fb9aa8630f0b1
     # via youwol (pyproject.toml)
+build==1.0.3 \
+    --hash=sha256:538aab1b64f9828977f84bc63ae570b060a8ed1be419e7870b8b4fc5e6ea553b \
+    --hash=sha256:589bf99a67df7c9cf07ec0ac0e5e2ea5d4b37ac63301c4986d1acb126aa83f8f
+    # via pip-tools
 cachecontrol[filecache]==0.12.11 \
     --hash=sha256:2c75d6a8938cb1933c75c50184549ad42728a27e9f6b92fd677c3151aa72555b \
     --hash=sha256:a5b9fcc986b184db101aa280b42ecdcdfc524892596f606858e0b7a8b4d9e144
@@ -292,6 +296,7 @@ click==8.1.3 \
     --hash=sha256:bb4d8133cb15a609f44e8213d9b391b0809795062913b383c62be0ee95b1db48
     # via
     #   black
+    #   pip-tools
     #   uvicorn
 colorama==0.4.5 \
     --hash=sha256:854bf444933e37f5824ae7bfc1e98d5bce2ebe4160d46b5edf346a89358e99da \
@@ -747,6 +752,7 @@ packaging==23.0 \
     --hash=sha256:b6ad297f8907de0fa2fe1ccbd26fdaf387f5f47c7275fedf8cce89f99446cf97
     # via
     #   black
+    #   build
     #   pip-audit
     #   pip-requirements-parser
 pathspec==0.11.1 \
@@ -833,6 +839,9 @@ pip-requirements-parser==32.0.1 \
     --hash=sha256:4659bc2a667783e7a15d190f6fccf8b2486685b6dba4c19c3876314769c57526 \
     --hash=sha256:b4fa3a7a0be38243123cf9d1f3518da10c51bdb165a2b2985566247f9155a7d3
     # via pip-audit
+pip-tools==7.3.0 \
+    --hash=sha256:8717693288720a8c6ebd07149c93ab0be1fced0b5191df9e9decd3263e20d85e \
+    --hash=sha256:8e9c99127fe024c025b46a0b2d15c7bd47f18f33226cf7330d35493663fc1d1d
 platformdirs==3.2.0 \
     --hash=sha256:d5b638ca397f25f979350ff789db335903d7ea010ab28903f57b27e1b16c2b08 \
     --hash=sha256:ebe11c0d7a805086e99506aa331612429a72ca7cd52a1f0d277dc4adc20cb10e
@@ -945,6 +954,10 @@ pyparsing==3.1.0 \
     # via
     #   pip-requirements-parser
     #   youwol (pyproject.toml)
+pyproject-hooks==1.0.0 \
+    --hash=sha256:283c11acd6b928d2f6a7c73fa0d01cb2bdc5f07c57a2eeb6e83d5e56b97976f8 \
+    --hash=sha256:f271b298b97f5955d53fb12b72c1fb1948c22c1a6b70b315c54cedaca0264ef5
+    # via build
 python-daemon==2.3.0 \
     --hash=sha256:191c7b67b8f7aac58849abf54e19fe1957ef7290c914210455673028ad454989 \
     --hash=sha256:bda993f1623b1197699716d68d983bb580043cf2b8a66a01274d9b8297b0aeaf
@@ -1044,8 +1057,11 @@ tomli==2.0.1 \
     --hash=sha256:de526c12914f0c550d15924c62d72abc48d6fe7364aa87328337a31007fe8a4f
     # via
     #   black
+    #   build
     #   mypy
+    #   pip-tools
     #   pylint
+    #   pyproject-hooks
 tomlkit==0.11.7 \
     --hash=sha256:5325463a7da2ef0c6bbfefb62a3dc883aebe679984709aee32a317907d0a8d3c \
     --hash=sha256:f392ef70ad87a672f02519f99967d28a4d3047133e2d1df936511465fbb3791d
@@ -1194,6 +1210,10 @@ websockets==10.3 \
     --hash=sha256:fab7c640815812ed5f10fbee7abbf58788d602046b7bb3af9b1ac753a6d5e916 \
     --hash=sha256:fc06cc8073c8e87072138ba1e431300e2d408f054b27047d047b549455066ff4
     # via youwol (pyproject.toml)
+wheel==0.41.2 \
+    --hash=sha256:0c5ac5ff2afb79ac23ab82bab027a0be7b5dbcf2e54dc50efe4bf507de1f7985 \
+    --hash=sha256:75909db2664838d015e3d9139004ee16711748a52c8f336b52882266540215d8
+    # via pip-tools
 wrapt==1.15.0 \
     --hash=sha256:02fce1852f755f44f95af51f69d22e45080102e9d00258053b79367d07af39c0 \
     --hash=sha256:077ff0d1f9d9e4ce6476c1a924a3332452c1406e59d90a2cf24aeb29eeac9420 \
@@ -1356,10 +1376,13 @@ zipp==3.16.2 \
 pip==23.2.1 \
     --hash=sha256:7ccf472345f20d35bdc9d1841ff5f313260c2c33fe417f48c30ac46cccabf5be \
     --hash=sha256:fb0bd5435b3200c602b5bf61d2d43c2f13c02e29c1707567ae7fbc514eb9faf2
-    # via pip-api
+    # via
+    #   pip-api
+    #   pip-tools
 setuptools==65.6.3 \
     --hash=sha256:57f6f22bde4e042978bcd50176fdb381d7c21a9efa4041202288d3737a0c6a54 \
     --hash=sha256:a7620757bf984b58deaf32fc8a4577a9bbc0850cf92c20e1ce41c38c19e5fb75
     # via
     #   cyclonedx-python-lib
+    #   pip-tools
     #   python-daemon
