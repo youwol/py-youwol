@@ -156,7 +156,7 @@ pathspec==0.11.1
     # via black
 pdoc3==0.10.0
     # via youwol (pyproject.toml)
-pillow==9.3.0
+pillow==9.5.0
     # via youwol (pyproject.toml)
 pip-api==0.0.30
     # via pip-audit
