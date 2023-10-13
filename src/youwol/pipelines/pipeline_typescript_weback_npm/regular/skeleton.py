@@ -127,6 +127,27 @@ def generate_template(input_template: Template):
     )
 
 
+def generate_template_py(input_template: Template):
+    project_path = input_template.path
+    src_template = (
+        Path(__file__).parent / "templates" / "template.lib.txt"
+        if input_template.type == PackageType.Library
+        else Path(__file__).parent / "templates" / "template.app.txt"
+    )
+
+    shutil.copyfile(src=src_template, dst=project_path / "template.py")
+    load_deps = input_template.dependencies.runTime.externals
+    for pattern, repl in [
+        ["loadDependencies", json.dumps(load_deps)],
+        ["loadDependenciesName", json.dumps(list(load_deps.keys()))],
+        [
+            "devServerPort",
+            str(input_template.devServer.port) if input_template.devServer else "",
+        ],
+    ]:
+        sed_inplace(project_path / "template.py", "{{" + pattern + "}}", repl)
+
+
 def generate_pipeline(
     base_template_path: Path, working_path: Path, input_template: Template
 ):
@@ -317,7 +338,7 @@ async def generate_ts_webpack_project(
 
         project_folder.mkdir(parents=True)
         load_deps = {
-            "@youwol/cdn-client": "^1.0.2",
+            "@youwol/cdn-client": "^2.0.4",
             "@youwol/flux-view": "^1.0.3",
             "rxjs": "^6.5.5",
         }
@@ -348,22 +369,5 @@ async def generate_ts_webpack_project(
         shutil.copytree(
             src=project_folder / ".template", dst=project_folder, dirs_exist_ok=True
         )
-        src_template = (
-            Path(__file__).parent / "templates" / "template.lib.txt"
-            if package_type == PackageType.Library
-            else Path(__file__).parent / "templates" / "template.app.txt"
-        )
-
-        shutil.copyfile(src=src_template, dst=project_folder / "template.py")
-        for pattern, repl in [
-            ["loadDependencies", json.dumps(load_deps)],
-            ["loadDependenciesName", json.dumps(list(load_deps.keys()))],
-            [
-                "devServerPort",
-                parameters[Keys.dev_server_port]
-                if Keys.dev_server_port in parameters
-                else "",
-            ],
-        ]:
-            sed_inplace(project_folder / "template.py", "{{" + pattern + "}}", repl)
+        generate_template_py(template)
         return name, project_folder
