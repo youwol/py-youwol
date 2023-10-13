@@ -130,7 +130,12 @@ def ensure_config_file_exists_or_create_it(path: Optional[Path]) -> (Path, bool)
 
         # relative
         from .models import predefined_configs
-        content = resources.files(predefined_configs).joinpath("default_config.py").read_text(encoding="UTF-8")
+
+        content = (
+            resources.files(predefined_configs)
+            .joinpath("default_config.py")
+            .read_text(encoding="UTF-8")
+        )
         final_path.write_text(data=content, encoding="UTF-8")
 
     return final_path, exists
