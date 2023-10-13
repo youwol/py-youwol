@@ -1,4 +1,5 @@
 # standard library
+from importlib import resources
 from pathlib import Path
 
 # typing
@@ -13,6 +14,9 @@ from youwol.app.main_args import get_main_arguments
 
 # Youwol utilities
 from youwol.utils.utils_paths import existing_path_or_default
+
+# relative
+from .models import predefined_configs
 
 docdb_filename = "data.json"
 
@@ -126,12 +130,12 @@ def ensure_config_file_exists_or_create_it(path: Optional[Path]) -> (Path, bool)
                 raise RuntimeError(msg)
 
         final_path.parent.mkdir(parents=True, exist_ok=True)
-        final_path.write_text(
-            """
-from youwol.app.environment import Configuration
 
-Configuration()
-""",
-            encoding="UTF-8",
+        content = (
+            resources.files(predefined_configs)
+            .joinpath("default_config.py")
+            .read_text(encoding="UTF-8")
         )
+        final_path.write_text(data=content, encoding="UTF-8")
+
     return final_path, exists
