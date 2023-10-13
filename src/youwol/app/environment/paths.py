@@ -15,6 +15,9 @@ from youwol.app.main_args import get_main_arguments
 # Youwol utilities
 from youwol.utils.utils_paths import existing_path_or_default
 
+# relative
+from .models import predefined_configs
+
 docdb_filename = "data.json"
 
 
@@ -127,9 +130,6 @@ def ensure_config_file_exists_or_create_it(path: Optional[Path]) -> (Path, bool)
                 raise RuntimeError(msg)
 
         final_path.parent.mkdir(parents=True, exist_ok=True)
-
-        # relative
-        from .models import predefined_configs
 
         content = (
             resources.files(predefined_configs)
