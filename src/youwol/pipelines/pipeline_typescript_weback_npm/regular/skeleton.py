@@ -317,7 +317,7 @@ async def generate_ts_webpack_project(
 
         project_folder.mkdir(parents=True)
         load_deps = {
-            "@youwol/cdn-client": "^1.0.2",
+            "@youwol/cdn-client": "^2.0.4",
             "@youwol/flux-view": "^1.0.3",
             "rxjs": "^6.5.5",
         }
