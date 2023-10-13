@@ -1,3 +1,4 @@
+# Youwol application
 from youwol.app.environment import Configuration
 
 # Default Configuration
