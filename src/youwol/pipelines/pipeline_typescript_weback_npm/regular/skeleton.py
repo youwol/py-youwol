@@ -12,6 +12,7 @@ from typing import Dict, NamedTuple
 
 # Youwol application
 from youwol.app.environment import ProjectTemplate
+from youwol.pipelines.pipeline_typescript_weback_npm import extract_npm_dependencies_dict
 
 # Youwol utilities
 from youwol.utils.context import Context
@@ -343,11 +344,7 @@ async def generate_ts_webpack_project(
             raise RuntimeError(f"Folder {folder} already exist")
 
         project_folder.mkdir(parents=True)
-        load_deps = {
-            "@youwol/cdn-client": "^2.0.4",
-            "@youwol/flux-view": "^1.0.3",
-            "rxjs": "^6.5.5",
-        }
+        load_deps = extract_npm_dependencies_dict(["@youwol/cdn-client", "@youwol/flux-view", "rxjs"])
         template = Template(
             path=project_folder,
             type=PackageType.Library
@@ -359,11 +356,7 @@ async def generate_ts_webpack_project(
             bundles=Bundles(
                 mainModule=MainModule(
                     entryFile="./lib/index.ts",
-                    loadDependencies=[
-                        "@youwol/cdn-client",
-                        "@youwol/flux-view",
-                        "rxjs",
-                    ],
+                    loadDependencies=list(load_deps.keys()),
                 )
             ),
             userGuide=True,
