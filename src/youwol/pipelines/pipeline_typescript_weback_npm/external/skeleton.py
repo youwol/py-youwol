@@ -1,25 +1,40 @@
 # standard library
 import json
 import shutil
+
 from base64 import b64encode
-
 from pathlib import Path
-from typing import NamedTuple, Dict
 
+# typing
+from typing import Dict, NamedTuple
+
+# third parties
 import aiohttp
+
 from fastapi import HTTPException
 
+# Youwol application
 from youwol.app.environment import ProjectTemplate
+
 # Youwol backends
 from youwol.backends.cdn import get_api_key
-from youwol.pipelines.pipeline_typescript_weback_npm import imTsSrc, PackageType, Bundles, MainModule, FileNames, \
-    auto_generated_filename, get_externals, generate_template_py, extract_npm_dependencies_dict
-from youwol.utils import Context
 
 # Youwol utilities
+from youwol.utils import Context
 from youwol.utils.utils_paths import sed_inplace, write_json
 
 # Youwol pipelines
+from youwol.pipelines.pipeline_typescript_weback_npm import (
+    Bundles,
+    FileNames,
+    MainModule,
+    PackageType,
+    auto_generated_filename,
+    extract_npm_dependencies_dict,
+    generate_template_py,
+    get_externals,
+    imTsSrc,
+)
 from youwol.pipelines.pipeline_typescript_weback_npm.common import (
     Dependencies,
     RunTimeDeps,

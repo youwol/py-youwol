@@ -24,7 +24,11 @@ from youwol.utils.utils_paths import parse_json
 
 # Youwol pipelines
 from youwol.pipelines.pipeline_typescript_weback_npm import (
-    create_sub_pipelines_publish_cdn, SetupStep, DependenciesStep, PublishConfig, TestStep,
+    DependenciesStep,
+    PublishConfig,
+    SetupStep,
+    TestStep,
+    create_sub_pipelines_publish_cdn,
 )
 from youwol.pipelines.publish_cdn import PublishCdnLocalStep
 

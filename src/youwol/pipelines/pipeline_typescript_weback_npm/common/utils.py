@@ -32,9 +32,9 @@ from youwol.pipelines import PublishCdnRemoteStep
 from youwol.pipelines.pipeline_typescript_weback_npm.environment import get_environment
 
 # relative
+from ..common.npm_dependencies_version import extract_npm_dependencies_dict
 from .models import PackageType, Template
 from .npm_step import PublishNpmStep
-from ..common.npm_dependencies_version import extract_npm_dependencies_dict
 
 
 class FileNames(NamedTuple):

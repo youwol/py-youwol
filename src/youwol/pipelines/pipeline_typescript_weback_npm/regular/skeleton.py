@@ -12,7 +12,6 @@ from typing import Dict, NamedTuple
 
 # Youwol application
 from youwol.app.environment import ProjectTemplate
-from youwol.pipelines.pipeline_typescript_weback_npm import extract_npm_dependencies_dict
 
 # Youwol utilities
 from youwol.utils.context import Context
@@ -20,6 +19,9 @@ from youwol.utils.http_clients.cdn_backend import get_api_key
 from youwol.utils.utils_paths import sed_inplace
 
 # Youwol pipelines
+from youwol.pipelines.pipeline_typescript_weback_npm import (
+    extract_npm_dependencies_dict,
+)
 from youwol.pipelines.pipeline_typescript_weback_npm.common import (
     Bundles,
     Dependencies,

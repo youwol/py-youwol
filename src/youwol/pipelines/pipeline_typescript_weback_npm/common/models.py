@@ -13,7 +13,7 @@ from youwol.app.environment import UploadTarget, UploadTargets
 from youwol.app.routers.projects.models_project import Project
 
 # Youwol utilities
-from youwol.utils import CommandException, execute_shell_cmd, JSON
+from youwol.utils import JSON, CommandException, execute_shell_cmd
 from youwol.utils.context import Context
 
 
