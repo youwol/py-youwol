@@ -1,7 +1,6 @@
-import * as AllImports from "{{name}}";
-import DefaultImport from "{{name}}";
+import DefaultImport from "{{name}}"
+export {setup as webpmSetup} from './auto-generated'
+// It may be the case that one of the two following line is not needed
+export * from "{{name}}"
+export default DefaultImport
 
-export * from "{{name}}";
-export default DefaultImport;
-// Pick the right one and remove useless import
-window["{{exportedSymbol}}_APIv{{apiVersion}}"] = DefaultImport || AllImports;
