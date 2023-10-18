@@ -127,7 +127,7 @@ def generate_template(input_template: Template):
     )
 
 
-def generate_template_py(input_template: Template):
+def generate_template_py(input_template: Template, generator_module: str = 'regular'):
     project_path = input_template.path
     src_template = (
         Path(__file__).parent / "templates" / "template.lib.txt"
@@ -136,10 +136,16 @@ def generate_template_py(input_template: Template):
     )
 
     shutil.copyfile(src=src_template, dst=project_path / "template.py")
-    load_deps = input_template.dependencies.runTime.externals
+    ext_deps = input_template.dependencies.runTime.externals
+    bundle_deps = input_template.dependencies.runTime.includedInBundle
+    dev_deps = input_template.dependencies.devTime
     for pattern, repl in [
-        ["loadDependencies", json.dumps(load_deps)],
-        ["loadDependenciesName", json.dumps(list(load_deps.keys()))],
+        ["generatorModule", generator_module],
+        ["loadDependencies", json.dumps(ext_deps, indent=4)],
+        ["loadDependenciesName", json.dumps(list(ext_deps.keys()), indent=4)],
+        ["inBundleDeps", json.dumps(bundle_deps, indent=4)],
+        ["devDeps", json.dumps(dev_deps, indent=4)],
+        ["aliases", json.dumps(list(input_template.bundles.mainModule.aliases))],
         [
             "devServerPort",
             str(input_template.devServer.port) if input_template.devServer else "",
