@@ -290,7 +290,7 @@ typing-extensions==4.2.0
     #   astroid
     #   mypy
     #   pydantic
-urllib3==2.0.6
+urllib3==2.0.7
     # via
     #   minio
     #   requests
