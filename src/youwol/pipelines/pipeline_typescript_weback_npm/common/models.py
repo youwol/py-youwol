@@ -3,7 +3,7 @@ from enum import Enum
 from pathlib import Path
 
 # typing
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 # third parties
 from pydantic import BaseModel
