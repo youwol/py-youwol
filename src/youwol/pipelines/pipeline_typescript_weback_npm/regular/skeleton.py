@@ -130,7 +130,7 @@ def generate_template(input_template: Template):
     )
 
 
-def generate_template_py(input_template: Template, generator_module: str = 'regular'):
+def generate_template_py(input_template: Template, generator_module: str = "regular"):
     project_path = input_template.path
     src_template = (
         Path(__file__).parent / "templates" / "template.lib.txt"
@@ -346,7 +346,9 @@ async def generate_ts_webpack_project(
             raise RuntimeError(f"Folder {folder} already exist")
 
         project_folder.mkdir(parents=True)
-        load_deps = extract_npm_dependencies_dict(["@youwol/cdn-client", "@youwol/flux-view", "rxjs"])
+        load_deps = extract_npm_dependencies_dict(
+            ["@youwol/cdn-client", "@youwol/flux-view", "rxjs"]
+        )
         template = Template(
             path=project_folder,
             type=PackageType.Library

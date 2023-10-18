@@ -67,7 +67,7 @@ def external_npm_template(folder: Path):
 
 
 async def fetch_package_json(name: str, version: str):
-    url = f'https://registry.npmjs.org/{name}/{version}'
+    url = f"https://registry.npmjs.org/{name}/{version}"
 
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
@@ -76,26 +76,26 @@ async def fetch_package_json(name: str, version: str):
             if response.status == 404:
                 raise HTTPException(
                     status_code=404,
-                    detail=f"The package {name}#{version} is not found in NPM"
+                    detail=f"The package {name}#{version} is not found in NPM",
                 )
             if response.status == 401:
                 raise HTTPException(
                     status_code=401,
-                    detail=f"You are not authorized to access the package {name}#{version} in NPM"
+                    detail=f"You are not authorized to access the package {name}#{version} in NPM",
                 )
             raise HTTPException(
                 status_code=response.status,
                 detail=f"Unable to fetch 'package.json' file from NPM (package '{name}' at version '{version}') : "
-                       f"{response.reason}"
+                f"{response.reason}",
             )
 
 
 async def generate_external_npm_template(
-        folder: Path,
-        parameters: Dict[str, str],
-        context: Context):
-    async with (context.start("Generate external npm project") as _ctx):  # type: Context
-
+    folder: Path, parameters: Dict[str, str], context: Context
+):
+    async with (
+        context.start("Generate external npm project") as _ctx
+    ):  # type: Context
         name, version = parameters[Keys.name], parameters[Keys.version]
         exported_symbol = parameters[Keys.exported_symbol]
         project_folder = folder / name / version
@@ -107,9 +107,7 @@ async def generate_external_npm_template(
 
         project_folder.mkdir(parents=True)
         target_package_json = await fetch_package_json(name, version)
-        in_bundle_deps = {
-            name: version
-        }
+        in_bundle_deps = {name: version}
         template = Template(
             path=project_folder,
             version=version,
@@ -121,14 +119,13 @@ async def generate_external_npm_template(
                 "keywords": target_package_json.get("keywords", []),
             },
             dependencies=Dependencies(
-                runTime=RunTimeDeps(includedInBundle=in_bundle_deps),
-                devTime={}
+                runTime=RunTimeDeps(includedInBundle=in_bundle_deps), devTime={}
             ),
             bundles=Bundles(
                 mainModule=MainModule(
                     entryFile="./index.ts",
                     loadDependencies=[],
-                    aliases=[exported_symbol] if exported_symbol else []
+                    aliases=[exported_symbol] if exported_symbol else [],
                 )
             ),
             userGuide=False,
@@ -137,12 +134,11 @@ async def generate_external_npm_template(
         shutil.copytree(
             src=project_folder / ".template", dst=project_folder, dirs_exist_ok=True
         )
-        generate_template_py(template, 'external')
+        generate_template_py(template, "external")
         return f"{name}~{version}", project_folder
 
 
 def generate_template(input_template: Template):
-
     working_path = input_template.path / ".template"
     if working_path.is_dir():
         shutil.rmtree(path=working_path)
@@ -150,10 +146,19 @@ def generate_template(input_template: Template):
     externals, exported_symbols = get_externals(input_template=input_template)
 
     Path(working_path).mkdir()
-    for file in ['.gitignore', '.npmignore', '.prettierignore', 'LICENSE', 'jest.config.ts', 'tsconfig.json',
-                 'typedoc.js']:
-        shutil.copyfile(Path(__file__).parent.parent / "regular" / "templates" / file,
-                        working_path / file)
+    for file in [
+        ".gitignore",
+        ".npmignore",
+        ".prettierignore",
+        "LICENSE",
+        "jest.config.ts",
+        "tsconfig.json",
+        "typedoc.js",
+    ]:
+        shutil.copyfile(
+            Path(__file__).parent.parent / "regular" / "templates" / file,
+            working_path / file,
+        )
 
     copy_files_folders(
         working_path=working_path,
@@ -161,7 +166,10 @@ def generate_template(input_template: Template):
         files=[],
         folders=[".yw_pipeline", "src"],
     )
-    for path in [working_path / "src" / "index.ts", working_path / "src" / "tests" / "install.test.ts"]:
+    for path in [
+        working_path / "src" / "index.ts",
+        working_path / "src" / "tests" / "install.test.ts",
+    ]:
         fill_file(path=path, input_template=input_template)
 
     generate_package_json(
@@ -172,29 +180,46 @@ def generate_template(input_template: Template):
         working_path=working_path,
         input_template=input_template,
         externals=externals,
-        exported_symbols=exported_symbols
+        exported_symbols=exported_symbols,
     )
 
     generate_readme(working_path=working_path, input_template=input_template)
     generate_webpack_config(
-        source=Path(__file__).parent.parent / "regular" / "templates" / "webpack.config.lib.ts",
+        source=Path(__file__).parent.parent
+        / "regular"
+        / "templates"
+        / "webpack.config.lib.ts",
         working_path=working_path,
         input_template=input_template,
     )
 
 
 def generate_package_json(working_path: Path, input_template: Template):
-
     load_main_externals = {
         k: v
         for k, v in input_template.dependencies.runTime.externals.items()
         if k in input_template.bundles.mainModule.loadDependencies
     }
-    mandatory_dev_deps = extract_npm_dependencies_dict([
-        "@types/node", "del-cli", "typescript", "ts-loader", "ts-node", "webpack", "webpack-bundle-analyzer",
-        "webpack-cli", "@youwol/cdn-client", "@youwol/http-clients", "@youwol/prettier-config",
-        "@youwol/eslint-config", "@youwol/tsconfig", "@types/jest", "@youwol/jest-preset", "isomorphic-fetch"
-    ])
+    mandatory_dev_deps = extract_npm_dependencies_dict(
+        [
+            "@types/node",
+            "del-cli",
+            "typescript",
+            "ts-loader",
+            "ts-node",
+            "webpack",
+            "webpack-bundle-analyzer",
+            "webpack-cli",
+            "@youwol/cdn-client",
+            "@youwol/http-clients",
+            "@youwol/prettier-config",
+            "@youwol/eslint-config",
+            "@youwol/tsconfig",
+            "@types/jest",
+            "@youwol/jest-preset",
+            "isomorphic-fetch",
+        ]
+    )
     mandatory_fields = {
         "scripts": {
             "clean": "del-cli dist",
@@ -207,11 +232,7 @@ def generate_package_json(working_path: Path, input_template: Template):
             "test-coverage": "jest -i --collect-coverage",
         },
         "prettier": "@youwol/prettier-config",
-        "eslintConfig": {
-            "extends": [
-                "@youwol"
-            ]
-        }
+        "eslintConfig": {"extends": ["@youwol"]},
     }
     values = {
         "name": input_template.name,
@@ -219,10 +240,7 @@ def generate_package_json(working_path: Path, input_template: Template):
         "description": input_template.shortDescription,
         "author": input_template.author,
         "main": f"dist/{input_template.name}.js",
-        **{
-            **mandatory_fields,
-            **input_template.inPackageJson
-        },
+        **{**mandatory_fields, **input_template.inPackageJson},
         "dependencies": {
             **input_template.dependencies.runTime.externals,
             **input_template.dependencies.runTime.includedInBundle,
@@ -235,7 +253,6 @@ def generate_package_json(working_path: Path, input_template: Template):
             "dependencies": load_main_externals,
             "aliases": input_template.bundles.mainModule.aliases,
         },
-
     }
     write_json(values, working_path / FileNames.package_json)
     with open(working_path / FileNames.package_json, "a", encoding="UTF-8") as file:
@@ -274,7 +291,7 @@ def fill_file(path: Path, input_template: Template):
 
 
 def generate_autogenerated(
-        working_path: Path, input_template: Template, externals, exported_symbols
+    working_path: Path, input_template: Template, externals, exported_symbols
 ):
     for pattern, repl in [
         ["name", input_template.name],

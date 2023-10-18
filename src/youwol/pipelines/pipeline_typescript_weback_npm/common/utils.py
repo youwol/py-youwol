@@ -71,15 +71,38 @@ def generate_package_json(source: Path, working_path: Path, input_template: Temp
         if k in input_template.bundles.mainModule.loadDependencies
     }
 
-    dev_app_deps_keys = ["css-loader", "file-loader", "html-webpack-plugin", "mini-css-extract-plugin",
-                         "source-map-loader", "webpack-dev-server"]
-    dev_common_deps = ["@types/node", "typescript", "ts-lib", "ts-node", "ts-loader", "@types/jest",
-                       "isomorphic-fetch", "typedoc", "webpack", "webpack-cli", "webpack-bundle-analyzer",
-                       "@types/webpack", "del-cli", "@youwol/prettier-config", "@youwol/eslint-config",
-                       "@youwol/tsconfig", "@youwol/jest-preset"]
-    dev_deps_keys = [*dev_common_deps, *dev_app_deps_keys] \
-        if input_template.type == PackageType.Application \
+    dev_app_deps_keys = [
+        "css-loader",
+        "file-loader",
+        "html-webpack-plugin",
+        "mini-css-extract-plugin",
+        "source-map-loader",
+        "webpack-dev-server",
+    ]
+    dev_common_deps = [
+        "@types/node",
+        "typescript",
+        "ts-lib",
+        "ts-node",
+        "ts-loader",
+        "@types/jest",
+        "isomorphic-fetch",
+        "typedoc",
+        "webpack",
+        "webpack-cli",
+        "webpack-bundle-analyzer",
+        "@types/webpack",
+        "del-cli",
+        "@youwol/prettier-config",
+        "@youwol/eslint-config",
+        "@youwol/tsconfig",
+        "@youwol/jest-preset",
+    ]
+    dev_deps_keys = (
+        [*dev_common_deps, *dev_app_deps_keys]
+        if input_template.type == PackageType.Application
         else dev_common_deps
+    )
     values = {
         "name": input_template.name,
         "version": input_template.version,
@@ -95,7 +118,7 @@ def generate_package_json(source: Path, working_path: Path, input_template: Temp
         },
         "devDependencies": {
             **input_template.dependencies.devTime,
-            **extract_npm_dependencies_dict(dev_deps_keys)
+            **extract_npm_dependencies_dict(dev_deps_keys),
         },
         "webpm": {
             "dependencies": load_main_externals,

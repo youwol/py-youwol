@@ -74,11 +74,7 @@ async def pipeline(config: PipelineConfig, context: Context) -> Pipeline:
         packagedArtifacts=config.publishConfig.packagedArtifacts,
         packagedFolders=config.publishConfig.packagedFolders,
     )
-    test_step = TestStep(
-        id="test",
-        run="yarn test",
-        artifacts=[]
-    )
+    test_step = TestStep(id="test", run="yarn test", artifacts=[])
     publish_remote_steps, dags = await create_sub_pipelines_publish_cdn(
         start_step=test_step.id, context=context
     )
@@ -100,7 +96,7 @@ async def pipeline(config: PipelineConfig, context: Context) -> Pipeline:
                 name="prod",
                 dag=[
                     f"{init_step.id} > {dependencies_step.id} > {build_step.id} > {cdn_local_step.id} > {test_step.id}",
-                    *dags
+                    *dags,
                 ],
             )
         ],
