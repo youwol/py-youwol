@@ -19,9 +19,6 @@ from youwol.utils.http_clients.cdn_backend import get_api_key
 from youwol.utils.utils_paths import sed_inplace
 
 # Youwol pipelines
-from youwol.pipelines.pipeline_typescript_weback_npm import (
-    extract_npm_dependencies_dict,
-)
 from youwol.pipelines.pipeline_typescript_weback_npm.common import (
     Bundles,
     Dependencies,
@@ -31,6 +28,7 @@ from youwol.pipelines.pipeline_typescript_weback_npm.common import (
     RunTimeDeps,
     Template,
     copy_files_folders,
+    extract_npm_dependencies_dict,
     generate_package_json,
     generate_webpack_config,
     get_externals,

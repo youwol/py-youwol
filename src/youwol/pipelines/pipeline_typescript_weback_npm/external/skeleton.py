@@ -24,9 +24,16 @@ from youwol.utils import Context
 from youwol.utils.utils_paths import sed_inplace, write_json
 
 # Youwol pipelines
-from youwol.pipelines.pipeline_typescript_weback_npm import (
-    Bundles,
+from youwol.pipelines.pipeline_typescript_weback_npm.common import (
+    Dependencies,
     FileNames,
+    RunTimeDeps,
+    Template,
+    copy_files_folders,
+    generate_webpack_config,
+)
+from youwol.pipelines.pipeline_typescript_weback_npm.regular import (
+    Bundles,
     MainModule,
     PackageType,
     auto_generated_filename,
@@ -34,13 +41,6 @@ from youwol.pipelines.pipeline_typescript_weback_npm import (
     generate_template_py,
     get_externals,
     imTsSrc,
-)
-from youwol.pipelines.pipeline_typescript_weback_npm.common import (
-    Dependencies,
-    RunTimeDeps,
-    Template,
-    copy_files_folders,
-    generate_webpack_config,
 )
 
 
@@ -93,9 +93,7 @@ async def fetch_package_json(name: str, version: str):
 async def generate_external_npm_template(
     folder: Path, parameters: Dict[str, str], context: Context
 ):
-    async with (
-        context.start("Generate external npm project") as _ctx
-    ):  # type: Context
+    async with context.start("Generate external npm project"):
         name, version = parameters[Keys.name], parameters[Keys.version]
         exported_symbol = parameters[Keys.exported_symbol]
         project_folder = folder / name / version
