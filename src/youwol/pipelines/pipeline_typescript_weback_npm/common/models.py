@@ -3,7 +3,7 @@ from enum import Enum
 from pathlib import Path
 
 # typing
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 # third parties
 from pydantic import BaseModel
@@ -13,7 +13,7 @@ from youwol.app.environment import UploadTarget, UploadTargets
 from youwol.app.routers.projects.models_project import Project
 
 # Youwol utilities
-from youwol.utils import CommandException, execute_shell_cmd
+from youwol.utils import JSON, CommandException, execute_shell_cmd
 from youwol.utils.context import Context
 
 
@@ -140,7 +140,7 @@ class Template(BaseModel):
     type: PackageType
     version: Optional[str]
     name: Optional[str]
-    inPackageJson: Optional[Any]
+    inPackageJson: Optional[JSON] = {}
     exportedSymbol: Optional[str] = None
     shortDescription: Optional[str] = ""
     author: Optional[str]

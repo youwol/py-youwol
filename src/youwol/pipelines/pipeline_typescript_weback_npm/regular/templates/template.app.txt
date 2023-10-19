@@ -2,13 +2,17 @@ import shutil
 from pathlib import Path
 
 from youwol.pipelines.pipeline_typescript_weback_npm import Template, PackageType, Dependencies, \
-    RunTimeDeps, generate_template, DevServer, Bundles, MainModule
+    RunTimeDeps, DevServer, Bundles, MainModule
+from youwol.pipelines.pipeline_typescript_weback_npm.{{generatorModule}} import generate_template
 from youwol.utils import parse_json
 
 folder_path = Path(__file__).parent
 
 pkg_json = parse_json(folder_path / 'package.json')
 
+externals_deps = {{loadDependencies}}
+in_bundle_deps = {{inBundleDeps}}
+dev_deps = {{devDeps}}
 
 template = Template(
     path=folder_path,
@@ -19,14 +23,16 @@ template = Template(
     author=pkg_json['author'],
     dependencies=Dependencies(
         runTime=RunTimeDeps(
-            externals={{loadDependencies}}
-        )
+            externals=externals_deps,
+            includedInBundle=in_bundle_deps
+        ),
+        devTime=dev_deps
     ),
     bundles=Bundles(
-      mainModule=MainModule(
-          entryFile='./main.ts',
-          loadDependencies={{loadDependenciesName}}
-      )
+         mainModule=MainModule(
+             entryFile='./main.ts',
+             loadDependencies=list(externals_deps.keys())
+         )
     ),
     userGuide=True,
     devServer=DevServer(

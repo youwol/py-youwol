@@ -28,6 +28,7 @@ from youwol.pipelines.pipeline_typescript_weback_npm.common import (
     RunTimeDeps,
     Template,
     copy_files_folders,
+    extract_npm_dependencies_dict,
     generate_package_json,
     generate_webpack_config,
     get_externals,
@@ -127,7 +128,7 @@ def generate_template(input_template: Template):
     )
 
 
-def generate_template_py(input_template: Template):
+def generate_template_py(input_template: Template, generator_module: str = "regular"):
     project_path = input_template.path
     src_template = (
         Path(__file__).parent / "templates" / "template.lib.txt"
@@ -136,10 +137,16 @@ def generate_template_py(input_template: Template):
     )
 
     shutil.copyfile(src=src_template, dst=project_path / "template.py")
-    load_deps = input_template.dependencies.runTime.externals
+    ext_deps = input_template.dependencies.runTime.externals
+    bundle_deps = input_template.dependencies.runTime.includedInBundle
+    dev_deps = input_template.dependencies.devTime
     for pattern, repl in [
-        ["loadDependencies", json.dumps(load_deps)],
-        ["loadDependenciesName", json.dumps(list(load_deps.keys()))],
+        ["generatorModule", generator_module],
+        ["loadDependencies", json.dumps(ext_deps, indent=4)],
+        ["loadDependenciesName", json.dumps(list(ext_deps.keys()), indent=4)],
+        ["inBundleDeps", json.dumps(bundle_deps, indent=4)],
+        ["devDeps", json.dumps(dev_deps, indent=4)],
+        ["aliases", json.dumps(list(input_template.bundles.mainModule.aliases))],
         [
             "devServerPort",
             str(input_template.devServer.port) if input_template.devServer else "",
@@ -337,11 +344,9 @@ async def generate_ts_webpack_project(
             raise RuntimeError(f"Folder {folder} already exist")
 
         project_folder.mkdir(parents=True)
-        load_deps = {
-            "@youwol/cdn-client": "^2.0.4",
-            "@youwol/flux-view": "^1.0.3",
-            "rxjs": "^6.5.5",
-        }
+        load_deps = extract_npm_dependencies_dict(
+            ["@youwol/cdn-client", "@youwol/flux-view", "rxjs"]
+        )
         template = Template(
             path=project_folder,
             type=PackageType.Library
@@ -353,11 +358,7 @@ async def generate_ts_webpack_project(
             bundles=Bundles(
                 mainModule=MainModule(
                     entryFile="./lib/index.ts",
-                    loadDependencies=[
-                        "@youwol/cdn-client",
-                        "@youwol/flux-view",
-                        "rxjs",
-                    ],
+                    loadDependencies=list(load_deps.keys()),
                 )
             ),
             userGuide=True,

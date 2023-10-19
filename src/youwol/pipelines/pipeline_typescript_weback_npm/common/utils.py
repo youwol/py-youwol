@@ -32,6 +32,7 @@ from youwol.pipelines import PublishCdnRemoteStep
 from youwol.pipelines.pipeline_typescript_weback_npm.environment import get_environment
 
 # relative
+from ..common.npm_dependencies_version import extract_npm_dependencies_dict
 from .models import PackageType, Template
 from .npm_step import PublishNpmStep
 
@@ -69,6 +70,39 @@ def generate_package_json(source: Path, working_path: Path, input_template: Temp
         for k, v in input_template.dependencies.runTime.externals.items()
         if k in input_template.bundles.mainModule.loadDependencies
     }
+
+    dev_app_deps_keys = [
+        "css-loader",
+        "file-loader",
+        "html-webpack-plugin",
+        "mini-css-extract-plugin",
+        "source-map-loader",
+        "webpack-dev-server",
+    ]
+    dev_common_deps = [
+        "@types/node",
+        "typescript",
+        "ts-lib",
+        "ts-node",
+        "ts-loader",
+        "@types/jest",
+        "isomorphic-fetch",
+        "typedoc",
+        "webpack",
+        "webpack-cli",
+        "webpack-bundle-analyzer",
+        "@types/webpack",
+        "del-cli",
+        "@youwol/prettier-config",
+        "@youwol/eslint-config",
+        "@youwol/tsconfig",
+        "@youwol/jest-preset",
+    ]
+    dev_deps_keys = (
+        [*dev_common_deps, *dev_app_deps_keys]
+        if input_template.type == PackageType.Application
+        else dev_common_deps
+    )
     values = {
         "name": input_template.name,
         "version": input_template.version,
@@ -84,12 +118,7 @@ def generate_package_json(source: Path, working_path: Path, input_template: Temp
         },
         "devDependencies": {
             **input_template.dependencies.devTime,
-            **package_json["devDependencies"],
-            **(
-                {}
-                if input_template.type == PackageType.Library
-                else package_json_app["devDependencies"]
-            ),
+            **extract_npm_dependencies_dict(dev_deps_keys),
         },
         "webpm": {
             "dependencies": load_main_externals,

@@ -24,9 +24,12 @@ from youwol.utils.utils_paths import parse_json
 
 # Youwol pipelines
 from youwol.pipelines.pipeline_typescript_weback_npm import (
+    DependenciesStep,
+    PublishConfig,
+    SetupStep,
+    TestStep,
     create_sub_pipelines_publish_cdn,
 )
-from youwol.pipelines.pipeline_typescript_weback_npm.common import InitStep
 from youwol.pipelines.publish_cdn import PublishCdnLocalStep
 
 
@@ -56,6 +59,7 @@ class PipelineConfig(BaseModel):
     )
     customInitStep: Optional[PipelineStep] = None
     customBuildStep: Optional[PipelineStep] = None
+    publishConfig: PublishConfig = PublishConfig(packagedArtifacts=["dist"])
 
 
 async def pipeline(config: PipelineConfig, context: Context) -> Pipeline:
@@ -63,12 +67,16 @@ async def pipeline(config: PipelineConfig, context: Context) -> Pipeline:
         package_json = parse_json(path / "package.json")
         return f'{package_json["name"]}~{package_json["version"]}'
 
-    init_step = config.customInitStep or InitStep()
+    init_step = config.customInitStep or SetupStep()
     build_step = config.customBuildStep or BuildStep()
-    cdn_local_step = PublishCdnLocalStep(packagedArtifacts=["dist"])
-
+    dependencies_step = DependenciesStep()
+    cdn_local_step = PublishCdnLocalStep(
+        packagedArtifacts=config.publishConfig.packagedArtifacts,
+        packagedFolders=config.publishConfig.packagedFolders,
+    )
+    test_step = TestStep(id="test", run="yarn test", artifacts=[])
     publish_remote_steps, dags = await create_sub_pipelines_publish_cdn(
-        start_step=cdn_local_step.id, context=context
+        start_step=test_step.id, context=context
     )
     return Pipeline(
         target=config.target,
@@ -77,14 +85,19 @@ async def pipeline(config: PipelineConfig, context: Context) -> Pipeline:
         projectVersion=lambda path: parse_json(path / "package.json")["version"],
         steps=[
             init_step,
+            dependencies_step,
             build_step,
+            test_step,
             PublishCdnLocalStep(packagedArtifacts=["dist"]),
             *publish_remote_steps,
         ],
         flows=[
             Flow(
                 name="prod",
-                dag=[f"{init_step.id} > {build_step.id} > {cdn_local_step.id}", *dags],
+                dag=[
+                    f"{init_step.id} > {dependencies_step.id} > {build_step.id} > {cdn_local_step.id} > {test_step.id}",
+                    *dags,
+                ],
             )
         ],
     )
