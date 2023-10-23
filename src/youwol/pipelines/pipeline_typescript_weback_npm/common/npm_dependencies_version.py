@@ -5,15 +5,15 @@ from typing import List
 def extract_npm_dependencies_dict(names: List[str]):
     dependencies = {
         "@types/jest": "^29.5.6",
-        "@types/node": "^20.8.7",
+        "@types/node": "^18.9.1",  # peer dependency for @youwol/tsconfig
         "@types/webpack": "^5.28.0",
         "@youwol/cdn-client": "^2.1.0",
-        "@youwol/eslint-config": "^0.1.0",
+        "@youwol/eslint-config": "1.0.0",
         "@youwol/flux-view": "^1.1.1",
         "@youwol/http-clients": "^2.0.5",
-        "@youwol/jest-preset": "^0.1.0",
-        "@youwol/prettier-config": "^0.1.0",
-        "@youwol/tsconfig": "^0.1.0",
+        "@youwol/jest-preset": "1.0.0",
+        "@youwol/prettier-config": "1.0.0",
+        "@youwol/tsconfig": "1.0.0",
         "css-loader": "^6.8.1",
         "del-cli": "^5.1.0",
         "file-loader": "6.2.0",
@@ -22,11 +22,10 @@ def extract_npm_dependencies_dict(names: List[str]):
         "mini-css-extract-plugin": "^2.7.6",
         "rxjs": "^6.5.5",
         "source-map-loader": "4.0.1",
-        "ts-lib": "^0.0.5",
         "ts-loader": "^9.5.0",
-        "ts-node": "^10.9.1",
+        "ts-node": "^10.9.1",  # peer dependency for @youwol/tsconfig
         "typedoc": "^0.25.2",
-        "typescript": "^5.2.2",
+        "typescript": "^5.2.2",  # peer dependency for @youwol/tsconfig
         "webpack": "^5.89.0",
         "webpack-bundle-analyzer": "^4.9.1",
         "webpack-cli": "5.1.4",

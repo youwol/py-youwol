@@ -238,7 +238,7 @@ def generate_readme(working_path: Path, input_template: Template):
     user_guide = (
         f"[Online user-guide](https://l.youwol.com/doc/{input_template.name})"
         if input_template.userGuide
-        else ""
+        else "<!-- no user guide provided -->"
     )
 
     dev_documentation = (
@@ -258,9 +258,9 @@ def generate_readme(working_path: Path, input_template: Template):
 
     test_config = (
         "Tests require [py-youwol](https://l.youwol.com/doc/py-youwol) to run on port 2001 using "
-        f"the configuration defined [here]({input_template.testConfig}).\n"
+        f"the configuration defined [here]({input_template.testConfig})."
         if input_template.testConfig
-        else ""
+        else "<!-- no specific test configuration documented -->"
     )
 
     for pattern, repl in [
