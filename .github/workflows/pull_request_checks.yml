@@ -47,7 +47,7 @@ jobs:
     with:
       pyYouwolCoverage: true
       tsRepository: youwol/local-youwol-client
-      tsRef: ${{ inputs.local-youwol-client_ref }}
+      tsRef: feature/ts-shared-conf-1.0.0
       coverageOmit: '*/src/tests/*/yw_pipeline.py'
       name: local-youwol-client
     secrets: inherit
@@ -59,7 +59,7 @@ jobs:
     with:
       pyYouwolCoverage: true
       tsRepository: youwol/cdn-client
-      tsRef: ${{ inputs.cdn-client_ref }}
+      tsRef: feature/ts-shared-conf-1.0.0
       name: cdn-client
     secrets: inherit
 
@@ -70,7 +70,7 @@ jobs:
     with:
       pyYouwolCoverage: true
       tsRepository: youwol/http-clients
-      tsRef: ${{ inputs.http-clients_ref }}
+      tsRef: feature/ts-shared-conf-1.0.0
       name: http-clients
     secrets: inherit
 
@@ -104,7 +104,7 @@ jobs:
         uses: youwol/nestor/ts/prepare@v3
         with:
           repository: youwol/todo-app-ts
-          ref: ${{ inputs.todo-app-ts_ref }}
+          ref: feature/ts-shared-conf-1.0.0
           path: ${{ runner.temp }}/todo-app-ts
 
       - name: Build todo-app-ts
