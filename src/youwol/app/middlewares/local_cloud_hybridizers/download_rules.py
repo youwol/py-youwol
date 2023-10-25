@@ -1,5 +1,7 @@
 # typing
-from typing import Optional
+import asyncio
+import base64
+from typing import Optional, List
 
 # third parties
 from starlette.middleware.base import RequestResponseEndpoint
@@ -7,11 +9,12 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 # Youwol application
-from youwol.app.environment import YouwolEnvironment
+from youwol.app.environment import YouwolEnvironment, LocalClients, RemoteClients
 from youwol.app.routers.environment.download_assets.auto_download_thread import (
-    AssetDownloadThread,
+    AssetDownloadThread, get_assets_downloader,
 )
 from youwol.app.routers.router_remote import redirect_api_remote
+from youwol.backends.cdn.utils_indexing import get_version_number
 
 # Youwol utilities
 from youwol.utils import YouwolHeaders, decode_id
@@ -98,3 +101,93 @@ class Download(AbstractLocalCloudDispatch):
                 return resp
             resp.headers[YouwolHeaders.youwol_origin] = incoming_request.url.hostname
             return resp
+
+
+class UpdateApplication(AbstractLocalCloudDispatch):
+
+    @staticmethod
+    def retrieve_package_version_path(params: List[str]):
+
+        if params[0].startswith('@'):
+            # e.g. @bar/foo/latest/dist/bundle.js
+            package_name = f"{params[0]}/{params[1]}"
+            version = params[2]
+            rest_of_path = params[3:]
+        else:
+            # e.g. /foo/latest/dist/bundle.js
+            package_name = params[0]
+            version = params[1]
+            rest_of_path = params[2:]
+        version = version if version != 'latest' else '*'
+        return package_name, version, rest_of_path
+
+    async def apply(
+            self,
+            incoming_request: Request,
+            call_next: RequestResponseEndpoint,
+            context: Context,
+    ) -> Optional[Response]:
+
+        match, params = url_match(incoming_request, "GET:/applications/**")
+        if not match:
+            return None
+        package_name, semver, rest_of_path = self.retrieve_package_version_path(params[0])
+
+        if len(rest_of_path) > 0:
+            # The application download is triggered only on the initial GET, e.g. 'applications/foo/latest'
+            # and not e.g. 'applications/foo/latest/dist/bundle.js'
+            return None
+
+        async with context.start(
+                action="UpdateApplication.apply", muted_http_errors={404}
+        ) as ctx:  # type: Context
+
+            if all([elem not in semver for elem in ['*', '^', 'x', 'latest']]):
+                await context.info("App with explicit version required -> proceed normally")
+                return await call_next(incoming_request)
+
+            asset_id = base64.urlsafe_b64encode(str.encode(package_name)).decode()
+
+            env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
+            remote_assets_gtw = await RemoteClients.get_assets_gateway_client(env.get_remote_info().host)
+            remote_cdn = remote_assets_gtw.get_cdn_backend_router()
+            local_cdn = LocalClients.get_cdn_client(env=env)
+
+            async with ctx.start(
+                    action=f"Recover local & remote latest version matching semver '{semver}'"
+            ):
+                version_info_local, version_info_remote = await asyncio.gather(
+                    local_cdn.get_library_info(library_id=asset_id, semver=semver, max_count=1, headers=ctx.headers()),
+                    remote_cdn.get_library_info(library_id=asset_id, semver=semver, max_count=1, headers=ctx.headers()),
+                    return_exceptions=True
+                )
+
+            if isinstance(version_info_local, BaseException) or isinstance(version_info_remote, BaseException):
+                await ctx.error(f"Both local and remote versions request failed for {package_name}#{semver} "
+                                f"... not good")
+                return await call_next(incoming_request)
+
+            latest_local = version_info_local['versions'][0]
+            latest_remote = version_info_remote['versions'][0]
+            if get_version_number(latest_local) >= get_version_number(latest_remote):
+                await ctx.info(f"Local version {latest_local} of application up-to-date with remote")
+                return await call_next(incoming_request)
+
+            await ctx.info(f"A newer version matching semver '{semver}' is available to download",
+                           data={'latest_remote': latest_remote, "latest_local": latest_local})
+
+            downloader = get_assets_downloader()
+
+            if not downloader:
+                # the downloader is initialized at start => there is no reason to pass by this branch
+                await ctx.warning(f"Assets downloader not available, proceed with no download by fetching "
+                                  f"{latest_local}")
+                return await call_next(incoming_request)
+
+            await downloader.download_asset(
+                url=f'/api/assets-gateway/cdn-backend/resources/{asset_id}/{latest_remote}',
+                kind="package",
+                raw_id=asset_id,
+                context=ctx
+            )
+            return await call_next(incoming_request)
