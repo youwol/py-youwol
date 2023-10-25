@@ -45,9 +45,16 @@ def downloading_pbar(env: YouwolEnvironment):
     return f"Downloading [{','.join(env.cache_py_youwol[CACHE_DOWNLOADING_KEY])}]"
 
 
-async def process_download_asset(url: str, kind: str, raw_id: str, factories: Dict[str, Any], pbar: tqdm,
-                                 on_error: Callable, on_done: Callable, context: Context):
-
+async def process_download_asset(
+    url: str,
+    kind: str,
+    raw_id: str,
+    factories: Dict[str, Any],
+    pbar: tqdm,
+    on_error: Callable,
+    on_done: Callable,
+    context: Context,
+):
     async def _on_error(text, data, _ctx: Context):
         log_error("Failed to download asset", data)
         await _ctx.error(text=text, data=data)
@@ -84,23 +91,19 @@ async def process_download_asset(url: str, kind: str, raw_id: str, factories: Di
 
     pbar.total = pbar.total + 1
     async with context.start(
-            action="Proceed download task",
-            with_attributes={"kind": kind, "rawId": raw_id},
+        action="Proceed download task",
+        with_attributes={"kind": kind, "rawId": raw_id},
     ) as ctx:  # types: Context
         cache_downloaded_ids.add(download_id)
         # log_info(f"Start asset install of kind {kind}: {download_id}")
         pbar.set_description(downloading_pbar(env), refresh=True)
         try:
             await ctx.send(
-                DownloadEvent(
-                    kind=kind, rawId=raw_id, type=DownloadEventType.started
-                )
+                DownloadEvent(kind=kind, rawId=raw_id, type=DownloadEventType.started)
             )
             await task.create_local_asset(context=ctx)
             await ctx.send(
-                DownloadEvent(
-                    kind=kind, rawId=raw_id, type=DownloadEventType.succeeded
-                )
+                DownloadEvent(kind=kind, rawId=raw_id, type=DownloadEventType.succeeded)
             )
             pbar.update(1)
             # log_info(f"Done asset install of kind {kind}: {download_id}")
@@ -131,8 +134,16 @@ async def process_download_asset_from_queue(
 ):
     while True:
         url, kind, raw_id, context, _ = await queue.get()
-        await process_download_asset(url=url, kind=kind, raw_id=raw_id, factories=factories, pbar=pbar,
-                                     on_error=lambda : True, on_done=lambda: queue.task_done(), context=context)
+        await process_download_asset(
+            url=url,
+            kind=kind,
+            raw_id=raw_id,
+            factories=factories,
+            pbar=pbar,
+            on_error=lambda: True,
+            on_done=lambda: queue.task_done(),
+            context=context,
+        )
 
 
 class AssetDownloadThread(Thread):
@@ -210,7 +221,7 @@ class AssetDownloadThread(Thread):
 
     async def download_asset(self, url: str, kind: str, raw_id: str, context: Context):
         async with context.start(
-                action="AssetDownloadThread.download_asset"
+            action="AssetDownloadThread.download_asset"
         ) as ctx:  # type: Context
             await process_download_asset(
                 url=url,
@@ -220,7 +231,7 @@ class AssetDownloadThread(Thread):
                 pbar=self.pbar,
                 on_error=lambda: True,
                 on_done=lambda: True,
-                context=ctx
+                context=ctx,
             )
 
 
