@@ -148,7 +148,7 @@ class TokensManager:
         tokens_id, tokens_data = await self.__storage.get_by_sid(session_id)
         if tokens_id is None or tokens_data is None:
             return None
-        return self.restore_tokens(tokens_id)
+        return await self.restore_tokens(tokens_id)
 
 
 class TokensStorageCache(TokensStorage):
