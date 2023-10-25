@@ -1,4 +1,5 @@
 # standard library
+import functools
 import hashlib
 
 from dataclasses import dataclass, field
@@ -124,8 +125,20 @@ class CdnClient:
                     resp, url=f"{self.url_base}/{str(url)}", headers=self.headers
                 )
 
-    async def get_library_info(self, library_id: str, **kwargs):
-        url = f"{self.url_base}/libraries/{library_id}"
+    async def get_library_info(
+        self, library_id: str, semver: str = None, max_count: int = None, **kwargs
+    ):
+        query_params = [
+            (k, v)
+            for k, v in {"semver": semver, "max-count": max_count}.items()
+            if v is not None
+        ]
+        suffix = functools.reduce(
+            lambda acc, item: acc + f"{acc}{item[0]}={item[1]}&", query_params, ""
+        )
+
+        url = f"{self.url_base}/libraries/{library_id}?{suffix}"
+
         async with aiohttp.ClientSession(headers=self.headers) as session:
             async with await session.get(url=url, **kwargs) as resp:
                 if resp.status == 200:

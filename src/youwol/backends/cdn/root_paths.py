@@ -7,7 +7,10 @@ import json
 from typing import Dict, List, Optional
 
 # third parties
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException
+from fastapi import Query as QueryParam
+from fastapi import UploadFile
+from semantic_version import NpmSpec, Version
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -113,12 +116,20 @@ async def download_library(
 
 @router.get(
     "/libraries/{library_id}",
-    summary="list versions of a library",
+    summary="""
+Retrieve info of a library, including available versions sorted from the most recent to the oldest.
+library_id:  id of the library
+query parameters:
+   semver: semantic versioning query
+   max_count: maximum count of versions returned
+    """,
     response_model=ListVersionsResponse,
 )
 async def get_library_info(
     request: Request,
     library_id: str,
+    semver: str = QueryParam(None),
+    max_count: int = QueryParam(1000, alias="max-count"),
     configuration: Configuration = Depends(get_configuration),
 ):
     response: Optional[ListVersionsResponse] = None
@@ -126,10 +137,28 @@ async def get_library_info(
         request=request, response=lambda: response
     ) as ctx:  # type: Context
         name = to_package_name(library_id)
+        # If a semver is requested we basically fetch all versions and proceed with filtering afterward using NpmSpec.
+        # It would be interesting to proceed with the versions filtering directly from the CQL query to scylla-db.
+        # This optimization remains to be done.
         response = await list_versions(
-            name=name, context=ctx, max_results=1000, configuration=configuration
+            name=name,
+            context=ctx,
+            max_results=10000 if semver else max_count,
+            configuration=configuration,
         )
-        return response
+        if semver is None:
+            return response
+        releases_by_version = {r.version: r for r in response.releases}
+        selector = NpmSpec(semver)
+        versions = [v for v in response.versions if selector.match(Version(v))]
+        versions = versions[0:max_count]
+        return ListVersionsResponse(
+            **{
+                **response.dict(),
+                "versions": versions,
+                "releases": [releases_by_version[v] for v in versions],
+            }
+        )
 
 
 async def get_version_info_impl(
@@ -375,7 +404,7 @@ async def get_entry_point(
         path = get_path(
             library_id=library_id, version=version, rest_of_path=doc["bundle"]
         )
-
+        await ctx.info(f"Fetch script at path {path}")
         return await fetch_resource(
             request=request,
             path=path,
