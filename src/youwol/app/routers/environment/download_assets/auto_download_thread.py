@@ -156,6 +156,8 @@ class AssetDownloadThread(Thread):
         return task.download_id() in env.cache_py_youwol[CACHE_DOWNLOADING_KEY]
 
     def __init__(self, factories, worker_count: int):
+        global assets_downloader
+
         def start_loop(loop):
             asyncio.set_event_loop(loop)
             loop.run_forever()
@@ -163,6 +165,7 @@ class AssetDownloadThread(Thread):
         super().__init__(target=start_loop, args=(self.event_loop,))
         self.worker_count = worker_count
         self.factories = factories
+        assets_downloader = self
 
     def go(self):
         super().start()
@@ -219,3 +222,10 @@ class AssetDownloadThread(Thread):
                 on_done=lambda: True,
                 context=ctx
             )
+
+
+assets_downloader: Optional[AssetDownloadThread] = None
+
+
+def get_assets_downloader() -> Optional[AssetDownloadThread]:
+    return assets_downloader
