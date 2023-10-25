@@ -79,7 +79,7 @@ def get_version_number(version_str: str) -> int:
         delta = (
             1
             if prerelease == "next"
-            else -Constants.allowed_prerelease.index(prerelease)
+            else -(1 + Constants.allowed_prerelease.index(prerelease))
         )
 
     return int(version.major * 1e7 + version.minor * 1e4 + version.patch * 10 + delta)
