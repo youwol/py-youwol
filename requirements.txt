@@ -214,7 +214,7 @@ python-daemon==2.3.0
     # via youwol (pyproject.toml)
 python-multipart==0.0.5
     # via youwol (pyproject.toml)
-pyyaml==6.0
+pyyaml==6.0.1
     # via youwol (pyproject.toml)
 readme-renderer==37.3
     # via twine
