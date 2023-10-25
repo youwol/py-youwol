@@ -14,7 +14,6 @@ from starlette.responses import Response
 from youwol.app.environment import LocalClients, RemoteClients, YouwolEnvironment
 from youwol.app.routers.environment.download_assets.auto_download_thread import (
     AssetDownloadThread,
-    get_assets_downloader,
 )
 from youwol.app.routers.router_remote import redirect_api_remote
 
@@ -201,7 +200,9 @@ class UpdateApplication(AbstractLocalCloudDispatch):
                 data={"latest_remote": latest_remote, "latest_local": latest_local},
             )
 
-            downloader = get_assets_downloader()
+            downloader: AssetDownloadThread = await ctx.get(
+                "download_thread", AssetDownloadThread
+            )
 
             if not downloader:
                 # the downloader is initialized at start => there is no reason to pass by this branch
