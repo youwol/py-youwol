@@ -139,13 +139,17 @@ async def process_download_asset_from_queue(
 ):
     while True:
         url, kind, raw_id, context, _ = await queue.get()
+
+        def on_done():
+            queue.task_done()
+
         await process_download_asset(
             url=url,
             kind=kind,
             raw_id=raw_id,
             factories=factories,
             pbar=pbar,
-            on_done=lambda: queue.task_done(),
+            on_done=on_done,
             context=context,
         )
 
