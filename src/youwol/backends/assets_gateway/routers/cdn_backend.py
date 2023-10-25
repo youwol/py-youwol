@@ -78,12 +78,20 @@ async def download_library(
 
 @router.get(
     "/libraries/{library_id}",
-    summary="list versions of a library",
+    summary="""
+Retrieve info of a library, including available versions sorted from the most recent to the oldest.
+library_id:  id of the library
+query parameters:
+   semver: semantic versioning query
+   max_count: maximum count of versions returned
+    """,
     response_model=ListVersionsResponse,
 )
 async def get_library_info(
     request: Request,
     library_id: str,
+    semver: str = Query(None),
+    max_count: int = Query(None, alias="max-count"),
     configuration: Configuration = Depends(get_configuration),
 ):
     async with Context.start_ep(request=request) as ctx:
@@ -92,6 +100,8 @@ async def get_library_info(
         )
         return await configuration.cdn_client.get_library_info(
             library_id=library_id,
+            semver=semver,
+            max_count=max_count,
             headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys),
         )
 
