@@ -130,6 +130,8 @@ async def process_download_asset(
 
 class AssetDownloadThread(Thread):
     event_loop = asyncio.new_event_loop()
+    pbar = tqdm(total=0, colour="green")
+
     download_queue = (
         # TODO: Remove once python 3.9 support is dropped
         asyncio.Queue(loop=event_loop)  # pylint: disable=unexpected-keyword-arg
@@ -158,7 +160,7 @@ class AssetDownloadThread(Thread):
     def go(self):
         super().start()
         tasks = []
-        pbar = tqdm(total=0, colour="green")
+
         for _ in range(self.worker_count):
             coroutine = process_download_asset(
                 queue=self.download_queue, factories=self.factories, pbar=pbar
