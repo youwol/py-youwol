@@ -1,7 +1,9 @@
-# typing
+# standard library
 import asyncio
 import base64
-from typing import Optional, List
+
+# typing
+from typing import List, Optional
 
 # third parties
 from starlette.middleware.base import RequestResponseEndpoint
@@ -9,11 +11,14 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 # Youwol application
-from youwol.app.environment import YouwolEnvironment, LocalClients, RemoteClients
+from youwol.app.environment import LocalClients, RemoteClients, YouwolEnvironment
 from youwol.app.routers.environment.download_assets.auto_download_thread import (
-    AssetDownloadThread, get_assets_downloader,
+    AssetDownloadThread,
+    get_assets_downloader,
 )
 from youwol.app.routers.router_remote import redirect_api_remote
+
+# Youwol backends
 from youwol.backends.cdn.utils_indexing import get_version_number
 
 # Youwol utilities

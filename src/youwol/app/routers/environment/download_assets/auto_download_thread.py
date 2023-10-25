@@ -7,7 +7,7 @@ from enum import Enum
 from threading import Thread
 
 # typing
-from typing import Any, Dict, Callable, Optional
+from typing import Any, Callable, Dict, Optional
 
 # third parties
 from pydantic import BaseModel
