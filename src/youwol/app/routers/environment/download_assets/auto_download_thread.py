@@ -51,9 +51,9 @@ async def process_download_asset(
     raw_id: str,
     factories: Dict[str, Any],
     pbar: tqdm,
-    on_error: Callable,
-    on_done: Callable,
     context: Context,
+    on_error: Optional[Callable] = None,
+    on_done: Optional[Callable] = None,
 ):
     async def _on_error(text, data, _ctx: Context):
         log_error("Failed to download asset", data)
@@ -65,7 +65,12 @@ async def process_download_asset(
                 type=DownloadEventType.failed,
             )
         )
-        on_error()
+        if on_error:
+            on_error()
+
+    def _on_done():
+        if on_done:
+            on_done()
 
     env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
     asset_id = encode_id(raw_id)
@@ -80,13 +85,13 @@ async def process_download_asset(
     download_id = task.download_id()
     if download_id in cache_downloaded_ids:
         await context.info(text="Asset already in download queue")
-        on_done()  # queue.task_done()
+        _on_done()
         return
 
     up_to_date = await task.is_local_up_to_date(context=context)
     if up_to_date:
         await context.info(text="Asset up to date")
-        on_done()  # queue.task_done()
+        _on_done()
         return
 
     pbar.total = pbar.total + 1
@@ -123,7 +128,7 @@ async def process_download_asset(
                 ctx,
             )
         finally:
-            on_done()  # queue.task_done()
+            _on_done()  # queue.task_done()
             if download_id in cache_downloaded_ids:
                 cache_downloaded_ids.remove(download_id)
             pbar.set_description(downloading_pbar(env), refresh=True)
@@ -140,7 +145,6 @@ async def process_download_asset_from_queue(
             raw_id=raw_id,
             factories=factories,
             pbar=pbar,
-            on_error=lambda: True,
             on_done=lambda: queue.task_done(),
             context=context,
         )
@@ -226,7 +230,5 @@ class AssetDownloadThread(Thread):
                 raw_id=raw_id,
                 factories=self.factories,
                 pbar=self.pbar,
-                on_error=lambda: True,
-                on_done=lambda: True,
                 context=ctx,
             )
