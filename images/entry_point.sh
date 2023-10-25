@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 if [ -z "$YOUWOL_SOURCES_PATH" ]; then
   echo "Missing expected environment variable YOUWOL_SOURCES_PATH"
   exit 1
@@ -41,6 +43,10 @@ if [ ! -f "${backends_directory_path}/${backend}/deployment.py" ]; then
   exit 1
 fi
 
-echo "Launching backend '${backend}'"
+echo "Selected backend: '${backend}'"
+
+echo "Entering youwol source directory '${YOUWOL_SOURCES_PATH}'"
 cd "${YOUWOL_SOURCES_PATH}" || exit 1
+
+echo "Executing uvicorn"
 exec uvicorn "youwol.backends.${backend}.deployment:app" --host=0.0.0.0 --no-server-header --port=8080
