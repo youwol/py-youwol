@@ -204,3 +204,18 @@ class AssetDownloadThread(Thread):
         asyncio.run_coroutine_threadsafe(stop_loop(), self.event_loop)
         if self.is_alive():
             super().join(timeout)
+
+    async def download_asset(self, url: str, kind: str, raw_id: str, context: Context):
+        async with context.start(
+                action="AssetDownloadThread.download_asset"
+        ) as ctx:  # type: Context
+            await process_download_asset(
+                url=url,
+                kind=kind,
+                raw_id=raw_id,
+                factories=self.factories,
+                pbar=self.pbar,
+                on_error=lambda: True,
+                on_done=lambda: True,
+                context=ctx
+            )
