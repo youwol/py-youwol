@@ -107,6 +107,7 @@ def setup_middlewares(env: YouwolEnvironment):
             local_cloud_hybridizer.workspace_explorer_rules.GetChildrenDispatch(),
             local_cloud_hybridizer.workspace_explorer_rules.MoveBorrowInRemoteFolderDispatch(),
             local_cloud_hybridizer.loading_graph_rules.GetLoadingGraph(),
+            local_cloud_hybridizer.download_rules.UpdateApplication(),
             local_cloud_hybridizer.download_rules.Download(),
             local_cloud_hybridizer.forward_only_rules.ForwardOnly(),
             local_cloud_hybridizer.deprecated_rules.PostMetadataDeprecated(),
