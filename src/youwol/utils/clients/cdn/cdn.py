@@ -224,9 +224,10 @@ class CdnClient:
                     resp, url=self.push_url, headers=self.headers
                 )
 
-    async def get_entry_point(self, library_id: str, version: str, **kwargs):
+    async def get_entry_point(self, library_id: str, version: str,
+                              reader: Callable[[ClientResponse], Awaitable[Any]] = None, **kwargs):
         return await self.get_resource(
-            library_id=library_id, version=version, rest_of_path="", **kwargs
+            library_id=library_id, version=version, rest_of_path="", reader=reader, **kwargs
         )
 
     async def get_resource(
