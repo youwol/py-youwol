@@ -228,6 +228,7 @@ class CdnClient:
         self,
         library_id: str,
         version: str,
+        auto_decompress=True,
         reader: Callable[[ClientResponse], Awaitable[Any]] = None,
         **kwargs,
     ):
@@ -236,6 +237,7 @@ class CdnClient:
             version=version,
             rest_of_path="",
             reader=reader,
+            auto_decompress=auto_decompress,
             **kwargs,
         )
 

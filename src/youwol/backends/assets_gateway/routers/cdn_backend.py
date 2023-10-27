@@ -205,6 +205,7 @@ async def get_entry_point(
             library_id=library_id,
             version=version,
             reader=aiohttp_to_starlette_response,
+            auto_decompress=False,
             headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys),
         )
 
