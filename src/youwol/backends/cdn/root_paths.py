@@ -143,11 +143,17 @@ async def get_library_info(
         response = await list_versions(
             name=name,
             context=ctx,
-            max_results=10000 if semver else max_count,
+            max_results=1000 if semver else max_count,
             configuration=configuration,
         )
         if semver is None:
             return response
+        if len(response.versions) == 1000:
+            raise HTTPException(
+                status_code=500,
+                detail=f"cdn.get_library_info => library {name} has more than 1000 "
+                f"versions.",
+            )
         releases_by_version = {r.version: r for r in response.releases}
         selector = NpmSpec(semver)
         versions = [v for v in response.versions if selector.match(Version(v))]
