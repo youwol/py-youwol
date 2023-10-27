@@ -181,7 +181,7 @@ class UpdateApplication(AbstractLocalCloudDispatch):
             latest_local = self.retrieve_latest_version(version_info_local)
             latest_remote = self.retrieve_latest_version(version_info_remote)
 
-            if not self.download_needed(
+            if not await self.download_needed(
                 package_name=package_name,
                 semver=semver,
                 latest_local=latest_local,
