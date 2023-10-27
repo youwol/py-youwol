@@ -2,6 +2,14 @@
 
 set -e
 
+dash2underscore() {
+  echo "$1" | sed "s/-/_/g"
+}
+
+underscore2dash() {
+  echo "$1" | sed "s/_/-/g"
+}
+
 if [ -z "$YOUWOL_SOURCES_PATH" ]; then
   echo "Missing expected environment variable YOUWOL_SOURCES_PATH"
   exit 1
@@ -28,25 +36,28 @@ cd "${backends_directory_path}" || exit 1
 echo "Available backends:"
 for backend in *; do
   if [ -f "${backend}/deployment.py" ]; then
-    echo " * ${backend}"
+    dashed_backend=$(underscore2dash ${backend})
+    echo " * ${dashed_backend}"
   fi
 done
 
-backend="$1"
+dashed_backend="$1"
 if [ "x${backend}" = "x" ]; then
   echo "Entry point need one argument, the backend name"
   exit 1
 fi
 
-if [ ! -f "${backends_directory_path}/${backend}/deployment.py" ]; then
-  echo "Argument '${backend}' is not a backend"
+underscored_backend=$(dash2underscore ${dashed_backend})
+
+if [ ! -f "${backends_directory_path}/${underscored_backend}/deployment.py" ]; then
+  echo "Argument '${dashed_backend}' is not a backend"
   exit 1
 fi
 
-echo "Selected backend: '${backend}'"
+echo "Selected backend: '${dashed_backend}'"
 
 echo "Entering youwol source directory '${YOUWOL_SOURCES_PATH}'"
 cd "${YOUWOL_SOURCES_PATH}" || exit 1
 
 echo "Executing uvicorn"
-exec uvicorn "youwol.backends.${backend}.deployment:app" --host=0.0.0.0 --no-server-header --port=8080
+exec uvicorn "youwol.backends.${underscored_backend}.deployment:app" --host=0.0.0.0 --no-server-header --port=8080
