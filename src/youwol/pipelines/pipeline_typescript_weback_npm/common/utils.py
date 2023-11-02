@@ -16,7 +16,7 @@ import semantic_version
 # Youwol application
 from youwol.app.routers.projects.models_project import PipelineStep
 from youwol.app.routers.system.router import Log
-from youwol.app.test.utils_test import PyYouwolSession, TestFailureResult
+
 
 # Youwol backends
 from youwol.backends.cdn import get_api_key
@@ -278,58 +278,3 @@ async def create_sub_pipelines_publish(start_step: str, context: Context):
 
 File = str
 Test = str
-
-
-async def yarn_errors_formatter(
-    py_yw_session: PyYouwolSession,
-    outputs: List[str],
-    py_yw_logs_getter: Callable[[PyYouwolSession, File, Test], Awaitable[List[Log]]],
-) -> List[TestFailureResult]:
-    """
-    This function extract relevant information from jest outputs in terms of logs.
-    A list of TestFailure is returned, each one related to a particular test in a particular file.
-    One test failure gather:
-        * a summary of the failure as printed by jest
-        * eventually the list of py-youwol logs
-
-    The way py-youwol logs are retrieved is in charge to the caller via the argument 'py_yw_logs_getter'.
-
-    :param py_yw_session: PyYouwol session
-    :param outputs: full std outputs of jest
-    :param py_yw_logs_getter: callback
-    :return:
-    """
-    lines = itertools.chain.from_iterable(line.split("\n") for line in outputs)
-    lines = [line for line in lines if line != ""]
-    test_suites_failed = [
-        i for i, line in enumerate(lines) if "FAIL src/tests/" in line
-    ] + [len(lines)]
-
-    def extract_test_suite(test_file, chunk):
-        test_name = chunk[0].split("● ")[1]
-        return TestFailureResult(
-            name=[test_file.split("/")[-1], test_name],
-            py_youwol_logs=py_yw_logs_getter(py_yw_session, test_file, test_name),
-            output_summary=chunk,
-        )
-
-    def extract_test_file(start, end):
-        lines_test = lines[start:end]
-        starts = [
-            i
-            for i, line in enumerate(lines_test)
-            if "●" in line and "Console" not in line
-        ]
-        chunks = [lines_test[i : i + 15] for i in starts]
-        test_file = lines_test[0].split(" ")[1]
-        return test_file, chunks
-
-    file_results = [
-        extract_test_file(start, end)
-        for start, end in zip(test_suites_failed[0:-1], test_suites_failed[1:])
-    ]
-    return [
-        extract_test_suite(test_file, chunk)
-        for test_file, test_results in file_results
-        for chunk in test_results
-    ]
