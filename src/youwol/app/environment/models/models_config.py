@@ -21,6 +21,7 @@ from youwol.app.environment.models.defaults import (
     default_path_data_dir,
     default_path_projects_dir,
     default_path_tokens_storage,
+    default_path_tokens_storage_encrypted,
     default_platform_host,
 )
 from youwol.app.environment.models.models import (
@@ -31,10 +32,6 @@ from youwol.app.environment.models.models import (
 from youwol.app.environment.models.projects_finder_handlers import (
     ExplicitProjectsFinderHandler,
     RecursiveProjectFinderHandler,
-)
-from youwol.app.environment.models.tokens_storage import (
-    TokensStorageFile,
-    TokensStorageKeyring,
 )
 from youwol.app.environment.paths import PathsBook
 
@@ -52,6 +49,10 @@ from youwol.utils.clients.oidc.tokens_manager import TokensStorageCache
 from youwol.utils.context import ContextFactory, Label
 from youwol.utils.servers.fast_api import FastApiRouter
 from youwol.utils.utils_requests import is_server_http_alive, redirect_request
+
+# relative
+from .tokens_storage.encrypted_file import AlgoSpec, TokensStorageKeyring
+from .tokens_storage.file import TokensStorageFile
 
 
 class Events(BaseModel):
@@ -362,20 +363,27 @@ class LocalEnvironment(BaseModel):
     cacheDir: ConfigPath = default_path_cache_dir
 
 
-class TokensStorage(ABC):
+class TokensStorageConf(ABC):
     @abstractmethod
     async def get_tokens_storage(self):
         pass
 
 
-class TokensStorageSystemKeyring(TokensStorage, BaseModel):
+class TokensStorageSystemKeyring(TokensStorageConf, BaseModel):
+    path: Optional[Union[str, Path]] = default_path_tokens_storage_encrypted
     service: str = "py-youwol"
+    algo: AlgoSpec = "any"
 
     async def get_tokens_storage(self):
-        return TokensStorageKeyring(service=self.service)
+        path = self.path if isinstance(self.path, Path) else Path(self.path)
+        result = TokensStorageKeyring(
+            service=self.service, absolute_path=path, algo=self.algo
+        )
+        await result.load_data()
+        return result
 
 
-class TokensStoragePath(TokensStorage, BaseModel):
+class TokensStoragePath(TokensStorageConf, BaseModel):
     path: Optional[Union[str, Path]] = default_path_tokens_storage
 
     async def get_tokens_storage(self):
@@ -385,7 +393,7 @@ class TokensStoragePath(TokensStorage, BaseModel):
         return result
 
 
-class TokensStorageInMemory(TokensStorage):
+class TokensStorageInMemory(TokensStorageConf):
     async def get_tokens_storage(self):
         return TokensStorageCache(cache=ContextFactory.with_static_data["auth_cache"])
 
@@ -421,7 +429,7 @@ class System(BaseModel):
     """
 
     httpPort: Optional[int] = default_http_port
-    tokensStorage: Optional[TokensStorage] = TokensStorageSystemKeyring()
+    tokensStorage: Optional[TokensStorageConf] = TokensStorageSystemKeyring()
     cloudEnvironments: CloudEnvironments = CloudEnvironments(
         defaultConnection=Connection(envId="public-youwol", authId="browser"),
         environments=[

@@ -1,13 +1,12 @@
 # standard library
 import functools
 import glob
-import itertools
 import shutil
 
 from pathlib import Path
 
 # typing
-from typing import Awaitable, Callable, Dict, List, NamedTuple, Union, cast
+from typing import Dict, List, NamedTuple, Union, cast
 
 # third parties
 import pyparsing
@@ -15,8 +14,6 @@ import semantic_version
 
 # Youwol application
 from youwol.app.routers.projects.models_project import PipelineStep
-from youwol.app.routers.system.router import Log
-
 
 # Youwol backends
 from youwol.backends.cdn import get_api_key

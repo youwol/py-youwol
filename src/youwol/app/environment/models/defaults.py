@@ -13,6 +13,7 @@ default_path_data_dir: Path = Path("./databases")
 default_path_cache_dir: Path = Path("./system")
 default_path_projects_dir: Path = Path("Projects") / Path("youwol")
 default_path_tokens_storage: Path = Path("./tokens_storage.json")
+default_path_tokens_storage_encrypted: Path = Path("./tokens_storage.json.encrypted")
 default_port_range_start: int = 3000
 default_port_range_end: int = 4000
 default_jwt_source: str = "config"
