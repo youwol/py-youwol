@@ -26,7 +26,6 @@ from youwol.pipelines.publish_cdn import PublishCdnLocalStep
 # relative
 from .build_step import BuildStep
 from .common import Paths, get_dependencies
-from .consistency_testing import ConsistencyTestStep
 from .dependencies_step import DependenciesStep
 from .doc_step import DocStep
 from .setup_step import SetupStep
@@ -44,7 +43,6 @@ class PipelineConfig(BaseModel):
     testConfig: TestStepConfig = TestStepConfig()
     publishConfig: PublishConfig = PublishConfig()
     overridenSteps: List[PipelineStep] = []
-    includeConsistencyTest: bool = False
 
 
 async def pipeline(config: PipelineConfig, context: Context):
@@ -72,10 +70,6 @@ async def pipeline(config: PipelineConfig, context: Context):
             ),
             *publish_remote_steps,
         ]
-        if config.includeConsistencyTest:
-            default_steps.append(ConsistencyTestStep(id="consistency-test"))
-            dags.append("test > consistency-test")
-
         overriden_steps = {step.id: step for step in config.overridenSteps}
         steps_dict = {
             step.id: overriden_steps.get(step.id, step) for step in default_steps
