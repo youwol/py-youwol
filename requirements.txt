@@ -190,6 +190,8 @@ pycodestyle==2.10.0
     # via youwol (pyproject.toml)
 pycparser==2.21
     # via cffi
+pycryptodome==3.19.0
+    # via youwol (pyproject.toml)
 pydantic==1.10.9
     # via fastapi
 pydocstyle==6.3.0
