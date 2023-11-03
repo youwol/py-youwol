@@ -50,6 +50,7 @@ from .models.models_config import (
     ExplicitProjectsFinder,
     Projects,
     TokensStoragePath,
+    TokensStorageSystemKeyring,
 )
 from .native_backends_config import BackendConfigurations, native_backends_config
 from .paths import PathsBook, app_dirs, ensure_config_file_exists_or_create_it
@@ -290,11 +291,10 @@ async def safe_load(
     tokens_storage_conf = config.system.tokensStorage
     if (
         isinstance(tokens_storage_conf, TokensStoragePath)
+        or isinstance(tokens_storage_conf, TokensStorageSystemKeyring)
         and not Path(tokens_storage_conf.path).is_absolute()
     ):
-        tokens_storage_conf = TokensStoragePath(
-            path=(cache_dir / tokens_storage_conf.path)
-        )
+        tokens_storage_conf.path = cache_dir / tokens_storage_conf.path
 
     tokens_storage = await tokens_storage_conf.get_tokens_storage()
 
