@@ -6,8 +6,8 @@ on:
       only:
         description: >
           Only run specified integrations.
-          Default to 'http-clients local-youwol-client cdn-client'
-        default: "http-clients local-youwol-client cdn-client"
+          Default to 'http-clients local-youwol-client webpm-client'
+        default: "http-clients local-youwol-client webpm-client"
 
 #  schedule:
 #    - cron: '39 23 * * 0' # Every sunday at 23:39
@@ -97,7 +97,7 @@ jobs:
         with:
           script: core.setFailed("Job failed because tests has failed, see job logs and annotations.")
 
-  integration_cdn-client:
+  integration_webpm-client:
     strategy:
       max-parallel: 1
       matrix:
@@ -141,9 +141,9 @@ jobs:
             env:
               OBJC_DISABLE_INITIALIZE_FORK_SAFETY: YES
 
-    name: cdn-client - python ${{ matrix.python }} on ${{ matrix.os.image }})
+    name: webpm-client - python ${{ matrix.python }} on ${{ matrix.os.image }})
     runs-on: ${{ matrix.os.image }}
-    if: inputs.only == '' || contains(inputs.only, 'cdn-client')
+    if: inputs.only == '' || contains(inputs.only, 'webpm-client')
     env: ${{ matrix.os.env }}
     continue-on-error: ${{ matrix.os.experimental }}
     steps:
@@ -153,19 +153,19 @@ jobs:
         with:
           python-version: "${{ matrix.python }}"
 
-      - name: Prepare cdn-client
-        id: prepare_cdn-client
+      - name: Prepare webpm-client
+        id: prepare_webpm-client
         uses: youwol/nestor/ts/prepare@v1
         with:
-          repository: youwol/cdn-client
-          ref: ${{ inputs.cdn-client_ref }}
-          path: ${{ runner.temp }}/cdn-client
+          repository: youwol/webpm-client
+          ref: ${{ inputs.webpm-client_ref }}
+          path: ${{ runner.temp }}/webpm-client
 
-      - name: Run cdn-client tests
-        id: tests_cdn-client
+      - name: Run webpm-client tests
+        id: tests_webpm-client
         uses: youwol/nestor/ts/tests_coverage@v1
         with:
-          path: ${{ runner.temp }}/cdn-client
+          path: ${{ runner.temp }}/webpm-client
           py-youwol_path: ${{ github.workspace }}
           py-youwol_conf_path: yw_config_IT.py
           py-youwol_conf_repository: youwol/integrations-tests-conf
@@ -176,7 +176,7 @@ jobs:
 
       - name: On Tests Failure
         id: on_tests_failure
-        if: steps.tests_cdn-client.outputs.result == 'failure'
+        if: steps.tests_webpm-client.outputs.result == 'failure'
         uses: actions/github-script@v6
         with:
           script: core.setFailed("Job failed because tests has failed, see job logs and annotations.")

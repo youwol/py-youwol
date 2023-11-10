@@ -9,9 +9,9 @@ on:
           Default to 'main'
         default: main
 
-      cdn-client_ref:
+      webpm-client_ref:
         description: >
-          Branch, tag or SHA for cdn-client checkout.
+          Branch, tag or SHA for webpm-client checkout.
           Default to 'main'
         default: main
 
@@ -29,7 +29,7 @@ on:
 
       skip:
         description: |
-          List of check to skip : local-youwol-client, http-clients, cdn-client, pipeline-ts, build, version_monotony, 
+          List of check to skip : local-youwol-client, http-clients, webpm-client, pipeline-ts, build, version_monotony, 
           audit, pep8, cleanness, dep_manager
         required: false
         default: ''
@@ -52,15 +52,15 @@ jobs:
       name: local-youwol-client
     secrets: inherit
 
-  integration_cdn-client:
-    name: Integration cdn-client
-    if: "! contains(inputs.skip, 'cdn-client')"
+  integration_webpm-client:
+    name: Integration webpm-client
+    if: "! contains(inputs.skip, 'webpm-client')"
     uses: youwol/nestor/.github/workflows/integration-tests.yaml@v3
     with:
       pyYouwolCoverage: true
-      tsRepository: youwol/cdn-client
-      tsRef: ${{ inputs.cdn-client_ref }}
-      name: cdn-client
+      tsRepository: youwol/webpm-client
+      tsRef: ${{ inputs.webpm-client_ref }}
+      name: webpm-client
     secrets: inherit
 
   integration_http-clients:
@@ -79,7 +79,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - integration_local-youwol-client
-      - integration_cdn-client
+      - integration_webpm-client
       - integration_http-clients
     steps:
       - name: Prepare repository
@@ -139,7 +139,7 @@ jobs:
     name: Build
     needs:
       - integration_local-youwol-client
-      - integration_cdn-client
+      - integration_webpm-client
       - integration_http-clients
       - static_analysis
       - pipeline_ts

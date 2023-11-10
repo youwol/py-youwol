@@ -184,13 +184,13 @@ jobs:
           ref: main
           path: ${{ runner.temp }}/http-clients
 
-      - name: Prepare cdn-client
-        id: prepare_cdn-client
+      - name: Prepare webpm-client
+        id: prepare_webpm-client
         uses: youwol/nestor/ts/prepare@v3
         with:
-          repository: youwol/cdn-client
+          repository: youwol/webpm-client
           ref: main
-          path: ${{ runner.temp }}/cdn-client
+          path: ${{ runner.temp }}/webpm-client
 
       - name: Prepare local-youwol-client
         id: prepare_local-youwol-client
@@ -233,9 +233,9 @@ jobs:
           yarn -s test --reporters=default --reporters=github-actions
         shell: sh
 
-      - name: Tests cdn-client
-        id: tests_cdn-client
-        working-directory: ${{ runner.temp }}/cdn-client
+      - name: Tests webpm-client
+        id: tests_webpm-client
+        working-directory: ${{ runner.temp }}/webpm-client
         run: |
           yarn -s test --reporters=default --reporters=github-actions
         shell: sh
