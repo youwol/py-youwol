@@ -6,7 +6,7 @@ from fastapi.params import Depends
 from starlette.responses import Response, StreamingResponse
 
 # relative
-from ..constantes import ASSET_ID, ASSET_PATH, ASSET_PATH_SOURCE_MAAP
+from ..constantes import ASSET_ID, ASSET_PATH, ASSET_PATH_SOURCE_MAP
 from ..dependencies import Dependencies, dependenciesFactory
 from ..metrics import count_download, count_version
 from .common import TypedHeader, get_client_config
@@ -46,7 +46,7 @@ async def get_cdn_client_js_map_default_version(
 async def get_cdn_client_js_map(
     version: str, deps: Dependencies = Depends(dependenciesFactory)
 ) -> StreamingResponse:
-    resource_path = f"{ASSET_ID}/{version}/{ASSET_PATH_SOURCE_MAAP}"
+    resource_path = f"{ASSET_ID}/{version}/{ASSET_PATH_SOURCE_MAP}"
     return await resource(resource_path, deps=deps)
 
 

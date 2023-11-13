@@ -21,4 +21,4 @@ PROXIED_HEADERS = [
 
 ASSET_ID = "QHlvdXdvbC9jZG4tY2xpZW50"
 ASSET_PATH = "dist/@youwol/cdn-client.js"
-ASSET_PATH_SOURCE_MAAP = f"{ASSET_PATH}.map"
+ASSET_PATH_SOURCE_MAP = f"{ASSET_PATH}.map"
