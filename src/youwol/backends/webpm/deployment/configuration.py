@@ -18,6 +18,7 @@ class Configuration:
     config_id: str
     host: str
     default_cdn_client_version: str
+    default_webpm_client_version: str
     root_redirection: str
 
 
@@ -50,6 +51,9 @@ class ConfigurationFactory:
                 config_id=os.environ.get("CONFIG_ID"),
                 host=os.environ.get("HOST"),
                 default_cdn_client_version=os.environ.get("DEFAULT_CDN_CLIENT_VERSION"),
+                default_webpm_client_version=os.environ.get(
+                    "DEFAULT_WEBPM_CLIENT_VERSION"
+                ),
                 root_redirection=os.environ.get("ROOT_REDIRECTION"),
             )
         )
