@@ -59,6 +59,8 @@ click==8.1.3
     #   uvicorn
 colorama==0.4.5
     # via youwol (pyproject.toml)
+colorlog==6.7.0
+    # via youwol (pyproject.toml)
 coverage==6.5.0
     # via youwol (pyproject.toml)
 cowpy==1.1.5
