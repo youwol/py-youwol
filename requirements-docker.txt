@@ -250,6 +250,10 @@ colorama==0.4.5 \
     --hash=sha256:854bf444933e37f5824ae7bfc1e98d5bce2ebe4160d46b5edf346a89358e99da \
     --hash=sha256:e6c6b4334fc50988a639d9b98aa429a0b57da6e17b9a44f0451f930b6967b7a4
     # via youwol (pyproject.toml)
+colorlog==6.7.0 \
+    --hash=sha256:0d33ca236784a1ba3ff9c532d4964126d8a2c44f1f0cb1d2b0728196f512f662 \
+    --hash=sha256:bd94bd21c1e13fac7bd3153f4bc3a7dc0eb0974b8bc2fdf1a989e474f6e582e5
+    # via youwol (pyproject.toml)
 cowpy==1.1.5 \
     --hash=sha256:089172db1d88c30a2e1b741b18945ee84170bd943a3ca71948e4ae3a3255e554 \
     --hash=sha256:de5ae7646dd30b4936013666c6bd019af9cf411cc3b377c8538cfd8414262921
