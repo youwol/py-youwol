@@ -8,7 +8,13 @@ from fastapi import FastAPI
 from youwol.backends.common.backend_deployment import add_observability_routes
 
 # relative
-from .app import COEPHeaderMiddleware, CORSMiddleware, lifespan, router
+from .app import (
+    COEPHeaderMiddleware,
+    CORSMiddleware,
+    VaryHeaderMiddleware,
+    lifespan,
+    router,
+)
 from .deployment import ConfigurationFactory, WebpmDeployment
 
 ConfigurationFactory.set_from_env()
@@ -24,6 +30,7 @@ app.add_middleware(
     max_age=7200,
 )
 app.add_middleware(COEPHeaderMiddleware)
+app.add_middleware(VaryHeaderMiddleware)
 app.include_router(router)
 
 logging.debug("Listing app routes:")
