@@ -1,0 +1,18 @@
+version: 1
+disable_existing_loggers: False
+
+formatters:
+    simple:
+      format: '[%(asctime)s] %(levelname)s [%(pathname)s.%(funcName)s#%(lineno)d] %(name)s: %(message)s'
+      datefmt: '%Y-%m-%d %H:%M:%S'
+
+handlers:
+    console:
+        class: logging.StreamHandler
+        level: DEBUG
+        formatter: simple
+        stream: ext://sys.stderr
+
+root:
+    level: DEBUG
+    handlers: [console]

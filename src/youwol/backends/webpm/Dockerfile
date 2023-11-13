@@ -17,7 +17,8 @@ RUN pip3 install --no-cache-dir --upgrade -r "requirements-docker.txt"
 COPY /src/youwol/utils /app/youwol/utils
 COPY /src/youwol/backends/common /app/youwol/backends/common
 COPY /src/youwol/backends/webpm /app/youwol/backends/webpm
+COPY /src/youwol/backends/webpm/default-logging.yaml /app/logging.yaml
 
 
 
-ENTRYPOINT ["uvicorn", "youwol.backends.webpm.main:app", "--host", "0.0.0.0", "--no-server-header"]
+ENTRYPOINT ["uvicorn", "youwol.backends.webpm.main:app", "--host", "0.0.0.0", "--no-server-header", "--log-config", "/app/logging.yaml"]
