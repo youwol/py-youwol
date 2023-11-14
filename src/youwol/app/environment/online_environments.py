@@ -32,6 +32,6 @@ def get_standard_youwol_env(
     return CloudEnvironment(
         envId=env_id,
         host=host,
-        authProvider=get_standard_auth_provider("platform.youwol.com", **kwargs),
+        authProvider=get_standard_auth_provider(host=host, **kwargs),
         authentications=authentications,
     )
