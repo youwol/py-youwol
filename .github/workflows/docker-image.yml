@@ -15,7 +15,6 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            backends
             registry.gitlab.com/youwol/platform/backends
           tags: |
             type=pep440,pattern={{version}}
