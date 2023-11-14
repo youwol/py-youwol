@@ -431,10 +431,10 @@ class System(BaseModel):
     httpPort: Optional[int] = default_http_port
     tokensStorage: Optional[TokensStorageConf] = TokensStorageSystemKeyring()
     cloudEnvironments: CloudEnvironments = CloudEnvironments(
-        defaultConnection=Connection(envId="public-youwol", authId="browser"),
+        defaultConnection=Connection(envId="remote", authId="browser"),
         environments=[
             CloudEnvironment(
-                envId="public-youwol",
+                envId="remote",
                 host=default_platform_host,
                 authProvider=AuthorizationProvider(**default_auth_provider()),
                 authentications=[BrowserAuth(authId="browser")],
