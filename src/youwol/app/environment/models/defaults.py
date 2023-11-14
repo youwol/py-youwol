@@ -1,4 +1,6 @@
 # standard library
+import os
+
 from pathlib import Path
 
 # Youwol utilities
@@ -7,7 +9,12 @@ from youwol.utils.clients.oidc.oidc_config import PublicClient
 # Changing values defined in this file usually required updates in the documentation of models_config.
 
 default_http_port: int = 2000
-default_platform_host: str = "platform.youwol.com"
+default_platform_host: str = (
+    os.getenv("PY_YOUWOL_REMOTE")
+    if os.getenv("PY_YOUWOL_REMOTE")
+    else "platform.youwol.com"
+)
+
 default_openid_client_id: str = "tbd_test_openid_connect_js"
 default_path_data_dir: Path = Path("./databases")
 default_path_cache_dir: Path = Path("./system")
