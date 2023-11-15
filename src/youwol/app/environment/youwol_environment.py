@@ -231,7 +231,7 @@ async def yw_config() -> YouwolEnvironment:
 
 
 async def safe_load(
-    path: Path, fwd_args_reload: Optional[FwdArgumentsReload] = None
+    path: Path, fwd_args_reload: FwdArgumentsReload = FwdArgumentsReload()
 ) -> YouwolEnvironment:
     """
     Possible errors:
@@ -307,7 +307,6 @@ async def safe_load(
     ):
         tokens_storage_conf.path = cache_dir / tokens_storage_conf.path
 
-    fwd_args_reload = fwd_args_reload or FwdArgumentsReload()
     fwd_args_reload = FwdArgumentsReload(
         token_storage=fwd_args_reload.token_storage
         or await tokens_storage_conf.get_tokens_storage(),
