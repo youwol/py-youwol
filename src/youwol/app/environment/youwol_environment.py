@@ -3,6 +3,7 @@ import importlib.metadata
 import json
 import os
 
+from dataclasses import dataclass
 from pathlib import Path
 
 # typing
@@ -141,6 +142,12 @@ Configuration loaded from '{self.pathsBook.config}'
 """
 
 
+@dataclass(frozen=True)
+class FwdArgumentsReload:
+    token_storage: Optional[TokensStorage] = None
+    remote_connection: Optional[Connection] = None
+
+
 class YouwolEnvironmentFactory:
     __cached_config: Optional[YouwolEnvironment] = None
 
@@ -151,8 +158,10 @@ class YouwolEnvironmentFactory:
         return config
 
     @staticmethod
-    async def load_from_file(path: Path):
-        conf = await safe_load(path=path)
+    async def load_from_file(
+        path: Path, fwd_args_reload: Optional[FwdArgumentsReload] = None
+    ):
+        conf = await safe_load(path=path, fwd_args_reload=fwd_args_reload)
         await YouwolEnvironmentFactory.trigger_on_load(config=conf)
         YouwolEnvironmentFactory.__cached_config = conf
         return conf
@@ -162,7 +171,9 @@ class YouwolEnvironmentFactory:
         cached = YouwolEnvironmentFactory.__cached_config
         conf = await safe_load(
             path=cached.pathsBook.config,
-            remote_connection=connection or cached.currentConnection,
+            fwd_args_reload=FwdArgumentsReload(
+                remote_connection=connection or cached.currentConnection
+            ),
         )
 
         await YouwolEnvironmentFactory.trigger_on_load(config=conf)
@@ -220,7 +231,7 @@ async def yw_config() -> YouwolEnvironment:
 
 
 async def safe_load(
-    path: Path, remote_connection: Optional[Connection] = None
+    path: Path, fwd_args_reload: FwdArgumentsReload = FwdArgumentsReload()
 ) -> YouwolEnvironment:
     """
     Possible errors:
@@ -296,13 +307,17 @@ async def safe_load(
     ):
         tokens_storage_conf.path = cache_dir / tokens_storage_conf.path
 
-    tokens_storage = await tokens_storage_conf.get_tokens_storage()
+    fwd_args_reload = FwdArgumentsReload(
+        token_storage=fwd_args_reload.token_storage
+        or await tokens_storage_conf.get_tokens_storage(),
+        remote_connection=fwd_args_reload.remote_connection
+        or system.cloudEnvironments.defaultConnection,
+    )
 
     return YouwolEnvironment(
         httpPort=system.httpPort,
         routers=customization.endPoints.routers,
-        currentConnection=remote_connection
-        or system.cloudEnvironments.defaultConnection,
+        currentConnection=fwd_args_reload.remote_connection,
         events=customization.events,
         pathsBook=paths_book,
         projects=projects,
@@ -314,7 +329,7 @@ async def safe_load(
             local_storage=paths_book.local_storage,
             local_nosql=paths_book.databases / "docdb",
         ),
-        tokens_storage=tokens_storage,
+        tokens_storage=fwd_args_reload.token_storage,
     )
 
 

@@ -22,6 +22,7 @@ from youwol.app.environment import (
     CustomMiddleware,
     DirectAuth,
     FlowSwitcherMiddleware,
+    FwdArgumentsReload,
     PathsBook,
     Projects,
     YouwolEnvironment,
@@ -109,10 +110,14 @@ async def load_predefined_config_file(request: Request, rest_of_path: str):
     async with Context.start_ep(
         request=request,
         with_reporters=[LogsStreamer()],
-    ):
+    ) as ctx:
         source = resources.files(predefined_configs).joinpath(rest_of_path)
         with resources.as_file(source) as path:
-            env = await YouwolEnvironmentFactory.load_from_file(path)
+            env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
+            env = await YouwolEnvironmentFactory.load_from_file(
+                path=path,
+                fwd_args_reload=FwdArgumentsReload(token_storage=env.tokens_storage),
+            )
             asyncio.ensure_future(ProjectLoader.initialize(env=env))
             return await status(request, env)
 
