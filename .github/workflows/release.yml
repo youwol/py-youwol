@@ -87,7 +87,7 @@ jobs:
           FINAL: ${{ inputs.final }}
           GNUPGHOME: ${{ steps.set_up_gpg.outputs.gnupghome }}
         run: |
-          if [ "x${FINAL}" == "xtrue" ]; then
+          if [ "x${FINAL}" = "xtrue" ]; then
             python version_management.py prepare_final
           else
             python version_management.py prepare_rc ${FINAL_VERSION}
