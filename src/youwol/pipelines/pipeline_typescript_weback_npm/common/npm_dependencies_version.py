@@ -22,10 +22,10 @@ def extract_npm_dependencies_dict(names: List[str]):
         "mini-css-extract-plugin": "^2.7.6",
         "rxjs": "^6.5.5",
         "source-map-loader": "4.0.1",
-        "ts-loader": "^9.5.0",
-        "ts-node": "^10.9.1",  # peer dependency for @youwol/tsconfig
+        "ts-loader": "9.5.0",
+        "ts-node": "10.9.1",  # peer dependency for @youwol/tsconfig
         "typedoc": "^0.25.2",
-        "typescript": "^5.2.2",  # peer dependency for @youwol/tsconfig
+        "typescript": "5.2.2",  # peer dependency for @youwol/tsconfig
         "webpack": "^5.89.0",
         "webpack-bundle-analyzer": "^4.9.1",
         "webpack-cli": "5.1.4",
