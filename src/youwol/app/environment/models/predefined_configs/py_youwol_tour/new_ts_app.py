@@ -1,5 +1,6 @@
 # Youwol application
 from youwol.app.environment import (
+    BrowserAuth,
     Configuration,
     LocalEnvironment,
     Projects,
@@ -24,8 +25,10 @@ pipeline_ts.set_environment(
     environment=pipeline_ts.Environment(
         cdnTargets=[
             CdnTarget(
-                name="prod",
-                cloudTarget=get_standard_youwol_env(env_id="prod"),
+                name="remote",
+                cloudTarget=get_standard_youwol_env(
+                    env_id="remote", authentications=[BrowserAuth(authId="browser")]
+                ),
                 authId="browser",
             ),
         ]

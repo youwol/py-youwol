@@ -38,6 +38,7 @@ on:
   pull_request:
     branches:
       - main
+      - 'release/**'
 
 jobs:
   integration_local-youwol-client:
@@ -121,11 +122,11 @@ jobs:
         id: prepare
         uses: youwol/nestor/py-youwol/prepare@v3
 
-      - name: Checkout main branch
-        id: checkout_main_branch
+      - name: Checkout target branch
+        id: checkout_target_branch
         uses: actions/checkout@v3
         with:
-          ref: main
+          ref: ${{ github.base_ref }}
           path: .py-youwol_main
 
       - name: Static Analysis
