@@ -98,7 +98,7 @@ def siv_256_decrypt_from_file(fp: BinaryIO, key: str, debug=False) -> str:
     try:
         data = cipher.decrypt_and_verify(ciphertext, tag)
     except ValueError as e:
-        (msg,) = e.args
+        msg = str(e)
         if msg == "MAC check failed":
             raise FileDecryptionFailed(algo=Algo.SIV_256, reason=msg)
         raise e
