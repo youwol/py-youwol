@@ -1,4 +1,4 @@
-import { VirtualDOM, attr$, render } from '@youwol/flux-view'
+import { VirtualDOM, render, ChildrenLike } from '@youwol/rx-vdom'
 import { timer } from 'rxjs'
 
 export {}
@@ -6,7 +6,12 @@ export {}
 /**
  * @category View
  */
-class ContentView implements VirtualDOM {
+class ContentView implements VirtualDOM<'div'> {
+    /**
+     * @group Immutable DOM constants
+     */
+    public readonly tag = 'div'
+
     /**
      * @group Immutable DOM constants
      */
@@ -16,17 +21,17 @@ class ContentView implements VirtualDOM {
     /**
      * @group Immutable DOM constants
      */
-    public readonly children: VirtualDOM[]
+    public readonly children: ChildrenLike
 
     constructor() {
         this.children = [
-            {
+            {   tag: 'div',
                 children: [
-                    {
-                        innerText: attr$(
-                            timer(0, 1000),
-                            () => `⌚ ${new Date().toLocaleString()}`,
-                        ),
+                    {   tag: 'div',
+                        innerText: {
+                            source$:timer(0, 1000),
+                            vdomMap: () => `⌚ ${new Date().toLocaleString()}`,
+                        },
                     },
                     {
                         tag: 'h1',
@@ -37,14 +42,14 @@ class ContentView implements VirtualDOM {
             },
             {
                 tag: 'a',
-                href: '',
-                innerText: 'Find out more on writing apps',
+                href: 'https://l.youwol.com/doc/py-youwol',
+                innerText: 'How to use py-youwol & the dev. portal',
             },
             {
                 tag: 'a',
-                href: '',
+                href: 'https://l.youwol.com/doc/@youwol/rx-vdom',
                 innerText:
-                    'The source code of the app & debug options are in the dev-tool of your browser',
+                    'How to write applications with @youwol/rx-vdom',
             },
         ]
     }

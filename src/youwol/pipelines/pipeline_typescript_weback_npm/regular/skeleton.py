@@ -79,6 +79,7 @@ def generate_template(input_template: Template):
             "jest.config.ts",
             "LICENSE",
             "tsconfig.json",
+            "rx-vdom-config.ts",
             "typedoc.js",
         ],
         folders=[],
@@ -345,9 +346,9 @@ async def generate_ts_webpack_project(
 
         project_folder.mkdir(parents=True)
         dependencies = (
-            ["@youwol/webpm-client", "@youwol/flux-view", "rxjs"]
+            ["@youwol/webpm-client", "@youwol/rx-vdom", "rxjs"]
             if package_type == PackageType.Application
-            else ["@youwol/flux-view", "rxjs"]
+            else ["@youwol/rx-vdom", "rxjs"]
         )
         load_deps = extract_npm_dependencies_dict(dependencies)
         template = Template(

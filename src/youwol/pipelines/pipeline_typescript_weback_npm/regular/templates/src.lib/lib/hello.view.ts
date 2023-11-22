@@ -1,10 +1,14 @@
-import { VirtualDOM, attr$ } from '@youwol/flux-view'
+import { VirtualDOM, ChildrenLike } from '@youwol/rx-vdom'
 import { timer } from 'rxjs'
 
 /**
  * @category View
  */
-export class HelloView implements VirtualDOM {
+export class HelloView implements VirtualDOM<'div'> {
+    /**
+     * @group Immutable DOM Constants
+     */
+    public readonly tag = 'div'
     /**
      * @group Immutable DOM Constants
      */
@@ -14,19 +18,18 @@ export class HelloView implements VirtualDOM {
     /**
      * @group Immutable DOM Constants
      */
-    public readonly children: VirtualDOM[]
+    public readonly children: ChildrenLike
 
     constructor() {
         this.children = [
+            { tag: 'div', class: 'fas fa-clock mx-1' },
             {
-                class: 'fas fa-clock mx-1',
-            },
-            {
-                innerText: attr$(
-                    timer(0, 1000),
-                    (_count) =>
+                tag: 'div',
+                innerText: {
+                    source$: timer(0, 1000),
+                    vdomMap: (_count) =>
                         `Hello :), it is: ${new Date().toLocaleString()}`,
-                ),
+                }
             },
         ]
     }
