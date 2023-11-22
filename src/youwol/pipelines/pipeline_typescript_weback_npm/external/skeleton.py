@@ -105,7 +105,7 @@ async def generate_external_npm_template(
 
         project_folder.mkdir(parents=True)
         target_package_json = await fetch_package_json(name, version)
-        in_bundle_deps = {name: version}
+        in_bundle_deps = {name: "{{__version_from_pkg__}}"}
         template = Template(
             path=project_folder,
             version=version,
@@ -133,6 +133,11 @@ async def generate_external_npm_template(
             src=project_folder / ".template", dst=project_folder, dirs_exist_ok=True
         )
         generate_template_py(template, "external")
+        for pattern, repl in [
+            ["__version_from_pkg__", "pkg_json['version']"],
+        ]:
+            sed_inplace(template.path / "template.py", '"{{' + pattern + '}}"', repl)
+
         return f"{name}~{version}", project_folder
 
 
@@ -208,7 +213,7 @@ def generate_package_json(working_path: Path, input_template: Template):
             "webpack",
             "webpack-bundle-analyzer",
             "webpack-cli",
-            "@youwol/cdn-client",
+            "@youwol/webpm-client",
             "@youwol/http-clients",
             "@youwol/prettier-config",
             "@youwol/eslint-config",

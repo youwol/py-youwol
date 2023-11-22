@@ -1,7 +1,7 @@
 import { install } from '@youwol/webpm-client'
 import './mock-requests'
 import { cleanDocument, installPackages, setupPyYouwolBackend } from './common'
-
+import { setup } from '../auto-generated'
 import * as originalPackage from '{{name}}'
 
 beforeAll(async () => {
@@ -23,10 +23,10 @@ test('install {{name}}', async () => {
         // Provide the name of the symbols that are not exported for a good reason + give the reason
     ];
     await install({
-        modules: ['{{name}}#{{version}}'],
+        modules: [`${setup.name}#${setup.version}`],
     })
     expect(document.scripts).toHaveLength(1)
-    const webpmPackage = globalThis['{{name}}_APIv{{apiVersion}}']
+    const webpmPackage = globalThis[`${setup.name}_APIv${setup.apiVersion}`]
     expect(webpmPackage).toBeTruthy()
     const originalProperties = Object.keys(originalPackage)
     const notFound = originalProperties.filter((p) => !webpmPackage[p])
