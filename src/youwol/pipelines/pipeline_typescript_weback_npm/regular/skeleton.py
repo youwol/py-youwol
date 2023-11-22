@@ -79,6 +79,7 @@ def generate_template(input_template: Template):
             "jest.config.ts",
             "LICENSE",
             "tsconfig.json",
+            "rx-vdom-config.ts",
             "typedoc.js",
         ],
         folders=[],
@@ -344,9 +345,12 @@ async def generate_ts_webpack_project(
             raise RuntimeError(f"Folder {folder} already exist")
 
         project_folder.mkdir(parents=True)
-        load_deps = extract_npm_dependencies_dict(
-            ["@youwol/cdn-client", "@youwol/flux-view", "rxjs"]
+        dependencies = (
+            ["@youwol/webpm-client", "@youwol/rx-vdom", "rxjs"]
+            if package_type == PackageType.Application
+            else ["@youwol/rx-vdom", "rxjs"]
         )
+        load_deps = extract_npm_dependencies_dict(dependencies)
         template = Template(
             path=project_folder,
             type=PackageType.Library

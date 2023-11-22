@@ -8,7 +8,7 @@ import { readFileSync } from 'fs'
 import path from 'path'
 import { from } from 'rxjs'
 import { mergeMap, reduce, take } from 'rxjs/operators'
-import { Client, backendConfiguration } from '@youwol/cdn-client'
+import { Client, backendConfiguration } from '@youwol/webpm-client'
 
 export function setupPyYouwolBackend({
     localOnly,
