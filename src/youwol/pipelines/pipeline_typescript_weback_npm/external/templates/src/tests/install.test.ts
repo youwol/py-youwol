@@ -1,4 +1,4 @@
-import { install } from '@youwol/cdn-client'
+import { install } from '@youwol/webpm-client'
 import './mock-requests'
 import { cleanDocument, installPackages, setupPyYouwolBackend } from './common'
 

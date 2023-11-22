@@ -344,9 +344,12 @@ async def generate_ts_webpack_project(
             raise RuntimeError(f"Folder {folder} already exist")
 
         project_folder.mkdir(parents=True)
-        load_deps = extract_npm_dependencies_dict(
-            ["@youwol/cdn-client", "@youwol/flux-view", "rxjs"]
+        dependencies = (
+            ["@youwol/webpm-client", "@youwol/flux-view", "rxjs"]
+            if package_type == PackageType.Application
+            else ["@youwol/flux-view", "rxjs"]
         )
+        load_deps = extract_npm_dependencies_dict(dependencies)
         template = Template(
             path=project_folder,
             type=PackageType.Library
