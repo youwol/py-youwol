@@ -138,11 +138,11 @@ class Template(BaseModel):
 
     path: Path
     type: PackageType
-    version: Optional[str]
-    name: Optional[str]
+    version: str
+    name: str
     inPackageJson: Optional[JSON] = {}
     exportedSymbol: Optional[str] = None
-    shortDescription: Optional[str] = ""
+    shortDescription: str = ""
     author: Optional[str]
     userGuide: bool = False
     dependencies: Dependencies = Dependencies()
