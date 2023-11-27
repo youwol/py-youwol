@@ -306,18 +306,3 @@ jobs:
           git tag -a "v$VERSION" -m "${tag_msg_1st_line}" -m "${tag_msg_2nd_line}" $COMMIT
           git push --follow-tags
         shell: sh
-
-      - name: Create Pull Request
-        if: "! ${{ inputs.dry-run }}"
-        id: create_pr
-        env:
-          VERSION: ${{ needs.build.outputs.version }}
-          COMMIT: ${{ needs.build.outputs.commit }}
-          GH_TOKEN: ${{ secrets.PAT_NESTOR_PYYOUWOL_PUSH }}
-        run: |
-          branch="ci_cd/merge_back/tags/v$VERSION"
-          git checkout $COMMIT
-          git branch $branch
-          git switch $branch
-          git push -u origin $branch
-          gh pr create --title="Merge back tag v$VERSION to main" --body="" --no-maintainer-edit --assignee @me
