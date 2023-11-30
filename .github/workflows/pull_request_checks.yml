@@ -145,12 +145,13 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: ${{ github.base_ref }}
-          path: .py-youwol_main
+          path: .py-youwol_target
 
       - name: Static Analysis
         id: static_analysis
         uses: youwol/nestor/py-youwol/static-analysis@v3
         with:
+          targetBranchPath: .py-youwol_target
           skip: ${{ inputs.skip }}
 
 
