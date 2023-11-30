@@ -192,6 +192,14 @@ jobs:
           ref: main
           path: ${{ runner.temp }}/webpm-client
 
+      - name: Prepare vsf-core
+        id: prepare_vsf-core
+        uses: youwol/nestor/ts/prepare@v3
+        with:
+          repository: youwol/vsf-core
+          ref: main
+          path: ${{ runner.temp }}/vsf-core
+
       - name: Prepare local-youwol-client
         id: prepare_local-youwol-client
         uses: youwol/nestor/ts/prepare@v3
@@ -236,6 +244,13 @@ jobs:
       - name: Tests webpm-client
         id: tests_webpm-client
         working-directory: ${{ runner.temp }}/webpm-client
+        run: |
+          yarn -s test --reporters=default --reporters=github-actions
+        shell: sh
+
+      - name: Tests vsf-core
+        id: tests_vsf-core
+        working-directory: ${{ runner.temp }}/vsf-core
         run: |
           yarn -s test --reporters=default --reporters=github-actions
         shell: sh

@@ -15,6 +15,12 @@ on:
           Default to 'main'
         default: main
 
+      vsf-core_ref:
+        description: >
+          Branch, tag or SHA for vsf-core checkout.
+          Default to 'main'
+        default: main
+
       http-clients_ref:
         description: >
           Branch, tag or SHA for http-clients checkout.
@@ -29,8 +35,8 @@ on:
 
       skip:
         description: |
-          List of check to skip : local-youwol-client, http-clients, webpm-client, pipeline-ts, build, version_monotony, 
-          audit, pep8, cleanness, dep_manager
+          List of check to skip : local-youwol-client, http-clients, webpm-client, vsf-core,
+          pipeline-ts, build, version_monotony, audit, pep8, cleanness, dep_manager
         required: false
         default: ''
 
@@ -64,6 +70,17 @@ jobs:
       name: webpm-client
     secrets: inherit
 
+  integration_vsf-core:
+    name: Integration vsf-core
+    if: "! contains(inputs.skip, 'vsf-core')"
+    uses: youwol/nestor/.github/workflows/integration-tests.yaml@v3
+    with:
+      pyYouwolCoverage: true
+      tsRepository: youwol/vsf-core
+      tsRef: ${{ inputs.vsf-core_ref }}
+      name: vsf-core
+    secrets: inherit
+
   integration_http-clients:
     name: Integration http-clients
     if: "! contains(inputs.skip, 'http-clients')"
@@ -82,6 +99,7 @@ jobs:
       - integration_local-youwol-client
       - integration_webpm-client
       - integration_http-clients
+      - integration_vsf-core
     steps:
       - name: Prepare repository
         id: prepare
