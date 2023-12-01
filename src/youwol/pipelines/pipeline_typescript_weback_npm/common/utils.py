@@ -25,7 +25,7 @@ from youwol.utils.context import Context
 from youwol.utils.utils_paths import sed_inplace
 
 # Youwol pipelines
-from youwol.pipelines import PublishCdnRemoteStep
+from youwol.pipelines import create_sub_pipelines_publish_cdn
 from youwol.pipelines.pipeline_typescript_weback_npm.environment import get_environment
 
 # relative
@@ -260,20 +260,6 @@ def generate_webpack_config(source: Path, working_path: Path, input_template: Te
         )
 
 
-async def create_sub_pipelines_publish_cdn(start_step: str, context: Context):
-    targets = get_environment().cdnTargets
-    steps = [
-        PublishCdnRemoteStep(id=f"cdn_{cdn_target.name}", cdnTarget=cdn_target)
-        for cdn_target in targets
-    ]
-    dags = [f"{start_step} > cdn_{cdn_target.name}" for cdn_target in targets]
-    await context.info(
-        text="Cdn pipelines created",
-        data={"targets:": targets, "steps": steps, "dags": dags},
-    )
-    return steps, dags
-
-
 async def create_sub_pipelines_publish_npm(start_step: str, context: Context):
     targets = get_environment().npmTargets
     steps = [
@@ -290,7 +276,7 @@ async def create_sub_pipelines_publish_npm(start_step: str, context: Context):
 
 async def create_sub_pipelines_publish(start_step: str, context: Context):
     publish_cdn_steps, dags_cdn = await create_sub_pipelines_publish_cdn(
-        start_step=start_step, context=context
+        start_step=start_step, targets=get_environment().cdnTargets, context=context
     )
     publish_npm_steps, dags_npm = await create_sub_pipelines_publish_npm(
         start_step=start_step, context=context

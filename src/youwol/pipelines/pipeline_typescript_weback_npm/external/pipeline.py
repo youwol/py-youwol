@@ -29,6 +29,7 @@ from youwol.pipelines.pipeline_typescript_weback_npm import (
     SetupStep,
     TestStep,
     create_sub_pipelines_publish_cdn,
+    get_environment,
 )
 from youwol.pipelines.publish_cdn import PublishCdnLocalStep
 
@@ -76,7 +77,7 @@ async def pipeline(config: PipelineConfig, context: Context) -> Pipeline:
     )
     test_step = TestStep(id="test", run="yarn test", artifacts=[])
     publish_remote_steps, dags = await create_sub_pipelines_publish_cdn(
-        start_step=test_step.id, context=context
+        start_step=test_step.id, context=context, targets=get_environment().cdnTargets
     )
     return Pipeline(
         target=config.target,
