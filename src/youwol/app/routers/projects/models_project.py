@@ -1,5 +1,7 @@
 # standard library
+import asyncio
 import functools
+import itertools
 
 from abc import ABC, abstractmethod
 from enum import Enum
@@ -416,6 +418,21 @@ class Project(BaseModel):
                 data={"files[0:100]": files[0:100]},
             )
             return files
+
+    async def get_step_artifacts_files(
+        self, flow_id: str, step_id: str, context: Context
+    ) -> List[Path]:
+        steps = self.get_flow_steps(flow_id=flow_id)
+        step = next((s for s in steps if s.id == step_id), None)
+        files = await asyncio.gather(
+            *[
+                self.get_artifact_files(
+                    flow_id=flow_id, artifact_id=artifact.id, context=context
+                )
+                for artifact in step.artifacts
+            ]
+        )
+        return list(itertools.chain.from_iterable(files))
 
     def get_flow_steps(self, flow_id: str) -> List[PipelineStep]:
         flow = next(f for f in self.pipeline.flows if f.name == flow_id)
