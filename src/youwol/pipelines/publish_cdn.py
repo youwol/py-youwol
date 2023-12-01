@@ -378,6 +378,21 @@ class CdnTarget(BaseModel):
     authId: str
 
 
+async def create_sub_pipelines_publish_cdn(
+    start_step: str, targets: List[CdnTarget], context: Context
+):
+    steps = [
+        PublishCdnRemoteStep(id=f"cdn_{cdn_target.name}", cdnTarget=cdn_target)
+        for cdn_target in targets
+    ]
+    dags = [f"{start_step} > cdn_{cdn_target.name}" for cdn_target in targets]
+    await context.info(
+        text="Cdn pipelines created",
+        data={"targets:": targets, "steps": steps, "dags": dags},
+    )
+    return steps, dags
+
+
 class PublishCdnRemoteStep(PipelineStep):
     id: str = "cdn-remote"
     cdnTarget: CdnTarget
