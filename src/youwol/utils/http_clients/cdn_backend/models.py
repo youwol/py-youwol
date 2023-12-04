@@ -2,7 +2,7 @@
 from pathlib import Path
 
 # typing
-from typing import Any, Dict, List, NamedTuple, Union
+from typing import Any, Dict, List, NamedTuple, Optional, Union
 
 # third parties
 from pydantic import BaseModel
@@ -184,6 +184,7 @@ class LibraryResolved(Library):
 class LoadingGraphBody(BaseModel):
     libraries: Union[List[LibraryQuery], Dict[str, str]]
     using: Dict[str, str] = {}
+    extraIndex: Optional[str]
 
 
 class LoadingGraphBodyV1(BaseModel):
