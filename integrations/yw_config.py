@@ -275,6 +275,11 @@ async def test_command_post(body, context: Context):
     return body["returnObject"]
 
 
+async def encode_extra_index(body, context: Context):
+    await context.info(text="encode_extra_index", data={"body": body})
+    return await encode_index(documents=body, context=context)
+
+
 class BrotliDecompressMiddleware(CustomMiddleware):
     async def dispatch(
         self,
@@ -378,6 +383,10 @@ class ConfigurationFactory(IConfigurationFactory):
                         Command(
                             name="set-jest-context",
                             do_post=apply_test_labels_logs,
+                        ),
+                        Command(
+                            name="encode-extra-index",
+                            do_post=encode_extra_index,
                         ),
                     ]
                 ),
