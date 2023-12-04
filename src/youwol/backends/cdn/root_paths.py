@@ -326,7 +326,10 @@ async def resolve_loading_tree(
             LibraryResolved(
                 name=element["library_name"],
                 aliases=element["aliases"],
-                dependencies=element["dependencies"],
+                dependencies=[
+                    LibraryQuery(name=e.split("#")[0], version=e.split("#")[1])
+                    for e in element["dependencies"]
+                ],
                 bundle=element["bundle"],
                 exportedSymbol=get_exported_symbol(element["library_name"]),
                 apiKey=get_api_key(element["version"]),
