@@ -31,7 +31,7 @@ class AssetsGatewayDeployment(BackendDeployment):
                 files_client=FilesClient(url_base="http://files/api/files"),
                 flux_client=FluxClient("http://flux/api/flux"),
                 stories_client=StoriesClient(url_base="http://stories/api/stories"),
-                treedb_client=TreeDbClient(url_base="http://treedb/api/tree-db"),
+                treedb_client=TreeDbClient(url_base="http://tree-db/api/tree-db"),
                 https=True,
             )
         )
