@@ -1,15 +1,22 @@
+# standard library
 import asyncio
 import json
 import os
 import shutil
+
 from pathlib import Path
+
+# typing
 from typing import List, cast
 
+# third parties
 import brotli
-import youwol.pipelines.pipeline_typescript_weback_npm as pipeline_ts
+
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
+
+# Youwol application
 from youwol.app.environment import (
     AuthorizationProvider,
     CdnSwitch,
@@ -35,10 +42,8 @@ from youwol.app.environment import (
 from youwol.app.main_args import MainArguments
 from youwol.app.routers.projects import ProjectLoader
 from youwol.app.routers.system.router import LeafLogResponse, Log, NodeLogResponse
-from youwol.pipelines.pipeline_typescript_weback_npm import (
-    app_ts_webpack_template,
-    lib_ts_webpack_template,
-)
+
+# Youwol utilities
 from youwol.utils import (
     ContextFactory,
     InMemoryReporter,
@@ -48,6 +53,17 @@ from youwol.utils import (
     sed_inplace,
 )
 from youwol.utils.context import Context, Label
+from youwol.utils.http_clients.cdn_backend.utils import (
+    encode_extra_index as encode_index,
+)
+
+# Youwol pipelines
+import youwol.pipelines.pipeline_typescript_weback_npm as pipeline_ts
+
+from youwol.pipelines.pipeline_typescript_weback_npm import (
+    app_ts_webpack_template,
+    lib_ts_webpack_template,
+)
 
 users = [
     (os.getenv("USERNAME_INTEGRATION_TESTS"), os.getenv("PASSWORD_INTEGRATION_TESTS")),
@@ -275,6 +291,11 @@ async def test_command_post(body, context: Context):
     return body["returnObject"]
 
 
+async def encode_extra_index(body, context: Context):
+    await context.info(text="encode_extra_index", data={"body": body})
+    return await encode_index(documents=body, context=context)
+
+
 class BrotliDecompressMiddleware(CustomMiddleware):
     async def dispatch(
         self,
@@ -378,6 +399,10 @@ class ConfigurationFactory(IConfigurationFactory):
                         Command(
                             name="set-jest-context",
                             do_post=apply_test_labels_logs,
+                        ),
+                        Command(
+                            name="encode-extra-index",
+                            do_post=encode_extra_index,
                         ),
                     ]
                 ),

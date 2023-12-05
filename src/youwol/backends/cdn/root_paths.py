@@ -45,7 +45,7 @@ from youwol.backends.cdn.utils import (
 from youwol.backends.cdn.utils_indexing import get_version_number_str
 
 # Youwol utilities
-from youwol.utils import PackagesNotFound
+from youwol.utils import JSON, PackagesNotFound
 from youwol.utils.clients.docdb.models import Query, QueryBody, WhereClause
 from youwol.utils.context import Context
 from youwol.utils.http_clients.cdn_backend import (
@@ -58,7 +58,9 @@ from youwol.utils.http_clients.cdn_backend import (
     LoadingGraphBody,
     LoadingGraphResponseV1,
     PublishResponse,
+    get_exported_symbol,
 )
+from youwol.utils.http_clients.cdn_backend.utils import decode_extra_index
 
 router = APIRouter(tags=["cdn-backend"])
 
@@ -316,8 +318,35 @@ async def resolve_loading_tree(
     versions_cache: Dict[LibName, List[str]] = {}
     full_data_cache: Dict[ExportedKey, LibraryResolved] = {}
     resolutions_cache: Dict[QueryKey, ResolvedQuery] = {}
+
+    def to_libraries_resolved(input_elements: List[JSON]):
+        return [
+            LibraryResolved(
+                name=element["library_name"],
+                aliases=element["aliases"],
+                dependencies=[
+                    LibraryQuery(name=e.split("#")[0], version=e.split("#")[1])
+                    for e in element["dependencies"]
+                ],
+                bundle=element["bundle"],
+                exportedSymbol=get_exported_symbol(element["library_name"]),
+                apiKey=get_api_key(element["version"]),
+                version=element["version"],
+                id=to_package_id(element["library_name"]),
+                fingerprint=element["fingerprint"],
+                namespace=element["library_name"].split("/")[0]
+                if "/" in element["library_name"]
+                else element["library_name"],
+                type="library",
+            )
+            for element in input_elements
+        ]
+
     async with Context.start_ep(request=request, body=body) as ctx:  # type: Context
         await ctx.info(text="Start resolving loading graph", data=body)
+        extra_index = (
+            await decode_extra_index(body.extraIndex, ctx) if body.extraIndex else []
+        )
         root_name = "!!root!!"
         # This is for backward compatibility when single lib version download were assumed
         dependencies = (
@@ -346,6 +375,7 @@ async def resolve_loading_tree(
                 )
             ],
             using=body.using,
+            extra_index=to_libraries_resolved(extra_index),
             versions_cache=versions_cache,
             resolutions_cache=resolutions_cache,
             full_data_cache=full_data_cache,
