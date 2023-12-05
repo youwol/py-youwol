@@ -88,21 +88,23 @@ async def encode_extra_index(documents: List[JSON], context: Context):
         return base64.b64encode(compressed).decode("utf-8")
 
 
-def decode_extra_index(documents: str):
-    b = base64.b64decode(documents)
-    extra = brotli.decompress(b)
-    src_str = extra.decode("utf-8")
+async def decode_extra_index(documents: str, context: Context):
+    async with context.start(action="decode_extra_index") as ctx:  # type: Context
+        b = base64.b64decode(documents)
+        extra = brotli.decompress(b)
+        src_str = extra.decode("utf-8")
 
-    def unflatten_elem(elem: str):
-        props: List[str] = elem.split("&")
-        return {
-            "library_name": props[0],
-            "version": props[1],
-            "bundle": props[2],
-            "fingerprint": props[3],
-            "dependencies": [d for d in props[4][1:-1].split(",") if d != ""],
-            "aliases": [d for d in props[5][1:-1].split(",") if d != ""],
-        }
+        def unflatten_elem(elem: str):
+            props: List[str] = elem.split("&")
+            return {
+                "library_name": props[0],
+                "version": props[1],
+                "bundle": props[2],
+                "fingerprint": props[3],
+                "dependencies": [d for d in props[4][1:-1].split(",") if d != ""],
+                "aliases": [d for d in props[5][1:-1].split(",") if d != ""],
+            }
 
-    documents = [unflatten_elem(d) for d in src_str.split(";")]
-    return documents
+        documents = [unflatten_elem(d) for d in src_str.split(";")]
+        await ctx.info(f"Decoded extra index with {len(documents)} elements")
+        return documents

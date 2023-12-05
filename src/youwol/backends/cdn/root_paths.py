@@ -319,8 +319,6 @@ async def resolve_loading_tree(
     full_data_cache: Dict[ExportedKey, LibraryResolved] = {}
     resolutions_cache: Dict[QueryKey, ResolvedQuery] = {}
 
-    extra_index = decode_extra_index(body.extraIndex) if body.extraIndex else []
-
     def to_libraries_resolved(input_elements: List[JSON]):
         return [
             LibraryResolved(
@@ -346,6 +344,9 @@ async def resolve_loading_tree(
 
     async with Context.start_ep(request=request, body=body) as ctx:  # type: Context
         await ctx.info(text="Start resolving loading graph", data=body)
+        extra_index = (
+            await decode_extra_index(body.extraIndex, ctx) if body.extraIndex else []
+        )
         root_name = "!!root!!"
         # This is for backward compatibility when single lib version download were assumed
         dependencies = (
