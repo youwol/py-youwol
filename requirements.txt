@@ -18,7 +18,7 @@ appdirs==1.4.4
     # via youwol (pyproject.toml)
 asgiref==3.6.0
     # via youwol (pyproject.toml)
-astroid==2.15.4
+astroid==3.0.1
     # via pylint
 async-timeout==4.0.2
     # via redis
@@ -73,7 +73,7 @@ deepdiff==5.8.1
     # via youwol (pyproject.toml)
 defusedxml==0.7.1
     # via py-serializable
-dill==0.3.6
+dill==0.3.7
     # via pylint
 docutils==0.18.1
     # via
@@ -114,8 +114,6 @@ keyring==24.2.0
     # via
     #   twine
     #   youwol (pyproject.toml)
-lazy-object-proxy==1.9.0
-    # via astroid
 license-expression==30.1.1
     # via cyclonedx-python-lib
 lockfile==0.12.2
@@ -202,7 +200,7 @@ pyjwt[crypto]==2.4.0
     # via
     #   pyjwt
     #   youwol (pyproject.toml)
-pylint==2.17.3
+pylint==3.0.2
     # via youwol (pyproject.toml)
 pyparsing==3.1.0
     # via
@@ -302,8 +300,6 @@ websockets==10.3
     # via youwol (pyproject.toml)
 wheel==0.38.4
     # via pip-tools
-wrapt==1.15.0
-    # via astroid
 yarl==1.9.2
     # via aiohttp
 zipp==3.8.0
