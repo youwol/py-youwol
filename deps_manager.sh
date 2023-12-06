@@ -4,7 +4,7 @@
 #
 # Python requirements management with pip-tools in an existing virtual environnement.
 # Requirements are pinned with package version and hashes in the following files :
-#    - requirements-dev.txt contains all dependencies. Install it with pip-sync requirements-dev.txt
+#    - requirements.txt contains all dependencies. Install it with `pip-sync requirements.txt`
 #    - requirements-qa.txt is for code static analysis
 #    - requirements-publish.txt is for publishing workflow
 #    - requirements-docker.txt for install in docker image (base image should pick it by default).
@@ -43,7 +43,7 @@ export CUSTOM_COMPILE_COMMAND="sh ${self_name} compile"
 action="$1"
 package="$2"
 
-out_dev="requirements-dev.txt"
+out_dev="requirements.txt"
 extras_dev="--extra=dev --extra=qa --extra=publish"
 
 out_qa="requirements-qa.txt"
@@ -131,7 +131,7 @@ do_compile() {
       echo "Requirements files updated."
       echo "You should run pip-sync now :"
       echo
-      echo "  pip-sync requirements-dev.txt"
+      echo "  pip-sync requirements.txt"
       echo
 }
 
@@ -176,7 +176,7 @@ do_upgrade_all() {
       echo "Dependencies upgraded and requirements files updated."
       echo "You should run pip-sync now :"
       echo
-      echo "    pip-sync requirements-dev.txt"
+      echo "    pip-sync requirements.txt"
       echo
 }
 
@@ -223,7 +223,7 @@ do_upgrade_package() {
       echo "Package '${package}' upgraded and requirements files updated."
       echo "You should run pip-sync now :"
       echo
-      echo "    pip-sync requirements-dev.txt"
+      echo "    pip-sync requirements.txt"
       echo
 }
 
