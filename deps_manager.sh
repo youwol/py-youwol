@@ -8,7 +8,7 @@
 #    - requirements-qa.txt is for code static analysis
 #    - requirements-publish.txt is for publishing workflow
 #    - requirements-docker.txt for install in docker image (base image should pick it by default).
-#    - requirements.txt specify dependencies without hashes (IDEs should pick it by default).
+#    - requirements-no-hashes.txt specify dependencies without hashes.
 #
 # Usage:
 #
@@ -54,7 +54,7 @@ extras_publish="--extra=publish"
 
 out_docker="requirements-docker.txt"
 
-out_no_hashes="requirements.txt"
+out_no_hashes="requirements-no-hashes.txt"
 extras_no_hashes="${extras_dev}"
 
 help_message() {
