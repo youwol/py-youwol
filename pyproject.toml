@@ -69,6 +69,7 @@ qa = [
     "types-setuptools",
     "types-tqdm",
     "types-ujson",
+    "yamllint",
 ]
 publish = [
     "pdoc3",

@@ -1,6 +1,8 @@
+---
+
 name: Release
 
-on:
+on:  # yamllint disable-line rule:truthy
   workflow_dispatch:
     inputs:
       final_version:
@@ -136,13 +138,14 @@ jobs:
       - name: Job Output
         id: job-output
         run: |
-          versions_json=$(python version_management.py python_versions)
-          echo python_versions=${versions_json} >> $GITHUB_OUTPUT
-          
-        
+         versions_json=$(python version_management.py python_versions)
+         echo python_versions=${versions_json} >> $GITHUB_OUTPUT
+
 
   tests:
-    name: Test ${{ needs.build.outputs.version }} on Python ${{ matrix.python_version }} (${{ matrix.install_from }})
+    name: "Test ${{ needs.build.outputs.version }} \
+    on Python ${{ matrix.python_version }} \
+    (${{ matrix.install_from }})"
     runs-on: ubuntu-latest
     needs: build
     strategy:
@@ -209,7 +212,7 @@ jobs:
           path: ${{ runner.temp }}/local-youwol-client
 
       - name: Download configuration for integration tests
-        id: download_config_integration
+        id: download_config
         uses: actions/download-artifact@v3
         with:
           name: config_integration-tests
@@ -226,13 +229,15 @@ jobs:
         env:
           USERNAME_INTEGRATION_TESTS: ${{ secrets.USERNAME_INTEGRATION_TESTS }}
           PASSWORD_INTEGRATION_TESTS: ${{ secrets.PASSWORD_INTEGRATION_TESTS }}
+          # yamllint disable rule:line-length
           USERNAME_INTEGRATION_TESTS_BIS: ${{ secrets.USERNAME_INTEGRATION_TESTS_BIS }}
           PASSWORD_INTEGRATION_TESTS_BIS: ${{ secrets.PASSWORD_INTEGRATION_TESTS_BIS }}
           CLIENT_SECRET_INTEGRATION_TESTS: ${{ secrets.CLIENT_SECRET_INTEGRATION_TESTS }}
+          # yamllint enable rule:line-length
         with:
           coverage: false
-          conf: ${{ steps.download_config_integration.outputs.download-path }}/yw_config.py
-          name: tests_${{ matrix.python_version }}_${{ matrix.install_from}}
+          conf: ${{ steps.download_config.outputs.download-path }}/yw_config.py
+          name: tests_${{ matrix.python_version }}_${{ matrix.install_from }}
 
       - name: Tests http-clients
         id: tests_http-clients
@@ -318,6 +323,10 @@ jobs:
           tag_msg_1st_line="Published release $VERSION on pypi.org"
           tag_msg_2nd_line="https://pypi.org/project/youwol/$VERSION/"
           twine upload --verbose youwol-$VERSION*
-          git tag -a "v$VERSION" -m "${tag_msg_1st_line}" -m "${tag_msg_2nd_line}" $COMMIT
+          git tag \
+            -a "v$VERSION" \
+            -m "${tag_msg_1st_line}" \
+            -m "${tag_msg_2nd_line}" \
+            $COMMIT
           git push --follow-tags
         shell: sh

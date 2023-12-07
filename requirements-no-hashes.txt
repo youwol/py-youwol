@@ -161,7 +161,9 @@ packaging==23.2
     #   pip-audit
     #   pip-requirements-parser
 pathspec==0.11.2
-    # via black
+    # via
+    #   black
+    #   yamllint
 pdoc3==0.10.0
     # via youwol (pyproject.toml)
 pillow==10.1.0
@@ -219,7 +221,9 @@ python-daemon==2.3.2
 python-multipart==0.0.5
     # via youwol (pyproject.toml)
 pyyaml==6.0.1
-    # via youwol (pyproject.toml)
+    # via
+    #   yamllint
+    #   youwol (pyproject.toml)
 readme-renderer==42.0
     # via twine
 redis==4.6.0
@@ -303,6 +307,8 @@ websockets==10.4
     # via youwol (pyproject.toml)
 wheel==0.42.0
     # via pip-tools
+yamllint==1.33.0
+    # via youwol (pyproject.toml)
 yarl==1.9.4
     # via aiohttp
 zipp==3.17.0

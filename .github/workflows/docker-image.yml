@@ -1,6 +1,8 @@
-name: "Docker Image"
+---
 
-on:
+name: Docker Image
+
+on:  # yamllint disable-line rule:truthy
   push:
     tags:
       - 'v*'
