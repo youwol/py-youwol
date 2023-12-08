@@ -109,8 +109,7 @@ class YouwolEnvironment(BaseModel):
             if len(self.commands.keys()) != 0:
                 return f"""
 - list of custom commands:
-{chr(10).join([f"  * http://localhost:{self.httpPort}/admin/custom-commands/{command}"
-               for command in self.commands.keys()])}
+{chr(10).join([f"  * http://localhost:{self.httpPort}/admin/custom-commands/{cmd}" for cmd in self.commands.keys()])}
 """
             return "- no custom command configured"
 
@@ -118,8 +117,7 @@ class YouwolEnvironment(BaseModel):
             if self.routers:
                 return f"""
 - list of additional routers:
-{chr(10).join([f"  * {router.base_path}"
-               for router in self.routers])}
+{chr(10).join([f"  * {router.base_path}" for router in self.routers])}
 """
             return "- no custom command configured"
 

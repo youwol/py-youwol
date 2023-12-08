@@ -100,7 +100,7 @@ class GetLoadingGraph(AbstractLocalCloudDispatch):
                 ) as resp:
                     end = timer()
                     await ctx.info(
-                        f"Response received from remote in {int(1000*(end-start))} ms"
+                        f"Response received from remote in {int(1000 * (end - start))} ms"
                     )
                     headers_resp = dict(resp.headers.items())
                     headers_resp[
