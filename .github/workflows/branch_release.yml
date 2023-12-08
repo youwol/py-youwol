@@ -1,13 +1,15 @@
+---
+
 name: Create Branch Release
 
-on:
+on:  # yamllint disable-line rule:truthy
   - workflow_dispatch
 
 permissions:
   contents: write
 
 jobs:
-  create_branch_release:
+  create_branch:
     name: Create Branch Release
     runs-on: ubuntu-latest
     outputs:
@@ -21,11 +23,11 @@ jobs:
           token: ${{ secrets.PAT_NESTOR_PYYOUWOL_PUSH }}
           ref: main
 
-      - name: Prepare Python 3.10
+      - name: Prepare Python 3.12
         id: prepare_python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.12'
           cache: 'pip'
 
       - name: Set up GPG
@@ -46,7 +48,7 @@ jobs:
           echo final_version=${final_version} >> $GITHUB_OUTPUT
 
       - name: Create branch release
-        id: create_branch_release
+        id: create_branch
         env:
           FINAL_VERSION: ${{ steps.params.outputs.final_version }}
         run: |
@@ -71,9 +73,9 @@ jobs:
   build_first_release_candidate:
     name: First Release
     uses: ./.github/workflows/release.yml
-    needs: create_branch_release
+    needs: create_branch
     with:
-      final_version: ${{ needs.create_branch_release.outputs.final_version }}
+      final_version: ${{ needs.create_branch.outputs.final_version }}
       final: false
     secrets: inherit
 
@@ -82,12 +84,12 @@ jobs:
     name: Create Merge back PR
     runs-on: ubuntu-latest
     needs:
-      - create_branch_release
+      - create_branch
     steps:
       - name: Create Pull Request
         id: create_pr
         env:
-          FINAL_VERSION: ${{ needs.create_branch_release.outputs.final_version }}
+          FINAL_VERSION: ${{ needs.create_branch.outputs.final_version }}
           GH_TOKEN: ${{ secrets.PAT_NESTOR_PYYOUWOL_PUSH }}
         run: |
           gh pr create \

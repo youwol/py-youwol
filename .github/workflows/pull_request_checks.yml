@@ -1,6 +1,8 @@
+---
+
 name: Continuous Integration
 
-on:
+on:  # yamllint disable-line rule:truthy
   workflow_dispatch:
     inputs:
       local-youwol-client_ref:
@@ -35,8 +37,9 @@ on:
 
       skip:
         description: |
-          List of check to skip : local-youwol-client, http-clients, webpm-client, vsf-core,
-          pipeline-ts, build, version_monotony, audit, pep8, cleanness, dep_manager
+          List of check to skip : local-youwol-client, http-clients, vsf-core,
+          webpm-client, pipeline-ts, build, version_monotony, audit, pep8,
+          cleanness, dep_manager
         required: false
         default: ''
 
@@ -160,6 +163,7 @@ jobs:
     needs:
       - integration_local-youwol-client
       - integration_webpm-client
+      - integration_vsf-core
       - integration_http-clients
       - static_analysis
       - pipeline_ts

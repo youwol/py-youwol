@@ -19,13 +19,12 @@ def assert_python():
     if not (
         (version_info.major == 3 and version_info.minor == 10)
         or (version_info.major == 3 and version_info.minor == 11)
+        or (version_info.major == 3 and version_info.minor == 12)
         or (version_info.major == 3 and version_info.minor == 9)
-        or (version_info.major == 3 and version_info.minor == 8)
-        or (version_info.major == 3 and version_info.minor == 7)
     ):
         print(
             """Your version of python is not compatible with py-youwol:
-        Recommended: 3.9.x"""
+        Recommended: 3.12.x"""
         )
         sys.exit(1)
 
