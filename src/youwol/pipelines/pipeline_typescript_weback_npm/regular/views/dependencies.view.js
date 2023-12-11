@@ -137,10 +137,12 @@ async function getView({
   project,
   flowId,
   stepId,
-  fluxView,
-  rxjs,
   projectsRouter,
+  webpmClient,
 }) {
+  const { rxjs, rxVdom } = await webpmClient.install({
+    modules: ["@youwol/rx-vdom#^1.0.1 as rxVdom", "rxjs#^7.5.6 as rxjs"],
+  });
   const state = new State({
     modalState,
     project,
