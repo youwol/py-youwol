@@ -152,11 +152,11 @@ async function getView({
     projectsRouter,
   });
 
-  return new SyncDependenciesView({
+  const VdomDyncDependenciesView = new SyncDependenciesView({
     state,
-    fluxView,
-    rxjs,
   });
+
+  return rxVdom.render(VdomDyncDependenciesView);
 }
 
 // noinspection JSAnnotator
