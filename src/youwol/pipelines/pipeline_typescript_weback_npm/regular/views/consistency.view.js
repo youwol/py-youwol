@@ -28,7 +28,7 @@ class State {
             stepId: this.stepId,
             body: { count, configPath },
           });
-        })
+        }),
       )
       .subscribe();
   }
@@ -51,8 +51,10 @@ class State {
 }
 
 class SyncDependenciesView {
+  tag = "div";
   class = "h-100 w-100 rounded fv-bg-background-alt border p-3";
-  constructor({ state, fluxView }) {
+
+  constructor({ state }) {
     this.children = [
       {
         tag: "h1",
@@ -60,30 +62,37 @@ class SyncDependenciesView {
         innerText: "Consistency Step",
       },
       {
+        tag: "div",
         innerText: "Provide the path of the test configuration:",
       },
       {
         tag: "input",
         type: "text",
         placeholder: "path of the config file",
-        value: fluxView.attr$(state.configPath$, (p) => p),
+        value: { source$: state.configPath$, vdomMap: (p) => p },
+
         onchange: (ev) => {
           state.configPath$.next(ev.target.value);
         },
       },
       {
+        tag: "div",
         innerText: "Provide the number of run:",
       },
       {
         tag: "input",
         type: "number",
-        value: fluxView.attr$(state.count$, (p) => p),
+        value: { source$: state.count$, vdomMap: (p) => p },
         onchange: (ev) => {
           state.count$.next(parseInt(ev.target.value));
         },
       },
-      { class: "my-3" },
       {
+        tag: "div",
+        class: "my-3",
+      },
+      {
+        tag: "div",
         class:
           "fv-bg-secondary rounded p-2 border fv-hover-xx-lighter fv-pointer",
         style: { width: "fit-content" },

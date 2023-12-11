@@ -12,7 +12,7 @@ class State {
       stepId,
     });
     this.dependencies$ = inputs$.pipe(
-      rxjs.operators.map((data) => Object.keys(data))
+      rxjs.operators.map((data) => Object.keys(data)),
     );
     const config$ = projectsRouter.getStepConfiguration$({
       projectId: project.id,
@@ -46,7 +46,7 @@ class State {
             stepId: this.stepId,
             body: { synchronizedDependencies: packages },
           });
-        })
+        }),
       )
       .subscribe();
   }
@@ -69,8 +69,11 @@ class State {
 }
 
 class SyncDependenciesView {
-  class = "h-100 w-100 rounded fv-bg-background-alt border p-3";
-  constructor({ state, fluxView }) {
+  tag = "div";
+  class =
+    "h-100 w-100 rounded fv-bg-background-alt yw-animate-in yw-box-shadow p-3";
+
+  constructor({ state }) {
     this.children = [
       {
         tag: "h1",
@@ -78,39 +81,47 @@ class SyncDependenciesView {
         innerText: "Dependencies Step",
       },
       {
+        tag: "div",
         innerText:
           "Check the dependencies you want to synchronized from the projects",
       },
       {
         tag: "ul",
-        children: fluxView.children$(state.dependencies$, (dependencies) => {
-          return dependencies.map((name) => {
-            return {
-              tag: "li",
-              class: "d-flex align-items-center",
-              children: [
-                {
-                  tag: "input",
-                  type: "checkbox",
-                  onclick: () => state.togglePackage(name),
-                  checked: fluxView.attr$(
-                    state.selectedPackages$,
-                    (packages) => packages.indexOf(name) > -1
-                  ),
-                },
-                {
-                  tag: "span",
-                  innerText: name,
-                },
-              ],
-            };
-          });
-        }),
+        children: {
+          policy: "replace",
+          source$: state.dependencies$,
+          vdomMap: (dependencies) => {
+            return dependencies.map((name) => {
+              return {
+                tag: "li",
+                class: "d-flex align-items-center",
+                children: [
+                  {
+                    tag: "input",
+                    type: "checkbox",
+                    onclick: () => state.togglePackage(name),
+                    checked: {
+                      source$: state.selectedPackages$,
+                      vdomMap: (packages) => packages.indexOf(name) > -1,
+                    },
+                  },
+                  {
+                    tag: "span",
+                    innerText: `${name}`,
+                  },
+                ],
+              };
+            });
+          },
+        },
       },
       {
+        tag: "div",
         class:
           "fv-bg-secondary rounded p-2 border fv-hover-xx-lighter fv-pointer",
-        style: { width: "fit-content" },
+        style: {
+          width: "fit-content",
+        },
         innerText: "Apply & run",
         onclick: () => {
           state.updateConfiguration();
