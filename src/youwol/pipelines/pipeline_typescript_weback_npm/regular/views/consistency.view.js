@@ -104,7 +104,8 @@ class SyncDependenciesView {
     ];
   }
 }
-function getView({
+
+async function getView({
   modalState,
   project,
   flowId,
