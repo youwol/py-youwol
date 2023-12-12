@@ -153,8 +153,8 @@ class UpdateApplication(AbstractLocalCloudDispatch):
             asset_id = base64.urlsafe_b64encode(str.encode(package_name)).decode()
 
             env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
-            remote_assets_gtw = await RemoteClients.get_assets_gateway_client(
-                env.get_remote_info().host
+            remote_assets_gtw = await RemoteClients.get_twin_assets_gateway_client(
+                env=env
             )
             remote_cdn = remote_assets_gtw.get_cdn_backend_router()
             local_cdn = LocalClients.get_cdn_client(env=env)

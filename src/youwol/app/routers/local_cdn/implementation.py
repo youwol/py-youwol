@@ -71,9 +71,7 @@ def get_latest_local_cdn_version(env: YouwolEnvironment) -> List[TargetPackage]:
 
 async def check_update(local_package: TargetPackage, context: Context):
     env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
-    remote_gtw_client = await RemoteClients.get_assets_gateway_client(
-        remote_host=env.get_remote_info().host
-    )
+    remote_gtw_client = await RemoteClients.get_twin_assets_gateway_client(env)
     headers = {"authorization": context.headers().get("authorization")}
     name, version = local_package.library_name, local_package.version
     async with context.start(

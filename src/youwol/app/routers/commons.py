@@ -104,9 +104,7 @@ async def ensure_local_path(folder_id: str, env: YouwolEnvironment, context: Con
             )
         except HTTPException as e:
             if e.status_code == 404:
-                assets_gtw = await RemoteClients.get_assets_gateway_client(
-                    remote_host=env.get_remote_info().host
-                )
+                assets_gtw = await RemoteClients.get_twin_assets_gateway_client(env=env)
                 remote_treedb = assets_gtw.get_treedb_backend_router()
                 path = await remote_treedb.get_path_folder(
                     folder_id=folder_id, headers=context.headers()

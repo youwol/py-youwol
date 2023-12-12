@@ -9,10 +9,13 @@ from youwol.utils.clients.assets_gateway.assets_gateway import AssetsGatewayClie
 from youwol.utils.clients.cdn_sessions_storage import CdnSessionsStorageClient
 from youwol.utils.clients.files import FilesClient
 from youwol.utils.clients.flux.flux import FluxClient
+from youwol.utils.clients.oidc.tokens_manager import TokensStorage
 from youwol.utils.clients.stories.stories import StoriesClient
 from youwol.utils.clients.treedb.treedb import TreeDbClient
 
 # relative
+from .local_auth import get_local_tokens
+from .models.models_config import CloudEnvironment
 from .youwol_environment import YouwolEnvironment
 
 
@@ -22,8 +25,48 @@ def client_session():
 
 class RemoteClients:
     @staticmethod
-    async def get_assets_gateway_client(remote_host: str) -> AssetsGatewayClient:
-        return AssetsGatewayClient(url_base=f"https://{remote_host}/api/assets-gateway")
+    async def access_token(
+        cloud_environment: CloudEnvironment, auth_id: str, tokens_storage: TokensStorage
+    ) -> str:
+        authentication = next(
+            auth for auth in cloud_environment.authentications if auth.authId == auth_id
+        )
+
+        tokens = await get_local_tokens(
+            tokens_storage=tokens_storage,
+            auth_provider=cloud_environment.authProvider,
+            auth_infos=authentication,
+        )
+
+        return await tokens.access_token()
+
+    @staticmethod
+    async def get_twin_assets_gateway_client(
+        env: YouwolEnvironment,
+    ) -> AssetsGatewayClient:
+        return await RemoteClients.get_assets_gateway_client(
+            cloud_environment=env.get_remote_info(),
+            auth_id=env.get_authentication_info().authId,
+            tokens_storage=env.tokens_storage,
+        )
+
+    @staticmethod
+    async def get_assets_gateway_client(
+        cloud_environment: CloudEnvironment, auth_id: str, tokens_storage: TokensStorage
+    ) -> AssetsGatewayClient:
+        async def access_token() -> str:
+            return await RemoteClients.access_token(
+                cloud_environment=cloud_environment,
+                auth_id=auth_id,
+                tokens_storage=tokens_storage,
+            )
+
+        return AssetsGatewayClient(
+            url_base=f"https://{cloud_environment.host}/api/assets-gateway",
+            request_executor=AioHttpExecutor(
+                access_token=access_token, client_session=client_session
+            ),
+        )
 
 
 class LocalClients:
