@@ -5,9 +5,12 @@ import asyncio
 from typing import List
 
 # third parties
+import aiohttp
+
 from pydantic import BaseModel
 
 # Youwol utilities
+from youwol.utils import AioHttpExecutor
 from youwol.utils.clients.oidc.oidc_config import (
     OidcConfig,
     OidcForClient,
@@ -107,7 +110,10 @@ async def clean_drive(drive: Drive, treedb: TreeDbClient, context: Context):
 async def clean_visitors(body: CleanVisitorsBody, context: Context):
     async with context.start(action="clean_visitors") as ctx:  # type: Context
         treedb = TreeDbClient(
-            url_base="https://platform.youwol.com/api/assets-gateway/treedb-backend"
+            url_base="https://platform.youwol.com/api/assets-gateway/treedb-backend",
+            request_executor=AioHttpExecutor(
+                client_session=lambda: aiohttp.ClientSession(auto_decompress=False)
+            ),
         )
         openid_config = OidcConfig(body.base_url)
         private_client = PrivateClient(
