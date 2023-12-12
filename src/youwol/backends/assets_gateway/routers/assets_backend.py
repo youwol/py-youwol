@@ -144,7 +144,7 @@ async def get_file(
         return await assets_db.get_file(
             asset_id=asset_id,
             path=rest_of_path,
-            reader=aiohttp_to_starlette_response,
+            custom_reader=aiohttp_to_starlette_response,
             headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys),
         )
 

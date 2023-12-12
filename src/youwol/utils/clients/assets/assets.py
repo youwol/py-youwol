@@ -11,11 +11,11 @@ from aiohttp import ClientResponse, FormData
 # Youwol utilities
 from youwol.utils.clients.request_executor import (
     RequestExecutor,
+    auto_reader,
     bytes_reader,
     json_reader,
 )
 from youwol.utils.exceptions import raise_exception_from_response
-from youwol.utils.utils_requests import extract_aiohttp_response
 
 
 @dataclass(frozen=True)
@@ -56,17 +56,11 @@ class AssetsClient:
         self,
         asset_id: str,
         path: Union[Path, str],
-        reader: Callable[[ClientResponse], Awaitable[Any]] = None,
         **kwargs,
     ):
-        async def _reader(resp: ClientResponse):
-            if resp.status < 300:
-                return await extract_aiohttp_response(resp=resp, reader=reader)
-            await raise_exception_from_response(resp, **kwargs)
-
         return await self.request_executor.get(
             url=f"{self.url_base}/assets/{asset_id}/files/{path}",
-            default_reader=_reader,
+            default_reader=auto_reader,
             **kwargs,
         )
 

@@ -208,7 +208,7 @@ class UpdateApplication(AbstractLocalCloudDispatch):
                     version=latest_remote,
                     rest_of_path="",
                     headers=ctx.headers(),
-                    reader=aiohttp_to_starlette_response,
+                    custom_reader=aiohttp_to_starlette_response,
                 )
             )
             return resp

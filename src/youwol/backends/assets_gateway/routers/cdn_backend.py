@@ -204,7 +204,7 @@ async def get_entry_point(
         return await configuration.cdn_client.get_entry_point(
             library_id=library_id,
             version=version,
-            reader=aiohttp_to_starlette_response,
+            custom_reader=aiohttp_to_starlette_response,
             headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys),
         )
 
@@ -234,7 +234,7 @@ async def get_resource(
             library_id=library_id,
             version=version,
             rest_of_path=rest_of_path,
-            reader=aiohttp_to_starlette_response,
+            custom_reader=aiohttp_to_starlette_response,
             headers=ctx.headers(),
         )
 

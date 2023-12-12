@@ -6,19 +6,18 @@ from dataclasses import dataclass
 from pathlib import Path
 
 # typing
-from typing import Any, Awaitable, Callable, Iterable, List, Union
+from typing import Iterable, List, Union
 
 # third parties
-from aiohttp import ClientResponse, FormData
+from aiohttp import FormData
 
 # Youwol utilities
 from youwol.utils.clients.request_executor import (
     RequestExecutor,
+    auto_reader,
     bytes_reader,
     json_reader,
 )
-from youwol.utils.exceptions import raise_exception_from_response
-from youwol.utils.utils_requests import extract_aiohttp_response
 
 
 def md5_update_from_file(filename: Union[str, Path], current_hash):
@@ -195,14 +194,12 @@ class CdnClient:
         self,
         library_id: str,
         version: str,
-        reader: Callable[[ClientResponse], Awaitable[Any]] = None,
         **kwargs,
     ):
         return await self.get_resource(
             library_id=library_id,
             version=version,
             rest_of_path="",
-            reader=reader,
             **kwargs,
         )
 
@@ -211,7 +208,6 @@ class CdnClient:
         library_id: str,
         version: str,
         rest_of_path: str,
-        reader: Callable[[ClientResponse], Awaitable[Any]] = None,
         **kwargs,
     ):
         url = (
@@ -220,13 +216,8 @@ class CdnClient:
             else f"{self.url_base}/resources/{library_id}/{version}"
         )
 
-        async def _reader(resp):
-            if resp.status < 300:
-                return await extract_aiohttp_response(resp=resp, reader=reader)
-            await raise_exception_from_response(resp, url=self.push_url)
-
         return await self.request_executor.get(
             url=url,
-            default_reader=_reader,
+            default_reader=auto_reader,
             **kwargs,
         )

@@ -61,7 +61,7 @@ async def get_raw_package(
             library_id=raw_id,
             version=version,
             rest_of_path=rest_of_path,
-            reader=aiohttp_to_starlette_response,
+            custom_reader=aiohttp_to_starlette_response,
             headers=ctx.headers(),
         )
 

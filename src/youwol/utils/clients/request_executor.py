@@ -199,3 +199,21 @@ async def bytes_reader(resp: ClientResponse) -> bytes:
         return resp_bytes
 
     await raise_exception_from_response(resp, url=resp.url)
+
+
+async def auto_reader(resp: ClientResponse) -> Union[JSON, str, bytes]:
+    if resp.status < 300:
+        content_type = resp.content_type
+
+        if content_type == "application/json":
+            return await resp.json()
+
+        text_applications = ["rtf", "xml", "x-sh"]
+        if content_type.startswith("text/") or content_type in [
+            f"application/{app}" for app in text_applications
+        ]:
+            return await resp.text()
+
+        return await resp.read()
+
+    await raise_exception_from_response(resp)

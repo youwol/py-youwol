@@ -3,7 +3,7 @@ from urllib.error import URLError
 from urllib.request import urlopen
 
 # typing
-from typing import Awaitable, Callable, List, Optional, Tuple, TypeVar, Union
+from typing import List, Optional, Tuple, TypeVar
 
 # third parties
 from aiohttp import ClientResponse, ClientSession, TCPConnector
@@ -11,8 +11,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 # Youwol utilities
-from youwol.utils.exceptions import assert_response
-from youwol.utils.types import JSON
+from youwol.utils.exceptions import assert_response, raise_exception_from_response
 
 
 async def redirect_request(
@@ -70,33 +69,16 @@ async def redirect_request(
 
 
 async def aiohttp_to_starlette_response(resp: ClientResponse) -> Response:
-    return Response(
-        status_code=resp.status,
-        content=await resp.read(),
-        headers=dict(resp.headers.items()),
-    )
+    if resp.status < 300:
+        return Response(
+            status_code=resp.status,
+            content=await resp.read(),
+            headers=dict(resp.headers.items()),
+        )
+    await raise_exception_from_response(resp, url=resp.url)
 
 
 TResp = TypeVar("TResp")
-
-
-async def extract_aiohttp_response(
-    resp: ClientResponse, reader: Callable[[ClientResponse], Awaitable[TResp]] = None
-) -> Union[TResp, JSON, str, bytes]:
-    if reader:
-        return await reader(resp)
-    content_type = resp.content_type
-
-    if content_type == "application/json":
-        return await resp.json()
-
-    text_applications = ["rtf", "xml", "x-sh"]
-    if content_type.startswith("text/") or content_type in [
-        f"application/{app}" for app in text_applications
-    ]:
-        return await resp.text()
-
-    return await resp.read()
 
 
 def extract_bytes_ranges(request: Request) -> Optional[List[Tuple[int, int]]]:
