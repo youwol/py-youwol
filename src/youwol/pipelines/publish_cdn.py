@@ -21,7 +21,6 @@ from youwol.app.environment import (
     RemoteClients,
     YouwolEnvironment,
 )
-from youwol.app.middlewares.local_auth import get_local_tokens
 from youwol.app.routers.environment.upload_assets.package import UploadPackageOptions
 from youwol.app.routers.environment.upload_assets.upload import upload_asset
 from youwol.app.routers.local_cdn import download_package
@@ -398,31 +397,6 @@ class PublishCdnRemoteStep(PipelineStep):
     cdnTarget: CdnTarget
     run: ExplicitNone = ExplicitNone()
 
-    async def get_access_token(self, context: Context):
-        env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
-        try:
-            authentication = next(
-                auth
-                for auth in self.cdnTarget.cloudTarget.authentications
-                if auth.authId == self.cdnTarget.authId
-            )
-        except StopIteration as e:
-            await context.error(
-                text=f"Can no find auth {self.cdnTarget.authId} in cloud target's authentications",
-                data={"cloud target": self.cdnTarget.cloudTarget},
-            )
-            raise e
-
-        tokens = await get_local_tokens(
-            tokens_storage=env.tokens_storage,
-            auth_provider=self.cdnTarget.cloudTarget.authProvider,
-            auth_infos=authentication,
-        )
-
-        access_token = await tokens.access_token()
-
-        return f"Bearer {access_token}"
-
     async def get_status(
         self,
         project: Project,
@@ -430,18 +404,15 @@ class PublishCdnRemoteStep(PipelineStep):
         last_manifest: Optional[Manifest],
         context: Context,
     ) -> PipelineStepStatus:
-        access_token = await self.get_access_token(context=context)
-
         async with context.start(
-            action="PublishCdnRemoteStep.get_status",
-            with_headers={
-                "Authorization": access_token,
-            },
+            action="PublishCdnRemoteStep.get_status"
         ) as ctx:  # type: Context
             env = await context.get("env", YouwolEnvironment)
             local_cdn = LocalClients.get_cdn_client(env=env)
             remote_gtw = await RemoteClients.get_assets_gateway_client(
-                remote_host=self.cdnTarget.cloudTarget.host
+                cloud_environment=self.cdnTarget.cloudTarget,
+                auth_id=self.cdnTarget.authId,
+                tokens_storage=env.tokens_storage,
             )
             remote_cdn = remote_gtw.get_cdn_backend_router()
             library_id = encode_id(project.publishName)
@@ -496,16 +467,18 @@ class PublishCdnRemoteStep(PipelineStep):
     async def execute_run(self, project: Project, flow_id: str, context: Context):
         env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
 
-        access_token = await self.get_access_token(context=context)
-
         async with context.start(
             action="PublishCdnRemoteStep.execute_run",
-            with_headers={"Authorization": access_token},
         ) as ctx:
             options = UploadPackageOptions(versions=[project.version])
             package_id = encode_id(project.publishName)
+            remote_assets_gtw = await RemoteClients.get_assets_gateway_client(
+                cloud_environment=self.cdnTarget.cloudTarget,
+                auth_id=self.cdnTarget.authId,
+                tokens_storage=env.tokens_storage,
+            )
             await upload_asset(
-                remote_host=self.cdnTarget.cloudTarget.host,
+                remote_assets_gtw=remote_assets_gtw,
                 asset_id=encode_id(package_id),
                 options=options,
                 context=ctx,

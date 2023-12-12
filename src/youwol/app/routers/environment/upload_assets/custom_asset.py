@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import Dict, Tuple
 
 # Youwol application
-from youwol.app.environment import LocalClients, RemoteClients, YouwolEnvironment
+from youwol.app.environment import LocalClients, YouwolEnvironment
 from youwol.app.routers.environment.upload_assets.models import UploadTask
 
 # Youwol utilities
@@ -36,10 +36,7 @@ class UploadCustomAssetTask(UploadTask):
         async with context.start(
             action="UploadDataTask.create_raw"
         ) as ctx:  # type: Context
-            assets_gtw = await RemoteClients.get_assets_gateway_client(
-                remote_host=self.remote_host
-            )
-            assets_backend = assets_gtw.get_assets_backend_router()
+            assets_backend = self.remote_assets_gtw.get_assets_backend_router()
             await assets_backend.create_asset(
                 body=data[1], params={"folder-id": folder_id}, headers=ctx.headers()
             )
@@ -53,10 +50,7 @@ class UploadCustomAssetTask(UploadTask):
         async with context.start(
             action="UploadDataTask.update_raw"
         ) as ctx:  # type: Context
-            assets_gtw = await RemoteClients.get_assets_gateway_client(
-                remote_host=self.remote_host
-            )
-            assets_backend = assets_gtw.get_assets_backend_router()
+            assets_backend = self.remote_assets_gtw.get_assets_backend_router()
             await assets_backend.add_zip_files(
                 asset_id=self.asset_id, data=data[0], headers=ctx.headers()
             )

@@ -1,6 +1,7 @@
 # relative
 from .clients import *
 from .config_from_module import *
+from .local_auth import *
 from .models import *
 from .online_environments import *
 from .paths import *

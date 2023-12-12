@@ -1,4 +1,5 @@
 # Youwol application
+from youwol.app.environment.local_auth import local_tokens_id
 from youwol.app.environment.youwol_environment import yw_config
 
 # Youwol backends
@@ -7,9 +8,6 @@ import youwol.backends.accounts
 # Youwol utilities
 from youwol.utils import CacheClient, OidcConfig
 from youwol.utils.context import ContextFactory
-
-# relative
-from ..middlewares.local_auth import local_tokens_id
 
 
 async def cdn_config_py_youwol():

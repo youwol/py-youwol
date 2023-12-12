@@ -25,12 +25,13 @@ from youwol.app.environment import (
     FwdArgumentsReload,
     PathsBook,
     Projects,
+    RemoteClients,
     YouwolEnvironment,
     YouwolEnvironmentFactory,
+    get_connected_local_tokens,
     yw_config,
 )
 from youwol.app.environment.models import predefined_configs
-from youwol.app.middlewares import get_connected_local_tokens
 from youwol.app.routers.projects import ProjectLoader
 from youwol.app.web_socket import LogsStreamer
 
@@ -231,7 +232,9 @@ async def upload(
         with_reporters=[LogsStreamer()],
     ) as ctx:
         return await upload_asset(
-            remote_host=config.get_remote_info().host,
+            remote_assets_gtw=await RemoteClients.get_twin_assets_gateway_client(
+                env=config
+            ),
             asset_id=asset_id,
             options=None,
             context=ctx,

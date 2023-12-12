@@ -3,6 +3,9 @@ import shutil
 
 from pathlib import Path
 
+# third parties
+from aiohttp import ClientSession
+
 # Youwol backends
 import youwol.backends.assets as yw_assets_backend
 import youwol.backends.assets_gateway as yw_assets_gtw
@@ -15,7 +18,7 @@ import youwol.backends.stories as yw_stories_backend
 import youwol.backends.tree_db as yw_tree_db_backend
 
 # Youwol utilities
-from youwol.utils import CdnClient, LocalStorageClient
+from youwol.utils import AioHttpExecutor, CdnClient, LocalStorageClient
 from youwol.utils.clients.assets.assets import AssetsClient
 from youwol.utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from youwol.utils.clients.docdb.local_docdb import get_local_nosql_instance
@@ -91,15 +94,36 @@ def native_backends_config(
     local_http_port: int, local_storage: Path, local_nosql: Path
 ):
     url_base = f"http://localhost:{local_http_port}/api"
+    request_executor = AioHttpExecutor(
+        client_session=lambda: ClientSession(auto_decompress=False)
+    )
 
     return BackendConfigurations(
         assets_gtw=yw_assets_gtw.Configuration(
-            flux_client=FluxClient(url_base=f"{url_base}/flux-backend"),
-            cdn_client=CdnClient(url_base=f"{url_base}/cdn-backend"),
-            stories_client=StoriesClient(url_base=f"{url_base}/stories-backend"),
-            treedb_client=TreeDbClient(url_base=f"{url_base}/treedb-backend"),
-            assets_client=AssetsClient(url_base=f"{url_base}/assets-backend"),
-            files_client=FilesClient(url_base=f"{url_base}/files-backend"),
+            flux_client=FluxClient(
+                url_base=f"{url_base}/flux-backend",
+                request_executor=request_executor,
+            ),
+            cdn_client=CdnClient(
+                url_base=f"{url_base}/cdn-backend",
+                request_executor=request_executor,
+            ),
+            stories_client=StoriesClient(
+                url_base=f"{url_base}/stories-backend",
+                request_executor=request_executor,
+            ),
+            treedb_client=TreeDbClient(
+                url_base=f"{url_base}/treedb-backend",
+                request_executor=request_executor,
+            ),
+            assets_client=AssetsClient(
+                url_base=f"{url_base}/assets-backend",
+                request_executor=request_executor,
+            ),
+            files_client=FilesClient(
+                url_base=f"{url_base}/files-backend",
+                request_executor=request_executor,
+            ),
         ),
         cdn_backend=yw_cdn_backend.Configuration(
             file_system=LocalFileSystem(
@@ -163,9 +187,13 @@ def native_backends_config(
                 secondary_indexes=[],
             ),
             assets_gtw_client=AssetsGatewayClient(
-                url_base=f"{url_base}/assets-gateway"
+                url_base=f"{url_base}/assets-gateway",
+                request_executor=request_executor,
             ),
-            cdn_client=CdnClient(url_base=f"{url_base}/cdn-backend"),
+            cdn_client=CdnClient(
+                url_base=f"{url_base}/cdn-backend",
+                request_executor=request_executor,
+            ),
         ),
         stories_backend=yw_stories_backend.Configuration(
             storage=LocalStorageClient(
@@ -185,12 +213,14 @@ def native_backends_config(
                 secondary_indexes=[yw_stories_backend.Constants.db_schema_doc_by_id],
             ),
             assets_gtw_client=AssetsGatewayClient(
-                url_base=f"{url_base}/assets-gateway"
+                url_base=f"{url_base}/assets-gateway",
+                request_executor=request_executor,
             ),
         ),
         cdn_apps_server=yw_cdn_apps_server.Configuration(
             assets_gtw_client=AssetsGatewayClient(
-                url_base=f"{url_base}/assets-gateway"
+                url_base=f"{url_base}/assets-gateway",
+                request_executor=request_executor,
             ),
         ),
         cdn_sessions_storage=yw_cdn_sessions_storage.Configuration(

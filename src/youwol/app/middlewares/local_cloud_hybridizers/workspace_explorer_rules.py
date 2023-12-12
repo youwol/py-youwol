@@ -78,9 +78,7 @@ class GetChildrenDispatch(AbstractLocalCloudDispatch):
                 )
                 await ensure_local_path(folder_id=folder_id, env=env, context=ctx)
 
-            assets_gtw = await RemoteClients.get_assets_gateway_client(
-                remote_host=env.get_remote_info().host
-            )
+            assets_gtw = await RemoteClients.get_twin_assets_gateway_client(env=env)
             remote_gtw_treedb = assets_gtw.get_treedb_backend_router()
 
             local_resp, remote_resp = await asyncio.gather(

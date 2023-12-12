@@ -1,38 +1,26 @@
 # standard library
-from dataclasses import dataclass, field
-
-# typing
-from typing import Dict
-
-# third parties
-import aiohttp
+from dataclasses import dataclass
 
 # Youwol utilities
-from youwol.utils.exceptions import raise_exception_from_response
+from youwol.utils.clients.request_executor import RequestExecutor, json_reader
 
 
 @dataclass(frozen=True)
 class AccountsClient:
     url_base: str
 
-    headers: Dict[str, str] = field(default_factory=lambda: {})
-    connector = aiohttp.TCPConnector(verify_ssl=False)
+    request_executor: RequestExecutor
 
     async def healthz(self, **kwargs):
-        url = f"{self.url_base}/healthz"
-        async with aiohttp.ClientSession(headers=self.headers) as session:
-            async with await session.get(url=url, **kwargs) as resp:
-                if resp.status == 200:
-                    drives = await resp.json()
-                    return drives
-
-                await raise_exception_from_response(resp, **kwargs)
+        return await self.request_executor.get(
+            url=f"{self.url_base}/healthz",
+            default_reader=json_reader,
+            **kwargs,
+        )
 
     async def get_session_details(self, **kwargs):
-        url = f"{self.url_base}/session"
-        async with aiohttp.ClientSession(headers=self.headers) as session:
-            async with await session.get(url=url, **kwargs) as resp:
-                if resp.status == 200:
-                    resp = await resp.json()
-                    return resp
-                await raise_exception_from_response(resp, **kwargs)
+        return await self.request_executor.get(
+            url=f"{self.url_base}/session",
+            default_reader=json_reader,
+            **kwargs,
+        )
