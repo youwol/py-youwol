@@ -9,15 +9,6 @@ from typing import Optional, Tuple
 # third parties
 from starlette.requests import Request
 
-# Youwol application
-from youwol.app.environment import (
-    Authentication,
-    AuthorizationProvider,
-    BrowserAuth,
-    DirectAuth,
-)
-from youwol.app.environment.youwol_environment import YouwolEnvironment
-
 # Youwol utilities
 from youwol.utils.clients.oidc.oidc_config import OidcConfig
 from youwol.utils.clients.oidc.tokens_manager import (
@@ -27,6 +18,10 @@ from youwol.utils.clients.oidc.tokens_manager import (
 )
 from youwol.utils.context import Context
 from youwol.utils.middlewares import JwtProvider, JwtProviderBearer, JwtProviderCookie
+
+# relative
+from .models import Authentication, AuthorizationProvider, BrowserAuth, DirectAuth
+from .youwol_environment import YouwolEnvironment
 
 
 class NeedInteractiveSession(RuntimeError):

@@ -13,15 +13,15 @@ import youwol.app.middlewares.local_cloud_hybridizers as local_cloud_hybridizer
 
 from youwol.app.environment import (
     CustomMiddleware,
+    JwtProviderBearerDynamicIssuer,
+    JwtProviderCookieDynamicIssuer,
+    JwtProviderPyYouwol,
     YouwolEnvironment,
     api_configuration,
     yw_config,
 )
 from youwol.app.middlewares import (
     BrowserCachingMiddleware,
-    JwtProviderBearerDynamicIssuer,
-    JwtProviderCookieDynamicIssuer,
-    JwtProviderPyYouwol,
     LocalCloudHybridizerMiddleware,
 )
 from youwol.app.routers import admin, native_backends

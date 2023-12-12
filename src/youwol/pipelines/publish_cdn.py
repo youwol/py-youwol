@@ -21,7 +21,7 @@ from youwol.app.environment import (
     RemoteClients,
     YouwolEnvironment,
 )
-from youwol.app.middlewares.local_auth import get_local_tokens
+from youwol.app.environment.local_auth import get_local_tokens
 from youwol.app.routers.environment.upload_assets.package import UploadPackageOptions
 from youwol.app.routers.environment.upload_assets.upload import upload_asset
 from youwol.app.routers.local_cdn import download_package
