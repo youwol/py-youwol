@@ -205,7 +205,6 @@ async def get_entry_point(
             library_id=library_id,
             version=version,
             reader=aiohttp_to_starlette_response,
-            auto_decompress=False,
             headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys),
         )
 
@@ -236,7 +235,6 @@ async def get_resource(
             version=version,
             rest_of_path=rest_of_path,
             reader=aiohttp_to_starlette_response,
-            auto_decompress=False,
             headers=ctx.headers(),
         )
 

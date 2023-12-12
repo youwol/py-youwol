@@ -62,7 +62,6 @@ async def get_raw_package(
             version=version,
             rest_of_path=rest_of_path,
             reader=aiohttp_to_starlette_response,
-            auto_decompress=False,
             headers=ctx.headers(),
         )
 

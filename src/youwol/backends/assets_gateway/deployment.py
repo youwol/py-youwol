@@ -8,7 +8,7 @@ from fastapi import APIRouter
 from youwol.backends.assets_gateway import Configuration, get_router
 from youwol.backends.common import BackendDeployment
 from youwol.backends.common.app import get_fastapi_app
-from youwol.backends.common.clients import cdn_client
+from youwol.backends.common.clients import cdn_client, request_executor
 from youwol.backends.common.use_auth_middleware_with_cookie import (
     get_auth_middleware_with_cookie,
 )
@@ -26,12 +26,27 @@ class AssetsGatewayDeployment(BackendDeployment):
     def router(self) -> APIRouter:
         return get_router(
             Configuration(
-                assets_client=AssetsClient(url_base="http://assets/api/assets"),
+                assets_client=AssetsClient(
+                    url_base="http://assets/api/assets",
+                    request_executor=request_executor(),
+                ),
                 cdn_client=cdn_client,
-                files_client=FilesClient(url_base="http://files/api/files"),
-                flux_client=FluxClient("http://flux/api/flux"),
-                stories_client=StoriesClient(url_base="http://stories/api/stories"),
-                treedb_client=TreeDbClient(url_base="http://tree-db/api/tree-db"),
+                files_client=FilesClient(
+                    url_base="http://files/api/files",
+                    request_executor=request_executor(),
+                ),
+                flux_client=FluxClient(
+                    "http://flux/api/flux",
+                    request_executor=request_executor(),
+                ),
+                stories_client=StoriesClient(
+                    url_base="http://stories/api/stories",
+                    request_executor=request_executor(),
+                ),
+                treedb_client=TreeDbClient(
+                    url_base="http://tree-db/api/tree-db",
+                    request_executor=request_executor(),
+                ),
                 https=True,
             )
         )

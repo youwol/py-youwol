@@ -209,7 +209,6 @@ class UpdateApplication(AbstractLocalCloudDispatch):
                     rest_of_path="",
                     headers=ctx.headers(),
                     reader=aiohttp_to_starlette_response,
-                    auto_decompress=False,
                 )
             )
             return resp
