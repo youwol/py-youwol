@@ -178,24 +178,24 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
 
 
 async def text_reader(resp: ClientResponse) -> str:
-    if resp.status == 200:
+    if resp.status < 300:
         resp_text = await resp.text()
         return resp_text
 
-    await raise_exception_from_response(resp)
+    await raise_exception_from_response(resp, url=resp.url)
 
 
 async def json_reader(resp: ClientResponse) -> JSON:
-    if resp.status == 200:
+    if resp.status < 300:
         resp_json = await resp.json()
         return resp_json
 
-    await raise_exception_from_response(resp)
+    await raise_exception_from_response(resp, url=resp.url)
 
 
 async def bytes_reader(resp: ClientResponse) -> bytes:
-    if resp.status == 200:
+    if resp.status < 300:
         resp_bytes = await resp.read()
         return resp_bytes
 
-    await raise_exception_from_response(resp)
+    await raise_exception_from_response(resp, url=resp.url)
