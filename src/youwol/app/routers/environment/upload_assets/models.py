@@ -6,12 +6,13 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 # Youwol utilities
+from youwol.utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from youwol.utils.context import Context
 
 
 @dataclass
 class UploadTask(ABC):
-    remote_host: str
+    remote_assets_gtw: AssetsGatewayClient
     raw_id: str
     asset_id: str
     options: Optional[Any] = None

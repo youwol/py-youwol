@@ -9,7 +9,7 @@ from fastapi import HTTPException
 from pydantic import BaseModel
 
 # Youwol application
-from youwol.app.environment import RemoteClients, YouwolEnvironment
+from youwol.app.environment import YouwolEnvironment
 from youwol.app.routers.environment.upload_assets.models import UploadTask
 
 # Youwol utilities
@@ -102,9 +102,6 @@ class UploadPackageTask(UploadTask):
             action="UploadPackageTask.get_raw"
         ) as ctx:  # type: Context
             local_package = get_local_package(asset_id=self.asset_id, config=env)
-            assets_gateway_client = await RemoteClients.get_assets_gateway_client(
-                remote_host=self.remote_host
-            )
 
             to_sync_releases = [v.version for v in local_package.releases]
             if self.options and self.options.versions:
@@ -112,7 +109,7 @@ class UploadPackageTask(UploadTask):
                     v for v in to_sync_releases if v in self.options.versions
                 ]
             try:
-                raw_metadata = await assets_gateway_client.get_cdn_backend_router().get_library_info(
+                raw_metadata = await self.remote_assets_gtw.get_cdn_backend_router().get_library_info(
                     library_id=decode_id(self.asset_id), headers=ctx.headers()
                 )
             except HTTPException as e:
@@ -149,10 +146,7 @@ class UploadPackageTask(UploadTask):
             return to_sync_releases
 
     async def publish_version(self, folder_id: str, version: str, context: Context):
-        remote_gtw = await RemoteClients.get_assets_gateway_client(
-            remote_host=self.remote_host
-        )
-        remote_cdn = remote_gtw.get_cdn_backend_router()
+        remote_cdn = self.remote_assets_gtw.get_cdn_backend_router()
         env = await context.get("env", YouwolEnvironment)
         async with context.start(
             action="UploadPackageTask.publish_version"

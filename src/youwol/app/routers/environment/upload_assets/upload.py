@@ -10,11 +10,7 @@ from aiohttp import ClientSession, FormData
 from fastapi import HTTPException
 
 # Youwol application
-from youwol.app.environment.clients import (
-    LocalClients,
-    RemoteClients,
-    YouwolEnvironment,
-)
+from youwol.app.environment.clients import LocalClients, YouwolEnvironment
 from youwol.app.routers.commons import Label, ensure_path, local_path
 from youwol.app.routers.environment.upload_assets.custom_asset import (
     UploadCustomAssetTask,
@@ -244,7 +240,10 @@ async def synchronize_metadata(
 
 
 async def upload_asset(
-    remote_host: str, asset_id: str, options: Optional[Any], context: Context
+    remote_assets_gtw: AssetsGatewayClient,
+    asset_id: str,
+    options: Optional[Any],
+    context: Context,
 ):
     upload_factories: Dict[str, any] = {
         "data": UploadDataTask,
@@ -285,14 +284,14 @@ async def upload_asset(
 
         factory: UploadTask = (
             upload_factories[asset["kind"]](
-                remote_host=remote_host,
+                remote_assets_gtw=remote_assets_gtw,
                 raw_id=raw_id,
                 asset_id=asset_id,
                 options=options,
             )
             if asset["kind"] in upload_factories
             else UploadCustomAssetTask(
-                remote_host=remote_host,
+                remote_assets_gtw=remote_assets_gtw,
                 raw_id=raw_id,
                 asset_id=asset_id,
                 options=options,
@@ -316,23 +315,19 @@ async def upload_asset(
             text="Data retrieved", data={"path_item": path_item, "raw data": local_data}
         )
 
-        assets_gtw_client = await RemoteClients.get_assets_gateway_client(
-            remote_host=remote_host
-        )
-        assets_client = assets_gtw_client.get_assets_backend_router()
+        remote_assets_client = remote_assets_gtw.get_assets_backend_router()
+        remote_treedb_client = remote_assets_gtw.get_treedb_backend_router()
         await ensure_path(
             path_item=PathResponse(**path_item),
-            assets_gateway_client=assets_gtw_client,
+            assets_gateway_client=remote_assets_gtw,
             context=ctx,
         )
         try:
-            remote_asset = await assets_client.get_asset(
+            remote_asset = await remote_assets_client.get_asset(
                 asset_id=asset_id, headers=ctx.headers()
             )
-            remote_tree_item = (
-                await assets_gtw_client.get_treedb_backend_router().get_item(
-                    item_id=tree_item["itemId"], headers=ctx.headers()
-                )
+            remote_tree_item = await remote_treedb_client.get_item(
+                item_id=tree_item["itemId"], headers=ctx.headers()
             )
             await ctx.info(
                 text="Asset already found in deployed environment",
@@ -354,7 +349,7 @@ async def upload_asset(
         await synchronize_permissions_metadata_symlinks(
             asset_id=asset_id,
             tree_id=tree_item["itemId"],
-            assets_gtw_client=assets_gtw_client,
+            assets_gtw_client=remote_assets_gtw,
             context=ctx,
         )
 

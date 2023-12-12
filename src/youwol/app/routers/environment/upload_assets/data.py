@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from aiohttp import FormData
 
 # Youwol application
-from youwol.app.environment import LocalClients, RemoteClients, YouwolEnvironment
+from youwol.app.environment import LocalClients, YouwolEnvironment
 from youwol.app.routers.environment.upload_assets.models import UploadTask
 
 # Youwol utilities
@@ -47,10 +47,7 @@ class UploadDataTask(UploadTask):
         async with context.start(
             action="UploadDataTask.create_raw"
         ) as ctx:  # type: Context
-            assets_gtw = await RemoteClients.get_assets_gateway_client(
-                remote_host=self.remote_host
-            )
-            files_client = assets_gtw.get_files_backend_router()
+            files_client = self.remote_assets_gtw.get_files_backend_router()
             await files_client.upload(
                 data=data, params={"folder-id": folder_id}, headers=ctx.headers()
             )
@@ -59,9 +56,6 @@ class UploadDataTask(UploadTask):
         async with context.start(
             action="UploadDataTask.update_raw"
         ) as ctx:  # type: Context
-            remote_gtw = await RemoteClients.get_assets_gateway_client(
-                remote_host=self.remote_host
-            )
-            await remote_gtw.get_files_backend_router().upload(
+            await self.remote_assets_gtw.get_files_backend_router().upload(
                 data=data, headers=ctx.headers()
             )

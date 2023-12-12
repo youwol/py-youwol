@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 
 # Youwol application
-from youwol.app.environment import LocalClients, RemoteClients, YouwolEnvironment
+from youwol.app.environment import LocalClients, YouwolEnvironment
 from youwol.app.routers.environment.upload_assets.models import UploadTask
 
 # Youwol backends
@@ -34,10 +34,7 @@ class UploadFluxProjectTask(UploadTask):
         ) as ctx:  # type: Context
             data["projectId"] = self.raw_id
             zipped = zip_project(project=data)
-            remote_gtw = await RemoteClients.get_assets_gateway_client(
-                remote_host=self.remote_host
-            )
-            await remote_gtw.get_flux_backend_router().upload_project(
+            await self.remote_assets_gtw.get_flux_backend_router().upload_project(
                 project_id=self.raw_id,
                 data={"file": zipped, "content_encoding": "identity"},
                 params={"folder-id": folder_id},
@@ -49,10 +46,7 @@ class UploadFluxProjectTask(UploadTask):
         async with context.start(
             "UploadFluxProjectTask.update_raw"
         ) as ctx:  # type: Context
-            remote_gtw = await RemoteClients.get_assets_gateway_client(
-                remote_host=self.remote_host
-            )
-            flux_client = remote_gtw.get_flux_backend_router()
+            flux_client = self.remote_assets_gtw.get_flux_backend_router()
             await flux_client.update_project(
                 project_id=self.raw_id, body=data, headers=ctx.headers()
             )
