@@ -245,16 +245,9 @@ class Context:
             if on_enter:
                 await on_enter(ctx)
 
-        # Hot-fix hiding a bigger problem regarding authorization using context; see #1481
-        with_headers = (
-            {"original_access_token": context.with_headers["authorization"]}
-            if "authorization" in context.with_headers
-            else {}
-        )
         return context.start(
             action=action,
             muted_http_errors=muted_http_errors,
-            with_headers=with_headers,
             with_labels=[Label.END_POINT, *with_labels],
             with_attributes={"method": request.method, **with_attributes},
             with_reporters=with_reporters,
@@ -368,13 +361,6 @@ class Context:
             ),
             **{k.lower(): v for k, v in self.with_headers.items()},
         }
-
-    def local_headers(self, from_req_fwd: HeadersFwdSelector = lambda _keys: []):
-        headers = self.headers(from_req_fwd)
-        if "original_access_token" in headers:
-            # Hot-fix hiding a bigger problem regarding authorization using context; see #1481
-            headers["authorization"] = self.with_headers["original_access_token"]
-        return headers
 
     def cookies(self):
         cookies = self.request.cookies if self.request else {}
