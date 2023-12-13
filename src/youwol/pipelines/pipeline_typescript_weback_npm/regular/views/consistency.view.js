@@ -115,11 +115,11 @@ async function getView({
     projectsRouter,
   });
 
-  const VdomDyncConsistencyView = new SyncConsistencyView({
+  const vDom = new ConsistencyView({
     state,
   });
 
-  return rxVdom.render(VdomDyncConsistencyView);
+  return rxVdom.render(vDom);
 }
 
 // noinspection JSAnnotator

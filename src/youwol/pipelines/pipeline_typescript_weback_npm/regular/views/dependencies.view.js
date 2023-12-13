@@ -126,11 +126,11 @@ async function getView({
     projectsRouter,
   });
 
-  const VdomDyncDependenciesView = new SyncDependenciesView({
+  const vDom = new SyncDependenciesView({
     state,
   });
 
-  return rxVdom.render(VdomDyncDependenciesView);
+  return rxVdom.render(vDom);
 }
 
 // noinspection JSAnnotator
