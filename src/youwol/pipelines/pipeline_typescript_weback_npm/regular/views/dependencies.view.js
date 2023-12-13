@@ -1,6 +1,6 @@
 class State {
-  constructor({ modalState, project, flowId, stepId, rxjs, projectsRouter }) {
-    this.modalState = modalState;
+  constructor({ triggerRun, project, flowId, stepId, rxjs, projectsRouter }) {
+    this.triggerRun = triggerRun;
     this.projectsRouter = projectsRouter;
     this.project = project;
     this.stepId = stepId;
@@ -12,7 +12,7 @@ class State {
       stepId,
     });
     this.dependencies$ = inputs$.pipe(
-      rxjs.operators.map((data) => Object.keys(data))
+      rxjs.operators.map((data) => Object.keys(data)),
     );
     const config$ = projectsRouter.getStepConfiguration$({
       projectId: project.id,
@@ -36,41 +36,19 @@ class State {
     this.selectedPackages$.next([...base, name]);
   }
 
-  updateConfiguration() {
-    this.selectedPackages$
-      .pipe(
-        rxjs.operators.mergeMap((packages) => {
-          return this.projectsRouter.updateStepConfiguration$({
-            projectId: this.project.id,
-            flowId: this.flowId,
-            stepId: this.stepId,
-            body: { synchronizedDependencies: packages },
-          });
-        })
-      )
-      .subscribe();
-  }
-
   run() {
-    const d = {
-      projectId: this.project.id,
-      flowId: this.flowId,
-      stepId: this.stepId,
-    };
-    rxjs
-      .combineLatest([
-        this.projectsRouter.getPipelineStepStatus$(d),
-        this.projectsRouter.runStep$(d),
-      ])
-      .pipe(rxjs.operators.take(1))
-      .subscribe();
-    this.modalState.ok$.next(true);
+    this.triggerRun({
+      configuration: { synchronizedDependencies: this.selectedPackages$.value },
+    });
   }
 }
 
 class SyncDependenciesView {
-  class = "h-100 w-100 rounded fv-bg-background-alt border p-3";
-  constructor({ state, fluxView }) {
+  tag = "div";
+  class =
+    "h-100 w-100 rounded fv-bg-background-alt yw-animate-in yw-box-shadow p-3";
+
+  constructor({ state }) {
     this.children = [
       {
         tag: "h1",
@@ -78,59 +56,69 @@ class SyncDependenciesView {
         innerText: "Dependencies Step",
       },
       {
+        tag: "div",
         innerText:
           "Check the dependencies you want to synchronized from the projects",
       },
       {
         tag: "ul",
-        children: fluxView.children$(state.dependencies$, (dependencies) => {
-          return dependencies.map((name) => {
-            return {
-              tag: "li",
-              class: "d-flex align-items-center",
-              children: [
-                {
-                  tag: "input",
-                  type: "checkbox",
-                  onclick: () => state.togglePackage(name),
-                  checked: fluxView.attr$(
-                    state.selectedPackages$,
-                    (packages) => packages.indexOf(name) > -1
-                  ),
-                },
-                {
-                  tag: "span",
-                  innerText: name,
-                },
-              ],
-            };
-          });
-        }),
+        children: {
+          policy: "replace",
+          source$: state.dependencies$,
+          vdomMap: (dependencies) => {
+            return dependencies.map((name) => {
+              return {
+                tag: "li",
+                class: "d-flex align-items-center",
+                children: [
+                  {
+                    tag: "input",
+                    type: "checkbox",
+                    onclick: () => state.togglePackage(name),
+                    checked: {
+                      source$: state.selectedPackages$,
+                      vdomMap: (packages) => packages.indexOf(name) > -1,
+                    },
+                  },
+                  {
+                    tag: "span",
+                    innerText: `${name}`,
+                  },
+                ],
+              };
+            });
+          },
+        },
       },
       {
+        tag: "div",
         class:
           "fv-bg-secondary rounded p-2 border fv-hover-xx-lighter fv-pointer",
-        style: { width: "fit-content" },
+        style: {
+          width: "fit-content",
+        },
         innerText: "Apply & run",
         onclick: () => {
-          state.updateConfiguration();
           state.run();
         },
       },
     ];
   }
 }
-function getView({
-  modalState,
+
+async function getView({
+  triggerRun,
   project,
   flowId,
   stepId,
-  fluxView,
-  rxjs,
   projectsRouter,
+  webpmClient,
 }) {
+  const { rxjs, rxVdom } = await webpmClient.install({
+    modules: ["@youwol/rx-vdom#^1.0.1 as rxVdom", "rxjs#^7.5.6 as rxjs"],
+  });
   const state = new State({
-    modalState,
+    triggerRun,
     project,
     flowId,
     stepId,
@@ -138,11 +126,11 @@ function getView({
     projectsRouter,
   });
 
-  return new SyncDependenciesView({
+  const vDom = new SyncDependenciesView({
     state,
-    fluxView,
-    rxjs,
   });
+
+  return rxVdom.render(vDom);
 }
 
 // noinspection JSAnnotator

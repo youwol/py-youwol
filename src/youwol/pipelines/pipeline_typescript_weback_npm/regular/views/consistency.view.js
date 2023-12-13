@@ -1,6 +1,6 @@
 class State {
-  constructor({ modalState, project, flowId, stepId, rxjs, projectsRouter }) {
-    this.modalState = modalState;
+  constructor({ triggerRun, project, flowId, stepId, rxjs, projectsRouter }) {
+    this.triggerRun = triggerRun;
     this.projectsRouter = projectsRouter;
     this.project = project;
     this.stepId = stepId;
@@ -28,31 +28,23 @@ class State {
             stepId: this.stepId,
             body: { count, configPath },
           });
-        })
+        }),
       )
       .subscribe();
   }
 
   run() {
-    const d = {
-      projectId: this.project.id,
-      flowId: this.flowId,
-      stepId: this.stepId,
-    };
-    rxjs
-      .combineLatest([
-        this.projectsRouter.getPipelineStepStatus$(d),
-        this.projectsRouter.runStep$(d),
-      ])
-      .pipe(rxjs.operators.take(1))
-      .subscribe();
-    this.modalState.ok$.next(true);
+    this.triggerRun({
+      configuration: { synchronizedDependencies: this.selectedPackages$.value },
+    });
   }
 }
 
-class SyncDependenciesView {
+class ConsistencyView {
+  tag = "div";
   class = "h-100 w-100 rounded fv-bg-background-alt border p-3";
-  constructor({ state, fluxView }) {
+
+  constructor({ state }) {
     this.children = [
       {
         tag: "h1",
@@ -60,30 +52,37 @@ class SyncDependenciesView {
         innerText: "Consistency Step",
       },
       {
+        tag: "div",
         innerText: "Provide the path of the test configuration:",
       },
       {
         tag: "input",
         type: "text",
         placeholder: "path of the config file",
-        value: fluxView.attr$(state.configPath$, (p) => p),
+        value: { source$: state.configPath$, vdomMap: (p) => p },
+
         onchange: (ev) => {
           state.configPath$.next(ev.target.value);
         },
       },
       {
+        tag: "div",
         innerText: "Provide the number of run:",
       },
       {
         tag: "input",
         type: "number",
-        value: fluxView.attr$(state.count$, (p) => p),
+        value: { source$: state.count$, vdomMap: (p) => p },
         onchange: (ev) => {
           state.count$.next(parseInt(ev.target.value));
         },
       },
-      { class: "my-3" },
       {
+        tag: "div",
+        class: "my-3",
+      },
+      {
+        tag: "div",
         class:
           "fv-bg-secondary rounded p-2 border fv-hover-xx-lighter fv-pointer",
         style: { width: "fit-content" },
@@ -95,17 +94,20 @@ class SyncDependenciesView {
     ];
   }
 }
-function getView({
-  modalState,
+
+async function getView({
+  triggerRun,
   project,
   flowId,
   stepId,
-  fluxView,
-  rxjs,
   projectsRouter,
+  webpmClient,
 }) {
+  const { rxjs, rxVdom } = await webpmClient.install({
+    modules: ["@youwol/rx-vdom#^1.0.1 as rxVdom", "rxjs#^7.5.6 as rxjs"],
+  });
   const state = new State({
-    modalState,
+    triggerRun,
     project,
     flowId,
     stepId,
@@ -113,11 +115,11 @@ function getView({
     projectsRouter,
   });
 
-  return new SyncDependenciesView({
+  const vDom = new ConsistencyView({
     state,
-    fluxView,
-    rxjs,
   });
+
+  return rxVdom.render(vDom);
 }
 
 // noinspection JSAnnotator

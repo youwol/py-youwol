@@ -348,7 +348,7 @@ def print_invite(conf: YouwolEnvironment, shutdown_script_path: Optional[Path]):
 The desktop application is available at:
 http://localhost:{conf.httpPort}/applications/@youwol/platform/latest
 The developer portal is available at:
-http://localhost:{conf.httpPort}/applications/@youwol/developer-portal/%5E0.1.0
+http://localhost:{conf.httpPort}/applications/@youwol/developer-portal/%5E0.2.0
 For a Py-YouWol interactive tour:
 http://localhost:{conf.httpPort}/applications/@youwol/stories/latest?id=9e664525-1dac-45af-83c6-f4b4ef3866af&mode=reader
 """
