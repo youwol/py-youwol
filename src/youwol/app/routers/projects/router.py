@@ -64,7 +64,7 @@ async def status(request: Request):
     async with Context.start_ep(
         request=request, with_reporters=[LogsStreamer()]
     ) as ctx:  # type: Context
-        response = ProjectsLoadingResults(results=await ProjectLoader.refresh(ctx))
+        response = await ProjectLoader.refresh(ctx)
         await ctx.send(response)
         return response
 
@@ -491,7 +491,7 @@ async def new_project_from_template(
         await ctx.info(text="Found template generator", data=template)
         name, _ = await template.generator(template.folder, body.parameters, ctx)
 
-        response = ProjectsLoadingResults(results=await ProjectLoader.refresh(ctx))
+        response = await ProjectLoader.refresh(ctx)
         await ctx.send(response)
 
         projects = await ProjectLoader.get_cached_projects()
