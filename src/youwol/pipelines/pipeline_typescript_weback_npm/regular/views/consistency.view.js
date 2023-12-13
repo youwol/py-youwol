@@ -40,7 +40,7 @@ class State {
   }
 }
 
-class SyncConsistencyView {
+class ConsistencyView {
   tag = "div";
   class = "h-100 w-100 rounded fv-bg-background-alt border p-3";
 
