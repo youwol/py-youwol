@@ -1,6 +1,6 @@
 class State {
-  constructor({ modalState, project, flowId, stepId, rxjs, projectsRouter }) {
-    this.modalState = modalState;
+  constructor({ triggerRun, project, flowId, stepId, rxjs, projectsRouter }) {
+    this.triggerRun = triggerRun;
     this.projectsRouter = projectsRouter;
     this.project = project;
     this.stepId = stepId;
@@ -52,19 +52,9 @@ class State {
   }
 
   run() {
-    const d = {
-      projectId: this.project.id,
-      flowId: this.flowId,
-      stepId: this.stepId,
-    };
-    rxjs
-      .combineLatest([
-        this.projectsRouter.getPipelineStepStatus$(d),
-        this.projectsRouter.runStep$(d),
-      ])
-      .pipe(rxjs.operators.take(1))
-      .subscribe();
-    this.modalState.ok$.next(true);
+    this.triggerRun({
+      configuration: { synchronizedDependencies: this.selectedPackages$.value },
+    });
   }
 }
 
@@ -133,7 +123,7 @@ class SyncDependenciesView {
 }
 
 async function getView({
-  modalState,
+  triggerRun,
   project,
   flowId,
   stepId,
@@ -144,7 +134,7 @@ async function getView({
     modules: ["@youwol/rx-vdom#^1.0.1 as rxVdom", "rxjs#^7.5.6 as rxjs"],
   });
   const state = new State({
-    modalState,
+    triggerRun,
     project,
     flowId,
     stepId,
