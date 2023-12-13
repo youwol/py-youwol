@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 # standard library
+import traceback
+
 from pathlib import Path
 
 # typing
@@ -150,14 +152,14 @@ async def get_project(
 
         pipeline_path = project_path / PROJECT_PIPELINE_DIRECTORY / "yw_pipeline.py"
 
-        if not pipeline_path.exists():
-            error = FailurePipelineNotFound(path=project_path)
-            await ctx.error(text="Can not find project's pipeline", data=error)
+        async def handle_import_error(import_error: FailureImportException):
+            import_error_message = "Failed to import project"
+            await ctx.error(text=import_error_message, data=import_error)
             log_error(
-                "Can not find project's pipeline '.yw_pipeline/yw_pipeline.py'",
-                {"path": project_path},
+                import_error_message,
+                {"path": str(import_error.path), "message": import_error.message},
             )
-            return error
+            return import_error
 
         try:
             pipeline_factory = get_object_from_module(
@@ -173,20 +175,25 @@ async def get_project(
                 traceback=e.traceback,
                 exceptionType=e.exception_type,
             )
-            await ctx.error(text="Failed to import project's pipeline", data=error)
-            log_error(
-                "Failed to import project's pipeline",
-                {"path": str(error.path), "message": error.message},
-            )
-            return error
+            return await handle_import_error(error)
 
-        pipeline = await pipeline_factory.get(env, ctx)
-        name = pipeline.projectName(project_path)
-        return Project(
-            name=name,
-            id=encode_id(name),
-            publishName=name.split("~")[0],
-            version=pipeline.projectVersion(project_path),
-            pipeline=pipeline,
-            path=project_path,
-        )
+        try:
+            pipeline = await pipeline_factory.get(env, ctx)
+            name = pipeline.projectName(project_path)
+            version = pipeline.projectVersion(project_path)
+            return Project(
+                name=name,
+                id=encode_id(name),
+                publishName=name.split("~")[0],
+                version=version,
+                pipeline=pipeline,
+                path=project_path,
+            )
+        except Exception as e:
+            error = FailureImportException(
+                path=project_path,
+                message=str(e),
+                traceback=traceback.format_exc(),
+                exceptionType=type(e).__name__,
+            )
+            return await handle_import_error(error)
