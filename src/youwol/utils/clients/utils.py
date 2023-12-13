@@ -99,7 +99,10 @@ def log_info(message, **kwargs):
 
 
 def log_error(message, json_data=None):
-    print(f"\nERROR:\n     {message}", json.dumps(json_data, indent=4))
+    content = f"ERROR:     {message}"
+    if json_data:
+        content += json.dumps(json_data, indent=4)
+    print(content)
 
 
 def auto_port_number(service_name: str):

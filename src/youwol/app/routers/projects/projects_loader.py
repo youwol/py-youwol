@@ -11,15 +11,23 @@ from pydantic import BaseModel
 
 # Youwol application
 from youwol.app.environment import ProjectsFinderHandler, YouwolEnvironment
-from youwol.app.environment.python_dynamic_loader import get_object_from_module
+from youwol.app.environment.python_dynamic_loader import (
+    ModuleLoadingException,
+    get_object_from_module,
+)
 from youwol.app.web_socket import WsDataStreamer
 
 # Youwol utilities
-from youwol.utils import encode_id, log_info
+from youwol.utils import encode_id, log_error, log_info
 from youwol.utils.context import Context
 
 # relative
-from .models import Failure, FailureSyntax
+from .models import (
+    Failure,
+    FailureDirectoryNotFound,
+    FailureImportException,
+    FailurePipelineNotFound,
+)
 from .models_project import IPipelineFactory, Project
 
 PROJECT_PIPELINE_DIRECTORY = ".yw_pipeline"
@@ -27,8 +35,15 @@ PROJECT_PIPELINE_DIRECTORY = ".yw_pipeline"
 Result = Union[Project, Failure]
 
 
+class FailuresReport(BaseModel):
+    directoriesNotFound: List[FailureDirectoryNotFound] = []
+    pipelinesNotFound: List[FailurePipelineNotFound] = []
+    importExceptions: List[FailureImportException] = []
+
+
 class ProjectsLoadingResults(BaseModel):
-    results: List[Result]
+    results: List[Project]
+    failures: FailuresReport
 
 
 class ProjectLoader:
@@ -37,6 +52,13 @@ class ProjectLoader:
     handler: Optional[ProjectsFinderHandler] = None
 
     projects_list: List[Project] = []
+    failures_report: FailuresReport = FailuresReport()
+
+    @staticmethod
+    def status():
+        return ProjectsLoadingResults(
+            results=ProjectLoader.projects_list, failures=ProjectLoader.failures_report
+        )
 
     @staticmethod
     async def sync_projects(update: (List[Path], List[Path]), env: YouwolEnvironment):
@@ -55,8 +77,19 @@ class ProjectLoader:
         ]
         projects = remaining_projects + new_projects
         ProjectLoader.projects_list = projects
+        ProjectLoader.failures_report = FailuresReport(
+            directoriesNotFound=[
+                p for p in failed if isinstance(p, FailureDirectoryNotFound)
+            ],
+            pipelinesNotFound=[
+                p for p in failed if isinstance(p, FailurePipelineNotFound)
+            ],
+            importExceptions=[
+                p for p in failed if isinstance(p, FailureImportException)
+            ],
+        )
         log_info(f"New projects count: {len(projects)}")
-        await ProjectLoader.context.send(ProjectsLoadingResults(results=projects))
+        await ProjectLoader.context.send(ProjectLoader.status())
 
     @staticmethod
     async def initialize(env: YouwolEnvironment):
@@ -72,13 +105,14 @@ class ProjectLoader:
         )
 
         ProjectLoader.projects_list = []
+        ProjectLoader.failures_list = []
         await ProjectLoader.handler.initialize()
 
     @staticmethod
-    async def refresh(context: Context) -> List[Project]:
+    async def refresh(context: Context) -> ProjectsLoadingResults:
         async with context.start("ProjectLoader.refresh"):
             await ProjectLoader.handler.refresh()
-            return ProjectLoader.projects_list
+            return ProjectLoader.status()
 
     @staticmethod
     async def get_cached_projects() -> List[Project]:
@@ -94,22 +128,9 @@ async def load_projects(
     paths: List[Path], env: YouwolEnvironment, context: Context
 ) -> List[Result]:
     async with context.start(action="load_projects") as ctx:  # type: Context
-        results: List[Result] = []
-        for dir_candidate in paths:
-            try:
-                results.append(await get_project(dir_candidate, [], env, ctx))
-            except SyntaxError as e:
-                msg = f"Could not load project in dir '{dir_candidate}' because of syntax error : {e.msg} "
-                await ctx.error(text=msg)
-                print(msg)
-                results.append(FailureSyntax(path=str(dir_candidate), message=e.msg))
-            except Exception as e:
-                msg = f"Could not load project in dir '{dir_candidate}' : {e} "
-                await ctx.error(text=msg)
-                print(msg)
-                results.append(Failure(path=str(dir_candidate), message=str(e)))
-
-        return results
+        return [
+            await get_project(dir_candidate, [], env, ctx) for dir_candidate in paths
+        ]
 
 
 async def get_project(
@@ -117,18 +138,48 @@ async def get_project(
     additional_python_src_paths: List[Path],
     env: YouwolEnvironment,
     context: Context,
-) -> Project:
+) -> Union[Project, Failure]:
     async with context.start(
         action="get_project", with_attributes={"folderName": project_path.name}
     ) as ctx:  # type: Context
-        pipeline_factory = get_object_from_module(
-            module_absolute_path=project_path
-            / PROJECT_PIPELINE_DIRECTORY
-            / "yw_pipeline.py",
-            object_or_class_name="PipelineFactory",
-            object_type=IPipelineFactory,
-            additional_src_absolute_paths=additional_python_src_paths,
-        )
+        if not project_path.exists():
+            error = FailureDirectoryNotFound(path=project_path)
+            await ctx.error(text="Can not find project's directory", data=error)
+            log_error("Can not find project's directory", {"path": project_path})
+            return error
+
+        pipeline_path = project_path / PROJECT_PIPELINE_DIRECTORY / "yw_pipeline.py"
+
+        if not pipeline_path.exists():
+            error = FailurePipelineNotFound(path=project_path)
+            await ctx.error(text="Can not find project's pipeline", data=error)
+            log_error(
+                "Can not find project's pipeline '.yw_pipeline/yw_pipeline.py'",
+                {"path": project_path},
+            )
+            return error
+
+        try:
+            pipeline_factory = get_object_from_module(
+                module_absolute_path=pipeline_path,
+                object_or_class_name="PipelineFactory",
+                object_type=IPipelineFactory,
+                additional_src_absolute_paths=additional_python_src_paths,
+            )
+        except ModuleLoadingException as e:
+            error = FailureImportException(
+                path=project_path,
+                message=str(e),
+                traceback=e.traceback,
+                exceptionType=e.exception_type,
+            )
+            await ctx.error(text="Failed to import project's pipeline", data=error)
+            log_error(
+                "Failed to import project's pipeline",
+                {"path": str(error.path), "message": error.message},
+            )
+            return error
+
         pipeline = await pipeline_factory.get(env, ctx)
         name = pipeline.projectName(project_path)
         return Project(

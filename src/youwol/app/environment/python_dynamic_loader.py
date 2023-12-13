@@ -1,6 +1,7 @@
 # standard library
 import importlib
 import sys
+import traceback as tb
 
 from importlib.machinery import SourceFileLoader
 from importlib.util import spec_from_loader
@@ -10,6 +11,18 @@ from pathlib import Path
 from typing import List, Optional, Type, TypeVar, Union, cast
 
 T = TypeVar("T")
+
+
+class ModuleLoadingException(Exception):
+    path: str
+    traceback: str
+    exception_type: str
+
+    def __init__(self, message, path, traceback, exception_type):
+        super().__init__(message)
+        self.path = path
+        self.traceback = traceback
+        self.exception_type = exception_type
 
 
 def get_object_from_module(
@@ -31,26 +44,26 @@ def get_object_from_module(
 
     def get_instance_from_module(imported_module):
         if not hasattr(imported_module, object_or_class_name):
-            raise NameError(
-                f"{module_absolute_path} : Expected class '{object_or_class_name}' not found"
+            raise ModuleLoadingException(
+                path=str(module_absolute_path),
+                message=f"Expected class '{object_or_class_name}' not found",
+                traceback=tb.format_exc(),
+                exception_type="NameError",
             )
 
         maybe_class_or_var = getattr(imported_module, object_or_class_name)
-        return cast(object_type, maybe_class_or_var(**object_instantiation_kwargs))
-        # Need to be re-pluged ASAP. The problem is for now pipeline in 'yw_pipeline.py' use the deprecated
-        # type youwol.app.environment.models.IPipelineFactory
-        # Need to be replaced by:
-        # youwol.app.routers.projects.models_projects.IPipelineFactory
-        #
-        # Below, original code:
-        # if isinstance(maybe_class_or_var, object_type):
-        #     return cast(object_type, maybe_class_or_var)
-        #
-        # if issubclass(maybe_class_or_var, object_type):
-        #     return cast(object_type, maybe_class_or_var(**object_instantiation_kwargs))
-        #
-        # raise TypeError(f"{module_absolute_path} : Expected class '{object_or_class_name}'"
-        #                 f" does not implements expected type '{object_type}")
+        if isinstance(maybe_class_or_var, object_type):
+            return cast(object_type, maybe_class_or_var)
+
+        if issubclass(maybe_class_or_var, object_type):
+            return cast(object_type, maybe_class_or_var(**object_instantiation_kwargs))
+
+        raise ModuleLoadingException(
+            path=str(module_absolute_path),
+            message=f"'{object_or_class_name}' does not implement '{object_type}'",
+            traceback=tb.format_exc(),
+            exception_type="NameError",
+        )
 
     module_name = module_absolute_path.stem
     try:
@@ -59,9 +72,12 @@ def get_object_from_module(
         module = importlib.util.module_from_spec(spec)
         loader.exec_module(module)
         instance = get_instance_from_module(module)
-    except SyntaxError as e:
-        raise SyntaxError(f"{module_absolute_path} : Syntax error '{e}'")
-    except NameError as e:
-        raise NameError(e)
+    except Exception as e:
+        raise ModuleLoadingException(
+            path=str(module_absolute_path),
+            message=str(e),
+            traceback=tb.format_exc(),
+            exception_type=type(e).__name__,
+        )
 
     return instance

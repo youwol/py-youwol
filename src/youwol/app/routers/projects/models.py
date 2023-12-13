@@ -16,23 +16,25 @@ PipelineStepId = str
 
 
 class Failure(BaseModel):
-    path: str
+    path: Path
     failure: str = "generic"
     message: str
 
 
-class FailureNoPipeline(Failure):
-    failure: str = "no_pipeline"
-    message: str = "No pipeline in directory"
+class FailurePipelineNotFound(Failure):
+    failure: str = "pipeline_not_found"
+    message: str = "Pipeline not found"
 
 
-class FailureEmptyDir(Failure):
-    failure: str = "empty_dir"
-    message: str = "Directory is empty"
+class FailureDirectoryNotFound(Failure):
+    failure: str = "directory_not_found"
+    message: str = "Project's directory not found"
 
 
-class FailureSyntax(Failure):
-    failure: str = "syntax"
+class FailureImportException(Failure):
+    failure: str = "import"
+    traceback: str
+    exceptionType: str
 
 
 class ListProjectsResponse(BaseModel):
