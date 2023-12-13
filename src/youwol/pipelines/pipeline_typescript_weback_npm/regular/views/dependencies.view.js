@@ -36,21 +36,6 @@ class State {
     this.selectedPackages$.next([...base, name]);
   }
 
-  updateConfiguration() {
-    this.selectedPackages$
-      .pipe(
-        rxjs.operators.mergeMap((packages) => {
-          return this.projectsRouter.updateStepConfiguration$({
-            projectId: this.project.id,
-            flowId: this.flowId,
-            stepId: this.stepId,
-            body: { synchronizedDependencies: packages },
-          });
-        }),
-      )
-      .subscribe();
-  }
-
   run() {
     this.triggerRun({
       configuration: { synchronizedDependencies: this.selectedPackages$.value },
@@ -114,7 +99,6 @@ class SyncDependenciesView {
         },
         innerText: "Apply & run",
         onclick: () => {
-          state.updateConfiguration();
           state.run();
         },
       },
