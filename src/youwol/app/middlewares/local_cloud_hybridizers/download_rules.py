@@ -65,7 +65,7 @@ class Download(AbstractLocalCloudDispatch):
             raw_id = decode_id(asset_id)
         env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
         async with context.start(
-            action="Download.apply", muted_http_errors={404}
+            action="Download.apply"
         ) as ctx:
             download_thread = await ctx.get("download_thread", AssetDownloadThread)
             is_downloading = download_thread.is_downloading(
@@ -142,7 +142,7 @@ class UpdateApplication(AbstractLocalCloudDispatch):
             return None
 
         async with context.start(
-            action="UpdateApplication.apply", muted_http_errors={404}
+            action="UpdateApplication.apply"
         ) as ctx:
             if all(elem not in semver for elem in ["*", "^", "x", "~"]):
                 await context.info(

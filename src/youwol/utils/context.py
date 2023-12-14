@@ -152,7 +152,6 @@ class Context:
     uid: Union[str, None] = "root"
     parent_uid: Union[str, None] = None
     trace_uid: Union[str, None] = None
-    muted_http_errors: Set[int] = field(default_factory=set)
 
     with_data: Dict[str, DataType] = field(default_factory=dict)
     with_attributes: JSON = field(default_factory=dict)
@@ -167,7 +166,6 @@ class Context:
     def start(
         self,
         action: str,
-        muted_http_errors: Set[int] = None,
         with_labels: List[StringLike] = None,
         with_attributes: JSON = None,
         with_data: Dict[str, DataType] = None,
@@ -186,11 +184,6 @@ class Context:
             if with_reporters is None
             else self.logs_reporters + with_reporters
         )
-        muted_http_errors = self.muted_http_errors.union(muted_http_errors or set())
-        if self.request:
-            YouwolHeaders.patch_request_mute_http_headers(
-                request=self.request, status_muted=muted_http_errors
-            )
 
         return ScopedContext(
             action=action,
@@ -203,7 +196,6 @@ class Context:
             request=self.request,
             parent_uid=self.uid,
             trace_uid=self.trace_uid,
-            muted_http_errors=self.muted_http_errors.union(muted_http_errors or set()),
             with_labels=[*self.with_labels, *with_labels],
             with_attributes={**self.with_attributes, **with_attributes},
             with_data={**self.with_data, **with_data},
@@ -215,7 +207,6 @@ class Context:
     def start_ep(
         request: Request,
         action: str = None,
-        muted_http_errors: Set[int] = None,
         with_labels: List[StringLike] = None,
         with_attributes: JSON = None,
         body: BaseModel = None,
@@ -228,10 +219,6 @@ class Context:
         action = action or f"{request.method}: {request.scope['path']}"
         with_labels = with_labels or []
         with_attributes = with_attributes or {}
-
-        muted_http_errors = YouwolHeaders.get_muted_http_errors(request=request).union(
-            muted_http_errors or set()
-        )
 
         async def on_exit_fct(ctx):
             if response:
@@ -247,7 +234,6 @@ class Context:
 
         return context.start(
             action=action,
-            muted_http_errors=muted_http_errors,
             with_labels=[Label.END_POINT, *with_labels],
             with_attributes={"method": request.method, **with_attributes},
             with_reporters=with_reporters,
@@ -356,9 +342,6 @@ class Context:
             **headers,
             YouwolHeaders.correlation_id: self.uid,
             YouwolHeaders.trace_id: self.trace_uid,
-            YouwolHeaders.muted_http_errors: ",".join(
-                str(s) for s in self.muted_http_errors
-            ),
             **{k.lower(): v for k, v in self.with_headers.items()},
         }
 
@@ -418,11 +401,6 @@ class ScopedContext(Context):
             )
             await ScopedContext.__execute_block(self, self.on_exception, exc)
             await ScopedContext.__execute_block(self, self.on_exit)
-            muted = False
-            if isinstance(exc, HTTPException):
-                muted = exc.status_code in self.muted_http_errors
-            if not muted:
-                traceback.print_exc()
             raise exc
 
         await self.info(

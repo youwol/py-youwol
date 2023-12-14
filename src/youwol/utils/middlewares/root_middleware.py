@@ -40,14 +40,12 @@ class RootMiddleware(BaseHTTPMiddleware):
     def get_context(self, request: Request):
         root_id = YouwolHeaders.get_correlation_id(request)
         trace_id = YouwolHeaders.get_trace_id(request)
-        muted_http_errors = YouwolHeaders.get_muted_http_errors(request)
         return ContextFactory.get_instance(
             request=request,
             logs_reporters=self.logs_reporters,
             data_reporters=self.data_reporters,
             parent_uid=root_id,
             trace_uid=trace_id if trace_id else str(uuid.uuid4()),
-            muted_http_errors=muted_http_errors,
             uid=root_id if root_id else "root",
         )
 

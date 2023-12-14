@@ -37,7 +37,7 @@ class PostMetadataDeprecated(AbstractLocalCloudDispatch):
             return None
 
         async with context.start(
-            action="PostMetadataDispatch.apply", muted_http_errors={404}
+            action="PostMetadataDispatch.apply"
         ) as ctx:
             env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
             asset_id = replaced[0]
@@ -90,7 +90,7 @@ class CreateAssetDeprecated(AbstractLocalCloudDispatch):
         env = await context.get("env", YouwolEnvironment)
 
         async with context.start(
-            action="CreateAssetDispatchDeprecated.apply", muted_http_errors={404}
+            action="CreateAssetDispatchDeprecated.apply"
         ) as ctx:
             folder_id = replaced[-1]
             await ensure_local_path(folder_id=folder_id, env=env, context=ctx)

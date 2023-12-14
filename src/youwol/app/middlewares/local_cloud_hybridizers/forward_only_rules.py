@@ -39,7 +39,7 @@ class ForwardOnly(AbstractLocalCloudDispatch):
 
         env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
         async with context.start(
-            action="ForwardOnlyDispatch.apply", muted_http_errors={404}
+            action="ForwardOnlyDispatch.apply"
         ) as ctx:
             resp = await call_next(incoming_request)
             if resp.status_code == 404:

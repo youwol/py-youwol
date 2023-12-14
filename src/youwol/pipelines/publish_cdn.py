@@ -35,7 +35,7 @@ from youwol.app.routers.projects.models_project import (
 )
 
 # Youwol utilities
-from youwol.utils import YouwolHeaders, encode_id, files_check_sum, to_json
+from youwol.utils import encode_id, files_check_sum, to_json
 from youwol.utils.context import Context
 from youwol.utils.http_clients.tree_db_backend import DefaultDriveResponse
 from youwol.utils.utils_paths import create_zip_file
@@ -180,7 +180,7 @@ class PublishCdnLocalStep(PipelineStep):
             try:
                 local_lib_info = await local_cdn.get_library_info(
                     library_id=encode_id(project.publishName),
-                    headers={**ctx.headers(), YouwolHeaders.muted_http_errors: "404"},
+                    headers=ctx.headers(),
                 )
             except HTTPException as e:
                 await ctx.info(
@@ -320,10 +320,7 @@ class PublishCdnLocalStep(PipelineStep):
             try:
                 item = await local_treedb.get_item(
                     item_id=asset_id,
-                    headers={
-                        **ctx.headers(),
-                        YouwolHeaders.muted_http_errors: "404",
-                    },
+                    headers=ctx.headers(),
                 )
                 folder_id = item["folderId"]
                 await ctx.info(
@@ -332,7 +329,9 @@ class PublishCdnLocalStep(PipelineStep):
                 )
             except HTTPException as e:
                 if e.status_code == 404:
-                    succeeded = await PublishCdnLocalStep._try_download_package(package_name=project_name, context=ctx)
+                    succeeded = await PublishCdnLocalStep._try_download_package(
+                        package_name=project_name, context=ctx
+                    )
                     if not succeeded:
                         await ctx.info(
                             "The package can not be downloaded from remote environment => "
@@ -423,7 +422,7 @@ class PublishCdnRemoteStep(PipelineStep):
             )
             remote_cdn = remote_gtw.get_cdn_backend_router()
             library_id = encode_id(project.publishName)
-            headers = {**ctx.headers(), YouwolHeaders.muted_http_errors: "404"}
+            headers = ctx.headers()
 
             local_info, remote_info = await asyncio.gather(
                 local_cdn.get_version_info(

@@ -60,7 +60,7 @@ class GetChildrenDispatch(AbstractLocalCloudDispatch):
             return None
         await context.info(text="GetChildrenDispatch matching incoming request")
         async with context.start(
-            action="GetChildrenDispatch.apply", muted_http_errors={404}
+            action="GetChildrenDispatch.apply"
         ) as ctx:
             env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
 
@@ -179,7 +179,7 @@ class MoveBorrowInRemoteFolderDispatch(AbstractLocalCloudDispatch):
             return None
 
         async with context.start(
-            action="MoveBorrowInRemoteFolderDispatch.apply", muted_http_errors={404}
+            action="MoveBorrowInRemoteFolderDispatch.apply"
         ) as ctx:
             body = await incoming_request.json()
             folder_id = body["destinationFolderId"]

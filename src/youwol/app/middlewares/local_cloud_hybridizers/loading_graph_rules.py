@@ -38,7 +38,7 @@ async def get_extra_index(context: Context) -> Optional[str]:
     """
     env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
     docdb: LocalDocDbClient = env.backends_configuration.cdn_backend.doc_db
-    async with context.start(action="get_extra_index", muted_http_errors={404}) as ctx:
+    async with context.start(action="get_extra_index") as ctx:
 
         def get_key(d):
             return d["library_name"] + "@" + get_api_key(d["version"])
@@ -76,7 +76,7 @@ class GetLoadingGraph(AbstractLocalCloudDispatch):
             return None
 
         async with context.start(
-            action="GetLoadingGraphDispatch.apply", muted_http_errors={404}
+            action="GetLoadingGraphDispatch.apply"
         ) as ctx:
             body_raw = await incoming_request.body()
             body = LoadingGraphBody(**(json.loads(body_raw.decode("utf-8"))))
