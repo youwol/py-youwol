@@ -332,22 +332,8 @@ class PublishCdnLocalStep(PipelineStep):
                 )
             except HTTPException as e:
                 if e.status_code == 404:
-                    await ctx.info(
-                        "The package has not been published yet, start creation. Attempt to download latest version "
-                        "from remote environment..."
-                    )
-                    # At first publication in local env, attempt to download the asset to get it with consistent
-                    # locations & metadata as defined in the remote environment
-                    [resp] = await asyncio.gather(
-                        download_package(
-                            package_name=project_name,
-                            version="latest",
-                            check_update_status=False,
-                            context=ctx,
-                        ),
-                        return_exceptions=True,
-                    )
-                    if isinstance(resp, HTTPException):
+                    succeeded = await PublishCdnLocalStep._try_download_package(package_name=project_name, context=ctx)
+                    if not succeeded:
                         await ctx.info(
                             "The package can not be downloaded from remote environment => "
                             "publish package in 'download' folder of default drive"
@@ -367,6 +353,31 @@ class PublishCdnLocalStep(PipelineStep):
                 else:
                     raise e
             return folder_id
+    @staticmethod
+    async def _try_download_package(package_name, context: Context) -> bool:
+        async with context.start(
+                action="PublishCdnLocalStep._try_download_package"
+        ) as ctx:
+
+            await ctx.info(
+                "The package has not been published yet, start creation. Attempt to download latest version "
+                "from remote environment..."
+            )
+            # At first publication in local env, attempt to download the asset to get it with consistent
+            # locations & metadata as defined in the remote environment
+            try:
+                await download_package(
+                    package_name=package_name,
+                    version="latest",
+                    check_update_status=False,
+                    context=ctx,
+                )
+            except HTTPException as e:
+                if e.status_code == 404:
+                    return False
+                raise
+
+            return True
 
 
 class CdnTarget(BaseModel):
@@ -418,7 +429,7 @@ class PublishCdnRemoteStep(PipelineStep):
                 local_cdn.get_version_info(
                     library_id=library_id,
                     version=project.version,
-                    headers=ctx.headers(),
+                    headers=headers,
                 ),
                 remote_cdn.get_version_info(
                     library_id=library_id, version=project.version, headers=headers
