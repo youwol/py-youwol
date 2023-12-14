@@ -196,9 +196,7 @@ async def download_zip(
     doc_db_docs = configuration.doc_db_documents
     storage = configuration.storage
 
-    async with Context.start_ep(
-        action="download zip", request=request
-    ) as ctx:  # type: Context
+    async with Context.start_ep(action="download zip", request=request) as ctx:
         story = await query_story(
             story_id=story_id, doc_db_stories=doc_db_stories, context=ctx
         )
@@ -338,7 +336,7 @@ async def post_story(
     body: PostStoryBody,
     configuration: Configuration = Depends(get_configuration),
 ):
-    async with Context.start_ep(request=request) as ctx:  # type: Context
+    async with Context.start_ep(request=request) as ctx:
         doc_db_stories = configuration.doc_db_stories
         doc_db_docs = configuration.doc_db_documents
         story_resp, requirements = await asyncio.gather(

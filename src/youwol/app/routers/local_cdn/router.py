@@ -57,7 +57,7 @@ async def status(request: Request):
         action="CDN status",
         with_attributes={"topic": cdn_topic},
         with_reporters=[LogsStreamer()],
-    ) as ctx:  # type: Context
+    ) as ctx:
         env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
         cdn_docs = env.backends_configuration.cdn_backend.doc_db.data["documents"]
         cdn_sorted = sorted(cdn_docs, key=lambda d: d["library_name"])
@@ -89,7 +89,7 @@ async def package_info(request: Request, package_id: str):
         action="package info",
         with_attributes={"topic": cdn_topic, "packageId": package_id},
         with_reporters=[LogsStreamer()],
-    ) as ctx:  # type: Context
+    ) as ctx:
         package_name = decode_id(package_id)
         env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
         cdn_docs = env.backends_configuration.cdn_backend.doc_db.data["documents"]
@@ -182,7 +182,7 @@ async def smooth_reset(request: Request, body: ResetCdnBody):
         action="reset CDN",
         with_attributes={"topic": "updatesCdn"},
         with_reporters=[LogsStreamer()],
-    ) as ctx:  # type: Context
+    ) as ctx:
         env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
         entities = env.backends_configuration.assets_backend.doc_db_asset.data
         packages = [p for p in entities["documents"] if p["kind"] == "package"]
@@ -239,7 +239,7 @@ async def hard_reset(request: Request):
         action="reset CDN",
         with_attributes={"topic": "updatesCdn"},
         with_reporters=[LogsStreamer()],
-    ) as ctx:  # type: Context
+    ) as ctx:
         env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
         cdn_packages = env.backends_configuration.cdn_backend.doc_db.data
         packages = list(cdn_packages["documents"])

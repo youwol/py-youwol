@@ -19,9 +19,7 @@ from youwol.utils.context import Context
 class UploadDataTask(UploadTask):
     async def get_raw(self, context: Context) -> FormData:
         # a dedicated asset service for data should be available and used here instead of assets_gateway_client
-        async with context.start(
-            action="UploadDataTask.get_raw"
-        ) as ctx:  # type: Context
+        async with context.start(action="UploadDataTask.get_raw") as ctx:
             env = await context.get("env", YouwolEnvironment)
             asset_client = LocalClients.get_assets_client(env=env)
             files_client = LocalClients.get_files_client(env=env)
@@ -44,18 +42,14 @@ class UploadDataTask(UploadTask):
             return form_data
 
     async def create_raw(self, data: FormData, folder_id: str, context: Context):
-        async with context.start(
-            action="UploadDataTask.create_raw"
-        ) as ctx:  # type: Context
+        async with context.start(action="UploadDataTask.create_raw") as ctx:
             files_client = self.remote_assets_gtw.get_files_backend_router()
             await files_client.upload(
                 data=data, params={"folder-id": folder_id}, headers=ctx.headers()
             )
 
     async def update_raw(self, data: bytes, folder_id: str, context: Context):
-        async with context.start(
-            action="UploadDataTask.update_raw"
-        ) as ctx:  # type: Context
+        async with context.start(action="UploadDataTask.update_raw") as ctx:
             await self.remote_assets_gtw.get_files_backend_router().upload(
                 data=data, headers=ctx.headers()
             )

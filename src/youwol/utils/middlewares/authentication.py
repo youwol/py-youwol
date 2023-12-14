@@ -101,7 +101,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
     ) -> Response:
         async with Context.from_request(request).start(
             action="Authorization middleware", with_labels=[Label.MIDDLEWARE]
-        ) as ctx:  # type: Context
+        ) as ctx:
             if self.predicate_public_path(request.url):
                 await ctx.info(text="public path", data=str(request.url))
                 return await call_next(request)

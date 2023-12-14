@@ -62,7 +62,7 @@ def patch_pipeline_generated_module(
 
 
 async def get_input_data(project: Project, flow_id: str, context: Context):
-    async with context.start(action="get_input_data") as ctx:  # type: Context
+    async with context.start(action="get_input_data") as ctx:
         env = await ctx.get("env", YouwolEnvironment)
         all_projects = await ProjectLoader.get_cached_projects()
         dependencies = await project.get_dependencies(

@@ -202,7 +202,7 @@ async def switch_data(
 
 
 async def db_get(asset_id: str, configuration: Configuration, context: Context):
-    async with context.start(action="db_get") as ctx:  # type: Context
+    async with context.start(action="db_get") as ctx:
         docdb = configuration.doc_db_asset
         asset = await docdb.get_document(
             partition_keys={"asset_id": asset_id},
@@ -214,7 +214,7 @@ async def db_get(asset_id: str, configuration: Configuration, context: Context):
 
 
 async def db_query(query: QueryBody, configuration: Configuration, context: Context):
-    async with context.start(action="db_query") as ctx:  # type: Context
+    async with context.start(action="db_query") as ctx:
         doc_db = configuration.doc_db_asset
         r = await doc_db.query(
             query_body=query, owner=Constants.public_owner, headers=ctx.headers()

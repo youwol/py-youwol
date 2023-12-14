@@ -98,9 +98,7 @@ class UploadPackageOptions(NamedTuple):
 class UploadPackageTask(UploadTask):
     async def get_raw(self, context: Context):
         env = await context.get("env", YouwolEnvironment)
-        async with context.start(
-            action="UploadPackageTask.get_raw"
-        ) as ctx:  # type: Context
+        async with context.start(action="UploadPackageTask.get_raw") as ctx:
             local_package = get_local_package(asset_id=self.asset_id, config=env)
 
             to_sync_releases = [v.version for v in local_package.releases]
@@ -148,9 +146,7 @@ class UploadPackageTask(UploadTask):
     async def publish_version(self, folder_id: str, version: str, context: Context):
         remote_cdn = self.remote_assets_gtw.get_cdn_backend_router()
         env = await context.get("env", YouwolEnvironment)
-        async with context.start(
-            action="UploadPackageTask.publish_version"
-        ) as ctx:  # type: Context
+        async with context.start(action="UploadPackageTask.publish_version") as ctx:
             if self.options.versions and version not in self.options.versions:
                 await ctx.info(
                     text=f"Version '{version}' not in explicit versions provided",
@@ -174,9 +170,7 @@ class UploadPackageTask(UploadTask):
                 # await check_package_status(package=local_package, context=context, target_versions=[version])
 
     async def create_raw(self, data: List[str], folder_id: str, context: Context):
-        async with context.start(
-            action="UploadPackageTask.create_raw"
-        ) as ctx:  # type: Context
+        async with context.start(action="UploadPackageTask.create_raw") as ctx:
             versions = data
             for version in versions:
                 await self.publish_version(
@@ -184,7 +178,5 @@ class UploadPackageTask(UploadTask):
                 )
 
     async def update_raw(self, data: List[str], folder_id: str, context: Context):
-        async with context.start(
-            action="UploadPackageTask.update_raw"
-        ) as ctx:  # type: Context
+        async with context.start(action="UploadPackageTask.update_raw") as ctx:
             await self.create_raw(data=data, folder_id=folder_id, context=ctx)

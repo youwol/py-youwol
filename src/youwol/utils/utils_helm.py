@@ -63,7 +63,7 @@ async def helm_dry_run(
     args="",
     context: Context = None,
 ):
-    async with context.start(action="helm_dry_run") as ctx:  # type: Context
+    async with context.start(action="helm_dry_run") as ctx:
         cmd = (
             f"helm upgrade --dry-run --install {release_name} --create-namespace --namespace {namespace} "
             + f" --values {str(values_file)} {str(chart_folder)} {args}"
@@ -136,7 +136,7 @@ async def helm_install_or_upgrade(
     args="",
     context: Context = None,
 ):
-    async with context.start(action="helm_install_or_upgrade") as ctx:  # type: Context
+    async with context.start(action="helm_install_or_upgrade") as ctx:
         cmd = (
             f"helm upgrade --install {release_name} --create-namespace --namespace {namespace} "
             + f"--kube-context {kube_context} --values {str(values_file)} --atomic "

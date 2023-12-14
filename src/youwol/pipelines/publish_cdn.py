@@ -48,7 +48,7 @@ async def create_cdn_zip(
     files: Iterable[Path],
     context: Context,
 ):
-    async with context.start(action="create_cdn_zip") as ctx:  # type: Context
+    async with context.start(action="create_cdn_zip") as ctx:
         env = await context.get("env", YouwolEnvironment)
         paths: PathsBook = env.pathsBook
         artifacts_flow_path = paths.artifacts_flow(
@@ -168,9 +168,7 @@ class PublishCdnLocalStep(PipelineStep):
         last_manifest: Optional[Manifest],
         context: Context,
     ) -> PipelineStepStatus:
-        async with context.start(
-            action="PublishCdnLocalStep.get_status"
-        ) as ctx:  # type: Context
+        async with context.start(action="PublishCdnLocalStep.get_status") as ctx:
             env = await context.get("env", YouwolEnvironment)
             local_cdn = LocalClients.get_cdn_client(env=env)
             if not last_manifest:
@@ -404,9 +402,7 @@ class PublishCdnRemoteStep(PipelineStep):
         last_manifest: Optional[Manifest],
         context: Context,
     ) -> PipelineStepStatus:
-        async with context.start(
-            action="PublishCdnRemoteStep.get_status"
-        ) as ctx:  # type: Context
+        async with context.start(action="PublishCdnRemoteStep.get_status") as ctx:
             env = await context.get("env", YouwolEnvironment)
             local_cdn = LocalClients.get_cdn_client(env=env)
             remote_gtw = await RemoteClients.get_assets_gateway_client(

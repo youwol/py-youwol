@@ -97,7 +97,7 @@ async def ensure_drive(
 async def sync_asset_data(
     asset_id: str, remote_gtw: AssetsGatewayClient, context: Context
 ):
-    async with context.start(action="Sync. asset data") as ctx:  # type: Context
+    async with context.start(action="Sync. asset data") as ctx:
         assets_remote = remote_gtw.get_assets_backend_router()
         assets_local = LocalClients.get_assets_client(
             await ctx.get("env", YouwolEnvironment)
@@ -146,7 +146,7 @@ async def sync_explorer_data(
 ):
     env = await context.get("env", YouwolEnvironment)
 
-    async with context.start(action="Sync. explorer data") as ctx:  # type: Context
+    async with context.start(action="Sync. explorer data") as ctx:
         remote_treedb = remote_gtw.get_treedb_backend_router()
         local_treedb = LocalClients.get_treedb_client(env)
         remote_item = await remote_treedb.get_item(

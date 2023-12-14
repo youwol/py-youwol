@@ -45,7 +45,7 @@ class Files(NamedTuple):
 
 
 async def user_inputs_sanity_checks(parameters: Dict[str, str], context: Context):
-    async with context.start("user_inputs_sanity_checks") as ctx:  # type: Context
+    async with context.start("user_inputs_sanity_checks") as ctx:
         if Keys.name not in parameters:
             raise RuntimeError("Expect 'name' in parameters")
         await ctx.info("Required parameters found")
@@ -333,7 +333,7 @@ async def generate_ts_webpack_project(
     package_type: PackageType,
     context: Context,
 ):
-    async with context.start("Generate ts webpack project") as ctx:  # type: Context
+    async with context.start("Generate ts webpack project") as ctx:
         await user_inputs_sanity_checks(parameters, ctx)
 
         name = parameters[Keys.name]

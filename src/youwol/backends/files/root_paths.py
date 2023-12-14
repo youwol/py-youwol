@@ -34,7 +34,7 @@ async def healthz():
 async def upload(
     request: Request, configuration: Configuration = Depends(get_configuration)
 ):
-    async with Context.start_ep(request=request):  # type: Context
+    async with Context.start_ep(request=request):
         form = await request.form()
         file = form.get("file")
         file_id = form.get("file_id", None) or str(uuid.uuid4())
@@ -74,7 +74,7 @@ async def get_info(
     file_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
-    async with Context.start_ep(request=request):  # type: Context
+    async with Context.start_ep(request=request):
         return await configuration.file_system.get_info(object_id=file_id)
 
 
@@ -85,7 +85,7 @@ async def update_metadata(
     body: PostMetadataBody,
     configuration: Configuration = Depends(get_configuration),
 ):
-    async with Context.start_ep(request=request):  # type: Context
+    async with Context.start_ep(request=request):
         await configuration.file_system.set_metadata(
             object_id=file_id, metadata=Metadata(**body.dict())
         )
@@ -100,7 +100,7 @@ async def get_file(
 ):
     async with Context.start_ep(
         request=request, with_attributes={"fileId": file_id}
-    ) as ctx:  # type: Context
+    ) as ctx:
         stats = await configuration.file_system.get_info(object_id=file_id)
         content = await configuration.file_system.get_object(object_id=file_id)
         max_age = "31536000"
@@ -122,6 +122,6 @@ async def remove_file(
     file_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
-    async with Context.start_ep(request=request):  # type: Context
+    async with Context.start_ep(request=request):
         await configuration.file_system.remove_object(object_id=file_id)
         return {}

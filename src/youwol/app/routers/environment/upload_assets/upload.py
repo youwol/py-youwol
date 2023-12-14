@@ -59,7 +59,7 @@ async def synchronize_permissions(
 ):
     async with context.start(
         action="synchronize_permissions", with_attributes={"assetId": asset_id}
-    ) as ctx:  # type: Context
+    ) as ctx:
         env = await context.get("env", YouwolEnvironment)
         local_assets_gtw = LocalClients.get_assets_gateway_client(env=env)
         access_info = (
@@ -138,7 +138,7 @@ async def create_borrowed_item(
             "borrowed_tree_id": borrowed_tree_id,
             "tree_id": item["item_id"],
         },
-    ) as ctx:  # type: Context
+    ) as ctx:
         tree_id = item["item_id"]
         treedb_backend = assets_gtw_client.get_treedb_backend_router()
         try:
@@ -178,7 +178,7 @@ async def synchronize_metadata(
     env = await context.get("env", YouwolEnvironment)
     async with context.start(
         action="synchronize_metadata", with_attributes={"asset_id": asset_id}
-    ) as ctx:  # type: Context
+    ) as ctx:
         local_assets_gtw: AssetsGatewayClient = LocalClients.get_assets_gateway_client(
             env=env
         )
@@ -254,7 +254,7 @@ async def upload_asset(
 
     async with context.start(
         action="upload_asset", with_attributes={"asset_id": asset_id}
-    ) as ctx:  # type: Context
+    ) as ctx:
         env = await context.get("env", YouwolEnvironment)
         local_treedb: TreeDbClient = LocalClients.get_treedb_client(env=env)
         local_assets: AssetsClient = LocalClients.get_assets_client(env=env)

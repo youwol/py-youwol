@@ -28,7 +28,7 @@ async def resolve_version(
 ) -> Optional[str]:
     async with context.start(
         action="resolve_version", with_attributes={"library": name}
-    ) as ctx:  # type: Context
+    ) as ctx:
         base = version.split("-")[0].replace("x", "*").replace("latest", "*")
         if is_fixed_version(version):
             return version
@@ -59,7 +59,7 @@ def create_local_scylla_db_docs_file_if_needed(expected_path: Path):
 
 
 async def encode_extra_index(documents: List[JSON], context: Context):
-    async with context.start(action="encode_extra_index") as ctx:  # type: Context
+    async with context.start(action="encode_extra_index") as ctx:
 
         def flatten_elem(d: JSON) -> str:
             return (
@@ -89,7 +89,7 @@ async def encode_extra_index(documents: List[JSON], context: Context):
 
 
 async def decode_extra_index(documents: str, context: Context):
-    async with context.start(action="decode_extra_index") as ctx:  # type: Context
+    async with context.start(action="decode_extra_index") as ctx:
         b = base64.b64decode(documents)
         extra = brotli.decompress(b)
         src_str = extra.decode("utf-8")

@@ -163,7 +163,7 @@ async def create_global_contents_if_needed(
 
 
 async def get_story_impl(story_id: str, configuration: Configuration, context: Context):
-    async with context.start(action="get_story_impl") as ctx:  # type: Context
+    async with context.start(action="get_story_impl") as ctx:
         doc_db_stories = configuration.doc_db_stories
         doc_db_docs = configuration.doc_db_documents
         story, root_doc, requirements = await asyncio.gather(

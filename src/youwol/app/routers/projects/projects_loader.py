@@ -129,7 +129,7 @@ class ProjectLoader:
 async def load_projects(
     paths: List[Path], env: YouwolEnvironment, context: Context
 ) -> List[Result]:
-    async with context.start(action="load_projects") as ctx:  # type: Context
+    async with context.start(action="load_projects") as ctx:
         return [
             await get_project(dir_candidate, [], env, ctx) for dir_candidate in paths
         ]
@@ -143,7 +143,7 @@ async def get_project(
 ) -> Union[Project, Failure]:
     async with context.start(
         action="get_project", with_attributes={"folderName": project_path.name}
-    ) as ctx:  # type: Context
+    ) as ctx:
         if not project_path.exists():
             error = FailureDirectoryNotFound(path=project_path)
             await ctx.error(text="Can not find project's directory", data=error)

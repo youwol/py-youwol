@@ -270,13 +270,9 @@ async def publish_package(
         md5_stamp = md5_from_folder(temp_dir)
         await context.info(text=f"md5_stamp={md5_stamp}")
 
-        async with context.start(
-            action="Upload data in storage"
-        ) as ctx:  # type: Context
+        async with context.start(action="Upload data in storage") as ctx:
             prefix = f"{base_path}/"
-            async with ctx.start(
-                action=f"Clean minio directory {prefix}"
-            ) as ctx_clean:  # type: Context
+            async with ctx.start(action=f"Clean minio directory {prefix}") as ctx_clean:
                 await file_system.remove_folder(
                     prefix=f"{prefix}",
                     raise_not_found=False,
@@ -285,7 +281,7 @@ async def publish_package(
 
             async with ctx.start(
                 action=f"Send {len(forms)} files to storage"
-            ) as ctx_post:  # type: Context
+            ) as ctx_post:
                 post_requests = [
                     file_system.put_object(
                         object_id=str(form.objectName),
@@ -371,7 +367,7 @@ async def create_explorer_data(
 
     async with context.start(
         action="create explorer data", with_attributes={"path": str(root_path)}
-    ) as ctx:  # type: Context
+    ) as ctx:
         data = {}
         forms_data_dict = {
             f"{Path(form.objectName).relative_to(root_path)}": {
@@ -546,7 +542,7 @@ async def list_versions(name: str, max_results: int, context: Context, configura
     async with context.start(
         action="list version of package",
         with_attributes={"name": name, "max_results": max_results},
-    ) as ctx:  # type: Context
+    ) as ctx:
         doc_db = configuration.doc_db
         query = QueryBody(
             max_results=max_results,
