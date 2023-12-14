@@ -82,9 +82,7 @@ async def publish_library(
     # https://www.toptal.com/python/beginners-guide-to-concurrency-and-parallelism-in-python
     # Publish needs to be done using a queue to let the cdn pods fully available to fetch resources
 
-    async with Context.start_ep(
-        request=request, with_labels=["Publish"]
-    ) as ctx:  # type: Context
+    async with Context.start_ep(request=request, with_labels=["Publish"]) as ctx:
         return await publish_package(
             file.file, file.filename, content_encoding, configuration, ctx
         )
@@ -97,9 +95,7 @@ async def download_library(
     version: str,
     configuration: Configuration = Depends(get_configuration),
 ):
-    async with Context.start_ep(
-        request=request, with_labels=["Download"]
-    ) as ctx:  # type: Context
+    async with Context.start_ep(request=request, with_labels=["Download"]) as ctx:
         version = await resolve_explicit_version(
             package_name=to_package_name(library_id),
             input_version=version,
@@ -135,9 +131,7 @@ async def get_library_info(
     configuration: Configuration = Depends(get_configuration),
 ):
     response: Optional[ListVersionsResponse] = None
-    async with Context.start_ep(
-        request=request, response=lambda: response
-    ) as ctx:  # type: Context
+    async with Context.start_ep(request=request, response=lambda: response) as ctx:
         name = to_package_name(library_id)
         # If a semver is requested we basically fetch all versions and proceed with filtering afterward using NpmSpec.
         # It would be interesting to proceed with the versions filtering directly from the CQL query to scylla-db.
@@ -175,7 +169,7 @@ async def get_version_info_impl(
     async with context.start(
         action="get_version_info_impl",
         with_attributes={"library_id": library_id, "version": version},
-    ) as ctx:  # type: Context
+    ) as ctx:
         library_name = to_package_name(library_id)
         _, resolved_version, _ = await resolve_resource(
             library_id=library_id,
@@ -216,7 +210,7 @@ async def get_version_info(
 ):
     async with Context.start_ep(
         request=request, with_attributes={"library_id": library_id, "version": version}
-    ) as ctx:  # type: Context
+    ) as ctx:
         return await get_version_info_impl(
             library_id=library_id,
             version=version,
@@ -237,7 +231,7 @@ async def delete_library(
 ):
     async with Context.start_ep(
         request=request, with_attributes={"libraryId": library_id}
-    ) as ctx:  # type: Context
+    ) as ctx:
         doc_db = configuration.doc_db
         name = to_package_name(library_id)
         query = QueryBody(
@@ -273,7 +267,7 @@ async def delete_version(
 ):
     async with Context.start_ep(
         request=request, with_attributes={"library_id": library_id, "version": version}
-    ) as ctx:  # type: Context
+    ) as ctx:
         doc_db = configuration.doc_db
         file_system = configuration.file_system
         library_name = to_package_name(library_id)
@@ -342,7 +336,7 @@ async def resolve_loading_tree(
             for element in input_elements
         ]
 
-    async with Context.start_ep(request=request, body=body) as ctx:  # type: Context
+    async with Context.start_ep(request=request, body=body) as ctx:
         await ctx.info(text="Start resolving loading graph", data=body)
         extra_index = (
             await decode_extra_index(body.extraIndex, ctx) if body.extraIndex else []
@@ -423,7 +417,7 @@ async def get_entry_point(
         action="fetch entry point",
         request=request,
         with_attributes={"library_id": library_id, "version": version},
-    ) as ctx:  # type: Context
+    ) as ctx:
         package_name, version, max_age = await resolve_resource(
             library_id=library_id,
             input_version=version,

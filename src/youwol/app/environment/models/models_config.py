@@ -557,10 +557,10 @@ class FlowSwitcherMiddleware(CustomMiddleware):
     ) -> Optional[Response]:
         async with context.start(
             action=f"FlowSwitcher: {self.name}", with_labels=[Label.MIDDLEWARE]
-        ) as ctx:  # type: Context
+        ) as ctx:
             async with ctx.start(
                 action=f"Get status of {len(self.oneOf)} switches"
-            ) as ctx_status:  # type: Context
+            ) as ctx_status:
                 matches = [
                     d
                     for d in self.oneOf

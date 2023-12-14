@@ -21,9 +21,7 @@ from .models import DownloadTask
 async def sync_raw_data(
     asset_id: str, remote_gtw: AssetsGatewayClient, caller_context: Context
 ):
-    async with caller_context.start(
-        action="Sync. raw data of file"
-    ) as ctx:  # type: Context
+    async with caller_context.start(action="Sync. raw data of file") as ctx:
         env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
         raw_id = decode_id(asset_id)
         data, info = await asyncio.gather(

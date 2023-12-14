@@ -85,7 +85,7 @@ async def retrieve_tmp_users(
 async def clean_drive(drive: Drive, treedb: TreeDbClient, context: Context):
     async with context.start(
         action="clean_drive", with_attributes={"driveId": drive.drive_id}
-    ) as ctx:  # type: Context
+    ) as ctx:
         headers = {**ctx.headers(), **drive.impersonated.headers()}
         children = await treedb.get_children(folder_id=drive.drive_id, headers=headers)
         await ctx.info("Drive's children retrieved", data={"children": children})
@@ -108,7 +108,7 @@ async def clean_drive(drive: Drive, treedb: TreeDbClient, context: Context):
 
 
 async def clean_visitors(body: CleanVisitorsBody, context: Context):
-    async with context.start(action="clean_visitors") as ctx:  # type: Context
+    async with context.start(action="clean_visitors") as ctx:
         treedb = TreeDbClient(
             url_base="https://platform.youwol.com/api/assets-gateway/treedb-backend",
             request_executor=AioHttpExecutor(

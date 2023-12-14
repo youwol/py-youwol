@@ -63,7 +63,7 @@ flatten = itertools.chain.from_iterable
 async def status(request: Request):
     async with Context.start_ep(
         request=request, with_reporters=[LogsStreamer()]
-    ) as ctx:  # type: Context
+    ) as ctx:
         response = await ProjectLoader.refresh(ctx)
         await ctx.send(response)
         return response

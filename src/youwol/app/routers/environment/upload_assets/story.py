@@ -47,9 +47,7 @@ def zip_local_story(raw_id: str, config: YouwolEnvironment) -> bytes:
 @dataclass
 class UploadStoryTask(UploadTask):
     async def get_raw(self, context: Context) -> bytes:
-        async with context.start(
-            action="UploadPackageTask.get_raw"
-        ) as ctx:  # type: Context
+        async with context.start(action="UploadPackageTask.get_raw") as ctx:
             env = await context.get("env", YouwolEnvironment)
             story_client = LocalClients.get_stories_client(env=env)
             zip_content = await story_client.download_zip(
@@ -58,7 +56,7 @@ class UploadStoryTask(UploadTask):
             return zip_content
 
     async def create_raw(self, data: bytes, folder_id: str, context: Context):
-        async with context.start("UploadStoryTask.create_raw") as ctx:  # type: Context
+        async with context.start("UploadStoryTask.create_raw") as ctx:
             stories_client = self.remote_assets_gtw.get_stories_backend_router()
             await stories_client.publish_story(
                 data={"file": data, "content_encoding": "identity"},
@@ -68,7 +66,7 @@ class UploadStoryTask(UploadTask):
 
     async def update_raw(self, data: JSON, folder_id: str, context: Context):
         # <!> stories_client will be removed as it should not be available
-        async with context.start("UploadStoryTask.update_raw") as ctx:  # type: Context
+        async with context.start("UploadStoryTask.update_raw") as ctx:
             stories_client = self.remote_assets_gtw.get_stories_backend_router()
             await stories_client.publish_story(
                 data={"file": data, "content_encoding": "identity"},

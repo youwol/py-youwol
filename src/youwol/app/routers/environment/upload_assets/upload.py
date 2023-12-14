@@ -59,12 +59,12 @@ async def synchronize_permissions(
 ):
     async with context.start(
         action="synchronize_permissions", with_attributes={"assetId": asset_id}
-    ) as ctx:  # type: Context
+    ) as ctx:
         env = await context.get("env", YouwolEnvironment)
         local_assets_gtw = LocalClients.get_assets_gateway_client(env=env)
         access_info = (
             await local_assets_gtw.get_assets_backend_router().get_access_info(
-                asset_id=asset_id, headers=ctx.local_headers()
+                asset_id=asset_id, headers=ctx.headers()
             )
         )
         await ctx.info(
@@ -138,7 +138,7 @@ async def create_borrowed_item(
             "borrowed_tree_id": borrowed_tree_id,
             "tree_id": item["item_id"],
         },
-    ) as ctx:  # type: Context
+    ) as ctx:
         tree_id = item["item_id"]
         treedb_backend = assets_gtw_client.get_treedb_backend_router()
         try:
@@ -178,14 +178,14 @@ async def synchronize_metadata(
     env = await context.get("env", YouwolEnvironment)
     async with context.start(
         action="synchronize_metadata", with_attributes={"asset_id": asset_id}
-    ) as ctx:  # type: Context
+    ) as ctx:
         local_assets_gtw: AssetsGatewayClient = LocalClients.get_assets_gateway_client(
             env=env
         )
 
         local_metadata, remote_metadata = await asyncio.gather(
             local_assets_gtw.get_assets_backend_router().get_asset(
-                asset_id=asset_id, headers=ctx.local_headers()
+                asset_id=asset_id, headers=ctx.headers()
             ),
             assets_gtw_client.get_assets_backend_router().get_asset(
                 asset_id=asset_id, headers=ctx.headers()
@@ -254,14 +254,14 @@ async def upload_asset(
 
     async with context.start(
         action="upload_asset", with_attributes={"asset_id": asset_id}
-    ) as ctx:  # type: Context
+    ) as ctx:
         env = await context.get("env", YouwolEnvironment)
         local_treedb: TreeDbClient = LocalClients.get_treedb_client(env=env)
         local_assets: AssetsClient = LocalClients.get_assets_client(env=env)
         raw_id = decode_id(asset_id)
         asset, tree_item = await asyncio.gather(
-            local_assets.get(asset_id=asset_id, headers=ctx.local_headers()),
-            local_treedb.get_item(item_id=asset_id, headers=ctx.local_headers()),
+            local_assets.get(asset_id=asset_id, headers=ctx.headers()),
+            local_treedb.get_item(item_id=asset_id, headers=ctx.headers()),
             return_exceptions=True,
         )
         if isinstance(asset, HTTPException) and asset.status_code == 404:
@@ -301,7 +301,7 @@ async def upload_asset(
         local_data = await factory.get_raw(context=ctx)
         try:
             path_item = await local_treedb.get_path(
-                item_id=tree_item["itemId"], headers=ctx.local_headers()
+                item_id=tree_item["itemId"], headers=ctx.headers()
             )
         except HTTPException as e:
             if e.status_code == 404:

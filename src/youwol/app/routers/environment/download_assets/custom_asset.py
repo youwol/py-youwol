@@ -19,9 +19,7 @@ from .models import DownloadTask
 async def sync_asset_files(
     asset_id: str, remote_gtw: AssetsGatewayClient, caller_context: Context
 ):
-    async with caller_context.start(
-        action="Sync. files of asset"
-    ) as ctx:  # type: Context
+    async with caller_context.start(action="Sync. files of asset") as ctx:
         env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
         data = await remote_gtw.get_assets_backend_router().get_zip_files(
             asset_id=asset_id, headers=ctx.headers()

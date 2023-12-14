@@ -83,7 +83,7 @@ async def healthz():
 async def list_projects(
     request: Request, configuration: Configuration = Depends(get_configuration)
 ):
-    async with Context.start_ep(request=request) as ctx:  # type: Context
+    async with Context.start_ep(request=request) as ctx:
         doc_db = configuration.doc_db
         user = user_info(request)
         groups = get_all_individual_groups(user["memberof"])
@@ -125,7 +125,7 @@ async def get_project(
     project_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
-    async with Context.start_ep(request=request) as ctx:  # type: Context
+    async with Context.start_ep(request=request) as ctx:
         owner = Constants.default_owner
 
         project = await retrieve_project(
@@ -148,7 +148,7 @@ async def new_project(
     project_body: NewProject,
     configuration: Configuration = Depends(get_configuration),
 ):
-    async with Context.start_ep(request=request) as ctx:  # type: Context
+    async with Context.start_ep(request=request) as ctx:
         project_id = project_body.projectId or str(uuid.uuid4())
         workflow = workflow_new_project
         builder_rendering = BuilderRendering(
@@ -198,7 +198,7 @@ async def duplicate(
     project_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
-    async with Context.start_ep(request=request) as ctx:  # type: Context
+    async with Context.start_ep(request=request) as ctx:
         owner = Constants.default_owner
         project = await retrieve_project(
             project_id=project_id,
@@ -263,9 +263,7 @@ async def download_zip(
     project_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
-    async with Context.start_ep(
-        action="download zip", request=request
-    ) as ctx:  # type: Context
+    async with Context.start_ep(action="download zip", request=request) as ctx:
         owner = Constants.default_owner
         project = await retrieve_project(
             project_id=project_id,

@@ -143,7 +143,7 @@ class UpdateApplication(AbstractLocalCloudDispatch):
 
         async with context.start(
             action="UpdateApplication.apply", muted_http_errors={404}
-        ) as ctx:  # type: Context
+        ) as ctx:
             if all(elem not in semver for elem in ["*", "^", "x", "~"]):
                 await context.info(
                     "App with explicit version required -> proceed normally"

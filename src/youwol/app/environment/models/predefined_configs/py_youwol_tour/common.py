@@ -12,7 +12,7 @@ async def clone_project(repo_name: str, parent_folder: Path, context: Context):
     :param context: context (essentially to log)
     :return: {'returnCode': return code of git clone command, 'outputs': outputs of git clone command }
     """
-    async with context.start(action=f"clone repo {repo_name}") as ctx:  # type: Context
+    async with context.start(action=f"clone repo {repo_name}") as ctx:
         url = f"https://github.com/youwol/{repo_name}.git"
         return_code, outputs = await execute_shell_cmd(
             cmd=f"(cd {parent_folder} && git clone {url})", context=ctx

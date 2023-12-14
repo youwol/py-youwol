@@ -128,7 +128,7 @@ async def status(request: Request, config: YouwolEnvironment = Depends(yw_config
     async with Context.start_ep(
         request=request,
         with_reporters=[LogsStreamer()],
-    ) as ctx:  # type: Context
+    ) as ctx:
         remote_gateway_info = config.get_remote_info()
         if remote_gateway_info:
             remote_gateway_info = RemoteGatewayInfo(

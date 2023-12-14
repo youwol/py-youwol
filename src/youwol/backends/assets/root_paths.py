@@ -96,7 +96,7 @@ async def create_asset(
     body: NewAssetBody,
     configuration: Configuration = Depends(get_configuration),
 ):
-    async with Context.start_ep(request=request) as ctx:  # type: Context
+    async with Context.start_ep(request=request) as ctx:
         user = user_info(request)
         policy = body.defaultAccessPolicy
         asset_id = body.assetId if body.assetId else to_doc_db_id(body.rawId)
@@ -147,7 +147,7 @@ async def post_asset(
     body: PostAssetBody,
     configuration: Configuration = Depends(get_configuration),
 ):
-    async with Context.start_ep(request=request) as ctx:  # type: Context
+    async with Context.start_ep(request=request) as ctx:
         docdb_access = configuration.doc_db_access_policy
         asset = await db_get(
             asset_id=asset_id, configuration=configuration, context=ctx
@@ -222,7 +222,7 @@ async def put_access_policy(
     body: AccessPolicyBody,
     configuration: Configuration = Depends(get_configuration),
 ):
-    async with Context.start_ep(request=request) as ctx:  # type: Context
+    async with Context.start_ep(request=request) as ctx:
         return await put_access_policy_impl(
             asset_id=asset_id,
             group_id=group_id,
@@ -239,7 +239,7 @@ async def delete_access_policy(
     group_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
-    async with Context.start_ep(request=request) as ctx:  # type: Context
+    async with Context.start_ep(request=request) as ctx:
         docdb_access = configuration.doc_db_access_policy
         await docdb_access.delete_document(
             doc={"asset_id": asset_id, "consumer_group_id": group_id},
@@ -274,7 +274,7 @@ async def get_access_policy(
             ),
         )
 
-    async with Context.start_ep(request=request) as ctx:  # type: Context
+    async with Context.start_ep(request=request) as ctx:
         docdb_access = configuration.doc_db_access_policy
 
         if not include_inherited:

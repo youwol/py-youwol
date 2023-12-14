@@ -91,7 +91,7 @@ async def loading_graph(
     def cached_api_key(lib: LibraryQuery) -> str:
         return resolutions_dict[get_query_key(lib)].exportedSymbol
 
-    async with context.start(action="loading_graph") as ctx:  # type: Context
+    async with context.start(action="loading_graph") as ctx:
         remaining_keys = [d.full_exported_symbol() for d in remaining]
         download_keys = [k for k in items_dict.keys() if k not in remaining_keys]
 
@@ -238,7 +238,7 @@ async def resolve_version(
 ) -> ResolvedQuery:
     async with context.start(
         action="resolve_version", with_attributes={"library": dependency.name}
-    ) as ctx:  # type: Context
+    ) as ctx:
         name = dependency.name
         version = (
             using[dependency.name] if dependency.name in using else dependency.version
@@ -303,9 +303,7 @@ async def resolve_dependencies_recursive(
     configuration: Configuration,
     context: Context,
 ) -> List[LibraryResolved]:
-    async with context.start(
-        action="resolve_dependencies_recursive"
-    ) as ctx:  # type: Context
+    async with context.start(action="resolve_dependencies_recursive") as ctx:
         resolved_versions = await resolve_dependencies_version_queries(
             from_libraries=from_libraries,
             using=using,
@@ -362,9 +360,7 @@ async def resolve_dependencies_version_queries(
     configuration: Configuration,
     context: Context,
 ):
-    async with context.start(
-        action="resolve_dependencies_version_queries"
-    ) as ctx:  # type: Context
+    async with context.start(action="resolve_dependencies_version_queries") as ctx:
         inputs_flat_dependencies = [
             LibraryQueryWithParent(**dependency.dict(), parent=lib)
             for lib in from_libraries
@@ -434,7 +430,7 @@ async def fetch_dependencies_data(
     configuration: Configuration,
     context: Context,
 ):
-    async with context.start(action="query dependencies data") as ctx:  # type: Context
+    async with context.start(action="query dependencies data") as ctx:
         resolved_dependencies = await asyncio.gather(
             *[
                 get_data(
@@ -468,7 +464,7 @@ async def get_data(
 ) -> LibraryResolved:
     async with context.start(
         action="get_data", with_attributes={"lib": f"{name}#{version}"}
-    ) as ctx:  # type: Context
+    ) as ctx:
         await ctx.info(f"Retrieved data of {name} version {version}")
         doc_db = configuration.doc_db
         data = next(
@@ -559,7 +555,7 @@ async def remove_duplicates(
     get_key: Callable[[LibraryQuery], str],
     context: Context,
 ) -> List[LibraryQueryWithParent]:
-    async with context.start(action="remove_duplicates") as ctx:  # type: Context
+    async with context.start(action="remove_duplicates") as ctx:
         result = []
         keys = []
         for library in libraries:

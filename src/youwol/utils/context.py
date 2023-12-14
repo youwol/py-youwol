@@ -2,19 +2,20 @@ from __future__ import annotations
 
 # standard library
 import asyncio
+import functools
 import json
 import time
 import traceback
 import uuid
 
 from abc import ABC, abstractmethod
-from contextlib import asynccontextmanager
+from dataclasses import dataclass, field
 from enum import Enum
+from types import TracebackType
 
 # typing
 from typing import (
     Any,
-    AsyncContextManager,
     Awaitable,
     Callable,
     Dict,
@@ -22,6 +23,7 @@ from typing import (
     NamedTuple,
     Optional,
     Set,
+    Type,
     TypeVar,
     Union,
     cast,
@@ -141,28 +143,28 @@ StringLike = Any
 HeadersFwdSelector = Callable[[List[str]], List[str]]
 
 
-class Context(NamedTuple):
-    logs_reporters: List[ContextReporter]
-    data_reporters: List[ContextReporter]
+@dataclass(frozen=True)
+class Context:
+    logs_reporters: List[ContextReporter] = field(default_factory=list)
+    data_reporters: List[ContextReporter] = field(default_factory=list)
     request: Optional[Request] = None
 
     uid: Union[str, None] = "root"
     parent_uid: Union[str, None] = None
     trace_uid: Union[str, None] = None
-    muted_http_errors: Set[int] = set()
+    muted_http_errors: Set[int] = field(default_factory=set)
 
-    with_data: Dict[str, DataType] = {}
-    with_attributes: JSON = {}
-    with_labels: List[str] = []
-    with_headers: Dict[str, str] = {}
-    with_cookies: Dict[str, str] = {}
+    with_data: Dict[str, DataType] = field(default_factory=dict)
+    with_attributes: JSON = field(default_factory=dict)
+    with_labels: List[str] = field(default_factory=list)
+    with_headers: Dict[str, str] = field(default_factory=dict)
+    with_cookies: Dict[str, str] = field(default_factory=dict)
 
     @staticmethod
     def from_request(request: Request):
         return cast(Context, request.state.context)
 
-    @asynccontextmanager
-    async def start(
+    def start(
         self,
         action: str,
         muted_http_errors: Set[int] = None,
@@ -175,7 +177,7 @@ class Context(NamedTuple):
         on_exit: "CallableBlock" = None,
         on_exception: "CallableBlockException" = None,
         with_reporters: List[ContextReporter] = None,
-    ) -> AsyncContextManager[Context]:
+    ) -> ScopedContext:
         with_attributes = with_attributes or {}
         with_labels = with_labels or []
         with_data = with_data or {}
@@ -189,7 +191,12 @@ class Context(NamedTuple):
             YouwolHeaders.patch_request_mute_http_headers(
                 request=self.request, status_muted=muted_http_errors
             )
-        ctx = Context(
+
+        return ScopedContext(
+            action=action,
+            on_enter=on_enter,
+            on_exit=on_exit,
+            on_exception=on_exception,
             logs_reporters=logs_reporters,
             data_reporters=self.data_reporters,
             uid=str(uuid.uuid4()),
@@ -204,44 +211,6 @@ class Context(NamedTuple):
             with_cookies={**self.with_cookies, **(with_cookies or {})},
         )
 
-        try:
-            # When middleware are calling 'next' this seems the only way to pass information
-            # see https://github.com/tiangolo/fastapi/issues/1529
-            if self.request:
-                self.request.state.context = ctx
-            await ctx.info(text=f"{action}", labels=[Label.STARTED])
-            start = time.time()
-            await Context.__execute_block(ctx, on_enter)
-            yield ctx  # NOSONAR => can not find proper type annotation
-        except Exception as e:
-            await ctx.error(
-                text=f"Exception: {str(e)}",
-                data={
-                    "detail": e.detail
-                    if isinstance(e, HTTPException)
-                    else "No detail available",
-                    "traceback": traceback.format_exc().split("\n"),
-                },
-                labels=[Label.EXCEPTION, Label.FAILED],
-            )
-            await Context.__execute_block(ctx, on_exception, e)
-            await Context.__execute_block(ctx, on_exit)
-            muted = False
-            if isinstance(e, HTTPException):
-                muted = e.status_code in self.muted_http_errors
-            if not muted:
-                traceback.print_exc()
-            if self.request.state:
-                self.request.state.context = self
-            raise e
-        await ctx.info(
-            text=f"{action} in {int(1000 * (time.time() - start))} ms",
-            labels=[Label.DONE],
-        )
-        if self.request:
-            self.request.state.context = self
-        await self.__execute_block(ctx, on_exit)
-
     @staticmethod
     def start_ep(
         request: Request,
@@ -254,7 +223,7 @@ class Context(NamedTuple):
         with_reporters: List[ContextReporter] = None,
         on_enter: "CallableBlock" = None,
         on_exit: "CallableBlock" = None,
-    ) -> AsyncContextManager[Context]:
+    ) -> ScopedContext:
         context = Context.from_request(request=request)
         action = action or f"{request.method}: {request.scope['path']}"
         with_labels = with_labels or []
@@ -276,16 +245,9 @@ class Context(NamedTuple):
             if on_enter:
                 await on_enter(ctx)
 
-        # Hot-fix hiding a bigger problem regarding authorization using context; see #1481
-        with_headers = (
-            {"original_access_token": context.with_headers["authorization"]}
-            if "authorization" in context.with_headers
-            else {}
-        )
         return context.start(
             action=action,
             muted_http_errors=muted_http_errors,
-            with_headers=with_headers,
             with_labels=[Label.END_POINT, *with_labels],
             with_attributes={"method": request.method, **with_attributes},
             with_reporters=with_reporters,
@@ -400,16 +362,74 @@ class Context(NamedTuple):
             **{k.lower(): v for k, v in self.with_headers.items()},
         }
 
-    def local_headers(self, from_req_fwd: HeadersFwdSelector = lambda _keys: []):
-        headers = self.headers(from_req_fwd)
-        if "original_access_token" in headers:
-            # Hot-fix hiding a bigger problem regarding authorization using context; see #1481
-            headers["authorization"] = self.with_headers["original_access_token"]
-        return headers
-
     def cookies(self):
         cookies = self.request.cookies if self.request else {}
         return {**cookies, **self.cookies}
+
+
+CallableBlock = Callable[[Context], Union[Awaitable, None]]
+CallableBlockException = Callable[[Exception, Context], Union[Awaitable, None]]
+
+
+LabelsGetter = Callable[[], Set[str]]
+
+
+@dataclass(frozen=True)
+class ScopedContext(Context):
+    action: Optional[str] = None
+    on_enter: Optional[CallableBlock] = None
+    on_exit: Optional[CallableBlock] = None
+    on_exception: Optional[CallableBlockException] = None
+
+    @functools.cached_property
+    def start_time(self):
+        return time.time()
+
+    async def __aenter__(self):
+        # When middleware are calling 'next' this seems the only way to pass the context through
+        # see https://github.com/tiangolo/fastapi/issues/1529
+        if self.request and self.request.state:
+            self.request.state.context = self
+
+        await self.info(text=f"{self.action}", labels=[Label.STARTED])
+        # next call initialize cache property
+        _ = self.start_time
+        await ScopedContext.__execute_block(self, self.on_enter)
+
+        return self
+
+    # exit the async context manager
+    async def __aexit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc: Optional[BaseException],
+        tb: Optional[TracebackType],
+    ):
+        if exc:
+            await self.error(
+                text=f"Exception: {str(exc)}",
+                data={
+                    "detail": exc.detail
+                    if isinstance(exc, HTTPException)
+                    else "No detail available",
+                    "traceback": traceback.format_exc().split("\n"),
+                },
+                labels=[Label.EXCEPTION, Label.FAILED],
+            )
+            await ScopedContext.__execute_block(self, self.on_exception, exc)
+            await ScopedContext.__execute_block(self, self.on_exit)
+            muted = False
+            if isinstance(exc, HTTPException):
+                muted = exc.status_code in self.muted_http_errors
+            if not muted:
+                traceback.print_exc()
+            raise exc
+
+        await self.info(
+            text=f"{self.action} in {int(1000 * (time.time() - self.start_time))} ms",
+            labels=[Label.DONE],
+        )
+        await self.__execute_block(self, self.on_exit)
 
     @staticmethod
     async def __execute_block(
@@ -422,13 +442,6 @@ class Context(NamedTuple):
         block = block(ctx) if not exception else block(exception, ctx)
         if isinstance(block, Awaitable):
             await block
-
-
-CallableBlock = Callable[[Context], Union[Awaitable, None]]
-CallableBlockException = Callable[[Exception, Context], Union[Awaitable, None]]
-
-
-LabelsGetter = Callable[[], Set[str]]
 
 
 class ContextFactory:

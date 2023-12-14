@@ -131,7 +131,7 @@ async def get_file(
     rest_of_path: str,
     configuration: Configuration = Depends(get_configuration),
 ):
-    async with Context.start_ep(request=request) as ctx:  # type: Context
+    async with Context.start_ep(request=request) as ctx:
         assets_db = configuration.assets_client
         permissions = await assets_db.get_permissions(
             asset_id=asset_id, headers=ctx.headers()
@@ -155,7 +155,7 @@ async def delete_files(
     asset_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
-    async with Context.start_ep(request=request) as ctx:  # type: Context
+    async with Context.start_ep(request=request) as ctx:
         assets_db = configuration.assets_client
         permissions = await assets_db.get_permissions(
             asset_id=asset_id, headers=ctx.headers()
@@ -177,7 +177,7 @@ async def zip_all_files(
     asset_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
-    async with Context.start_ep(request=request) as ctx:  # type: Context
+    async with Context.start_ep(request=request) as ctx:
         assets_db = configuration.assets_client
         permissions = await assets_db.get_permissions(
             asset_id=asset_id, headers=ctx.headers()

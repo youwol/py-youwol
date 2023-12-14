@@ -389,7 +389,7 @@ class Project(BaseModel):
     ) -> List[Path]:
         async with context.start(
             action="get_artifact_files", with_attributes={"artifact": artifact_id}
-        ) as ctx:  # type: Context
+        ) as ctx:
             env = await context.get("env", YouwolEnvironment)
             steps = self.get_flow_steps(flow_id=flow_id)
             step = next(

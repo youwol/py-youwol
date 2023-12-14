@@ -91,7 +91,7 @@ async def check_update(local_package: TargetPackage, context: Context):
             "packageName": name,
             "packageVersion": version,
         },
-    ) as ctx:  # type: Context
+    ) as ctx:
         package_id = encode_id(local_package.library_name)
 
         try:
@@ -190,7 +190,7 @@ async def download_package(
         async with caller_context.start(
             action="Sync. raw data of cdn-package",
             with_attributes={"asset_id": asset_id},
-        ) as ctx:  # type: Context
+        ) as ctx:
             library_id = encode_id(package_name)
             resp = await remote_gtw.get_cdn_backend_router().download_library(
                 library_id=library_id, version=version, headers=ctx.headers()
