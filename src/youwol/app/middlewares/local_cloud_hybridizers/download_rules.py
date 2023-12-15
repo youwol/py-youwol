@@ -64,9 +64,7 @@ class Download(AbstractLocalCloudDispatch):
             asset_id = raw_id
             raw_id = decode_id(asset_id)
         env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
-        async with context.start(
-            action="Download.apply"
-        ) as ctx:
+        async with context.start(action="Download.apply") as ctx:
             download_thread = await ctx.get("download_thread", AssetDownloadThread)
             is_downloading = download_thread.is_downloading(
                 url=incoming_request.url.path, kind=kind, raw_id=raw_id, env=env
@@ -141,9 +139,7 @@ class UpdateApplication(AbstractLocalCloudDispatch):
             # and not e.g. 'applications/foo/latest/dist/bundle.js'
             return None
 
-        async with context.start(
-            action="UpdateApplication.apply"
-        ) as ctx:
+        async with context.start(action="UpdateApplication.apply") as ctx:
             if all(elem not in semver for elem in ["*", "^", "x", "~"]):
                 await context.info(
                     "App with explicit version required -> proceed normally"

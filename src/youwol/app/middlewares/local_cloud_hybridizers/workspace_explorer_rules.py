@@ -59,9 +59,7 @@ class GetChildrenDispatch(AbstractLocalCloudDispatch):
         if not folder_id:
             return None
         await context.info(text="GetChildrenDispatch matching incoming request")
-        async with context.start(
-            action="GetChildrenDispatch.apply"
-        ) as ctx:
+        async with context.start(action="GetChildrenDispatch.apply") as ctx:
             env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
 
             local_gtw_treedb = LocalClients.get_gtw_treedb_client(env=env)

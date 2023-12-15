@@ -75,9 +75,7 @@ class GetLoadingGraph(AbstractLocalCloudDispatch):
         ):
             return None
 
-        async with context.start(
-            action="GetLoadingGraphDispatch.apply"
-        ) as ctx:
+        async with context.start(action="GetLoadingGraphDispatch.apply") as ctx:
             body_raw = await incoming_request.body()
             body = LoadingGraphBody(**(json.loads(body_raw.decode("utf-8"))))
             await ctx.info("Loading graph body", data=body)

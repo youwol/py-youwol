@@ -352,12 +352,12 @@ class PublishCdnLocalStep(PipelineStep):
                 else:
                     raise e
             return folder_id
+
     @staticmethod
     async def _try_download_package(package_name, context: Context) -> bool:
         async with context.start(
-                action="PublishCdnLocalStep._try_download_package"
+            action="PublishCdnLocalStep._try_download_package"
         ) as ctx:
-
             await ctx.info(
                 "The package has not been published yet, start creation. Attempt to download latest version "
                 "from remote environment..."
