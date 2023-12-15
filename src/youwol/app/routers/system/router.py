@@ -96,6 +96,10 @@ class LogsResponse(BaseModel):
     logs: List[Log]
 
 
+class NodeLogsResponse(BaseModel):
+    logs: List[NodeLogResponse]
+
+
 class PostLogBody(Log):
     traceUid: str
 
@@ -109,8 +113,8 @@ async def query_logs(
     request: Request,
     from_timestamp: int = Query(alias="from-timestamp", default=time.time()),
     max_count: int = Query(alias="max-count", default=1000),
-) -> LogsResponse:
-    response: Optional[LogsResponse] = None
+) -> NodeLogsResponse:
+    response: Optional[NodeLogsResponse] = None
     async with Context.start_ep(
         with_attributes={"fromTimestamp": from_timestamp, "maxCount": max_count},
         response=lambda: response,
@@ -125,7 +129,7 @@ async def query_logs(
             )
             if len(logs) > max_count:
                 break
-        response = LogsResponse(logs=logs)
+        response = NodeLogsResponse(logs=logs)
         return response
 
 
