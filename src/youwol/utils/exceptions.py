@@ -287,6 +287,8 @@ YouwolExceptions = [
 
 
 async def youwol_exception_handler(request: Request, exc: YouWolException):
+    if request.state and request.state.context:
+        await request.state.context.info("Trigger youwol_exception_handler")
     content = {
         "url": request.url.path,
         "exceptionType": exc.exceptionType,
