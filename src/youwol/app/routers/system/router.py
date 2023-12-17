@@ -2,6 +2,7 @@
 import os
 import time
 
+from enum import Enum
 from pathlib import Path
 
 # typing
@@ -88,8 +89,16 @@ class LeafLogResponse(Log):
     pass
 
 
+class NodeLogStatus(Enum):
+    Succeeded = "Succeeded"
+    Failed = "Failed"
+    Unresolved = "Unresolved"
+
+
 class NodeLogResponse(Log):
     failed: bool
+    future: bool
+    status: NodeLogStatus
 
 
 class LogsResponse(BaseModel):
@@ -124,8 +133,14 @@ async def query_logs(
         logs = []
         for log in reversed(logger.root_node_logs):
             failed = log.context_id in logger.errors
+            unresolved = log.context_id in logger.futures
             logs.append(
-                NodeLogResponse(**Log.from_log_entry(log).dict(), failed=failed)
+                NodeLogResponse(
+                    **Log.from_log_entry(log).dict(),
+                    failed=failed,
+                    future=unresolved,
+                    status=get_status(log, logger),
+                )
             )
             if len(logs) > max_count:
                 break
@@ -137,15 +152,19 @@ async def query_logs(
 async def get_logs(request: Request, parent_id: str):
     async with Context.start_ep(request=request) as ctx:
         logger = cast(InMemoryReporter, ctx.logs_reporters[0])
-        nodes_logs, leaf_logs, errors = (
+        nodes_logs, leaf_logs, errors, futures = (
             logger.node_logs,
             logger.leaf_logs,
             logger.errors,
+            logger.futures,
         )
 
         nodes: List[Log] = [
             NodeLogResponse(
-                **Log.from_log_entry(log).dict(), failed=log.context_id in errors
+                **Log.from_log_entry(log).dict(),
+                failed=log.context_id in errors,
+                future=log.context_id in futures,
+                status=get_status(log, logger),
             )
             for log in nodes_logs
             if log.parent_context_id == parent_id
@@ -183,3 +202,17 @@ async def clear_logs(request: Request):
     context = Context.from_request(request=request)
     logger = cast(InMemoryReporter, context.logs_reporters[0])
     logger.clear()
+
+
+def get_status(log: LogEntry, logger: InMemoryReporter):
+    if log.context_id in logger.errors:
+        return NodeLogStatus.Failed
+
+    if log.context_id in logger.futures:
+        if log.context_id in logger.futures_succeeded:
+            return NodeLogStatus.Succeeded
+        if log.context_id in logger.futures_failed:
+            return NodeLogStatus.Failed
+        return NodeLogStatus.Unresolved
+
+    return NodeLogStatus.Succeeded
