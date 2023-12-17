@@ -83,6 +83,11 @@ class RootMiddleware(BaseHTTPMiddleware):
             if response.status_code >= 400:
                 await ctx.failed(f"Request resolved to error {response.status_code}")
 
+            if response.status_code == 202:
+                await ctx.future(
+                    "202 : Request accepted, status not resolved yet"
+                )
+
             response.headers[YouwolHeaders.trace_id] = ctx.trace_uid
             response.headers["cross-origin-opener-policy"] = "same-origin"
             response.headers["cross-origin-embedder-policy"] = "require-corp"
