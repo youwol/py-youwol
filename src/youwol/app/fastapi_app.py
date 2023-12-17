@@ -44,6 +44,7 @@ from youwol.utils import (
     YouWolException,
     YouwolHeaders,
     factory_local_cache,
+    unexpected_exception_handler,
     youwol_exception_handler,
 )
 from youwol.utils.clients.oidc.tokens_manager import TokensManager
@@ -158,8 +159,12 @@ async def create_app():
     asyncio.ensure_future(ProjectLoader.initialize(env=env))
 
     @fastapi_app.exception_handler(YouWolException)
-    async def exception_handler(request: Request, exc: YouWolException):
+    async def expected_exception(request: Request, exc: YouWolException):
         return await youwol_exception_handler(request, exc)
+
+    @fastapi_app.exception_handler(Exception)
+    async def unexpected_exception(request: Request, exc: Exception):
+        return await unexpected_exception_handler(request, exc)
 
     @fastapi_app.get(api_configuration.base_path + "/healthz")
     async def healthz():
