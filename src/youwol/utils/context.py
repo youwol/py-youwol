@@ -401,7 +401,8 @@ class ScopedContext(Context):
             )
             await ScopedContext.__execute_block(self, self.on_exception, exc)
             await ScopedContext.__execute_block(self, self.on_exit)
-            raise exc
+            # False indicates that exception has not been handled
+            return False
 
         await self.info(
             text=f"{self.action} in {int(1000 * (time.time() - self.start_time))} ms",
