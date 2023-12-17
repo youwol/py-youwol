@@ -69,6 +69,9 @@ class Label(Enum):
     DONE = "DONE"
     EXCEPTION = "EXCEPTION"
     FAILED = "FAILED"
+    FUTURE = "FUTURE"
+    FUTURE_SUCCEEDED = "FUTURE_SUCCEEDED"
+    FUTURE_FAILED = "FUTURE_FAILED"
     MIDDLEWARE = "MIDDLEWARE"
     API_GATEWAY = "API_GATEWAY"
     ADMIN = "ADMIN"
@@ -314,6 +317,36 @@ class Context:
             level=LogLevel.ERROR, text=text, labels=[Label.FAILED, *labels], data=data
         )
 
+    async def future(
+        self,
+        text: str,
+        future: asyncio.Future = None,
+        labels: List[StringLike] = None,
+        data: JsonLike = None,
+    ):
+        labels = labels or []
+        await self.log(
+            level=LogLevel.INFO, text=text, labels=[Label.FUTURE, *labels], data=data
+        )
+        if future is None:
+            return
+        try:
+            await future
+            await self.log(
+                level=LogLevel.INFO,
+                text=f"Future '{text}' resolved successfully",
+                labels=[Label.FUTURE_SUCCEEDED, *labels],
+                data=data,
+            )
+        except Exception:
+            await self.log(
+                level=LogLevel.ERROR,
+                text=f"Future '{text}' resolved with exception",
+                labels=[Label.FUTURE_FAILED, *labels],
+                data=data,
+            )
+            raise
+
     async def get(self, att_name: str, object_type: T) -> T():
         result = self.with_data[att_name]
         if isinstance(result, Callable):
@@ -525,6 +558,9 @@ class InMemoryReporter(ContextReporter):
     leaf_logs: List[LogEntry] = []
 
     errors = set()
+    futures = set()
+    futures_succeeded = set()
+    futures_failed = set()
 
     def clear(self):
         self.root_node_logs = []
@@ -551,6 +587,15 @@ class InMemoryReporter(ContextReporter):
 
         if str(Label.FAILED) in entry.labels:
             self.errors.add(entry.context_id)
+
+        if str(Label.FUTURE) in entry.labels:
+            self.futures.add(entry.context_id)
+
+        if str(Label.FUTURE_SUCCEEDED) in entry.labels:
+            self.futures_succeeded.add(entry.context_id)
+
+        if str(Label.FUTURE_FAILED) in entry.labels:
+            self.futures_failed.add(entry.context_id)
 
         self.root_node_logs = self.resize_if_needed(self.root_node_logs)
         self.leaf_logs = self.resize_if_needed(self.leaf_logs)
