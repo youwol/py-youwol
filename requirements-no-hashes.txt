@@ -212,7 +212,7 @@ pyjwt[crypto]==2.4.0
     #   youwol (pyproject.toml)
 pylint==3.0.3
     # via youwol (pyproject.toml)
-pyparsing==3.1.0
+pyparsing==3.1.1
     # via
     #   pip-requirements-parser
     #   youwol (pyproject.toml)
