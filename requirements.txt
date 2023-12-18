@@ -1213,9 +1213,9 @@ types-colorama==0.4.15.11 \
     --hash=sha256:a9421eb24d9cfc584880dc1d33b7fd406a14227c1f99f50c5ab9265e04d07638 \
     --hash=sha256:d1e37571a19e152c930b3e789c316e9332e51a43bfcd4470b98225be974fb90c
     # via youwol (pyproject.toml)
-types-pillow==9.5.0.1 \
-    --hash=sha256:205b074a344fa8e26555c4f988adc66dceab3ba789ed3af7ca1dd4318a707ec0 \
-    --hash=sha256:c23992c26ce52a7020444d1e7fbdc99e9fab50592806123039864fd4608b6793
+types-pillow==10.1.0.2 \
+    --hash=sha256:131078ffa547bf9a201d39ffcdc65633e108148085f4f1b07d4647fcfec6e923 \
+    --hash=sha256:525c1c5ee67b0ac1721c40d2bc618226ef2123c347e527e14e05b920721a13b9
     # via youwol (pyproject.toml)
 types-psutil==5.9.5.17 \
     --hash=sha256:2161d166256084acf629d30aaf6bda8bee726ae1fea530559650281056b491fc \
