@@ -55,7 +55,7 @@ click==8.1.7
     #   black
     #   pip-tools
     #   uvicorn
-colorama==0.4.5
+colorama==0.4.6
     # via youwol (pyproject.toml)
 colorlog==6.8.0
     # via youwol (pyproject.toml)
