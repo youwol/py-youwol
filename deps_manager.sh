@@ -186,21 +186,27 @@ pip_upgrade_package() {
   extras=$3
   no_hashes=$4
 
-  opts="--upgrade-package ${package} ${pip_compile_default_opts}"
+  if grep --quiet "^${package}==" "${out}"; then
 
-  if [ -z "${no_hashes}" ]; then
-    opts="${opts} --generate-hashes"
+    opts="--upgrade-package ${package} ${pip_compile_default_opts}"
+
+    if [ -z "${no_hashes}" ]; then
+      opts="${opts} --generate-hashes"
+    fi
+
+    if [ -n "${extras}" ]; then
+      opts="${opts} ${extras}"
+    fi
+
+    echo "[upgrade package '${package}'] '${out}'"
+    pip-compile \
+      ${opts} \
+      --output-file="${out}" \
+      pyproject.toml
+
+  else
+    echo "[upgrade package '${package}'] Skipping '${out}'"
   fi
-
-  if [ -n "${extras}" ]; then
-    opts="${opts} ${extras}"
-  fi
-
-  echo "[upgrade package '${package}'] '${out}'"
-  pip-compile \
-    ${opts} \
-    --output-file="${out}" \
-    pyproject.toml
 }
 
 do_upgrade_package() {
@@ -220,7 +226,7 @@ do_upgrade_package() {
       pip_upgrade_package "${package}" "${out_no_hashes}" "${extras_no_hashes}" "no_hashes"
 
       echo
-      echo "Package '${package}' upgraded and requirements files updated."
+      echo "Package '${package}' upgraded and requirement(s) files updated."
       echo "You should run pip-sync now :"
       echo
       echo "    pip-sync requirements.txt"
