@@ -330,22 +330,38 @@ class Context:
         )
         if future is None:
             return
-        try:
-            await future
-            await self.log(
-                level=LogLevel.INFO,
-                text=f"Future '{text}' resolved successfully",
-                labels=[Label.FUTURE_SUCCEEDED, *labels],
-                data=data,
-            )
-        except Exception:
-            await self.log(
-                level=LogLevel.ERROR,
-                text=f"Future '{text}' resolved with exception",
-                labels=[Label.FUTURE_FAILED, *labels],
-                data=data,
-            )
-            raise
+
+        def done_callback(task):
+            if task.cancelled():
+                asyncio.ensure_future(
+                    self.log(
+                        level=LogLevel.WARNING,
+                        text=f"Future '{text}' cancelled",
+                        labels=[*labels],
+                        data=data,
+                    )
+                )
+            elif task.exception() is not None:
+                asyncio.ensure_future(
+                    self.log(
+                        level=LogLevel.ERROR,
+                        text=f"Future '{text}' resolved with exception",
+                        labels=[Label.FUTURE_FAILED, *labels],
+                        data=data,
+                    )
+                )
+                raise task.exception()
+            else:
+                asyncio.ensure_future(
+                    self.log(
+                        level=LogLevel.INFO,
+                        text=f"Future '{text}' resolved successfully",
+                        labels=[Label.FUTURE_SUCCEEDED, *labels],
+                        data=data,
+                    )
+                )
+
+        future.add_done_callback(done_callback)
 
     async def get(self, att_name: str, object_type: T) -> T():
         result = self.with_data[att_name]
