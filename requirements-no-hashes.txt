@@ -65,7 +65,7 @@ cryptography==41.0.7
     #   secretstorage
     #   types-pyopenssl
     #   types-redis
-cyclonedx-python-lib==4.2.2
+cyclonedx-python-lib==4.2.3
     # via pip-audit
 deepdiff==5.8.1
     # via youwol (pyproject.toml)

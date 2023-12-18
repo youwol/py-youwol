@@ -385,9 +385,9 @@ cryptography==41.0.7 \
     #   secretstorage
     #   types-pyopenssl
     #   types-redis
-cyclonedx-python-lib==4.2.2 \
-    --hash=sha256:d8fd40a94ab9130e9d1292ecebd35bd081f8a2d589c5259eaf7ec5caa5e95a43 \
-    --hash=sha256:fabc09bedc1e5aa2244d16bb72faaf88d2ff918c9a5f5c1a9026f75d1f896015
+cyclonedx-python-lib==4.2.3 \
+    --hash=sha256:904068b55d1665f0ea96f38307603cc14f95c3b421f1687fc2411326aefde3a6 \
+    --hash=sha256:e9b923af525b6acf7bab917a35360b4b562b85dc15fde9eaa500828949adf73a
     # via pip-audit
 deepdiff==5.8.1 \
     --hash=sha256:8d4eb2c4e6cbc80b811266419cb71dd95a157094a3947ccf937a94d44943c7b8 \
