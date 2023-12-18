@@ -270,7 +270,7 @@ twine==4.0.2
     # via youwol (pyproject.toml)
 types-appdirs==1.4.3.5
     # via youwol (pyproject.toml)
-types-colorama==0.4.15.11
+types-colorama==0.4.15.12
     # via youwol (pyproject.toml)
 types-pillow==10.1.0.2
     # via youwol (pyproject.toml)
