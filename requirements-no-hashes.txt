@@ -85,7 +85,7 @@ frozenlist==1.4.0
     # via
     #   aiohttp
     #   aiosignal
-h11==0.13.0
+h11==0.14.0
     # via uvicorn
 html5lib==1.1
     # via pip-audit
