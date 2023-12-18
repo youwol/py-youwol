@@ -16,6 +16,10 @@ anyio==3.6.1
     # via starlette
 appdirs==1.4.4
     # via youwol (pyproject.toml)
+argon2-cffi==23.1.0
+    # via minio
+argon2-cffi-bindings==21.2.0
+    # via argon2-cffi
 asgiref==3.7.2
     # via youwol (pyproject.toml)
 astroid==3.0.2
@@ -43,7 +47,9 @@ certifi==2023.11.17
     #   minio
     #   requests
 cffi==1.16.0
-    # via cryptography
+    # via
+    #   argon2-cffi-bindings
+    #   cryptography
 charset-normalizer==2.0.12
     # via requests
 click==8.1.7
@@ -128,7 +134,7 @@ mccabe==0.7.0
     # via pylint
 mdurl==0.1.2
     # via markdown-it-py
-minio==7.1.9
+minio==7.2.0
     # via youwol (pyproject.toml)
 more-itertools==10.1.0
     # via jaraco-classes
@@ -189,7 +195,9 @@ pycodestyle==2.11.1
 pycparser==2.21
     # via cffi
 pycryptodome==3.19.0
-    # via youwol (pyproject.toml)
+    # via
+    #   minio
+    #   youwol (pyproject.toml)
 pydantic==1.10.9
     # via fastapi
 pydocstyle==6.3.0
