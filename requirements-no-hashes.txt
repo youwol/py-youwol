@@ -268,7 +268,7 @@ types-colorama==0.4.15.11
     # via youwol (pyproject.toml)
 types-pillow==9.5.0.1
     # via youwol (pyproject.toml)
-types-psutil==5.9.5.12
+types-psutil==5.9.5.17
     # via youwol (pyproject.toml)
 types-pyopenssl==23.1.0.2
     # via types-redis
