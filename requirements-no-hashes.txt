@@ -278,7 +278,7 @@ types-redis==4.5.4.1
     # via youwol (pyproject.toml)
 types-setuptools==67.7.0.0
     # via youwol (pyproject.toml)
-types-tqdm==4.65.0.1
+types-tqdm==4.66.0.5
     # via youwol (pyproject.toml)
 types-ujson==5.9.0.0
     # via youwol (pyproject.toml)

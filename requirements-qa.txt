@@ -1082,9 +1082,9 @@ types-setuptools==67.7.0.0 \
     --hash=sha256:02ee794d41c282ecfc99e09d8115ca4c3c4395a9747d1a35fa4a6f243d7585e6 \
     --hash=sha256:f59b03c786510176c7601578d84d5e6c58e985de331f08036b2fe008408a63c1
     # via youwol (pyproject.toml)
-types-tqdm==4.65.0.1 \
-    --hash=sha256:4894fe2b1581374ce9bca3f23d53729e4409d69b352e3d5db5829fa19482962c \
-    --hash=sha256:972dd871b6b2b8ff32f1f0f6fdfdf5a4ba2b0b848453689391bec8bd858fb1c4
+types-tqdm==4.66.0.5 \
+    --hash=sha256:74bd7e469238c28816300f72a9b713d02036f6b557734616430adb7b7e74112c \
+    --hash=sha256:d2c38085bec440e8ad1e94e8619f7cb3d1dd0a7ee06a863ccd0610a5945046ef
     # via youwol (pyproject.toml)
 types-ujson==5.9.0.0 \
     --hash=sha256:7e7042454dc7cd7f31b09c420d7caf36b93d30bdf4b8db93791bd0561713d017 \
