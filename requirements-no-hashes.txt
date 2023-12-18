@@ -210,7 +210,7 @@ pyparsing==3.1.0
     #   youwol (pyproject.toml)
 pyproject-hooks==1.0.0
     # via build
-python-daemon==2.3.0
+python-daemon==3.0.1
     # via youwol (pyproject.toml)
 python-multipart==0.0.5
     # via youwol (pyproject.toml)

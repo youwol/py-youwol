@@ -753,9 +753,9 @@ pyproject-hooks==1.0.0 \
     --hash=sha256:283c11acd6b928d2f6a7c73fa0d01cb2bdc5f07c57a2eeb6e83d5e56b97976f8 \
     --hash=sha256:f271b298b97f5955d53fb12b72c1fb1948c22c1a6b70b315c54cedaca0264ef5
     # via build
-python-daemon==2.3.0 \
-    --hash=sha256:191c7b67b8f7aac58849abf54e19fe1957ef7290c914210455673028ad454989 \
-    --hash=sha256:bda993f1623b1197699716d68d983bb580043cf2b8a66a01274d9b8297b0aeaf
+python-daemon==3.0.1 \
+    --hash=sha256:42bb848a3260a027fa71ad47ecd959e471327cb34da5965962edd5926229f341 \
+    --hash=sha256:6c57452372f7eaff40934a1c03ad1826bf5e793558e87fef49131e6464b4dae5
     # via youwol (pyproject.toml)
 python-multipart==0.0.5 \
     --hash=sha256:f7bb5f611fc600d15fa47b3974c8aa16e93724513b49b5f95c81e6624c83fa43
