@@ -89,7 +89,7 @@ h11==0.14.0
     # via uvicorn
 html5lib==1.1
     # via pip-audit
-idna==3.3
+idna==3.6
     # via
     #   anyio
     #   requests
