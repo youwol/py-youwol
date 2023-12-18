@@ -303,7 +303,7 @@ wheel==0.42.0
     # via pip-tools
 yamllint==1.33.0
     # via youwol (pyproject.toml)
-yarl==1.9.2
+yarl==1.9.4
     # via aiohttp
 zipp==3.17.0
     # via importlib-metadata
