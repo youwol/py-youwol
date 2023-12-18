@@ -890,7 +890,7 @@ zipp==3.16.2 \
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==65.6.3 \
-    --hash=sha256:57f6f22bde4e042978bcd50176fdb381d7c21a9efa4041202288d3737a0c6a54 \
-    --hash=sha256:a7620757bf984b58deaf32fc8a4577a9bbc0850cf92c20e1ce41c38c19e5fb75
+setuptools==69.0.2 \
+    --hash=sha256:1e8fdff6797d3865f37397be788a4e3cba233608e9b509382a2777d25ebde7f2 \
+    --hash=sha256:735896e78a4742605974de002ac60562d286fa8051a7e2299445e8e8fbb01aa6
     # via python-daemon
