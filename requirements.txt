@@ -523,9 +523,9 @@ keyring==24.3.0 \
     # via
     #   twine
     #   youwol (pyproject.toml)
-license-expression==30.1.1 \
-    --hash=sha256:42375df653ad85e6f5b4b0385138b2dbea1f5d66360783d8625c3e4f97f11f0c \
-    --hash=sha256:8d7e5e2de0d04fc104a4f952c440e8f08a5ba63480a0dad015b294770b7e58ec
+license-expression==30.2.0 \
+    --hash=sha256:1a7dc2bb2d09cdc983d072e4f9adc787e107e09def84cbb3919baaaf4f8e6fa1 \
+    --hash=sha256:599928edd995c43fc335e0af342076144dc71cb858afa1ed9c1c30c4e81794f5
     # via cyclonedx-python-lib
 lockfile==0.12.2 \
     --hash=sha256:6aed02de03cba24efabcd600b30540140634fc06cfa603822d508d5361e9f799 \
