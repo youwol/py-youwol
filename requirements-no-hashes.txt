@@ -98,7 +98,7 @@ importlib-metadata==7.0.0
     # via
     #   keyring
     #   twine
-isort==5.12.0
+isort==5.13.2
     # via
     #   pylint
     #   youwol (pyproject.toml)
