@@ -15,7 +15,6 @@ from youwol.app.routers.native_backends_config import assets_backend_config_py_y
 from youwol.backends.assets import put_access_policy_impl
 
 # Youwol utilities
-from youwol.utils import YouwolHeaders
 from youwol.utils.clients.assets.assets import AssetsClient
 from youwol.utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from youwol.utils.clients.treedb.treedb import TreeDbClient
@@ -172,7 +171,7 @@ async def sync_explorer_data(
         await local_treedb.create_item(
             folder_id=remote_item.folderId,
             body=body,
-            headers={**ctx.headers(), YouwolHeaders.muted_http_errors: ""},
+            headers=ctx.headers(),
         )
 
 

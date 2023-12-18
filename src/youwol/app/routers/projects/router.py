@@ -268,7 +268,8 @@ async def run_pipeline_step_implementation(
     project_id: str,
     flow_id: str,
     step_id: str,
-    run_upstream: bool = Query(alias="run-upstream", default=False),
+    run_upstream: bool,
+    context: Context,
 ):
     async def on_enter(ctx_enter):
         env_enter = await ctx_enter.get("env", YouwolEnvironment)
@@ -321,14 +322,11 @@ async def run_pipeline_step_implementation(
                 ]
             )
 
-    async with Context.start_ep(
-        request=request,
-        action="Run pipeline-step",
+    async with context.start(
+        action="run_pipeline_step_implementation",
         with_labels=[str(Label.RUN_PIPELINE_STEP), str(Label.PIPELINE_STEP_RUNNING)],
-        with_attributes={"projectId": project_id, "flowId": flow_id, "stepId": step_id},
         on_enter=on_enter,
         on_exit=on_exit,
-        with_reporters=[LogsStreamer()],
     ) as ctx:
         env = await ctx.get("env", YouwolEnvironment)
         projects = await ProjectLoader.get_cached_projects()
@@ -414,16 +412,23 @@ async def run_pipeline_step(
     step_id: str,
     run_upstream: bool = Query(alias="run-upstream", default=False),
 ):
-    asyncio.ensure_future(
-        run_pipeline_step_implementation(
+    async with Context.start_ep(
+        request=request,
+        action="run_pipeline_step",
+        with_attributes={"projectId": project_id, "flowId": flow_id, "stepId": step_id},
+        with_reporters=[LogsStreamer()],
+    ) as ctx:
+        task = run_pipeline_step_implementation(
             request=request,
             project_id=project_id,
             flow_id=flow_id,
             step_id=step_id,
             run_upstream=run_upstream,
+            context=ctx,
         )
-    )
-    return Response(status_code=202)
+        future = asyncio.ensure_future(task)
+        await ctx.future("Async run step scheduled", future=future)
+        return Response(status_code=202)
 
 
 @router.get("/{project_id}/cdn", response_model=CdnResponse, summary="status")

@@ -112,12 +112,10 @@ async def clone_project(git_url: str, branch: str, new_project_name: str, ctx: C
 
 async def purge_downloads(context: Context):
     async with context.start(
-        action="purge_downloads", muted_http_errors={404}
+        action="purge_downloads"
     ) as ctx:  # type: Context
         env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
-        assets_gtw = await RemoteClients.get_assets_gateway_client(
-            remote_host=env.get_remote_info().host
-        )
+        assets_gtw = await RemoteClients.get_twin_assets_gateway_client(env=env)
         headers = ctx.headers()
         default_drive = (
             await LocalClients.get_assets_gateway_client(env)

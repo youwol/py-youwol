@@ -40,14 +40,12 @@ class RootMiddleware(BaseHTTPMiddleware):
     def get_context(self, request: Request):
         root_id = YouwolHeaders.get_correlation_id(request)
         trace_id = YouwolHeaders.get_trace_id(request)
-        muted_http_errors = YouwolHeaders.get_muted_http_errors(request)
         return ContextFactory.get_instance(
             request=request,
             logs_reporters=self.logs_reporters,
             data_reporters=self.data_reporters,
             parent_uid=root_id,
             trace_uid=trace_id if trace_id else str(uuid.uuid4()),
-            muted_http_errors=muted_http_errors,
             uid=root_id if root_id else "root",
         )
 
@@ -84,6 +82,9 @@ class RootMiddleware(BaseHTTPMiddleware):
             # Only 4xx (client error) and 5xx (server error) are considered failure
             if response.status_code >= 400:
                 await ctx.failed(f"Request resolved to error {response.status_code}")
+
+            if response.status_code == 202:
+                await ctx.future("202 : Request accepted, status not resolved yet")
 
             response.headers[YouwolHeaders.trace_id] = ctx.trace_uid
             response.headers["cross-origin-opener-policy"] = "same-origin"

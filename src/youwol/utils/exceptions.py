@@ -1,3 +1,6 @@
+# standard library
+import traceback
+
 # typing
 from typing import Any, Dict, List
 
@@ -5,7 +8,7 @@ from typing import Any, Dict, List
 from aiohttp import ClientResponse, ContentTypeError
 from fastapi import HTTPException, Request
 from pydantic import BaseModel
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, PlainTextResponse
 
 
 class YouWolException(HTTPException):
@@ -287,12 +290,28 @@ YouwolExceptions = [
 
 
 async def youwol_exception_handler(request: Request, exc: YouWolException):
+    if request.state and request.state.context:
+        await request.state.context.info("Trigger youwol_exception_handler")
     content = {
         "url": request.url.path,
         "exceptionType": exc.exceptionType,
         "detail": exc.detail,
     }
     return JSONResponse(status_code=exc.status_code, content=content)
+
+
+async def unexpected_exception_handler(request: Request, exc: Exception):
+    if request.state and request.state.context:
+        await request.state.context.info("Trigger youwol_developer_exception_handler")
+    print(traceback.format_exc())
+    print(
+        "Please fill a new issue (https://github.com/youwol/py-youwol/issues) by providing the above stack trace.\n"
+    )
+    return PlainTextResponse(
+        status_code=500,
+        content=f"Exception in implementation caught: \n {exc}\n"
+        f"Refer to the py-youwol terminal for stack trace.",
+    )
 
 
 async def raise_exception_from_response(raw_resp: ClientResponse, **kwargs):

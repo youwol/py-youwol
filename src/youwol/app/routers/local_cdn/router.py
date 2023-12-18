@@ -155,7 +155,6 @@ async def download(request: Request, body: DownloadPackagesBody):
         action="download packages",
         with_attributes={"topic": "updatesCdn"},
         with_reporters=[LogsStreamer()],
-        muted_http_errors={404},
     ) as ctx:
         await ctx.info(
             text=f"Proceed to {len(body.packages)} packages download", data=body

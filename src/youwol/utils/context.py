@@ -69,6 +69,9 @@ class Label(Enum):
     DONE = "DONE"
     EXCEPTION = "EXCEPTION"
     FAILED = "FAILED"
+    FUTURE = "FUTURE"
+    FUTURE_SUCCEEDED = "FUTURE_SUCCEEDED"
+    FUTURE_FAILED = "FUTURE_FAILED"
     MIDDLEWARE = "MIDDLEWARE"
     API_GATEWAY = "API_GATEWAY"
     ADMIN = "ADMIN"
@@ -152,7 +155,6 @@ class Context:
     uid: Union[str, None] = "root"
     parent_uid: Union[str, None] = None
     trace_uid: Union[str, None] = None
-    muted_http_errors: Set[int] = field(default_factory=set)
 
     with_data: Dict[str, DataType] = field(default_factory=dict)
     with_attributes: JSON = field(default_factory=dict)
@@ -167,7 +169,6 @@ class Context:
     def start(
         self,
         action: str,
-        muted_http_errors: Set[int] = None,
         with_labels: List[StringLike] = None,
         with_attributes: JSON = None,
         with_data: Dict[str, DataType] = None,
@@ -186,11 +187,6 @@ class Context:
             if with_reporters is None
             else self.logs_reporters + with_reporters
         )
-        muted_http_errors = self.muted_http_errors.union(muted_http_errors or set())
-        if self.request:
-            YouwolHeaders.patch_request_mute_http_headers(
-                request=self.request, status_muted=muted_http_errors
-            )
 
         return ScopedContext(
             action=action,
@@ -203,7 +199,6 @@ class Context:
             request=self.request,
             parent_uid=self.uid,
             trace_uid=self.trace_uid,
-            muted_http_errors=self.muted_http_errors.union(muted_http_errors or set()),
             with_labels=[*self.with_labels, *with_labels],
             with_attributes={**self.with_attributes, **with_attributes},
             with_data={**self.with_data, **with_data},
@@ -215,7 +210,6 @@ class Context:
     def start_ep(
         request: Request,
         action: str = None,
-        muted_http_errors: Set[int] = None,
         with_labels: List[StringLike] = None,
         with_attributes: JSON = None,
         body: BaseModel = None,
@@ -228,10 +222,6 @@ class Context:
         action = action or f"{request.method}: {request.scope['path']}"
         with_labels = with_labels or []
         with_attributes = with_attributes or {}
-
-        muted_http_errors = YouwolHeaders.get_muted_http_errors(request=request).union(
-            muted_http_errors or set()
-        )
 
         async def on_exit_fct(ctx):
             if response:
@@ -247,7 +237,6 @@ class Context:
 
         return context.start(
             action=action,
-            muted_http_errors=muted_http_errors,
             with_labels=[Label.END_POINT, *with_labels],
             with_attributes={"method": request.method, **with_attributes},
             with_reporters=with_reporters,
@@ -328,6 +317,52 @@ class Context:
             level=LogLevel.ERROR, text=text, labels=[Label.FAILED, *labels], data=data
         )
 
+    async def future(
+        self,
+        text: str,
+        future: asyncio.Future = None,
+        labels: List[StringLike] = None,
+        data: JsonLike = None,
+    ):
+        labels = labels or []
+        await self.log(
+            level=LogLevel.INFO, text=text, labels=[Label.FUTURE, *labels], data=data
+        )
+        if future is None:
+            return
+
+        def done_callback(task):
+            if task.cancelled():
+                asyncio.ensure_future(
+                    self.log(
+                        level=LogLevel.WARNING,
+                        text=f"Future '{text}' cancelled",
+                        labels=[*labels],
+                        data=data,
+                    )
+                )
+            elif task.exception() is not None:
+                asyncio.ensure_future(
+                    self.log(
+                        level=LogLevel.ERROR,
+                        text=f"Future '{text}' resolved with exception",
+                        labels=[Label.FUTURE_FAILED, *labels],
+                        data=data,
+                    )
+                )
+                raise task.exception()
+            else:
+                asyncio.ensure_future(
+                    self.log(
+                        level=LogLevel.INFO,
+                        text=f"Future '{text}' resolved successfully",
+                        labels=[Label.FUTURE_SUCCEEDED, *labels],
+                        data=data,
+                    )
+                )
+
+        future.add_done_callback(done_callback)
+
     async def get(self, att_name: str, object_type: T) -> T():
         result = self.with_data[att_name]
         if isinstance(result, Callable):
@@ -356,9 +391,6 @@ class Context:
             **headers,
             YouwolHeaders.correlation_id: self.uid,
             YouwolHeaders.trace_id: self.trace_uid,
-            YouwolHeaders.muted_http_errors: ",".join(
-                str(s) for s in self.muted_http_errors
-            ),
             **{k.lower(): v for k, v in self.with_headers.items()},
         }
 
@@ -418,12 +450,8 @@ class ScopedContext(Context):
             )
             await ScopedContext.__execute_block(self, self.on_exception, exc)
             await ScopedContext.__execute_block(self, self.on_exit)
-            muted = False
-            if isinstance(exc, HTTPException):
-                muted = exc.status_code in self.muted_http_errors
-            if not muted:
-                traceback.print_exc()
-            raise exc
+            # False indicates that exception has not been handled
+            return False
 
         await self.info(
             text=f"{self.action} in {int(1000 * (time.time() - self.start_time))} ms",
@@ -546,6 +574,9 @@ class InMemoryReporter(ContextReporter):
     leaf_logs: List[LogEntry] = []
 
     errors = set()
+    futures = set()
+    futures_succeeded = set()
+    futures_failed = set()
 
     def clear(self):
         self.root_node_logs = []
@@ -572,6 +603,15 @@ class InMemoryReporter(ContextReporter):
 
         if str(Label.FAILED) in entry.labels:
             self.errors.add(entry.context_id)
+
+        if str(Label.FUTURE) in entry.labels:
+            self.futures.add(entry.context_id)
+
+        if str(Label.FUTURE_SUCCEEDED) in entry.labels:
+            self.futures_succeeded.add(entry.context_id)
+
+        if str(Label.FUTURE_FAILED) in entry.labels:
+            self.futures_failed.add(entry.context_id)
 
         self.root_node_logs = self.resize_if_needed(self.root_node_logs)
         self.leaf_logs = self.resize_if_needed(self.leaf_logs)

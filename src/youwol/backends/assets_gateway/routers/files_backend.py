@@ -66,7 +66,7 @@ async def upload(
     configuration: Configuration = Depends(get_configuration),
 ):
     async with Context.start_ep(
-        request=request, muted_http_errors={404}
+        request=request,
     ) as ctx:  # type: Context
         form = await request.form()
         content = await form.get("file").read()
