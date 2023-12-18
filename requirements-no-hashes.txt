@@ -138,7 +138,7 @@ multidict==6.0.2
     # via
     #   aiohttp
     #   yarl
-mypy==1.2.0
+mypy==1.7.1
     # via youwol (pyproject.toml)
 mypy-extensions==1.0.0
     # via
