@@ -276,7 +276,7 @@ types-pillow==10.1.0.2
     # via youwol (pyproject.toml)
 types-psutil==5.9.5.17
     # via youwol (pyproject.toml)
-types-pyopenssl==23.1.0.2
+types-pyopenssl==23.3.0.0
     # via types-redis
 types-pyyaml==6.0.12.9
     # via youwol (pyproject.toml)
