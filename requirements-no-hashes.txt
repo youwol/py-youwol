@@ -148,7 +148,7 @@ nh3==0.2.15
     # via readme-renderer
 ordered-set==4.1.0
     # via deepdiff
-packageurl-python==0.11.2
+packageurl-python==0.13.1
     # via cyclonedx-python-lib
 packaging==23.2
     # via
