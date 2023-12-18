@@ -138,7 +138,7 @@ more-itertools==10.1.0
     # via jaraco-classes
 msgpack==1.0.4
     # via cachecontrol
-multidict==6.0.2
+multidict==6.0.4
     # via
     #   aiohttp
     #   yarl
