@@ -10,9 +10,9 @@ aiohttp==3.9.1
     #   youwol (pyproject.toml)
 aiosignal==1.3.1
     # via aiohttp
-aiostream==0.4.5
+aiostream==0.4.4
     # via youwol (pyproject.toml)
-anyio==4.1.0
+anyio==3.6.1
     # via starlette
 appdirs==1.4.4
     # via youwol (pyproject.toml)
@@ -22,15 +22,15 @@ argon2-cffi-bindings==21.2.0
     # via argon2-cffi
 asgiref==3.7.2
     # via youwol (pyproject.toml)
-astroid==3.0.1
+astroid==3.0.2
     # via pylint
-attrs==23.1.0
+attrs==21.4.0
     # via aiohttp
-black[d]==23.11.0
+black[d]==23.12.0
     # via youwol (pyproject.toml)
 boolean-py==4.0
     # via license-expression
-brotli==1.1.0
+brotli==1.0.9
     # via youwol (pyproject.toml)
 build==1.0.3
     # via
@@ -48,7 +48,7 @@ cffi==1.16.0
     # via
     #   argon2-cffi-bindings
     #   cryptography
-charset-normalizer==3.3.2
+charset-normalizer==2.0.12
     # via requests
 click==8.1.7
     # via
@@ -59,7 +59,7 @@ colorama==0.4.6
     # via youwol (pyproject.toml)
 colorlog==6.8.0
     # via youwol (pyproject.toml)
-coverage==7.3.2
+coverage==7.3.3
     # via youwol (pyproject.toml)
 cowpy==1.1.5
     # via youwol (pyproject.toml)
@@ -83,7 +83,7 @@ docutils==0.20.1
     #   readme-renderer
 fastapi==0.95.2
     # via youwol (pyproject.toml)
-filelock==3.13.1
+filelock==3.12.4
     # via cachecontrol
 frozenlist==1.4.0
     # via
@@ -102,7 +102,7 @@ importlib-metadata==7.0.0
     # via
     #   keyring
     #   twine
-isort==5.12.0
+isort==5.13.2
     # via
     #   pylint
     #   youwol (pyproject.toml)
@@ -136,7 +136,7 @@ minio==7.2.0
     # via youwol (pyproject.toml)
 more-itertools==10.1.0
     # via jaraco-classes
-msgpack==1.0.7
+msgpack==1.0.4
     # via cachecontrol
 multidict==6.0.4
     # via
@@ -148,11 +148,11 @@ mypy-extensions==1.0.0
     # via
     #   black
     #   mypy
-nh3==0.2.14
+nh3==0.2.15
     # via readme-renderer
 ordered-set==4.1.0
     # via deepdiff
-packageurl-python==0.11.2
+packageurl-python==0.13.1
     # via cyclonedx-python-lib
 packaging==23.2
     # via
@@ -160,7 +160,7 @@ packaging==23.2
     #   build
     #   pip-audit
     #   pip-requirements-parser
-pathspec==0.11.2
+pathspec==0.12.1
     # via
     #   black
     #   yamllint
@@ -184,7 +184,7 @@ platformdirs==4.1.0
     #   pylint
 prometheus-client==0.19.0
     # via youwol (pyproject.toml)
-psutil==5.9.6
+psutil==5.9.7
     # via youwol (pyproject.toml)
 py-serializable==0.11.1
     # via cyclonedx-python-lib
@@ -196,7 +196,7 @@ pycryptodome==3.19.0
     # via
     #   minio
     #   youwol (pyproject.toml)
-pydantic==1.10.13
+pydantic==1.10.9
     # via fastapi
 pydocstyle==6.3.0
     # via youwol (pyproject.toml)
@@ -204,11 +204,11 @@ pygments==2.17.2
     # via
     #   readme-renderer
     #   rich
-pyjwt[crypto]==2.8.0
+pyjwt[crypto]==2.4.0
     # via
     #   pyjwt
     #   youwol (pyproject.toml)
-pylint==3.0.2
+pylint==3.0.3
     # via youwol (pyproject.toml)
 pyparsing==3.1.1
     # via
@@ -216,7 +216,7 @@ pyparsing==3.1.1
     #   youwol (pyproject.toml)
 pyproject-hooks==1.0.0
     # via build
-python-daemon==2.3.2
+python-daemon==3.0.1
     # via youwol (pyproject.toml)
 python-multipart==0.0.5
     # via youwol (pyproject.toml)
@@ -286,9 +286,9 @@ types-setuptools==69.0.0.0
     # via youwol (pyproject.toml)
 types-tqdm==4.66.0.5
     # via youwol (pyproject.toml)
-types-ujson==5.8.0.1
+types-ujson==5.9.0.0
     # via youwol (pyproject.toml)
-typing-extensions==4.8.0
+typing-extensions==4.9.0
     # via
     #   mypy
     #   pydantic
@@ -297,13 +297,13 @@ urllib3==2.1.0
     #   minio
     #   requests
     #   twine
-uvicorn==0.22.0
+uvicorn==0.24.0.post1
     # via youwol (pyproject.toml)
-watchdog==2.3.1
+watchdog==2.1.9
     # via youwol (pyproject.toml)
 webencodings==0.5.1
     # via html5lib
-websockets==10.4
+websockets==10.3
     # via youwol (pyproject.toml)
 wheel==0.42.0
     # via pip-tools
@@ -315,7 +315,7 @@ zipp==3.17.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==23.3.1
+pip==23.3.2
     # via
     #   pip-api
     #   pip-tools
