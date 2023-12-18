@@ -24,8 +24,6 @@ asgiref==3.7.2
     # via youwol (pyproject.toml)
 astroid==3.0.2
     # via pylint
-async-timeout==4.0.2
-    # via redis
 attrs==21.4.0
     # via aiohttp
 black[d]==23.12.0
@@ -228,7 +226,7 @@ pyyaml==6.0.1
     #   youwol (pyproject.toml)
 readme-renderer==42.0
     # via twine
-redis==4.5.4
+redis==4.6.0
     # via youwol (pyproject.toml)
 requests==2.31.0
     # via
