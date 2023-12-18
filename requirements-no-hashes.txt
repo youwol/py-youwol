@@ -30,7 +30,7 @@ boolean-py==4.0
     # via license-expression
 brotli==1.0.9
     # via youwol (pyproject.toml)
-build==0.10.0
+build==1.0.3
     # via
     #   pip-tools
     #   youwol (pyproject.toml)
