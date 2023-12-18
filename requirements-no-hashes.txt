@@ -280,7 +280,7 @@ types-pyopenssl==23.1.0.2
     # via types-redis
 types-pyyaml==6.0.12.9
     # via youwol (pyproject.toml)
-types-redis==4.5.4.1
+types-redis==4.6.0.11
     # via youwol (pyproject.toml)
 types-setuptools==69.0.0.0
     # via youwol (pyproject.toml)

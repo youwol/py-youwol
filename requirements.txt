@@ -1225,9 +1225,9 @@ types-pyyaml==6.0.12.9 \
     --hash=sha256:5aed5aa66bd2d2e158f75dda22b059570ede988559f030cf294871d3b647e3e8 \
     --hash=sha256:c51b1bd6d99ddf0aa2884a7a328810ebf70a4262c292195d3f4f9a0005f9eeb6
     # via youwol (pyproject.toml)
-types-redis==4.5.4.1 \
-    --hash=sha256:2db530f54facec3149147bfe61d5ac24f5fe4e871823d95a601cd2c1d775d8a0 \
-    --hash=sha256:bf04192f415b2b42ecefd70bb4b91eb0352e48f2716a213e038e35c096a639c2
+types-redis==4.6.0.11 \
+    --hash=sha256:94fc61118601fb4f79206b33b9f4344acff7ca1d7bba67834987fb0efcf6a770 \
+    --hash=sha256:c8cfc84635183deca2db4a528966c5566445fd3713983f0034fb0f5a09e0890d
     # via youwol (pyproject.toml)
 types-setuptools==69.0.0.0 \
     --hash=sha256:8c86195bae2ad81e6dea900a570fe9d64a59dbce2b11cc63c046b03246ea77bf \
