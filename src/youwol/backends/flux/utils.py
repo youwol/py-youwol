@@ -6,10 +6,11 @@ import os
 import tempfile
 import zipfile
 
+from collections.abc import Coroutine, Mapping
 from pathlib import Path
 
 # typing
-from typing import Coroutine, List, Mapping, Tuple, Union
+from typing import Union
 
 # third parties
 from fastapi import HTTPException, UploadFile
@@ -82,7 +83,7 @@ def update_project(
     storage: Storage,
     docdb: DocDb,
     headers: Mapping[str, str],
-) -> List[Coroutine]:
+) -> list[Coroutine]:
     base_path = f"projects/{project_id}"
     description = {
         "description": project.description,
@@ -153,7 +154,7 @@ def update_metadata(
     storage: Storage,
     docdb: DocDb,
     headers: Mapping[str, str],
-) -> List[Coroutine]:
+) -> list[Coroutine]:
     base_path = f"projects/{project_id}"
     description = {
         "description": description,
@@ -455,7 +456,7 @@ def create_component_document(
     }
 
 
-async def get_json_files(base_path: str, files: List[str], storage, headers):
+async def get_json_files(base_path: str, files: list[str], storage, headers):
     futures = [
         storage.get_json(path=base_path + "/" + f, headers=headers) for f in files
     ]
@@ -463,7 +464,7 @@ async def get_json_files(base_path: str, files: List[str], storage, headers):
 
 
 async def post_json_files(
-    base_path: str, files: List[Tuple[str, any]], storage, headers
+    base_path: str, files: list[tuple[str, any]], storage, headers
 ):
     futures = [
         storage.post_json(path=base_path + "/" + name, json=data, headers=headers)

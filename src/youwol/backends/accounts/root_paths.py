@@ -1,5 +1,5 @@
 # typing
-from typing import Annotated, Any, List, Optional
+from typing import Annotated, Any, Optional
 
 # third parties
 from fastapi import APIRouter, Depends
@@ -33,7 +33,7 @@ class SessionDetailsUserGroup(BaseModel):
 class SessionDetailsUserInfo(BaseModel):
     name: str = "temporary user"
     temp: bool = False
-    groups: List[SessionDetailsUserGroup]
+    groups: list[SessionDetailsUserGroup]
 
 
 class SessionDetails(BaseModel):

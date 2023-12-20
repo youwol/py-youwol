@@ -1,9 +1,6 @@
 # standard library
 import sys
 
-# typing
-from typing import List
-
 # third parties
 import semantic_version
 
@@ -17,7 +14,7 @@ from ...models import LibrariesRow
 from .commons import check_owner
 
 
-def check(session: CqlSession) -> List[Correction]:
+def check(session: CqlSession) -> list[Correction]:
     corrections: list[Correction] = []
     for row_data in session.execute(q="SELECT * FROM prod_cdn.libraries"):
         row = LibrariesRow(**row_data)

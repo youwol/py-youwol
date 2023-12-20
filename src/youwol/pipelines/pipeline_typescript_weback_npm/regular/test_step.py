@@ -1,6 +1,3 @@
-# typing
-from typing import List
-
 # third parties
 from pydantic import BaseModel
 
@@ -32,13 +29,13 @@ test_coverage: Artifact = Artifact(
 
 
 class TestStepConfig(BaseModel):
-    artifacts: List[Artifact] = [test_result, test_coverage]
+    artifacts: list[Artifact] = [test_result, test_coverage]
 
 
 class TestStep(PipelineStep):
     id: str
     run: str
-    artifacts: List[Artifact]
+    artifacts: list[Artifact]
 
     sources: FileListing = FileListing(
         include=[Paths.package_json_file, Paths.lib_folder, "src/tests"],

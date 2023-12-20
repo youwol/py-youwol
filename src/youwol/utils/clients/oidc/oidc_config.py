@@ -7,7 +7,7 @@ import secrets
 from dataclasses import dataclass
 
 # typing
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 # third parties
 import aiohttp
@@ -32,7 +32,7 @@ class PublicClient(BaseModel):
 
 
 class OpenIdConfiguration(BaseModel):
-    token_endpoint_auth_signing_alg_values_supported: List[str]
+    token_endpoint_auth_signing_alg_values_supported: list[str]
     authorization_endpoint: str
     token_endpoint: str
     end_session_endpoint: str
@@ -132,7 +132,7 @@ class OidcConfig:
     def for_client(self, client: Client) -> "OidcForClient":
         return OidcForClient(self, client)
 
-    async def token_decode(self, token: str) -> Dict[str, Any]:
+    async def token_decode(self, token: str) -> dict[str, Any]:
         jwks_client = await self.jwks_client()
         token_data = jwt.decode(
             jwt=token,
@@ -142,7 +142,7 @@ class OidcConfig:
         )
         return token_data
 
-    async def jwt_algos(self) -> List[str]:
+    async def jwt_algos(self) -> list[str]:
         conf = await self.openid_configuration()
         return conf.token_endpoint_auth_signing_alg_values_supported
 
@@ -192,12 +192,12 @@ class OidcForClient:
                     raise RuntimeError(f"Unexpected HTTP status {status} : {content}")
                 return await resp.json()
 
-    def __params_with_client_id(self, **params) -> Dict[str, Any]:
+    def __params_with_client_id(self, **params) -> dict[str, Any]:
         return {**params, "client_id": self.__client.client_id}
 
     async def auth_flow_url(
         self, state: str, redirect_uri: str, login_hint: Optional[str]
-    ) -> Tuple[str, str, str]:
+    ) -> tuple[str, str, str]:
         """OpenId Authorization Code Flow request URL
 
         See:
@@ -389,7 +389,7 @@ class OidcForClient:
             )
         )
 
-    async def token_decode(self, token: str) -> Dict[str, Any]:
+    async def token_decode(self, token: str) -> dict[str, Any]:
         return await self.__config.token_decode(token)
 
     def client_id(self) -> str:

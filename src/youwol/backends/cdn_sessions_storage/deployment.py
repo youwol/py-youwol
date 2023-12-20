@@ -1,6 +1,3 @@
-# typing
-from typing import List
-
 # third parties
 from fastapi import APIRouter
 
@@ -37,7 +34,7 @@ class CdnSessionsStorageDeployment(BackendDeployment):
     def name(self) -> str:
         return "cdn-sessions-storage"
 
-    def middlewares(self) -> List[FastApiMiddleware]:
+    def middlewares(self) -> list[FastApiMiddleware]:
         return [get_auth_middleware_with_cookie()]
 
 

@@ -3,7 +3,7 @@ import asyncio
 import itertools
 
 # typing
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Callable, Optional, Union
 
 # third parties
 from fastapi import HTTPException
@@ -83,9 +83,9 @@ def get_full_exported_symbol(name: str, version: Union[str, Version]):
 
 
 async def loading_graph(
-    remaining: List[LibraryResolved],
-    items_dict: Dict[ExportedKey, Tuple[str, str]],
-    resolutions_dict: Dict[QueryKey, ResolvedQuery],
+    remaining: list[LibraryResolved],
+    items_dict: dict[ExportedKey, tuple[str, str]],
+    resolutions_dict: dict[QueryKey, ResolvedQuery],
     context: Context,
 ):
     def cached_api_key(lib: LibraryQuery) -> str:
@@ -163,8 +163,8 @@ async def loading_graph(
 
 async def list_all_versions_with_cache(
     library: LibraryQueryWithParent,
-    extra_index: List[LibraryResolved],
-    versions_cache: Dict[str, List[str]],
+    extra_index: list[LibraryResolved],
+    versions_cache: dict[str, list[str]],
     configuration: Configuration,
     context: Context,
 ):
@@ -230,9 +230,9 @@ async def list_all_versions_with_cache(
 
 async def resolve_version(
     dependency: LibraryQueryWithParent,
-    using: Dict[str, str],
-    extra_index: List[LibraryResolved],
-    versions_cache: Dict[str, List[str]],
+    using: dict[str, str],
+    extra_index: list[LibraryResolved],
+    versions_cache: dict[str, list[str]],
     configuration: Configuration,
     context: Context,
 ) -> ResolvedQuery:
@@ -294,15 +294,15 @@ async def resolve_version(
 
 
 async def resolve_dependencies_recursive(
-    from_libraries: List[LibraryResolved],
-    using: Dict[LibName, str],
-    extra_index: List[LibraryResolved],
-    resolutions_cache: Dict[QueryKey, ResolvedQuery],
-    versions_cache: Dict[LibName, List[str]],
-    full_data_cache: Dict[ExportedKey, LibraryResolved],
+    from_libraries: list[LibraryResolved],
+    using: dict[LibName, str],
+    extra_index: list[LibraryResolved],
+    resolutions_cache: dict[QueryKey, ResolvedQuery],
+    versions_cache: dict[LibName, list[str]],
+    full_data_cache: dict[ExportedKey, LibraryResolved],
     configuration: Configuration,
     context: Context,
-) -> List[LibraryResolved]:
+) -> list[LibraryResolved]:
     async with context.start(action="resolve_dependencies_recursive") as ctx:
         resolved_versions = await resolve_dependencies_version_queries(
             from_libraries=from_libraries,
@@ -352,11 +352,11 @@ async def resolve_dependencies_recursive(
 
 
 async def resolve_dependencies_version_queries(
-    from_libraries: List[LibraryResolved],
-    using: Dict[LibName, str],
-    extra_index: List[LibraryResolved],
-    resolutions_cache: Dict[QueryKey, ResolvedQuery],
-    versions_cache: Dict[LibName, List[str]],
+    from_libraries: list[LibraryResolved],
+    using: dict[LibName, str],
+    extra_index: list[LibraryResolved],
+    resolutions_cache: dict[QueryKey, ResolvedQuery],
+    versions_cache: dict[LibName, list[str]],
     configuration: Configuration,
     context: Context,
 ):
@@ -424,9 +424,9 @@ async def resolve_dependencies_version_queries(
 
 
 async def fetch_dependencies_data(
-    missing_data_versions: Dict[ExportedKey, ResolvedQuery],
-    extra_index: List[LibraryResolved],
-    full_data_cache: Dict[ExportedKey, LibraryResolved],
+    missing_data_versions: dict[ExportedKey, ResolvedQuery],
+    extra_index: list[LibraryResolved],
+    full_data_cache: dict[ExportedKey, LibraryResolved],
     configuration: Configuration,
     context: Context,
 ):
@@ -458,7 +458,7 @@ async def fetch_dependencies_data(
 async def get_data(
     name: str,
     version: str,
-    extra_index: List[LibraryResolved],
+    extra_index: list[LibraryResolved],
     configuration: Configuration,
     context: Context,
 ) -> LibraryResolved:
@@ -498,7 +498,7 @@ async def get_data(
 
 
 async def raise_errors(
-    errors: List[Union[LibraryNotFound, LibraryException]], context: Context
+    errors: list[Union[LibraryNotFound, LibraryException]], context: Context
 ):
     if not errors:
         return
@@ -525,11 +525,11 @@ async def raise_errors(
 
 
 def retrieve_dependency_paths(
-    known_libraries: List[LibraryResolved],
+    known_libraries: list[LibraryResolved],
     from_package: str,
     get_key: Callable[[Union[LibraryQuery, LibraryResolved]], str],
     suffix: Optional[str] = None,
-) -> List[str]:
+) -> list[str]:
     parents = [
         lib
         for lib in known_libraries
@@ -551,10 +551,10 @@ def retrieve_dependency_paths(
 
 
 async def remove_duplicates(
-    libraries: List[LibraryQueryWithParent],
+    libraries: list[LibraryQueryWithParent],
     get_key: Callable[[LibraryQuery], str],
     context: Context,
-) -> List[LibraryQueryWithParent]:
+) -> list[LibraryQueryWithParent]:
     async with context.start(action="remove_duplicates") as ctx:
         result = []
         keys = []

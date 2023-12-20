@@ -9,12 +9,13 @@ import shutil
 import tempfile
 import zipfile
 
+from collections.abc import Iterable
 from fnmatch import fnmatch
 from os import PathLike
 from pathlib import Path
 
 # typing
-from typing import IO, Callable, Iterable, List, Optional, Set, Tuple, Union, cast
+from typing import IO, Callable, Optional, Union, cast
 
 # third parties
 import aiohttp
@@ -24,14 +25,14 @@ from pydantic import BaseModel
 
 
 class FileListing(BaseModel):
-    include: List[str]
-    ignore: List[str] = []
+    include: list[str]
+    ignore: list[str] = []
 
 
 flatten = itertools.chain.from_iterable
 
 
-def list_files(folder: Path, rec=True) -> List[Path]:
+def list_files(folder: Path, rec=True) -> list[Path]:
     return [
         Path(p)
         for p in glob.glob(str(folder) + "/**/*", recursive=rec)
@@ -44,7 +45,7 @@ def parse_json(path: Union[str, Path]):
 
 
 def parse_yaml(path: Union[str, Path]):
-    with open(path, "r", encoding="UTF-8") as stream:
+    with open(path, encoding="UTF-8") as stream:
         return yaml.safe_load(stream)
 
 
@@ -68,8 +69,8 @@ def copy_file(source: Path, destination: Path, create_folders: bool = False):
 
 
 def matching_files(
-    folder: Union[Path, str], patterns: Union[List[str], FileListing]
-) -> Set[Path]:
+    folder: Union[Path, str], patterns: Union[list[str], FileListing]
+) -> set[Path]:
     folder = Path(folder)
 
     def fix_pattern(pattern):
@@ -137,8 +138,8 @@ def files_check_sum(paths: Iterable[Union[str, Path]]):
 
 def create_zip_file(
     path: Path,
-    files_to_zip: List[Tuple[Path, str]],
-    with_data: Optional[List[Tuple[str, Union[str, bytes]]]] = None,
+    files_to_zip: list[tuple[Path, str]],
+    with_data: Optional[list[tuple[str, Union[str, bytes]]]] = None,
 ):
     with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as zipper:
         for path_file, name in files_to_zip:
@@ -170,7 +171,7 @@ def do_nothing_on_missing_dir(_path: Path):
 
 def ensure_dir_exists(
     path: Optional[Union[str, Path]],
-    root_candidates: Union[Union[str, Path], List[Union[str, Path]]],
+    root_candidates: Union[Union[str, Path], list[Union[str, Path]]],
     default_root: Optional[Union[str, Path]] = None,
     create: Optional[Callable[[Path], None]] = default_create_dir,
 ) -> Path:
@@ -190,7 +191,7 @@ def ensure_dir_exists(
 
 def ensure_file_exists(
     path: Union[str, Path],
-    root_candidates: Union[Union[str, Path], List[Union[str, Path]]],
+    root_candidates: Union[Union[str, Path], list[Union[str, Path]]],
     default_root: Optional[Union[str, Path]] = None,
     default_content: Optional[str] = None,
 ) -> Path:
@@ -216,7 +217,7 @@ def ensure_file_exists(
 
 def existing_path_or_default(
     path: Union[str, Path],
-    root_candidates: Union[Union[str, Path], List[Union[str, Path]]],
+    root_candidates: Union[Union[str, Path], list[Union[str, Path]]],
     default_root: Optional[Union[str, Path]] = None,
 ) -> (Path, bool):
     typed_path = Path(path)
@@ -224,7 +225,7 @@ def existing_path_or_default(
     if typed_path.is_absolute():
         return typed_path, typed_path.exists()
 
-    if not isinstance(root_candidates, List):
+    if not isinstance(root_candidates, list):
         root_candidates = [root_candidates]
 
     root_candidates_idx = 0

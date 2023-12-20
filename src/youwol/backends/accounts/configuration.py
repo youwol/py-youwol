@@ -1,8 +1,10 @@
 # standard library
 import uuid
 
+from collections.abc import Awaitable
+
 # typing
-from typing import Awaitable, Callable, Optional, Union
+from typing import Callable, Optional, Union
 
 # Youwol utilities
 from youwol.utils.clients.cache import CacheClient

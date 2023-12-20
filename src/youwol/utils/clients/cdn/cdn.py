@@ -2,11 +2,12 @@
 import functools
 import hashlib
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
 # typing
-from typing import Iterable, List, Optional, Union
+from typing import Optional, Union
 
 # third parties
 from aiohttp import FormData
@@ -90,7 +91,7 @@ class CdnClient:
             **kwargs,
         )
 
-    async def query_dependencies_latest(self, libraries: List[str], **kwargs):
+    async def query_dependencies_latest(self, libraries: list[str], **kwargs):
         return await self.request_executor.post(
             url=self.dependencies_url,
             default_reader=json_reader,

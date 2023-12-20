@@ -1,6 +1,3 @@
-# typing
-from typing import List
-
 # third parties
 from fastapi import APIRouter
 
@@ -46,7 +43,7 @@ class AccountsDeployment(BackendDeployment):
     def name(self) -> str:
         return "accounts"
 
-    def middlewares(self) -> List[FastApiMiddleware]:
+    def middlewares(self) -> list[FastApiMiddleware]:
         return [
             get_auth_middleware_with_cookie(public_path="/api/accounts/openid_rp/"),
         ]

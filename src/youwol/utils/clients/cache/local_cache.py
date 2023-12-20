@@ -5,7 +5,7 @@ import time
 from threading import Event, Thread
 
 # typing
-from typing import Dict, List, Optional
+from typing import Optional
 
 # third parties
 from pydantic import BaseModel
@@ -20,7 +20,7 @@ class CacheEntry(BaseModel):
 
 
 class LocalCacheClient(CacheClient):
-    _cache: Dict[str, CacheEntry]
+    _cache: dict[str, CacheEntry]
 
     def __init__(self, prefix: str):
         super().__init__(prefix=prefix)
@@ -61,7 +61,7 @@ class LocalCacheClient(CacheClient):
 
 
 class CleanerThread(Thread):
-    __caches: List[LocalCacheClient]
+    __caches: list[LocalCacheClient]
     __stopping: Event
     __period: int
 

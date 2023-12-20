@@ -3,7 +3,7 @@ from urllib.error import URLError
 from urllib.request import urlopen
 
 # typing
-from typing import List, Optional, Tuple, TypeVar
+from typing import Optional, TypeVar
 
 # third parties
 from aiohttp import ClientResponse, ClientSession, TCPConnector
@@ -81,7 +81,7 @@ async def aiohttp_to_starlette_response(resp: ClientResponse) -> Response:
 TResp = TypeVar("TResp")
 
 
-def extract_bytes_ranges(request: Request) -> Optional[List[Tuple[int, int]]]:
+def extract_bytes_ranges(request: Request) -> Optional[list[tuple[int, int]]]:
     range_header = request.headers.get("range")
     if not range_header:
         return None

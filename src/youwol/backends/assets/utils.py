@@ -4,11 +4,12 @@ import base64
 import io
 import itertools
 
+from collections.abc import Mapping
 from datetime import datetime
 from pathlib import Path
 
 # typing
-from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 # third parties
 from fastapi import UploadFile
@@ -79,7 +80,7 @@ async def format_image(filename: str, file: UploadFile) -> ParsedFile:
     )
 
 
-def get_thumbnail(file: ParsedFile, size: Tuple[int, int]) -> ParsedFile:
+def get_thumbnail(file: ParsedFile, size: tuple[int, int]) -> ParsedFile:
     ext_dict = {"jpg": "JPEG", "JPG": "JPEG", "png": "PNG", "PNG": "PNG"}
     image = Image.open(io.BytesIO(file.content))
     image.thumbnail(size)
@@ -145,7 +146,7 @@ def format_download_form(file_path: Path, base_path: Path, dir_path: Path) -> Fo
 
 
 async def post_storage_by_chunk(
-    storage: Storage, forms: List[FormData], count: int, headers: Dict[str, str]
+    storage: Storage, forms: list[FormData], count: int, headers: dict[str, str]
 ):
     for _, chunk in enumerate(chunks(forms, count)):
         await asyncio.gather(
@@ -154,7 +155,7 @@ async def post_storage_by_chunk(
 
 
 async def post_indexes(
-    doc_db: DocDb, data: Any, count: int, group: str, headers: Dict[str, str]
+    doc_db: DocDb, data: Any, count: int, group: str, headers: dict[str, str]
 ):
     for chunk in chunks(data, count):
         await asyncio.gather(
@@ -283,5 +284,5 @@ def get_file_path(
     )
 
 
-async def log_asset(asset: Dict[str, str], context: Context):
+async def log_asset(asset: dict[str, str], context: Context):
     await context.info(text="asset retrieved", data=asset)

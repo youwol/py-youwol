@@ -4,7 +4,7 @@ import io
 import json
 
 # typing
-from typing import Dict, List, Optional
+from typing import Optional
 
 # third parties
 from fastapi import APIRouter, Depends, File, Form, HTTPException
@@ -309,11 +309,11 @@ async def resolve_loading_tree(
     body: LoadingGraphBody,
     configuration: Configuration = Depends(get_configuration),
 ):
-    versions_cache: Dict[LibName, List[str]] = {}
-    full_data_cache: Dict[ExportedKey, LibraryResolved] = {}
-    resolutions_cache: Dict[QueryKey, ResolvedQuery] = {}
+    versions_cache: dict[LibName, list[str]] = {}
+    full_data_cache: dict[ExportedKey, LibraryResolved] = {}
+    resolutions_cache: dict[QueryKey, ResolvedQuery] = {}
 
-    def to_libraries_resolved(input_elements: List[JSON]):
+    def to_libraries_resolved(input_elements: list[JSON]):
         return [
             LibraryResolved(
                 name=element["library_name"],

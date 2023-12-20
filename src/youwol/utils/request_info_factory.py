@@ -4,7 +4,7 @@ import traceback
 from abc import ABC, abstractmethod
 
 # typing
-from typing import Dict, List, Optional, Union
+from typing import Optional, Union
 
 # third parties
 from pydantic import BaseModel
@@ -56,8 +56,8 @@ def url_match(request: Request, pattern: str):
 
 class RequestInfo(BaseModel):
     message: Optional[str]
-    attributes: Dict[str, str] = {}
-    labels: List[Label] = []
+    attributes: dict[str, str] = {}
+    labels: list[Label] = []
 
 
 class RequestInfoExtractor(ABC):
@@ -77,7 +77,7 @@ class PatternRequestInfoExtractor(RequestInfoExtractor):
 
     @abstractmethod
     def extract_from_pattern(
-        self, substitutes: List[Union[str, List[str]]]
+        self, substitutes: list[Union[str, list[str]]]
     ) -> RequestInfo:
         return NotImplemented
 
@@ -85,7 +85,7 @@ class PatternRequestInfoExtractor(RequestInfoExtractor):
 class All(PatternRequestInfoExtractor):
     pattern = "*:/**"
 
-    def extract_from_pattern(self, substitutes: List[Union[str, List[str]]]):
+    def extract_from_pattern(self, substitutes: list[Union[str, list[str]]]):
         [method, messages] = substitutes
         if len(messages) != 0:
             *_, last = messages
@@ -97,7 +97,7 @@ class All(PatternRequestInfoExtractor):
 class Api(PatternRequestInfoExtractor):
     pattern = "*:/api/**"
 
-    def extract_from_pattern(self, substitutes: List[Union[str, List[str]]]):
+    def extract_from_pattern(self, substitutes: list[Union[str, list[str]]]):
         [_method, [service, *_parts, last]] = substitutes
         return RequestInfo(message=last, attributes={"service": service})
 

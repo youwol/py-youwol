@@ -5,10 +5,11 @@ import itertools
 import os
 import shutil
 
+from collections.abc import Mapping
 from datetime import datetime
 
 # typing
-from typing import Any, Mapping
+from typing import Any
 
 # third parties
 from fastapi import APIRouter, Depends, HTTPException, Query

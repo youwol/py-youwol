@@ -3,8 +3,10 @@ import base64
 import functools
 import json
 
+from collections.abc import Mapping
+
 # typing
-from typing import Mapping, NamedTuple, Union
+from typing import NamedTuple, Union
 
 # third parties
 from aiohttp import ClientResponse

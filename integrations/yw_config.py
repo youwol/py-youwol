@@ -7,7 +7,7 @@ import shutil
 from pathlib import Path
 
 # typing
-from typing import List, cast
+from typing import cast
 
 # third parties
 import brotli
@@ -265,14 +265,14 @@ def retrieve_logs(body, context: Context):
 
     test_name = body["testName"]
     file_name = body["file"]
-    nodes: List[Log] = [
+    nodes: list[Log] = [
         NodeLogResponse(
             **Log.from_log_entry(log).dict(), failed=log.context_id in errors
         )
         for log in root_logs + nodes_logs
         if test_name in log.labels and file_name in log.labels
     ]
-    leafs: List[Log] = [
+    leafs: list[Log] = [
         LeafLogResponse(**Log.from_log_entry(log).dict())
         for log in leaf_logs
         if test_name in log.labels and file_name in log.labels

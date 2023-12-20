@@ -1,8 +1,9 @@
 # standard library
+from collections.abc import Awaitable
 from dataclasses import dataclass
 
 # typing
-from typing import Awaitable, Callable, Dict, Optional
+from typing import Callable, Optional
 
 # Youwol utilities
 from youwol.utils import CdnClient, DocDb, Storage
@@ -50,7 +51,7 @@ class Configuration:
     doc_db_component: DocDb
     assets_gtw_client: AssetsGatewayClient
     cdn_client: CdnClient
-    admin_headers: Optional[Dict[str, str]] = None
+    admin_headers: Optional[dict[str, str]] = None
 
 
 class Dependencies:

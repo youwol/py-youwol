@@ -4,21 +4,11 @@ import inspect
 import itertools
 import sys
 
+from collections.abc import Awaitable
 from dataclasses import dataclass
 
 # typing
-from typing import (
-    Any,
-    Awaitable,
-    Callable,
-    Dict,
-    Generic,
-    List,
-    Optional,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import Any, Callable, Generic, Optional, TypeVar, Union
 
 # third parties
 import uvicorn
@@ -61,8 +51,8 @@ class FastApiRouter(BaseModel):
 
 @dataclass(frozen=True)
 class FastApiMiddleware:
-    middleware: Type[BaseHTTPMiddleware]
-    args: Dict[str, Any]
+    middleware: type[BaseHTTPMiddleware]
+    args: dict[str, Any]
 
 
 @dataclass(frozen=True)
@@ -70,7 +60,7 @@ class ServerOptions:
     root_path: str
     http_port: int
     base_path: str
-    middlewares: List[FastApiMiddleware]
+    middlewares: list[FastApiMiddleware]
     ctx_logger: ContextReporter
     on_before_startup: Callable[[], Union[None, Awaitable[None]]] = None
 
@@ -93,7 +83,7 @@ class FastApiApp:
 
 
 def select_configuration_from_command_line(
-    configs_map: Dict[str, Callable[[], Awaitable[AppConfiguration]]]
+    configs_map: dict[str, Callable[[], Awaitable[AppConfiguration]]]
 ) -> AppConfiguration:
     if len(sys.argv) < 2:
         raise RuntimeError(

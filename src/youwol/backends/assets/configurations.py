@@ -1,8 +1,9 @@
 # standard library
+from collections.abc import Awaitable
 from dataclasses import dataclass
 
 # typing
-from typing import Awaitable, Callable, Dict, Optional, TypeVar, Union
+from typing import Callable, Optional, TypeVar, Union
 
 # Youwol utilities
 from youwol.utils import DocDb, FileSystemInterface, Storage
@@ -26,7 +27,7 @@ class Configuration:
     doc_db_asset: DocDb
     doc_db_access_history: DocDb
     doc_db_access_policy: DocDb
-    admin_headers: Optional[Dict[str, str]] = None
+    admin_headers: Optional[dict[str, str]] = None
 
 
 class Dependencies:

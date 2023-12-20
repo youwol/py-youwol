@@ -1,9 +1,6 @@
 # standard library
 import asyncio
 
-# typing
-from typing import List
-
 # third parties
 import aiohttp
 
@@ -62,7 +59,7 @@ async def retrieve_tmp_users(
     users_manager: KeycloakUsersManagement,
     impersonator_name: str,
     impersonator_pwd: str,
-) -> List[ImpersonatedUser]:
+) -> list[ImpersonatedUser]:
     impersonator_tokens = await openid_client.direct_flow(
         username=impersonator_name, password=impersonator_pwd
     )

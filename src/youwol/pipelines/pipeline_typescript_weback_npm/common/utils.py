@@ -6,7 +6,7 @@ import shutil
 from pathlib import Path
 
 # typing
-from typing import Dict, List, NamedTuple, Union, cast
+from typing import NamedTuple, Union, cast
 
 # third parties
 import pyparsing
@@ -41,8 +41,8 @@ class FileNames(NamedTuple):
 def copy_files_folders(
     working_path: Path,
     base_template_path: Path,
-    files: List[Union[str, Path]],
-    folders: List[Union[str, Path]],
+    files: list[Union[str, Path]],
+    folders: list[Union[str, Path]],
 ):
     for file in files:
         shutil.copyfile(src=base_template_path / Path(file), dst=working_path / file)
@@ -137,7 +137,7 @@ def generate_package_json(source: Path, working_path: Path, input_template: Temp
 
 
 def get_imports_from_submodules(
-    input_template: Template, all_runtime_deps: Dict[str, str]
+    input_template: Template, all_runtime_deps: dict[str, str]
 ):
     src_folder = "lib" if input_template.type == PackageType.Library else "app"
     base_path = input_template.path / "src" / src_folder
@@ -147,7 +147,7 @@ def get_imports_from_submodules(
 
     lines = []
     for file in glob.glob(str(base_path / "**" / "*.ts"), recursive=True):
-        with open(file, "r", encoding="UTF-8") as fp:
+        with open(file, encoding="UTF-8") as fp:
             content = fp.read()
             content = pyparsing.cppStyleComment.suppress().transform_string(content)
 
@@ -194,8 +194,8 @@ def get_api_version(query):
 
 
 def get_externals(input_template: Template):
-    externals: Dict[str, Union[str, JSON]] = {}
-    exported_symbols: Dict[str, JSON] = {}
+    externals: dict[str, Union[str, JSON]] = {}
+    exported_symbols: dict[str, JSON] = {}
 
     all_runtime = {
         **input_template.dependencies.runTime.externals,
@@ -283,7 +283,7 @@ async def create_sub_pipelines_publish(start_step: str, context: Context):
     )
 
     return (
-        cast(List[PipelineStep], publish_cdn_steps) + publish_npm_steps,
+        cast(list[PipelineStep], publish_cdn_steps) + publish_npm_steps,
         dags_cdn + dags_npm,
     )
 

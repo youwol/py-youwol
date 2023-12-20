@@ -6,7 +6,7 @@ import random
 from importlib import resources
 
 # typing
-from typing import Dict, List, Optional
+from typing import Optional
 
 # third parties
 from cowpy import cow
@@ -49,19 +49,19 @@ flatten = itertools.chain.from_iterable
 
 class ConfigurationResponse(BaseModel):
     httpPort: int
-    customMiddlewares: List[CustomMiddleware]
+    customMiddlewares: list[CustomMiddleware]
     projects: Projects
-    commands: Dict[str, Command]
+    commands: dict[str, Command]
     currentConnection: Connection
     pathsBook: PathsBook
 
 
 class EnvironmentStatusResponse(BaseModel):
     configuration: ConfigurationResponse
-    users: List[str]
+    users: list[str]
     userInfo: UserInfo
     remoteGatewayInfo: Optional[RemoteGatewayInfo]
-    remotesInfo: List[RemoteGatewayInfo]
+    remotesInfo: list[RemoteGatewayInfo]
 
 
 @router.get("/cow-say", response_class=PlainTextResponse, summary="status")

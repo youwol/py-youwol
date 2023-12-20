@@ -1,5 +1,8 @@
+# standard library
+from collections.abc import Awaitable
+
 # typing
-from typing import Awaitable, Callable, Union
+from typing import Callable, Union
 
 # Youwol backends
 from youwol.backends.assets_gateway.configurations import Configuration, Dependencies

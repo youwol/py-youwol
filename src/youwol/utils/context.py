@@ -10,25 +10,13 @@ import traceback
 import uuid
 
 from abc import ABC, abstractmethod
+from collections.abc import Awaitable
 from dataclasses import dataclass, field
 from enum import Enum
 from types import TracebackType
 
 # typing
-from typing import (
-    Any,
-    Awaitable,
-    Callable,
-    Dict,
-    List,
-    NamedTuple,
-    Optional,
-    Set,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import Any, Callable, NamedTuple, TypeVar, Union, cast
 
 # third parties
 import aiohttp
@@ -87,11 +75,11 @@ class LogEntry(NamedTuple):
     level: LogLevel
     text: str
     data: JSON
-    labels: List[str]
-    attributes: Dict[str, str]
+    labels: list[str]
+    attributes: dict[str, str]
     context_id: str
     parent_context_id: str
-    trace_uid: Union[str, None]
+    trace_uid: str | None
     timestamp: float
 
 
@@ -119,7 +107,7 @@ def format_message(entry: LogEntry):
 class WsContextReporter(ContextReporter):
     def __init__(
         self,
-        websockets_getter: Callable[[], List[WebSocket]],
+        websockets_getter: Callable[[], list[WebSocket]],
         mute_exceptions: bool = False,
     ):
         self.websockets_getter = websockets_getter
@@ -144,24 +132,24 @@ class WsContextReporter(ContextReporter):
 
 StringLike = Any
 
-HeadersFwdSelector = Callable[[List[str]], List[str]]
+HeadersFwdSelector = Callable[[list[str]], list[str]]
 
 
 @dataclass(frozen=True)
 class Context:
-    logs_reporters: List[ContextReporter] = field(default_factory=list)
-    data_reporters: List[ContextReporter] = field(default_factory=list)
-    request: Optional[Request] = None
+    logs_reporters: list[ContextReporter] = field(default_factory=list)
+    data_reporters: list[ContextReporter] = field(default_factory=list)
+    request: Request | None = None
 
-    uid: Union[str, None] = "root"
-    parent_uid: Union[str, None] = None
-    trace_uid: Union[str, None] = None
+    uid: str | None = "root"
+    parent_uid: str | None = None
+    trace_uid: str | None = None
 
-    with_data: Dict[str, DataType] = field(default_factory=dict)
+    with_data: dict[str, DataType] = field(default_factory=dict)
     with_attributes: JSON = field(default_factory=dict)
-    with_labels: List[str] = field(default_factory=list)
-    with_headers: Dict[str, str] = field(default_factory=dict)
-    with_cookies: Dict[str, str] = field(default_factory=dict)
+    with_labels: list[str] = field(default_factory=list)
+    with_headers: dict[str, str] = field(default_factory=dict)
+    with_cookies: dict[str, str] = field(default_factory=dict)
 
     @staticmethod
     def from_request(request: Request):
@@ -170,15 +158,15 @@ class Context:
     def start(
         self,
         action: str,
-        with_labels: Optional[List[StringLike]] = None,
-        with_attributes: Optional[JSON] = None,
-        with_data: Optional[Dict[str, DataType]] = None,
-        with_headers: Optional[Dict[str, str]] = None,
-        with_cookies: Optional[Dict[str, str]] = None,
-        on_enter: Optional["CallableBlock"] = None,
-        on_exit: Optional["CallableBlock"] = None,
-        on_exception: Optional["CallableBlockException"] = None,
-        with_reporters: Optional[List[ContextReporter]] = None,
+        with_labels: list[StringLike] | None = None,
+        with_attributes: JSON | None = None,
+        with_data: dict[str, DataType] | None = None,
+        with_headers: dict[str, str] | None = None,
+        with_cookies: dict[str, str] | None = None,
+        on_enter: CallableBlock | None = None,
+        on_exit: CallableBlock | None = None,
+        on_exception: CallableBlockException | None = None,
+        with_reporters: list[ContextReporter] | None = None,
     ) -> ScopedContext:
         with_attributes = with_attributes or {}
         with_labels = with_labels or []
@@ -210,14 +198,14 @@ class Context:
     @staticmethod
     def start_ep(
         request: Request,
-        action: Optional[str] = None,
-        with_labels: Optional[List[StringLike]] = None,
-        with_attributes: Optional[JSON] = None,
-        body: Optional[BaseModel] = None,
-        response: Optional[Callable[[], BaseModel]] = None,
-        with_reporters: Optional[List[ContextReporter]] = None,
-        on_enter: Optional["CallableBlock"] = None,
-        on_exit: Optional["CallableBlock"] = None,
+        action: str | None = None,
+        with_labels: list[StringLike] | None = None,
+        with_attributes: JSON | None = None,
+        body: BaseModel | None = None,
+        response: Callable[[], BaseModel] | None = None,
+        with_reporters: list[ContextReporter] | None = None,
+        on_enter: CallableBlock | None = None,
+        on_exit: CallableBlock | None = None,
     ) -> ScopedContext:
         context = Context.from_request(request=request)
         action = action or f"{request.method}: {request.scope['path']}"
@@ -249,8 +237,8 @@ class Context:
         self,
         level: LogLevel,
         text: str,
-        labels: Optional[List[StringLike]] = None,
-        data: Optional[JsonLike] = None,
+        labels: list[StringLike] | None = None,
+        data: JsonLike | None = None,
     ):
         if not self.data_reporters and not self.logs_reporters:
             return
@@ -281,7 +269,7 @@ class Context:
 
         await asyncio.gather(*[logger.log(entry) for logger in self.logs_reporters])
 
-    async def send(self, data: BaseModel, labels: Optional[List[StringLike]] = None):
+    async def send(self, data: BaseModel, labels: list[StringLike] | None = None):
         labels = labels or []
         await self.log(
             level=LogLevel.DATA,
@@ -293,40 +281,40 @@ class Context:
     async def debug(
         self,
         text: str,
-        labels: Optional[List[StringLike]] = None,
-        data: Optional[JsonLike] = None,
+        labels: list[StringLike] | None = None,
+        data: JsonLike | None = None,
     ):
         await self.log(level=LogLevel.DEBUG, text=text, labels=labels, data=data)
 
     async def info(
         self,
         text: str,
-        labels: Optional[List[StringLike]] = None,
-        data: Optional[JsonLike] = None,
+        labels: list[StringLike] | None = None,
+        data: JsonLike | None = None,
     ):
         await self.log(level=LogLevel.INFO, text=text, labels=labels, data=data)
 
     async def warning(
         self,
         text: str,
-        labels: Optional[List[StringLike]] = None,
-        data: Optional[JsonLike] = None,
+        labels: list[StringLike] | None = None,
+        data: JsonLike | None = None,
     ):
         await self.log(level=LogLevel.WARNING, text=text, labels=labels, data=data)
 
     async def error(
         self,
         text: str,
-        labels: Optional[List[StringLike]] = None,
-        data: Optional[JsonLike] = None,
+        labels: list[StringLike] | None = None,
+        data: JsonLike | None = None,
     ):
         await self.log(level=LogLevel.ERROR, text=text, labels=labels, data=data)
 
     async def failed(
         self,
         text: str,
-        labels: Optional[List[StringLike]] = None,
-        data: Optional[JsonLike] = None,
+        labels: list[StringLike] | None = None,
+        data: JsonLike | None = None,
     ):
         labels = labels or []
         await self.log(
@@ -336,9 +324,9 @@ class Context:
     async def future(
         self,
         text: str,
-        future: Optional[asyncio.Future] = None,
-        labels: Optional[List[StringLike]] = None,
-        data: Optional[JsonLike] = None,
+        future: asyncio.Future | None = None,
+        labels: list[StringLike] | None = None,
+        data: JsonLike | None = None,
     ):
         labels = labels or []
         await self.log(
@@ -419,15 +407,15 @@ CallableBlock = Callable[[Context], Union[Awaitable, None]]
 CallableBlockException = Callable[[Exception, Context], Union[Awaitable, None]]
 
 
-LabelsGetter = Callable[[], Set[str]]
+LabelsGetter = Callable[[], set[str]]
 
 
 @dataclass(frozen=True)
 class ScopedContext(Context):
-    action: Optional[str] = None
-    on_enter: Optional[CallableBlock] = None
-    on_exit: Optional[CallableBlock] = None
-    on_exception: Optional[CallableBlockException] = None
+    action: str | None = None
+    on_enter: CallableBlock | None = None
+    on_exit: CallableBlock | None = None
+    on_exception: CallableBlockException | None = None
 
     @functools.cached_property
     def start_time(self):
@@ -449,9 +437,9 @@ class ScopedContext(Context):
     # exit the async context manager
     async def __aexit__(
         self,
-        exc_type: Optional[Type[BaseException]],
-        exc: Optional[BaseException],
-        tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
     ):
         if exc:
             await self.error(
@@ -478,8 +466,8 @@ class ScopedContext(Context):
     @staticmethod
     async def __execute_block(
         ctx: Context,
-        block: Optional[Union[CallableBlock, CallableBlockException]],
-        exception: Optional[Exception] = None,
+        block: CallableBlock | CallableBlockException | None,
+        exception: Exception | None = None,
     ):
         if not block:
             return
@@ -489,11 +477,11 @@ class ScopedContext(Context):
 
 
 class ContextFactory:
-    with_static_data: Dict[str, DataType] = {}
-    with_static_labels: Dict[str, LabelsGetter] = {}
+    with_static_data: dict[str, DataType] = {}
+    with_static_labels: dict[str, LabelsGetter] = {}
 
     @staticmethod
-    def add_labels(key: str, labels: Union[Set[str], LabelsGetter]):
+    def add_labels(key: str, labels: set[str] | LabelsGetter):
         ContextFactory.with_static_labels[key] = (
             labels if callable(labels) else lambda: labels
         )
@@ -585,9 +573,9 @@ class PyYouwolContextReporter(ContextReporter):
 class InMemoryReporter(ContextReporter):
     max_count = 10000
 
-    root_node_logs: List[LogEntry] = []
-    node_logs: List[LogEntry] = []
-    leaf_logs: List[LogEntry] = []
+    root_node_logs: list[LogEntry] = []
+    node_logs: list[LogEntry] = []
+    leaf_logs: list[LogEntry] = []
 
     errors = set()
     futures = set()
@@ -599,7 +587,7 @@ class InMemoryReporter(ContextReporter):
         self.node_logs = []
         self.leaf_logs = []
 
-    def resize_if_needed(self, items: List[any]):
+    def resize_if_needed(self, items: list[any]):
         if len(items) > 2 * self.max_count:
             return items[len(items) - self.max_count :]
         return items

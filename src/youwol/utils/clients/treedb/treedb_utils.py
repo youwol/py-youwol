@@ -1,6 +1,3 @@
-# typing
-from typing import Dict, List
-
 # Youwol utilities
 from youwol.utils.clients.treedb.treedb import TreeDbClient
 
@@ -8,9 +5,9 @@ from youwol.utils.clients.treedb.treedb import TreeDbClient
 async def ensure_pathname(
     group_id: str,
     drive_name: str,
-    folders_name: List[str],
+    folders_name: list[str],
     treedb_client: TreeDbClient,
-    headers: Dict[str, str],
+    headers: dict[str, str],
 ):
     resp_drives = await treedb_client.get_drives(group_id=group_id, headers=headers)
     drive = next((d for d in resp_drives["drives"] if d["name"] == drive_name), None)

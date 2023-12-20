@@ -1,9 +1,10 @@
 # standard library
+from collections.abc import Awaitable
 from dataclasses import dataclass
 from pathlib import Path
 
 # typing
-from typing import Awaitable, Callable, Optional, TypeVar, Union
+from typing import Callable, Optional, TypeVar, Union
 
 # Youwol utilities
 from youwol.utils.clients.docdb.docdb import DocDbClient as RemoteDocDb

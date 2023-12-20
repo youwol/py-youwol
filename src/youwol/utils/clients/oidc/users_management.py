@@ -1,9 +1,6 @@
 # standard library
 import time
 
-# typing
-from typing import List
-
 # third parties
 from pydantic import BaseModel
 
@@ -26,7 +23,7 @@ class KeycloakUsersManagement(ServiceAccountClient):
     def __init__(self, realm_url: str, cache: CacheClient, oidc_client: OidcForClient):
         super().__init__(base_url=realm_url, cache=cache, oidc_client=oidc_client)
 
-    async def get_temporary_users(self) -> List[User]:
+    async def get_temporary_users(self) -> list[User]:
         return [
             User.parse_obj(item)
             for item in (

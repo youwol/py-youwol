@@ -2,7 +2,7 @@
 import asyncio
 
 # typing
-from typing import List, Optional, TypeVar, Union
+from typing import Optional, TypeVar, Union
 
 # third parties
 from fastapi import HTTPException
@@ -146,8 +146,8 @@ class GetChildrenDispatch(AbstractLocalCloudDispatch):
     @staticmethod
     def decorate_with_metadata(
         item: Union[ItemResponse, FolderResponse],
-        local_ids: List[str],
-        remote_ids: List[str],
+        local_ids: list[str],
+        remote_ids: list[str],
     ):
         tree_id = item.itemId if isinstance(item, ItemResponse) else item.folderId
         return {

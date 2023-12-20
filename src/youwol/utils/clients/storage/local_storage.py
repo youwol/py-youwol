@@ -4,12 +4,13 @@ import json as _json
 import os
 import shutil
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from os import PathLike
 from pathlib import Path
 
 # typing
-from typing import Mapping, Optional, Union, cast
+from typing import Optional, Union, cast
 
 # third parties
 from fastapi import HTTPException

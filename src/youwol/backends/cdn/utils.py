@@ -11,7 +11,7 @@ import tempfile
 from pathlib import Path
 
 # typing
-from typing import IO, Dict, List, Optional, Union
+from typing import IO, Optional, Union
 
 # third parties
 import brotli
@@ -90,7 +90,7 @@ async def prepare_files_to_post(
     base_path: Path,
     package_path: Path,
     zip_path: Path,
-    paths: List[Path],
+    paths: list[Path],
     need_compression,
     context: Context,
 ):
@@ -348,8 +348,8 @@ async def publish_package(
 
 
 async def create_explorer_data(
-    dir_path: Path, root_path: Path, forms: List[FormData], context: Context
-) -> Dict[str, ExplorerResponse]:
+    dir_path: Path, root_path: Path, forms: list[FormData], context: Context
+) -> dict[str, ExplorerResponse]:
     def compute_attributes_rec(content: ExplorerResponse, all_data, result):
         size_files = sum(file.size for file in content.files)
         attributes = [
@@ -483,7 +483,7 @@ def chunks(lst, n):
         yield lst[i : i + n]
 
 
-async def post_storage_by_chunk(storage, forms: List[FormData], count, headers):
+async def post_storage_by_chunk(storage, forms: list[FormData], count, headers):
     for i, chunk in enumerate(chunks(forms, count)):
         progress = 100 * i / (len(forms) / count)
         print(f"post files chunk, progress: {progress}")
@@ -664,7 +664,7 @@ def get_path(library_id: str, version: str, rest_of_path: str):
     return f"libraries/{name.replace('@', '')}/{version}/{rest_of_path}"
 
 
-def library_model_from_doc(d: Dict[str, str]):
+def library_model_from_doc(d: dict[str, str]):
     return Library(
         name=d["library_name"],
         version=d["version"],

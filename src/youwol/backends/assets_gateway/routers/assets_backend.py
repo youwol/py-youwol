@@ -2,7 +2,7 @@
 import uuid
 
 # typing
-from typing import List, Optional
+from typing import Optional
 
 # third parties
 from aiohttp import ClientResponse
@@ -48,7 +48,7 @@ class NewEmptyAssetBody(BaseModel):
     kind: str
     name: str = ""
     description: str = ""
-    tags: List[str] = []
+    tags: list[str] = []
 
 
 @router.get(

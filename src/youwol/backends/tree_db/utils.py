@@ -2,8 +2,10 @@
 import base64
 import json
 
+from collections.abc import Mapping
+
 # typing
-from typing import Any, Dict, List, Mapping, Union
+from typing import Any, Union
 
 # third parties
 from fastapi import HTTPException
@@ -55,7 +57,7 @@ def to_owner(group_id: str) -> Union[str, None]:
 async def get_group(
     primary_key: str,
     primary_value: Union[str, float, int, bool],
-    groups: List[str],
+    groups: list[str],
     doc_db: DocDb,
     headers: Mapping[str, str],
 ):
@@ -144,7 +146,7 @@ def doc_to_drive_response(doc):
 
 
 async def ensure_drive(
-    drive_id: str, group_id: str, docdb_drive: DocDb, headers: Dict[str, Any]
+    drive_id: str, group_id: str, docdb_drive: DocDb, headers: dict[str, Any]
 ):
     try:
         await docdb_drive.get_document(
@@ -160,7 +162,7 @@ async def ensure_drive(
 
 
 async def ensure_folder(
-    folder_id: str, group_id: str, docdb_folder: DocDb, headers: Dict[str, Any]
+    folder_id: str, group_id: str, docdb_folder: DocDb, headers: dict[str, Any]
 ):
     try:
         await docdb_folder.get_document(
@@ -176,7 +178,7 @@ async def ensure_folder(
 
 
 def delete_folder(
-    folder_id: str, group_id: str, docdb_folders: DocDb, headers: Dict[str, Any]
+    folder_id: str, group_id: str, docdb_folders: DocDb, headers: dict[str, Any]
 ):
     return docdb_folders.delete_document(
         doc={"folder_id": folder_id}, owner=group_id, headers=headers
@@ -184,7 +186,7 @@ def delete_folder(
 
 
 def delete_item(
-    item_id: str, group_id: str, docdb_items: DocDb, headers: Dict[str, Any]
+    item_id: str, group_id: str, docdb_items: DocDb, headers: dict[str, Any]
 ):
     return docdb_items.delete_document(
         doc={"item_id": item_id}, owner=group_id, headers=headers
@@ -196,7 +198,7 @@ async def get_drive_rec(
     folders_db: DocDb,
     drives_db: DocDb,
     owner: str,
-    headers: Dict[str, str],
+    headers: dict[str, str],
 ):
     query = f"parent_folder_id={parent_folder_id}#1"
     drives = await drives_db.query(query_body=query, owner=owner, headers=headers)
@@ -211,7 +213,7 @@ async def get_drive_rec(
 
 
 async def get_group_from_drive(
-    user: Dict[str, Any], drive_id: str, doc_dbs: Any, headers
+    user: dict[str, Any], drive_id: str, doc_dbs: Any, headers
 ) -> str:
     groups = get_all_individual_groups(user["memberof"])
     group_id0, group_id1 = await asyncio.gather(
@@ -222,7 +224,7 @@ async def get_group_from_drive(
 
 
 async def get_group_from_folder(
-    user: Dict[str, Any], folder_id: str, doc_dbs: Any, headers: Dict[str, str]
+    user: dict[str, Any], folder_id: str, doc_dbs: Any, headers: dict[str, str]
 ) -> str:
     groups = get_all_individual_groups(user["memberof"])
     group_id0, group_id1 = await asyncio.gather(
@@ -233,7 +235,7 @@ async def get_group_from_folder(
 
 
 async def get_group_from_item(
-    user: Dict[str, Any], item_id: str, doc_dbs: Any, headers
+    user: dict[str, Any], item_id: str, doc_dbs: Any, headers
 ) -> str:
     groups = get_all_individual_groups(user["memberof"])
     group_id0, group_id1 = await asyncio.gather(
@@ -243,7 +245,7 @@ async def get_group_from_item(
     return group_id0 or group_id1
 
 
-async def db_get(docdb: DocDb, partition_keys: Dict[str, Any], context: Context):
+async def db_get(docdb: DocDb, partition_keys: dict[str, Any], context: Context):
     async with context.start(
         action="db_get",
     ) as ctx:  # type: Context
@@ -279,7 +281,7 @@ async def db_query(
         return list(r["documents"])
 
 
-async def db_delete(docdb: DocDb, doc: Dict[str, Any], context: Context):
+async def db_delete(docdb: DocDb, doc: dict[str, Any], context: Context):
     async with context.start(action="db_delete") as ctx:  # type: Context
         return await docdb.delete_document(
             doc=doc, owner=Constants.public_owner, headers=ctx.headers()

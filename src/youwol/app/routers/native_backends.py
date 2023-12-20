@@ -1,9 +1,6 @@
 # standard library
 from dataclasses import dataclass
 
-# typing
-from typing import List
-
 # third parties
 from fastapi import APIRouter
 
@@ -41,7 +38,7 @@ router = APIRouter()
 @dataclass(frozen=True)
 class BackendPlugin:
     prefix: str
-    tags: List[str]
+    tags: list[str]
     router: APIRouter
 
 

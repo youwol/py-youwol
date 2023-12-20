@@ -1,8 +1,9 @@
 # standard library
+from collections.abc import Awaitable
 from dataclasses import dataclass
 
 # typing
-from typing import Any, Awaitable, Callable, Optional
+from typing import Any, Callable, Optional
 
 # third parties
 from aiohttp import ClientResponse

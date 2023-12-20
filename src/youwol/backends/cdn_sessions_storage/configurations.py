@@ -1,8 +1,9 @@
 # standard library
+from collections.abc import Awaitable
 from dataclasses import dataclass
 
 # typing
-from typing import Awaitable, Callable
+from typing import Callable
 
 # Youwol utilities
 from youwol.utils import Storage

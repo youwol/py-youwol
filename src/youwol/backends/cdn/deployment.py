@@ -1,6 +1,3 @@
-# typing
-from typing import List
-
 # third parties
 from fastapi import APIRouter
 
@@ -46,7 +43,7 @@ class CdnDeployment(BackendDeployment):
     def name(self) -> str:
         return "cdn"
 
-    def middlewares(self) -> List[FastApiMiddleware]:
+    def middlewares(self) -> list[FastApiMiddleware]:
         return [auth_middleware]
 
 

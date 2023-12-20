@@ -2,9 +2,6 @@
 import asyncio
 import json
 
-# typing
-from typing import Dict
-
 # third parties
 from fastapi import HTTPException
 from starlette.requests import Request
@@ -63,7 +60,7 @@ async def create_asset(
     request: Request,
     kind: str,
     raw_id: str,
-    raw_response: Dict[str, any],
+    raw_response: dict[str, any],
     folder_id: str,
     metadata: AssetMeta,
     context: Context,

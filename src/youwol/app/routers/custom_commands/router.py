@@ -1,8 +1,6 @@
 # standard library
+from collections.abc import Awaitable
 from enum import Enum
-
-# typing
-from typing import Awaitable
 
 # third parties
 from fastapi import APIRouter, Depends, HTTPException

@@ -1,6 +1,3 @@
-# typing
-from typing import List
-
 # third parties
 from fastapi import APIRouter
 
@@ -30,7 +27,7 @@ class CdnAppsServerDeployment(BackendDeployment):
     def name(self) -> str:
         return "cdn-apps-server"
 
-    def middlewares(self) -> List[FastApiMiddleware]:
+    def middlewares(self) -> list[FastApiMiddleware]:
         return [
             get_auth_middleware_with_cookie(redirect_to_login_for_path="/applications")
         ]

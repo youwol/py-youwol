@@ -1,9 +1,6 @@
 # standard library
 from collections import defaultdict
 
-# typing
-from typing import Dict, List
-
 # third parties
 from pydantic import BaseModel
 
@@ -18,8 +15,8 @@ from .projects_loader import ProjectLoader
 
 async def check_cyclic_dependency(
     project_name: str,
-    all_projects: List[Project],
-    forbidden: List[str],
+    all_projects: list[Project],
+    forbidden: list[str],
     context: Context,
 ) -> bool:
     forbidden = forbidden + [project_name]
@@ -53,8 +50,8 @@ async def check_cyclic_dependency(
 
 
 async def sort_projects(
-    projects: List[Project], sorted_projects: List[Project], context: Context = Context
-) -> List[Project]:
+    projects: list[Project], sorted_projects: list[Project], context: Context = Context
+) -> list[Project]:
     sorted_projects = sorted_projects or []
     if not projects:
         return sorted_projects
@@ -91,15 +88,15 @@ async def sort_projects(
 
 
 class ResolvedDependencies(BaseModel):
-    global_dag: List[ChildToParentConnections]
-    sorted_projects: List[Project]
-    recursive_dependencies: Dict[str, List[str]]
+    global_dag: list[ChildToParentConnections]
+    sorted_projects: list[Project]
+    recursive_dependencies: dict[str, list[str]]
 
 
 async def resolve_workspace_dependencies(context: Context) -> ResolvedDependencies:
     projects = await ProjectLoader.get_cached_projects()
 
-    parent_ids = defaultdict(lambda: [])
+    parent_ids = defaultdict(list)
     for project in projects:
         for d in await project.get_dependencies(
             recursive=False, projects=projects, context=context

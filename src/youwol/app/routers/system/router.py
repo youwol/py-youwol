@@ -6,7 +6,7 @@ from enum import Enum
 from pathlib import Path
 
 # typing
-from typing import Dict, List, Optional, cast
+from typing import Optional, cast
 
 # third parties
 from fastapi import APIRouter, Query
@@ -22,8 +22,8 @@ router = APIRouter()
 
 
 class FolderContentResp(BaseModel):
-    files: List[str]
-    folders: List[str]
+    files: list[str]
+    folders: list[str]
 
 
 class FolderContentBody(BaseModel):
@@ -45,7 +45,7 @@ async def folder_content(body: FolderContentBody):
     if not path.is_dir():
         return FolderContentResp(files=[], folders=[])
     # if 'List[str]' not provided => items result in 'Union[List[str], List[bytes]]'...?
-    items: List[str] = os.listdir(path)
+    items: list[str] = os.listdir(path)
     return FolderContentResp(
         files=[item for item in items if os.path.isfile(path / item)],
         folders=[item for item in items if os.path.isdir(path / item)],
@@ -63,8 +63,8 @@ class Log(BaseModel):
     """
 
     level: str
-    attributes: Dict[str, str]
-    labels: List[str]
+    attributes: dict[str, str]
+    labels: list[str]
     text: str
     data: Optional[JSON]
     contextId: str
@@ -102,11 +102,11 @@ class NodeLogResponse(Log):
 
 
 class LogsResponse(BaseModel):
-    logs: List[Log]
+    logs: list[Log]
 
 
 class NodeLogsResponse(BaseModel):
-    logs: List[NodeLogResponse]
+    logs: list[NodeLogResponse]
 
 
 class PostLogBody(Log):
@@ -114,7 +114,7 @@ class PostLogBody(Log):
 
 
 class PostLogsBody(BaseModel):
-    logs: List[PostLogBody]
+    logs: list[PostLogBody]
 
 
 @router.get("/logs/", summary="return the logs")
@@ -159,7 +159,7 @@ async def get_logs(request: Request, parent_id: str):
             logger.futures,
         )
 
-        nodes: List[Log] = [
+        nodes: list[Log] = [
             NodeLogResponse(
                 **Log.from_log_entry(log).dict(),
                 failed=log.context_id in errors,
@@ -169,7 +169,7 @@ async def get_logs(request: Request, parent_id: str):
             for log in nodes_logs
             if log.parent_context_id == parent_id
         ]
-        leafs: List[Log] = [
+        leafs: list[Log] = [
             LeafLogResponse(**Log.from_log_entry(log).dict())
             for log in leaf_logs
             if log.context_id == parent_id

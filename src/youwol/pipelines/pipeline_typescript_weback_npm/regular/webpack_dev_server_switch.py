@@ -1,5 +1,5 @@
 # typing
-from typing import List, Optional
+from typing import Optional
 
 # third parties
 from starlette.requests import Request
@@ -38,7 +38,7 @@ class WebpackDevServerSwitch(CdnSwitch):
 
     packageName: str
     port: int
-    notServedResources: List[str] = [
+    notServedResources: list[str] = [
         ".yw_metadata.json",
         "dist/docs",
         "coverage",

@@ -3,7 +3,7 @@ from enum import Enum
 from pathlib import Path
 
 # typing
-from typing import Dict, List, Optional
+from typing import Optional
 
 # third parties
 from pydantic import BaseModel
@@ -38,8 +38,8 @@ class RunTimeDeps(BaseModel):
     Note: All dependencies listed in 'external' must be available in YouWol ecosystem.
     """
 
-    externals: Dict[str, str] = {}
-    includedInBundle: Dict[str, str] = {}
+    externals: dict[str, str] = {}
+    includedInBundle: dict[str, str] = {}
 
 
 class Dependencies(BaseModel):
@@ -53,7 +53,7 @@ class Dependencies(BaseModel):
     """
 
     runTime: RunTimeDeps = RunTimeDeps()
-    devTime: Dict[str, str] = {}
+    devTime: dict[str, str] = {}
 
 
 class DevServer(BaseModel):
@@ -79,8 +79,8 @@ class MainModule(BaseModel):
     """
 
     entryFile: str
-    loadDependencies: List[str] = []
-    aliases: List[str] = []
+    loadDependencies: list[str] = []
+    aliases: list[str] = []
 
 
 class AuxiliaryModule(MainModule):
@@ -112,7 +112,7 @@ class Bundles(BaseModel):
     """
 
     mainModule: MainModule
-    auxiliaryModules: List[AuxiliaryModule] = []
+    auxiliaryModules: list[AuxiliaryModule] = []
 
 
 class Template(BaseModel):
@@ -172,7 +172,7 @@ class PublicNpmRepo(NpmRepo):
 
 
 class PackagesPublishNpm(UploadTargets):
-    targets: List[NpmRepo]
+    targets: list[NpmRepo]
 
     async def publish(self, target_name: str, project: Project, context: Context):
         target = next(t for t in self.targets if t.name == target_name)

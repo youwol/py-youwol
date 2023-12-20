@@ -1,6 +1,3 @@
-# typing
-from typing import List
-
 # Youwol application
 from youwol.app.routers.projects.models_project import (
     Artifact,
@@ -27,7 +24,7 @@ class DocStep(PipelineStep):
         ],
     )
 
-    artifacts: List[Artifact] = [
+    artifacts: list[Artifact] = [
         Artifact(
             id="docs",
             files=FileListing(

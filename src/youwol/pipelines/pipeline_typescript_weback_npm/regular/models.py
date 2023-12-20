@@ -1,9 +1,6 @@
 # standard library
 from pathlib import Path
 
-# typing
-from typing import List
-
 # third parties
 from pydantic import BaseModel
 
@@ -15,6 +12,6 @@ class InputDataDependency(BaseModel):
     project: Project
     dist_folder: Path
     src_folder: Path
-    dist_files: List[Path]
-    src_files: List[Path]
+    dist_files: list[Path]
+    src_files: list[Path]
     checksum: str

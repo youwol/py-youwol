@@ -1,6 +1,3 @@
-# typing
-from typing import List
-
 # third parties
 from fastapi import APIRouter
 
@@ -64,7 +61,7 @@ class AssetsDeployment(BackendDeployment):
     def name(self) -> str:
         return "assets"
 
-    def middlewares(self) -> List[FastApiMiddleware]:
+    def middlewares(self) -> list[FastApiMiddleware]:
         return [auth_middleware]
 
 

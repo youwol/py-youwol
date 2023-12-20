@@ -1,9 +1,10 @@
 # standard library
 from abc import ABC, abstractmethod
+from collections.abc import Awaitable
 from dataclasses import dataclass
 
 # typing
-from typing import Any, Awaitable, Callable, Dict, Generic, Optional, TypeVar, Union
+from typing import Any, Callable, Generic, Optional, TypeVar, Union
 
 # third parties
 from aiohttp import ClientResponse, ClientSession
@@ -22,7 +23,7 @@ class RequestExecutor(ABC, Generic[TClientResponse]):
         url: str,
         default_reader: Callable[[TClientResponse], Awaitable[Any]],
         custom_reader: Optional[Callable[[TClientResponse], Awaitable[Any]]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
         **kwargs,
     ):
         pass
@@ -33,7 +34,7 @@ class RequestExecutor(ABC, Generic[TClientResponse]):
         url: str,
         default_reader: Callable[[TClientResponse], Awaitable[Any]],
         custom_reader: Optional[Callable[[TClientResponse], Awaitable[Any]]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
         **kwargs,
     ):
         pass
@@ -44,7 +45,7 @@ class RequestExecutor(ABC, Generic[TClientResponse]):
         url: str,
         default_reader: Callable[[TClientResponse], Awaitable[Any]],
         custom_reader: Optional[Callable[[TClientResponse], Awaitable[Any]]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
         **kwargs,
     ):
         pass
@@ -55,7 +56,7 @@ class RequestExecutor(ABC, Generic[TClientResponse]):
         url: str,
         default_reader: Callable[[TClientResponse], Awaitable[Any]],
         custom_reader: Optional[Callable[[TClientResponse], Awaitable[Any]]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
         **kwargs,
     ):
         pass
@@ -79,7 +80,7 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
         async with self.client_session() as session:
             return await request(session)
 
-    async def _resolve_headers(self, headers: Optional[Dict[str, str]]):
+    async def _resolve_headers(self, headers: Optional[dict[str, str]]):
         static_headers = headers or {}
         access_token = await self.access_token() if self.access_token else None
         dynamic_headers = (
@@ -93,7 +94,7 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
         url: str,
         default_reader: Callable[[ClientResponse], Awaitable[Any]],
         custom_reader: Optional[Callable[[ClientResponse], Awaitable[Any]]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
         **kwargs,
     ):
         resolved_headers = await self._resolve_headers(headers)
@@ -113,7 +114,7 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
         url: str,
         default_reader: Callable[[ClientResponse], Awaitable[Any]],
         custom_reader: Optional[Callable[[ClientResponse], Awaitable[Any]]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
         **kwargs,
     ):
         return await self._request(
@@ -130,7 +131,7 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
         url: str,
         default_reader: Callable[[ClientResponse], Any],
         custom_reader: Optional[Callable[[ClientResponse], Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
         **kwargs,
     ):
         return await self._request(
@@ -147,7 +148,7 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
         url: str,
         default_reader: Callable[[ClientResponse], Any],
         custom_reader: Optional[Callable[[ClientResponse], Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
         **kwargs,
     ):
         return await self._request(
@@ -164,7 +165,7 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
         url: str,
         default_reader: Callable[[ClientResponse], Any],
         custom_reader: Optional[Callable[[ClientResponse], Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
         **kwargs,
     ):
         return await self._request(

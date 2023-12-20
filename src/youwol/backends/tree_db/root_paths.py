@@ -4,8 +4,10 @@ import itertools
 import json
 import uuid
 
+from collections.abc import Coroutine
+
 # typing
-from typing import Coroutine, List, Optional, Set, Tuple, cast
+from typing import Optional, cast
 
 # third parties
 from fastapi import APIRouter, Depends, HTTPException
@@ -1223,11 +1225,11 @@ async def purge_folder(
     request: Request,
     drive_id: str,
     folder_id: str,
-    skip_folders: Set[str],
-    skip_items: Set[str],
+    skip_folders: set[str],
+    skip_items: set[str],
     configuration: Configuration,
     context: Context,
-) -> Tuple[List[Coroutine], List[Coroutine], List[ItemResponse]]:
+) -> tuple[list[Coroutine], list[Coroutine], list[ItemResponse]]:
     async with context.start(action="purge folder") as ctx:
         doc_dbs = configuration.doc_dbs
         content = await _children(

@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 # typing
-from typing import Dict, Union
+from typing import Union
 
 # third parties
 import aiohttp
@@ -32,7 +32,7 @@ class StorageClient:
 
     version: str = "v0-alpha1"
 
-    headers: Dict[str, str] = field(default_factory=lambda: {})
+    headers: dict[str, str] = field(default_factory=lambda: {})
     connector = aiohttp.TCPConnector(verify_ssl=False)
 
     @property

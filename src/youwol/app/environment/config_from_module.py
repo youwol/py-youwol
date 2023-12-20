@@ -6,12 +6,13 @@ import traceback
 
 from _ast import mod
 from abc import ABC, abstractmethod
+from collections.abc import Awaitable
 from importlib.machinery import SourceFileLoader
 from importlib.util import spec_from_loader
 from pathlib import Path
 
 # typing
-from typing import Awaitable, Optional, cast
+from typing import Optional, cast
 
 # Youwol application
 from youwol.app.main_args import MainArguments, get_main_arguments
@@ -51,7 +52,7 @@ def try_last_expression_as_config(config_path: Path) -> Optional[Configuration]:
     module = importlib.util.module_from_spec(spec)
     loader.exec_module(module)
     config_globals = {k: getattr(module, k) for k in module.__dict__}
-    with open(config_path, "r", encoding="UTF-8") as fp:
+    with open(config_path, encoding="UTF-8") as fp:
         script = fp.read()
         stmts = list(ast.iter_child_nodes(ast.parse(script)))
         if not stmts:

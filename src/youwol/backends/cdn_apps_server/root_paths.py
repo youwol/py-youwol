@@ -1,9 +1,6 @@
 # standard library
 import base64
 
-# typing
-from typing import List
-
 # third parties
 import aiohttp
 
@@ -21,7 +18,7 @@ from youwol.utils.context import Context
 router = APIRouter(tags=["cdn-apps-server"])
 
 
-def get_info(segments: List[str]):
+def get_info(segments: list[str]):
     namespace = segments[0]
     name = segments[1]
     version = segments[2]

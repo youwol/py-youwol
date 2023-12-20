@@ -1,8 +1,9 @@
 # standard library
+from collections.abc import Awaitable
 from dataclasses import dataclass
 
 # typing
-from typing import Awaitable, Callable, Dict, Generic, Optional, TypeVar
+from typing import Callable, Generic, Optional, TypeVar
 
 # Youwol utilities
 from youwol.utils.clients.file_system.interfaces import FileSystemInterface
@@ -21,7 +22,7 @@ FileSystemImplementation = TypeVar(
 @dataclass(frozen=True)
 class Configuration(Generic[FileSystemImplementation]):
     file_system: FileSystemImplementation
-    admin_headers: Optional[Dict[str, str]] = None
+    admin_headers: Optional[dict[str, str]] = None
 
 
 class Dependencies:

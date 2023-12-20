@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 
 # typing
-from typing import Any, Dict, List, Union
+from typing import Any, Union
 
 # third parties
 import semantic_version
@@ -97,7 +97,7 @@ def get_library_id(name: str, version: str) -> str:
 
 async def format_doc_db_record(
     package_path: Path, fingerprint: str, context: Context
-) -> Dict[str, str]:
+) -> dict[str, str]:
     package_json = json.loads(package_path.read_bytes())
 
     name = package_json.get("name", None)
@@ -117,7 +117,7 @@ async def format_doc_db_record(
             + "entry point.",
         )
 
-    async def get_webpm_dependencies() -> Dict[str, str]:
+    async def get_webpm_dependencies() -> dict[str, str]:
         if "webpm" in package_json and "dependencies" in package_json["webpm"]:
             return package_json["webpm"]["dependencies"]
         if "youwol" in package_json and "cdnDependencies" in package_json["youwol"]:
@@ -127,7 +127,7 @@ async def format_doc_db_record(
             return package_json["youwol"]["cdnDependencies"]
         return {}
 
-    def get_webpm_aliases() -> List[str]:
+    def get_webpm_aliases() -> list[str]:
         if "webpm" in package_json and "aliases" in package_json["webpm"]:
             return package_json["webpm"]["aliases"]
         return []

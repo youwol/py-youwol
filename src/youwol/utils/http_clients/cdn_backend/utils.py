@@ -1,10 +1,11 @@
 # standard library
 import base64
 
+from collections.abc import Iterable
 from pathlib import Path
 
 # typing
-from typing import Iterable, List, Optional
+from typing import Optional
 
 # third parties
 import brotli
@@ -58,7 +59,7 @@ def create_local_scylla_db_docs_file_if_needed(expected_path: Path):
     return expected_path
 
 
-async def encode_extra_index(documents: List[JSON], context: Context):
+async def encode_extra_index(documents: list[JSON], context: Context):
     async with context.start(action="encode_extra_index") as ctx:
 
         def flatten_elem(d: JSON) -> str:
@@ -95,7 +96,7 @@ async def decode_extra_index(documents: str, context: Context):
         src_str = extra.decode("utf-8")
 
         def unflatten_elem(elem: str):
-            props: List[str] = elem.split("&")
+            props: list[str] = elem.split("&")
             return {
                 "library_name": props[0],
                 "version": props[1],

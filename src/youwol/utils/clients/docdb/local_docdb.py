@@ -2,12 +2,13 @@
 import json
 import shutil
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from threading import Lock
 
 # typing
-from typing import Any, Dict, List, Mapping, Optional, Union
+from typing import Any, Optional, Union
 
 # third parties
 from fastapi import HTTPException
@@ -30,7 +31,7 @@ def get_local_nosql_instance(
     root_path: Path,
     keyspace_name: str,
     table_body: TableBody,
-    secondary_indexes: List[SecondaryIndex],
+    secondary_indexes: list[SecondaryIndex],
 ):
     path = root_path / keyspace_name / table_body.name / "data.json"
     create_local_scylla_db_docs_file_if_needed(path)
@@ -52,7 +53,7 @@ class LocalDocDbClient:
     table_body: TableBody
 
     data: Any = field(default_factory=lambda: {"documents": []})
-    secondary_indexes: List[SecondaryIndex] = field(default_factory=lambda: [])
+    secondary_indexes: list[SecondaryIndex] = field(default_factory=lambda: [])
 
     @property
     def table_name(self):
@@ -70,7 +71,7 @@ class LocalDocDbClient:
     def metadata_path(self):
         return self.base_path / "metadata.json"
 
-    def primary_key_id(self, doc: Dict[str, any]):
+    def primary_key_id(self, doc: dict[str, any]):
         return str(
             [[k, doc[k]] for k in self.table_body.partition_key]
             + [[k, doc[k]] for k in self.table_body.clustering_columns]
@@ -86,8 +87,8 @@ class LocalDocDbClient:
 
     async def get_document(
         self,
-        partition_keys: Dict[str, any],
-        clustering_keys: Dict[str, any],
+        partition_keys: dict[str, any],
+        clustering_keys: dict[str, any],
         owner: Union[str, None],
         allow_filtering: bool = False,
         **kwargs,
@@ -211,7 +212,7 @@ class LocalDocDbClient:
 
     async def delete_document(
         self,
-        doc: Dict[str, any],
+        doc: dict[str, any],
         owner: Union[str, None],
         headers: Optional[Mapping[str, str]] = None,
         **_kwargs,

@@ -1,8 +1,10 @@
 # standard library
 import asyncio
 
+from collections.abc import Awaitable
+
 # typing
-from typing import Awaitable, Protocol
+from typing import Protocol
 
 # third parties
 from fastapi import HTTPException

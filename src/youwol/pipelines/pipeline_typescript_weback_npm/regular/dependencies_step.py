@@ -2,10 +2,11 @@
 import functools
 import shutil
 
+from collections.abc import Mapping
 from pathlib import Path
 
 # typing
-from typing import List, Mapping, Optional
+from typing import Optional
 
 # third parties
 from deepdiff import DeepDiff
@@ -138,11 +139,11 @@ class DependenciesStep(PipelineStep):
     id: str = "dependencies"
     run: ExplicitNone = ExplicitNone()
 
-    artifacts: List[Artifact] = []
+    artifacts: list[Artifact] = []
 
     view: str = Path(__file__).parent / "views" / "dependencies.view.js"
 
-    http_commands: List[CommandPipelineStep] = [
+    http_commands: list[CommandPipelineStep] = [
         CommandPipelineStep(
             name="get_input_data",
             do_get=lambda project, flow_id, ctx: get_input_data(

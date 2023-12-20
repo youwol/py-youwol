@@ -2,10 +2,11 @@
 import io
 
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from dataclasses import dataclass
 
 # typing
-from typing import Iterable, List, Optional, Tuple
+from typing import Optional
 
 # third parties
 from pydantic import BaseModel
@@ -56,7 +57,7 @@ class FileSystemInterface(ABC):
     async def get_object(
         self,
         object_id: str,
-        ranges_bytes: Optional[List[Tuple[int, int]]] = None,
+        ranges_bytes: Optional[list[tuple[int, int]]] = None,
         **kwargs,
     ):
         raise NotImplementedError

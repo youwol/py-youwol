@@ -1,9 +1,10 @@
 # standard library
+from collections.abc import Awaitable
 from dataclasses import dataclass
 from pathlib import Path
 
 # typing
-from typing import Any, Awaitable, Callable, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 # third parties
 from aiohttp import ClientResponse, FormData

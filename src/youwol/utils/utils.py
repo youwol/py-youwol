@@ -2,12 +2,13 @@
 import base64
 import itertools
 
+from collections.abc import Iterable
 from datetime import datetime
 from enum import Enum
 from pathlib import Path, PosixPath
 
 # typing
-from typing import Any, Callable, Dict, Iterable, List, NamedTuple, Union, cast
+from typing import Any, Callable, NamedTuple, Union, cast
 
 # third parties
 import aiohttp
@@ -65,8 +66,8 @@ def is_authorized_write(request: Request, group_id):
     return True
 
 
-def get_all_individual_groups(groups: List[str]) -> List[Union[str, None]]:
-    def get_combinations(elements: List[str]):
+def get_all_individual_groups(groups: list[str]) -> list[Union[str, None]]:
+    def get_combinations(elements: list[str]):
         result = []
         for i in range(1, len(elements)):
             result.append("/".join(elements[0:i]))
@@ -78,7 +79,7 @@ def get_all_individual_groups(groups: List[str]) -> List[Union[str, None]]:
     return list(set(groups + parts_flat))
 
 
-def get_user_group_ids(user) -> List[Union[str, None]]:
+def get_user_group_ids(user) -> list[Union[str, None]]:
     group_ids = [
         to_group_id(g)
         for g in get_all_individual_groups(user["memberof"])
@@ -87,7 +88,7 @@ def get_user_group_ids(user) -> List[Union[str, None]]:
     return [private_group_id(user)] + group_ids
 
 
-def get_leaf_group_ids(user) -> List[Union[str, None]]:
+def get_leaf_group_ids(user) -> list[Union[str, None]]:
     group_ids = [to_group_id(g) for g in user["memberof"] if g is not None]
     return [private_group_id(user)] + group_ids
 
@@ -123,7 +124,7 @@ async def reload_youwol_environment(port: int):
 
 def generate_headers_downstream(
     incoming_headers: Headers,
-    from_req_fwd: Callable[[List[str]], List[str]] = lambda _keys: [],
+    from_req_fwd: Callable[[list[str]], list[str]] = lambda _keys: [],
 ):
     # the following headers are set when a request is sent anyway
     black_list = ["content-type", "content-length", "content-encoding"]
@@ -147,7 +148,7 @@ def chunks(lst, n):
 
 
 def check_permission_or_raise(
-    target_group: Union[str, None], allowed_groups: List[Union[None, str]]
+    target_group: Union[str, None], allowed_groups: list[Union[None, str]]
 ):
     if not target_group:
         return
@@ -242,7 +243,7 @@ def is_json_leaf(v):
     )
 
 
-def to_json_rec(_obj: Union[Dict[str, Any], List[Any]]):
+def to_json_rec(_obj: Union[dict[str, Any], list[Any]]):
     result = {}
 
     def process_value(value):
@@ -265,6 +266,6 @@ def to_json_rec(_obj: Union[Dict[str, Any], List[Any]]):
     return result
 
 
-def to_json(obj: Union[BaseModel, Dict[str, Any]]) -> JSON:
+def to_json(obj: Union[BaseModel, dict[str, Any]]) -> JSON:
     base = obj.dict() if isinstance(obj, BaseModel) else obj
     return to_json_rec(base)

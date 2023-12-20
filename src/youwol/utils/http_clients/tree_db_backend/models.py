@@ -1,5 +1,5 @@
 # typing
-from typing import List, NamedTuple, Optional, TypeVar, Union
+from typing import NamedTuple, Optional, TypeVar, Union
 
 # third parties
 from pydantic import BaseModel
@@ -49,7 +49,7 @@ class Group(BaseModel):
 
 
 class GroupsResponse(BaseModel):
-    groups: List[Group]
+    groups: list[Group]
 
 
 class ItemResponse(BaseModel):
@@ -107,21 +107,21 @@ GroupId = str
 
 
 class DrivesResponse(BaseModel):
-    drives: List[DriveResponse]
+    drives: list[DriveResponse]
 
 
 class ChildrenResponse(BaseModel):
-    items: List[ItemResponse]
-    folders: List[FolderResponse]
+    items: list[ItemResponse]
+    folders: list[FolderResponse]
 
 
 class ItemsResponse(BaseModel):
-    items: List[ItemResponse]
+    items: list[ItemResponse]
 
 
 class PathResponse(BaseModel):
     item: Optional[ItemResponse] = None
-    folders: List[FolderResponse]
+    folders: list[FolderResponse]
     drive: DriveResponse
 
 
@@ -129,19 +129,19 @@ WhereClause = dict
 
 
 class QueryFilesBody(BaseModel):
-    whereClauses: List[WhereClause] = []
+    whereClauses: list[WhereClause] = []
     maxResults: int = 10
 
 
 class PurgeResponse(BaseModel):
     foldersCount: int
     itemsCount: int
-    items: List[ItemResponse]
+    items: list[ItemResponse]
 
 
 class MoveResponse(BaseModel):
     foldersCount: int
-    items: List[ItemResponse]
+    items: list[ItemResponse]
 
 
 class ItemBody(BaseModel):
@@ -182,7 +182,7 @@ class DriveBody(BaseModel):
 
 class User(BaseModel):
     name: str
-    groups: List[str]
+    groups: list[str]
 
 
 class GetRecordsBody(BaseModel):

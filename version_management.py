@@ -3,9 +3,6 @@ import json
 import subprocess
 import sys
 
-# typing
-from typing import List
-
 # third parties
 import tomlkit
 
@@ -22,7 +19,7 @@ def debug(msg: str):
 
 def write_version(v: str):
     pyproject_dict = None
-    with open(PYPROJECT_TOML, "r", encoding="utf8") as f_r:
+    with open(PYPROJECT_TOML, encoding="utf8") as f_r:
         pyproject_dict = tomlkit.load(f_r)
 
     with open(PYPROJECT_TOML, "w", encoding="utf8") as f_w:
@@ -39,7 +36,7 @@ def git_commit(msg: str):
 
 
 def get_current_version():
-    with open(PYPROJECT_TOML, "r", encoding="utf8") as f:
+    with open(PYPROJECT_TOML, encoding="utf8") as f:
         pyproject_dict = tomlkit.load(f)
         v = version.parse(pyproject_dict.get("project").get("version"))
         if v.is_postrelease:
@@ -47,8 +44,8 @@ def get_current_version():
         return v
 
 
-def get_classifiers_python_version() -> List[str]:
-    with open(PYPROJECT_TOML, "r", encoding="utf8") as fd:
+def get_classifiers_python_version() -> list[str]:
+    with open(PYPROJECT_TOML, encoding="utf8") as fd:
         metadata = tomlkit.load(fd)
         return [
             f"{PYTHON_VERSION_PREFIX}{classifier[len(CLASSIFIER_PYTHON_VERSION):]}"

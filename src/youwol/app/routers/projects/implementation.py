@@ -2,9 +2,6 @@
 import os
 import shutil
 
-# typing
-from typing import List, Tuple
-
 # Youwol application
 from youwol.app.environment import PathsBook, YouwolEnvironment
 
@@ -66,7 +63,7 @@ async def get_project_configuration(
 
 async def get_project_step(
     project_id: str, step_id: str, context: Context
-) -> Tuple[Project, PipelineStep]:
+) -> tuple[Project, PipelineStep]:
     projects = await ProjectLoader.get_cached_projects()
     project = next((p for p in projects if p.id == project_id), None)
     if project is None:
@@ -91,7 +88,7 @@ async def get_project_step(
 
 async def get_project_flow_steps(
     project_id: str, flow_id: str, context: Context
-) -> Tuple[Project, Flow, List[PipelineStep]]:
+) -> tuple[Project, Flow, list[PipelineStep]]:
     projects = await ProjectLoader.get_cached_projects()
     project = next((p for p in projects if p.id == project_id), None)
 

@@ -1,9 +1,6 @@
 # standard library
 import asyncio
 
-# typing
-from typing import List
-
 # third parties
 from aiostream import stream
 
@@ -12,7 +9,7 @@ from youwol.utils.context import Context
 
 
 class CommandException(Exception):
-    def __init__(self, command: str, outputs: List[str]):
+    def __init__(self, command: str, outputs: list[str]):
         self.command = command
         self.outputs = outputs
         super().__init__(f"{self.command} failed")

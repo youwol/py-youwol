@@ -4,22 +4,12 @@ import functools
 import itertools
 
 from abc import ABC, abstractmethod
+from collections.abc import Awaitable, Iterable
 from enum import Enum
 from pathlib import Path
 
 # typing
-from typing import (
-    Any,
-    Awaitable,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Set,
-    Union,
-    cast,
-)
+from typing import Any, Callable, Optional, Union, cast
 
 # third parties
 from pydantic import BaseModel
@@ -41,8 +31,8 @@ class LinkKind(Enum):
 
 
 class FileListing(BaseModel):
-    include: List[str]
-    ignore: List[str] = []
+    include: list[str]
+    ignore: list[str] = []
 
 
 class Link(BaseModel):
@@ -54,7 +44,7 @@ class Link(BaseModel):
 class Artifact(BaseModel):
     id: str = ""
     files: FileListing
-    links: List[Link] = []
+    links: list[Link] = []
 
 
 class PipelineStepStatus(Enum):
@@ -69,8 +59,8 @@ class Manifest(BaseModel):
     succeeded: bool
     fingerprint: Optional[str]
     creationDate: str
-    files: List[str]
-    cmdOutputs: Union[List[str], Dict] = []
+    files: list[str]
+    cmdOutputs: Union[list[str], dict] = []
 
 
 class ExplicitNone(BaseModel):
@@ -116,13 +106,13 @@ class CommandPipelineStep(BaseModel):
 class PipelineStep(BaseModel):
     id: str = ""
 
-    artifacts: List[Artifact] = []
+    artifacts: list[Artifact] = []
 
     sources: Union[FileListing, SourcesFctImplicit, SourcesFctExplicit] = None
 
     view: Optional[Path]
 
-    http_commands: List[CommandPipelineStep] = []
+    http_commands: list[CommandPipelineStep] = []
 
     async def get_sources(
         self, project: "Project", flow_id: FlowId, context: Context
@@ -244,7 +234,7 @@ class PipelineStep(BaseModel):
 
 class Flow(BaseModel):
     name: str
-    dag: List[str]
+    dag: list[str]
 
 
 class Family(Enum):
@@ -255,7 +245,7 @@ class Family(Enum):
 
 class Target(BaseModel):
     family: Family
-    links: List[Link] = []
+    links: list[Link] = []
 
 
 class BrowserTarget(Target):
@@ -286,19 +276,19 @@ class Parametrization(BaseModel):
 
 
 class FromAsset(Parametrization):
-    match: Dict
-    parameters: Dict
+    match: dict
+    parameters: dict
 
 
 class OpenWith(Parametrization):
     name: Optional[str]
-    match: Union[Dict, str]
-    parameters: Union[Dict, str]
+    match: Union[dict, str]
+    parameters: Union[dict, str]
 
 
 class Execution(BaseModel):
     standalone: bool = True
-    parametrized: List[Parametrization] = []
+    parametrized: list[Parametrization] = []
 
 
 class BrowserAppGraphics(BaseModel):
@@ -323,12 +313,12 @@ class MicroService(Target):
 
 class Pipeline(BaseModel):
     target: Target
-    tags: List[str] = []
+    tags: list[str] = []
     description: str = ""
-    steps: List[PipelineStep]
-    flows: List[Flow]
+    steps: list[PipelineStep]
+    flows: list[Flow]
     extends: Optional[str] = None
-    dependencies: Callable[["Project", Context], Set[str]] = None
+    dependencies: Callable[["Project", Context], set[str]] = None
     projectName: Callable[[Path], str]
     projectVersion: Callable[[Path], str]
 
@@ -349,11 +339,11 @@ class Project(BaseModel):
 
     async def get_dependencies(
         self,
-        projects: List["Project"],
+        projects: list["Project"],
         recursive: bool,
         context: Context,
-        ignore: Optional[List[str]] = None,
-    ) -> List["Project"]:
+        ignore: Optional[list[str]] = None,
+    ) -> list["Project"]:
         ignore = ignore or []
         all_dependencies = (
             self.pipeline.dependencies(self, context)
@@ -386,7 +376,7 @@ class Project(BaseModel):
 
     async def get_artifact_files(
         self, flow_id: str, artifact_id: str, context: Context
-    ) -> List[Path]:
+    ) -> list[Path]:
         async with context.start(
             action="get_artifact_files", with_attributes={"artifact": artifact_id}
         ) as ctx:
@@ -421,7 +411,7 @@ class Project(BaseModel):
 
     async def get_step_artifacts_files(
         self, flow_id: str, step_id: str, context: Context
-    ) -> List[Path]:
+    ) -> list[Path]:
         steps = self.get_flow_steps(flow_id=flow_id)
         step = next((s for s in steps if s.id == step_id), None)
         files = await asyncio.gather(
@@ -434,16 +424,16 @@ class Project(BaseModel):
         )
         return list(itertools.chain.from_iterable(files))
 
-    def get_flow_steps(self, flow_id: str) -> List[PipelineStep]:
+    def get_flow_steps(self, flow_id: str) -> list[PipelineStep]:
         flow = next(f for f in self.pipeline.flows if f.name == flow_id)
-        involved_steps = set(step.strip() for b in flow.dag for step in b.split(">"))
+        involved_steps = {step.strip() for b in flow.dag for step in b.split(">")}
         steps = [step for step in self.pipeline.steps if step.id in involved_steps]
 
         return steps
 
     def get_downstream_flow_steps(
         self, flow_id: str, from_step_id: str, from_step_included: bool
-    ) -> List[PipelineStep]:
+    ) -> list[PipelineStep]:
         flow = next(f for f in self.pipeline.flows if f.name == flow_id)
         branches = [[step.strip() for step in branch.split(">")] for branch in flow.dag]
 
@@ -454,7 +444,7 @@ class Project(BaseModel):
                 for i, step in enumerate(branch)
                 if step == from_step_tmp
             ]
-            return set(s for step, i, branch in starts for s in branch[i + 1 :])
+            return {s for step, i, branch in starts for s in branch[i + 1 :]}
 
         downstream_steps = implementation(from_step_tmp=from_step_id)
         indirect = [implementation(from_step_tmp=s) for s in downstream_steps]
@@ -466,8 +456,8 @@ class Project(BaseModel):
 
     def get_direct_upstream_steps(
         self, flow_id: str, step_id: str
-    ) -> List[PipelineStep]:
-        def get_direct_upstream_step_in_branch(branch: List[str]) -> Optional[str]:
+    ) -> list[PipelineStep]:
+        def get_direct_upstream_step_in_branch(branch: list[str]) -> Optional[str]:
             if step_id not in branch:
                 return None
 

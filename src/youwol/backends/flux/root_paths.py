@@ -8,10 +8,11 @@ import tempfile
 import uuid
 import zipfile
 
+from collections.abc import Mapping
 from pathlib import Path
 
 # typing
-from typing import Mapping, Union
+from typing import Union
 
 # third parties
 from fastapi import APIRouter, Depends, File, HTTPException

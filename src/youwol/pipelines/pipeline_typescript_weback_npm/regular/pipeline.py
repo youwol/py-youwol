@@ -1,6 +1,3 @@
-# typing
-from typing import List
-
 # third parties
 from pydantic import BaseModel
 
@@ -33,16 +30,16 @@ from .test_step import TestStep, TestStepConfig
 
 
 class PublishConfig(BaseModel):
-    packagedArtifacts: List[str] = ["dist", "docs", "test-coverage"]
-    packagedFolders: List[str] = []
+    packagedArtifacts: list[str] = ["dist", "docs", "test-coverage"]
+    packagedFolders: list[str] = []
 
 
 class PipelineConfig(BaseModel):
     target: BrowserTarget = BrowserLibBundle()
-    with_tags: List[str] = []
+    with_tags: list[str] = []
     testConfig: TestStepConfig = TestStepConfig()
     publishConfig: PublishConfig = PublishConfig()
-    overridenSteps: List[PipelineStep] = []
+    overridenSteps: list[PipelineStep] = []
 
 
 async def pipeline(config: PipelineConfig, context: Context):

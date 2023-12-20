@@ -1,5 +1,5 @@
 # typing
-from typing import Any, Dict, List
+from typing import Any
 
 # third parties
 from pydantic import BaseModel
@@ -18,16 +18,16 @@ class OrderingClause(BaseModel):
 
 
 class TableOptions(BaseModel):
-    clustering_order: List[OrderingClause] = []
+    clustering_order: list[OrderingClause] = []
     comment: str = ""
 
 
 class TableBody(BaseModel):
     name: str
     version: str
-    columns: List[Column]
-    partition_key: List[str]
-    clustering_columns: List[str] = []
+    columns: list[Column]
+    partition_key: list[str]
+    clustering_columns: list[str] = []
     table_options: TableOptions = TableOptions()
 
 
@@ -49,7 +49,7 @@ class WhereClause(BaseModel):
     relation: str
     term: Any
 
-    def is_matching(self, doc: Dict[str, Any]) -> bool:
+    def is_matching(self, doc: dict[str, Any]) -> bool:
         factory_clauses = {
             "eq": lambda _value, _target: value == target,
             "lt": lambda _value, _target: value < target,
@@ -65,8 +65,8 @@ class WhereClause(BaseModel):
 
 
 class Query(BaseModel):
-    where_clause: List[WhereClause] = []
-    ordering_clause: List[OrderingClause] = []
+    where_clause: list[WhereClause] = []
+    ordering_clause: list[OrderingClause] = []
 
 
 class QueryBody(BaseModel):
@@ -74,8 +74,8 @@ class QueryBody(BaseModel):
     max_results: int = 100
     iterator: str = None
     mode: str = "documents"
-    distinct: List[str] = []
-    select_clauses: List[SelectClause] = []
+    distinct: list[str] = []
+    select_clauses: list[SelectClause] = []
     query: Query
 
     @staticmethod

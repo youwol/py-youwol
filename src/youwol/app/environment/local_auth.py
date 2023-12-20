@@ -4,7 +4,7 @@ import base64
 from abc import ABC, abstractmethod
 
 # typing
-from typing import Optional, Tuple
+from typing import Optional
 
 # third parties
 from starlette.requests import Request
@@ -36,7 +36,7 @@ class JwtProviderDynamicIssuer(JwtProvider, ABC):
 
     async def get_token_and_openid_base_url(
         self, request: Request, context: Context
-    ) -> Tuple[Optional[str], str]:
+    ) -> tuple[Optional[str], str]:
         env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
         token = await self._get_token(request=request, context=context)
         if token is None:

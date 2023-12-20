@@ -2,7 +2,7 @@
 import traceback
 
 # typing
-from typing import Any, Dict, List
+from typing import Any
 
 # third parties
 from aiohttp import ClientResponse, ContentTypeError
@@ -51,7 +51,7 @@ class PublishPackageError(YouWolException):
 class PackagesNotFound(YouWolException):
     exceptionType = "PackagesNotFound"
 
-    def __init__(self, context: str, packages: List[str], **kwargs):
+    def __init__(self, context: str, packages: list[str], **kwargs):
         YouWolException.__init__(
             self,
             status_code=404,
@@ -69,7 +69,7 @@ class PackagesNotFound(YouWolException):
 class IndirectPackagesNotFound(YouWolException):
     exceptionType = "IndirectPackagesNotFound"
 
-    def __init__(self, context: str, paths: Dict[str, List[str]], **kwargs):
+    def __init__(self, context: str, paths: dict[str, list[str]], **kwargs):
         YouWolException.__init__(
             self, status_code=404, detail={"context": context, "paths": paths}, **kwargs
         )
@@ -83,14 +83,14 @@ class IndirectPackagesNotFound(YouWolException):
 
 class DependencyErrorData(BaseModel):
     key: str
-    path: List[str]
+    path: list[str]
     detail: str
 
 
 class DependenciesError(YouWolException):
     exceptionType = "DependenciesError"
 
-    def __init__(self, context: str, errors: List[Dict[str, Any]], **kwargs):
+    def __init__(self, context: str, errors: list[dict[str, Any]], **kwargs):
         """
 
         :param context: context of the error
@@ -113,7 +113,7 @@ class DependenciesError(YouWolException):
 class CircularDependencies(YouWolException):
     exceptionType = "CircularDependencies"
 
-    def __init__(self, context: str, packages: Dict[str, List[str]], **kwargs):
+    def __init__(self, context: str, packages: dict[str, list[str]], **kwargs):
         YouWolException.__init__(
             self,
             status_code=404,

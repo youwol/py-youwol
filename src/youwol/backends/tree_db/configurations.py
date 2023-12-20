@@ -1,8 +1,9 @@
 # standard library
+from collections.abc import Awaitable
 from dataclasses import dataclass
 
 # typing
-from typing import Awaitable, Callable, Dict, Optional, Union
+from typing import Callable, Optional, Union
 
 # Youwol utilities
 from youwol.utils import get_valid_bucket_name
@@ -24,7 +25,7 @@ class Constants:
 @dataclass(frozen=True)
 class Configuration:
     doc_dbs: DocDbs
-    admin_headers: Optional[Dict[str, str]] = None
+    admin_headers: Optional[dict[str, str]] = None
 
 
 class Dependencies:

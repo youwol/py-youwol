@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 
 # typing
-from typing import Dict, List, NamedTuple, Union
+from typing import NamedTuple, Union
 
 # third parties
 import aiohttp
@@ -30,7 +30,7 @@ def patch_query_body(query_body: QueryBody, table_body: TableBody) -> QueryBody:
     """
     column_types = {col.name: col.type for col in table_body.columns}
 
-    def patch_clause(clause: WhereClause, types: Dict[str, str]) -> WhereClause:
+    def patch_clause(clause: WhereClause, types: dict[str, str]) -> WhereClause:
         if types[clause.column] in ["int", "bigint"]:
             return WhereClause(
                 column=clause.column, relation=clause.relation, term=f"{clause.term}"
@@ -79,7 +79,7 @@ class Update(NamedTuple):
     new_major: int
 
 
-def get_update_description(previous_table: Dict[str, any], current_version: str):
+def get_update_description(previous_table: dict[str, any], current_version: str):
     new_major = int(current_version.split(".")[0])
     new_minor = int(current_version.split(".")[1])
 
@@ -123,10 +123,10 @@ class DocDbClient:
 
     replication_factor: int
 
-    headers: Dict[str, str] = field(default_factory=lambda: {})
+    headers: dict[str, str] = field(default_factory=lambda: {})
     connector = aiohttp.TCPConnector(verify_ssl=False)
 
-    secondary_indexes: List[SecondaryIndex] = field(default_factory=lambda: [])
+    secondary_indexes: list[SecondaryIndex] = field(default_factory=lambda: [])
 
     async def raise_exception(self, resp: ClientResponse, **kwargs):
         params = {
@@ -298,8 +298,8 @@ class DocDbClient:
 
     async def get_document(
         self,
-        partition_keys: Dict[str, any],
-        clustering_keys: Dict[str, any],
+        partition_keys: dict[str, any],
+        clustering_keys: dict[str, any],
         owner: Union[str, None],
         **kwargs,
     ):
@@ -368,7 +368,7 @@ class DocDbClient:
                 )
 
     async def delete_document(
-        self, doc: Dict[str, any], owner: Union[str, None], **kwargs
+        self, doc: dict[str, any], owner: Union[str, None], **kwargs
     ):
         params_part = self.get_primary_key_query_parameters(doc)
         params = {"owner": owner} if owner else {}
@@ -385,7 +385,7 @@ class DocDbClient:
                     doc=doc,
                 )
 
-    def get_primary_key_query_parameters(self, doc: Dict[str, any]):
+    def get_primary_key_query_parameters(self, doc: dict[str, any]):
         if (
             len(self.table_body.partition_key) == 1
             and len(self.table_body.clustering_columns) == 0

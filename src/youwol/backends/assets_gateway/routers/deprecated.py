@@ -1,5 +1,8 @@
+# standard library
+from collections.abc import Awaitable
+
 # typing
-from typing import Awaitable, Dict, Union
+from typing import Union
 
 # third parties
 import aiohttp
@@ -73,7 +76,7 @@ async def get_raw_package(
 
 async def forward_deprecated_get(
     request, forward_path, configuration: Configuration, to_json=True
-) -> Union[Awaitable[JSON], Union[Awaitable[bytes], Dict[str, str]]]:
+) -> Union[Awaitable[JSON], Union[Awaitable[bytes], dict[str, str]]]:
     async with Context.start_ep(request=request) as ctx:
         url = f"{request.base_url}api/{forward_path}"
         if configuration.https:

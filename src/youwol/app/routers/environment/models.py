@@ -2,7 +2,7 @@
 from enum import Enum
 
 # typing
-from typing import Dict, List, Optional
+from typing import Optional
 
 # third parties
 from pydantic import BaseModel
@@ -22,18 +22,18 @@ class UserInfo(BaseModel):
     name: str
     email: str
     # Is empty everywhere in the code …
-    memberOf: List[str]
+    memberOf: list[str]
 
 
 class CustomDispatch(BaseModel):
     type: str
     name: str
     activated: Optional[bool]
-    parameters: Optional[Dict[str, str]]
+    parameters: Optional[dict[str, str]]
 
 
 class CustomDispatchesResponse(BaseModel):
-    dispatches: Dict[str, List[DispatchInfo]]
+    dispatches: dict[str, list[DispatchInfo]]
 
 
 class RemoteGatewayInfo(BaseModel):
@@ -42,11 +42,11 @@ class RemoteGatewayInfo(BaseModel):
 
 
 class SwitchConfigurationBody(BaseModel):
-    path: List[str]
+    path: list[str]
 
 
 class SwitchResponse(BaseModel):
-    errors: List[ErrorResponse]
+    errors: list[ErrorResponse]
 
 
 class LoginBody(BaseModel):
@@ -78,7 +78,7 @@ class ComponentUpdate(BaseModel):
 
 
 class ComponentsUpdate(BaseModel):
-    components: List[ComponentUpdate]
+    components: list[ComponentUpdate]
     status: ComponentsUpdateStatus
 
 

@@ -5,7 +5,7 @@ import math
 import time
 
 # typing
-from typing import Any, Dict, List
+from typing import Any
 
 # third parties
 from fastapi import HTTPException
@@ -91,7 +91,7 @@ def position_format(index: float):
     return (6 - len(decimal.split(".")[0])) * "0" + decimal
 
 
-def format_document_resp(docdb_doc: Dict[str, str]):
+def format_document_resp(docdb_doc: dict[str, str]):
     return GetDocumentResp(
         documentId=docdb_doc["document_id"],
         parentDocumentId=docdb_doc["parent_document_id"],
@@ -206,7 +206,7 @@ async def get_story_impl(story_id: str, configuration: Configuration, context: C
 
 async def get_children_rec(
     document_id: str, start_index, chunk_size, headers, doc_db_docs: DocDbClient
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     headers = generate_headers_downstream(headers)
     documents_resp = await doc_db_docs.query(
         query_body=f"parent_document_id={document_id},position>={start_index}#{chunk_size}",
