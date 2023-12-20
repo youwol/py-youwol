@@ -142,20 +142,11 @@ debug = [
 [tool.isort]
 profile = "black"
 lines_between_types = 1
-import_heading_stdlib = "standard library"
 known_typing = "typing"
-import_heading_typing = "typing"
-import_heading_thirdparty = "third parties"
-import_heading_firstparty = "Youwol"
 known_yw_app = "youwol.app"
-import_heading_yw_app = "Youwol application"
 known_yw_backends = "youwol.backends"
-import_heading_yw_backends = "Youwol backends"
 known_yw_utils = "youwol.utils"
-import_heading_yw_utils = "Youwol utilities"
 known_yw_pipelines = "youwol.pipelines"
-import_heading_yw_pipelines = "Youwol pipelines"
-import_heading_localfolder = "relative"
 sections = [
     "FUTURE",
     "STDLIB",
@@ -168,6 +159,16 @@ sections = [
     "YW_PIPELINES",
     "LOCALFOLDER",
 ]
+import_heading_future = "future"
+import_heading_stdlib = "standard library"
+import_heading_typing = "typing"
+import_heading_thirdparty = "third parties"
+import_heading_firstparty = "Youwol"
+import_heading_yw_app = "Youwol application"
+import_heading_yw_backends = "Youwol backends"
+import_heading_yw_utils = "Youwol utilities"
+import_heading_yw_pipelines = "Youwol pipelines"
+import_heading_localfolder = "relative"
 
 [tool.mypy]
 mypy_path = ".typing_stubs"
