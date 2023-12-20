@@ -1,6 +1,10 @@
-from _typeshed import Incomplete
+# standard library
 from argparse import RawDescriptionHelpFormatter
-from watchdog.utils import WatchdogShutdown as WatchdogShutdown, load_class as load_class
+
+# third parties
+from _typeshed import Incomplete
+from watchdog.utils import WatchdogShutdown as WatchdogShutdown
+from watchdog.utils import load_class as load_class
 from watchdog.version import VERSION_STRING as VERSION_STRING
 
 CONFIG_KEY_TRICKS: str

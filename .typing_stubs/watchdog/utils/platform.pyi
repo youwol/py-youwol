@@ -1,3 +1,4 @@
+# third parties
 from _typeshed import Incomplete
 
 PLATFORM_WINDOWS: str

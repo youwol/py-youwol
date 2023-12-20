@@ -1,5 +1,8 @@
-from _typeshed import Incomplete
+# standard library
 from collections.abc import Generator
+
+# third parties
+from _typeshed import Incomplete
 from watchdog.utils.patterns import match_any_paths as match_any_paths
 
 EVENT_TYPE_MOVED: str
@@ -68,7 +71,13 @@ class FileSystemEventHandler:
     def on_closed(self, event) -> None: ...
 
 class PatternMatchingEventHandler(FileSystemEventHandler):
-    def __init__(self, patterns: Incomplete | None = ..., ignore_patterns: Incomplete | None = ..., ignore_directories: bool = ..., case_sensitive: bool = ...) -> None: ...
+    def __init__(
+        self,
+        patterns: Incomplete | None = ...,
+        ignore_patterns: Incomplete | None = ...,
+        ignore_directories: bool = ...,
+        case_sensitive: bool = ...,
+    ) -> None: ...
     @property
     def patterns(self): ...
     @property
@@ -80,7 +89,13 @@ class PatternMatchingEventHandler(FileSystemEventHandler):
     def dispatch(self, event) -> None: ...
 
 class RegexMatchingEventHandler(FileSystemEventHandler):
-    def __init__(self, regexes: Incomplete | None = ..., ignore_regexes: Incomplete | None = ..., ignore_directories: bool = ..., case_sensitive: bool = ...) -> None: ...
+    def __init__(
+        self,
+        regexes: Incomplete | None = ...,
+        ignore_regexes: Incomplete | None = ...,
+        ignore_directories: bool = ...,
+        case_sensitive: bool = ...,
+    ) -> None: ...
     @property
     def regexes(self): ...
     @property
@@ -99,5 +114,7 @@ class LoggingEventHandler(FileSystemEventHandler):
     def on_deleted(self, event) -> None: ...
     def on_modified(self, event) -> None: ...
 
-def generate_sub_moved_events(src_dir_path, dest_dir_path) -> Generator[Incomplete, None, None]: ...
+def generate_sub_moved_events(
+    src_dir_path, dest_dir_path
+) -> Generator[Incomplete, None, None]: ...
 def generate_sub_created_events(src_dir_path) -> Generator[Incomplete, None, None]: ...

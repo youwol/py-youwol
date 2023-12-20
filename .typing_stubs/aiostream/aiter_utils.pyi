@@ -1,5 +1,8 @@
-from async_exit_stack import AsyncExitStack as AsyncExitStack
+# standard library
 from collections.abc import AsyncIterator
+
+# third parties
+from async_exit_stack import AsyncExitStack as AsyncExitStack
 
 def aiter(obj): ...
 def anext(obj): ...

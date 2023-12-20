@@ -1,4 +1,7 @@
+# standard library
 import ctypes.wintypes
+
+# third parties
 from _typeshed import Incomplete
 
 LPVOID: Incomplete

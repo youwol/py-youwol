@@ -1,5 +1,8 @@
+# relative
 from .commonconfig import Tags as Tags
-from .xml import Element as Element, SubElement as SubElement, find as find
+from .xml import Element as Element
+from .xml import SubElement as SubElement
+from .xml import find as find
 
 class Tagging:
     def __init__(self, tags) -> None: ...

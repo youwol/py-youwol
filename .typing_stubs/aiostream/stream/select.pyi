@@ -1,5 +1,8 @@
-from _typeshed import Incomplete
+# standard library
 from collections.abc import Generator
+
+# third parties
+from _typeshed import Incomplete
 
 async def take(source, n) -> Generator[Incomplete, None, None]: ...
 async def takelast(source, n) -> Generator[Incomplete, None, None]: ...

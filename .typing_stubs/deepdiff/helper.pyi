@@ -1,9 +1,15 @@
+# standard library
 import uuid
-from _typeshed import Incomplete
+
 from collections import OrderedDict as OrderedDict
 from collections.abc import Generator
-from ordered_set import OrderedSet
+
+# typing
 from typing import NamedTuple
+
+# third parties
+from _typeshed import Incomplete
+from ordered_set import OrderedSet
 
 class np_type: ...
 
@@ -51,6 +57,7 @@ booleans: Incomplete
 class IndexedHash(NamedTuple):
     indexes: Incomplete
     item: Incomplete
+
 current_dir: Incomplete
 ID_PREFIX: str
 ZERO_DECIMAL_CHARACTERS: Incomplete
@@ -101,7 +108,9 @@ class DeepDiffDeprecationWarning(DeprecationWarning): ...
 
 def cartesian_product(a, b) -> Generator[Incomplete, None, None]: ...
 def cartesian_product_of_shape(dimentions, result: Incomplete | None = ...): ...
-def get_numpy_ndarray_rows(obj, shape: Incomplete | None = ...) -> Generator[Incomplete, None, None]: ...
+def get_numpy_ndarray_rows(
+    obj, shape: Incomplete | None = ...
+) -> Generator[Incomplete, None, None]: ...
 
 class _NotFound:
     def __eq__(self, other): ...

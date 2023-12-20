@@ -1,4 +1,7 @@
+# standard library
 import ctypes.util
+
+# third parties
 from _typeshed import Incomplete
 from watchdog.utils import UnsupportedLibc as UnsupportedLibc
 

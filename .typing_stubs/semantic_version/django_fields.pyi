@@ -1,6 +1,9 @@
-from . import base as base
+# third parties
 from _typeshed import Incomplete
 from django.db import models
+
+# relative
+from . import base as base
 
 class SemVerField(models.CharField):
     def __init__(self, *args, **kwargs) -> None: ...

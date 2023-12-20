@@ -1,3 +1,4 @@
+# third parties
 from watchdog.utils import BaseThread as BaseThread
 from watchdog.utils.bricks import SkipRepeatsQueue as SkipRepeatsQueue
 

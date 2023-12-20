@@ -1,6 +1,15 @@
-from .xml import Element as Element, SubElement as SubElement, find as find, findall as findall, findtext as findtext
-from _typeshed import Incomplete
+# standard library
 from abc import ABCMeta
+
+# third parties
+from _typeshed import Incomplete
+
+# relative
+from .xml import Element as Element
+from .xml import SubElement as SubElement
+from .xml import find as find
+from .xml import findall as findall
+from .xml import findtext as findtext
 
 class FilterRule:
     __metaclass__ = ABCMeta
@@ -21,7 +30,9 @@ class SuffixFilterRule(FilterRule):
 
 class CommonConfig:
     __metaclass__ = ABCMeta
-    def __init__(self, events, config_id, prefix_filter_rule, suffix_filter_rule) -> None: ...
+    def __init__(
+        self, events, config_id, prefix_filter_rule, suffix_filter_rule
+    ) -> None: ...
     @property
     def events(self): ...
     @property
@@ -35,7 +46,14 @@ class CommonConfig:
     def toxml(self, element): ...
 
 class CloudFuncConfig(CommonConfig):
-    def __init__(self, cloud_func, events, config_id: Incomplete | None = ..., prefix_filter_rule: Incomplete | None = ..., suffix_filter_rule: Incomplete | None = ...) -> None: ...
+    def __init__(
+        self,
+        cloud_func,
+        events,
+        config_id: Incomplete | None = ...,
+        prefix_filter_rule: Incomplete | None = ...,
+        suffix_filter_rule: Incomplete | None = ...,
+    ) -> None: ...
     @property
     def cloud_func(self): ...
     @classmethod
@@ -43,7 +61,14 @@ class CloudFuncConfig(CommonConfig):
     def toxml(self, element): ...
 
 class QueueConfig(CommonConfig):
-    def __init__(self, queue, events, config_id: Incomplete | None = ..., prefix_filter_rule: Incomplete | None = ..., suffix_filter_rule: Incomplete | None = ...) -> None: ...
+    def __init__(
+        self,
+        queue,
+        events,
+        config_id: Incomplete | None = ...,
+        prefix_filter_rule: Incomplete | None = ...,
+        suffix_filter_rule: Incomplete | None = ...,
+    ) -> None: ...
     @property
     def queue(self): ...
     @classmethod
@@ -51,7 +76,14 @@ class QueueConfig(CommonConfig):
     def toxml(self, element): ...
 
 class TopicConfig(CommonConfig):
-    def __init__(self, topic, events, config_id: Incomplete | None = ..., prefix_filter_rule: Incomplete | None = ..., suffix_filter_rule: Incomplete | None = ...) -> None: ...
+    def __init__(
+        self,
+        topic,
+        events,
+        config_id: Incomplete | None = ...,
+        prefix_filter_rule: Incomplete | None = ...,
+        suffix_filter_rule: Incomplete | None = ...,
+    ) -> None: ...
     @property
     def topic(self): ...
     @classmethod
@@ -59,7 +91,12 @@ class TopicConfig(CommonConfig):
     def toxml(self, element): ...
 
 class NotificationConfig:
-    def __init__(self, cloud_func_config_list: Incomplete | None = ..., queue_config_list: Incomplete | None = ..., topic_config_list: Incomplete | None = ...) -> None: ...
+    def __init__(
+        self,
+        cloud_func_config_list: Incomplete | None = ...,
+        queue_config_list: Incomplete | None = ...,
+        topic_config_list: Incomplete | None = ...,
+    ) -> None: ...
     @property
     def cloud_func_config_list(self): ...
     @property

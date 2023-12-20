@@ -1,5 +1,8 @@
-from _typeshed import Incomplete
+# standard library
 from collections.abc import Generator
+
+# third parties
+from _typeshed import Incomplete
 
 class DirectorySnapshotDiff:
     def __init__(self, ref, snapshot, ignore_device: bool = ...) -> None: ...

@@ -1,5 +1,8 @@
-from _typeshed import Incomplete
+# standard library
 from collections.abc import Generator
+
+# third parties
+from _typeshed import Incomplete
 
 async def add_resource(source, cleanup_time) -> Generator[Incomplete, None, None]: ...
 def assert_run(request): ...

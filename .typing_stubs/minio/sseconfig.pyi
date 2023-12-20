@@ -1,13 +1,23 @@
-from .xml import Element as Element, SubElement as SubElement, find as find, findtext as findtext
-from _typeshed import Incomplete
+# standard library
 from abc import ABCMeta
+
+# third parties
+from _typeshed import Incomplete
+
+# relative
+from .xml import Element as Element
+from .xml import SubElement as SubElement
+from .xml import find as find
+from .xml import findtext as findtext
 
 AES256: str
 AWS_KMS: str
 
 class Rule:
     __metaclass__ = ABCMeta
-    def __init__(self, sse_algorithm, kms_master_key_id: Incomplete | None = ...) -> None: ...
+    def __init__(
+        self, sse_algorithm, kms_master_key_id: Incomplete | None = ...
+    ) -> None: ...
     @property
     def sse_algorithm(self): ...
     @property

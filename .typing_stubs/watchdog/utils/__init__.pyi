@@ -1,3 +1,4 @@
+# standard library
 import threading
 
 class UnsupportedLibc(Exception): ...

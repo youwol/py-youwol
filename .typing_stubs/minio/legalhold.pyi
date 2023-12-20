@@ -1,4 +1,7 @@
-from .xml import Element as Element, SubElement as SubElement, findtext as findtext
+# relative
+from .xml import Element as Element
+from .xml import SubElement as SubElement
+from .xml import findtext as findtext
 
 class LegalHold:
     def __init__(self, status: bool = ...) -> None: ...

@@ -1,5 +1,13 @@
-from . import AlreadyLocked as AlreadyLocked, LockBase as LockBase, LockFailed as LockFailed, LockTimeout as LockTimeout, NotLocked as NotLocked, NotMyLock as NotMyLock
+# third parties
 from _typeshed import Incomplete
+
+# relative
+from . import AlreadyLocked as AlreadyLocked
+from . import LockBase as LockBase
+from . import LockFailed as LockFailed
+from . import LockTimeout as LockTimeout
+from . import NotLocked as NotLocked
+from . import NotMyLock as NotMyLock
 
 class LinkLockFile(LockBase):
     def acquire(self, timeout: Incomplete | None = ...) -> None: ...

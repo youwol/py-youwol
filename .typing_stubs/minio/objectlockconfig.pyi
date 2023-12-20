@@ -1,5 +1,11 @@
-from .commonconfig import COMPLIANCE as COMPLIANCE, ENABLED as ENABLED, GOVERNANCE as GOVERNANCE
-from .xml import Element as Element, SubElement as SubElement, find as find, findtext as findtext
+# relative
+from .commonconfig import COMPLIANCE as COMPLIANCE
+from .commonconfig import ENABLED as ENABLED
+from .commonconfig import GOVERNANCE as GOVERNANCE
+from .xml import Element as Element
+from .xml import SubElement as SubElement
+from .xml import find as find
+from .xml import findtext as findtext
 
 DAYS: str
 YEARS: str
