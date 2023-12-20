@@ -352,7 +352,7 @@ class Project(BaseModel):
         projects: List["Project"],
         recursive: bool,
         context: Context,
-        ignore: List[str] = None,
+        ignore: Optional[List[str]] = None,
     ) -> List["Project"]:
         ignore = ignore or []
         all_dependencies = (

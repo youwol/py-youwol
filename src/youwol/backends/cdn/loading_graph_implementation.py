@@ -3,7 +3,7 @@ import asyncio
 import itertools
 
 # typing
-from typing import Callable, Dict, List, Tuple, Union
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 # third parties
 from fastapi import HTTPException
@@ -528,7 +528,7 @@ def retrieve_dependency_paths(
     known_libraries: List[LibraryResolved],
     from_package: str,
     get_key: Callable[[Union[LibraryQuery, LibraryResolved]], str],
-    suffix: str = None,
+    suffix: Optional[str] = None,
 ) -> List[str]:
     parents = [
         lib

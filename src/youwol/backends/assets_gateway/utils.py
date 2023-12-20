@@ -22,7 +22,7 @@ from youwol.utils.http_clients.assets_gateway import (
 
 
 def to_asset_resp(
-    asset, permissions: PermissionsResponse = None
+    asset, permissions: Optional[PermissionsResponse] = None
 ) -> Union[AssetResponse, AssetWithPermissionResponse]:
     group_id = asset["groupId"] if "groupId" in asset else to_group_id(asset["scope"])
     if permissions:

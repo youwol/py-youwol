@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 # typing
-from typing import Union, cast
+from typing import Optional, Union, cast
 
 # third parties
 from fastapi import HTTPException
@@ -77,7 +77,10 @@ class LocalFileSystem(FileSystemInterface):
         )
 
     async def get_object(
-        self, object_id: str, ranges_bytes: [int, int] = None, **kwargs
+        self,
+        object_id: str,
+        ranges_bytes: Optional[list[tuple[int, int]]] = None,
+        **kwargs,
     ):
         path = self.ensure_object_exist(object_id)
         if not path.exists():

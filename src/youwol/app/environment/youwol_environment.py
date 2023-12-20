@@ -165,7 +165,7 @@ class YouwolEnvironmentFactory:
         return conf
 
     @staticmethod
-    async def reload(connection: Connection = None):
+    async def reload(connection: Optional[Connection] = None):
         cached = YouwolEnvironmentFactory.__cached_config
         conf = await safe_load(
             path=cached.pathsBook.config,

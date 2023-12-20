@@ -7,7 +7,7 @@ from pathlib import Path
 from threading import Lock
 
 # typing
-from typing import Any, Dict, List, Mapping, Union
+from typing import Any, Dict, List, Mapping, Optional, Union
 
 # third parties
 from fastapi import HTTPException
@@ -129,7 +129,7 @@ class LocalDocDbClient:
         self,
         query_body: Union[QueryBody, str],
         owner: Union[str, None],
-        headers: Mapping[str, str] = None,
+        headers: Optional[Mapping[str, str]] = None,
         **_kwargs,
     ):
         if not headers:
@@ -174,12 +174,20 @@ class LocalDocDbClient:
         return {"documents": r[0 : query_body.max_results]}
 
     async def create_document(
-        self, doc, owner: Union[str, None], headers: Mapping[str, str] = None, **_kwargs
+        self,
+        doc,
+        owner: Union[str, None],
+        headers: Optional[Mapping[str, str]] = None,
+        **_kwargs,
     ):
         return await self.update_document(doc, owner, headers, **_kwargs)
 
     async def update_document(
-        self, doc, owner: Union[str, None], headers: Mapping[str, str] = None, **_kwargs
+        self,
+        doc,
+        owner: Union[str, None],
+        headers: Optional[Mapping[str, str]] = None,
+        **_kwargs,
     ):
         if not headers:
             headers = {}
@@ -205,7 +213,7 @@ class LocalDocDbClient:
         self,
         doc: Dict[str, any],
         owner: Union[str, None],
-        headers: Mapping[str, str] = None,
+        headers: Optional[Mapping[str, str]] = None,
         **_kwargs,
     ):
         if not headers:

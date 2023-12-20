@@ -138,7 +138,7 @@ def files_check_sum(paths: Iterable[Union[str, Path]]):
 def create_zip_file(
     path: Path,
     files_to_zip: List[Tuple[Path, str]],
-    with_data: List[Tuple[str, Union[str, bytes]]] = None,
+    with_data: Optional[List[Tuple[str, Union[str, bytes]]]] = None,
 ):
     with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as zipper:
         for path_file, name in files_to_zip:

@@ -169,15 +169,15 @@ class Context:
     def start(
         self,
         action: str,
-        with_labels: List[StringLike] = None,
-        with_attributes: JSON = None,
-        with_data: Dict[str, DataType] = None,
-        with_headers: Dict[str, str] = None,
-        with_cookies: Dict[str, str] = None,
-        on_enter: "CallableBlock" = None,
-        on_exit: "CallableBlock" = None,
-        on_exception: "CallableBlockException" = None,
-        with_reporters: List[ContextReporter] = None,
+        with_labels: Optional[List[StringLike]] = None,
+        with_attributes: Optional[JSON] = None,
+        with_data: Optional[Dict[str, DataType]] = None,
+        with_headers: Optional[Dict[str, str]] = None,
+        with_cookies: Optional[Dict[str, str]] = None,
+        on_enter: Optional["CallableBlock"] = None,
+        on_exit: Optional["CallableBlock"] = None,
+        on_exception: Optional["CallableBlockException"] = None,
+        with_reporters: Optional[List[ContextReporter]] = None,
     ) -> ScopedContext:
         with_attributes = with_attributes or {}
         with_labels = with_labels or []
@@ -209,14 +209,14 @@ class Context:
     @staticmethod
     def start_ep(
         request: Request,
-        action: str = None,
-        with_labels: List[StringLike] = None,
-        with_attributes: JSON = None,
-        body: BaseModel = None,
-        response: Callable[[], BaseModel] = None,
-        with_reporters: List[ContextReporter] = None,
-        on_enter: "CallableBlock" = None,
-        on_exit: "CallableBlock" = None,
+        action: Optional[str] = None,
+        with_labels: Optional[List[StringLike]] = None,
+        with_attributes: Optional[JSON] = None,
+        body: Optional[BaseModel] = None,
+        response: Optional[Callable[[], BaseModel]] = None,
+        with_reporters: Optional[List[ContextReporter]] = None,
+        on_enter: Optional["CallableBlock"] = None,
+        on_exit: Optional["CallableBlock"] = None,
     ) -> ScopedContext:
         context = Context.from_request(request=request)
         action = action or f"{request.method}: {request.scope['path']}"
@@ -248,8 +248,8 @@ class Context:
         self,
         level: LogLevel,
         text: str,
-        labels: List[StringLike] = None,
-        data: JsonLike = None,
+        labels: Optional[List[StringLike]] = None,
+        data: Optional[JsonLike] = None,
     ):
         if not self.data_reporters and not self.logs_reporters:
             return
@@ -280,7 +280,7 @@ class Context:
 
         await asyncio.gather(*[logger.log(entry) for logger in self.logs_reporters])
 
-    async def send(self, data: BaseModel, labels: List[StringLike] = None):
+    async def send(self, data: BaseModel, labels: Optional[List[StringLike]] = None):
         labels = labels or []
         await self.log(
             level=LogLevel.DATA,
@@ -290,27 +290,42 @@ class Context:
         )
 
     async def debug(
-        self, text: str, labels: List[StringLike] = None, data: JsonLike = None
+        self,
+        text: str,
+        labels: Optional[List[StringLike]] = None,
+        data: Optional[JsonLike] = None,
     ):
         await self.log(level=LogLevel.DEBUG, text=text, labels=labels, data=data)
 
     async def info(
-        self, text: str, labels: List[StringLike] = None, data: JsonLike = None
+        self,
+        text: str,
+        labels: Optional[List[StringLike]] = None,
+        data: Optional[JsonLike] = None,
     ):
         await self.log(level=LogLevel.INFO, text=text, labels=labels, data=data)
 
     async def warning(
-        self, text: str, labels: List[StringLike] = None, data: JsonLike = None
+        self,
+        text: str,
+        labels: Optional[List[StringLike]] = None,
+        data: Optional[JsonLike] = None,
     ):
         await self.log(level=LogLevel.WARNING, text=text, labels=labels, data=data)
 
     async def error(
-        self, text: str, labels: List[StringLike] = None, data: JsonLike = None
+        self,
+        text: str,
+        labels: Optional[List[StringLike]] = None,
+        data: Optional[JsonLike] = None,
     ):
         await self.log(level=LogLevel.ERROR, text=text, labels=labels, data=data)
 
     async def failed(
-        self, text: str, labels: List[StringLike] = None, data: JsonLike = None
+        self,
+        text: str,
+        labels: Optional[List[StringLike]] = None,
+        data: Optional[JsonLike] = None,
     ):
         labels = labels or []
         await self.log(
@@ -320,9 +335,9 @@ class Context:
     async def future(
         self,
         text: str,
-        future: asyncio.Future = None,
-        labels: List[StringLike] = None,
-        data: JsonLike = None,
+        future: Optional[asyncio.Future] = None,
+        labels: Optional[List[StringLike]] = None,
+        data: Optional[JsonLike] = None,
     ):
         labels = labels or []
         await self.log(

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 # typing
-from typing import Iterable, List, Union
+from typing import Iterable, List, Optional, Union
 
 # third parties
 from aiohttp import FormData
@@ -71,7 +71,7 @@ class CdnClient:
     def push_url(self):
         return f"{self.url_base}/publish_libraries"
 
-    async def query_packs(self, namespace: str = None, **kwargs):
+    async def query_packs(self, namespace: Optional[str] = None, **kwargs):
         url = (
             self.packs_url
             if not namespace
@@ -114,7 +114,11 @@ class CdnClient:
         )
 
     async def get_library_info(
-        self, library_id: str, semver: str = None, max_count: int = None, **kwargs
+        self,
+        library_id: str,
+        semver: Optional[str] = None,
+        max_count: Optional[int] = None,
+        **kwargs,
     ):
         query_params = [
             (k, v)

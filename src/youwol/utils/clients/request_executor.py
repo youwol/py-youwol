@@ -21,7 +21,7 @@ class RequestExecutor(ABC, Generic[TClientResponse]):
         self,
         url: str,
         default_reader: Callable[[TClientResponse], Awaitable[Any]],
-        custom_reader: Callable[[TClientResponse], Awaitable[Any]] = None,
+        custom_reader: Optional[Callable[[TClientResponse], Awaitable[Any]]] = None,
         headers: Optional[Dict[str, str]] = None,
         **kwargs,
     ):
@@ -32,7 +32,7 @@ class RequestExecutor(ABC, Generic[TClientResponse]):
         self,
         url: str,
         default_reader: Callable[[TClientResponse], Awaitable[Any]],
-        custom_reader: Callable[[TClientResponse], Awaitable[Any]] = None,
+        custom_reader: Optional[Callable[[TClientResponse], Awaitable[Any]]] = None,
         headers: Optional[Dict[str, str]] = None,
         **kwargs,
     ):
@@ -43,7 +43,7 @@ class RequestExecutor(ABC, Generic[TClientResponse]):
         self,
         url: str,
         default_reader: Callable[[TClientResponse], Awaitable[Any]],
-        custom_reader: Callable[[TClientResponse], Awaitable[Any]] = None,
+        custom_reader: Optional[Callable[[TClientResponse], Awaitable[Any]]] = None,
         headers: Optional[Dict[str, str]] = None,
         **kwargs,
     ):
@@ -54,7 +54,7 @@ class RequestExecutor(ABC, Generic[TClientResponse]):
         self,
         url: str,
         default_reader: Callable[[TClientResponse], Awaitable[Any]],
-        custom_reader: Callable[[TClientResponse], Awaitable[Any]] = None,
+        custom_reader: Optional[Callable[[TClientResponse], Awaitable[Any]]] = None,
         headers: Optional[Dict[str, str]] = None,
         **kwargs,
     ):
@@ -92,7 +92,7 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
         method: str,
         url: str,
         default_reader: Callable[[ClientResponse], Awaitable[Any]],
-        custom_reader: Callable[[ClientResponse], Awaitable[Any]] = None,
+        custom_reader: Optional[Callable[[ClientResponse], Awaitable[Any]]] = None,
         headers: Optional[Dict[str, str]] = None,
         **kwargs,
     ):
@@ -112,7 +112,7 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
         self,
         url: str,
         default_reader: Callable[[ClientResponse], Awaitable[Any]],
-        custom_reader: Callable[[ClientResponse], Awaitable[Any]] = None,
+        custom_reader: Optional[Callable[[ClientResponse], Awaitable[Any]]] = None,
         headers: Optional[Dict[str, str]] = None,
         **kwargs,
     ):

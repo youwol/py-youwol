@@ -9,7 +9,7 @@ from os import PathLike
 from pathlib import Path
 
 # typing
-from typing import Mapping, Union, cast
+from typing import Mapping, Optional, Union, cast
 
 # third parties
 from fastapi import HTTPException
@@ -52,7 +52,7 @@ class LocalStorageClient:
         return True
 
     async def post_file(
-        self, form: FileData, headers: Mapping[str, str] = None, **_kwargs
+        self, form: FileData, headers: Optional[Mapping[str, str]] = None, **_kwargs
     ):
         owner = form.owner
         if not headers:
@@ -71,7 +71,7 @@ class LocalStorageClient:
         path: Union[Path, str],
         content: bytes,
         owner: Union[str, None],
-        headers: Mapping[str, str] = None,
+        headers: Optional[Mapping[str, str]] = None,
         **_kwargs,
     ):
         if not headers:
@@ -93,7 +93,7 @@ class LocalStorageClient:
         path: Union[str, Path],
         json: JSON,
         owner: Union[str, None],
-        headers: Mapping[str, str] = None,
+        headers: Optional[Mapping[str, str]] = None,
         **_kwargs,
     ):
         if not headers:
@@ -111,7 +111,7 @@ class LocalStorageClient:
         path: Union[str, Path],
         text,
         owner: Union[str, None],
-        headers: Mapping[str, str] = None,
+        headers: Optional[Mapping[str, str]] = None,
         **_kwargs,
     ):
         if not headers:
@@ -128,7 +128,7 @@ class LocalStorageClient:
         self,
         prefix: Union[Path, str],
         owner: Union[str, None],
-        headers: Mapping[str, str] = None,
+        headers: Optional[Mapping[str, str]] = None,
         **_kwargs,
     ):
         if not headers:
@@ -144,7 +144,7 @@ class LocalStorageClient:
         self,
         path: Union[str, Path],
         owner: Union[str, None],
-        headers: Mapping[str, str] = None,
+        headers: Optional[Mapping[str, str]] = None,
         **_kwargs,
     ):
         if not headers:
@@ -169,7 +169,7 @@ class LocalStorageClient:
         self,
         prefix: Union[str, Path],
         owner: Union[str, None],
-        headers: Mapping[str, str] = None,
+        headers: Optional[Mapping[str, str]] = None,
         **_kwargs,
     ):
         if not headers:
@@ -189,7 +189,7 @@ class LocalStorageClient:
         self,
         path: Union[str, Path],
         owner: Union[str, None],
-        headers: Mapping[str, str] = None,
+        headers: Optional[Mapping[str, str]] = None,
         **_kwargs,
     ):
         if not headers:
@@ -207,7 +207,7 @@ class LocalStorageClient:
         self,
         path: Union[str, Path],
         owner: Union[str, None],
-        headers: Mapping[str, str] = None,
+        headers: Optional[Mapping[str, str]] = None,
         **kwargs,
     ):
         return _json.loads(await self.get_bytes(path, owner, headers, **kwargs))
@@ -216,7 +216,7 @@ class LocalStorageClient:
         self,
         path: str,
         owner: Union[str, None],
-        headers: Mapping[str, str] = None,
+        headers: Optional[Mapping[str, str]] = None,
         **kwargs,
     ):
         raw = await self.get_bytes(path, owner, headers, **kwargs)

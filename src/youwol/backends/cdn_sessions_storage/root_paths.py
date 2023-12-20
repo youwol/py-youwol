@@ -1,3 +1,6 @@
+# typing
+from typing import Optional
+
 # third parties
 from fastapi import APIRouter, Depends, HTTPException
 from starlette.requests import Request
@@ -27,7 +30,7 @@ async def post_data_generic(
     package: str,
     name: str,
     body: JSON,
-    namespace: str = None,
+    namespace: Optional[str] = None,
     configuration: Configuration = Depends(get_configuration),
 ):
     """
@@ -97,7 +100,7 @@ async def delete_data_generic(
     request: Request,
     package: str,
     name: str,
-    namespace: str = None,
+    namespace: Optional[str] = None,
     configuration: Configuration = Depends(get_configuration),
 ):
     async with Context.start_ep(
@@ -146,7 +149,7 @@ async def get_data_generic(
     request: Request,
     package: str,
     name: str,
-    namespace: str = None,
+    namespace: Optional[str] = None,
     configuration: Configuration = Depends(get_configuration),
 ):
     async with Context.start_ep(

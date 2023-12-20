@@ -30,7 +30,7 @@ class RootMiddleware(BaseHTTPMiddleware):
         app: ASGIApp,
         logs_reporter: ContextReporter,
         data_reporter: Optional[ContextReporter],
-        dispatch: DispatchFunction = None,
+        dispatch: Optional[DispatchFunction] = None,
         **_,
     ) -> None:
         super().__init__(app, dispatch)

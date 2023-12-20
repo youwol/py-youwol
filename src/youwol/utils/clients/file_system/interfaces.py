@@ -54,7 +54,10 @@ class FileSystemInterface(ABC):
 
     @abstractmethod
     async def get_object(
-        self, object_id: str, ranges_bytes: List[Tuple[int, int]] = None, **kwargs
+        self,
+        object_id: str,
+        ranges_bytes: Optional[List[Tuple[int, int]]] = None,
+        **kwargs,
     ):
         raise NotImplementedError
 

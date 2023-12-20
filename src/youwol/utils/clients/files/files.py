@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 
 # typing
-from typing import Any, Awaitable, Callable
+from typing import Any, Awaitable, Callable, Optional
 
 # third parties
 from aiohttp import ClientResponse
@@ -51,7 +51,7 @@ class FilesClient:
     async def get(
         self,
         file_id: str,
-        reader: Callable[[ClientResponse], Awaitable[Any]] = None,
+        reader: Optional[Callable[[ClientResponse], Awaitable[Any]]] = None,
         **kwargs,
     ):
         url = f"{self.url_base}/files/{file_id}"

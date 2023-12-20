@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 # typing
-from typing import Any, Awaitable, Callable, Union
+from typing import Any, Awaitable, Callable, Optional, Union
 
 # third parties
 from aiohttp import ClientResponse, FormData
@@ -126,7 +126,7 @@ class AssetsClient:
         asset_id: str,
         media_type: str,
         name: str,
-        reader: Callable[[ClientResponse], Awaitable[Any]] = None,
+        reader: Optional[Callable[[ClientResponse], Awaitable[Any]]] = None,
         **kwargs,
     ):
         async def _reader(resp: ClientResponse):

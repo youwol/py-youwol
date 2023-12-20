@@ -61,7 +61,7 @@ async def helm_dry_run(
     values_file: Path,
     chart_folder: Path,
     args="",
-    context: Context = None,
+    context: Optional[Context] = None,
 ):
     async with context.start(action="helm_dry_run") as ctx:
         cmd = (
@@ -81,7 +81,7 @@ async def helm_install(
     chart_folder: Path,
     timeout=120,
     args="",
-    context: Context = None,
+    context: Optional[Context] = None,
 ):
     return await helm_install_or_upgrade(
         release_name=release_name,
@@ -103,7 +103,7 @@ async def helm_upgrade(
     chart_folder: Path,
     timeout=120,
     args="",
-    context: Context = None,
+    context: Optional[Context] = None,
 ):
     return await helm_install_or_upgrade(
         release_name=release_name,
@@ -118,7 +118,10 @@ async def helm_upgrade(
 
 
 async def helm_uninstall(
-    release_name: str, kube_context: str, namespace: str, context: Context = None
+    release_name: str,
+    kube_context: str,
+    namespace: str,
+    context: Optional[Context] = None,
 ):
     cmd = f"helm uninstall --namespace {namespace} --kube-context {kube_context} {release_name}"
     if context:
@@ -134,7 +137,7 @@ async def helm_install_or_upgrade(
     kube_context: str,
     timeout=120,
     args="",
-    context: Context = None,
+    context: Optional[Context] = None,
 ):
     async with context.start(action="helm_install_or_upgrade") as ctx:
         cmd = (

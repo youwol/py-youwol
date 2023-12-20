@@ -59,7 +59,7 @@ async def get_cdn_client_js_map(
 @router.get("/cdn-client.config.json")
 async def get_cdn_client_config_default_version(
     response: Response,
-    if_none_match: TypedHeader = None,
+    if_none_match: Optional[TypedHeader] = None,
     deps: Dependencies = Depends(dependenciesFactory),
 ) -> Optional[ClientConfig]:
     return get_client_config(
@@ -72,7 +72,7 @@ async def get_cdn_client_config_default_version(
 @router.get("/{version}/cdn-client.config.json")
 async def get_cdn_client_config(
     response: Response,
-    if_none_match: TypedHeader = None,
+    if_none_match: Optional[TypedHeader] = None,
     deps: Dependencies = Depends(dependenciesFactory),
 ) -> Optional[ClientConfig]:
     return get_client_config(response=response, if_none_match=if_none_match, deps=deps)
