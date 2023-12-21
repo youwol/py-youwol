@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 
 # typing
-from typing import Dict, List, NamedTuple, Union
+from typing import Any, Dict, List, NamedTuple, Union
 
 # third parties
 import aiohttp
@@ -20,6 +20,7 @@ from youwol.utils.clients.docdb.models import (
 )
 from youwol.utils.clients.utils import aiohttp_resp_parameters
 from youwol.utils.exceptions import raise_exception_from_response
+from youwol.utils.utils import JSON
 
 
 def patch_query_body(query_body: QueryBody, table_body: TableBody) -> QueryBody:
@@ -116,17 +117,46 @@ def get_update_description(previous_table: Dict[str, any], current_version: str)
 
 @dataclass(frozen=True)
 class DocDbClient:
+    """
+
+    Remote indexed database implementation following [scyllaDB](https://www.scylladb.com/) concepts.
+    """
+
     version_service = "v0-alpha1"
+
     table_body: TableBody
+    """
+    Table definition.
+    """
+
     url_base: str
+    """
+    Base URL serving the remote service.
+    """
+
     keyspace_name: str
+    """
+    Keyspace name
+    """
 
     replication_factor: int
+    """
+    Replication factor
+    """
 
     headers: Dict[str, str] = field(default_factory=lambda: {})
+    """
+    Default headers to pass to the HTTP calls.
+    """
     connector = aiohttp.TCPConnector(verify_ssl=False)
+    """
+    Connector use for HTTP calls.
+    """
 
     secondary_indexes: List[SecondaryIndex] = field(default_factory=lambda: [])
+    """
+    Secondary indexes pf the table.
+    """
 
     async def raise_exception(self, resp: ClientResponse, **kwargs):
         params = {
@@ -179,7 +209,7 @@ class DocDbClient:
     def document_url(self):
         return f"{self.url_base}/{self.version_service}/{self.keyspace_name}/{self.table_name}/document"
 
-    async def _keyspace_exists(self, **kwargs) -> bool:
+    async def _keyspace_exists(self, **kwargs: Dict[str, Any]) -> bool:
         async with aiohttp.ClientSession(headers=self.headers) as session:
             async with await session.get(url=self.keyspaces_url, **kwargs) as resp:
                 if resp.status == 200:
@@ -187,7 +217,7 @@ class DocDbClient:
                     return self.keyspace_name in resp_json
                 await self.raise_exception(resp, message="Can not get the keyspace")
 
-    async def _table_exists(self, **kwargs) -> bool:
+    async def _table_exists(self, **kwargs: Dict[str, Any]) -> bool:
         async with aiohttp.ClientSession(headers=self.headers) as session:
             async with await session.get(url=self.tables_url, **kwargs) as resp:
                 if resp.status == 200:
@@ -195,7 +225,16 @@ class DocDbClient:
                     return self.table_name in resp_json
                 await self.raise_exception(resp, message="Can not get the table")
 
-    async def delete_table(self, **kwargs):
+    async def delete_table(self, **kwargs: Dict[str, Any]) -> JSON:
+        """
+        Delete the table.
+
+        Parameters:
+            kwargs: keywords arg. forwarded to internal calls.
+
+        Return:
+            Response of the service.
+        """
         if not await self._keyspace_exists(**kwargs) or not await self._table_exists(
             **kwargs
         ):
@@ -209,7 +248,7 @@ class DocDbClient:
                     return resp_json
                 await self.raise_exception(resp, message="Deletion of the table failed")
 
-    async def _create_keyspace(self, **kwargs):
+    async def _create_keyspace(self, **kwargs: Dict[str, Any]):
         body_json = post_keyspace_body(self.keyspace_name, self.replication_factor)
 
         async with aiohttp.ClientSession(headers=self.headers) as session:
@@ -224,7 +263,7 @@ class DocDbClient:
                     resp, message="Creation of the keyspace failed"
                 )
 
-    async def _create_table(self, **kwargs):
+    async def _create_table(self, **kwargs: Dict[str, Any]):
         body = self.table_body.dict()
         body["table_options"]["comment"] += f" #{self.table_body.version}#"
         if not self.table_body.clustering_columns:
@@ -241,7 +280,7 @@ class DocDbClient:
 
                 await self.raise_exception(resp, message="Creation of the table failed")
 
-    async def _create_index(self, index: SecondaryIndex, **kwargs):
+    async def _create_index(self, index: SecondaryIndex, **kwargs: Dict[str, Any]):
         body = index.dict()
 
         async with aiohttp.ClientSession(headers=self.headers) as session:
@@ -254,7 +293,16 @@ class DocDbClient:
 
                 await self.raise_exception(resp, message="Creation of the index failed")
 
-    async def ensure_table(self, **kwargs):
+    async def ensure_table(self, **kwargs: Dict[str, Any]):
+        """
+        Ensure the table exists, creates it if needed.
+
+        Parameters:
+            kwargs: keywords arg. forwarded to internal calls.
+
+        Return:
+            Response of the service.
+        """
         if not await self._keyspace_exists(**kwargs):
             print(f"keyspace {self.keyspace_name} does not exist")
             await self._create_keyspace(**kwargs)
@@ -287,7 +335,16 @@ class DocDbClient:
             for index in self.secondary_indexes:
                 await self._create_index(index, **kwargs)
 
-    async def get_table(self, **kwargs):
+    async def get_table(self, **kwargs: Dict[str, Any]) -> JSON:
+        """
+        Get description of a table.
+
+        Parameters:
+            kwargs: keywords arg. forwarded to internal calls.
+
+        Return:
+            Response of the service.
+        """
         async with aiohttp.ClientSession(headers=self.headers) as session:
             async with await session.get(url=self.table_url, **kwargs) as resp:
                 if resp.status == 200:
@@ -301,8 +358,20 @@ class DocDbClient:
         partition_keys: Dict[str, any],
         clustering_keys: Dict[str, any],
         owner: Union[str, None],
-        **kwargs,
-    ):
+        **kwargs: Dict[str, Any],
+    ) -> JSON:
+        """
+        Get a document based on partition and clustering keys.
+
+        Parameters:
+            partition_keys: The partition keys.
+            clustering_keys: The clustering keys.
+            owner: The owner of the document. Please provide always `youwol-users`.
+            kwargs:  keywords arg. forwarded to internal calls.
+
+        Return:
+            The retrieved document.
+        """
         params = {"owner": owner}
         params_part = self.get_primary_key_query_parameters(
             {**partition_keys, **clustering_keys}
@@ -321,8 +390,22 @@ class DocDbClient:
                 )
 
     async def query(
-        self, query_body: Union[QueryBody, str], owner: Union[str, None], **kwargs
-    ):
+        self,
+        query_body: Union[QueryBody, str],
+        owner: Union[str, None],
+        **kwargs: Dict[str, Any],
+    ) -> JSON:
+        """
+        Execute a query on the table.
+
+        Parameters:
+            query_body: The query body.
+            owner: The owner of the document. Please provide always `youwol-users`.
+            kwargs:  keywords arg. forwarded to internal calls.
+
+        Return:
+            The query result.
+        """
         if isinstance(query_body, str):
             query_body = QueryBody.parse(query_body)
 
@@ -341,7 +424,20 @@ class DocDbClient:
                     resp, message="Query failed", params=params, query_body=query_body
                 )
 
-    async def create_document(self, doc, owner: Union[str, None], **kwargs):
+    async def create_document(
+        self, doc: JSON, owner: Union[str, None], **kwargs: Dict[str, Any]
+    ) -> JSON:
+        """
+        Create a new document in the database.
+
+        Parameters:
+            doc: The document to create.
+            owner: The owner of the document. Please provide always `youwol-users`.
+            kwargs:  keywords arg. forwarded to internal calls.
+
+        Return:
+            Response from the service.
+        """
         params = {"owner": owner} if owner else {}
 
         async with aiohttp.ClientSession(headers=self.headers) as session:
@@ -354,7 +450,20 @@ class DocDbClient:
                     resp, message="Can not create the document", params=params, doc=doc
                 )
 
-    async def update_document(self, doc, owner: Union[str, None], **kwargs):
+    async def update_document(
+        self, doc: JSON, owner: Union[str, None], **kwargs: Dict[str, Any]
+    ) -> JSON:
+        """
+        Update a new document in the database.
+
+        Parameters:
+            doc: Updated document.
+            owner: The owner of the document. Please provide always `youwol-users`.
+            kwargs:  keywords arg. forwarded to internal calls.
+
+        Return:
+            Response from the service.
+        """
         params = {"owner": owner} if owner else {}
 
         async with aiohttp.ClientSession(headers=self.headers) as session:
@@ -368,8 +477,19 @@ class DocDbClient:
                 )
 
     async def delete_document(
-        self, doc: Dict[str, any], owner: Union[str, None], **kwargs
-    ):
+        self, doc: JSON, owner: Union[str, None], **kwargs: Dict[str, Any]
+    ) -> JSON:
+        """
+        Delete a document from the database.
+
+        Parameters:
+            doc: Primary key of the document.
+            owner: The owner of the document. Please provide always `youwol-users`.
+            kwargs:  keywords arg. forwarded to internal calls.
+
+        Return:
+            Empty JSON object.
+        """
         params_part = self.get_primary_key_query_parameters(doc)
         params = {"owner": owner} if owner else {}
         async with aiohttp.ClientSession(headers=self.headers) as session:

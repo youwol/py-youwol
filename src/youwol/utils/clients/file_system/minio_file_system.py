@@ -23,9 +23,23 @@ from youwol.utils.exceptions import ResourcesNotFoundException, ServerError
 
 @dataclass(frozen=True)
 class MinioFileSystem(FileSystemInterface):
+    """
+    Implementation of storage for remote usage (connected to a [Minio](https://min.io/ S3 service).
+    client.
+    """
+
     client: Minio
+    """
+    Minio client
+    """
     bucket_name: str
+    """
+    Bucket name
+    """
     root_path: Union[str, Path] = ""
+    """
+    Reference path (in the bucket) of all operations in this class.
+    """
 
     metadata_keys = {
         "x-amz-meta-contentencoding": "contentEncoding",

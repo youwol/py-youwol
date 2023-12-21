@@ -7,7 +7,17 @@ from enum import Enum
 from pathlib import Path, PosixPath
 
 # typing
-from typing import Any, Callable, Dict, Iterable, List, NamedTuple, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    NamedTuple,
+    Optional,
+    Union,
+    cast,
+)
 
 # third parties
 import aiohttp
@@ -25,22 +35,56 @@ flatten = itertools.chain.from_iterable
 
 
 class YouwolHeaders(NamedTuple):
+    """
+    Gather headers and operations on headers related to Youwol.
+    """
+
     #  About tracing & headers: https://www.w3.org/TR/trace-context/
     py_youwol_local_only = "py-youwol-local-only"
+    """
+    If this header is true, no operation involving the remote ecosystem is enabled.
+    """
     youwol_origin = "youwol-origin"
     correlation_id = "x-correlation-id"
+    """
+    Correlation id (see [trace & context](https://www.w3.org/TR/trace-context/)).
+    """
     trace_id = "x-trace-id"
+    """
+    Trace id (see [trace & context](https://www.w3.org/TR/trace-context/)).
+    """
 
     @staticmethod
-    def get_correlation_id(request: Request):
+    def get_correlation_id(request: Request) -> Optional[str]:
+        """
+
+        Parameters:
+            request: incoming request
+        Return:
+            Correlation id of the request, if provided.
+        """
         return request.headers.get(YouwolHeaders.correlation_id, None)
 
     @staticmethod
-    def get_trace_id(request: Request):
+    def get_trace_id(request: Request) -> Optional[str]:
+        """
+
+        Parameters:
+            request: incoming request
+        Return:
+            Trace id of the request, if provided.
+        """
         return request.headers.get(YouwolHeaders.trace_id, None)
 
     @staticmethod
-    def get_py_youwol_local_only(request: Request):
+    def get_py_youwol_local_only(request: Request) -> Optional[str]:
+        """
+
+        Parameters:
+            request: incoming request
+        Return:
+            The value of the header 'py-youwol-local-only' if included in the request.
+        """
         return request.headers.get(YouwolHeaders.py_youwol_local_only, None)
 
 

@@ -21,7 +21,7 @@ from youwol.app.routers.commons import Label
 from youwol.app.web_socket import LogsStreamer
 
 # Youwol utilities
-from youwol.utils import CommandException, decode_id
+from youwol.utils import JSON, CommandException, decode_id
 from youwol.utils.context import Context
 from youwol.utils.utils_paths import parse_json, write_json
 
@@ -60,7 +60,14 @@ flatten = itertools.chain.from_iterable
 
 
 @router.get("/status", response_model=ProjectsLoadingResults, summary="status")
-async def status(request: Request):
+async def status(request: Request) -> ProjectsLoadingResults:
+    """
+    Parameters:
+        request: Incoming request
+
+    Return:
+        The description of the projects list in the workspace, it is also send via the `data` webSocket.
+    """
     async with Context.start_ep(
         request=request, with_reporters=[LogsStreamer()]
     ) as ctx:
@@ -72,11 +79,24 @@ async def status(request: Request):
 @router.get(
     "/{project_id}/flows/{flow_id}/steps/{step_id}",
     response_model=PipelineStepStatusResponse,
-    summary="status",
+    summary="Check the status of a step, it is also send via the `/ws-data` webSocket.",
 )
 async def pipeline_step_status(
     request: Request, project_id: str, flow_id: str, step_id: str
 ) -> PipelineStepStatusResponse:
+    """
+    Check the status of a step, it is also send via the `/ws-data` webSocket.
+
+    Parameters:
+        request: incoming request
+        project_id: id of the project
+        flow_id: id of the flow
+        step_id: id of the step
+
+    Return:
+        The status of target step.
+    """
+
     async with Context.start_ep(
         request=request,
         action="pipeline_step_status",
@@ -93,10 +113,25 @@ async def pipeline_step_status(
         return response
 
 
-@router.get("/{project_id}", response_model=ProjectStatusResponse, summary="status")
+@router.get(
+    "/{project_id}",
+    response_model=ProjectStatusResponse,
+    summary="Check the status of a project, it is also send via the `/ws-data` webSocket.",
+)
 async def project_status(
     request: Request, project_id: str, config: YouwolEnvironment = Depends(yw_config)
-):
+) -> ProjectStatusResponse:
+    """
+    Check the status of a project, it is also send via the `/ws-data` webSocket.
+
+    Parameters:
+        request: incoming request
+        project_id: id of the project
+        config: the current environment
+
+    Return:
+        The status of the target project.
+    """
     async with Context.start_ep(
         request=request,
         action="project_status",
@@ -123,9 +158,24 @@ async def project_status(
 @router.get(
     "/{project_id}/flows/{flow_id}",
     response_model=PipelineStatusResponse,
-    summary="status",
+    summary="Check the status of a flow, it is also send via the `/ws-data` webSocket.",
 )
-async def flow_status(request: Request, project_id: str, flow_id: str):
+async def flow_status(
+    request: Request, project_id: str, flow_id: str
+) -> PipelineStatusResponse:
+    """
+    Check the status of a flow, it is also send via the `/ws-data` webSocket.
+    The steps included in the response are the steps included in the requested `flow_id`.
+
+    Parameters:
+        request: incoming request
+        project_id: id of the project
+        flow_id: id of the flow
+
+    Return:
+        The status of the target flow.
+    """
+
     async with Context.start_ep(
         request=request,
         action="flow_status",
@@ -155,9 +205,23 @@ async def flow_status(request: Request, project_id: str, flow_id: str):
 @router.get(
     "/{project_id}/flows/{flow_id}/artifacts",
     response_model=ArtifactsResponse,
-    summary="status",
+    summary="Retrieve the list of a project's artifacts for a given flow",
 )
-async def project_artifacts(request: Request, project_id: str, flow_id: str):
+async def project_artifacts(
+    request: Request, project_id: str, flow_id: str
+) -> ArtifactsResponse:
+    """
+    Retrieve the list of a project's artifacts for a given flow.
+
+    Parameters:
+        request: incoming request
+        project_id: id of the project
+        flow_id: id of the flow
+
+    Return:
+        The list artifacts.
+    """
+
     async with Context.start_ep(
         request=request,
         action="project_artifacts",
@@ -223,11 +287,24 @@ async def run_upstream_steps(
 
 
 @router.get(
-    "/{project_id}/flows/{flow_id}/steps/{step_id}/configuration", summary="status"
+    "/{project_id}/flows/{flow_id}/steps/{step_id}/configuration",
+    summary="Retrieve the configuration of a step.",
 )
 async def get_configuration(
     request: Request, project_id: str, flow_id: str, step_id: str
-):
+) -> JSONResponse:
+    """
+    Retrieve the configuration of a step.
+
+    Parameters:
+        request: incoming request
+        project_id: id of the project
+        flow_id: id of the flow
+        step_id: id of the step
+
+    Return:
+        The configuration of a step
+    """
     async with Context.from_request(request).start(action="get_configuration") as ctx:
         return JSONResponse(
             content=await get_project_configuration(
@@ -239,7 +316,7 @@ async def get_configuration(
 @router.post(
     "/{project_id}/flows/{flow_id}/steps/{step_id}/configuration",
     response_model=UpdateConfigurationResponse,
-    summary="status",
+    summary="update configuration",
 )
 async def update_configuration(
     request: Request,
@@ -248,7 +325,21 @@ async def update_configuration(
     step_id: str,
     body: Mapping[str, Any],
     env: YouwolEnvironment = Depends(yw_config),
-):
+) -> UpdateConfigurationResponse:
+    """
+    Update the configuration of a step.
+
+    Parameters:
+        request: incoming request
+        project_id: id of the project
+        flow_id: id of the flow
+        step_id: id of the step
+        body: configuration's definition
+        env: current environment
+
+    Return:
+        Update response
+    """
     async with Context.from_request(request).start(
         action="update_configuration"
     ) as ctx:
@@ -411,7 +502,21 @@ async def run_pipeline_step(
     flow_id: str,
     step_id: str,
     run_upstream: bool = Query(alias="run-upstream", default=False),
-):
+) -> Response:
+    """
+    Run a step of a pipeline asynchronously. Result of the run will be sent in a future data message using the
+    `data` WebSocket with a [PipelineStepEvent](@yw-nav-class:youwol.app.routers.projects.models.PipelineStepEvent).
+
+    Parameters:
+        request: incoming request
+        project_id: id of the project
+        flow_id: id of the flow
+        step_id: id of the step
+        run_upstream: whether to run upstream steps
+
+    Return:
+        Response(status_code=202) : acknowledged
+    """
     async with Context.start_ep(
         request=request,
         action="run_pipeline_step",
@@ -431,10 +536,26 @@ async def run_pipeline_step(
         return Response(status_code=202)
 
 
-@router.get("/{project_id}/cdn", response_model=CdnResponse, summary="status")
+@router.get(
+    "/{project_id}/cdn",
+    response_model=CdnResponse,
+    summary="Retrieve the status of a particular project published within the CDN database.",
+)
 async def cdn_status(
     request: Request, project_id: str, config: YouwolEnvironment = Depends(yw_config)
-):
+) -> CdnResponse:
+    """
+    Retrieve the status of a particular project published within the CDN database.
+
+    Parameters:
+        request: incoming request
+        project_id: id of the project
+        config: current environment
+
+    Return:
+        The status response.
+    """
+
     async with Context.from_request(request).start(
         action="Get local cdn status",
         with_attributes={"event": "CdnResponsePending", "projectId": project_id},
@@ -469,13 +590,25 @@ async def cdn_status(
 @router.put(
     "/create-from-template",
     response_model=CreateProjectFromTemplateResponse,
-    summary="status",
+    summary="Create a new project from a specified template.",
 )
 async def new_project_from_template(
     request: Request,
     body: CreateProjectFromTemplateBody,
     config: YouwolEnvironment = Depends(yw_config),
-):
+) -> CreateProjectFromTemplateResponse:
+    """
+    Create a new project from a specified template.
+
+    Parameters:
+        request: incoming request
+        body: generator reference
+        config: current environment
+
+    Return:
+        Information on the created project
+    """
+
     async with Context.from_request(request).start(
         action="new_project_from_template",
         with_attributes={"templateType": body.type},
@@ -512,7 +645,48 @@ async def pipeline_step_view(
     request: Request,
     project_id: str,
     step_id: str,
-):
+) -> FileResponse:
+    """
+    Return the view of a pipeline step.
+
+    It is a javascript file that return a function generating a view, it has the following signature:
+
+    ```typescript
+    async function getView(body:{
+      triggerRun: () => void,
+      // to be called by the view when the configuration is validated
+      project: Project,
+      flowId: str,
+      //  the flowId
+      stepId: str,
+      //  the stepId
+      projectsRouter,
+      webpmClient,
+       // the packages manager client, used to install dependencies to create the view if needed,
+    }) : HTMLElement {
+
+        // typical implementation
+
+        const {foo, bar} = await webpmClient.install({modules:['foo#^1.2.3', 'bar#^2.3.4']})
+        //  use foo and bar to create reactive view
+        //  can interact with the custom backends of the step using projectsRouter.executeStepGetCommand$
+        //  return the view
+        }
+
+    return getView;
+    ```
+
+    In practice, the view often interact with commands defined by the step (usually to retrieve data).
+    See [do_cmd_get_pipeline_step](@yw-nav-func:youwol.app.routers.projects.router.do_cmd_get_pipeline_step).
+
+    Parameters:
+        request (Starlette.Request): incoming request
+        project_id: id of the project
+        step_id: id of the step
+
+    Return:
+        text/javascript FileResponse with returned `getView` function when executed.
+    """
     async with Context.from_request(request).start(
         action="new_project_from_template"
     ) as ctx:
@@ -532,7 +706,7 @@ async def pipeline_step_view(
 
 @router.get(
     "/{project_id}/flows/{flow_id}/steps/{step_id}/commands/{command_id}",
-    summary="view of a pipeline step",
+    summary="Execute a particular GET command defined by step.",
 )
 async def do_cmd_get_pipeline_step(
     request: Request,
@@ -540,7 +714,21 @@ async def do_cmd_get_pipeline_step(
     flow_id: str,
     step_id: str,
     command_id: str,
-):
+) -> JSON:
+    """
+    Execute a particular GET command defined by step.
+
+    Parameters:
+        request: incoming request
+        project_id: id of the project
+        flow_id: id of the flow
+        step_id: id of the step
+        command_id: id of the command
+
+    Return:
+        The response from the associated command.
+    """
+
     async with Context.from_request(request).start(
         action="do_cmd_get_pipeline_step"
     ) as ctx:

@@ -30,13 +30,40 @@ class NeedInteractiveSession(RuntimeError):
 
 
 class JwtProviderDynamicIssuer(JwtProvider, ABC):
+    """
+    Abstract dynamic JWT provider issuer w/ the target remote environment.
+
+    """
+
     @abstractmethod
     async def _get_token(self, request: Request, context: Context) -> Optional[str]:
+        """
+        Define abstract method interface.
+
+        Parameters:
+            request: incoming request.
+            context: current context
+
+        Return:
+             The JWT token.
+        """
         raise NotImplementedError()
 
     async def get_token_and_openid_base_url(
         self, request: Request, context: Context
     ) -> Tuple[Optional[str], str]:
+        """
+        Use the abstract `_get_token` method to implement
+        <a href="@yw-nav-class:youwol.utils.middlewares.authentication.JwtProvider.get_token_and_openid_base_url">
+        JwtProvider.get_token_and_openid_base_url</a>.
+
+        Parameters:
+            request: incoming request.
+            context: current context, used to retrieve the connected remote environment.
+
+        Return:
+            A tuple of string with optional JWT token and openId base URL.
+        """
         env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
         token = await self._get_token(request=request, context=context)
         if token is None:
@@ -46,7 +73,23 @@ class JwtProviderDynamicIssuer(JwtProvider, ABC):
 
 
 class JwtProviderDelegatingDynamicIssuer(JwtProviderDynamicIssuer, ABC):
+    """
+    Abstract delegating dynamic JWT provider issuer.
+    """
+
     async def _get_token(self, request: Request, context: Context) -> Optional[str]:
+        """
+        Use the abstract `_get_delegate` method to implement
+        <a href="@yw-nav-class:youwol.app.environment.local_auth.JwtProviderDynamicIssuer._get_token">
+        JwtProviderDynamicIssuer._get_token</a>.
+
+        Parameters:
+            request: incoming request.
+            context: current context, used to retrieve the connected remote environment.
+
+        Return:
+            JWT token.
+        """
         return (
             await self._get_delegate().get_token_and_openid_base_url(
                 request=request, context=context
@@ -55,26 +98,89 @@ class JwtProviderDelegatingDynamicIssuer(JwtProviderDynamicIssuer, ABC):
 
     @abstractmethod
     def _get_delegate(self) -> JwtProvider:
+        """
+        Define abstract method interface.
+
+        Return:
+             The JWT provider delegate.
+        """
         raise NotImplementedError()
 
 
 class JwtProviderBearerDynamicIssuer(JwtProviderDelegatingDynamicIssuer):
+    """
+    Delegating dynamic JWT provider issuer using
+    [JwtProviderBearer](@yw-nav-class:youwol.utils.middlewares.authentication.JwtProviderBearer).
+    """
+
     def _get_delegate(self) -> JwtProvider:
+        """
+        Implement
+        <a href="@yw-nav-meth:youwol.app.environment.local_auth.JwtProviderDelegatingDynamicIssuer._get_delegate">
+        JwtProviderDelegatingDynamicIssuer._get_delegate</a>
+
+        Return:
+            The [JwtProviderBearer](@yw-nav-class:youwol.utils.middlewares.authentication.JwtProviderBearer) delegate.
+        """
         return JwtProviderBearer(openid_base_url="")
 
 
 class JwtProviderCookieDynamicIssuer(JwtProviderDelegatingDynamicIssuer):
+    """
+    Delegating dynamic JWT provider issuer using
+    [JwtProviderCookie](@yw-nav-class:youwol.utils.middlewares.authentication.JwtProviderCookie).
+    """
+
+    __delegate: JwtProviderCookie
+    """
+    Instantiated delegate.
+    """
+
     def __init__(self, tokens_manager: TokensManager):
+        """
+        Instantiate
+        <a href="@yw-nav-meth:youwol.app.environment.local_auth.JwtProviderCookieDynamicIssuer.__delegate">
+        JwtProviderCookieDynamicIssuer.__delegate</a>
+        from the tokens manager.
+
+        Parameters:
+            tokens_manager: tokens manager
+
+        """
         self.__delegate = JwtProviderCookie(
             tokens_manager=tokens_manager, openid_base_url=""
         )
 
     def _get_delegate(self) -> JwtProvider:
+        """
+        Implement
+        <a href="@yw-nav-meth:youwol.app.environment.local_auth.JwtProviderDelegatingDynamicIssuer._get_delegate">
+        JwtProviderDelegatingDynamicIssuer._get_delegate</a>
+
+        Return:
+            The [JwtProviderCookie](@yw-nav-class:youwol.utils.middlewares.authentication.JwtProviderCookie) delegate.
+        """
         return self.__delegate
 
 
 class JwtProviderPyYouwol(JwtProviderDynamicIssuer):
+    """
+    PyYouwol JWT provider.
+    """
+
     async def _get_token(self, request: Request, context: Context) -> Optional[str]:
+        """
+        Implement
+        <a href="@yw-nav-class:youwol.app.environment.local_auth.JwtProviderDynamicIssuer._get_token">
+        JwtProviderDynamicIssuer._get_token</a>.
+
+        Parameters:
+            request: incoming request.
+            context: current context, used to retrieve the connected remote environment.
+
+        Return:
+            JWT token.
+        """
         env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
         try:
             if isinstance(env.get_authentication_info(), BrowserAuth):
@@ -97,6 +203,16 @@ def local_tokens_id(
 
 
 async def get_connected_local_tokens(context: Context) -> Tokens:
+    """
+    Use the active CloudEnvironment to retrieve the auth. token using
+    [get_local_tokens](@yw-nav-func:youwol.app.environment.local_auth.get_local_tokens).
+
+    Parameters:
+        context: current context, used to retrieve the connected remote environment & tokens storage.
+
+    Return:
+        The tokens
+    """
     env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
 
     return await get_local_tokens(
@@ -111,6 +227,17 @@ async def get_local_tokens(
     auth_provider: AuthorizationProvider,
     auth_infos: Authentication,
 ) -> Tokens:
+    """
+    Retrieve local auth. token from explicit target.
+
+    Parameters:
+        tokens_storage: a token storage
+        auth_provider: an auth. provider
+        auth_infos: authentication info
+
+    Return:
+        Tokens
+    """
     tokens_id = local_tokens_id(auth_provider=auth_provider, auth_infos=auth_infos)
 
     oidc_client = OidcConfig(auth_provider.openidBaseUrl).for_client(

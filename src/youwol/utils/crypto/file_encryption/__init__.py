@@ -1,3 +1,7 @@
+"""
+This module encapsulates files encryption utilities.
+"""
+
 # relative
 from .constantes import Algo
 from .exceptions import FileEncryptionException

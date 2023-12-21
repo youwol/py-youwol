@@ -35,8 +35,42 @@ from .python_dynamic_loader import get_object_from_module
 
 
 class IConfigurationFactory(ABC):
+    """
+    Abstract class to for [Configuration](@yw-nav-class:youwol.app.environment.models.models_config.Configuration)
+     factory.
+
+    It is used to define the youwol's
+    [Configuration](@yw-nav-class:youwol.app.environment.models.models_config.Configuration)
+    by providing a `ConfigurationFactory` class deriving from it in the python configuration file.
+
+    It is an alternative to yielding a
+    [Configuration](@yw-nav-class:youwol.app.environment.models.models_config.Configuration)
+    object as last statement of the python configuration file.
+
+    Example:
+
+        ```python
+        from youwol.app.environment import Configuration, IConfigurationFactory
+        from youwol.app.main_args import MainArguments
+
+        class ConfigurationFactory(IConfigurationFactory):
+            async def get(self, main_args: MainArguments) -> Configuration:
+                return Configuration()
+        ```
+
+        Derived class should implement the **get** method.
+    """
+
     @abstractmethod
-    async def get(self, _main_args: MainArguments) -> Configuration:
+    async def get(self, main_args: MainArguments) -> Configuration:
+        """
+
+        Parameters:
+            main_args: Arguments provided from the command line when starting youwol.
+
+        Return:
+            The (@yw-nav-class:youwol.app.environment.models.models_config.Configuration) instance.
+        """
         return NotImplemented
 
 

@@ -23,20 +23,56 @@ EXPIRATION_THRESHOLD = 60
 
 
 class PrivateClient(BaseModel):
+    """
+    PrivateClient represents a client in the OpenID Connect protocol with a client secret.
+    """
+
     client_id: str
+    """
+    The client identifier.
+    """
     client_secret: str
+    """
+    The client secret.
+    """
 
 
 class PublicClient(BaseModel):
+    """
+    Represents a client in the OpenID Connect protocol without a client secret.
+    """
+
     client_id: str
+    """
+    The client identifier.
+    """
 
 
 class OpenIdConfiguration(BaseModel):
+    """
+    Represents the OpenID Connect configuration received from the Authorization Server.
+    """
+
     token_endpoint_auth_signing_alg_values_supported: List[str]
+    """
+    The supported signing algorithms for token endpoint authentication.
+    """
     authorization_endpoint: str
+    """
+    The authorization endpoint URL.
+    """
     token_endpoint: str
+    """
+    The token endpoint URL.
+    """
     end_session_endpoint: str
+    """
+     The end session endpoint URL.
+     """
     jwks_uri: str
+    """
+    The JSON Web Key Set (JWKS) endpoint URL.
+    """
 
 
 class InvalidTokensData(RuntimeError):
@@ -46,15 +82,50 @@ class InvalidTokensData(RuntimeError):
 
 @dataclass(frozen=True)
 class TokensData:
+    """
+    Represents the data associated with tokens in the OpenID Connect protocol.
+    """
+
     id_token: str
+    """
+    The ID token issued by the Authorization Server.
+    """
     access_token: str
+    """
+    The access token used to access protected resources.
+    """
     refresh_token: str
+    """
+    The refresh token used to obtain a new access token.
+    """
     expires_at: float
+    """
+    The expiration timestamp of the access token.
+    """
     refresh_expires_at: float
+    """
+    The expiration timestamp of the refresh token.
+    """
     session_state: str
+    """
+    The session state identifier.
+    """
 
 
 def tokens_data(data: Any) -> TokensData:
+    """
+    Convert raw token data received from the Authorization Server into a TokensData object.
+
+    Parameters:
+        data: Raw token data received from the Authorization Server.
+
+    Returns:
+        TokensData object representing the parsed token data.
+
+    Raises:
+        InvalidTokensData: If the provided data is missing required attributes or has invalid values.
+    """
+
     if "token_type" not in data:
         raise InvalidTokensData("no 'token_type' attribute")
 
@@ -88,8 +159,18 @@ def tokens_data(data: Any) -> TokensData:
 
 @dataclass(frozen=True)
 class SessionlessTokensData:
+    """
+    Immutable data class representing tokens obtained without a session.
+    """
+
     access_token: str
+    """
+    The access token.
+    """
     expires_in: int
+    """
+    The time, in seconds, until the access token expires.
+    """
 
 
 def sessionless_tokens_data(data: Any) -> SessionlessTokensData:
@@ -112,27 +193,83 @@ def sessionless_tokens_data(data: Any) -> SessionlessTokensData:
 
 
 Client = Union[PrivateClient, PublicClient]
+"""
+Generic client type (either public - no secret required -,  or private - secret required -).
+"""
 
 
 class OidcInfos(BaseModel):
+    """
+    Data class representing information related to OpenID Connect (OIDC).
+    """
+
     base_uri: str
+    """
+    The base URI for OIDC.
+    """
+
     client: Client
+    """
+    The client information.
+    """
 
 
 class OidcConfig:
+    """
+    OidcConfig represents the configuration for OpenID Connect (OIDC) in a client application.
+    """
+
     base_url: str
+    """
+    The base URL for the OIDC configuration.
+    """
     _openid_configuration: Optional[OpenIdConfiguration]
+    """
+    OpenId configuration.
+    Initialized at first call of
+    [openid_configuration](@yw-nav-meth:youwol.utils.clients.oidc.oidc_config.OidcConfig.openid_configuration)
+    """
+
     _jwks_client: Optional[PyJWKClient]
+    """
+    JSON Web Key Set (JWKS) client.
+    Initialized at first call of
+    [jwks_client](@yw-nav-meth:youwol.utils.clients.oidc.oidc_config.OidcConfig.jwks_client)
+    """
 
     def __init__(self, base_url: str):
+        """
+        Initialize the OidcConfig instance with the specified base URL.
+
+        Parameters:
+            base_url: The base URL for the OIDC configuration.
+        """
         self.base_url = base_url
         self._jwks_client = None
         self._openid_configuration = None
 
     def for_client(self, client: Client) -> "OidcForClient":
+        """
+        Create an OidcForClient instance associated with this configuration.
+
+        Parameters:
+            client: The OIDC client.
+
+        Return:
+            An instance of OidcForClient.
+        """
         return OidcForClient(self, client)
 
     async def token_decode(self, token: str) -> Dict[str, Any]:
+        """
+        Decode a token and return its JSON representation.
+
+        Args:
+            token: The token to decode.
+
+        Returns:
+            The JSON representation of the token.
+        """
         jwks_client = await self.jwks_client()
         token_data = jwt.decode(
             jwt=token,
@@ -143,16 +280,35 @@ class OidcConfig:
         return token_data
 
     async def jwt_algos(self) -> List[str]:
+        """
+        Retrieve the supported JSON Web Token (JWT) algorithms from the OpenID Configuration.
+
+        Return:
+            A list of supported JWT algorithms.
+        """
         conf = await self.openid_configuration()
         return conf.token_endpoint_auth_signing_alg_values_supported
 
     async def jwks_client(self) -> PyJWKClient:
+        """
+        Retrieve or create a JSON Web Key Set (JWKS) client.
+
+        Return:
+            PyJWKClient: The JWKS client.
+        """
         if self._jwks_client is None:
             conf = await self.openid_configuration()
             self._jwks_client = PyJWKClient(conf.jwks_uri)
         return self._jwks_client
 
     async def openid_configuration(self) -> OpenIdConfiguration:
+        """
+        Retrieve or fetch the OpenID Configuration.
+
+        Return:
+            OpenIdConfiguration: The OpenID Configuration.
+
+        """
         if self._openid_configuration is None:
             well_known_url = f"{self.base_url}/.well-known/openid-configuration"
             async with aiohttp.ClientSession() as session:
@@ -168,7 +324,19 @@ class OidcConfig:
 
 
 class OidcForClient:
+    """
+    OidcForClient provides methods for interacting with the OpenID Connect (OIDC) protocol
+    in the context of a client application.
+    """
+
     def __init__(self, config: OidcConfig, client: Client) -> None:
+        """
+        Initialize the instance with the provided configuration and client.
+
+        Parameters:
+            config: The OIDC configuration.
+            client: The OIDC client.
+        """
         self.__config = config
         self.__client = client
 
@@ -198,7 +366,8 @@ class OidcForClient:
     async def auth_flow_url(
         self, state: str, redirect_uri: str, login_hint: Optional[str]
     ) -> Tuple[str, str, str]:
-        """OpenId Authorization Code Flow request URL
+        """
+        Generate the URL for the OpenID Authorization Code Flow request.
 
         See:
             * OpenId Authorization Code Flow : https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth
@@ -206,14 +375,13 @@ class OidcForClient:
             * Proof Key for Code Exchange : https://datatracker.ietf.org/doc/html/rfc7636
             * Nonce implementations notes : https://openid.net/specs/openid-connect-core-1_0.html#NonceNotes
 
-        Args:
-            state (str): opaque value, to maintain state between this request ond the callback
-            redirect_uri (str): the callback URL where the response will be send (by redirecting the User Agent once
+        Parameters:
+            state: opaque value, to maintain state between this request and the callback
+            redirect_uri: the callback URL where the response will be sent (by redirecting the User Agent once
                                 User is authenticated)
-            login_hint (Union[None, None, None, str, None, None]): username to pre-fill login form.
+            login_hint: username to pre-fill login form.
 
-        Returns:
-            Tuple[str, str, str]:
+        Return:
                 * the URL to request End-User authentication
                 * the code verifier for PKCE
                 * the ID token nonce for mitigating replay attacks
@@ -256,7 +424,8 @@ class OidcForClient:
     async def auth_flow_handle_cb(
         self, code: str, redirect_uri: str, code_verifier: str, nonce: str
     ) -> TokensData:
-        """Authorization Code Flow callback handler
+        """
+        Handle the callback for the OpenID Authorization Code Flow.
 
         See:
             * OpenId Authorization Code Flow : https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth
@@ -264,14 +433,14 @@ class OidcForClient:
             * Proof Key for Code Exchange : https://datatracker.ietf.org/doc/html/rfc7636
             * Nonce implementations notes : https://openid.net/specs/openid-connect-core-1_0.html#NonceNotes
 
-        Args:
-            code (str): passed as query param by the Authorization Server
-            redirect_uri (str): must match the redirect_uri used in Authorization Code Flow request URL
-            code_verifier (str): the code verifier for PKCE
-            nonce (str): the ID token nonce for mitigating replay attacks
+        Parameters:
+            code: passed as query param by the Authorization Server
+            redirect_uri: must match the redirect_uri used in Authorization Code Flow request URL
+            code_verifier: the code verifier for PKCE
+            nonce: the ID token nonce for mitigating replay attacks
 
-        Returns:
-            TokensData: representation of tokens issued by the Authorization Server
+        Return:
+            representation of tokens issued by the Authorization Server
         """
         data = await self.__post_token_endpoint(
             code=code,
@@ -291,15 +460,17 @@ class OidcForClient:
         return result
 
     async def client_credentials_flow(self) -> SessionlessTokensData:
-        """Client Credentials flow
+        """
+        Perform the Client Credentials flow.
 
         See https://datatracker.ietf.org/doc/html/rfc6749#section-4.4
 
-        Raises:
-            RuntimeError, if the client is public
+        Return:
+            representation of access token issued by the Authorization Server
 
-        Returns:
-            SessionlessTokensData: representation of access token issued by the Authorization Server
+        Raises:
+            RuntimeError: if the client is public
+
         """
         if isinstance(self.__client, PublicClient):
             raise RuntimeError(f"Client {self.__client.client_id} is public !")
@@ -307,16 +478,17 @@ class OidcForClient:
         return sessionless_tokens_data(data)
 
     async def direct_flow(self, username: str, password: str) -> TokensData:
-        """Direct Authentication flow
+        """
+        Perform the Direct Authentication flow.
 
-            See https://datatracker.ietf.org/doc/html/rfc6749#section-4.3
+        See https://datatracker.ietf.org/doc/html/rfc6749#section-4.3
 
-        Args:
-            username (str): the username
-            password (str): the password
+        Parameters:
+            username: the username
+            password: the password
 
-        Returns:
-            TokensData: representation of tokens issued by the Authorization Server
+        Return:
+            representation of tokens issued by the Authorization Server
         """
         data = await self.__post_token_endpoint(
             grant_type="password", username=username, password=password, scope="openid"
@@ -326,16 +498,17 @@ class OidcForClient:
     async def impersonation(
         self, requested_subject: str, subject_token: str
     ) -> TokensData:
-        """Token exchange for impersonation
+        """
+        Perform token exchange for impersonation.
 
         See https://www.keycloak.org/docs/latest/securing_apps/#impersonation
 
-        Args:
-            requested_subject (str): the sub of the User to impersonate
-            subject_token (str): access token for the real User
+        Parameters:
+            requested_subject: the sub of the User to impersonate
+            subject_token: access token for the real User
 
-        Returns:
-           TokensData: representation of tokens issued by the Authorization Server
+        Return:
+           representation of tokens issued by the Authorization Server
         """
         data = await self.__post_token_endpoint(
             grant_type="urn:ietf:params:oauth:grant-type:token-exchange",
@@ -347,15 +520,16 @@ class OidcForClient:
         return tokens_data(data)
 
     async def refresh(self, refresh_token: str) -> TokensData:
-        """Refresh tokens
+        """
+        Refresh tokens using a refresh token.
 
         See https://openid.net/specs/openid-connect-core-1_0.html#RefreshTokens
 
-        Args:
-            refresh_token (str): the refresh token
+        Parameters:
+            refresh_token: the refresh token
 
-        Returns:
-           TokensData: representation of tokens issued by the Authorization Server
+        Return:
+           representation of tokens issued by the Authorization Server
         """
         data = await self.__post_token_endpoint(
             grant_type="refresh_token", scope="openid", refresh_token=refresh_token
@@ -366,16 +540,18 @@ class OidcForClient:
     async def logout_url(
         self, redirect_uri: str, state: str, id_token_hint: Optional[str] = None
     ) -> str:
-        """RP-Initiated Logout URL
+        """
+        Generate the RP-Initiated Logout URL.
 
         See https://openid.net/specs/openid-connect-rpinitiated-1_0.html#RPLogout
 
-        Args:
-            redirect_uri (str): the callback URI to which redirect the User Agent after log-out has been performed
-            state (str): opaque value, to maintain state between this request ond the callback
+        Parameters:
+            redirect_uri: the callback URI to which redirect the User Agent after log-out has been performed
+            state: opaque value, to maintain state between this request ond the callback
+            id_token_hint: token hint
 
-        Returns:
-            str: the log-out URL
+        Return:
+            the log-out URL
         """
         conf = await self.__config.openid_configuration()
         url = URL(conf.end_session_endpoint)
@@ -390,7 +566,22 @@ class OidcForClient:
         )
 
     async def token_decode(self, token: str) -> Dict[str, Any]:
+        """
+        Decode a token and return its JSON representation.
+
+        Parameters:
+            token: token to decode
+
+        Return:
+             The JSON representation of the token
+        """
         return await self.__config.token_decode(token)
 
     def client_id(self) -> str:
+        """
+        Retrieve the client ID associated with the client.
+
+        Return:
+             The client ID.
+        """
         return self.__client.client_id

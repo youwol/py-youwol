@@ -27,6 +27,9 @@ from .path_base import (
 )
 
 AlgoSpec = Union[Literal["any"], Optional[Algo]]
+"""
+Encryption algorithm.
+"""
 
 
 class EncryptedFileReader(ReaderBase):

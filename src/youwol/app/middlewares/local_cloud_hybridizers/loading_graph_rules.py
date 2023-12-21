@@ -63,12 +63,31 @@ async def get_extra_index(context: Context) -> Optional[str]:
 
 
 class GetLoadingGraph(AbstractLocalCloudDispatch):
+    """
+    Dispatch handling requests related to loading graph queries (resolving the dependencies tree of dependencies).
+    """
+
     async def apply(
         self,
         incoming_request: Request,
         call_next: RequestResponseEndpoint,
         context: Context,
     ) -> Optional[Response]:
+        """
+        This dispatch match the endpoint `/api/assets-gateway/cdn-backend/queries/loading-graph`;
+        it returns `None` otherwise.
+
+
+
+        Parameters:
+            incoming_request: The incoming request.
+            call_next: The next endpoint in the chain.
+            context: The current context.
+
+        Returns:
+            The response after dispatching the loading graph query.
+        """
+
         if (
             "/api/assets-gateway/cdn-backend/queries/loading-graph"
             not in incoming_request.url.path

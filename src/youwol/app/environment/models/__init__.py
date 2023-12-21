@@ -1,3 +1,7 @@
+"""
+The models used in YouWolEnvironment and its Configuration.
+"""
+
 # relative
 from .defaults import *
 from .models import *

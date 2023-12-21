@@ -71,12 +71,34 @@ class FormData(NamedTuple):
 
 
 class PublishResponse(BaseModel):
+    """
+    Publication summary response.
+    """
+
     name: str
+    """
+    Name of the library.
+    """
     id: str
+    """
+    ID of the library.
+    """
     version: str
+    """
+    Version of the library.
+    """
     fingerprint: str
+    """
+    Fingerprint of the library.
+    """
     compressedSize: int
+    """
+    Compressed size of the library.
+    """
     url: str
+    """
+    URL of the library.
+    """
 
 
 class UploadResponse(BaseModel):
@@ -241,3 +263,6 @@ LIBRARIES_TABLE = TableBody(
         clustering_order=[OrderingClause(name="version_number", order="DESC")]
     ),
 )
+"""
+Table definition for the cdn-backend service regarding the indexation of libraries.
+"""

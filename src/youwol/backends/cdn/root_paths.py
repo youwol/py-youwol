@@ -71,16 +71,40 @@ async def healthz():
 
 
 @router.post(
-    "/publish-library", summary="upload a library", response_model=PublishResponse
+    "/publish-library",
+    summary="Publish a library from a zip file.",
+    response_model=PublishResponse,
 )
 async def publish_library(
     request: Request,
     file: UploadFile = File(...),
     content_encoding: str = Form("identity"),
     configuration: Configuration = Depends(get_configuration),
-):
-    # https://www.toptal.com/python/beginners-guide-to-concurrency-and-parallelism-in-python
-    # Publish needs to be done using a queue to let the cdn pods fully available to fetch resources
+) -> PublishResponse:
+    """
+    Publish a library from a zip file:
+        *  Publish the files in the storage
+        *  Publish a document in the no-sql table
+        *  Publish files in the storage (under folder `/auto-generated/explorer`) to summarize the files' organization.
+
+    Requirements:
+        *  a `package.json` file is available in the zip, its location define the **reference path**.
+        Only the files in this folder and below are published.
+        *  `package.json` is a valid JSON file, including the fields:
+           *  'name' : the package name, also UID.
+           *  'version' : the package version, need to follow [semantic versioning](https://semver.org/).
+           Pre-releases allowed are defined [here](@yw-nav-class:youwol.backends.cdn.configurations.Constants).
+           *  'main' : the path of the main entry point, with respect to the **reference path**.
+
+    Parameters:
+        request: Incoming request.
+        file: Zip file including the packaged files.
+        content_encoding: Deprecated, use the default value.
+        configuration: Injected configuration of the service.
+
+    Return:
+        Publication summary.
+    """
 
     async with Context.start_ep(request=request, with_labels=["Publish"]) as ctx:
         return await publish_package(
@@ -88,13 +112,22 @@ async def publish_library(
         )
 
 
-@router.get("/download-library/{library_id}/{version}", summary="download a library")
+@router.get("/download-library/{library_id}/{version}", summary="Download a library.")
 async def download_library(
     request: Request,
     library_id: str,
     version: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    Download a library.
+
+    Parameters:
+        request: Incoming request.
+        library_id: Base64 encoded library name
+        version: explicit version (no semver allowed)
+        configuration: Injected configuration of the service.
+    """
     async with Context.start_ep(request=request, with_labels=["Download"]) as ctx:
         version = await resolve_explicit_version(
             package_name=to_package_name(library_id),
@@ -129,7 +162,16 @@ async def get_library_info(
     semver: str = QueryParam(None),
     max_count: int = QueryParam(1000, alias="max-count"),
     configuration: Configuration = Depends(get_configuration),
-):
+) -> ListVersionsResponse:
+    """
+
+    Parameters:
+        request: Incoming request.
+        library_id: Base64 encoded library name
+        semver: semantic versioning query
+        max_count: maximum count of versions returned
+        configuration: Injected configuration of the service.
+    """
     response: Optional[ListVersionsResponse] = None
     async with Context.start_ep(request=request, response=lambda: response) as ctx:
         name = to_package_name(library_id)

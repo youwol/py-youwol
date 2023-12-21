@@ -13,11 +13,13 @@ from youwol.app.environment.models.models_config import DispatchInfo
 
 
 class UserInfo(BaseModel):
-    """Most of these informations does not make sense …"""
+    """
+    TODO: needs to be updated, most if these information here does not make sense.
+    """
 
-    # id should be the subject of a token , as use everywhere to uniquely identify an user
+    # id should be the subject of a token , as use everywhere to uniquely identify a user
     id: str
-    # There is no 'name' for an user, either there is her first / last name (her civil name) or
+    # There is no 'name' for a user, either there is her first / last name (her civil name) or
     # her login, which is the same as the email
     name: str
     email: str
@@ -51,7 +53,17 @@ class SwitchResponse(BaseModel):
 
 class LoginBody(BaseModel):
     authId: Optional[str]
+    """
+    Id of the authentication, need to be referenced in the configuration file under the
+    [CloudEnvironment](@yw-nav-class:youwol.app.environment.models.models_config.CloudEnvironment) section
+     for the given `envId`.
+    """
+
     envId: Optional[str]
+    """
+    Id of the environment, need to be referenced in the configuration file under the
+    [CloudEnvironments](@yw-nav-class:youwol.app.environment.models.models_config.CloudEnvironments) section.
+    """
 
 
 class SelectRemoteBody(BaseModel):

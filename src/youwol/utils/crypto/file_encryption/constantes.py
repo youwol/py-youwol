@@ -11,8 +11,19 @@ ALGO_HEADER_LENGTH = 1
 
 
 class Algo(Enum):
-    NULL = 0x0A  # A single new line '\n'
+    """
+    Available algorithm for encryption.
+    """
+
+    NULL = 0x0A
+    """
+    A single new line '\n'
+    """
+
     SIV_256 = 0x01
+    """
+    SIV 256
+    """
 
 
 default_algo: Algo = Algo.SIV_256

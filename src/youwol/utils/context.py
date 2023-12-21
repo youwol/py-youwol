@@ -41,17 +41,42 @@ from starlette.websockets import WebSocket
 from youwol.utils.types import JSON
 from youwol.utils.utils import YouwolHeaders, generate_headers_downstream, to_json
 
-#  Can also be a JSON referencing BaseModel(s), etc
-#  At the end 'JsonLike' is anything that can be used in the function 'to_json'
 JsonLike = Union[JSON, BaseModel]
+"""
+Represents data structures that can be serialized into a json representation
+(can also be `JSON` referencing `BaseModel`).
+"""
 
 
 class LogLevel(Enum):
+    """
+    Available severities when loging.
+    """
+
     DEBUG = "DEBUG"
+    """
+    See [debug](@yw-nav-meth:youwol.utils.context.Context.debug).
+    """
+
     INFO = "INFO"
+    """
+    See [info](@yw-nav-meth:youwol.utils.context.Context.info).
+    """
+
     WARNING = "WARNING"
+    """
+    See [warning](@yw-nav-meth:youwol.utils.context.Context.warning).
+    """
+
     ERROR = "ERROR"
+    """
+    See [error](@yw-nav-meth:youwol.utils.context.Context.error).
+    """
+
     DATA = "DATA"
+    """
+    See [send](@yw-nav-meth:youwol.utils.context.Context.send).
+    """
 
 
 class Label(Enum):
@@ -83,23 +108,77 @@ T = TypeVar("T")
 
 
 class LogEntry(NamedTuple):
+    """
+
+    LogEntry represent a log, they are created from the class
+     [Context](@yw-nav-class:youwol.utils.context.ContextReporter) when
+     [starting function](@yw-nav-meth:youwol.utils.context.Context.start) or
+     [end-point](@yw-nav-meth:youwol.utils.context.Context.start_ep) as well as
+     when logging information (e.g. [info](@yw-nav-meth:youwol.utils.context.Context.info)).
+
+    Log entries are processed by [ContextReporter](@yw-nav-class:youwol.utils.context.ContextReporter) that
+    implements the action to trigger when a log entry is created.
+    """
+
     level: LogLevel
+    """
+    Level (e.g. debug, info, error, *etc.*).
+    """
+
     text: str
+    """
+    Text.
+    """
+
     data: JSON
+    """
+    Data associated to the log (set up with the `data` argument of *e.g.*
+    [info](@yw-nav-meth:youwol.utils.context.Context.info)).
+    """
     labels: List[str]
+    """
+    Labels associated to the log (set up with the `labels` argument of *e.g.*
+    [info](@yw-nav-meth:youwol.utils.context.Context.info)).
+    """
     attributes: Dict[str, str]
+    """
+    Attributes associated to the log (set up with the `attributes` argument of *e.g.*
+    [info](@yw-nav-meth:youwol.utils.context.Context.info)).
+    """
     context_id: str
+    """
+    The context ID that was used to generated this entry.
+    """
     parent_context_id: str
+    """
+    The parent context ID that was used to generated this entry.
+    """
+
     trace_uid: Union[str, None]
+    """
+    Trace ID (*i.e.*  root context ID).
+    """
+
     timestamp: float
+    """
+    Timestamp: time in second since EPOC.
+    """
 
 
 DataType = Union[T, Callable[[], T], Callable[[], Awaitable[T]]]
 
 
 class ContextReporter(ABC):
+    """
+    Abstract class that implements log strategy (e.g. within terminal, file, REST call, *etc.*).
+    """
+
     @abstractmethod
     async def log(self, entry: LogEntry):
+        """
+        Parameters:
+            entry: the og entry to process
+        """
         return NotImplemented
 
 
@@ -116,15 +195,41 @@ def format_message(entry: LogEntry):
 
 
 class WsContextReporter(ContextReporter):
+    websockets_getter: Callable[[], List[WebSocket]]
+    """
+    Callback that provides a list of web socket channels to use.
+    This function is evaluated each time [log](@yw-nav-meth:youwol.utils.context.WsContextReporter.log) is called.
+    """
+
+    mute_exceptions: bool
+    """
+    If `True` exceptions while sending the message in a web socket are not reported.
+    """
+
     def __init__(
         self,
         websockets_getter: Callable[[], List[WebSocket]],
         mute_exceptions: bool = False,
     ):
+        """
+        Set the class's attributes.
+
+        Parameters:
+            websockets_getter: see
+                [websockets_getter](@yw-nav-attr:youwol.utils.context.WsContextReporter.websockets_getter)
+            mute_exceptions: see
+                [websockets_getter](@yw-nav-attr:youwol.utils.context.WsContextReporter.mute_exceptions)
+        """
         self.websockets_getter = websockets_getter
         self.mute_exceptions = mute_exceptions
 
     async def log(self, entry: LogEntry):
+        """
+        Send a [LogEntry](@yw-nav-class:youwol.utils.context.LogEntry) in the web-socket channels.
+
+        Parameters:
+            entry: log to process.
+        """
         message = format_message(entry)
         websockets = self.websockets_getter()
 
@@ -144,22 +249,69 @@ class WsContextReporter(ContextReporter):
 StringLike = Any
 
 HeadersFwdSelector = Callable[[List[str]], List[str]]
+"""
+A selector function for headers: it takes a list of header's keys in argument, and return the selected keys from it.
+"""
 
 
 @dataclass(frozen=True)
 class Context:
+    """
+    Context objects serves at tracing the execution flow within python code and logs information as well as
+    propagating contextual information.
+    """
+
     logs_reporters: List[ContextReporter] = field(default_factory=list)
+    """
+    The list of reporters used to log information. Information are not meant to vehicle logic.
+    See the attribute `data_reporters` for log that actually conveys logic related data.
+    """
+
     data_reporters: List[ContextReporter] = field(default_factory=list)
+    """
+    The list of reporters used to log data.
+    """
+
     request: Optional[Request] = None
+    """
+    If the context was initiated with an incoming request (using the method
+    [start_ep](@yw-nav-meth:youwol.utils.context.Context.start_ep)), it stores the original
+    [Request](https://fastapi.tiangolo.com/reference/request/) object.
+    """
 
     uid: Union[str, None] = "root"
+    """
+    Context UID.
+    """
+
     parent_uid: Union[str, None] = None
+    """
+    Parent's context UID.
+    """
+
     trace_uid: Union[str, None] = None
+    """
+    The root parent's UID of the context, it is the `trace_uid` of the request if applicable.
+    """
 
     with_data: Dict[str, DataType] = field(default_factory=dict)
+
     with_attributes: JSON = field(default_factory=dict)
+    """
+    A JSON like datastructure that gets forwarded to children context.
+    """
+
     with_labels: List[str] = field(default_factory=list)
+    """
+    A list of tags that gets forwarded to children context.
+    """
+
     with_headers: Dict[str, str] = field(default_factory=dict)
+    """
+    Defines some headers that will gets forwarded to children context and retrieved using the method
+    [headers](@yw-nav-attr:youwol.utils.context.Context.headers).
+    """
+
     with_cookies: Dict[str, str] = field(default_factory=dict)
 
     @staticmethod
@@ -179,6 +331,45 @@ class Context:
         on_exception: "CallableBlockException" = None,
         with_reporters: List[ContextReporter] = None,
     ) -> ScopedContext:
+        """
+        Function to start a child context bound to an execution scope.
+
+        Parameters:
+            action: a title of the context
+            with_labels: labels to add to the context and its children
+            with_attributes: attributes to add to the context and its children
+            with_headers: additional headers to add to the context and its children
+            with_cookies: additional cookies to add to the context and its children
+            with_reporters: additional reporters that are included in the context and its children
+            on_enter: function to execute at context's start
+            on_exit: function to execute at context's exit
+            on_exception: function to execute if an exception is raised during the context's scope
+            with_data: deprecated
+
+        Return:
+            new child
+
+        **Example:**
+
+        ```python
+        async def foo(
+            project: Project,
+            flow_id: str,
+            step: PipelineStep,
+            context: Context,
+        ):
+            async with context.start(
+                action="foo",
+                with_attributes={
+                    "projectId": project.id,
+                    "flowId": flow_id,
+                    "stepId": step.id
+                },
+            ) as ctx:
+                pass
+        ```
+        """
+
         with_attributes = with_attributes or {}
         with_labels = with_labels or []
         with_data = with_data or {}
@@ -218,6 +409,38 @@ class Context:
         on_enter: "CallableBlock" = None,
         on_exit: "CallableBlock" = None,
     ) -> ScopedContext:
+        """
+        Static method to start a context when reaching an end point.
+
+        Parameters:
+            request: initiating request.
+            action: a custom title of the context, if not provided the request's URL
+            with_labels: labels to add to the context and its children
+            with_attributes: attributes to add to the context and its children
+            with_reporters: additional reporters that are included in the context and its children
+            on_enter: function to execute at context's start
+            on_exit: function to execute at context's exit
+            body: body of the request (deprecated)
+            response: response of the request (deprecated)
+
+        Return:
+            The new scoped context.
+
+        **Example:**
+
+        ```python
+        @router.get("/status", response_model=ProjectsLoadingResults, summary="status")
+        async def status(request: Request):
+
+            async with Context.start_ep(
+                request=request, with_reporters=[LogsStreamer()]
+            ) as ctx:
+                response = await ProjectLoader.refresh(ctx)
+                await ctx.send(response)
+                return response
+        ```
+        """
+
         context = Context.from_request(request=request)
         action = action or f"{request.method}: {request.scope['path']}"
         with_labels = with_labels or []
@@ -281,6 +504,14 @@ class Context:
         await asyncio.gather(*[logger.log(entry) for logger in self.logs_reporters])
 
     async def send(self, data: BaseModel, labels: List[StringLike] = None):
+        """
+        Send data.
+
+        Parameters:
+            data: data to send
+            labels: additional labels associated
+        """
+
         labels = labels or []
         await self.log(
             level=LogLevel.DATA,
@@ -292,26 +523,71 @@ class Context:
     async def debug(
         self, text: str, labels: List[StringLike] = None, data: JsonLike = None
     ):
+        """
+        Log information with severity [Debug](@yw-nav-att:youwol.utils.context.LogLevel.DEBUG).
+
+        Parameters:
+            text: text of the log
+            labels: additional labels associated
+            data: data to associate
+        """
         await self.log(level=LogLevel.DEBUG, text=text, labels=labels, data=data)
 
     async def info(
         self, text: str, labels: List[StringLike] = None, data: JsonLike = None
     ):
+        """
+        Log information with severity [Info](@yw-nav-att:youwol.utils.context.LogLevel.INFO).
+
+        Parameters:
+            text: text of the log
+            labels: additional labels associated
+            data: data to associate
+        """
         await self.log(level=LogLevel.INFO, text=text, labels=labels, data=data)
 
     async def warning(
         self, text: str, labels: List[StringLike] = None, data: JsonLike = None
     ):
+        """
+        Log information with severity [Warning](@yw-nav-att:youwol.utils.context.LogLevel.WARNING).
+
+        Parameters:
+            text: text of the log
+            labels: additional labels associated
+            data: data to associate
+        """
         await self.log(level=LogLevel.WARNING, text=text, labels=labels, data=data)
 
     async def error(
         self, text: str, labels: List[StringLike] = None, data: JsonLike = None
     ):
+        """
+        Log information with severity [Error](@yw-nav-att:youwol.utils.context.LogLevel.ERROR).
+
+        Parameters:
+            text: text of the log
+            labels: additional labels associated
+            data: data to associate
+        """
         await self.log(level=LogLevel.ERROR, text=text, labels=labels, data=data)
 
     async def failed(
         self, text: str, labels: List[StringLike] = None, data: JsonLike = None
     ):
+        """
+        Log information with severity [ERROR](@yw-nav-att:youwol.utils.context.LogLevel.ERROR) and
+        the tag `FAILED` to indicate that an unrecoverable failure in the encapsulated function happened
+        even if no exception has been raised.
+
+        Note:
+            It is most often preferred to raise an exception.
+
+        Parameters:
+            text: text of the log
+            labels: additional labels associated
+            data: data to associate
+        """
         labels = labels or []
         await self.log(
             level=LogLevel.ERROR, text=text, labels=[Label.FAILED, *labels], data=data
@@ -324,6 +600,17 @@ class Context:
         labels: List[StringLike] = None,
         data: JsonLike = None,
     ):
+        """
+        Log information with severity [Info](@yw-nav-att:youwol.utils.context.LogLevel.INFO) and
+        the tag `FUTURE` to indicate that an asynchronous task has been scheduled (and not awaited).
+
+        Parameters:
+            text: text of the log
+            future: if provided, a log entry will also be added when the future complete (or is canceled)
+            labels: additional labels associated
+            data: data to associate
+        """
+
         labels = labels or []
         await self.log(
             level=LogLevel.INFO, text=text, labels=[Label.FUTURE, *labels], data=data
@@ -375,10 +662,15 @@ class Context:
 
     def headers(self, from_req_fwd: HeadersFwdSelector = lambda _keys: []):
         """
-        :param from_req_fwd: selector returning the list of header's keys to forward given the header's keys
+        Return the headers associated to the context.
+
+        Parameters:
+            from_req_fwd: selector returning the list of header's keys to forward given the header's keys
         of the initiating request of the context.
-        :return: headers with all contribution (from YouWol, from original request & from eventual contribution at each
-        context's scope)
+
+        Return:
+            headers with all contribution (from YouWol, from original request & from eventual contribution at each
+            context's scope)
         """
         headers = (
             generate_headers_downstream(
@@ -395,6 +687,12 @@ class Context:
         }
 
     def cookies(self):
+        """
+
+        Return:
+            The cookie associated to the original request.
+            If the context has not been generated from a request, return `{}`
+        """
         cookies = self.request.cookies if self.request else {}
         return {**cookies, **self.cookies}
 
@@ -408,6 +706,14 @@ LabelsGetter = Callable[[], Set[str]]
 
 @dataclass(frozen=True)
 class ScopedContext(Context):
+    """
+    A context with lifecycle management logic (implementing async context manager API from python: `__aenter__`
+    and `__aexit__`).
+
+    `ScopedContext` are created using the method [start](@yw-nav-meth:youwol.utils.context.Context.start) and
+    [start_ep](@yw-nav-meth:youwol.utils.context.Context.start_ep).
+    """
+
     action: Optional[str] = None
     on_enter: Optional[CallableBlock] = None
     on_exit: Optional[CallableBlock] = None
@@ -493,9 +799,22 @@ class ContextFactory:
 
 
 class DeployedContextReporter(ContextReporter):
+    """
+    This [ContextReporter](@yw-nav-class: youwol.utils.context.ContextReporter) logs into the standard
+    output using a format understood by most cloud providers (*e.g.* using spanId, traceId).
+    """
+
     errors = set()
 
     async def log(self, entry: LogEntry):
+        """
+        Use [print](https://docs.python.org/3/library/functions.html#print) to log a serialized version of
+         the provided entry.
+
+        Parameters:
+            entry: log entry to print.
+
+        """
         prefix = ""
         if str(Label.STARTED) in entry.labels:
             prefix = "<START>"
@@ -526,7 +845,19 @@ class DeployedContextReporter(ContextReporter):
 
 
 class ConsoleContextReporter(ContextReporter):
+    """
+    This [ContextReporter](@yw-nav-class:youwol.utils.context.ContextReporter) logs into the standard
+    output.
+    """
+
     async def log(self, entry: LogEntry):
+        """
+        Use [print](https://docs.python.org/3/library/functions.html#print) to log a serialized version of
+         the provided entry by selecting the attributes `message`, `level`, `spanId`, `labels` and `spanId.
+
+        Parameters:
+            entry: Log entry to print.
+        """
         base = {
             "message": entry.text,
             "level": entry.level.name,
@@ -538,12 +869,48 @@ class ConsoleContextReporter(ContextReporter):
 
 
 class PyYouwolContextReporter(ContextReporter):
-    def __init__(self, py_youwol_port, headers=None):
+    """
+    This [ContextReporter](@yw-nav-class: youwol.utils.context.ContextReporter) send logs through
+    an API call to a running youwol server in localhost.
+
+    It uses a POST request at `http://localhost:{self.py_youwol_port}/admin/system/logs` with provided headers.
+
+    See [post_logs](@yw-nav-func:youwol.app.routers.system.post_logs).
+    """
+
+    py_youwol_port: int
+    """
+    Port used on localhost to execute the POST request of the log.
+    """
+    headers: Dict[str, str]
+    """
+    Headers associated to the POST request of the log.
+    """
+
+    def __init__(self, py_youwol_port: int, headers=None):
+        """
+        Set the class's attributes.
+
+        Parameters:
+            py_youwol_port: see
+                [py_youwol_port](@yw-nav-attr:youwol.utils.context.PyYouwolContextReporter.py_youwol_port)
+            headers: see
+                [headers](@yw-nav-attr:youwol.utils.context.PyYouwolContextReporter.headers)
+        """
         super().__init__()
         self.py_youwol_port = py_youwol_port
         self.headers = headers or {}
 
     async def log(self, entry: LogEntry):
+        """
+        Send the log to a py-youwol running server using provided
+        [port](@yw-nav-attr:youwol.utils.context.PyYouwolContextReporter.py_youwol_port) and
+        [headers](@yw-nav-attr:youwol.utils.context.PyYouwolContextReporter.headers).
+
+        Parameters:
+            entry: log entry to print.
+        """
+
         url = f"http://localhost:{self.py_youwol_port}/admin/system/logs"
         body = {
             "logs": [
@@ -567,16 +934,49 @@ class PyYouwolContextReporter(ContextReporter):
 
 
 class InMemoryReporter(ContextReporter):
+    """
+    Stores logs generated from [context](youwol.utils.context.Context) in memory.
+    """
+
     max_count = 10000
+    """
+    Maximum count of logs kept in memory.
+    """
 
     root_node_logs: List[LogEntry] = []
-    node_logs: List[LogEntry] = []
-    leaf_logs: List[LogEntry] = []
+    """
+    The list of the root logs.
+    """
 
-    errors = set()
-    futures = set()
-    futures_succeeded = set()
-    futures_failed = set()
+    node_logs: List[LogEntry] = []
+    """
+    The list of all 'node' logs: those associated to a function execution (and associated to children logs).
+
+    They are created from the context using [Context.start](@yw-nav-meth:youwol.utils.context.Context.start) or
+    [Context.start_ep](@yw-nav-meth:youwol.utils.context.Context.start_ep).
+    """
+
+    leaf_logs: List[LogEntry] = []
+    """
+    The list of all 'leaf' logs: those associated to a simple log
+     (e.g. [Context.info](@yw-nav-meth:youwol.utils.context.Context.info)).
+    """
+    errors: Set[str] = set()
+    """
+    List of `context_id` associated to errors.
+    """
+    futures: Set[str] = set()
+    """
+    List of `context_id` associated to futures (eventually not resolved yet).
+    """
+    futures_succeeded: Set[str] = set()
+    """
+    List of `context_id` associated to succeeded futures.
+    """
+    futures_failed: Set[str] = set()
+    """
+    List of `context_id` associated to failed futures.
+    """
 
     def clear(self):
         self.root_node_logs = []
@@ -589,6 +989,12 @@ class InMemoryReporter(ContextReporter):
         return items
 
     async def log(self, entry: LogEntry):
+        """
+        Save the entry in memory.
+
+        Parameters:
+            entry: log entry.
+        """
         if str(Label.LOG) in entry.labels:
             return
 

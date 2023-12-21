@@ -32,10 +32,82 @@ from youwol.pipelines import (
 
 
 class Environment(BaseModel):
+    """
+    Specifies the remote CDN targets in which the pipeline publish (using
+    [set_environment](@yw-nav-function:youwol.pipelines.pipeline_raw_app.set_environment)).
+    """
+
     cdnTargets: List[CdnTarget] = []
+    """
+    The list of (remote) CDN targets.
+    """
 
 
 def set_environment(environment: Environment = Environment()):
+    """
+    Set the global [environment](@yw-nav-class:youwol.pipelines.pipeline_raw_app.Environment) of the pipeline
+    (the remote CDN targets).
+
+    Example:
+
+        The pipeline can be configured to publish in custom remote CDN targets from the youwol's configuration file
+        as illustrated below:
+
+        ```python hl_lines="37-45"
+        from youwol.pipelines import CdnTarget
+        from youwol.app.environment import (CloudEnvironment, get_standard_auth_provider, BrowserAuth,
+         AuthorizationProvider, PublicClient, PrivateClient, DirectAuth)
+
+        import youwol.pipelines.pipeline_raw_app as pipeline_raw_app
+
+
+        prod_env = CloudEnvironment(
+            envId="prod",
+            host="platform.youwol.com",
+            authProvider=get_standard_auth_provider("platform.youwol.com"),
+            authentications=[BrowserAuth(authId="browser")],
+        )  # (1)
+
+
+        bar_env = CloudEnvironment(
+            envId="bar",
+            host="platform.bar.com",
+            authProvider=AuthorizationProvider(
+                openidClient=PublicClient(client_id="openid_client_id"),
+                openidBaseUrl="https://platform.bar.com/auth/realms/youwol",
+                keycloakAdminClient=PrivateClient(
+                    client_id="client_id_to_be_provided",
+                    client_secret="client_secret_to_be_provided",
+                ),
+                keycloakAdminBaseUrl="https://platform.bar.com/auth/admin/realms/youwol",
+            ),
+            authentications=[
+                DirectAuth(
+                    authId="foo",
+                    userName="foo@bar.com",
+                    password="foo-pwd",
+                ),
+            ],
+        )  # (2)
+
+        pipeline_raw_app.set_environment(
+            environment=pipeline_raw_app.Environment(
+                cdnTargets=[
+                    CdnTarget(name="bar", cloudTarget=bar_env, authId="foo"),
+                    CdnTarget(name="prod", cloudTarget=prod_env, authId="browser"),
+                ]
+            )
+        )
+        ```
+
+        1.  Define the regular `platform.youwol.com` environment authenticated through browser'
+        2.  This is a custom environment (managed by keycloak regarding identity & access management),
+        hosted on `platform.bar.com`, and authenticated using user-name & password.
+
+
+    Parameters:
+        environment: environment listing the CDNs targets
+    """
     Dependencies.get_environment = lambda: environment
 
 
@@ -64,28 +136,40 @@ default_files = FileListing(
 
 
 class PackageConfig(BaseModel):
+    """
+    Configuration regarding packaging.
+    """
+
     files: FileListing = default_files
+    """
+    Defines the list of files to package.
+    """
 
 
 class PackageStep(PipelineStep):
     """
     This step does not trigger any action (beside the 'echo').
-    Its purpose is to define an artifact 'package' that includes the project's files,
-    latter publish by the PublishCdnStep.
     """
 
     id: str = "package"
+    """
+    The ID of the step.
+    """
+
     run: str = "echo 'Nothing to do'"
+    """
+    Shell command to execute before packaging
+    """
 
-    """
-    sources defined the files on which depends the package, all the files by default
-    """
     sources: FileListing = default_files
+    """
+    Sources of the file.
+    """
 
+    artifacts: List[Artifact] = [Artifact(id="package", files=default_files)]
     """
     One artifact is defined, it is called 'package' and contains all the files of the project by default.
     """
-    artifacts: List[Artifact] = [Artifact(id="package", files=default_files)]
 
     async def get_status(
         self,
@@ -157,15 +241,35 @@ class PipelineConfig(BaseModel):
     """
 
     target: BrowserAppBundle
+    """
+    Defines the target.
+    """
 
     with_tags: List[str] = []
+    """
+    The list of tags.
+    """
 
     packageConfig: PackageConfig = PackageConfig()
+    """
+    Configuration specifying the packaging.
+    """
 
+    # Implementation details
     publishConfig: PublishConfig = PublishConfig()
 
 
 async def pipeline(config: PipelineConfig, context: Context):
+    """
+    Instantiate the pipeline.
+
+    Parameters:
+        config: configuration of the pipeline
+        context: current context
+
+    Return:
+        The pipeline instance.
+    """
     async with context.start(action="pipeline") as ctx:
         await ctx.info(text="Instantiate pipeline", data=config)
 

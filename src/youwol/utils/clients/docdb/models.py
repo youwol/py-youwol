@@ -6,38 +6,113 @@ from pydantic import BaseModel
 
 
 class Column(BaseModel):
+    """
+    Defines a column for a [scylla-db](https://www.scylladb.com/) table.
+    """
+
     name: str
+    """
+    Name of the column.
+    """
     type: str
+    """
+    Type of the column.
+    """
     static: bool = False
+    """
+    Whether is it static.
+    """
     primary_key: bool = False
+    """
+    Whether is it part of the primary key.
+    """
 
 
 class OrderingClause(BaseModel):
+    """
+    Defines ordering clause for a [scylla-db](https://www.scylladb.com/) table.
+    """
+
     name: str
+    """
+    Name of the target column.
+    """
     order: str = "ASC"
+    """
+    Ordering definition.
+    """
 
 
 class TableOptions(BaseModel):
+    """
+    Table options for a [scylla-db](https://www.scylladb.com/) table.
+    """
+
     clustering_order: List[OrderingClause] = []
+    """
+    Clustering order definition.
+    """
     comment: str = ""
+    """
+    Optional comment.
+    """
 
 
 class TableBody(BaseModel):
+    """
+    [Scylla-db](https://www.scylladb.com/) table definition.
+    """
+
     name: str
+    """
+    Table name.
+    """
     version: str
+    """
+    Table version.
+    """
     columns: List[Column]
+    """
+    Columns definition.
+    """
     partition_key: List[str]
+    """
+    Partition key definition.
+    """
     clustering_columns: List[str] = []
+    """
+    Clustering columns definition.
+    """
     table_options: TableOptions = TableOptions()
+    """
+    Table options
+    """
 
 
 class IdentifierSI(BaseModel):
+    """
+    Identifier for secondary index.
+    """
+
     column_name: str
+    """
+    Column name.
+    """
 
 
 class SecondaryIndex(BaseModel):
+    """
+    Defines secondary indexes for a [scylla-db](https://www.scylladb.com/) table.
+    """
+
     name: str
+    """
+    Name of the index.
+    """
     identifier: IdentifierSI
+    """
+    Identifier for the secondary index.
+    """
 
 
 class SelectClause(BaseModel):

@@ -30,7 +30,14 @@ def create_dir_if_needed(full_path: Path):
 
 @dataclass(frozen=True)
 class LocalFileSystem(FileSystemInterface):
+    """
+    Implementation of storage for local usage (in user hard drive).
+    """
+
     root_path: Path
+    """
+    Reference path of all operations in this class.
+    """
 
     def get_full_path(self, path: Union[str, Path]) -> Path:
         return self.root_path / path

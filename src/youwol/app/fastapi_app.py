@@ -55,11 +55,25 @@ from youwol.utils.middlewares.root_middleware import RootMiddleware
 # relative
 from .web_socket import WsDataStreamer, WsType, start_web_socket
 
-fastapi_app = FastAPI(
+fastapi_app: FastAPI = FastAPI(
     title="Local Dashboard",
     openapi_prefix=api_configuration.open_api_prefix,
     dependencies=[Depends(yw_config)],
 )
+"""
+The fast api application.
+
+The dependency [yw_config](@yw-nav-func:youwol.app.environment.youwol_environment.yw_config) inject the
+ [environment](@yw-nav-class:youwol.app.environment.youwol_environment.YouwolEnvironment)
+in the target end-points implementation
+(see FastAPI's [dependencies injection](https://fastapi.tiangolo.com/tutorial/dependencies/)).
+See also [api_configuration](@yw-nav-glob:youwol.app.environment.youwol_environment.api_configuration) regarding
+elements related to the global API configuration.
+
+The application is instrumented in the [create_app](@yw-nav-func:youwol.app.fastapi_app.create_app) function.
+
+"""
+
 
 download_thread = AssetDownloadThread(
     factories={
@@ -102,6 +116,25 @@ class CustomMiddlewareWrapper(BaseHTTPMiddleware):
 
 
 def setup_middlewares(env: YouwolEnvironment):
+    """
+    Set up the middlewares stack of the [application](@yw-nav-glob:youwol.app.fastapi_app.fastapi_app):
+    *  [RootMiddleware](@yw-nav-class:youwol.utils.middlewares.root_middleware.RootMiddleware) using
+    [InMemoryReporter](@yw-nav-class:youwol.utils.context.InMemoryReporter) for `logs_reporter` and
+    [WsDataStreamer](@yw-nav-class:youwol.app.web_socket.WsDataStreamer) for `data_reporter`.
+    *  [AuthMiddleware](@yw-nav-class:youwol.utils.middlewares.authentication.AuthMiddleware)
+    using
+    [JwtProviderBearerDynamicIssuer](@yw-nav-class:youwol.app.environment.local_auth.JwtProviderBearerDynamicIssuer),
+    [JwtProviderCookieDynamicIssuer](@yw-nav-class:youwol.app.environment.local_auth.JwtProviderCookieDynamicIssuer),
+    [JwtProviderPyYouwol](@yw-nav-class:youwol.app.environment.local_auth.JwtProviderPyYouwol)
+    *  <a href="@yw-nav-class:youwol.app.middlewares.browser_caching_middleware.BrowserCachingMiddleware">
+    BrowserCachingMiddleware</a>
+    *  the list of [custom middlewares](@yw-nav-class:youwol.app.environment.models.models_config.CustomMiddleware)
+    defined in the configuration file.
+    *  the local/cloud hybridizer middlewares
+
+    Parameters:
+        env: the current environment, used to inject user defined middlewares.
+    """
     fastapi_app.add_middleware(
         LocalCloudHybridizerMiddleware,
         dynamic_dispatch_rules=[
@@ -147,24 +180,18 @@ def setup_middlewares(env: YouwolEnvironment):
         RootMiddleware, logs_reporter=InMemoryReporter(), data_reporter=WsDataStreamer()
     )
 
+
+def setup_routers():
+    """
+    Set up the routers of the [application](@yw-nav-glob:youwol.app.fastapi_app.fastapi_app):
+    *  native backends router
+    *  admin router
+    *  the routes `/healthz` and `/`
+    """
     fastapi_app.include_router(native_backends.router)
     fastapi_app.include_router(
         admin.router, prefix=api_configuration.base_path + "/admin"
     )
-
-
-async def create_app():
-    env = await yw_config()
-    setup_middlewares(env=env)
-    asyncio.ensure_future(ProjectLoader.initialize(env=env))
-
-    @fastapi_app.exception_handler(YouWolException)
-    async def expected_exception(request: Request, exc: YouWolException):
-        return await youwol_exception_handler(request, exc)
-
-    @fastapi_app.exception_handler(Exception)
-    async def unexpected_exception(request: Request, exc: Exception):
-        return await unexpected_exception_handler(request, exc)
 
     @fastapi_app.get(api_configuration.base_path + "/healthz")
     async def healthz():
@@ -175,6 +202,29 @@ async def create_app():
         return RedirectResponse(
             status_code=308, url="/applications/@youwol/platform/latest"
         )
+
+
+async def create_app():
+    """
+    Create the application:
+
+    *  [setup_middlewares](@yw-nav-func:youwol.app.fastapi_app.setup_middlewares)
+    *  [setup_routers](@yw-nav-func:youwol.app.fastapi_app.setup_routers)
+    *  add exceptions handler, for both 'expected' and 'unexpected' ones.
+    *  install web-sockets for `/ws-logs` and `/ws-data` channels.
+    """
+    env = await yw_config()
+    setup_middlewares(env=env)
+    setup_routers()
+    asyncio.ensure_future(ProjectLoader.initialize(env=env))
+
+    @fastapi_app.exception_handler(YouWolException)
+    async def expected_exception(request: Request, exc: YouWolException):
+        return await youwol_exception_handler(request, exc)
+
+    @fastapi_app.exception_handler(Exception)
+    async def unexpected_exception(request: Request, exc: Exception):
+        return await unexpected_exception_handler(request, exc)
 
     @fastapi_app.websocket(api_configuration.base_path + "/ws-logs")
     async def ws_logs(ws: WebSocket):
