@@ -1,6 +1,10 @@
+# typing
+from typing import Any
+
 # third parties
 from aiohttp import ClientResponse
 from fastapi import APIRouter, Depends, HTTPException, Query
+from starlette.datastructures import UploadFile
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -69,8 +73,11 @@ async def upload(
         request=request,
     ) as ctx:  # type: Context
         form = await request.form()
-        content = await form.get("file").read()
-        form = {
+        uploaded_file = form.get("file")
+        if not isinstance(uploaded_file, UploadFile):
+            raise ValueError("Field `file` of form is not of type `UploadFile`")
+        content = await uploaded_file.read()
+        post_file_body = {
             "file": content,
             "content_type": form.get("content_type", ""),
             "content_encoding": form.get("content_encoding", ""),
@@ -80,7 +87,7 @@ async def upload(
         await assert_write_permissions_folder_id(folder_id=folder_id, context=ctx)
         file = PostFileResponse(
             **await configuration.files_client.upload(
-                data=form,
+                data=post_file_body,
                 headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys),
             )
         )
@@ -114,7 +121,7 @@ async def upload(
             if file.contentType in mime_types_images
             else []
         )
-        parameters_base = {
+        parameters_base: dict[str, Any] = {
             "request": request,
             "kind": "data",
             "raw_id": file.fileId,

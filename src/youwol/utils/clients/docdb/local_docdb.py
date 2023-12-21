@@ -4,6 +4,7 @@ import shutil
 
 from collections.abc import Mapping
 from dataclasses import dataclass, field
+from functools import partial
 from pathlib import Path
 from threading import Lock
 
@@ -71,7 +72,7 @@ class LocalDocDbClient:
     def metadata_path(self):
         return self.base_path / "metadata.json"
 
-    def primary_key_id(self, doc: dict[str, any]):
+    def primary_key_id(self, doc: dict[str, Any]):
         return str(
             [[k, doc[k]] for k in self.table_body.partition_key]
             + [[k, doc[k]] for k in self.table_body.clustering_columns]
@@ -87,8 +88,8 @@ class LocalDocDbClient:
 
     async def get_document(
         self,
-        partition_keys: dict[str, any],
-        clustering_keys: dict[str, any],
+        partition_keys: dict[str, Any],
+        clustering_keys: dict[str, Any],
         owner: Union[str, None],
         allow_filtering: bool = False,
         **kwargs,
@@ -139,15 +140,15 @@ class LocalDocDbClient:
         if not owner:
             owner = get_default_owner(headers)
 
-        if isinstance(query_body, str):
-            query_body = QueryBody.parse(query_body)
-
-        if len(query_body.query.ordering_clause) > 1:
+        typed_query_body = (
+            QueryBody.parse(query_body) if isinstance(query_body, str) else query_body
+        )
+        if len(typed_query_body.query.ordering_clause) > 1:
             raise RuntimeError("Ordering emulated only for 1 ordering clause")
 
         where_clauses = [
             WhereClause(column="owner", relation="eq", term=owner)
-        ] + query_body.query.where_clause
+        ] + typed_query_body.query.where_clause
 
         def is_matching(doc):
             for clause in where_clauses:
@@ -160,19 +161,23 @@ class LocalDocDbClient:
         r = [doc for doc in documents if is_matching(doc)]
 
         query_ordering = {
-            clause.name: clause.order for clause in query_body.query.ordering_clause
+            clause.name: clause.order
+            for clause in typed_query_body.query.ordering_clause
         }
         for ordering in self.table_body.table_options.clustering_order:
-            order = ordering.order
-            col = ordering.name
-            sorted_result = sorted(r, key=lambda doc, c=col: doc[c])
-            r = sorted_result
-            if order == "DESC" or (
-                col in query_ordering and query_ordering[col] == "DESC"
-            ):
-                r.reverse()
+            r = sorted(
+                r,
+                key=(partial(lambda doc, col: doc[col], col=ordering.name)),
+                reverse=(
+                    ordering.order == "DESC"
+                    or (
+                        ordering.name in query_ordering
+                        and query_ordering[ordering.name] == "DESC"
+                    )
+                ),
+            )
 
-        return {"documents": r[0 : query_body.max_results]}
+        return {"documents": r[0 : typed_query_body.max_results]}
 
     async def create_document(
         self,
@@ -212,7 +217,7 @@ class LocalDocDbClient:
 
     async def delete_document(
         self,
-        doc: dict[str, any],
+        doc: dict[str, Any],
         owner: Union[str, None],
         headers: Optional[Mapping[str, str]] = None,
         **_kwargs,

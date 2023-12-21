@@ -117,7 +117,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 except StopIteration:
                     break
 
-            if access_token is None:
+            if access_token is None or openid_base_url is None:
                 await ctx.info("No JWT providers found a token")
                 return self.on_missing_token(request.url, "No access token")
 

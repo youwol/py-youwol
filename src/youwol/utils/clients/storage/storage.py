@@ -16,7 +16,7 @@ from aiohttp import FormData
 # Youwol utilities
 from youwol.utils.clients.storage.models import FileData
 from youwol.utils.clients.storage.patches import patch_files_name
-from youwol.utils.exceptions import raise_exception_from_response
+from youwol.utils.exceptions import upstream_exception_from_response
 from youwol.utils.types import JSON
 
 
@@ -82,14 +82,14 @@ class StorageClient:
                 if resp.status == 200:
                     print("Bucket deleted", self.bucket_name)
                     return await resp.json()
-                await raise_exception_from_response(resp)
+                raise await upstream_exception_from_response(resp)
 
     async def list_buckets(self, **kwargs):
         async with aiohttp.ClientSession(headers=self.headers) as session:
             async with await session.get(url=self.list_buckets_url, **kwargs) as resp:
                 if resp.status == 200:
                     return await resp.json()
-                await raise_exception_from_response(resp)
+                raise await upstream_exception_from_response(resp)
 
     async def ensure_bucket(self, **kwargs):
         buckets = await self.list_buckets(**kwargs)
@@ -104,7 +104,7 @@ class StorageClient:
                 if resp.status == 201:
                     print(f"bucket '{self.bucket_name}' created")
                     return True
-                await raise_exception_from_response(resp)
+                raise await upstream_exception_from_response(resp)
         return False
 
     async def post_file(self, form: FileData, **kwargs):
@@ -123,7 +123,7 @@ class StorageClient:
             ) as resp:
                 if resp.status == 201:
                     return await resp.read()
-                await raise_exception_from_response(resp)
+                raise await upstream_exception_from_response(resp)
 
     async def post_object(
         self,
@@ -153,7 +153,7 @@ class StorageClient:
             ) as resp:
                 if resp.status == 201:
                     return await resp.read()
-                await raise_exception_from_response(resp)
+                raise await upstream_exception_from_response(resp)
 
     async def post_json(self, path: Union[Path, str], json: JSON, owner: str, **kwargs):
         str_json = _json.dumps(json)
@@ -183,7 +183,7 @@ class StorageClient:
             ) as resp:
                 if resp.status == 200:
                     return await resp.json()
-                await raise_exception_from_response(resp)
+                raise await upstream_exception_from_response(resp)
 
     async def delete(self, path: Union[Path, str], owner: Union[str, None], **kwargs):
         params = {"objectName": str(path)}
@@ -196,13 +196,13 @@ class StorageClient:
             ) as resp:
                 if resp.status == 200:
                     return await resp.json()
-                await raise_exception_from_response(resp)
+                raise await upstream_exception_from_response(resp)
 
     async def list_files(
         self,
         prefix: Union[Path, str],
         owner: Union[str, None],
-        _max_results: int = 1e6,
+        _max_results: int = 1_000_000,
         _delimiter=None,
         **kwargs,
     ):
@@ -217,7 +217,7 @@ class StorageClient:
                 if resp.status == 200:
                     files = await resp.json()
                     return patch_files_name(files)
-                await raise_exception_from_response(resp)
+                raise await upstream_exception_from_response(resp)
 
     async def get_bytes(
         self, path: Union[Path, str], owner: Union[str, None], **kwargs
@@ -232,7 +232,7 @@ class StorageClient:
                 if resp.status == 200:
                     resp_bytes = await resp.read()
                     return base64.decodebytes(resp_bytes)
-                await raise_exception_from_response(resp)
+                raise await upstream_exception_from_response(resp)
 
     async def get_json(self, path: Union[Path, str], owner: Union[str, None], **kwargs):
         content = await self.get_bytes(path, owner, **kwargs)

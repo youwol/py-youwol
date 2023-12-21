@@ -1,5 +1,6 @@
 # third parties
 from fastapi import APIRouter, Depends, Query
+from starlette.datastructures import UploadFile
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -87,13 +88,17 @@ async def publish_story(
 ):
     async with Context.start_ep(request=request) as ctx:
         form = await request.form()
-        form = {
-            "file": await form.get("file").read(),
+        file = form.get("file")
+        if not isinstance(file, UploadFile):
+            raise ValueError("Field `file` of form is not of type `UploadFile`")
+        publish_body = {
+            "file": await file.read(),
             "content_encoding": form.get("content_encoding", "identity"),
         }
         await assert_write_permissions_folder_id(folder_id=folder_id, context=ctx)
         story = await configuration.stories_client.publish_story(
-            data=form, headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
+            data=publish_body,
+            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys),
         )
         return await create_asset(
             request=request,

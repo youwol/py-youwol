@@ -8,6 +8,7 @@ from typing import Optional
 from starlette.responses import Response
 
 # Youwol backends
+from youwol.backends.common.env import get_not_empty_env_value
 from youwol.backends.common.use_auth_middleware import jwt_provider_bearer
 from youwol.backends.common.use_openid_base_url import openid_base_url
 from youwol.backends.common.use_openid_client import oidc_client
@@ -28,7 +29,7 @@ required_env_vars = REDIS
 not_founds = [v for v in required_env_vars if not os.getenv(v.value)]
 if not_founds:
     raise RuntimeError(f"Missing environments variable: {not_founds}")
-redis_host = os.getenv(Env.REDIS_HOST.value)
+redis_host = get_not_empty_env_value(Env.REDIS_HOST)
 auth_cache = RedisCacheClient(host=redis_host, prefix="auth_cache")
 
 tokens_storage = TokensStorageCache(cache=auth_cache)
@@ -46,16 +47,9 @@ def get_auth_middleware_with_cookie(
                 openid_base_url=openid_base_url,
             ),
         ],
+        "predicate_public_path": lambda url: url.path.startswith("/observability")
+        or (public_path and url.path.startswith(public_path)),
     }
-
-    if public_path is None:
-        auth_middleware_args["predicate_public_path"] = lambda url: url.path.startswith(
-            "/observability"
-        )
-    else:
-        auth_middleware_args["predicate_public_path"] = lambda url: url.path.startswith(
-            "/observability"
-        ) or url.path.startswith(public_path)
 
     if redirect_to_login_for_path:
         auth_middleware_args["on_missing_token"] = (

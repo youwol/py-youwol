@@ -11,7 +11,7 @@ from typing import Any, Union
 from fastapi import HTTPException
 
 # Youwol utilities
-from youwol.utils import DocDb, asyncio, decode_id, get_all_individual_groups, log_info
+from youwol.utils import DocDb, asyncio, decode_id, get_all_individual_groups
 from youwol.utils.context import Context
 from youwol.utils.http_clients.tree_db_backend import (
     DriveResponse,
@@ -21,23 +21,6 @@ from youwol.utils.http_clients.tree_db_backend import (
 
 # relative
 from .configurations import Configuration, Constants
-
-
-async def init_resources(config: Configuration):
-    log_info("Ensure database resources")
-    headers = config.admin_headers if config.admin_headers else {}
-    log_info("Successfully retrieved authorization for resources creation")
-    doc_dbs = config.doc_dbs
-    log_info("Ensure items_db table")
-    await doc_dbs.items_db.ensure_table(headers=headers)
-    log_info("Ensure folders_db table")
-    await doc_dbs.folders_db.ensure_table(headers=headers)
-    log_info("Ensure drives_db table")
-    await doc_dbs.drives_db.ensure_table(headers=headers)
-    log_info("Ensure deleted_db table")
-    await doc_dbs.deleted_db.ensure_table(headers=headers)
-
-    log_info("resources initialization done")
 
 
 def to_group_id(group_path: Union[str, None]) -> str:

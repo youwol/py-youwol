@@ -40,7 +40,6 @@ class PermissionsResponse(BaseModel):
     read: bool
     write: bool
     share: bool
-    expiration: Union[int, None]
 
 
 class AssetResponse(BaseModel):

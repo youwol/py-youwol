@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 # typing
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 # third parties
 from aiohttp import FormData
@@ -34,8 +34,7 @@ def files_check_sum(paths: Iterable[Path]):
     for path in sorted(paths, key=lambda p: str(p).lower()):
         sha_hash.update(path.name.encode())
         sha_hash = md5_update_from_file(path, sha_hash)
-    sha_hash = sha_hash.hexdigest()
-    return sha_hash
+    return sha_hash.hexdigest()
 
 
 @dataclass(frozen=True)
@@ -99,7 +98,7 @@ class CdnClient:
             **kwargs,
         )
 
-    async def query_loading_graph(self, body: any, **kwargs):
+    async def query_loading_graph(self, body: Any, **kwargs):
         return await self.request_executor.post(
             url=self.loading_graph_url,
             default_reader=json_reader,

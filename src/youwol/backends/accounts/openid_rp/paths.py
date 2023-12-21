@@ -208,7 +208,7 @@ async def back_channel_logout(
         await conf.openid_flows.handle_logout_back_channel(logout_token=logout_token)
     except InvalidLogoutToken as e:
         response.status_code = status.HTTP_400_BAD_REQUEST
-        response.content = str(e)
+        response.body = str(e).encode(encoding="utf-8")
 
 
 @router.get("/openid_rp/login")

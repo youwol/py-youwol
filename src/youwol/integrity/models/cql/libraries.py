@@ -36,5 +36,5 @@ class LibrariesRow(OwnerColumns, Table):
         ]
 
     @staticmethod
-    def get_keyspace_table() -> (str, str):
+    def get_keyspace_table() -> tuple[str, str]:
         return "prod_cdn", "libraries"

@@ -2,8 +2,9 @@
 from typing import BinaryIO
 
 # relative
-from .constantes import ALGO_HEADER_LENGTH, Algo, algo_to_byte
+from .constantes import ALGO_HEADER_LENGTH, Algo
 from .exceptions import BadKeyValue
+from .utils import algo_to_byte
 
 NULL_KEY = "password"
 

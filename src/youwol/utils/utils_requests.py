@@ -11,7 +11,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 # Youwol utilities
-from youwol.utils.exceptions import assert_response, raise_exception_from_response
+from youwol.utils.exceptions import upstream_exception_from_response
 
 
 async def redirect_request(
@@ -25,7 +25,8 @@ async def redirect_request(
     redirect_url = f"{destination_base_path}/{rest_of_path}"
 
     async def forward_response(response):
-        await assert_response(response)
+        if response.status >= 400:
+            raise await upstream_exception_from_response(response)
         headers_resp = dict(response.headers.items())
         content = await response.read()
         return Response(
@@ -67,6 +68,8 @@ async def redirect_request(
             ) as resp:
                 return await forward_response(resp)
 
+        raise ValueError(f"Unexpected method {incoming_request.method}")
+
 
 async def aiohttp_to_starlette_response(resp: ClientResponse) -> Response:
     if resp.status < 300:
@@ -75,7 +78,7 @@ async def aiohttp_to_starlette_response(resp: ClientResponse) -> Response:
             content=await resp.read(),
             headers=dict(resp.headers.items()),
         )
-    await raise_exception_from_response(resp, url=resp.url)
+    raise await upstream_exception_from_response(resp, url=resp.url)
 
 
 TResp = TypeVar("TResp")

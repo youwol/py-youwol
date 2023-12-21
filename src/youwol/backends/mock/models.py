@@ -8,7 +8,7 @@ methods = ["GET", "POST", "PUT", "DELETE"]
 
 
 class Body(BaseModel):
-    mimeType: str
+    mimeType: Optional[str]
     contentBase64: str
 
 
@@ -29,7 +29,7 @@ class Response(BaseModel):
 
 class Request(BaseModel):
     timestamp: int
-    ip: str
+    ip: Optional[str]
     method: str
     url: str
     headers: dict[str, list[str]]

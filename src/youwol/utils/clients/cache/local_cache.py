@@ -26,7 +26,7 @@ class LocalCacheClient(CacheClient):
         super().__init__(prefix=prefix)
         self._cache = {}
 
-    def _impl_get(self, key: str) -> str:
+    def _impl_get(self, key: str) -> Optional[str]:
         return (
             self._cache[key].value
             if key in self._cache and self._cache[key].expire_at > int(time.time())

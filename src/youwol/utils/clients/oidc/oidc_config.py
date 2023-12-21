@@ -172,6 +172,9 @@ class OidcForClient:
         self.__config = config
         self.__client = client
 
+    def get_base_url(self) -> str:
+        return self.__config.base_url
+
     async def __post_token_endpoint(self, **params) -> Any:
         conf = await self.__config.openid_configuration()
         auth = None

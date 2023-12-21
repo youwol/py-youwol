@@ -271,7 +271,7 @@ class UpstreamResponseException(YouWolException):
         return """Upstream Exception"""
 
 
-YouwolExceptions = [
+YouwolExceptions: list[type[YouWolException]] = [
     ServerError,
     PipelineFlowNotFound,
     FolderNotFound,
@@ -314,8 +314,9 @@ async def unexpected_exception_handler(request: Request, exc: Exception):
     )
 
 
-async def raise_exception_from_response(raw_resp: ClientResponse, **kwargs):
-    parameters = {}
+async def upstream_exception_from_response(
+    raw_resp: ClientResponse, **kwargs
+) -> UpstreamResponseException:
     resp = None
 
     try:
@@ -331,7 +332,7 @@ async def raise_exception_from_response(raw_resp: ClientResponse, **kwargs):
             )
             if exception_type:
                 upstream_exception0 = exception_type(**resp["detail"])
-                raise UpstreamResponseException(
+                return UpstreamResponseException(
                     url=raw_resp.url.human_repr(),
                     status=upstream_exception0.status_code,
                     detail=upstream_exception0.detail,
@@ -346,19 +347,14 @@ async def raise_exception_from_response(raw_resp: ClientResponse, **kwargs):
     )
     detail = detail if detail else await raw_resp.text()
 
-    raise UpstreamResponseException(
+    return UpstreamResponseException(
         url=raw_resp.url.human_repr(),
         status=raw_resp.status,
         detail=detail,
         exceptionType="HTTP",
         **{
             k: v
-            for k, v in {**kwargs, **parameters}.items()
+            for k, v in kwargs.items()
             if k not in ["url", "status", "detail", "exceptionType"]
         },
     )
-
-
-async def assert_response(raw_resp: ClientResponse):
-    if raw_resp.status >= 400:
-        await raise_exception_from_response(raw_resp)

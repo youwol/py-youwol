@@ -45,14 +45,14 @@ class FactoryId(BaseModel):
 class Module(BaseModel):
     configuration: dict
     moduleId: str
-    factoryId: Union[str, FactoryId]
+    factoryId: FactoryId
 
 
 class Plugin(BaseModel):
     configuration: dict
     moduleId: str
     parentModuleId: str
-    factoryId: Union[str, FactoryId]
+    factoryId: FactoryId
 
 
 class Workflow(BaseModel):
@@ -93,12 +93,6 @@ class BuilderRendering(BaseModel):
     modulesView: list[ModuleView]
     connectionsView: list[ConnectionView]
     descriptionsBoxes: list[DescriptionBox] = []
-
-
-class PackageLink(BaseModel):
-    id: str
-    version: str = "latest"
-    dependencies = []
 
 
 class EditMetadata(BaseModel):

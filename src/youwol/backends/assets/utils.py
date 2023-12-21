@@ -12,8 +12,8 @@ from pathlib import Path
 from typing import Any, Optional, Union
 
 # third parties
-from fastapi import UploadFile
 from PIL import Image
+from starlette.datastructures import UploadFile
 from starlette.requests import Request
 
 # Youwol backends
@@ -21,14 +21,12 @@ from youwol.backends.assets.configurations import Configuration, Constants
 
 # Youwol utilities
 from youwol.utils import (
-    JSON,
     DocDb,
     QueryBody,
     Storage,
     chunks,
     get_content_type,
     get_user_group_ids,
-    log_info,
     user_info,
 )
 from youwol.utils.context import Context
@@ -43,22 +41,6 @@ from youwol.utils.http_clients.assets_backend.models import (
 )
 
 flatten = itertools.chain.from_iterable
-
-
-async def init_resources(config: Configuration):
-    log_info("Ensure database resources")
-    headers = config.admin_headers if config.admin_headers else {}
-
-    log_info("Successfully retrieved authorization for resources creation")
-    log_info("Ensure assets table")
-    await config.doc_db_asset.ensure_table(headers=headers)
-    log_info("Ensure assets bucket")
-    await config.storage.ensure_bucket(headers=headers)
-    log_info("Ensure access policy table")
-    await asyncio.gather(config.doc_db_access_policy.ensure_table(headers=headers))
-    log_info("Ensure access history table")
-    await asyncio.gather(config.doc_db_access_history.ensure_table(headers=headers))
-    log_info("resources initialization done")
 
 
 def group_scope_to_owner(scope: str) -> Union[str, None]:
@@ -102,7 +84,7 @@ def get_raw_record_permissions(request: Request, group_id: str):
     return {"read": group_id in allowed_groups, "write": group_id in allowed_groups}
 
 
-def format_asset(doc: JSON, _: Request):
+def format_asset(doc: dict[str, Any], _: Request):
     return AssetResponse(
         assetId=doc["asset_id"],
         kind=doc["kind"],
@@ -165,7 +147,7 @@ async def post_indexes(
 
 async def switch_data(
     asset_id: str,
-    asset: any,
+    asset: Any,
     kind: str,
     from_group: Union[str, None],
     to_group: Union[str, None],
@@ -223,7 +205,7 @@ async def db_query(query: QueryBody, configuration: Configuration, context: Cont
         return r["documents"]
 
 
-async def db_delete(asset: any, configuration: Configuration, context: Context):
+async def db_delete(asset: Any, configuration: Configuration, context: Context):
     async with context.start(action="db_delete") as ctx:  # type: Context
         storage, doc_db = configuration.storage, configuration.doc_db_asset
         asset_id = asset["asset_id"]

@@ -25,7 +25,7 @@ class Table(ABC):
 
     @staticmethod
     @abstractmethod
-    def get_keyspace_table() -> (str, str):
+    def get_keyspace_table() -> tuple[str, str]:
         pass
 
     def __getitem__(self, item):

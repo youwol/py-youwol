@@ -8,5 +8,6 @@ def patch_files_name(files: list[JSON]):
     we recover the same name as we used first when posting objects
     """
     for file in files:
-        file["name"] = "/".join(file["name"].split("/")[1:])
+        if isinstance(file, dict) and "name" in file:
+            file["name"] = "/".join(file["name"].split("/")[1:])
     return files

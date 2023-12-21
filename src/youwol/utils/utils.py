@@ -1,14 +1,14 @@
 # standard library
 import base64
+import datetime
 import itertools
 
 from collections.abc import Iterable
-from datetime import datetime
 from enum import Enum
 from pathlib import Path, PosixPath
 
 # typing
-from typing import Any, Callable, NamedTuple, Union, cast
+from typing import Any, Callable, Union, cast
 
 # third parties
 import aiohttp
@@ -25,12 +25,12 @@ from youwol.utils.types import JSON
 flatten = itertools.chain.from_iterable
 
 
-class YouwolHeaders(NamedTuple):
+class YouwolHeaders:
     #  About tracing & headers: https://www.w3.org/TR/trace-context/
-    py_youwol_local_only = "py-youwol-local-only"
-    youwol_origin = "youwol-origin"
-    correlation_id = "x-correlation-id"
-    trace_id = "x-trace-id"
+    py_youwol_local_only: str = "py-youwol-local-only"
+    youwol_origin: str = "youwol-origin"
+    correlation_id: str = "x-correlation-id"
+    trace_id: str = "x-trace-id"
 
     @staticmethod
     def get_correlation_id(request: Request):
@@ -66,7 +66,7 @@ def is_authorized_write(request: Request, group_id):
     return True
 
 
-def get_all_individual_groups(groups: list[str]) -> list[Union[str, None]]:
+def get_all_individual_groups(groups: list[str]) -> list[str]:
     def get_combinations(elements: list[str]):
         result = []
         for i in range(1, len(elements)):
@@ -74,12 +74,12 @@ def get_all_individual_groups(groups: list[str]) -> list[Union[str, None]]:
         return result
 
     parts = [group.split("/") for group in groups if group]
-    parts_flat = flatten([get_combinations(part) for part in parts])
-    parts_flat = [e for e in parts_flat if e] + cast(any, [None])
+    parts_flat_chained = flatten([get_combinations(part) for part in parts])
+    parts_flat = [e for e in parts_flat_chained if e] + cast(Any, [None])
     return list(set(groups + parts_flat))
 
 
-def get_user_group_ids(user) -> list[Union[str, None]]:
+def get_user_group_ids(user) -> list[str]:
     group_ids = [
         to_group_id(g)
         for g in get_all_individual_groups(user["memberof"])
@@ -88,7 +88,7 @@ def get_user_group_ids(user) -> list[Union[str, None]]:
     return [private_group_id(user)] + group_ids
 
 
-def get_leaf_group_ids(user) -> list[Union[str, None]]:
+def get_leaf_group_ids(user) -> list[str]:
     group_ids = [to_group_id(g) for g in user["memberof"] if g is not None]
     return [private_group_id(user)] + group_ids
 
@@ -148,7 +148,7 @@ def chunks(lst, n):
 
 
 def check_permission_or_raise(
-    target_group: Union[str, None], allowed_groups: list[Union[None, str]]
+    target_group: Union[str, None], allowed_groups: list[str]
 ):
     if not target_group:
         return
@@ -225,7 +225,7 @@ def to_serializable_json_leaf(v):
         return v.value
     if isinstance(v, Iterable) and not isinstance(v, list) and not isinstance(v, str):
         v = list(v)
-    if isinstance(v, datetime):
+    if isinstance(v, datetime.datetime):
         return str(v)
     if isinstance(v, (int, float, str, bool)):
         return v
@@ -244,8 +244,6 @@ def is_json_leaf(v):
 
 
 def to_json_rec(_obj: Union[dict[str, Any], list[Any]]):
-    result = {}
-
     def process_value(value):
         if is_json_leaf(value):
             return to_serializable_json_leaf(value)
@@ -254,16 +252,18 @@ def to_json_rec(_obj: Union[dict[str, Any], list[Any]]):
         return to_json_rec(value)
 
     if isinstance(_obj, dict):
-        result = {}
+        r_dict = {}
         for k, v in _obj.items():
-            result[k] = process_value(v)
+            r_dict[k] = process_value(v)
+        return r_dict
 
     if isinstance(_obj, list):
-        result = []
+        r_list = []
         for k in _obj:
-            result.append(process_value(k))
+            r_list.append(process_value(k))
+        return r_list
 
-    return result
+    return {}
 
 
 def to_json(obj: Union[BaseModel, dict[str, Any]]) -> JSON:

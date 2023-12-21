@@ -14,7 +14,6 @@ from youwol.backends.common.use_keycloak_admin import (
     keycloak_admin_base_url,
     keycloak_admin_client,
 )
-from youwol.backends.common.use_openid_base_url import openid_base_url
 from youwol.backends.common.use_openid_client import oidc_client
 
 # Youwol utilities
@@ -26,7 +25,6 @@ class AccountsDeployment(BackendDeployment):
         return get_router(
             Configuration(
                 openid_client=oidc_client,
-                openid_base_url=openid_base_url,
                 keycloak_admin_client=keycloak_admin_client,
                 keycloak_admin_base_url=keycloak_admin_base_url,
                 auth_cache=auth_cache,

@@ -59,6 +59,7 @@ qa = [
     "isort",
     "black[d]",
     "mypy",
+    "scylla-driver",
     "tomlkit",
     "types-Pillow",
     "types-PyYAML",
@@ -171,8 +172,16 @@ import_heading_yw_pipelines = "Youwol pipelines"
 import_heading_localfolder = "relative"
 
 [tool.mypy]
-mypy_path = ".typing_stubs"
-files = "src"
+mypy_path = ".typing_stubs:src"
+packages = [
+    "youwol.utils",
+    "youwol.integrity",
+    "youwol.backends",
+]
+
+[[tool.mypy.overrides]]
+module = "cassandra.*"
+ignore_missing_imports = true
 
 [tool.pylint]
 disable = [
@@ -191,6 +200,7 @@ disable = [
     "design",
 ]
 max-line-length = 120
+extension-pkg-allow-list = "cassandra"
 
 [tool.pylint."MESSAGES CONTROL"]
 extension-pkg-whitelist = "pydantic"

@@ -20,7 +20,6 @@ from youwol.utils.context import Context
 # relative
 from .configurations import Constants
 
-skipped_dependencies = []
 flatten = itertools.chain.from_iterable
 
 
@@ -97,7 +96,7 @@ def get_library_id(name: str, version: str) -> str:
 
 async def format_doc_db_record(
     package_path: Path, fingerprint: str, context: Context
-) -> dict[str, str]:
+) -> dict[str, Union[str, list[str]]]:
     package_json = json.loads(package_path.read_bytes())
 
     name = package_json.get("name", None)

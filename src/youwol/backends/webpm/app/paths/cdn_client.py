@@ -2,7 +2,7 @@
 from typing import Optional
 
 # third parties
-from fastapi.params import Depends
+from fastapi.param_functions import Depends
 from starlette.responses import Response, StreamingResponse
 
 # relative

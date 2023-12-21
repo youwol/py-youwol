@@ -10,7 +10,7 @@ from typing import Any, Callable, Generic, Optional, TypeVar, Union
 from aiohttp import ClientResponse, ClientSession
 
 # Youwol utilities
-from youwol.utils.exceptions import raise_exception_from_response
+from youwol.utils.exceptions import upstream_exception_from_response
 from youwol.utils.types import JSON
 
 TClientResponse = TypeVar("TClientResponse")
@@ -65,7 +65,7 @@ class RequestExecutor(ABC, Generic[TClientResponse]):
 @dataclass(frozen=True)
 class AioHttpExecutor(RequestExecutor[ClientResponse]):
     client_session: Union[ClientSession, Callable[[], ClientSession]]
-    access_token: Callable[[], Awaitable[str]] = None
+    access_token: Optional[Callable[[], Awaitable[str]]] = None
 
     @staticmethod
     def _get_session():
@@ -183,7 +183,7 @@ async def text_reader(resp: ClientResponse) -> str:
         resp_text = await resp.text()
         return resp_text
 
-    await raise_exception_from_response(resp, url=resp.url)
+    raise await upstream_exception_from_response(resp, url=resp.url)
 
 
 async def json_reader(resp: ClientResponse) -> JSON:
@@ -191,7 +191,7 @@ async def json_reader(resp: ClientResponse) -> JSON:
         resp_json = await resp.json()
         return resp_json
 
-    await raise_exception_from_response(resp, url=resp.url)
+    raise await upstream_exception_from_response(resp, url=resp.url)
 
 
 async def bytes_reader(resp: ClientResponse) -> bytes:
@@ -199,7 +199,7 @@ async def bytes_reader(resp: ClientResponse) -> bytes:
         resp_bytes = await resp.read()
         return resp_bytes
 
-    await raise_exception_from_response(resp, url=resp.url)
+    raise await upstream_exception_from_response(resp, url=resp.url)
 
 
 async def auto_reader(resp: ClientResponse) -> Union[JSON, str, bytes]:
@@ -217,4 +217,4 @@ async def auto_reader(resp: ClientResponse) -> Union[JSON, str, bytes]:
 
         return await resp.read()
 
-    await raise_exception_from_response(resp)
+    raise await upstream_exception_from_response(resp)

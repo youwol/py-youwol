@@ -587,7 +587,7 @@ class InMemoryReporter(ContextReporter):
         self.node_logs = []
         self.leaf_logs = []
 
-    def resize_if_needed(self, items: list[any]):
+    def resize_if_needed(self, items: list[Any]):
         if len(items) > 2 * self.max_count:
             return items[len(items) - self.max_count :]
         return items

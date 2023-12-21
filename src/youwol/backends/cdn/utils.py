@@ -249,10 +249,10 @@ async def publish_package(
         base_path = Path("libraries") / library_id / version
         file_system = configuration.file_system
 
-        paths = flatten(
+        paths_chained = flatten(
             [[Path(root) / f for f in files] for root, _, files in os.walk(temp_dir)]
         )
-        paths = [p for p in paths if p != zip_path]
+        paths = [p for p in paths_chained if p != zip_path]
         await context.info(
             text=f"Prepare {len(paths)} files to publish", data={"paths": paths}
         )
@@ -267,7 +267,7 @@ async def publish_package(
         )
         # the fingerprint in the md5 checksum of the included files after having eventually being compressed
         os.remove(zip_path)
-        md5_stamp = md5_from_folder(temp_dir)
+        md5_stamp = md5_from_folder(Path(temp_dir))
         await context.info(text=f"md5_stamp={md5_stamp}")
 
         async with context.start(action="Upload data in storage") as ctx:

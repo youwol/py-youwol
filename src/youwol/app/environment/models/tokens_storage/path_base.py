@@ -98,7 +98,7 @@ class TokensStoragePathBase(TokensStorage, ABC):
 
     async def get_by_sid(
         self, session_id: str
-    ) -> (Optional[str], Optional[TokensData]):
+    ) -> tuple[Optional[str], Optional[TokensData]]:
         with atomic_access:
             if session_id not in self.__session_ids:
                 return None, None

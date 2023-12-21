@@ -55,13 +55,11 @@ class LocalStorageClient:
     async def post_file(
         self, form: FileData, headers: Optional[Mapping[str, str]] = None, **_kwargs
     ):
-        owner = form.owner
         if not headers:
             headers = {}
-        if not owner:
-            owner = get_default_owner(headers)
-
-        full_path = self.get_full_path(owner, form.objectName)
+        full_path = self.get_full_path(
+            form.owner if form.owner else get_default_owner(headers), form.objectName
+        )
 
         create_dir_if_needed(full_path)
         full_path.open("wb").write(form.objectData)
@@ -71,21 +69,20 @@ class LocalStorageClient:
         self,
         path: Union[Path, str],
         content: bytes,
-        owner: Union[str, None],
+        owner: Optional[str],
         headers: Optional[Mapping[str, str]] = None,
         **_kwargs,
     ):
         if not headers:
             headers = {}
-        if not owner:
-            owner = get_default_owner(headers)
-
         if isinstance(content, str):
             content = str.encode(content)
 
         data = content
 
-        full_path = self.get_full_path(owner, path)
+        full_path = self.get_full_path(
+            owner if owner else get_default_owner(headers), path
+        )
         create_dir_if_needed(full_path)
         full_path.open("wb").write(data)
 
@@ -93,16 +90,16 @@ class LocalStorageClient:
         self,
         path: Union[str, Path],
         json: JSON,
-        owner: Union[str, None],
+        owner: Optional[str],
         headers: Optional[Mapping[str, str]] = None,
         **_kwargs,
     ):
         if not headers:
             headers = {}
-        if not owner:
-            owner = get_default_owner(headers)
 
-        full_path = self.get_full_path(owner, path)
+        full_path = self.get_full_path(
+            owner if owner else get_default_owner(headers), path
+        )
         create_dir_if_needed(full_path)
         full_path.open("w").write(_json.dumps(json, indent=4))
         return {}
@@ -111,16 +108,16 @@ class LocalStorageClient:
         self,
         path: Union[str, Path],
         text,
-        owner: Union[str, None],
+        owner: Optional[str],
         headers: Optional[Mapping[str, str]] = None,
         **_kwargs,
     ):
         if not headers:
             headers = {}
-        if not owner:
-            owner = get_default_owner(headers)
 
-        full_path = self.get_full_path(owner, path)
+        full_path = self.get_full_path(
+            owner if owner else get_default_owner(headers), path
+        )
         create_dir_if_needed(full_path)
         full_path.open("w").write(text)
         return {}
@@ -128,32 +125,32 @@ class LocalStorageClient:
     async def delete_group(
         self,
         prefix: Union[Path, str],
-        owner: Union[str, None],
+        owner: Optional[str],
         headers: Optional[Mapping[str, str]] = None,
         **_kwargs,
     ):
         if not headers:
             headers = {}
-        if not owner:
-            owner = get_default_owner(headers)
 
-        path = self.get_full_path(owner, prefix)
+        path = self.get_full_path(
+            owner if owner else get_default_owner(headers), prefix
+        )
         if path.exists():
             shutil.rmtree(path)
 
     async def delete(
         self,
         path: Union[str, Path],
-        owner: Union[str, None],
+        owner: Optional[str],
         headers: Optional[Mapping[str, str]] = None,
         **_kwargs,
     ):
         if not headers:
             headers = {}
-        if not owner:
-            owner = get_default_owner(headers)
 
-        full_path = self.get_full_path(owner, path)
+        full_path = self.get_full_path(
+            owner if owner else get_default_owner(headers), path
+        )
         if full_path.is_dir():
             shutil.rmtree(full_path)
             return
@@ -169,19 +166,17 @@ class LocalStorageClient:
     async def list_files(
         self,
         prefix: Union[str, Path],
-        owner: Union[str, None],
+        owner: Optional[str],
         headers: Optional[Mapping[str, str]] = None,
         **_kwargs,
     ):
         if not headers:
             headers = {}
-        if not owner:
-            owner = get_default_owner(headers)
 
-        owner = owner[1:]
+        path_owner = (owner if owner else get_default_owner(headers))[1:]
         results = [
-            [(Path(root) / f).relative_to(self.bucket_path / owner) for f in files]
-            for root, _, files in os.walk(self.bucket_path / owner / prefix)
+            [(Path(root) / f).relative_to(self.bucket_path / path_owner) for f in files]
+            for root, _, files in os.walk(self.bucket_path / path_owner / prefix)
         ]
 
         return [{"name": str(r)} for r in flatten(results)]
@@ -189,16 +184,16 @@ class LocalStorageClient:
     async def get_bytes(
         self,
         path: Union[str, Path],
-        owner: Union[str, None],
+        owner: Optional[str],
         headers: Optional[Mapping[str, str]] = None,
         **_kwargs,
     ):
         if not headers:
             headers = {}
-        if not owner:
-            owner = get_default_owner(headers)
 
-        full_path = self.get_full_path(owner, path)
+        full_path = self.get_full_path(
+            owner if owner else get_default_owner(headers), path
+        )
         if not full_path.is_file():
             raise ResourcesNotFoundException(path=str(full_path))
 
@@ -207,7 +202,7 @@ class LocalStorageClient:
     async def get_json(
         self,
         path: Union[str, Path],
-        owner: Union[str, None],
+        owner: Optional[str],
         headers: Optional[Mapping[str, str]] = None,
         **kwargs,
     ):
@@ -216,7 +211,7 @@ class LocalStorageClient:
     async def get_text(
         self,
         path: str,
-        owner: Union[str, None],
+        owner: Optional[str],
         headers: Optional[Mapping[str, str]] = None,
         **kwargs,
     ):

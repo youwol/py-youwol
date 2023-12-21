@@ -6,7 +6,7 @@ from prometheus_client import Counter, Gauge
 
 
 class CountVersions:
-    def __init__(self):
+    def __init__(self) -> None:
         self.__counters: dict[str, Counter] = {}
 
     def inc(self, version: str):

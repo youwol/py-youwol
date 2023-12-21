@@ -12,7 +12,7 @@ from starlette.responses import Response
 from youwol.backends.cdn_apps_server.configurations import get_configuration
 
 # Youwol utilities
-from youwol.utils import raise_exception_from_response
+from youwol.utils import upstream_exception_from_response
 from youwol.utils.context import Context
 
 router = APIRouter(tags=["cdn-apps-server"])
@@ -48,7 +48,7 @@ async def get_raw_resource(
                     content=await resp.read(),
                     headers={**dict(resp.headers.items()), **cors_headers},
                 )
-            await raise_exception_from_response(resp)
+            raise await upstream_exception_from_response(resp)
 
 
 @router.get("/healthz")

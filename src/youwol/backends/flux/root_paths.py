@@ -156,12 +156,13 @@ async def new_project(
             modulesView=[], connectionsView=[], descriptionsBoxes=[]
         )
         runner_rendering = RunnerRendering(layout="", style="")
+        empty: list[str] = []
         requirements = Requirements(
             fluxPacks=[],
             fluxComponents=[],
             libraries={},
             loadingGraph=LoadingGraph(
-                graphType="sequential-v2", lock=[], definition=[[]]
+                graphType="sequential-v2", lock=[], definition=[list(empty)]
             ),
         )
 
@@ -272,7 +273,7 @@ async def download_zip(
             storage=configuration.storage,
             headers=ctx.headers(),
         )
-        project = project.dict()
+        dict_project = project.dict()
         await ctx.info(text="Project retrieved")
 
         with tempfile.TemporaryDirectory() as tmp_folder:
@@ -289,13 +290,15 @@ async def download_zip(
                 ]:
                     if file == "description":
                         description = {
-                            "description": project["description"],
-                            "name": project["name"],
-                            "schemaVersion": project["schemaVersion"],
+                            "description": dict_project["description"],
+                            "name": dict_project["name"],
+                            "schemaVersion": dict_project["schemaVersion"],
                         }
                         write_json(data=description, path=base_path / f"{file}.json")
                     else:
-                        write_json(data=project[file], path=base_path / f"{file}.json")
+                        write_json(
+                            data=dict_project[file], path=base_path / f"{file}.json"
+                        )
                     zipper.write(base_path / f"{file}.json", arcname=f"{file}.json")
 
             content_bytes = (Path(tmp_folder) / "flux-project.zip").read_bytes()

@@ -29,10 +29,6 @@ Storage = Union[StorageClient, LocalStorageClient]
 class Constants:
     namespace: str = "stories"
     cache_prefix: str = "stories-backend_"
-    unprotected_paths: Callable[[str], bool] = (
-        lambda url: url.path.split("/")[-1] == "healthz"
-        or url.path.split("/")[-1] == "openapi-docs"
-    )
     default_owner = "/youwol-users"
     text_content_type = "text/plain"
     db_schema_documents = DOCUMENTS_TABLE

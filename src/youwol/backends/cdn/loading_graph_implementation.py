@@ -262,32 +262,40 @@ async def resolve_version(
             raise LibraryException(library=dependency)
 
         if fixed:
-            version = next((v for v in versions if v == version), None)
+            resolved_version = next((v for v in versions if v == version), None)
         else:
             await ctx.info(f"Got {len(versions)} versions")
-            version = next(
+            resolved_version = next(
                 selector.filter(Version(v.replace("-wip", "")) for v in versions), None
             )
 
-        if not version:
+        if not resolved_version:
             raise LibraryNotFound(library=dependency)
 
         if not fixed:
-            if str(version) not in versions and f"{version}-wip" in versions:
-                await ctx.info(f"{version} not available => use {version}-wip")
-                version = Version(f"{version}-wip")
-            elif str(version) not in versions and f"{version}-wip" not in versions:
+            if (
+                str(resolved_version) not in versions
+                and f"{resolved_version}-wip" in versions
+            ):
+                await ctx.info(
+                    f"{resolved_version} not available => using {resolved_version}-wip"
+                )
+                resolved_version = Version(f"{resolved_version}-wip")
+            elif (
+                str(resolved_version) not in versions
+                and f"{resolved_version}-wip" not in versions
+            ):
                 raise LibraryNotFound(library=dependency)
             await ctx.info(
-                text=f"Use latest compatible version of {name}#{dependency.version} : {version}"
+                text=f"Use latest compatible version of {name}#{dependency.version} : {resolved_version}"
             )
 
-        await ctx.info(f"Version resolved to {version}")
-        api_key = get_full_exported_symbol(name, version)
+        await ctx.info(f"Version resolved to {resolved_version}")
+        api_key = get_full_exported_symbol(name, resolved_version)
         return ResolvedQuery(
             name=dependency.name,
             query=dependency.version,
-            version=str(version),
+            version=str(resolved_version),
             exportedSymbol=api_key,
             parent=dependency.parent,
         )
@@ -386,7 +394,7 @@ async def resolve_dependencies_version_queries(
             data={"dependencies": inputs_flat_dependencies},
         )
 
-        resolved_versions = await asyncio.gather(
+        unsafe_resolved_versions = await asyncio.gather(
             *[
                 resolve_version(
                     dependency,
@@ -403,13 +411,13 @@ async def resolve_dependencies_version_queries(
         await raise_errors(
             errors=[
                 resp
-                for resp in resolved_versions
+                for resp in unsafe_resolved_versions
                 if isinstance(resp, (LibraryNotFound, LibraryException))
             ],
             context=ctx,
         )
         resolved_versions = [
-            lib for lib in resolved_versions if isinstance(lib, ResolvedQuery)
+            lib for lib in unsafe_resolved_versions if isinstance(lib, ResolvedQuery)
         ]
 
         resolutions_cache.update(
@@ -431,7 +439,7 @@ async def fetch_dependencies_data(
     context: Context,
 ):
     async with context.start(action="query dependencies data") as ctx:
-        resolved_dependencies = await asyncio.gather(
+        unsafe_resolved_dependencies = await asyncio.gather(
             *[
                 get_data(
                     name=dependency.name,
@@ -445,7 +453,7 @@ async def fetch_dependencies_data(
             return_exceptions=True,
         )
         resolved_dependencies = [
-            d for d in resolved_dependencies if isinstance(d, LibraryResolved)
+            d for d in unsafe_resolved_dependencies if isinstance(d, LibraryResolved)
         ]
         full_data_cache.update({d.exportedSymbol: d for d in resolved_dependencies})
         await ctx.info(
@@ -467,11 +475,11 @@ async def get_data(
     ) as ctx:
         await ctx.info(f"Retrieved data of {name} version {version}")
         doc_db = configuration.doc_db
-        data = next(
+        maybe_data = next(
             (d for d in extra_index if d.name == name and d.version == version), None
         )
-        if data is not None:
-            return data
+        if maybe_data is not None:
+            return maybe_data
         data = await doc_db.get_document(
             partition_keys={"library_name": name},
             clustering_keys={"version_number": get_version_number_str(version)},
@@ -546,8 +554,7 @@ def retrieve_dependency_paths(
         )
         for parent in parents
     ]
-    paths = list(itertools.chain.from_iterable(paths))
-    return paths
+    return list(itertools.chain.from_iterable(paths))
 
 
 async def remove_duplicates(

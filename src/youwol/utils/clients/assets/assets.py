@@ -16,7 +16,7 @@ from youwol.utils.clients.request_executor import (
     bytes_reader,
     json_reader,
 )
-from youwol.utils.exceptions import raise_exception_from_response
+from youwol.utils.exceptions import upstream_exception_from_response
 
 
 @dataclass(frozen=True)
@@ -136,7 +136,7 @@ class AssetsClient:
                     return await reader(resp)
                 return resp.read()
 
-            await raise_exception_from_response(resp, **kwargs)
+            raise await upstream_exception_from_response(resp, **kwargs)
 
         return await self.request_executor.get(
             url=f"{self.url_base}/assets/{asset_id}/{media_type}/{name}",

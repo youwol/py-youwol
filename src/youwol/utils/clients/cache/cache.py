@@ -47,7 +47,7 @@ class CacheClient:
         key = self._name_to_key(name)
         return self._impl_get_ttl(key)
 
-    def _impl_get(self, key: str) -> str:
+    def _impl_get(self, key: str) -> Optional[str]:
         raise NotImplementedError()
 
     def _impl_set(self, key: str, value: str):

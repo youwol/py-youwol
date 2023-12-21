@@ -18,9 +18,10 @@ class Origin(BaseModel):
         host_without_scheme = host[after_scheme_pos:]
         colon_pos = host_without_scheme.find(":")
         if colon_pos != -1:
-            port = host_without_scheme[colon_pos + 1 :]
-            if str(int(port)) != port:
-                raise RuntimeError(f"Host '{host}' has invalid port {port}")
+            port_str = host_without_scheme[colon_pos + 1 :]
+            if str(int(port_str)) != port_str:
+                raise RuntimeError(f"Host '{host}' has invalid port {port_str}")
+            port = int(port_str)
         else:
             port = 443 if secure else 80
             colon_pos = len(host_without_scheme)

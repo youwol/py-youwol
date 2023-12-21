@@ -7,11 +7,14 @@ from minio import Minio
 # Youwol utilities
 from youwol.utils.servers.env import MINIO, Env, minio_endpoint
 
+# relative
+from .env import get_not_empty_env_value
+
 required_env_vars = MINIO
 not_founds = [v for v in required_env_vars if not os.getenv(v.value)]
 if not_founds:
     raise RuntimeError(f"Missing environments variable: {not_founds}")
-minio_host = os.getenv(Env.MINIO_HOST.value)
+minio_host = get_not_empty_env_value(Env.MINIO_HOST)
 minio_access_key = os.getenv(Env.MINIO_ACCESS_KEY.value)
 minio_secret_key = os.getenv(Env.MINIO_ACCESS_SECRET.value)
 minio = Minio(

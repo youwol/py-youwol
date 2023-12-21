@@ -3,7 +3,7 @@ from collections.abc import Awaitable
 from dataclasses import dataclass
 
 # typing
-from typing import Callable, Optional
+from typing import Callable, Optional, Union
 
 # Youwol utilities
 from youwol.utils import CdnClient, DocDb, Storage
@@ -55,7 +55,7 @@ class Configuration:
 
 
 class Dependencies:
-    get_configuration: Callable[[], Awaitable[Configuration]]
+    get_configuration: Callable[[], Union[Configuration, Awaitable[Configuration]]]
 
 
 async def get_configuration():

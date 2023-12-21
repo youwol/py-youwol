@@ -23,7 +23,6 @@ def default_tokens_id_generator() -> str:
 class Configuration:
     def __init__(
         self,
-        openid_base_url: str,
         openid_client: OidcForClient,
         tokens_storage: TokensStorage,
         auth_cache: CacheClient,
@@ -58,7 +57,6 @@ class Configuration:
         self.https = https
         self.logout_url = logout_url
         self.account_manager_url = account_manager_url
-        self.keycloak_base_url = openid_base_url
 
 
 class Dependencies:

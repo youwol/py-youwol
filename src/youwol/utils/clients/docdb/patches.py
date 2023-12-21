@@ -2,7 +2,7 @@
 from typing import Any
 
 
-def compare_schemas(left: dict[str, any], right: dict[str, any]):
+def compare_schemas(left: dict[str, Any], right: dict[str, Any]):
     left_dict = {c["name"]: c["type"] for c in left["columns"]}
     right_dict = {c["name"]: c["type"] for c in right["columns"]}
     left_ok = all(right_dict.get(k, None) == v for k, v in left_dict.items())

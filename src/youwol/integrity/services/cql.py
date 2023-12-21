@@ -2,8 +2,8 @@
 from typing import Optional
 
 # third parties
-from cassandra import query  # pylint: disable=import-error
-from cassandra.cluster import Cluster, Session  # pylint: disable=import-error
+from cassandra import query
+from cassandra.cluster import Cluster, Session
 
 
 class CqlSession:

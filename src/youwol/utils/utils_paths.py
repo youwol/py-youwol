@@ -23,6 +23,9 @@ import yaml
 
 from pydantic import BaseModel
 
+# relative
+from .utils import JSON
+
 
 class FileListing(BaseModel):
     include: list[str]
@@ -49,7 +52,7 @@ def parse_yaml(path: Union[str, Path]):
         return yaml.safe_load(stream)
 
 
-def write_json(data: json, path: Path):
+def write_json(data: JSON, path: Path):
     with open(path, "w", encoding="UTF-8") as fp:
         json.dump(data, fp, indent=4)
 
@@ -70,7 +73,7 @@ def copy_file(source: Path, destination: Path, create_folders: bool = False):
 
 def matching_files(
     folder: Union[Path, str], patterns: Union[list[str], FileListing]
-) -> set[Path]:
+) -> list[Path]:
     folder = Path(folder)
 
     def fix_pattern(pattern):
@@ -97,7 +100,7 @@ def matching_files(
     def to_skip_branch(path: Path):
         return any(fnmatch(str(path), pattern) for pattern in patterns_folder_ignore)
 
-    selected = []
+    selected: list[Path] = []
     for root, dirs, files in os.walk(folder):
         root_path = Path(root)
         relative_root_path = root_path.relative_to(folder)
@@ -132,8 +135,7 @@ def files_check_sum(paths: Iterable[Union[str, Path]]):
     for path in sorted(paths, key=lambda p: str(p).lower()):
         sha_hash.update(str(path).encode())
         sha_hash = md5_update_from_file(path, sha_hash)
-    sha_hash = sha_hash.hexdigest()
-    return sha_hash
+    return sha_hash.hexdigest()
 
 
 def create_zip_file(
@@ -173,7 +175,7 @@ def ensure_dir_exists(
     path: Optional[Union[str, Path]],
     root_candidates: Union[Union[str, Path], list[Union[str, Path]]],
     default_root: Optional[Union[str, Path]] = None,
-    create: Optional[Callable[[Path], None]] = default_create_dir,
+    create: Callable[[Path], None] = default_create_dir,
 ) -> Path:
     path = path if path else "."
     (final_path, exists) = existing_path_or_default(
@@ -219,7 +221,7 @@ def existing_path_or_default(
     path: Union[str, Path],
     root_candidates: Union[Union[str, Path], list[Union[str, Path]]],
     default_root: Optional[Union[str, Path]] = None,
-) -> (Path, bool):
+) -> tuple[Path, bool]:
     typed_path = Path(path)
 
     if typed_path.is_absolute():
@@ -270,7 +272,7 @@ def extract_zip_file(
         for chunk in iter(lambda: file.read(10000), b""):
             f.write(chunk)
 
-    compressed_size = zip_path.stat().st_size
+    compressed_size = Path(zip_path).stat().st_size
 
     with zipfile.ZipFile(zip_path, "r") as zip_ref:
         zip_ref.extractall(dir_path)

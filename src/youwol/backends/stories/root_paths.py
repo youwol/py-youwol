@@ -12,7 +12,7 @@ from pathlib import Path
 # third parties
 from fastapi import APIRouter, Depends, File, HTTPException
 from fastapi import Query as QueryParam
-from fastapi import UploadFile
+from starlette.datastructures import UploadFile
 from starlette.responses import StreamingResponse
 
 # Youwol backends
@@ -100,7 +100,9 @@ async def publish_story(
 
         with tempfile.TemporaryDirectory() as tmp_folder:
             dir_path = Path(tmp_folder)
-            zip_path = (dir_path / file.filename).with_suffix(".zip")
+            zip_path = (
+                dir_path / (file.filename if file.filename else "upload_file")
+            ).with_suffix(".zip")
             try:
                 extract_zip_file(file.file, zip_path=zip_path, dir_path=dir_path)
             except zipfile.BadZipFile as e:
@@ -755,7 +757,11 @@ async def add_plugin(
                 packageName=body.packageName,
                 version=next(
                     lib.version
-                    for lib in requirements.loadingGraph.lock
+                    for lib in (
+                        requirements.loadingGraph.lock
+                        if requirements.loadingGraph
+                        else []
+                    )
                     if lib.name == body.packageName
                 ),
                 requirements=requirements,
@@ -788,7 +794,11 @@ async def add_plugin(
             packageName=body.packageName,
             version=next(
                 lib.version
-                for lib in new_requirements.loadingGraph.lock
+                for lib in (
+                    new_requirements.loadingGraph.lock
+                    if new_requirements.loadingGraph
+                    else []
+                )
                 if lib.name == body.packageName
             ),
             requirements=new_requirements,
@@ -817,27 +827,35 @@ async def upgrade_plugins(
         await ctx.info("Initial requirements", data=requirements)
         if not requirements.plugins:
             return
-        body = {
+        empty: dict[str, str] = {}
+        query_body = {
             "libraries": functools.reduce(
-                lambda acc, e: {**acc, e: "x"}, requirements.plugins, {}
+                lambda acc, e: {**acc, e: "x"}, requirements.plugins, dict(empty)
             )
         }
         assets_gtw = configuration.assets_gtw_client
         loading_graph = await assets_gtw.get_cdn_backend_router().query_loading_graph(
-            body=body, headers=ctx.headers()
+            body=query_body, headers=ctx.headers()
         )
 
         new_requirements = Requirements(
             plugins=[*requirements.plugins],
             loadingGraph=LoadingGraphResponse(**loading_graph),
         )
-        upgraded_plugins = [
+
+        upgraded_plugins_list = [
             lib
-            for lib in new_requirements.loadingGraph.lock
+            for lib in (
+                new_requirements.loadingGraph.lock
+                if new_requirements.loadingGraph
+                else []
+            )
             if lib.name in requirements.plugins
         ]
         upgraded_plugins = functools.reduce(
-            lambda acc, e: {**acc, e.name: e.version}, upgraded_plugins, {}
+            lambda acc, e: {**acc, e.name: e.version},
+            upgraded_plugins_list,
+            dict(empty),
         )
         await storage.post_json(
             path=get_document_path(story_id=story_id, document_id="requirements"),

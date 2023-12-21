@@ -1,5 +1,6 @@
 # third parties
 from fastapi import APIRouter, Depends, Query
+from starlette.datastructures import UploadFile
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -40,9 +41,12 @@ async def publish_library(
 ):
     async with Context.start_ep(request=request) as ctx:
         form = await request.form()
+        file = form.get("file")
+        if not isinstance(file, UploadFile):
+            raise ValueError("Field `file` of form is not of type `UploadFile`")
         await assert_write_permissions_folder_id(folder_id=folder_id, context=ctx)
         package = await configuration.cdn_client.publish(
-            zip_content=await form.get("file").read(),
+            zip_content=await file.read(),
             headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys),
         )
         return await create_asset(

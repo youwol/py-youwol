@@ -5,6 +5,7 @@ import uuid
 
 # third parties
 from fastapi import APIRouter, Depends
+from starlette.datastructures import UploadFile
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -37,15 +38,25 @@ async def upload(
     async with Context.start_ep(request=request):
         form = await request.form()
         file = form.get("file")
+        if not isinstance(file, UploadFile):
+            raise ValueError("Field `file` of form is not of type `UploadFile`")
         file_id = form.get("file_id", None) or str(uuid.uuid4())
+        if not isinstance(file_id, str):
+            raise ValueError("Field `file_id` of form is not of type `str`")
         filename = form.get("file_name", "default_name")
+        if not isinstance(filename, str):
+            raise ValueError("Field `filename` of form is not of type `str`")
         content = await file.read()
         content_type = form.get("content_type", file.content_type) or get_content_type(
             filename
         )
+        if not isinstance(content_type, str):
+            raise ValueError("Field `content_type` of form is not of type `str`")
         content_encoding = form.get("content_encoding", "") or get_content_encoding(
             filename
         )
+        if not isinstance(content_encoding, str):
+            raise ValueError("Field `content_encoding` of form is not of type `str`")
         await configuration.file_system.put_object(
             object_id=file_id,
             object_name=filename,

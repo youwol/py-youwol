@@ -1,39 +1,30 @@
+# standard library
+from dataclasses import dataclass
+
 # typing
-from typing import NamedTuple, Optional, TypeVar, Union
+from typing import Any, Optional, Union
 
 # third parties
 from pydantic import BaseModel
 
 # Youwol utilities
-from youwol.utils import DocDb, TableBody, get_valid_keyspace_name
+from youwol.utils import DocDb, TableBody
 from youwol.utils.clients.docdb.models import Column, IdentifierSI, SecondaryIndex
-
-namespace = "tree-db"
 
 
 class HealthzResponse(BaseModel):
     status: str = "treedb-backend ok"
 
 
-class DocDbs(NamedTuple):
+keyspace_name = "tree_db"
+
+
+@dataclass(frozen=True)
+class DocDbs:
     items_db: DocDb
     folders_db: DocDb
     drives_db: DocDb
     deleted_db: DocDb
-
-    keyspace_name = get_valid_keyspace_name(namespace)
-
-    items_table_name = "items"
-    items_primary_key = "item_id"
-
-    folders_table_name = "folders"
-    folders_primary_key = "folder_id"
-
-    drives_table_name = "drives"
-    drives_primary_key = "drive_id"
-
-    deleted_table_name = "deleted"
-    deleted_primary_key = "deleted_id"
 
 
 class PublishResponse(BaseModel):
@@ -273,33 +264,31 @@ DELETED_TABLE_DRIVE_INDEX = SecondaryIndex(
     name="deleted_by_drive", identifier=IdentifierSI(column_name="drive_id")
 )
 
-TDocDb = TypeVar("TDocDb")
 
-
-def create_doc_dbs(factory_db: TDocDb, **kwargs) -> DocDbs:
+def create_doc_dbs(factory_db: Any, **kwargs) -> DocDbs:
     files_db = factory_db(
-        keyspace_name=DocDbs.keyspace_name,
+        keyspace_name=keyspace_name,
         table_body=FILES_TABLE,
         secondary_indexes=[FILES_TABLE_PARENT_INDEX, FILES_TABLE_RELATED_INDEX],
         **kwargs,
     )
 
     folders_db = factory_db(
-        keyspace_name=DocDbs.keyspace_name,
+        keyspace_name=keyspace_name,
         table_body=FOLDERS_TABLE,
         secondary_indexes=[FOLDERS_TABLE_PARENT_INDEX],
         **kwargs,
     )
 
     drives_db = factory_db(
-        keyspace_name=DocDbs.keyspace_name,
+        keyspace_name=keyspace_name,
         table_body=DRIVES_TABLE,
         secondary_indexes=[DRIVES_TABLE_PARENT_INDEX],
         **kwargs,
     )
 
     deleted_db = factory_db(
-        keyspace_name=DocDbs.keyspace_name,
+        keyspace_name=keyspace_name,
         table_body=DELETED_TABLE,
         secondary_indexes=[DELETED_TABLE_DRIVE_INDEX],
         **kwargs,

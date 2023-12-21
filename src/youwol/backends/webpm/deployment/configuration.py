@@ -40,20 +40,31 @@ class ConfigurationFactory:
         cls.__configuration = configuration
 
     @classmethod
-    def set_from_env(cls):
+    def set_from_env(cls) -> None:
         cls.set(
             Configuration(
-                version=os.environ.get("VERSION"),
-                oidc_issuer=os.environ.get("OIDC_ISSUER"),
-                client_id=os.environ.get("CLIENT_ID"),
-                client_secret=os.environ.get("CLIENT_SECRET"),
-                assets_gateway_base_url=os.environ.get("ASSETS_GATEWAY_BASE_URL"),
-                config_id=os.environ.get("CONFIG_ID"),
-                host=os.environ.get("HOST"),
-                default_cdn_client_version=os.environ.get("DEFAULT_CDN_CLIENT_VERSION"),
-                default_webpm_client_version=os.environ.get(
+                version=cls.__get_value_from_env("VERSION"),
+                oidc_issuer=cls.__get_value_from_env("OIDC_ISSUER"),
+                client_id=cls.__get_value_from_env("CLIENT_ID"),
+                client_secret=cls.__get_value_from_env("CLIENT_SECRET"),
+                assets_gateway_base_url=cls.__get_value_from_env(
+                    "ASSETS_GATEWAY_BASE_URL"
+                ),
+                config_id=cls.__get_value_from_env("CONFIG_ID"),
+                host=cls.__get_value_from_env("HOST"),
+                default_cdn_client_version=cls.__get_value_from_env(
+                    "DEFAULT_CDN_CLIENT_VERSION"
+                ),
+                default_webpm_client_version=cls.__get_value_from_env(
                     "DEFAULT_WEBPM_CLIENT_VERSION"
                 ),
-                root_redirection=os.environ.get("ROOT_REDIRECTION"),
+                root_redirection=cls.__get_value_from_env("ROOT_REDIRECTION"),
             )
         )
+
+    @staticmethod
+    def __get_value_from_env(key) -> str:
+        v = os.environ.get(key)
+        if v is None:
+            raise ValueError(f"Missing environment value {v}")
+        return v

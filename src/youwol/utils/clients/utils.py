@@ -18,7 +18,7 @@ class GroupInfo(NamedTuple):
     scope: str
 
 
-def to_group_id(group_path: Union[str, None]) -> str:
+def to_group_id(group_path: str) -> str:
     if group_path == "private":
         return "private"
     b = str.encode(group_path)
@@ -83,12 +83,8 @@ def get_default_owner(headers: Mapping[str, str]):
     return f"/{headers['user-name']}" if "user-name" in headers else "/default-username"
 
 
-def get_valid_bucket_name(name):
+def get_valid_bucket_name(name: str) -> str:
     return name.replace("_", "-")
-
-
-def get_valid_keyspace_name(name):
-    return name.replace("-", "_")
 
 
 def log_info(message, **kwargs):

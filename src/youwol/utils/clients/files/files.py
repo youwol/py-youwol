@@ -10,7 +10,7 @@ from aiohttp import ClientResponse
 
 # Youwol utilities
 from youwol.utils.clients.request_executor import RequestExecutor, json_reader
-from youwol.utils.exceptions import raise_exception_from_response
+from youwol.utils.exceptions import upstream_exception_from_response
 
 
 @dataclass(frozen=True)
@@ -62,7 +62,7 @@ class FilesClient:
                 if reader:
                     return await reader(resp)
                 return await resp.read()
-            await raise_exception_from_response(resp, url=url)
+            raise await upstream_exception_from_response(resp, url=url)
 
         return await self.request_executor.get(
             url=url,

@@ -1,5 +1,5 @@
 # typing
-from typing import Any
+from typing import Any, Callable, Optional
 
 # third parties
 from pydantic import BaseModel
@@ -50,7 +50,7 @@ class WhereClause(BaseModel):
     term: Any
 
     def is_matching(self, doc: dict[str, Any]) -> bool:
-        factory_clauses = {
+        factory_clauses: dict[str, Callable[[float, float], bool]] = {
             "eq": lambda _value, _target: value == target,
             "lt": lambda _value, _target: value < target,
             "leq": lambda _value, _target: value <= target,
@@ -72,7 +72,7 @@ class Query(BaseModel):
 class QueryBody(BaseModel):
     allow_filtering: bool = False
     max_results: int = 100
-    iterator: str = None
+    iterator: Optional[str] = None
     mode: str = "documents"
     distinct: list[str] = []
     select_clauses: list[SelectClause] = []

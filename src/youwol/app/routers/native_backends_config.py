@@ -67,7 +67,6 @@ async def accounts_backend_config_py_youwol():
         keycloak_admin_base_url = auth_provider.keycloakAdminBaseUrl
 
     return youwol.backends.accounts.Configuration(
-        openid_base_url=oidc_config.base_url,
         openid_client=oidc_config.for_client(
             config.get_remote_info().authProvider.openidClient
         ),

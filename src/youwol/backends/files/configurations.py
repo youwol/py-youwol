@@ -3,7 +3,7 @@ from collections.abc import Awaitable
 from dataclasses import dataclass
 
 # typing
-from typing import Callable, Generic, Optional, TypeVar
+from typing import Callable, Generic, Optional, TypeVar, Union
 
 # Youwol utilities
 from youwol.utils.clients.file_system.interfaces import FileSystemInterface
@@ -26,7 +26,7 @@ class Configuration(Generic[FileSystemImplementation]):
 
 
 class Dependencies:
-    get_configuration: Callable[[], Awaitable[Configuration]]
+    get_configuration: Callable[[], Union[Configuration, Awaitable[Configuration]]]
 
 
 async def get_configuration():

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 # typing
-from typing import Callable, Optional, TypeVar, Union
+from typing import Callable, Optional, Union
 
 # Youwol utilities
 from youwol.utils.clients.docdb.docdb import DocDbClient as RemoteDocDb
@@ -28,20 +28,15 @@ class Constants:
     schema_docdb = LIBRARIES_TABLE
 
 
-FileSystemImplementation = TypeVar(
-    "FileSystemImplementation", bound=FileSystemInterface
-)
-
-
 @dataclass(frozen=True)
 class Configuration:
-    file_system: FileSystemImplementation
+    file_system: FileSystemInterface
     doc_db: DocDb
     required_libs: Optional[Path] = None
 
 
 class Dependencies:
-    get_configuration: Callable[[], Awaitable[Configuration]]
+    get_configuration: Callable[[], Union[Configuration, Awaitable[Configuration]]]
 
 
 async def get_configuration():
