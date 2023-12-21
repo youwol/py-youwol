@@ -21,9 +21,19 @@ from youwol.utils.exceptions import upstream_exception_from_response
 
 @dataclass(frozen=True)
 class AssetsClient:
+    """
+    HTTP client of the [assets](@yw-nav-mod:youwol.backends.assets) service.
+    """
+
     url_base: str
+    """
+    Base URL used for the request.
+    """
 
     request_executor: RequestExecutor
+    """
+    Request executor.
+    """
 
     async def healthz(self, **kwargs):
         return await self.request_executor.get(
@@ -31,6 +41,10 @@ class AssetsClient:
         )
 
     async def create_asset(self, body, **kwargs):
+        """
+        See description in
+        [assets.resolve_loading_tree](@yw-nav-func:youwol.backends.assets.root_paths.create_asset).
+        """
         return await self.request_executor.put(
             url=f"{self.url_base}/assets",
             default_reader=json_reader,
@@ -39,6 +53,10 @@ class AssetsClient:
         )
 
     async def add_zip_files(self, asset_id: str, data: bytes, **kwargs):
+        """
+        See description in
+        [assets.add_zip_files](@yw-nav-func:youwol.backends.assets.root_paths.add_zip_files).
+        """
         form_data = FormData()
         form_data.add_field(
             "file",
@@ -59,6 +77,10 @@ class AssetsClient:
         path: Union[Path, str],
         **kwargs,
     ):
+        """
+        See description in
+        [assets.get_file](@yw-nav-func:youwol.backends.assets.root_paths.get_file).
+        """
         return await self.request_executor.get(
             url=f"{self.url_base}/assets/{asset_id}/files/{path}",
             default_reader=auto_reader,
@@ -66,6 +88,10 @@ class AssetsClient:
         )
 
     async def delete_files(self, asset_id: str, **kwargs):
+        """
+        See description in
+        [assets.delete_files](@yw-nav-func:youwol.backends.assets.root_paths.delete_files).
+        """
         return await self.request_executor.delete(
             url=f"{self.url_base}/assets/{asset_id}/files",
             default_reader=json_reader,
@@ -73,6 +99,10 @@ class AssetsClient:
         )
 
     async def get_zip_files(self, asset_id: str, **kwargs):
+        """
+        See description in
+        [assets.get_zip_files](@yw-nav-func:youwol.backends.assets.root_paths.get_zip_files).
+        """
         return await self.request_executor.get(
             url=f"{self.url_base}/assets/{asset_id}/files",
             default_reader=bytes_reader,
@@ -80,6 +110,10 @@ class AssetsClient:
         )
 
     async def update_asset(self, asset_id: str, body, **kwargs):
+        """
+        See description in
+        [assets.post_asset](@yw-nav-func:youwol.backends.assets.root_paths.post_asset).
+        """
         return await self.request_executor.post(
             url=f"{self.url_base}/assets/{asset_id}",
             default_reader=json_reader,
@@ -88,6 +122,10 @@ class AssetsClient:
         )
 
     async def put_access_policy(self, asset_id: str, group_id: str, body, **kwargs):
+        """
+        See description in
+        [assets.put_access_policy](@yw-nav-func:youwol.backends.assets.root_paths.put_access_policy).
+        """
         return await self.request_executor.put(
             url=f"{self.url_base}/assets/{asset_id}/access/{group_id}",
             default_reader=json_reader,
@@ -96,6 +134,10 @@ class AssetsClient:
         )
 
     async def delete_access_policy(self, asset_id: str, group_id: str, **kwargs):
+        """
+        See description in
+        [assets.delete_access_policy](@yw-nav-func:youwol.backends.assets.root_paths.delete_access_policy).
+        """
         return await self.request_executor.delete(
             url=f"{self.url_base}/assets/{asset_id}/access/{group_id}",
             default_reader=json_reader,
@@ -103,6 +145,10 @@ class AssetsClient:
         )
 
     async def post_image(self, asset_id: str, filename: str, src: bytes, **kwargs):
+        """
+        See description in
+        [assets.post_image](@yw-nav-func:youwol.backends.assets.root_paths.post_image).
+        """
         form_data = FormData()
         form_data.add_field(
             "file", src, filename=filename, content_type="application/octet-stream"
@@ -116,6 +162,10 @@ class AssetsClient:
         )
 
     async def remove_image(self, asset_id: str, filename: str, **kwargs):
+        """
+        See description in
+        [assets.remove_image](@yw-nav-func:youwol.backends.assets.root_paths.remove_image).
+        """
         return await self.request_executor.delete(
             url=f"{self.url_base}/assets/{asset_id}/images/{filename}",
             default_reader=json_reader,
@@ -130,6 +180,12 @@ class AssetsClient:
         reader: Optional[Callable[[ClientResponse], Awaitable[Any]]] = None,
         **kwargs,
     ):
+        """
+        See description in
+        [assets.get_media_image](@yw-nav-func:youwol.backends.assets.root_paths.get_media_image) or
+        [assets.get_media_thumbnail](@yw-nav-func:youwol.backends.assets.root_paths.get_media_thumbnail).
+        """
+
         async def _reader(resp: ClientResponse):
             if resp.status == 200:
                 if reader:
@@ -160,9 +216,17 @@ class AssetsClient:
         )
 
     async def get_asset(self, asset_id: str, **kwargs):
+        """
+        See description in
+        [assets.get_asset](@yw-nav-func:youwol.backends.assets.root_paths.get_asset).
+        """
         return await self.get(asset_id=asset_id, **kwargs)
 
     async def delete_asset(self, asset_id: str, **kwargs):
+        """
+        See description in
+        [assets.delete_asset](@yw-nav-func:youwol.backends.assets.root_paths.delete_asset).
+        """
         return await self.request_executor.delete(
             url=f"{self.url_base}/assets/{asset_id}",
             default_reader=json_reader,
@@ -170,6 +234,10 @@ class AssetsClient:
         )
 
     async def get_access_policy(self, asset_id: str, group_id: str, **kwargs):
+        """
+        See description in
+        [assets.get_access_policy](@yw-nav-func:youwol.backends.assets.root_paths.get_access_policy).
+        """
         return await self.request_executor.get(
             url=f"{self.url_base}/assets/{asset_id}/access/{group_id}",
             default_reader=json_reader,
@@ -177,6 +245,10 @@ class AssetsClient:
         )
 
     async def get_permissions(self, asset_id: str, **kwargs):
+        """
+        See description in
+        [assets.get_permissions](@yw-nav-func:youwol.backends.assets.root_paths.get_permissions).
+        """
         return await self.request_executor.get(
             url=f"{self.url_base}/assets/{asset_id}/permissions",
             default_reader=json_reader,
@@ -184,6 +256,10 @@ class AssetsClient:
         )
 
     async def get_access_info(self, asset_id: str, **kwargs):
+        """
+        See description in
+        [assets.access_info](@yw-nav-func:youwol.backends.assets.root_paths.access_info).
+        """
         return await self.request_executor.get(
             url=f"{self.url_base}/assets/{asset_id}/access-info",
             default_reader=json_reader,

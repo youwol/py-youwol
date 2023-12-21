@@ -55,11 +55,25 @@ from youwol.utils.middlewares.root_middleware import RootMiddleware
 # relative
 from .web_socket import WsDataStreamer, WsType, start_web_socket
 
-fastapi_app = FastAPI(
+fastapi_app: FastAPI = FastAPI(
     title="Local Dashboard",
     openapi_prefix=api_configuration.open_api_prefix,
     dependencies=[Depends(yw_config)],
 )
+"""
+The fast api application.
+
+The dependency [yw_config](@yw-nav-func:youwol.app.environment.youwol_environment.yw_config) inject the
+ [environment](@yw-nav-class:youwol.app.environment.youwol_environment.YouwolEnvironment)
+in the target end-points implementation
+(see FastAPI's [dependencies injection](https://fastapi.tiangolo.com/tutorial/dependencies/)).
+See also [api_configuration](@yw-nav-glob:youwol.app.environment.youwol_environment.api_configuration) regarding
+elements related to the global API configuration.
+
+The application is instrumented in the [create_app](@yw-nav-func:youwol.app.fastapi_app.create_app) function.
+
+"""
+
 
 download_thread = AssetDownloadThread(
     factories={
@@ -102,6 +116,27 @@ class CustomMiddlewareWrapper(BaseHTTPMiddleware):
 
 
 def setup_middlewares(env: YouwolEnvironment):
+    """
+    Set up the middlewares stack of the [application](@yw-nav-glob:youwol.app.fastapi_app.fastapi_app):
+    *  [RootMiddleware](@yw-nav-class:youwol.utils.middlewares.root_middleware.RootMiddleware) using
+    [InMemoryReporter](@yw-nav-class:youwol.utils.context.InMemoryReporter) for `logs_reporter` and
+    [WsDataStreamer](@yw-nav-class:youwol.app.web_socket.WsDataStreamer) for `data_reporter`.
+    *  [AuthMiddleware](@yw-nav-class:youwol.utils.middlewares.authentication.AuthMiddleware)
+    using
+    [JwtProviderBearerDynamicIssuer](@yw-nav-class:youwol.app.environment.local_auth.JwtProviderBearerDynamicIssuer),
+    [JwtProviderCookieDynamicIssuer](@yw-nav-class:youwol.app.environment.local_auth.JwtProviderCookieDynamicIssuer),
+    [JwtProviderPyYouwol](@yw-nav-class:youwol.app.environment.local_auth.JwtProviderPyYouwol)
+    *  <a href="@yw-nav-class:youwol.app.middlewares.browser_caching_middleware.BrowserCachingMiddleware">
+    BrowserCachingMiddleware</a>
+    *  the list of [custom middlewares](@yw-nav-class:youwol.app.environment.models.models_config.CustomMiddleware)
+    defined in the configuration file.
+    *  the <a href="@yw-nav-class:youwol.app.middlewares.hybridizer_middleware.LocalCloudHybridizerMiddleware">
+    local/cloud hybrid middleware</a>
+     using various [dispatches](@yw-nav-mod:youwol.app.middlewares.local_cloud_hybridizers).
+
+    Parameters:
+        env: the current environment, used to inject user defined middlewares.
+    """
     fastapi_app.add_middleware(
         LocalCloudHybridizerMiddleware,
         dynamic_dispatch_rules=[
@@ -147,24 +182,32 @@ def setup_middlewares(env: YouwolEnvironment):
         RootMiddleware, logs_reporter=InMemoryReporter(), data_reporter=WsDataStreamer()
     )
 
+
+def setup_http_routers():
+    """
+    Set up the routers of the [application](@yw-nav-glob:youwol.app.fastapi_app.fastapi_app):
+    *  [native backends router](@yw-nav-mod:youwol.backends): these routers include the core services of youwol,
+    they define services that are available in local and remote environments.
+    Beside [cdn_app_server](@ywn-nav-mod:youwol.backends.cdn_app_server) that is served
+    under `/applications`, the other services are served under `/api/$SERVICE_NAME` (where `$SERVICE_NAME` is the name
+    of the corresponding service).
+    *  [local youwol router](@yw-nav-mod:youwol.app.routers): these routers correspond to the services specific to
+    the local youwol server, they are served under `/admin`.
+    **These services are not available in the online environment.**
+    *  the routes `/healthz` and `/`
+
+    Notes:
+        While in the local server all services are exposed, in the online environment access to the services
+        [tree_db](@yw-nav-mod:youwol.backends.tree_db),
+        [files](@yw-nav-mod:youwol.backends.files), [assets](@yw-nav-mod:youwol.backends.assets) and
+        [cdn](@yw-nav-mod:youwol.backends.cdn) are **only exposed through
+        the [assets-gateway](@yw-nav-mod:youwol.backends.assets_gateway) service**.
+
+    """
     fastapi_app.include_router(native_backends.router)
     fastapi_app.include_router(
         admin.router, prefix=api_configuration.base_path + "/admin"
     )
-
-
-async def create_app():
-    env = await yw_config()
-    setup_middlewares(env=env)
-    asyncio.ensure_future(ProjectLoader.initialize(env=env))
-
-    @fastapi_app.exception_handler(YouWolException)
-    async def expected_exception(request: Request, exc: YouWolException):
-        return await youwol_exception_handler(request, exc)
-
-    @fastapi_app.exception_handler(Exception)
-    async def unexpected_exception(request: Request, exc: Exception):
-        return await unexpected_exception_handler(request, exc)
 
     @fastapi_app.get(api_configuration.base_path + "/healthz")
     async def healthz():
@@ -176,6 +219,35 @@ async def create_app():
             status_code=308, url="/applications/@youwol/platform/latest"
         )
 
+
+def setup_web_sockets():
+    """
+    Install web-sockets handlers, they convey messages from the server to the client (not the other way around).
+    Two channels are available:
+     * `/ws-logs`: Channel that is responsible to convey messages related to logs (no 'useful' information).
+     * `/ws-data`: Channel that is responsible to convey messages related to expected results
+      (like result of computations).
+
+    The easiest way for now to consume the different messages sent from `/ws-data` is to use the methods exposed by the
+    package [@youwol/local-youwol-client](https://github.com/youwol/local-youwol-client):
+    *  `SystemRouter.webSocket.downloadEvent$`
+    *  `ProjectsRouter.webSocket.status$`
+    *  `ProjectsRouter.webSocket.projectStatus$`
+    *  `ProjectsRouter.webSocket.pipelineStatus$`
+    *  `ProjectsRouter.webSocket.pipelineStepStatus$`
+    *  `ProjectsRouter.webSocket.artifacts$`
+    *  `ProjectsRouter.webSocket.stepEvent$`
+    *  `LocalCdnRouter.webSocket.status$`
+    *  `LocalCdnRouter.webSocket.package$`
+    *  `LocalCdnRouter.webSocket.downloadedPackage$`
+    *  `LocalCdnRouter.webSocket.packageEvent$`
+    *  `EnvironmentRouter.webSocket.status$`
+    *  `CustomCommandsRouter.webSocket.log$`
+
+
+    See also [start_web_socket](@yw-nav-func:youwol.app.web_socket.start_web_socket).
+    """
+
     @fastapi_app.websocket(api_configuration.base_path + "/ws-logs")
     async def ws_logs(ws: WebSocket):
         await start_web_socket(ws, WsType.Log)
@@ -183,6 +255,38 @@ async def create_app():
     @fastapi_app.websocket(api_configuration.base_path + "/ws-data")
     async def ws_data(ws: WebSocket):
         await start_web_socket(ws, WsType.Data)
+
+
+def setup_exceptions_handlers():
+    """
+    Add exceptions handlers, for both ['expected'](@yw-nav-func:youwol.utils.exceptions.youwol_exception_handler)
+    and ['unexpected'](@yw-nav-func:youwol.utils.exceptions.unexpected_exception_handler) ones.
+    """
+
+    @fastapi_app.exception_handler(YouWolException)
+    async def expected_exception(request: Request, exc: YouWolException):
+        return await youwol_exception_handler(request, exc)
+
+    @fastapi_app.exception_handler(Exception)
+    async def unexpected_exception(request: Request, exc: Exception):
+        return await unexpected_exception_handler(request, exc)
+
+
+async def create_app():
+    """
+    Create the application:
+
+    *  [setup_middlewares](@yw-nav-func:youwol.app.fastapi_app.setup_middlewares)
+    *  [setup_http_routers](@yw-nav-func:youwol.app.fastapi_app.setup_http_routers)
+    *  [setup_web_sockets](@yw-nav-func:youwol.app.fastapi_app.setup_web_sockets)
+    *  [setup_exceptions_handlers](@yw-nav-func:youwol.app.fastapi_app.setup_exceptions_handlers)
+    """
+    env = await yw_config()
+    setup_middlewares(env=env)
+    setup_http_routers()
+    setup_web_sockets()
+    setup_exceptions_handlers()
+    asyncio.ensure_future(ProjectLoader.initialize(env=env))
 
 
 asyncio.run(create_app())

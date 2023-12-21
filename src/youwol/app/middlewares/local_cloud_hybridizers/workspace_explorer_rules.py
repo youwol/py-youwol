@@ -37,6 +37,14 @@ def cast_response(response: Union[JSON, BaseException], _type: PydanticType):
 
 
 class GetChildrenDispatch(AbstractLocalCloudDispatch):
+    """
+    Dispatch over the requests to the files explorer service that adds up to the local items those found in the
+    remote environment.
+
+    It allows for application like `@youwol/explorer` to display the files/folders that are available in the remote
+    environment for the targeted parent.
+    """
+
     @staticmethod
     def is_matching(request: Request) -> Union[None, str]:
         match, params = url_match(
@@ -55,6 +63,26 @@ class GetChildrenDispatch(AbstractLocalCloudDispatch):
         call_next: RequestResponseEndpoint,
         context: Context,
     ) -> Optional[Response]:
+        """
+        This dispatch match the endpoint `GET:/api/assets-gateway/treedb-backend/folders/*/children`;
+        it returns `None` otherwise.
+
+        Parameters:
+            incoming_request: The incoming request.
+            call_next: The next endpoint in the chain.
+            context: The current context.
+
+        Return:
+            A modified version of
+            [ChildrenResponse](@yw-nav-class:youwol.utils.http_clients.tree_db_backend.models.ChildrenResponse)
+            that include both local and remote children, each child being annotated with an attribute `origin`:
+            ```
+            "origin": {
+                    "remote": bool,
+                    "local": bool,
+                }
+            ```
+        """
         folder_id = GetChildrenDispatch.is_matching(request=incoming_request)
         if not folder_id:
             return None

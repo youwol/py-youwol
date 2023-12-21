@@ -20,12 +20,42 @@ from .abstract_local_cloud_dispatch import AbstractLocalCloudDispatch
 
 
 class ForwardOnly(AbstractLocalCloudDispatch):
+    """
+    Dispatch handling requests related to GET request that resolve to 404 using local backends,
+     when this happens, the request is re-executed by targeting the equivalent service in remote (in which the asset may
+     exist).
+
+     The end-points targeted:
+     *  `GET:/api/assets-gateway/assets/**`
+     *  `GET:/api/assets-gateway/cdn-backend/libraries/**`
+     *  `GET:/api/assets-gateway/assets-backend/assets/**`
+     *  `GET:/api/assets-gateway/treedb-backend/items/**`
+
+    """
+
     async def apply(
         self,
         incoming_request: Request,
         call_next: RequestResponseEndpoint,
         context: Context,
     ) -> Optional[Response]:
+        """
+        This dispatch match the endpoints:
+         *  `GET:/api/assets-gateway/assets/**`
+         *  `GET:/api/assets-gateway/cdn-backend/libraries/**`
+         *  `GET:/api/assets-gateway/assets-backend/assets/**`
+         *  `GET:/api/assets-gateway/treedb-backend/items/**`
+
+        It returns `None` otherwise.
+
+        Parameters:
+            incoming_request: The incoming request.
+            call_next: The next endpoint in the chain.
+            context: The current context.
+
+        Return:
+            The local or remote response.
+        """
         patterns = [
             "GET:/api/assets-gateway/assets/**",
             "GET:/api/assets-gateway/cdn-backend/libraries/**",

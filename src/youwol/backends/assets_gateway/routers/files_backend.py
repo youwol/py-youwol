@@ -68,7 +68,23 @@ async def upload(
     request: Request,
     folder_id: str = Query(None, alias="folder-id"),
     configuration: Configuration = Depends(get_configuration),
-):
+) -> NewAssetResponse:
+    """
+    If access is granted, forwarded to
+    [files.upload](@yw-nav-func:youwol.backends.files.root_paths.upload)
+    endpoint of [files](@yw-nav-mod:youwol.backends.files) service.
+
+    On top of uploading the file, it:
+        *  create an asset using the [assets](@yw-nav-mod:youwol.backends.assets) service.
+        *  create an explorer item using [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+
+    Parameters:
+        request: Incoming request.
+        folder_id: Folder ID (from files explorer) in which the asset is located in the file explorer.
+        configuration: Injected
+            [Configuration](@yw-nav-class:youwol.backends.assets_gateway.configurations.Configuration).
+    """
+
     async with Context.start_ep(
         request=request,
     ) as ctx:  # type: Context
@@ -151,6 +167,11 @@ async def get_stats(
     file_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [files.get_info](@yw-nav-func:youwol.backends.files.root_paths.get_info)
+    of [files](@yw-nav-mod:youwol.backends.files) service.
+    """
     async with Context.start_ep(request=request) as ctx:  # type: Context
         await assert_read_permissions_from_raw_id(
             raw_id=file_id, configuration=configuration, context=ctx
@@ -168,6 +189,11 @@ async def update_metadata(
     body: PostMetadataBody,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [files.update_metadata](@yw-nav-func:youwol.backends.files.root_paths.update_metadata)
+    of [files](@yw-nav-mod:youwol.backends.files) service.
+    """
     async with Context.start_ep(request=request) as ctx:  # type: Context
         await assert_read_permissions_from_raw_id(
             raw_id=file_id, configuration=configuration, context=ctx
@@ -185,6 +211,12 @@ async def get_file(
     file_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [files.get_file](@yw-nav-func:youwol.backends.files.root_paths.get_file)
+    of [files](@yw-nav-mod:youwol.backends.files) service.
+    """
+
     async def reader(resp: ClientResponse):
         resp_bytes = await resp.read()
         return Response(content=resp_bytes, headers=dict(resp.headers.items()))
@@ -225,6 +257,11 @@ async def remove_file(
     purge: bool = False,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [files.remove_file](@yw-nav-func:youwol.backends.files.root_paths.remove_file)
+    of [files](@yw-nav-mod:youwol.backends.files) service.
+    """
     async with Context.start_ep(request=request) as ctx:  # type: Context
         return await remove_file_impl(
             file_id=file_id, purge=purge, configuration=configuration, context=ctx

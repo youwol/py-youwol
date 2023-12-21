@@ -70,7 +70,27 @@ async def create_asset(
     body: NewEmptyAssetBody,
     folder_id: str = Query(None, alias="folder-id"),
     configuration: Configuration = Depends(get_configuration),
-):
+) -> NewAssetResponse:
+    """
+    Creates an asset not affiliated to any backends; for files and packages kind of assets, use the dedicated endpoints
+    [upload](@yw-nav-func:youwol.backends.assets_gateway.routers.files_backend.upload)
+    [publish_library](@yw-nav-func:youwol.backends.assets_gateway.routers.cdn_backend.publish_library)
+    respectively.
+
+    The asset can be populated with files afterward.
+
+    Parameters:
+        request: Incoming request.
+        body: Asset description.
+        folder_id: Folder ID (from files explorer) in which the asset is located in the file explorer.
+            If not provided, use the 'downloadFolder' of the user's
+            [default drive](@yw-nav-class:youwol.backends.tree_db.root_paths.get_default_user_drive).
+        configuration: Injected
+            [Configuration](@yw-nav-class:youwol.backends.assets_gateway.configurations.Configuration).
+
+    Return:
+        New asset description (no `rawResponse` associated).
+    """
     # This end point create an asset not affiliated to any backends.
     # It can be populated with files afterward.
     # For asset creation related to a backend, see specific router for this backend in the current directory.
@@ -106,6 +126,11 @@ async def post_asset_files(
     asset_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [assets.add_zip_files](@yw-nav-func:youwol.backends.assets.root_paths.add_zip_files)
+    of [assets](@yw-nav-mod:youwol.backends.assets) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         assets_db = configuration.assets_client
         permissions = await assets_db.get_permissions(
@@ -135,6 +160,11 @@ async def get_file(
     rest_of_path: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [assets.get_file](@yw-nav-func:youwol.backends.assets.root_paths.get_file)
+    of [assets](@yw-nav-mod:youwol.backends.assets) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         assets_db = configuration.assets_client
         permissions = await assets_db.get_permissions(
@@ -159,6 +189,11 @@ async def delete_files(
     asset_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [assets.delete_files](@yw-nav-func:youwol.backends.assets.root_paths.delete_files)
+    of [assets](@yw-nav-mod:youwol.backends.assets) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         assets_db = configuration.assets_client
         permissions = await assets_db.get_permissions(
@@ -181,6 +216,11 @@ async def zip_all_files(
     asset_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [assets.get_zip_files](@yw-nav-func:youwol.backends.assets.root_paths.get_zip_files)
+    of [assets](@yw-nav-mod:youwol.backends.assets) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         assets_db = configuration.assets_client
         permissions = await assets_db.get_permissions(
@@ -207,6 +247,11 @@ async def post_asset(
     body: PostAssetBody,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [assets.post_asset](@yw-nav-func:youwol.backends.assets.root_paths.post_asset)
+    of [assets](@yw-nav-mod:youwol.backends.assets) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         asset = await configuration.assets_client.get_asset(
             asset_id=asset_id, headers=ctx.headers()
@@ -229,6 +274,11 @@ async def delete_asset(
     asset_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [assets.delete_asset](@yw-nav-func:youwol.backends.assets.root_paths.delete_asset)
+    of [assets](@yw-nav-mod:youwol.backends.assets) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         asset = await configuration.assets_client.get_asset(
             asset_id=asset_id, headers=ctx.headers()
@@ -249,6 +299,11 @@ async def get_asset(
     asset_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [assets.get_asset](@yw-nav-func:youwol.backends.assets.root_paths.get_asset)
+    of [assets](@yw-nav-mod:youwol.backends.assets) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.assets_client.get_asset(
             asset_id=asset_id,
@@ -264,6 +319,11 @@ async def put_access_policy(
     body: AccessPolicyBody,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [assets.put_access_policy](@yw-nav-func:youwol.backends.assets.root_paths.put_access_policy)
+    of [assets](@yw-nav-mod:youwol.backends.assets) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         asset = await configuration.assets_client.get_asset(
             asset_id=asset_id, headers=ctx.headers()
@@ -285,6 +345,11 @@ async def delete_access_policy(
     group_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [assets.delete_access_policy](@yw-nav-func:youwol.backends.assets.root_paths.delete_access_policy)
+    of [assets](@yw-nav-mod:youwol.backends.assets) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         asset = await configuration.assets_client.get_asset(
             asset_id=asset_id, headers=ctx.headers()
@@ -309,6 +374,11 @@ async def get_access_policy(
     group_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [assets.get_access_policy](@yw-nav-func:youwol.backends.assets.root_paths.get_access_policy)
+    of [assets](@yw-nav-mod:youwol.backends.assets) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.assets_client.get_access_policy(
             asset_id=asset_id,
@@ -327,6 +397,11 @@ async def get_permissions(
     asset_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [assets.get_permissions](@yw-nav-func:youwol.backends.assets.root_paths.get_permissions)
+    of [assets](@yw-nav-mod:youwol.backends.assets) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.assets_client.get_permissions(
             asset_id=asset_id,
@@ -344,6 +419,11 @@ async def get_access_info(
     asset_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [assets.access_info](@yw-nav-func:youwol.backends.assets.root_paths.access_info)
+    of [assets](@yw-nav-mod:youwol.backends.assets) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.assets_client.get_access_info(
             asset_id=asset_id,
@@ -358,6 +438,11 @@ async def post_image(
     filename: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [assets.post_image](@yw-nav-func:youwol.backends.assets.root_paths.post_image)
+    of [assets](@yw-nav-mod:youwol.backends.assets) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         asset = await configuration.assets_client.get_asset(
             asset_id=asset_id, headers=ctx.headers()
@@ -384,6 +469,11 @@ async def remove_image(
     filename: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [assets.remove_image](@yw-nav-func:youwol.backends.assets.root_paths.remove_image)
+    of [assets](@yw-nav-mod:youwol.backends.assets) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         asset = await configuration.assets_client.get_asset(
             asset_id=asset_id, headers=ctx.headers()
@@ -405,6 +495,14 @@ async def get_media(
     name: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [assets.get_media_image](@yw-nav-func:youwol.backends.assets.root_paths.get_media_image) or
+    [assets.get_media_thumbnail](@yw-nav-func:youwol.backends.assets.root_paths.get_media_thumbnail)
+    (depending on `media_type`)
+    of [assets](@yw-nav-mod:youwol.backends.assets) service.
+    """
+
     async def reader(resp: ClientResponse):
         resp_bytes = await resp.read()
         return Response(content=resp_bytes, headers=dict(resp.headers.items()))

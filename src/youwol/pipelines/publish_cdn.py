@@ -381,9 +381,24 @@ class PublishCdnLocalStep(PipelineStep):
 
 
 class CdnTarget(BaseModel):
+    """
+    Specifies a remote CDN target to publish.
+    """
+
     cloudTarget: CloudEnvironment
+    """
+    The cloud target.
+    """
+
     name: str
+    """
+    Name of the target (display name).
+    """
+
     authId: str
+    """
+    Authentication ID to use (should be available in the cloud target).
+    """
 
 
 async def create_sub_pipelines_publish_cdn(

@@ -11,7 +11,14 @@ from youwol.utils.clients.assets_gateway.assets_gateway import AssetsGatewayClie
 
 @dataclass(frozen=True)
 class Configuration:
+    """
+    Configuration of the service.
+    """
+
     assets_gtw_client: AssetsGatewayClient
+    """
+    Assets gateway client.
+    """
 
 
 class Dependencies:

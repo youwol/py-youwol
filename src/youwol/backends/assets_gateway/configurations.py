@@ -16,12 +16,28 @@ from youwol.utils.clients.treedb.treedb import TreeDbClient
 
 @dataclass(frozen=True)
 class Configuration:
+    """
+    Configuration of the service.
+    """
+
     flux_client: FluxClient
     cdn_client: CdnClient
+    """
+    HTTP client to connect to the service `cdn`.
+    """
     stories_client: StoriesClient
     treedb_client: TreeDbClient
+    """
+    HTTP client to connect to the 'files explorer' like service.
+    """
     assets_client: AssetsClient
+    """
+    HTTP client to handle permissions.
+    """
     files_client: FilesClient
+    """
+    HTTP client to retrieve assets of kind  ̀data`.
+    """
     https: bool = False
 
 

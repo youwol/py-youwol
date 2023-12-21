@@ -20,6 +20,7 @@ from youwol.utils.clients.docdb.models import (
 )
 from youwol.utils.clients.utils import aiohttp_resp_parameters
 from youwol.utils.exceptions import upstream_exception_from_response
+from youwol.utils.types import AnyDict
 
 
 def patch_query_body(query_body: QueryBody, table_body: TableBody) -> QueryBody:
@@ -116,17 +117,46 @@ def get_update_description(previous_table: dict[str, Any], current_version: str)
 
 @dataclass(frozen=True)
 class DocDbClient:
+    """
+
+    Remote indexed database implementation following [scyllaDB](https://www.scylladb.com/) concepts.
+    """
+
     version_service = "v0-alpha1"
+
     table_body: TableBody
+    """
+    Table definition.
+    """
+
     url_base: str
+    """
+    Base URL serving the remote service.
+    """
+
     keyspace_name: str
+    """
+    Keyspace name
+    """
 
     replication_factor: int
+    """
+    Replication factor
+    """
 
     headers: dict[str, str] = field(default_factory=lambda: {})
+    """
+    Default headers to pass to the HTTP calls.
+    """
     connector = aiohttp.TCPConnector(verify_ssl=False)
+    """
+    Connector use for HTTP calls.
+    """
 
     secondary_indexes: list[SecondaryIndex] = field(default_factory=lambda: [])
+    """
+    Secondary indexes pf the table.
+    """
 
     async def get_upstsream_exception(self, resp: ClientResponse, **kwargs):
         params = {
@@ -199,16 +229,25 @@ class DocDbClient:
                     resp, message="Can not get the table"
                 )
 
-    async def delete_table(self, **kwargs):
+    async def delete_table(self, **kwargs) -> AnyDict:
+        """
+        Delete the table.
+
+        Parameters:
+            kwargs: keywords arg. forwarded to internal calls.
+
+        Return:
+            Response of the service.
+        """
         if not await self._keyspace_exists(**kwargs) or not await self._table_exists(
             **kwargs
         ):
-            return
+            return {}
 
         async with aiohttp.ClientSession(headers=self.headers) as session:
             async with await session.delete(url=self.table_url, **kwargs) as resp:
                 if resp.status == 200:
-                    resp_json = await resp.text()
+                    resp_json = await resp.json()
                     print(f"table {self.table_name} deleted", resp_json)
                     return resp_json
                 raise await self.get_upstsream_exception(
@@ -265,6 +304,15 @@ class DocDbClient:
                 )
 
     async def ensure_table(self, **kwargs):
+        """
+        Ensure the table exists, creates it if needed.
+
+        Parameters:
+            kwargs: keywords arg. forwarded to internal calls.
+
+        Return:
+            Response of the service.
+        """
         if not await self._keyspace_exists(**kwargs):
             print(f"keyspace {self.keyspace_name} does not exist")
             await self._create_keyspace(**kwargs)
@@ -297,7 +345,16 @@ class DocDbClient:
             for index in self.secondary_indexes:
                 await self._create_index(index, **kwargs)
 
-    async def get_table(self, **kwargs):
+    async def get_table(self, **kwargs) -> AnyDict:
+        """
+        Get description of a table.
+
+        Parameters:
+            kwargs: keywords arg. forwarded to internal calls.
+
+        Return:
+            Response of the service.
+        """
         async with aiohttp.ClientSession(headers=self.headers) as session:
             async with await session.get(url=self.table_url, **kwargs) as resp:
                 if resp.status == 200:
@@ -314,7 +371,19 @@ class DocDbClient:
         clustering_keys: dict[str, Any],
         owner: Union[str, None],
         **kwargs,
-    ):
+    ) -> AnyDict:
+        """
+        Get a document based on partition and clustering keys.
+
+        Parameters:
+            partition_keys: The partition keys.
+            clustering_keys: The clustering keys.
+            owner: The owner of the document. Please provide always `youwol-users`.
+            kwargs:  keywords arg. forwarded to internal calls.
+
+        Return:
+            The retrieved document.
+        """
         params = {"owner": owner}
         params_part = self.get_primary_key_query_parameters(
             {**partition_keys, **clustering_keys}
@@ -325,16 +394,29 @@ class DocDbClient:
                 url=self.document_url + params_part, params=params, **kwargs
             ) as resp:
                 if resp.status == 200:
-                    resp = await resp.json()
-                    return resp
+                    return await resp.json()
 
                 raise await self.get_upstsream_exception(
                     resp, message="Can not get the document", params=params
                 )
 
     async def query(
-        self, query_body: Union[QueryBody, str], owner: Union[str, None], **kwargs
-    ):
+        self,
+        query_body: Union[QueryBody, str],
+        owner: Union[str, None],
+        **kwargs,
+    ) -> AnyDict:
+        """
+        Execute a query on the table.
+
+        Parameters:
+            query_body: The query body.
+            owner: The owner of the document. Please provide always `youwol-users`.
+            kwargs:  keywords arg. forwarded to internal calls.
+
+        Return:
+            The query result.
+        """
         typed_query_body = patch_query_body(
             query_body=(
                 QueryBody.parse(query_body)
@@ -367,7 +449,20 @@ class DocDbClient:
                     query_body=typed_query_body,
                 )
 
-    async def create_document(self, doc, owner: Union[str, None], **kwargs):
+    async def create_document(
+        self, doc: AnyDict, owner: Union[str, None], **kwargs
+    ) -> AnyDict:
+        """
+        Create a new document in the database.
+
+        Parameters:
+            doc: The document to create.
+            owner: The owner of the document. Please provide always `youwol-users`.
+            kwargs:  keywords arg. forwarded to internal calls.
+
+        Return:
+            Response from the service.
+        """
         params = {"owner": owner} if owner else {}
 
         async with aiohttp.ClientSession(headers=self.headers) as session:
@@ -380,7 +475,20 @@ class DocDbClient:
                     resp, message="Can not create the document", params=params, doc=doc
                 )
 
-    async def update_document(self, doc, owner: Union[str, None], **kwargs):
+    async def update_document(
+        self, doc: AnyDict, owner: Union[str, None], **kwargs
+    ) -> AnyDict:
+        """
+        Update a new document in the database.
+
+        Parameters:
+            doc: Updated document.
+            owner: The owner of the document. Please provide always `youwol-users`.
+            kwargs:  keywords arg. forwarded to internal calls.
+
+        Return:
+            Response from the service.
+        """
         params = {"owner": owner} if owner else {}
 
         async with aiohttp.ClientSession(headers=self.headers) as session:
@@ -396,6 +504,17 @@ class DocDbClient:
     async def delete_document(
         self, doc: dict[str, Any], owner: Union[str, None], **kwargs
     ):
+        """
+        Delete a document from the database.
+
+        Parameters:
+            doc: Primary key of the document.
+            owner: The owner of the document. Please provide always `youwol-users`.
+            kwargs:  keywords arg. forwarded to internal calls.
+
+        Return:
+            Empty JSON object.
+        """
         params_part = self.get_primary_key_query_parameters(doc)
         params = {"owner": owner} if owner else {}
         async with aiohttp.ClientSession(headers=self.headers) as session:

@@ -79,7 +79,7 @@ def update_project(
     project: Project,
     storage: Storage,
     docdb: DocDb,
-    headers: Mapping[str, str],
+    headers: dict[str, str],
 ) -> list[Coroutine]:
     base_path = f"projects/{project_id}"
     description = {
@@ -149,7 +149,7 @@ def update_metadata(
     requirements: Requirements,
     storage: Storage,
     docdb: DocDb,
-    headers: Mapping[str, str],
+    headers: dict[str, str],
 ) -> list[Coroutine]:
     base_path = f"projects/{project_id}"
     struct_description = {
@@ -256,7 +256,7 @@ async def update_component(
     component: Component,
     storage: Storage,
     doc_db_component: DocDb,
-    headers: Mapping[str, str],
+    headers: dict[str, str],
 ) -> Any:
     base_path = f"components/{component_id}"
     description = {

@@ -22,16 +22,41 @@ docdb_filename = "data.json"
 
 
 class PathsBook(BaseModel):
+    """
+    References usual paths (folders or files) used by youwol.
+    """
+
     config: Path
+    """
+    The path of the configuration file
+    """
+
     system: Path
+    """
+    The path of folder that includes system related data (e.g. cache).
+    """
+
     databases: Path
+    """
+    The path of root folder representing user's data.
+    """
 
     @property
     def local_storage(self) -> Path:
+        """
+
+        Return:
+            The path of the root storage (for files) of user's data.
+        """
         return self.databases / "storage"
 
     @property
     def local_cdn_storage(self) -> Path:
+        """
+
+        Return:
+            The path of the CDN database for files.
+        """
         return self.local_storage / "cdn" / "youwol-users"
 
     @property
@@ -79,14 +104,48 @@ class PathsBook(BaseModel):
         return cls.node_modules(target_folder) / dependency_name
 
     def artifacts_flow(self, project_name: str, flow_id: str) -> Path:
+        """
+        Return the parent folder that includes all artifacts related files of a given project and flow.
+
+        Parameters:
+            project_name: name of the project.
+            flow_id: id of the flow.
+        Return:
+            The path of the parent folder.
+        """
         return self.system / project_name / flow_id
 
     def artifacts_step(self, project_name: str, flow_id: str, step_id: str) -> Path:
+        """
+        Return the parent folder that includes all artifacts related files of a given project, given flow
+        and given step.
+
+        Parameters:
+            project_name: name of the project.
+            flow_id: id of the flow.
+            step_id: id of the step.
+        Return:
+            The path of the parent folder.
+        """
+
         return self.artifacts_flow(project_name=project_name, flow_id=flow_id) / step_id
 
     def artifact(
         self, project_name: str, flow_id: str, step_id: str, artifact_id: str
     ) -> Path:
+        """
+        Return the path of the parent folder that includes all artifacts related files of a given project, flow
+        , step and artifact.
+
+        Parameters:
+            project_name: name of the project.
+            flow_id: id of the flow.
+            step_id: id of the step.
+            artifact_id: id of the artifact.
+        Return:
+            The path of the parent folder.
+        """
+
         return (
             self.artifacts_step(
                 project_name=project_name, flow_id=flow_id, step_id=step_id
@@ -95,6 +154,17 @@ class PathsBook(BaseModel):
         )
 
     def artifacts_manifest(self, project_name: str, flow_id: str, step_id: str):
+        """
+        Return the path of the manifest file of a given project, flow and step.
+
+        Parameters:
+            project_name: name of the project.
+            flow_id: id of the flow.
+            step_id: id of the step.
+        Return:
+            The path of the manifest file.
+        """
+
         return (
             self.artifacts_step(
                 project_name=project_name, flow_id=flow_id, step_id=step_id

@@ -60,18 +60,53 @@ from .projects_finders import auto_detect_projects
 
 
 class YouwolEnvironment(BaseModel):
+    """
+    Runtime environment of the server.
+    """
+
     httpPort: int
+    """
+    Serving port,
+    defined from the [Configuration](@yw-nav-attr:youwol.app.environment.models.models_config.System.httpPort).
+    """
+
     events: Events
+    """
+    Plugged events,
+    defined from the [Configuration](@yw-nav-attr:youwol.app.environment.models.models_config.Customization.events).
+    """
+
     customMiddlewares: list[CustomMiddleware]
+    """
+    Custom middlewares,
+    defined from the
+     [Configuration](@yw-nav-attr:youwol.app.environment.models.models_config.Customization.middlewares).
+    """
 
     projects: Projects
+    """
+    The list of projects in the user's workspace.
+    """
+
     commands: dict[str, Command]
+    """
+    The list of commands,
+    defined from the [Configuration](@yw-nav-attr:youwol.app.environment.models.models_config.CustomEndPoints.commands).
+    """
 
     currentConnection: Connection
+    """
+    The current connection to the remote ecosystem.
+    """
 
     remotes: list[CloudEnvironment]
+    """
+    The list of available remotes,
+    defined from the [Configuration](@yw-nav-attr:youwol.app.environment.models.models_config.System.cloudEnvironments).
+    """
 
     pathsBook: PathsBook
+
     routers: list[FastApiRouter] = []
 
     backends_configuration: BackendConfigurations
@@ -226,6 +261,12 @@ class YouwolEnvironmentFactory:
 
 
 async def yw_config() -> YouwolEnvironment:
+    """
+    Return the current environment, used in particular to inject it in FastAPI registered end-points.
+
+    Return:
+        Current environment
+    """
     return await YouwolEnvironmentFactory.get()
 
 
@@ -363,4 +404,7 @@ http://localhost:{conf.httpPort}/applications/@youwol/stories/latest?id=9e664525
         print(f"$ sh {shutdown_script_path}")
 
 
-api_configuration = ApiConfiguration(open_api_prefix="", base_path="")
+api_configuration: ApiConfiguration = ApiConfiguration(open_api_prefix="", base_path="")
+"""
+The environment's API configuration.
+"""

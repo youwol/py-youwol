@@ -39,6 +39,21 @@ async def publish_library(
     folder_id: str = Query(None, alias="folder-id"),
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If access is granted, forwarded to
+    [cdn.publish_library](@yw-nav-func:youwol.backends.cdn.root_paths.publish_library)
+    endpoint of [cdn](@yw-nav-mod:youwol.backends.cdn) service.
+
+    On top of uploading the package, it:
+        *  create an asset using the [assets](@yw-nav-mod:youwol.backends.assets) service.
+        *  create an explorer item using [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+
+    Parameters:
+        request: Incoming request.
+        folder_id: Folder ID (from files explorer) in which the asset is located in the file explorer.
+        configuration: Injected
+            [Configuration](@yw-nav-class:youwol.backends.assets_gateway.configurations.Configuration).
+    """
     async with Context.start_ep(request=request) as ctx:
         form = await request.form()
         file = form.get("file")
@@ -68,6 +83,11 @@ async def download_library(
     version: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [cdn.download_library](@yw-nav-func:youwol.backends.cdn.root_paths.download_library)
+    of [cdn](@yw-nav-mod:youwol.backends.cdn) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         await assert_read_permissions_from_raw_id(
             raw_id=library_id, configuration=configuration, context=ctx
@@ -98,6 +118,11 @@ async def get_library_info(
     max_count: int = Query(None, alias="max-count"),
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [cdn.get_library_info](@yw-nav-func:youwol.backends.cdn.root_paths.get_library_info)
+    of [cdn](@yw-nav-mod:youwol.backends.cdn) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         await assert_read_permissions_from_raw_id(
             raw_id=library_id, configuration=configuration, context=ctx
@@ -120,6 +145,11 @@ async def get_version_info(
     version: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [cdn.get_version_info](@yw-nav-func:youwol.backends.cdn.root_paths.get_version_info)
+    of [cdn](@yw-nav-mod:youwol.backends.cdn) service.
+    """
     async with Context.start_ep(
         request=request, with_attributes={"library_id": library_id, "version": version}
     ) as ctx:
@@ -140,6 +170,11 @@ async def delete_library(
     purge: bool = False,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [cdn.delete_library](@yw-nav-func:youwol.backends.cdn.root_paths.delete_library)
+    of [cdn](@yw-nav-mod:youwol.backends.cdn) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         await assert_write_permissions_from_raw_id(
             raw_id=library_id, configuration=configuration, context=ctx
@@ -162,6 +197,11 @@ async def delete_version(
     version: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [cdn.delete_version](@yw-nav-func:youwol.backends.cdn.root_paths.delete_version)
+    of [cdn](@yw-nav-mod:youwol.backends.cdn) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         await assert_write_permissions_from_raw_id(
             raw_id=library_id, configuration=configuration, context=ctx
@@ -183,6 +223,11 @@ async def resolve_loading_tree(
     body: LoadingGraphBody,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    Forward to
+    [cdn.query_loading_graph](@yw-nav-func:youwol.backends.cdn.root_paths.query_loading_graph)
+    of [cdn](@yw-nav-mod:youwol.backends.cdn) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.cdn_client.query_loading_graph(
             body=body.dict(),
@@ -199,6 +244,11 @@ async def get_entry_point(
     version: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [cdn.get_entry_point](@yw-nav-func:youwol.backends.cdn.root_paths.get_entry_point)
+    of [cdn](@yw-nav-mod:youwol.backends.cdn) service.
+    """
     async with Context.start_ep(
         request=request, with_attributes={"library_id": library_id, "version": version}
     ) as ctx:
@@ -223,6 +273,11 @@ async def get_resource(
     rest_of_path: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [cdn.get_resource](@yw-nav-func:youwol.backends.cdn.root_paths.get_resource)
+    of [cdn](@yw-nav-mod:youwol.backends.cdn) service.
+    """
     async with Context.start_ep(
         request=request,
         with_attributes={
@@ -254,6 +309,11 @@ async def get_explorer(
     version: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [cdn.get_explorer](@yw-nav-func:youwol.backends.cdn.root_paths.get_explorer)
+    of [cdn](@yw-nav-mod:youwol.backends.cdn) service.
+    """
     async with Context.start_ep(
         request=request, with_attributes={"libraryId": library_id, version: "version"}
     ) as ctx:

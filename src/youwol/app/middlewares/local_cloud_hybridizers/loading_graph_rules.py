@@ -33,8 +33,18 @@ from .abstract_local_cloud_dispatch import AbstractLocalCloudDispatch
 
 async def get_extra_index(context: Context) -> Optional[str]:
     """
-    Useful items are the libraries from the local cdn database from which we keep only the latest version w/ all API
-    version.
+    This function retrieves the items from the local CDN database that can be involved when resolving loading graphs
+    (when queried from the remote `cdn-backend`).
+
+    It basically filters the latest version of all the libraries corresponding to a particular API key.
+
+    The filtered items are encoded using brotli compression.
+
+    Parameters:
+        context: Current context
+
+    Return:
+        The list of selected items compressed in bytes.
     """
     env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
     docdb: LocalDocDbClient = env.backends_configuration.cdn_backend.doc_db
@@ -63,12 +73,36 @@ async def get_extra_index(context: Context) -> Optional[str]:
 
 
 class GetLoadingGraph(AbstractLocalCloudDispatch):
+    """
+    Dispatch handling requests related to loading graph queries (resolving the dependencies tree of dependencies).
+
+    It intercepts requests to
+    `/api/assets-gateway/cdn-backend/queries/loading-graph` that would normally proceed to the local cdn
+    (see [here](@yw-nav-func:youwol.backends.cdn.root_paths.resolve_loading_tree)).
+
+    The loading graph request is redirected to the remote backend `cdn-backend` by providing as `extraIndex` the
+    relevant items from the local-cdn such that the resolution couple the items available in both local & remote CDNs.
+    """
+
     async def apply(
         self,
         incoming_request: Request,
         call_next: RequestResponseEndpoint,
         context: Context,
     ) -> Optional[Response]:
+        """
+        This dispatch match the endpoint `/api/assets-gateway/cdn-backend/queries/loading-graph`;
+        it returns `None` otherwise.
+
+        Parameters:
+            incoming_request: The incoming request.
+            call_next: The next endpoint in the chain.
+            context: The current context.
+
+        Return:
+            The response after dispatching the loading graph query.
+        """
+
         if (
             "/api/assets-gateway/cdn-backend/queries/loading-graph"
             not in incoming_request.url.path

@@ -74,8 +74,19 @@ async def healthz():
     return {"status": "treedb-backend ok"}
 
 
-@router.get("/groups", response_model=GroupsResponse, summary="list subscribed groups")
-async def get_groups(request: Request):
+@router.get(
+    "/groups", response_model=GroupsResponse, summary="List user's subscribed groups."
+)
+async def get_groups(request: Request) -> GroupsResponse:
+    """
+    Lists user's subscribed groups.
+
+    Parameters:
+        request: Incoming request.
+
+    Return:
+        User's groups.
+    """
     user = user_info(request)
     groups = get_all_individual_groups(user["memberof"])
     return GroupsResponse(
@@ -104,14 +115,29 @@ async def _create_drive(
 
 
 @router.put(
-    "/groups/{group_id}/drives", summary="create a drive", response_model=DriveResponse
+    "/groups/{group_id}/drives",
+    summary="Create a new drive.",
+    response_model=DriveResponse,
 )
 async def create_drive(
     request: Request,
     group_id: str,
     drive: DriveBody,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> DriveResponse:
+    """
+    Creates a new drive.
+
+    Parameters:
+        request: Incoming request.
+        group_id: Group in which the drive belongs.
+        drive: Description of the drive.
+        configuration: Injected configuration of the service.
+
+    Return:
+        Drive attributes.
+    """
+
     async with Context.start_ep(
         request=request, action="create drive", body=drive
     ) as ctx:  # type: Context
@@ -122,13 +148,26 @@ async def create_drive(
 
 
 @router.get(
-    "/groups/{group_id}/drives", summary="list drives", response_model=DrivesResponse
+    "/groups/{group_id}/drives",
+    summary="List the available drives under a particular group.",
+    response_model=DrivesResponse,
 )
 async def list_drives(
     request: Request,
     group_id: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> DrivesResponse:
+    """
+    Lists the available drives under a particular group.
+
+    Parameters:
+        request: Incoming request.
+        group_id: Group in which the drives belong.
+        configuration: Injected configuration of the service.
+
+    Return:
+        The list of available drives.
+    """
     async with Context.start_ep(
         request=request,
         action="list_drives",
@@ -142,22 +181,35 @@ async def list_drives(
             owner=Constants.public_owner,
             headers=ctx.headers(),
         )
-
-        drives = [doc_to_drive_response(d) for d in drives["documents"]]
-
-        response = DrivesResponse(drives=drives)
+        response = DrivesResponse(
+            drives=[doc_to_drive_response(d) for d in drives["documents"]]
+        )
         return response
 
 
 @router.post(
-    "/drives/{drive_id}", summary="update a drive", response_model=DriveResponse
+    "/drives/{drive_id}",
+    summary="Update a drive properties.",
+    response_model=DriveResponse,
 )
 async def update_drive(
     request: Request,
     drive_id: str,
     body: RenameBody,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> DriveResponse:
+    """
+    Updates a drive properties.
+
+    Parameters:
+        request: Incoming request.
+        drive_id: ID of the drive.
+        body: Update details.
+        configuration: Injected configuration of the service.
+
+    Return:
+        Description of the drive.
+    """
     async with Context.start_ep(
         request=request,
         action="update_drive",
@@ -203,19 +255,45 @@ async def _get_drive(drive_id: str, configuration: Configuration, context: Conte
 )
 async def get_default_user_drive(
     request: Request, configuration: Configuration = Depends(get_configuration)
-):
+) -> DefaultDriveResponse:
+    """
+    Retrieves properties of the default user's drive.
+
+    Parameters:
+        request: Incoming request.
+        configuration: Injected configuration of the service.
+
+    Return:
+        Description of the drive.
+    """
     user = user_info(request)
     return await get_default_drive(
         request=request, group_id=private_group_id(user), configuration=configuration
     )
 
 
-@router.get("/drives/{drive_id}", summary="get a drive", response_model=DriveResponse)
+@router.get(
+    "/drives/{drive_id}",
+    summary="Retrieves a drive properties.",
+    response_model=DriveResponse,
+)
 async def get_drive(
     request: Request,
     drive_id: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> DriveResponse:
+    """
+    Retrieves a drive properties.
+
+    Parameters:
+        request: Incoming request.
+        drive_id: ID of the drive.
+        configuration: Injected configuration of the service.
+
+    Return:
+        Description of the drive.
+    """
+
     async with Context.start_ep(
         request=request,
         action="get_drive",
@@ -258,13 +336,24 @@ async def ensure_folder(
 @router.get(
     "/groups/{group_id}/default-drive",
     response_model=DefaultDriveResponse,
-    summary="get group's default drive",
+    summary="Retrieves the default drive of a group.",
 )
 async def get_default_drive(
     request: Request,
     group_id: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> DefaultDriveResponse:
+    """
+    Retrieves properties of the default drive of a group.
+
+    Parameters:
+        request: Incoming request.
+        group_id: ID of the parent group.
+        configuration: Injected configuration of the service.
+
+    Return:
+        Description of the drive.
+    """
     async with Context.start_ep(
         request=request,
         action="get default drive",
@@ -386,7 +475,19 @@ async def create_folder(
     parent_folder_id: str,
     folder: FolderBody,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> FolderResponse:
+    """
+    Creates a new folder.
+
+    Parameters:
+        request: Incoming request.
+        parent_folder_id: ID of the parent folder.
+        folder: folder properties.
+        configuration: Injected configuration of the service.
+
+    Return:
+        Description of the folder.
+    """
     async with Context.start_ep(
         request=request,
         action="create_folder",
@@ -410,7 +511,19 @@ async def update_folder(
     folder_id: str,
     body: RenameBody,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> FolderResponse:
+    """
+    Updates a folder properties.
+
+    Parameters:
+        request: Incoming request.
+        folder_id: ID of the folder.
+        body: Update details.
+        configuration: Injected configuration of the service.
+
+    Return:
+        Description of the drive.
+    """
     async with Context.start_ep(
         request=request,
         action="update_folder",
@@ -439,13 +552,26 @@ async def _get_folder(folder_id: str, configuration: Configuration, context: Con
 
 
 @router.get(
-    "/folders/{folder_id}", summary="get a folder", response_model=FolderResponse
+    "/folders/{folder_id}",
+    summary="Retrieves properties of a folder.",
+    response_model=FolderResponse,
 )
 async def get_folder(
     request: Request,
     folder_id: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> FolderResponse:
+    """
+    Retrieves properties of a folder.
+
+    Parameters:
+        request: Incoming request.
+        folder_id: ID of the folder.
+        configuration: Injected configuration of the service.
+
+    Return:
+        Description of the folder.
+    """
     async with Context.start_ep(
         request=request,
         action="get_folder",
@@ -483,14 +609,32 @@ async def _create_item(
 
 
 @router.put(
-    "/folders/{folder_id}/items", summary="create an item", response_model=ItemResponse
+    "/folders/{folder_id}/items",
+    summary="Create a new item.",
+    response_model=ItemResponse,
 )
 async def create_item(
     request: Request,
     folder_id: str,
     item: ItemBody,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> ItemResponse:
+    """
+    Creates a new item.
+
+    Note:
+        An item is related to an asset: before creating one, the corresponding asset should have been created
+            (and its ID provided in the `item` parameter).
+
+    Parameters:
+        request: Incoming request.
+        folder_id: ID of the parent folder.
+        item: item properties.
+        configuration: Injected configuration of the service.
+
+    Return:
+        Description of the folder.
+    """
     async with Context.start_ep(
         request=request,
         action="create_item",
@@ -502,13 +646,29 @@ async def create_item(
         )
 
 
-@router.post("/items/{item_id}", summary="update an item", response_model=ItemResponse)
+@router.post(
+    "/items/{item_id}",
+    summary="Updates an item properties.",
+    response_model=ItemResponse,
+)
 async def update_item(
     request: Request,
     item_id: str,
     body: RenameBody,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> ItemResponse:
+    """
+    Updates an item properties.
+
+    Parameters:
+        request: Incoming request.
+        item_id: ID of the item.
+        body: Update details.
+        configuration: Injected configuration of the service.
+
+    Return:
+        Description of the item.
+    """
     async with Context.start_ep(
         request=request,
         action="update_item",
@@ -535,12 +695,27 @@ async def _get_item(item_id: str, configuration: Configuration, context: Context
         return doc_to_item(doc)
 
 
-@router.get("/items/{item_id}", summary="get an item", response_model=ItemResponse)
+@router.get(
+    "/items/{item_id}",
+    summary="Retrieves properties of an item",
+    response_model=ItemResponse,
+)
 async def get_item(
     request: Request,
     item_id: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> ItemResponse:
+    """
+    Retrieves properties of an item.
+
+    Parameters:
+        request: Incoming request.
+        item_id: ID of the item.
+        configuration: Injected configuration of the service.
+
+    Return:
+        Description of the item.
+    """
     async with Context.start_ep(
         request=request,
         action="get_item",
@@ -559,7 +734,19 @@ async def get_items_by_asset_id(
     request: Request,
     asset_id: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> ItemsResponse:
+    """
+    Retrieves the list of items associated to a corresponding `assetID`.
+    From this list, one is the original item (not borrowed), the others are symbolic links (borrowed).
+
+    Parameters:
+        request: Incoming request.
+        asset_id: ID of the corresponding asset.
+        configuration: Injected configuration of the service.
+
+    Return:
+        Description of the item.
+    """
     async with Context.start_ep(
         request=request,
         action="get_item",
@@ -606,7 +793,18 @@ async def get_path(
     request: Request,
     item_id: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> PathResponse:
+    """
+    Retrieves the full path of an item.
+
+    Parameters:
+        request: Incoming request.
+        item_id: ID of the item.
+        configuration: Injected configuration of the service.
+
+    Return:
+        Description of the path.
+    """
     async with Context.start_ep(
         request=request,
         action="get_path",
@@ -628,14 +826,25 @@ async def get_path(
 
 @router.get(
     "/folders/{folder_id}/path",
-    summary="get the path of a folder",
+    summary="Retrieves the full path of a folder.",
     response_model=PathResponse,
 )
 async def get_path_folder(
     request: Request,
     folder_id: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> PathResponse:
+    """
+    Retrieves the full path of a folder.
+
+    Parameters:
+        request: Incoming request.
+        folder_id: ID of the folder.
+        configuration: Injected configuration of the service.
+
+    Return:
+        Description of the path.
+    """
     async with Context.start_ep(
         request=request,
         action="get_path_folder",
@@ -655,12 +864,27 @@ async def get_path_folder(
         return response
 
 
-@router.post("/move", response_model=MoveResponse, summary="move an item")
+@router.post(
+    "/move",
+    response_model=MoveResponse,
+    summary="Move an entity, folder or item, from on location to another one.",
+)
 async def move(
     request: Request,
     body: MoveItemBody,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> MoveResponse:
+    """
+    Move an entity, folder or item, from on location to another one.
+
+    Parameters:
+        request: Incoming request.
+        body: Move specification
+        configuration: Injected configuration of the service.
+
+    Return:
+        Description of the executed task result.
+    """
     async with Context.start_ep(request=request, action="move", body=body) as ctx:
         items_db = configuration.doc_dbs.items_db
         folders_db = configuration.doc_dbs.folders_db
@@ -782,7 +1006,19 @@ async def borrow(
     item_id: str,
     body: BorrowBody,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> ItemResponse:
+    """
+    Create a symbolic link of an item.
+
+    Parameters:
+        request: Incoming request.
+        item_id: Item's ID.
+        body: Borrow specification
+        configuration: Injected configuration of the service.
+
+    Return:
+        Description of the resulting item.
+    """
     async with Context.start_ep(
         request=request,
         action="borrow item",
@@ -870,7 +1106,7 @@ async def _get_entity(
 @router.get(
     "/entities/{entity_id}",
     response_model=EntityResponse,
-    summary="get an entity from id in [item, folder, drive]",
+    summary="Retrieves an entity (drive, folder, or item) from its ID.",
 )
 async def get_entity(
     request: Request,
@@ -879,7 +1115,21 @@ async def get_entity(
     include_folders: bool = QueryParam(True, alias="include-folders"),
     include_items: bool = QueryParam(True, alias="include-items"),
     configuration: Configuration = Depends(get_configuration),
-):
+) -> EntityResponse:
+    """
+    Retrieves an entity (drive, folder, or item) from its ID.
+
+    Parameters:
+        request: Incoming request.
+        entity_id: Entity's ID.
+        include_drives: Whether to look up in drives.
+        include_folders: Whether to look up in folders.
+        include_items: Whether to look up in items.
+        configuration: Injected configuration of the service.
+
+    Return:
+        Description of the entity.
+    """
     async with Context.start_ep(
         request=request, action="get_entity"
     ) as ctx:  # type: Context
@@ -927,14 +1177,25 @@ async def _children(folder_id: str, configuration: Configuration, context: Conte
 
 @router.get(
     "/folders/{folder_id}/children",
-    summary="list drives",
+    summary="Query the children of a folder or drive.",
     response_model=ChildrenResponse,
 )
 async def children(
     request: Request,
     folder_id: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> ChildrenResponse:
+    """
+    Query the children of a folder or drive.
+
+    Parameters:
+        request: Incoming request
+        folder_id: parent folder's ID (or parent's drive ID to request a drive's children).
+        configuration: Injected configuration of the service.
+
+    Return:
+        Description of the children.
+    """
     async with Context.start_ep(
         request=request, action="children"
     ) as ctx:  # type: Context
@@ -980,7 +1241,18 @@ async def list_deleted(
     request: Request,
     drive_id: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> ChildrenResponse:
+    """
+    Query the entities queued for deletion (moved into the 'trash').
+
+    Parameters:
+        request: Incoming request
+        drive_id: parent drive's ID of the 'trash'.
+        configuration: Injected configuration of the service.
+
+    Return:
+        Description of the children.
+    """
     async with Context.start_ep(
         request=request, action="list_deleted"
     ) as ctx:  # type: Context
@@ -990,13 +1262,28 @@ async def list_deleted(
         return response
 
 
-@router.delete("/items/{item_id}", summary="delete an entity")
+@router.delete(
+    "/items/{item_id}",
+    summary="Queues an entity for deletion (moves into the 'trash').",
+)
 async def queue_delete_item(
     request: Request,
     item_id: str,
     erase: bool = False,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    Queues an item for deletion (moves into the 'trash').
+
+    Parameters:
+        request: Incoming request
+        item_id: Item's ID.
+        erase: if `True`, the entity is deleted directly (and not queued for deletion).
+        configuration: Injected configuration of the service.
+
+    Return:
+        Empty JSON response.
+    """
     async with Context.start_ep(
         request=request, action="queue_delete_item", with_attributes={"itemId": item_id}
     ) as ctx:  # type: Context
@@ -1041,6 +1328,17 @@ async def queue_delete_folder(
     folder_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    Queues a folder for deletion (moves into the 'trash').
+
+    Parameters:
+        request: Incoming request
+        folder_id: Folder's ID.
+        configuration: Injected configuration of the service.
+
+    Return:
+        Empty JSON response.
+    """
     async with Context.start_ep(
         request=request,
         action="queue_delete_folder",
@@ -1080,12 +1378,26 @@ async def queue_delete_folder(
         return {}
 
 
-@router.delete("/drives/{drive_id}", summary="delete drive, need to be empty")
+@router.delete(
+    "/drives/{drive_id}", summary="Delete a drive, the drive needs to be empty."
+)
 async def delete_drive(
     request: Request,
     drive_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    Delete a drive, the drive needs to be empty.
+
+    Parameters:
+        request: Incoming request
+        drive_id: Drive's ID.
+        configuration: Injected configuration of the service.
+
+    Return:
+        Empty JSON response.
+    """
+
     async with Context.start_ep(
         request=request, action="delete_drive", with_attributes={"drive_id": drive_id}
     ) as ctx:  # type: Context
@@ -1110,14 +1422,25 @@ async def delete_drive(
 
 @router.delete(
     "/drives/{drive_id}/purge",
-    summary="purge drive's items scheduled for deletion",
+    summary="Purge drive's entities scheduled for deletion.",
     response_model=PurgeResponse,
 )
 async def purge_drive(
     request: Request,
     drive_id: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> PurgeResponse:
+    """
+    Purge drive's entities scheduled for deletion.
+
+    Parameters:
+        request: Incoming request
+        drive_id: Drive's ID.
+        configuration: Injected configuration of the service.
+
+    Return:
+        Purge description.
+    """
     async with Context.start_ep(
         request=request,
         action="purge_drive",

@@ -8,7 +8,7 @@ from enum import Enum
 from pathlib import Path, PosixPath
 
 # typing
-from typing import Any, Callable, Union, cast
+from typing import Any, Callable, Optional, Union, cast
 
 # third parties
 import aiohttp
@@ -26,22 +26,56 @@ flatten = itertools.chain.from_iterable
 
 
 class YouwolHeaders:
+    """
+    Gather headers and operations on headers related to Youwol.
+    """
+
     #  About tracing & headers: https://www.w3.org/TR/trace-context/
     py_youwol_local_only: str = "py-youwol-local-only"
+    """
+    If this header is true, no operation involving the remote ecosystem is enabled.
+    """
     youwol_origin: str = "youwol-origin"
     correlation_id: str = "x-correlation-id"
+    """
+    Correlation id (see [trace & context](https://www.w3.org/TR/trace-context/)).
+    """
     trace_id: str = "x-trace-id"
+    """
+    Trace id (see [trace & context](https://www.w3.org/TR/trace-context/)).
+    """
 
     @staticmethod
-    def get_correlation_id(request: Request):
+    def get_correlation_id(request: Request) -> Optional[str]:
+        """
+
+        Parameters:
+            request: incoming request
+        Return:
+            Correlation id of the request, if provided.
+        """
         return request.headers.get(YouwolHeaders.correlation_id, None)
 
     @staticmethod
-    def get_trace_id(request: Request):
+    def get_trace_id(request: Request) -> Optional[str]:
+        """
+
+        Parameters:
+            request: incoming request
+        Return:
+            Trace id of the request, if provided.
+        """
         return request.headers.get(YouwolHeaders.trace_id, None)
 
     @staticmethod
-    def get_py_youwol_local_only(request: Request):
+    def get_py_youwol_local_only(request: Request) -> Optional[str]:
+        """
+
+        Parameters:
+            request: incoming request
+        Return:
+            The value of the header 'py-youwol-local-only' if included in the request.
+        """
         return request.headers.get(YouwolHeaders.py_youwol_local_only, None)
 
 
@@ -160,7 +194,16 @@ def check_permission_or_raise(
         )
 
 
-def get_content_type(file_name: Union[str, Path]):
+def get_content_type(file_name: Union[str, Path]) -> str:
+    """
+    Return a guessed content type from the extension.
+
+    Parameters:
+        file_name: Name or path of the file.
+
+    Return:
+        The content-type, default is "application/octet-stream".
+    """
     extensions = Path(file_name).name.split(".")[1:]
     if "json" in extensions:
         return "application/json"
@@ -188,6 +231,15 @@ def get_content_type(file_name: Union[str, Path]):
 
 
 def get_content_encoding(file_name: Union[str, Path]):
+    """
+    Return a guessed content encoding from the extension.
+
+    Parameters:
+        file_name: Name or path of the file.
+
+    Return:
+        The content-type, default is "identity".
+    """
     extension = Path(file_name).name.split(".")[-1]
     if extension == "br":
         return "br"

@@ -60,6 +60,7 @@ from youwol.utils.http_clients.assets_backend import (
     ReadPolicyEnum,
     SharePolicyEnum,
 )
+from youwol.utils.types import AnyDict
 
 # relative
 from .utils import (
@@ -92,7 +93,18 @@ async def create_asset(
     request: Request,
     body: NewAssetBody,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> AssetResponse:
+    """
+    Creates a new asset.
+
+    Parameters:
+        request: Incoming request.
+        body: Asset's properties.
+        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+
+    Return:
+        The asset description.
+    """
     async with Context.start_ep(request=request) as ctx:
         user = user_info(request)
         policy = body.defaultAccessPolicy
@@ -136,14 +148,26 @@ async def create_asset(
 
 
 @router.post(
-    "/assets/{asset_id}", response_model=AssetResponse, summary="update an asset"
+    "/assets/{asset_id}", response_model=AssetResponse, summary="Updates an asset."
 )
 async def post_asset(
     request: Request,
     asset_id: str,
     body: PostAssetBody,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> AssetResponse:
+    """
+    Updates an asset.
+
+    Parameters:
+        request: Incoming request.
+        body: Asset's properties.
+        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+
+    Return:
+        The asset description.
+    """
+
     async with Context.start_ep(request=request) as ctx:
         docdb_access = configuration.doc_db_access_policy
         asset = await db_get(
@@ -211,14 +235,30 @@ async def put_access_policy_impl(
     return {}
 
 
-@router.put("/assets/{asset_id}/access/{group_id}", summary="update an asset")
+@router.put(
+    "/assets/{asset_id}/access/{group_id}",
+    summary="Add access policy for a particular asset & group.",
+)
 async def put_access_policy(
     request: Request,
     asset_id: str,
     group_id: str,
     body: AccessPolicyBody,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> AnyDict:
+    """
+    Adds access policy for a particular asset & group.
+
+    Parameters:
+        request: Incoming request.
+        asset_id: target asset's ID.
+        group_id: target group's ID.
+        body: access policy.
+        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+
+    Return:
+        Empty JSON response.
+    """
     async with Context.start_ep(request=request) as ctx:
         return await put_access_policy_impl(
             asset_id=asset_id,
@@ -229,13 +269,28 @@ async def put_access_policy(
         )
 
 
-@router.delete("/assets/{asset_id}/access/{group_id}", summary="update an asset")
+@router.delete(
+    "/assets/{asset_id}/access/{group_id}",
+    summary="Delete access policy for a particular asset & group.",
+)
 async def delete_access_policy(
     request: Request,
     asset_id: str,
     group_id: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> AnyDict:
+    """
+    Deletes access policy for a particular asset & group.
+
+    Parameters:
+        request: Incoming request.
+        asset_id: target asset's ID.
+        group_id: target group's ID.
+        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+
+    Return:
+        Empty JSON response.
+    """
     async with Context.start_ep(request=request) as ctx:
         docdb_access = configuration.doc_db_access_policy
         await docdb_access.delete_document(
@@ -249,7 +304,7 @@ async def delete_access_policy(
 @router.get(
     "/assets/{asset_id}/access/{group_id}",
     response_model=AccessPolicyResp,
-    summary="update an asset",
+    summary="Retrieves access policy for a particular asset & group.",
 )
 async def get_access_policy(
     request: Request,
@@ -257,7 +312,20 @@ async def get_access_policy(
     group_id: str,
     include_inherited: bool = RequestQuery(True, alias="include-inherited"),
     configuration: Configuration = Depends(get_configuration),
-):
+) -> AccessPolicyResp:
+    """
+    Retrieves access policy for a particular asset & group.
+
+    Parameters:
+        request: Incoming request.
+        asset_id: target asset's ID.
+        group_id: target group's ID.
+        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+
+    Return:
+        Access policy description.
+    """
+
     def query_body(for_group_id: str):
         return QueryBody(
             max_results=1,
@@ -460,13 +528,24 @@ async def get_permissions_implementation(
 @router.get(
     "/assets/{asset_id}/permissions",
     response_model=PermissionsResp,
-    summary="permissions of the user on the asset",
+    summary="    Retrieves the permissions of the user regarding access on a particular asset.",
 )
 async def get_permissions(
     request: Request,
     asset_id: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> PermissionsResp:
+    """
+    Retrieves the permissions of the user regarding access on a particular asset.
+
+    Parameters:
+        request: Incoming request.
+        asset_id: Asset's ID.
+        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+
+    Return:
+        Permissions description.
+    """
     async with Context.start_ep(request=request) as ctx:  # type: Context
         return await get_permissions_implementation(
             request=request, asset_id=asset_id, configuration=configuration, context=ctx
@@ -476,13 +555,24 @@ async def get_permissions(
 @router.get(
     "/assets/{asset_id}/access-info",
     response_model=AccessInfoResp,
-    summary="get asset info w/ access",
+    summary="Summarize access information on a particular asset.",
 )
 async def access_info(
     request: Request,
     asset_id: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> AccessInfoResp:
+    """
+    Summarizes access information on a particular asset.
+
+    Parameters:
+        request: Incoming request.
+        asset_id: Asset's ID.
+        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+
+    Return:
+        Access summary.
+    """
     max_policies_count = 1000
     async with Context.start_ep(
         request=request,
@@ -532,7 +622,7 @@ async def access_info(
                 if policy["consumer_group_id"] != asset.groupId
             }
         )
-        policies = await asyncio.gather(
+        policies_groups = await asyncio.gather(
             *[
                 get_access_policy(
                     request=request,
@@ -547,10 +637,10 @@ async def access_info(
             ExposingGroup(
                 name=to_group_scope(group), groupId=group, access=format_policy(policy)
             )
-            for group, policy in zip(groups, policies[0:-1])
+            for group, policy in zip(groups, policies_groups[0:-1])
             if group != "*"
         ]
-        default_access = format_policy(policies[-1])
+        default_access = format_policy(policies_groups[-1])
         owner_info = OwnerInfo(
             exposingGroups=exposing_groups, defaultAccess=default_access
         )
@@ -569,12 +659,23 @@ async def access_info(
         )
 
 
-@router.delete("/assets/{asset_id}", summary="delete an asset")
+@router.delete("/assets/{asset_id}", summary="Delete an asset.")
 async def delete_asset(
     request: Request,
     asset_id: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> AnyDict:
+    """
+    Deletes an asset.
+
+    Parameters:
+        request: Incoming request.
+        asset_id: Asset's ID.
+        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+
+    Return:
+        Empty JSON.
+    """
     async with Context.start_ep(request=request) as ctx:  # type: Context
         asset = await db_get(
             asset_id=asset_id, configuration=configuration, context=ctx
@@ -629,13 +730,26 @@ async def get_asset_implementation(
 
 
 @router.get(
-    "/assets/{asset_id}", response_model=AssetResponse, summary="return an asset"
+    "/assets/{asset_id}",
+    response_model=AssetResponse,
+    summary="Retrieves general asset information.",
 )
 async def get_asset(
     request: Request,
     asset_id: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> AssetResponse:
+    """
+    Retrieves general asset information.
+
+    Parameters:
+        request: Incoming request.
+        asset_id: Asset's ID.
+        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+
+    Return:
+        The asset description.
+    """
     async with Context.start_ep(request=request) as ctx:  # type: Context
         return await get_asset_implementation(
             request=request, asset_id=asset_id, configuration=configuration, context=ctx
@@ -648,10 +762,9 @@ async def record_access(
     related_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
-    """
-    WARNING: use 'allow_filtering' => do not use in prod
-    Probably need as secondary index on 'related_id'
-    """
+    # WARNING: use 'allow_filtering' => do not use in prod
+    # Probably need as secondary index on 'related_id'
+
     async with Context.start_ep(request=request) as ctx:  # type: Context
         user = user_info(request)
         doc_db_assets, doc_db_history = (
@@ -705,10 +818,9 @@ async def query_access(
     max_count: int = RequestQuery(100, alias="max-count"),
     configuration: Configuration = Depends(get_configuration),
 ):
-    """
-    WARNING: use 'allow_filtering' => do not use in prod
-    Probably need as secondary index on 'related_id'
-    """
+    # WARNING: use 'allow_filtering' => do not use in prod
+    # Probably need as secondary index on 'related_id'
+
     async with Context.start_ep(request=request) as ctx:  # type: Context
         doc_db_history = configuration.doc_db_access_history
 
@@ -736,10 +848,9 @@ async def clear_asset_history(
     count: int = 1000,
     configuration: Configuration = Depends(get_configuration),
 ):
-    """
-    WARNING: use 'allow_filtering' => do not use in prod
-    Probably need as secondary index on 'related_id'
-    """
+    # WARNING: use 'allow_filtering' => do not use in prod
+    # Probably need as secondary index on 'related_id'
+
     async with Context.start_ep(request=request) as ctx:  # type: Context
         doc_db_history = configuration.doc_db_access_history
 
@@ -776,7 +887,7 @@ async def clear_asset_history(
 @router.post(
     "/assets/{asset_id}/images/{filename}",
     response_model=AssetResponse,
-    summary="add an image to asset",
+    summary="Add an image to an asset.",
 )
 async def post_image(
     request: Request,
@@ -784,7 +895,20 @@ async def post_image(
     filename: str,
     file: UploadFile = File(...),
     configuration: Configuration = Depends(get_configuration),
-):
+) -> AssetResponse:
+    """
+    Adds an image to an asset. A thumbnail 200px*200px is also created.
+
+    Parameters:
+        request: Incoming request.
+        asset_id: Asset's ID.
+        filename: Name of the image.
+        file: the image bytes content.
+        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+
+    Return:
+        The asset description.
+    """
     async with Context.start_ep(request=request) as ctx:  # type: Context
         storage, _ = configuration.storage, configuration.doc_db_asset
 
@@ -864,6 +988,18 @@ async def remove_image(
     filename: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    Removes an image of an asset. The associated thumbnail is also removed.
+
+    Parameters:
+        request: Incoming request.
+        asset_id: Asset's ID.
+        filename: Name of the image.
+        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+
+    Return:
+        The asset description.
+    """
     async with Context.start_ep(request=request) as ctx:  # type: Context
         storage, _ = configuration.storage, configuration.doc_db_asset
 
@@ -930,13 +1066,28 @@ async def get_media(
     )
 
 
-@router.get("/assets/{asset_id}/images/{name}", summary="return a media")
+@router.get(
+    "/assets/{asset_id}/images/{name}",
+    summary="Retrieves a persisted image of an asset.",
+)
 async def get_media_image(
     request: Request,
     asset_id: str,
     name: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> Response:
+    """
+    Retrieves a persisted image of an asset.
+
+    Parameters:
+        request: Incoming request.
+        asset_id: Asset's ID.
+        name: Name of the image.
+        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+
+    Return:
+        The image.
+    """
     async with Context.start_ep(request=request) as ctx:  # type: Context
         return await get_media(
             asset_id=asset_id,
@@ -947,13 +1098,28 @@ async def get_media_image(
         )
 
 
-@router.get("/assets/{asset_id}/thumbnails/{name}", summary="return a media")
+@router.get(
+    "/assets/{asset_id}/thumbnails/{name}",
+    summary="Retrieves the thumbnail of a persisted image of an asset.",
+)
 async def get_media_thumbnail(
     request: Request,
     asset_id: str,
     name: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    Retrieves the thumbnail of a persisted image of an asset.
+
+    Parameters:
+        request: Incoming request.
+        asset_id: Asset's ID.
+        name: Name of the image.
+        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+
+    Return:
+        The image.
+    """
     async with Context.start_ep(request=request) as ctx:  # type: Context
         return await get_media(
             asset_id=asset_id,
@@ -970,7 +1136,20 @@ async def add_zip_files(
     asset_id: str,
     file: UploadFile = File(...),
     configuration: Configuration = Depends(get_configuration),
-):
+) -> AddFilesResponse:
+    """
+    Associates files (using a .zip file) to an asset.
+    The files are extracted in the youwol filesystem, preserving the files organization coming from the zip.
+
+    Parameters:
+        request: Incoming request.
+        asset_id: Asset's ID.
+        file: the zip file.
+        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+
+    Return:
+        Files upload description.
+    """
     async with Context.start_ep(request=request) as ctx:  # type: Context
         asset = await db_get(
             asset_id=asset_id, configuration=configuration, context=ctx
@@ -1007,7 +1186,19 @@ async def get_file(
     asset_id: str,
     rest_of_path: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> Response:
+    """
+    Retrieves a file associated to an asset.
+
+    Parameters:
+        request: Incoming request.
+        asset_id: Asset's ID.
+        rest_of_path: Path to the file.
+        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+
+    Return:
+        The file content.
+    """
     async with Context.start_ep(request=request) as ctx:  # type: Context
         asset = await db_get(
             asset_id=asset_id, configuration=configuration, context=ctx
@@ -1038,7 +1229,18 @@ async def delete_files(
     request: Request,
     asset_id: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> AnyDict:
+    """
+    Deletes all files associated to an asset.
+
+    Parameters:
+        request: Incoming request.
+        asset_id: Asset's ID.
+        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+
+    Return:
+        Empty JSON.
+    """
     async with Context.start_ep(request=request) as ctx:  # type: Context
         asset = await db_get(
             asset_id=asset_id, configuration=configuration, context=ctx
@@ -1057,7 +1259,18 @@ async def get_zip_files(
     request: Request,
     asset_id: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> Response:
+    """
+    Retrieves all the files associated to an asset in a zip file..
+
+    Parameters:
+        request: Incoming request.
+        asset_id: Asset's ID.
+        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+
+    Return:
+        The zip file..
+    """
     async with Context.start_ep(request=request) as ctx:  # type: Context
         asset = await db_get(
             asset_id=asset_id, configuration=configuration, context=ctx

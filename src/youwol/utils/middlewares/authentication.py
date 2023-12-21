@@ -23,20 +23,54 @@ from youwol.utils.context import Context, Label
 
 
 class JwtProvider(ABC):
+    """
+    Abstract provider for **J**son **W**eb **T**oken using openID base protocol.
+    """
+
     @abstractmethod
     async def get_token_and_openid_base_url(
         self, request: Request, context: Context
     ) -> tuple[Optional[str], str]:
+        """
+        Abstract method declaration to retrieve JWT token.
+
+        Parameters:
+            request: incoming request
+            context: current context
+
+        Return:
+            A tuple of string with optional JWT token and openId base URL.
+        """
         raise NotImplementedError()
 
 
 class JwtProviderBearer(JwtProvider):
+    """
+    Json Web Token provider based on bearer token.
+    """
+
     def __init__(self, openid_base_url: str):
+        """
+        Initialize a new instance..
+
+        Parameters:
+            openid_base_url: OpenId base URL.
+        """
         self.__openid_base_url = openid_base_url
 
     async def get_token_and_openid_base_url(
         self, request: Request, context: Context
     ) -> tuple[Optional[str], str]:
+        """
+        Extract the JWT token from the header 'Authorization' with bearer.
+
+        Parameters:
+            request: Incoming request
+            context: Current context.
+
+        Return:
+            A tuple of string with optional JWT token and openId base URL.
+        """
         header_value = request.headers.get("Authorization")
 
         if not header_value:
@@ -52,13 +86,46 @@ class JwtProviderBearer(JwtProvider):
 
 
 class JwtProviderCookie(JwtProvider):
+
+    """
+    Json Web Token provider based on cookie.
+    """
+
+    __openid_base_url: str
+    """
+    OpenId base URL.
+    """
+
+    __tokens_manager: TokensManager
+    """
+    Tokens manager.
+    """
+
     def __init__(self, tokens_manager: TokensManager, openid_base_url: str):
+        """
+        Initialize a new instance.
+
+        Parameters:
+            tokens_manager: Tokens manager.
+            openid_base_url: OpenId base URL.
+        """
         self.__tokens_manager = tokens_manager
         self.__openid_base_url = openid_base_url
 
     async def get_token_and_openid_base_url(
         self, request: Request, context: Context
     ) -> tuple[Optional[str], str]:
+        """
+        Extract the JWT token from the request's cookie using
+        [__tokens_manager](@yw-nav-attr:youwol.utils.middlewares.authentication.JwtProviderBearer.__tokens_manager).
+
+        Parameters:
+            request: Incoming request
+            context: Current context.
+
+        Return:
+            A tuple of string with optional JWT token and openId base URL.
+        """
         tokens_id = request.cookies.get("yw_jwt")
 
         if not tokens_id:
@@ -78,6 +145,10 @@ class JwtProviderCookie(JwtProvider):
 
 
 class AuthMiddleware(BaseHTTPMiddleware):
+    """
+    Authentication middleware.
+    """
+
     def __init__(
         self,
         app: ASGIApp,
@@ -88,6 +159,17 @@ class AuthMiddleware(BaseHTTPMiddleware):
         ),
         dispatch: Optional[DispatchFunction] = None,
     ):
+        """
+        Initialize a new instance.
+
+        Parameters:
+            app: the FastAPI application
+            jwt_providers: List of the JwtProvider.
+            predicate_public_path: Predicate public path.
+            on_missing_token: Callback to define the response to send when tokens ar missing.
+                First argument is the URL, second is the text content received from the authentication service.
+            dispatch: forwarded to starlette's `BaseHTTPMiddleware` constructor.
+        """
         super().__init__(app, dispatch)
         self.predicate_public_path = predicate_public_path
         if not isinstance(jwt_providers, list):
@@ -99,6 +181,16 @@ class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
+        """
+        Handle authentication.
+
+        Parameters:
+            request: incoming request
+            call_next: trigger to proceed to the next destination
+
+        Return:
+            HTTP response
+        """
         async with Context.from_request(request).start(
             action="Authorization middleware", with_labels=[Label.MIDDLEWARE]
         ) as ctx:

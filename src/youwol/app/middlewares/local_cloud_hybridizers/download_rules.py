@@ -30,12 +30,42 @@ from .abstract_local_cloud_dispatch import AbstractLocalCloudDispatch
 
 
 class Download(AbstractLocalCloudDispatch):
+    """
+    Dispatch handling automatic download in the local drive for resources that are not found locally.
+    If the resource is found locally, it returns the response.
+    If the resource is not found locally:
+    *  it redirects the request to the remote environment
+    *  if the previous step succeeded, it adds in the download queue a task to download the corresponding asset.
+
+    """
+
     async def apply(
         self,
         incoming_request: Request,
         call_next: RequestResponseEndpoint,
         context: Context,
     ) -> Optional[Response]:
+        """
+        This dispatch match the endpoints:
+         *  `GET:/api/assets-gateway/assets-backend/assets/*/files/**`
+         *  `GET:/api/assets-gateway/stories-backend/stories/**`
+         *  `GET:/api/assets-gateway/flux-backend/projects/**`
+         *  `GET:/api/assets-gateway/files-backend/files/**`
+         *  `GET:/api/assets-gateway/cdn-backend/resources/**`
+         *  `GET:/api/assets-gateway/raw/package/**`
+         *  `GET:/api/assets-gateway/raw/flux-project/**`
+
+        It returns `None` otherwise.
+
+        Parameters:
+            incoming_request: The incoming request.
+            call_next: The next endpoint in the chain.
+            context: The current context.
+
+        Return:
+            The local or remote response. Side effects: the target asset eventually queued for download (in dedicated
+            thread).
+        """
         # Caution: download should be triggered only when fetching raw data of the asset
         # not metadata (e.g. do not catch /assets-backend/assets/**).
         patterns = [
@@ -106,6 +136,11 @@ class Download(AbstractLocalCloudDispatch):
 
 
 class UpdateApplication(AbstractLocalCloudDispatch):
+    """
+    Dispatch handling automatic upgrade of application if a newer version w/ target semantic versioning is available
+     in remote environment w/ local one.
+    """
+
     @staticmethod
     def retrieve_package_version_path(params: list[str]):
         if params[0].startswith("@"):
@@ -127,6 +162,21 @@ class UpdateApplication(AbstractLocalCloudDispatch):
         call_next: RequestResponseEndpoint,
         context: Context,
     ) -> Optional[Response]:
+        """
+        This dispatch match the endpoint `GET:/applications/**`, it returns `None` otherwise.
+
+        Parameters:
+            incoming_request: The incoming request.
+            call_next: The next endpoint in the chain.
+            context: The current context.
+
+        Return:
+            The latest version available in remote or local environments for the application that match
+            the semver query. If returned from the remote environment, the dispatch
+            [Download](@yw-nav-class:youwol.app.middlewares.local_cloud_hybridizers.download_rules.Download)
+             will later trigger local download of the corresponding asset.
+        """
+
         match, params = url_match(incoming_request, "GET:/applications/**")
         if not match:
             return None
