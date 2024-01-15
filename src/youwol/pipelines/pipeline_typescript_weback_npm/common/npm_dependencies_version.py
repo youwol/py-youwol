@@ -4,13 +4,13 @@ def extract_npm_dependencies_dict(names: list[str]):
         "@types/node": "^18.9.1",  # peer dependency for @youwol/tsconfig
         "@types/webpack": "^5.28.0",
         "@youwol/cdn-client": "^2.1.0",
-        "@youwol/eslint-config": "^1.0.0",
+        "@youwol/eslint-config": "^1.1.0",
         "@youwol/flux-view": "^1.2.0",
         "@youwol/http-clients": "^3.0.0",
         "@youwol/jest-preset": "^1.0.0",
         "@youwol/prettier-config": "^1.0.0",
         "@youwol/rx-vdom": "^1.0.1",
-        "@youwol/tsconfig": "^1.0.0",
+        "@youwol/tsconfig": "^1.1.0",
         "@youwol/webpm-client": "^3.0.0",
         "css-loader": "^6.8.1",
         "del-cli": "^5.1.0",
@@ -21,9 +21,10 @@ def extract_npm_dependencies_dict(names: list[str]):
         "rxjs": "^7.5.6",
         "source-map-loader": "4.0.1",
         "ts-loader": "9.5.0",
-        "ts-node": "10.9.1",  # peer dependency for @youwol/tsconfig
-        "typedoc": "^0.25.2",
-        "typescript": "5.2.2",  # peer dependency for @youwol/tsconfig
+        "ts-node": "10.9.2",  # peer dependency for @youwol/tsconfig
+        "tsx": "4.7.0",
+        "typedoc": "^0.25.7",
+        "typescript": "5.3.3",  # peer dependency for @youwol/tsconfig
         "webpack": "^5.89.0",
         "webpack-bundle-analyzer": "^4.9.1",
         "webpack-cli": "5.1.4",

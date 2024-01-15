@@ -81,6 +81,7 @@ def generate_package_json(source: Path, working_path: Path, input_template: Temp
         "typescript",
         "ts-lib",
         "ts-node",
+        "tsx",
         "ts-loader",
         "@types/jest",
         "isomorphic-fetch",
