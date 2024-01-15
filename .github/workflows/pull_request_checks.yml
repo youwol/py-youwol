@@ -57,7 +57,7 @@ jobs:
     with:
       pyYouwolCoverage: true
       tsRepository: youwol/local-youwol-client
-      tsRef: feature/typescript-5.3.3
+      tsRef: ${{ inputs.local-youwol-client_ref }}
       coverageOmit: '*/src/tests/*/yw_pipeline.py'
       name: local-youwol-client
     secrets: inherit
@@ -69,7 +69,7 @@ jobs:
     with:
       pyYouwolCoverage: true
       tsRepository: youwol/webpm-client
-      tsRef: feature/typescript-5.3.3
+      tsRef: ${{ inputs.webpm-client_ref }}
       name: webpm-client
     secrets: inherit
 
@@ -80,7 +80,7 @@ jobs:
     with:
       pyYouwolCoverage: true
       tsRepository: youwol/vsf-core
-      tsRef: feature/typescript-5.3.3
+      tsRef: ${{ inputs.vsf-core_ref }}
       name: vsf-core
     secrets: inherit
 
@@ -91,7 +91,7 @@ jobs:
     with:
       pyYouwolCoverage: true
       tsRepository: youwol/http-clients
-      tsRef: feature/typescript-5.3.3
+      tsRef: ${{ inputs.http-clients_ref }}
       name: http-clients
     secrets: inherit
 
@@ -126,7 +126,7 @@ jobs:
         uses: youwol/nestor/ts/prepare@v3
         with:
           repository: youwol/todo-app-ts
-          ref: feature/typescript-5.3.3
+          ref: ${{ inputs.todo-app-ts_ref }}
           path: ${{ runner.temp }}/todo-app-ts
 
       - name: Build todo-app-ts
