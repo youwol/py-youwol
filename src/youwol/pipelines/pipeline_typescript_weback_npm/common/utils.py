@@ -114,8 +114,8 @@ def generate_package_json(source: Path, working_path: Path, input_template: Temp
             **input_template.dependencies.runTime.includedInBundle,
         },
         "devDependencies": {
-            **input_template.dependencies.devTime,
             **extract_npm_dependencies_dict(dev_deps_keys),
+            **input_template.dependencies.devTime,
         },
         "webpm": {
             "dependencies": load_main_externals,
