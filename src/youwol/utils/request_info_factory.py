@@ -4,7 +4,7 @@ import traceback
 from abc import ABC, abstractmethod
 
 # typing
-from typing import Optional, Union
+from typing import Optional, Union, cast
 
 # third parties
 from pydantic import BaseModel
@@ -21,7 +21,7 @@ def url_match(request: Request, pattern: str):
     if method not in ("*", request.method):
         return False, None
 
-    replaced = []
+    replaced: list[str | list[str]] = []
     if method == "*":
         replaced.append(request.method)
     parts_target = request.url.path.split("/")
@@ -86,7 +86,8 @@ class All(PatternRequestInfoExtractor):
     pattern = "*:/**"
 
     def extract_from_pattern(self, substitutes: list[Union[str, list[str]]]):
-        [method, messages] = substitutes
+        casted = cast(tuple[str, list[str]], substitutes)
+        [method, messages] = casted
         if len(messages) != 0:
             *_, last = messages
         else:
@@ -98,7 +99,8 @@ class Api(PatternRequestInfoExtractor):
     pattern = "*:/api/**"
 
     def extract_from_pattern(self, substitutes: list[Union[str, list[str]]]):
-        [_method, [service, *_parts, last]] = substitutes
+        casted = cast(tuple[str, list[str]], substitutes)
+        [_method, [service, *_parts, last]] = casted
         return RequestInfo(message=last, attributes={"service": service})
 
 
@@ -249,8 +251,8 @@ scenarios = [
 
 
 def request_info(request: Request):
-    attributes = {}
-    labels = []
+    attributes: dict[str, str] = {}
+    labels: list[Label] = []
     message = None
     for scenario in scenarios:
         try:

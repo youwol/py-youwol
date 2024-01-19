@@ -10,6 +10,9 @@ from fastapi import HTTPException, Request
 from pydantic import BaseModel
 from starlette.responses import JSONResponse, PlainTextResponse
 
+# Youwol utilities
+from youwol.utils.types import AnyDict
+
 
 class YouWolException(HTTPException):
     exceptionType = "YouWolException"
@@ -113,7 +116,7 @@ class DependenciesError(YouWolException):
 class CircularDependencies(YouWolException):
     exceptionType = "CircularDependencies"
 
-    def __init__(self, context: str, packages: dict[str, list[str]], **kwargs):
+    def __init__(self, context: str, packages: dict[str, list[AnyDict]], **kwargs):
         YouWolException.__init__(
             self,
             status_code=404,

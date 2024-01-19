@@ -387,10 +387,10 @@ async def resolve_loading_tree(
             lib for lib in resolved_libraries if lib.name != root_name
         ]
         items_dict = {
-            get_full_exported_symbol(d.name, d.version): [
+            get_full_exported_symbol(d.name, d.version): (
                 to_package_id(d.name),
                 get_url(d),
-            ]
+            )
             for d in resolved_libraries
         }
 

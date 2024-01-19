@@ -16,7 +16,7 @@ from enum import Enum
 from types import TracebackType
 
 # typing
-from typing import Any, Callable, NamedTuple, TypeVar, Union, cast
+from typing import Any, Callable, NamedTuple, Type, TypeVar, Union, cast
 
 # third parties
 import aiohttp
@@ -70,15 +70,17 @@ class Label(Enum):
 
 T = TypeVar("T")
 
+TContextAttr = int | str | bool
+
 
 class LogEntry(NamedTuple):
     level: LogLevel
     text: str
     data: JSON
     labels: list[str]
-    attributes: dict[str, str]
+    attributes: dict[str, TContextAttr]
     context_id: str
-    parent_context_id: str
+    parent_context_id: str | None
     trace_uid: str | None
     timestamp: float
 
@@ -141,12 +143,12 @@ class Context:
     data_reporters: list[ContextReporter] = field(default_factory=list)
     request: Request | None = None
 
-    uid: str | None = "root"
+    uid: str = "root"
     parent_uid: str | None = None
     trace_uid: str | None = None
 
     with_data: dict[str, DataType] = field(default_factory=dict)
-    with_attributes: JSON = field(default_factory=dict)
+    with_attributes: dict[str, TContextAttr] = field(default_factory=dict)
     with_labels: list[str] = field(default_factory=list)
     with_headers: dict[str, str] = field(default_factory=dict)
     with_cookies: dict[str, str] = field(default_factory=dict)
@@ -159,7 +161,7 @@ class Context:
         self,
         action: str,
         with_labels: list[StringLike] | None = None,
-        with_attributes: JSON | None = None,
+        with_attributes: dict[str, TContextAttr] | None = None,
         with_data: dict[str, DataType] | None = None,
         with_headers: dict[str, str] | None = None,
         with_cookies: dict[str, str] | None = None,
@@ -200,7 +202,7 @@ class Context:
         request: Request,
         action: str | None = None,
         with_labels: list[StringLike] | None = None,
-        with_attributes: JSON | None = None,
+        with_attributes: dict[str, TContextAttr] | None = None,
         body: BaseModel | None = None,
         response: Callable[[], BaseModel] | None = None,
         with_reporters: list[ContextReporter] | None = None,
@@ -243,7 +245,7 @@ class Context:
         if not self.data_reporters and not self.logs_reporters:
             return
 
-        json_data = to_json(data)
+        json_data = to_json(data) if data else {}
         label_level = {
             LogLevel.DATA: Label.DATA,
             LogLevel.WARNING: Label.LOG_WARNING,
@@ -367,15 +369,15 @@ class Context:
 
         future.add_done_callback(done_callback)
 
-    async def get(self, att_name: str, object_type: T) -> T():
+    async def get(self, att_name: str, _object_type: Type[T]) -> T:
         result = self.with_data[att_name]
-        if isinstance(result, Callable):
+        if callable(result):
             result = result()
 
         if isinstance(result, Awaitable):
             result = await result
 
-        return cast(object_type, result)
+        return cast(T, result)
 
     def headers(self, from_req_fwd: HeadersFwdSelector = lambda _keys: []):
         """
@@ -437,8 +439,8 @@ class ScopedContext(Context):
     # exit the async context manager
     async def __aexit__(
         self,
-        exc_type: type[BaseException] | None,
-        exc: BaseException | None,
+        exc_type: type[Exception] | None,
+        exc: Exception | None,
         tb: TracebackType | None,
     ):
         if exc:
@@ -471,9 +473,13 @@ class ScopedContext(Context):
     ):
         if not block:
             return
-        block = block(ctx) if not exception else block(exception, ctx)
-        if isinstance(block, Awaitable):
-            await block
+        r = (
+            cast(CallableBlockException, block)(exception, ctx)
+            if exception
+            else cast(CallableBlock, block)(ctx)
+        )
+        if isinstance(r, Awaitable):
+            await r
 
 
 class ContextFactory:
@@ -497,8 +503,6 @@ class ContextFactory:
 
 
 class DeployedContextReporter(ContextReporter):
-    errors = set()
-
     async def log(self, entry: LogEntry):
         prefix = ""
         if str(Label.STARTED) in entry.labels:
@@ -577,10 +581,10 @@ class InMemoryReporter(ContextReporter):
     node_logs: list[LogEntry] = []
     leaf_logs: list[LogEntry] = []
 
-    errors = set()
-    futures = set()
-    futures_succeeded = set()
-    futures_failed = set()
+    errors: set[str] = set()
+    futures: set[str] = set()
+    futures_succeeded: set[str] = set()
+    futures_failed: set[str] = set()
 
     def clear(self):
         self.root_node_logs = []

@@ -12,7 +12,7 @@ from youwol.backends.assets_gateway.configurations import (
 )
 
 # Youwol utilities
-from youwol.utils import ensure_group_permission
+from youwol.utils import AnyDict, ensure_group_permission
 from youwol.utils.context import Context
 from youwol.utils.http_clients.tree_db_backend import (
     BorrowBody,
@@ -400,6 +400,9 @@ async def borrow(
             text="[tree_item, destination] retrieved",
             data={"tree_item": tree_item, "destination": destination},
         )
+        asset: AnyDict
+        user_permission: AnyDict
+        access_policy: AnyDict
         asset, user_permission, access_policy = await asyncio.gather(
             assets_db.get_asset(asset_id=tree_item["assetId"], headers=ctx.headers()),
             assets_db.get_permissions(

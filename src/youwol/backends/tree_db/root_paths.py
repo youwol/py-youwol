@@ -35,6 +35,7 @@ from youwol.backends.tree_db.utils import (
 
 # Youwol utilities
 from youwol.utils import (
+    AnyDict,
     ensure_group_permission,
     get_all_individual_groups,
     private_group_id,
@@ -660,12 +661,12 @@ async def move(
     body: MoveItemBody,
     configuration: Configuration = Depends(get_configuration),
 ):
-    async with Context.start_ep(
-        request=request, action="move", body=body
-    ) as ctx:  # type: Context
+    async with Context.start_ep(request=request, action="move", body=body) as ctx:
         items_db = configuration.doc_dbs.items_db
         folders_db = configuration.doc_dbs.folders_db
-
+        items: list[AnyDict]
+        folders: list[AnyDict]
+        to_folder_or_drive: EntityResponse
         items, folders, to_folder_or_drive = await asyncio.gather(
             db_query(
                 docdb=items_db,

@@ -20,7 +20,7 @@ from starlette.requests import Request
 
 # Youwol utilities
 from youwol.utils.clients.utils import to_group_id
-from youwol.utils.types import JSON
+from youwol.utils.types import JSON, AnyDict
 
 flatten = itertools.chain.from_iterable
 
@@ -243,7 +243,7 @@ def is_json_leaf(v):
     )
 
 
-def to_json_rec(_obj: Union[dict[str, Any], list[Any]]):
+def to_json_rec(_obj: Union[AnyDict, list[Any], JSON]):
     def process_value(value):
         if is_json_leaf(value):
             return to_serializable_json_leaf(value)
@@ -266,6 +266,6 @@ def to_json_rec(_obj: Union[dict[str, Any], list[Any]]):
     return {}
 
 
-def to_json(obj: Union[BaseModel, dict[str, Any]]) -> JSON:
+def to_json(obj: Union[BaseModel, JSON]) -> JSON:
     base = obj.dict() if isinstance(obj, BaseModel) else obj
     return to_json_rec(base)
