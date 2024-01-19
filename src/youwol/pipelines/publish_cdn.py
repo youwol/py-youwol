@@ -4,10 +4,11 @@ import glob
 import itertools
 import json
 
+from collections.abc import Iterable, Mapping
 from pathlib import Path
 
 # typing
-from typing import Iterable, List, Mapping, Optional, cast
+from typing import Optional, cast
 
 # third parties
 from fastapi import HTTPException
@@ -131,9 +132,9 @@ async def get_default_drive(context: Context) -> DefaultDriveResponse:
 class PublishCdnLocalStep(PipelineStep):
     id: str = "cdn-local"
 
-    packagedArtifacts: List[str]
+    packagedArtifacts: list[str]
 
-    packagedFolders: List[str] = []
+    packagedFolders: list[str] = []
 
     run: ExplicitNone = ExplicitNone()
 
@@ -386,7 +387,7 @@ class CdnTarget(BaseModel):
 
 
 async def create_sub_pipelines_publish_cdn(
-    start_step: str, targets: List[CdnTarget], context: Context
+    start_step: str, targets: list[CdnTarget], context: Context
 ):
     steps = [
         PublishCdnRemoteStep(id=f"cdn_{cdn_target.name}", cdnTarget=cdn_target)

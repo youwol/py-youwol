@@ -5,22 +5,13 @@ import math
 import time
 
 # typing
-from typing import Any, Dict, List
+from typing import Any
 
 # third parties
 from fastapi import HTTPException
 
-# Youwol backends
-from youwol.backends.stories.configurations import Configuration, Constants
-
 # Youwol utilities
-from youwol.utils import (
-    DocDbClient,
-    QueryIndexException,
-    StorageClient,
-    generate_headers_downstream,
-    log_info,
-)
+from youwol.utils import QueryIndexException, generate_headers_downstream
 from youwol.utils.context import Context
 from youwol.utils.http_clients.cdn_backend import patch_loading_graph
 from youwol.utils.http_clients.stories_backend import (
@@ -30,25 +21,15 @@ from youwol.utils.http_clients.stories_backend import (
     StoryResp,
 )
 
+# relative
+from .configurations import Configuration, Constants, DocDb, Storage
+
 zip_data_filename = "data.json"
 zip_requirements_filename = "requirements.json"
 zip_global_content_filename = "global-contents.json"
 
 
-async def init_resources(config: Configuration):
-    log_info("Ensure database resources")
-    headers = config.admin_headers or {}
-
-    log_info("Successfully retrieved authorization for resources creation")
-    await asyncio.gather(
-        config.doc_db_stories.ensure_table(headers=headers),
-        config.doc_db_documents.ensure_table(headers=headers),
-        config.storage.ensure_bucket(headers=headers),
-    )
-    log_info("resources initialization done")
-
-
-async def query_story(story_id: str, doc_db_stories: DocDbClient, context: Context):
+async def query_story(story_id: str, doc_db_stories: DocDb, context: Context):
     docs = await doc_db_stories.query(
         query_body=f"story_id={story_id}#1",
         owner=Constants.default_owner,
@@ -91,7 +72,7 @@ def position_format(index: float):
     return (6 - len(decimal.split(".")[0])) * "0" + decimal
 
 
-def format_document_resp(docdb_doc: Dict[str, str]):
+def format_document_resp(docdb_doc: dict[str, str]):
     return GetDocumentResp(
         documentId=docdb_doc["document_id"],
         parentDocumentId=docdb_doc["parent_document_id"],
@@ -103,7 +84,7 @@ def format_document_resp(docdb_doc: Dict[str, str]):
 
 
 async def get_requirements(
-    story_id: str, storage: StorageClient, context: Context
+    story_id: str, storage: Storage, context: Context
 ) -> Requirements:
     requirements_path = get_document_path(story_id=story_id, document_id="requirements")
     try:
@@ -205,8 +186,8 @@ async def get_story_impl(story_id: str, configuration: Configuration, context: C
 
 
 async def get_children_rec(
-    document_id: str, start_index, chunk_size, headers, doc_db_docs: DocDbClient
-) -> List[Dict[str, Any]]:
+    document_id: str, start_index, chunk_size, headers, doc_db_docs: DocDb
+) -> list[dict[str, Any]]:
     headers = generate_headers_downstream(headers)
     documents_resp = await doc_db_docs.query(
         query_body=f"parent_document_id={document_id},position>={start_index}#{chunk_size}",
@@ -227,7 +208,7 @@ async def get_children_rec(
             for d in direct_children
         ]
     )
-    indirect_children = itertools.chain.from_iterable(indirect_children)
+    indirect_children_chained = itertools.chain.from_iterable(indirect_children)
     if len(direct_children) == chunk_size:
         children_next = await get_children_rec(
             document_id=document_id,
@@ -236,9 +217,9 @@ async def get_children_rec(
             chunk_size=chunk_size,
             headers=headers,
         )
-        return [*direct_children, *indirect_children, *children_next]
+        return [*direct_children, *indirect_children_chained, *children_next]
 
-    return [*direct_children, *indirect_children]
+    return [*direct_children, *indirect_children_chained]
 
 
 async def delete_docdb_docs_from_page(

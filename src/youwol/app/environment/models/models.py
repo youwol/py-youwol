@@ -1,11 +1,12 @@
 # standard library
+from collections.abc import Awaitable
 from dataclasses import dataclass
 from pathlib import Path
 
 # typing
-from typing import Awaitable, Callable, List, Tuple, Union
+from typing import Callable, Union
 
-OnProjectsCountUpdate = Callable[[Tuple[List[Path], List[Path]]], Awaitable[None]]
+OnProjectsCountUpdate = Callable[[tuple[list[Path], list[Path]]], Awaitable[None]]
 ConfigPath = Union[str, Path]
 
 

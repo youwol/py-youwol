@@ -1,5 +1,5 @@
 # typing
-from typing import Dict, List, Optional, Union
+from typing import Optional, Union
 
 # third parties
 from pydantic import BaseModel, Field
@@ -13,12 +13,12 @@ class ProjectSnippetDeprecated(BaseModel):
 
 
 class ProjectsDeprecated(BaseModel):
-    projects: List[ProjectSnippetDeprecated] = Field(..., title="projects")
+    projects: list[ProjectSnippetDeprecated] = Field(..., title="projects")
 
 
 class NewProjectResponse(BaseModel):
     projectId: str
-    libraries: Dict[str, str]
+    libraries: dict[str, str]
 
 
 class Slot(BaseModel):
@@ -45,20 +45,20 @@ class FactoryId(BaseModel):
 class Module(BaseModel):
     configuration: dict
     moduleId: str
-    factoryId: Union[str, FactoryId]
+    factoryId: FactoryId
 
 
 class Plugin(BaseModel):
     configuration: dict
     moduleId: str
     parentModuleId: str
-    factoryId: Union[str, FactoryId]
+    factoryId: FactoryId
 
 
 class Workflow(BaseModel):
-    modules: List[Module] = []
-    connections: List[Connection] = []
-    plugins: List[Plugin] = []
+    modules: list[Module] = []
+    connections: list[Connection] = []
+    plugins: list[Plugin] = []
 
 
 class ModuleView(BaseModel):
@@ -86,25 +86,19 @@ class DescriptionBox(BaseModel):
     title: str
     descriptionBoxId: str = ""
     descriptionHtml: str
-    modulesId: List[str]
+    modulesId: list[str]
 
 
 class BuilderRendering(BaseModel):
-    modulesView: List[ModuleView]
-    connectionsView: List[ConnectionView]
-    descriptionsBoxes: List[DescriptionBox] = []
-
-
-class PackageLink(BaseModel):
-    id: str
-    version: str = "latest"
-    dependencies = []
+    modulesView: list[ModuleView]
+    connectionsView: list[ConnectionView]
+    descriptionsBoxes: list[DescriptionBox] = []
 
 
 class EditMetadata(BaseModel):
     name: Optional[str]
     description: Optional[str]
-    libraries: Optional[Dict[str, str]]
+    libraries: Optional[dict[str, str]]
 
 
 Url = str
@@ -120,14 +114,14 @@ class Library(BaseModel):
 
 class LoadingGraph(BaseModel):
     graphType: str
-    lock: Optional[List[Library]] = None
-    definition: Union[List[List[Url]], List[List[List[str]]]]
+    lock: Optional[list[Library]] = None
+    definition: Union[list[list[Url]], list[list[list[str]]]]
 
 
 class Requirements(BaseModel):
-    fluxComponents: List[str] = []
-    fluxPacks: List[str]
-    libraries: Dict[str, str]
+    fluxComponents: list[str] = []
+    fluxPacks: list[str]
+    libraries: dict[str, str]
     loadingGraph: LoadingGraph
 
 
@@ -145,11 +139,11 @@ class ProjectSnippet(BaseModel):
     id: str = Field(..., title="id")
     name: str
     description: str
-    fluxPacks: List[str]
+    fluxPacks: list[str]
 
 
 class Projects(BaseModel):
-    projects: List[ProjectSnippet] = Field(..., title="projects")
+    projects: list[ProjectSnippet] = Field(..., title="projects")
 
 
 class Description(BaseModel):
@@ -184,7 +178,7 @@ class Component(BaseModel):
     name: str
     description: str
     scope: str
-    fluxPacks: List[str]
+    fluxPacks: list[str]
     workflow: Workflow
     builderRendering: BuilderRendering
     runnerRendering: Optional[RunnerRendering] = None
@@ -194,15 +188,15 @@ class Package(BaseModel):
     name: str
     description: str
     link: str
-    tags: List[str]
+    tags: list[str]
 
 
 class Packages(BaseModel):
-    projects: List[Package] = Field(..., title="packages")
+    projects: list[Package] = Field(..., title="packages")
 
 
 class ListFiles(BaseModel):
-    files: List[str]
+    files: list[str]
 
 
 class PostAdaptorBody(BaseModel):
@@ -227,7 +221,7 @@ class GraphicsDescription(BaseModel):
 
 class ExecutionDescription(BaseModel):
     standalone: bool
-    parametrized: List[OpenWithDescription]
+    parametrized: list[OpenWithDescription]
 
 
 class PublishApplicationBody(BaseModel):

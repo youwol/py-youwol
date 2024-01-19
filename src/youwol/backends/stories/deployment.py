@@ -1,6 +1,3 @@
-# typing
-from typing import List
-
 # third parties
 from fastapi import APIRouter
 
@@ -54,7 +51,7 @@ class StoriesDeployment(BackendDeployment):
     def name(self) -> str:
         return "stories"
 
-    def middlewares(self) -> List[FastApiMiddleware]:
+    def middlewares(self) -> list[FastApiMiddleware]:
         return [auth_middleware]
 
 

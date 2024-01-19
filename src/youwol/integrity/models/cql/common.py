@@ -2,9 +2,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-# typing
-from typing import List
-
 # relative
 from .constants import (
     COLUMN_OWNER_ID_VALUE,
@@ -23,12 +20,12 @@ class OwnerColumns:
 class Table(ABC):
     @staticmethod
     @abstractmethod
-    def get_key_columns() -> List[str]:
+    def get_key_columns() -> list[str]:
         pass
 
     @staticmethod
     @abstractmethod
-    def get_keyspace_table() -> (str, str):
+    def get_keyspace_table() -> tuple[str, str]:
         pass
 
     def __getitem__(self, item):

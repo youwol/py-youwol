@@ -2,7 +2,7 @@
 from pathlib import Path
 
 # typing
-from typing import List, Union
+from typing import Optional, Union
 
 # Youwol utilities
 from youwol.utils.utils_paths import FileListing, matching_files
@@ -13,8 +13,10 @@ from .paths import PathsBook
 
 
 def auto_detect_projects(
-    paths_book: PathsBook, root_folder: Union[Path, str], ignore: List[str] = None
-) -> List[Path]:
+    paths_book: PathsBook,
+    root_folder: Union[Path, str],
+    ignore: Optional[list[str]] = None,
+) -> list[Path]:
     database_ignore = None
     system_ignore = None
     pipelines_ignore = None

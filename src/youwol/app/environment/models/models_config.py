@@ -1,9 +1,10 @@
 # standard library
 from abc import ABC, abstractmethod
+from collections.abc import Awaitable
 from pathlib import Path
 
 # typing
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 # third parties
 from aiohttp import ClientSession
@@ -90,7 +91,7 @@ class UploadTargets(BaseModel):
     Gather :class:`UploadTarget` targets of similar king (e.g. multiple docker registries, multiple remote CDN )
     """
 
-    targets: List[UploadTarget]
+    targets: list[UploadTarget]
 
 
 class ProjectTemplate(BaseModel):
@@ -131,8 +132,8 @@ class ProjectTemplate(BaseModel):
     icon: Any
     type: str
     folder: Union[str, Path]
-    parameters: Dict[str, str]
-    generator: Callable[[Path, Dict[str, str], Context], Awaitable[Tuple[str, Path]]]
+    parameters: dict[str, str]
+    generator: Callable[[Path, dict[str, str], Context], Awaitable[tuple[str, Path]]]
 
 
 class ProjectsFinder(BaseModel):
@@ -170,8 +171,8 @@ class RecursiveProjectsFinder(ProjectsFinder):
     Whether or not watching added/removed projects is activated.
     """
 
-    fromPaths: List[ConfigPath] = [Path.home() / default_path_projects_dir]
-    ignoredPatterns: List[str] = default_ignored_paths
+    fromPaths: list[ConfigPath] = [Path.home() / default_path_projects_dir]
+    ignoredPatterns: list[str] = default_ignored_paths
     watch: bool = True
 
     def handler(
@@ -186,7 +187,7 @@ class RecursiveProjectsFinder(ProjectsFinder):
 
 
 class ExplicitProjectsFinder(ProjectsFinder):
-    fromPaths: Union[List[ConfigPath], Callable[[PathsBook], List[ConfigPath]]]
+    fromPaths: Union[list[ConfigPath], Callable[[PathsBook], list[ConfigPath]]]
 
     def handler(
         self, paths_book: PathsBook, on_projects_count_update: OnProjectsCountUpdate
@@ -224,7 +225,7 @@ class Projects(BaseModel):
 
     finder: Union[ProjectsFinder, ConfigPath] = RecursiveProjectsFinder()
 
-    templates: List[ProjectTemplate] = []
+    templates: list[ProjectTemplate] = []
 
 
 class AuthorizationProvider(BaseModel):
@@ -300,7 +301,7 @@ class CloudEnvironment(BaseModel):
     envId: str
     host: str
     authProvider: AuthorizationProvider
-    authentications: List[Authentication]
+    authentications: list[Authentication]
 
 
 class Connection(BaseModel):
@@ -338,7 +339,7 @@ class CloudEnvironments(BaseModel):
     """
 
     defaultConnection: Connection
-    environments: List[CloudEnvironment]
+    environments: list[CloudEnvironment]
 
 
 class LocalEnvironment(BaseModel):
@@ -468,8 +469,8 @@ class CustomEndPoints(BaseModel):
 
     *Default to empty list*"""
 
-    commands: Optional[List[Command]] = []
-    routers: Optional[List[FastApiRouter]] = []
+    commands: Optional[list[Command]] = []
+    routers: Optional[list[FastApiRouter]] = []
 
 
 class CustomMiddleware(BaseModel):
@@ -501,7 +502,7 @@ class DispatchInfo(BaseModel):
 
     name: str
     activated: bool
-    parameters: Dict[str, str] = {}
+    parameters: dict[str, str] = {}
 
 
 class FlowSwitch(BaseModel):
@@ -547,7 +548,7 @@ class FlowSwitcherMiddleware(CustomMiddleware):
     List of the :class:`FlowSwitch` elements."""
 
     name: str
-    oneOf: List[FlowSwitch]
+    oneOf: list[FlowSwitch]
 
     async def dispatch(
         self,
@@ -662,7 +663,7 @@ class CdnSwitch(FlowSwitch):
         raise ResourcesNotFoundException(path=rest_of_path, detail="No resource found")
 
     async def _forward_request(
-        self, rest_of_path: str, headers: Dict[str, str]
+        self, rest_of_path: str, headers: dict[str, str]
     ) -> Optional[Response]:
         dest_url = f"http://localhost:{self.port}/{rest_of_path}"
 
@@ -777,7 +778,7 @@ class Customization(BaseModel):
     """
 
     endPoints: CustomEndPoints = CustomEndPoints()
-    middlewares: Optional[List[CustomMiddleware]] = []
+    middlewares: Optional[list[CustomMiddleware]] = []
     events: Optional[Events] = Events()
 
 

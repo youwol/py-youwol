@@ -2,7 +2,7 @@
 from pathlib import Path
 
 # typing
-from typing import Callable, List, Optional
+from typing import Callable, Optional
 
 # third parties
 from pydantic import BaseModel
@@ -32,7 +32,7 @@ from youwol.pipelines import (
 
 
 class Environment(BaseModel):
-    cdnTargets: List[CdnTarget] = []
+    cdnTargets: list[CdnTarget] = []
 
 
 def set_environment(environment: Environment = Environment()):
@@ -85,7 +85,7 @@ class PackageStep(PipelineStep):
     """
     One artifact is defined, it is called 'package' and contains all the files of the project by default.
     """
-    artifacts: List[Artifact] = [Artifact(id="package", files=default_files)]
+    artifacts: list[Artifact] = [Artifact(id="package", files=default_files)]
 
     async def get_status(
         self,
@@ -105,7 +105,7 @@ class PackageStep(PipelineStep):
 
         env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
 
-        files_artifacts: List[Path] = await project.get_step_artifacts_files(
+        files_artifacts: list[Path] = await project.get_step_artifacts_files(
             flow_id=flow_id, step_id=self.id, context=context
         )
         folder = env.pathsBook.artifacts_step(
@@ -147,8 +147,8 @@ class PackageStep(PipelineStep):
 
 
 class PublishConfig(BaseModel):
-    packagedArtifacts: List[str] = ["package"]
-    packagedFolders: List[str] = []
+    packagedArtifacts: list[str] = ["package"]
+    packagedFolders: list[str] = []
 
 
 class PipelineConfig(BaseModel):
@@ -158,7 +158,7 @@ class PipelineConfig(BaseModel):
 
     target: BrowserAppBundle
 
-    with_tags: List[str] = []
+    with_tags: list[str] = []
 
     packageConfig: PackageConfig = PackageConfig()
 

@@ -2,13 +2,16 @@
 import traceback
 
 # typing
-from typing import Any, Dict, List
+from typing import Any
 
 # third parties
 from aiohttp import ClientResponse, ContentTypeError
 from fastapi import HTTPException, Request
 from pydantic import BaseModel
 from starlette.responses import JSONResponse, PlainTextResponse
+
+# Youwol utilities
+from youwol.utils.types import AnyDict
 
 
 class YouWolException(HTTPException):
@@ -51,7 +54,7 @@ class PublishPackageError(YouWolException):
 class PackagesNotFound(YouWolException):
     exceptionType = "PackagesNotFound"
 
-    def __init__(self, context: str, packages: List[str], **kwargs):
+    def __init__(self, context: str, packages: list[str], **kwargs):
         YouWolException.__init__(
             self,
             status_code=404,
@@ -69,7 +72,7 @@ class PackagesNotFound(YouWolException):
 class IndirectPackagesNotFound(YouWolException):
     exceptionType = "IndirectPackagesNotFound"
 
-    def __init__(self, context: str, paths: Dict[str, List[str]], **kwargs):
+    def __init__(self, context: str, paths: dict[str, list[str]], **kwargs):
         YouWolException.__init__(
             self, status_code=404, detail={"context": context, "paths": paths}, **kwargs
         )
@@ -83,14 +86,14 @@ class IndirectPackagesNotFound(YouWolException):
 
 class DependencyErrorData(BaseModel):
     key: str
-    path: List[str]
+    path: list[str]
     detail: str
 
 
 class DependenciesError(YouWolException):
     exceptionType = "DependenciesError"
 
-    def __init__(self, context: str, errors: List[Dict[str, Any]], **kwargs):
+    def __init__(self, context: str, errors: list[dict[str, Any]], **kwargs):
         """
 
         :param context: context of the error
@@ -113,7 +116,7 @@ class DependenciesError(YouWolException):
 class CircularDependencies(YouWolException):
     exceptionType = "CircularDependencies"
 
-    def __init__(self, context: str, packages: Dict[str, List[str]], **kwargs):
+    def __init__(self, context: str, packages: dict[str, list[AnyDict]], **kwargs):
         YouWolException.__init__(
             self,
             status_code=404,
@@ -271,7 +274,7 @@ class UpstreamResponseException(YouWolException):
         return """Upstream Exception"""
 
 
-YouwolExceptions = [
+YouwolExceptions: list[type[YouWolException]] = [
     ServerError,
     PipelineFlowNotFound,
     FolderNotFound,
@@ -314,8 +317,9 @@ async def unexpected_exception_handler(request: Request, exc: Exception):
     )
 
 
-async def raise_exception_from_response(raw_resp: ClientResponse, **kwargs):
-    parameters = {}
+async def upstream_exception_from_response(
+    raw_resp: ClientResponse, **kwargs
+) -> UpstreamResponseException:
     resp = None
 
     try:
@@ -331,7 +335,7 @@ async def raise_exception_from_response(raw_resp: ClientResponse, **kwargs):
             )
             if exception_type:
                 upstream_exception0 = exception_type(**resp["detail"])
-                raise UpstreamResponseException(
+                return UpstreamResponseException(
                     url=raw_resp.url.human_repr(),
                     status=upstream_exception0.status_code,
                     detail=upstream_exception0.detail,
@@ -346,19 +350,14 @@ async def raise_exception_from_response(raw_resp: ClientResponse, **kwargs):
     )
     detail = detail if detail else await raw_resp.text()
 
-    raise UpstreamResponseException(
+    return UpstreamResponseException(
         url=raw_resp.url.human_repr(),
         status=raw_resp.status,
         detail=detail,
         exceptionType="HTTP",
         **{
             k: v
-            for k, v in {**kwargs, **parameters}.items()
+            for k, v in kwargs.items()
             if k not in ["url", "status", "detail", "exceptionType"]
         },
     )
-
-
-async def assert_response(raw_resp: ClientResponse):
-    if raw_resp.status >= 400:
-        await raise_exception_from_response(raw_resp)

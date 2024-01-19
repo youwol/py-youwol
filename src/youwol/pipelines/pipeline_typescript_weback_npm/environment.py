@@ -1,5 +1,5 @@
 # typing
-from typing import Callable, List
+from typing import Callable
 
 # third parties
 from pydantic import BaseModel
@@ -11,12 +11,12 @@ from youwol.app.environment import UploadTargets
 from youwol.pipelines import CdnTarget
 from youwol.pipelines.pipeline_typescript_weback_npm.common.models import NpmRepo
 
-upload_targets = List[UploadTargets]
+upload_targets = list[UploadTargets]
 
 
 class Environment(BaseModel):
-    cdnTargets: List[CdnTarget] = []
-    npmTargets: List[NpmRepo] = []
+    cdnTargets: list[CdnTarget] = []
+    npmTargets: list[NpmRepo] = []
 
 
 def set_environment(environment: Environment = Environment()):

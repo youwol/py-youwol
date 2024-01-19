@@ -1,15 +1,16 @@
 # standard library
+from collections.abc import Awaitable
 from dataclasses import dataclass
 
 # typing
-from typing import Any, Awaitable, Callable
+from typing import Any, Callable, Optional
 
 # third parties
 from aiohttp import ClientResponse
 
 # Youwol utilities
 from youwol.utils.clients.request_executor import RequestExecutor, json_reader
-from youwol.utils.exceptions import raise_exception_from_response
+from youwol.utils.exceptions import upstream_exception_from_response
 
 
 @dataclass(frozen=True)
@@ -51,7 +52,7 @@ class FilesClient:
     async def get(
         self,
         file_id: str,
-        reader: Callable[[ClientResponse], Awaitable[Any]] = None,
+        reader: Optional[Callable[[ClientResponse], Awaitable[Any]]] = None,
         **kwargs,
     ):
         url = f"{self.url_base}/files/{file_id}"
@@ -61,7 +62,7 @@ class FilesClient:
                 if reader:
                     return await reader(resp)
                 return await resp.read()
-            await raise_exception_from_response(resp, url=url)
+            raise await upstream_exception_from_response(resp, url=url)
 
         return await self.request_executor.get(
             url=url,

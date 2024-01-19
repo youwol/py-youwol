@@ -1,9 +1,10 @@
 # standard library
+from collections.abc import Mapping
 from enum import Enum
 from pathlib import Path
 
 # typing
-from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Union
+from typing import Any, NamedTuple, Optional, Union
 
 # third parties
 from pydantic import BaseModel
@@ -70,7 +71,7 @@ class Group(BaseModel):
 
 class User(BaseModel):
     name: str
-    groups: List[Group]
+    groups: list[Group]
 
 
 class OwningGroup(BaseModel):
@@ -91,7 +92,7 @@ class ExposingGroup(BaseModel):
 
 
 class OwnerInfo(BaseModel):
-    exposingGroups: List[ExposingGroup]
+    exposingGroups: list[ExposingGroup]
     defaultAccess: GroupAccess
 
 
@@ -118,9 +119,9 @@ class AssetResponse(BaseModel):
     kind: str
     rawId: str
     name: str
-    images: List[str]
-    thumbnails: List[str]
-    tags: List[str]
+    images: list[str]
+    thumbnails: list[str]
+    tags: list[str]
     description: str
     groupId: str
 
@@ -132,7 +133,7 @@ class NewAssetBody(BaseModel):
     groupId: Optional[str] = None
     name: str = ""
     description: str = ""
-    tags: List[str] = []
+    tags: list[str] = []
     defaultAccessPolicy: AccessPolicyBody = AccessPolicyBody(
         read=ReadPolicyEnum.forbidden, share=SharePolicyEnum.forbidden, parameters={}
     )
@@ -141,7 +142,7 @@ class NewAssetBody(BaseModel):
 class PostAssetBody(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
-    tags: Optional[List[str]] = None
+    tags: Optional[list[str]] = None
     groupId: Optional[str] = None
     defaultAccessPolicy: Optional[AccessPolicyBody] = None
 
@@ -155,8 +156,8 @@ WhereClause = dict
 
 
 class QueryAssetBody(BaseModel):
-    selectClauses: List[Dict[str, str]] = []
-    whereClauses: List[WhereClause] = []
+    selectClauses: list[dict[str, str]] = []
+    whereClauses: list[WhereClause] = []
     maxResults: int = 10
 
 

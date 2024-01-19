@@ -8,7 +8,7 @@ from importlib.util import spec_from_loader
 from pathlib import Path
 
 # typing
-from typing import List, Optional, Type, TypeVar, Union, cast
+from typing import Optional, TypeVar, Union, cast
 
 T = TypeVar("T")
 
@@ -28,8 +28,8 @@ class ModuleLoadingException(Exception):
 def get_object_from_module(
     module_absolute_path: Path,
     object_or_class_name: str,
-    object_type: Type[T],
-    additional_src_absolute_paths: Optional[Union[Path, List[Path]]] = None,
+    object_type: type[T],
+    additional_src_absolute_paths: Optional[Union[Path, list[Path]]] = None,
     **object_instantiation_kwargs,
 ) -> T:
     if additional_src_absolute_paths is None:

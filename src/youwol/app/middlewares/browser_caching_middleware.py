@@ -1,3 +1,6 @@
+# typing
+from typing import Optional
+
 # third parties
 from starlette.middleware.base import (
     BaseHTTPMiddleware,
@@ -18,7 +21,9 @@ class BrowserCachingMiddleware(BaseHTTPMiddleware):
 
     cache = {}
 
-    def __init__(self, app: ASGIApp, dispatch: DispatchFunction = None, **_) -> None:
+    def __init__(
+        self, app: ASGIApp, dispatch: Optional[DispatchFunction] = None, **_
+    ) -> None:
         super().__init__(app, dispatch)
 
     async def dispatch(

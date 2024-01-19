@@ -1,10 +1,11 @@
 # standard library
 import base64
 
+from collections.abc import Iterable
 from pathlib import Path
 
 # typing
-from typing import Iterable, List, Optional
+from typing import Optional
 
 # third parties
 import brotli
@@ -36,19 +37,21 @@ async def resolve_version(
         pre_release = "-".join(version.split("-")[1:])
         version_spec = base if len(version.split("-")) == 1 else f"{base}-{pre_release}"
         selector = NpmSpec(version_spec)
-        version = next(
+        typed_version = next(
             selector.filter(Version(v.replace("-wip", "")) for v in versions), None
         )
-        if not version:
+        if not typed_version:
             return None
-        if str(version) not in versions and f"{version}-wip" in versions:
-            await ctx.info(f"{version} not available => use {version}-wip")
-            version = Version(f"{version}-wip")
+        if str(typed_version) not in versions and f"{typed_version}-wip" in versions:
+            await ctx.info(
+                f"{typed_version} not available => using {typed_version}-wip"
+            )
+            typed_version = Version(f"{typed_version}-wip")
 
         await ctx.info(
-            text=f"Use latest compatible version of {name}#{version} : {version}"
+            text=f"Use latest compatible version of {name}#{version} : {typed_version}"
         )
-        return str(version)
+        return str(typed_version)
 
 
 def create_local_scylla_db_docs_file_if_needed(expected_path: Path):
@@ -58,10 +61,12 @@ def create_local_scylla_db_docs_file_if_needed(expected_path: Path):
     return expected_path
 
 
-async def encode_extra_index(documents: List[JSON], context: Context):
+async def encode_extra_index(documents: list[JSON], context: Context):
     async with context.start(action="encode_extra_index") as ctx:
 
         def flatten_elem(d: JSON) -> str:
+            if not isinstance(d, dict):
+                raise ValueError("Not a dictionary")
             return (
                 "&".join(
                     [d["library_name"], d["version"], d["bundle"], d["fingerprint"]]
@@ -95,7 +100,7 @@ async def decode_extra_index(documents: str, context: Context):
         src_str = extra.decode("utf-8")
 
         def unflatten_elem(elem: str):
-            props: List[str] = elem.split("&")
+            props: list[str] = elem.split("&")
             return {
                 "library_name": props[0],
                 "version": props[1],
@@ -105,6 +110,6 @@ async def decode_extra_index(documents: str, context: Context):
                 "aliases": [d for d in props[5][1:-1].split(",") if d != ""],
             }
 
-        documents = [unflatten_elem(d) for d in src_str.split(";")]
-        await ctx.info(f"Decoded extra index with {len(documents)} elements")
-        return documents
+        list_documents = [unflatten_elem(d) for d in src_str.split(";")]
+        await ctx.info(f"Decoded extra index with {len(list_documents)} elements")
+        return list_documents

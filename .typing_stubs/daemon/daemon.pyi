@@ -1,3 +1,4 @@
+# third parties
 from _typeshed import Incomplete
 
 basestring = basestring
@@ -27,7 +28,23 @@ class DaemonContext:
     initgroups: Incomplete
     detach_process: Incomplete
     signal_map: Incomplete
-    def __init__(self, chroot_directory: Incomplete | None = ..., working_directory: str = ..., umask: int = ..., uid: Incomplete | None = ..., gid: Incomplete | None = ..., initgroups: bool = ..., prevent_core: bool = ..., detach_process: Incomplete | None = ..., files_preserve: Incomplete | None = ..., pidfile: Incomplete | None = ..., stdin: Incomplete | None = ..., stdout: Incomplete | None = ..., stderr: Incomplete | None = ..., signal_map: Incomplete | None = ...) -> None: ...
+    def __init__(
+        self,
+        chroot_directory: Incomplete | None = ...,
+        working_directory: str = ...,
+        umask: int = ...,
+        uid: Incomplete | None = ...,
+        gid: Incomplete | None = ...,
+        initgroups: bool = ...,
+        prevent_core: bool = ...,
+        detach_process: Incomplete | None = ...,
+        files_preserve: Incomplete | None = ...,
+        pidfile: Incomplete | None = ...,
+        stdin: Incomplete | None = ...,
+        stdout: Incomplete | None = ...,
+        stderr: Incomplete | None = ...,
+        signal_map: Incomplete | None = ...,
+    ) -> None: ...
     @property
     def is_open(self): ...
     def open(self) -> None: ...

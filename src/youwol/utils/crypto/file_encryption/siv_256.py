@@ -10,8 +10,9 @@ from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 
 # relative
-from .constantes import KEY_SIZE, Algo, algo_from_byte, algo_to_byte
+from .constantes import KEY_SIZE, Algo
 from .exceptions import BadAlgo, BadKeyLength, BadKeyValue, FileDecryptionFailed
+from .utils import algo_from_byte, algo_to_byte
 
 SIV_KEY_SIZE = 2 * KEY_SIZE
 
@@ -36,11 +37,11 @@ def siv_256_generate_key() -> str:
 
 def siv_256_encrypt_into_file(fp: BinaryIO, data: str, key: str, debug=False) -> None:
     try:
-        key = base64.b64decode(key)
+        key_bytes = base64.b64decode(key)
     except ValueError as e:
         raise KeyB64DecodingFailure(e)
-    if len(key) != SIV_KEY_SIZE:
-        raise SivBadKeyLength(key)
+    if len(key_bytes) != SIV_KEY_SIZE:
+        raise SivBadKeyLength(key_bytes)
     data_bytes = data.encode(encoding="utf-8")
     siv_256_header_length = struct.calcsize(SIV_256_PACK_FORMAT)
     siv_256_nonce_length = 16
@@ -48,7 +49,7 @@ def siv_256_encrypt_into_file(fp: BinaryIO, data: str, key: str, debug=False) ->
     if debug:
         print(
             f"header: {siv_256_header_length}, nonce: {siv_256_nonce_length}, data: {siv_256_data_length}, "
-            f"algo: {algo_to_byte(Algo.SIV_256)}"
+            f"algo: {algo_to_byte(Algo.SIV_256)!r}"
         )
 
     header = struct.pack(
@@ -59,11 +60,11 @@ def siv_256_encrypt_into_file(fp: BinaryIO, data: str, key: str, debug=False) ->
         siv_256_data_length,
     )
     nonce = get_random_bytes(siv_256_nonce_length)
-    cipher = AES.new(key, AES.MODE_SIV, nonce=nonce)
+    cipher = AES.new(key_bytes, AES.MODE_SIV, nonce=nonce)
     cipher.update(header)
     ciphertext, tag = cipher.encrypt_and_digest(data_bytes)
     if debug:
-        print(f"h:{header}, nonce:{nonce}, ciphertext:{ciphertext}, tag:{tag}")
+        print(f"h:{header!r}, nonce:{nonce!r}, ciphertext:{ciphertext!r}, tag:{tag!r}")
     fp.write(header)
     fp.write(nonce)
     fp.write(ciphertext)
@@ -72,11 +73,11 @@ def siv_256_encrypt_into_file(fp: BinaryIO, data: str, key: str, debug=False) ->
 
 def siv_256_decrypt_from_file(fp: BinaryIO, key: str, debug=False) -> str:
     try:
-        key = base64.b64decode(key)
+        key_bytes = base64.b64decode(key)
     except ValueError as e:
         raise KeyB64DecodingFailure(e)
-    if len(key) != SIV_KEY_SIZE:
-        raise SivBadKeyLength(key)
+    if len(key_bytes) != SIV_KEY_SIZE:
+        raise SivBadKeyLength(key_bytes)
     header = fp.read(struct.calcsize(SIV_256_PACK_FORMAT))
     algo_byte, header_length, nonce_length, data_length = struct.unpack(
         SIV_256_PACK_FORMAT, header
@@ -91,9 +92,11 @@ def siv_256_decrypt_from_file(fp: BinaryIO, key: str, debug=False) -> str:
     ciphertext = fp.read(data_length)
     tag = fp.read()
     if debug:
-        print(f"header:{header}, nonce:{nonce}, ciphertext:{ciphertext}, tag:{tag}")
+        print(
+            f"header:{header!r}, nonce:{nonce!r}, ciphertext:{ciphertext!r}, tag:{tag!r}"
+        )
 
-    cipher = AES.new(key, AES.MODE_SIV, nonce=nonce)
+    cipher = AES.new(key_bytes, AES.MODE_SIV, nonce=nonce)
     cipher.update(header)
     try:
         data = cipher.decrypt_and_verify(ciphertext, tag)
@@ -103,6 +106,6 @@ def siv_256_decrypt_from_file(fp: BinaryIO, key: str, debug=False) -> str:
             raise FileDecryptionFailed(algo=Algo.SIV_256, reason=msg)
         raise e
     if debug:
-        print(f"data:{data}")
+        print(f"data:{data!r}")
 
     return data.decode(encoding="utf-8")

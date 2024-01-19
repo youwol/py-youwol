@@ -60,7 +60,7 @@ async def get_webpm_client_js_map(
 @router.get("/webpm-client.config.json")
 async def get_webpm_client_config_default_version(
     response: Response,
-    if_none_match: TypedHeader = None,
+    if_none_match: Optional[TypedHeader] = None,
     deps: Dependencies = Depends(dependenciesFactory),
 ) -> Optional[ClientConfig]:
     return get_client_config(
@@ -73,7 +73,7 @@ async def get_webpm_client_config_default_version(
 @router.get("/{version}/webpm-client.config.json")
 async def get_webpm_client_config(
     response: Response,
-    if_none_match: TypedHeader = None,
+    if_none_match: Optional[TypedHeader] = None,
     deps: Dependencies = Depends(dependenciesFactory),
 ) -> Optional[ClientConfig]:
     return get_client_config(

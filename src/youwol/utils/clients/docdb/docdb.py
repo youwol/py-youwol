@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 
 # typing
-from typing import Dict, List, NamedTuple, Union
+from typing import Any, NamedTuple, Union
 
 # third parties
 import aiohttp
@@ -19,7 +19,7 @@ from youwol.utils.clients.docdb.models import (
     WhereClause,
 )
 from youwol.utils.clients.utils import aiohttp_resp_parameters
-from youwol.utils.exceptions import raise_exception_from_response
+from youwol.utils.exceptions import upstream_exception_from_response
 
 
 def patch_query_body(query_body: QueryBody, table_body: TableBody) -> QueryBody:
@@ -30,7 +30,7 @@ def patch_query_body(query_body: QueryBody, table_body: TableBody) -> QueryBody:
     """
     column_types = {col.name: col.type for col in table_body.columns}
 
-    def patch_clause(clause: WhereClause, types: Dict[str, str]) -> WhereClause:
+    def patch_clause(clause: WhereClause, types: dict[str, str]) -> WhereClause:
         if types[clause.column] in ["int", "bigint"]:
             return WhereClause(
                 column=clause.column, relation=clause.relation, term=f"{clause.term}"
@@ -79,7 +79,7 @@ class Update(NamedTuple):
     new_major: int
 
 
-def get_update_description(previous_table: Dict[str, any], current_version: str):
+def get_update_description(previous_table: dict[str, Any], current_version: str):
     new_major = int(current_version.split(".")[0])
     new_minor = int(current_version.split(".")[1])
 
@@ -123,19 +123,19 @@ class DocDbClient:
 
     replication_factor: int
 
-    headers: Dict[str, str] = field(default_factory=lambda: {})
+    headers: dict[str, str] = field(default_factory=lambda: {})
     connector = aiohttp.TCPConnector(verify_ssl=False)
 
-    secondary_indexes: List[SecondaryIndex] = field(default_factory=lambda: [])
+    secondary_indexes: list[SecondaryIndex] = field(default_factory=lambda: [])
 
-    async def raise_exception(self, resp: ClientResponse, **kwargs):
+    async def get_upstsream_exception(self, resp: ClientResponse, **kwargs):
         params = {
             "url_base": self.url_base,
             "keyspace": self.keyspace_name,
             "table": self.table_name,
             "replication_factor": self.replication_factor,
         }
-        await raise_exception_from_response(
+        return await upstream_exception_from_response(
             resp, **kwargs, **params, **aiohttp_resp_parameters(resp)
         )
 
@@ -185,7 +185,9 @@ class DocDbClient:
                 if resp.status == 200:
                     resp_json = await resp.json()
                     return self.keyspace_name in resp_json
-                await self.raise_exception(resp, message="Can not get the keyspace")
+                raise await self.get_upstsream_exception(
+                    resp, message="Can not get the keyspace"
+                )
 
     async def _table_exists(self, **kwargs) -> bool:
         async with aiohttp.ClientSession(headers=self.headers) as session:
@@ -193,7 +195,9 @@ class DocDbClient:
                 if resp.status == 200:
                     resp_json = await resp.json()
                     return self.table_name in resp_json
-                await self.raise_exception(resp, message="Can not get the table")
+                raise await self.get_upstsream_exception(
+                    resp, message="Can not get the table"
+                )
 
     async def delete_table(self, **kwargs):
         if not await self._keyspace_exists(**kwargs) or not await self._table_exists(
@@ -207,7 +211,9 @@ class DocDbClient:
                     resp_json = await resp.text()
                     print(f"table {self.table_name} deleted", resp_json)
                     return resp_json
-                await self.raise_exception(resp, message="Deletion of the table failed")
+                raise await self.get_upstsream_exception(
+                    resp, message="Deletion of the table failed"
+                )
 
     async def _create_keyspace(self, **kwargs):
         body_json = post_keyspace_body(self.keyspace_name, self.replication_factor)
@@ -220,7 +226,7 @@ class DocDbClient:
                     print(f"keyspace '{self.keyspace_name}' created")
                     return
 
-                await self.raise_exception(
+                raise await self.get_upstsream_exception(
                     resp, message="Creation of the keyspace failed"
                 )
 
@@ -239,7 +245,9 @@ class DocDbClient:
                     print(f"table '{self.table_name}' created")
                     return
 
-                await self.raise_exception(resp, message="Creation of the table failed")
+                raise await self.get_upstsream_exception(
+                    resp, message="Creation of the table failed"
+                )
 
     async def _create_index(self, index: SecondaryIndex, **kwargs):
         body = index.dict()
@@ -252,7 +260,9 @@ class DocDbClient:
                     print(f"secondary index '{index.name}' created")
                     return
 
-                await self.raise_exception(resp, message="Creation of the index failed")
+                raise await self.get_upstsream_exception(
+                    resp, message="Creation of the index failed"
+                )
 
     async def ensure_table(self, **kwargs):
         if not await self._keyspace_exists(**kwargs):
@@ -294,12 +304,14 @@ class DocDbClient:
                     table = await resp.json()
                     return table
 
-                await self.raise_exception(resp, message="Can not get the table")
+                raise await self.get_upstsream_exception(
+                    resp, message="Can not get the table"
+                )
 
     async def get_document(
         self,
-        partition_keys: Dict[str, any],
-        clustering_keys: Dict[str, any],
+        partition_keys: dict[str, Any],
+        clustering_keys: dict[str, Any],
         owner: Union[str, None],
         **kwargs,
     ):
@@ -316,29 +328,43 @@ class DocDbClient:
                     resp = await resp.json()
                     return resp
 
-                await self.raise_exception(
+                raise await self.get_upstsream_exception(
                     resp, message="Can not get the document", params=params
                 )
 
     async def query(
         self, query_body: Union[QueryBody, str], owner: Union[str, None], **kwargs
     ):
-        if isinstance(query_body, str):
-            query_body = QueryBody.parse(query_body)
-
-        query_body = patch_query_body(query_body=query_body, table_body=self.table_body)
+        typed_query_body = patch_query_body(
+            query_body=(
+                QueryBody.parse(query_body)
+                if isinstance(query_body, str)
+                else query_body
+            ),
+            table_body=self.table_body,
+        )
 
         params = {"owner": owner} if owner else {}
         async with aiohttp.ClientSession(headers=self.headers) as session:
             async with await session.post(
-                url=self.query_url, json=query_body.dict(), params=params, **kwargs
+                url=self.query_url,
+                json=typed_query_body.dict(),
+                params=params,
+                **kwargs,
             ) as resp:
                 if resp.status == 200:
-                    resp = await resp.json()
-                    return {"documents": resp["documents"][0 : query_body.max_results]}
+                    resp_json_body = await resp.json()
+                    return {
+                        "documents": resp_json_body["documents"][
+                            0 : typed_query_body.max_results
+                        ]
+                    }
 
-                await self.raise_exception(
-                    resp, message="Query failed", params=params, query_body=query_body
+                raise await self.get_upstsream_exception(
+                    resp,
+                    message="Query failed",
+                    params=params,
+                    query_body=typed_query_body,
                 )
 
     async def create_document(self, doc, owner: Union[str, None], **kwargs):
@@ -350,7 +376,7 @@ class DocDbClient:
             ) as resp:
                 if resp.status == 201:
                     return await resp.json()
-                await self.raise_exception(
+                raise await self.get_upstsream_exception(
                     resp, message="Can not create the document", params=params, doc=doc
                 )
 
@@ -363,12 +389,12 @@ class DocDbClient:
             ) as resp:
                 if resp.status == 200:
                     return await resp.json()
-                await self.raise_exception(
+                raise await self.get_upstsream_exception(
                     resp, message="Can not update the document", params=params, doc=doc
                 )
 
     async def delete_document(
-        self, doc: Dict[str, any], owner: Union[str, None], **kwargs
+        self, doc: dict[str, Any], owner: Union[str, None], **kwargs
     ):
         params_part = self.get_primary_key_query_parameters(doc)
         params = {"owner": owner} if owner else {}
@@ -378,14 +404,14 @@ class DocDbClient:
             ) as resp:
                 if resp.status == 200:
                     return await resp.json()
-                await self.raise_exception(
+                raise await self.get_upstsream_exception(
                     resp,
                     message="Can not delete the document",
                     params=params_part,
                     doc=doc,
                 )
 
-    def get_primary_key_query_parameters(self, doc: Dict[str, any]):
+    def get_primary_key_query_parameters(self, doc: dict[str, Any]):
         if (
             len(self.table_body.partition_key) == 1
             and len(self.table_body.clustering_columns) == 0

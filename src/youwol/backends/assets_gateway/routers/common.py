@@ -3,7 +3,7 @@ import asyncio
 import json
 
 # typing
-from typing import Dict
+from typing import Any
 
 # third parties
 from fastapi import HTTPException
@@ -63,7 +63,7 @@ async def create_asset(
     request: Request,
     kind: str,
     raw_id: str,
-    raw_response: Dict[str, any],
+    raw_response: dict[str, Any],
     folder_id: str,
     metadata: AssetMeta,
     context: Context,

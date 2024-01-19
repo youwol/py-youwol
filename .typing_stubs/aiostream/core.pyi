@@ -1,6 +1,11 @@
-from .aiter_utils import AsyncIteratorContext
-from _typeshed import Incomplete
+# standard library
 from collections.abc import AsyncIterable, Awaitable
+
+# third parties
+from _typeshed import Incomplete
+
+# relative
+from .aiter_utils import AsyncIteratorContext
 
 class StreamEmpty(Exception): ...
 

@@ -1,8 +1,4 @@
-# typing
-from typing import List
-
-
-def extract_npm_dependencies_dict(names: List[str]):
+def extract_npm_dependencies_dict(names: list[str]):
     dependencies = {
         "@types/jest": "^29.5.6",
         "@types/node": "^18.9.1",  # peer dependency for @youwol/tsconfig

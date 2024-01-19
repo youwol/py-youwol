@@ -1,5 +1,5 @@
-# typing
-from typing import Awaitable, Dict, Union
+# standard library
+from collections.abc import Awaitable
 
 # third parties
 import aiohttp
@@ -21,7 +21,7 @@ from youwol.backends.assets_gateway.routers.common import (
 from youwol.utils import (
     JSON,
     aiohttp_to_starlette_response,
-    raise_exception_from_response,
+    upstream_exception_from_response,
 )
 from youwol.utils.context import Context
 
@@ -71,9 +71,9 @@ async def get_raw_package(
 # The libraries are '@youwol/flux-youwol-essentials' & '@youwol/youwol-essentials'.
 
 
-async def forward_deprecated_get(
-    request, forward_path, configuration: Configuration, to_json=True
-) -> Union[Awaitable[JSON], Union[Awaitable[bytes], Dict[str, str]]]:
+async def forward_deprecated_get_json(
+    request, forward_path, configuration: Configuration
+) -> Awaitable[JSON]:
     async with Context.start_ep(request=request) as ctx:
         url = f"{request.base_url}api/{forward_path}"
         if configuration.https:
@@ -83,12 +83,24 @@ async def forward_deprecated_get(
         async with aiohttp.ClientSession() as session:
             async with await session.get(url=url, headers=headers) as resp:
                 if resp.status == 200:
-                    return (
-                        await resp.json()
-                        if to_json
-                        else (await resp.read(), resp.headers)
-                    )
-                await raise_exception_from_response(resp)
+                    return resp.json()
+                raise await upstream_exception_from_response(resp)
+
+
+async def forward_deprecated_get_content(
+    request, forward_path, configuration: Configuration
+) -> tuple[bytes, dict[str, str]]:
+    async with Context.start_ep(request=request) as ctx:
+        url = f"{request.base_url}api/{forward_path}"
+        if configuration.https:
+            url = url.replace("http://", "https://")
+        await ctx.info(f"Deprecated GET end-point => redirect to GET:{url}")
+        headers = ctx.headers()
+        async with aiohttp.ClientSession() as session:
+            async with await session.get(url=url, headers=headers) as resp:
+                if resp.status == 200:
+                    return (await resp.read()), headers
+                raise await upstream_exception_from_response(resp)
 
 
 @router.get("/raw/data/{raw_id}", summary="get raw data. DEPRECATED")
@@ -97,9 +109,8 @@ async def get_raw_data(
     raw_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
-    content, headers = await forward_deprecated_get(
+    content, headers = await forward_deprecated_get_content(
         request=request,
-        to_json=False,
         forward_path=f"assets-gateway/files-backend/files/{raw_id}",
         configuration=configuration,
     )
@@ -110,9 +121,13 @@ async def get_raw_data(
 async def groups(
     request: Request, configuration: Configuration = Depends(get_configuration)
 ):
-    resp = await forward_deprecated_get(
+    resp = await forward_deprecated_get_json(
         request=request, forward_path="accounts/session", configuration=configuration
     )
+    if not isinstance(resp, dict):
+        raise ValueError("Did not get a JSON dict from accounts/session")
+    if "userInfo" not in resp:
+        raise ValueError("Did not get userInfo from acconuts/session")
     return resp["userInfo"]
 
 
@@ -122,7 +137,7 @@ async def drives(
     group_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
-    return await forward_deprecated_get(
+    return await forward_deprecated_get_json(
         request=request,
         forward_path=f"assets-gateway/treedb-backend/groups/{group_id}/drives",
         configuration=configuration,
@@ -135,7 +150,7 @@ async def item(
     item_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
-    return await forward_deprecated_get(
+    return await forward_deprecated_get_json(
         request=request,
         forward_path=f"assets-gateway/treedb-backend/items/{item_id}",
         configuration=configuration,

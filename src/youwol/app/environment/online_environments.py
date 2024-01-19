@@ -1,5 +1,5 @@
 # typing
-from typing import List, Optional
+from typing import Optional
 
 # relative
 from .models.defaults import default_auth_provider, default_platform_host
@@ -24,7 +24,7 @@ def get_standard_auth_provider(host: str, **kwargs) -> AuthorizationProvider:
 def get_standard_youwol_env(
     env_id: str,
     host: Optional[str] = None,
-    authentications: Optional[List[Authentication]] = None,
+    authentications: Optional[list[Authentication]] = None,
     **kwargs,
 ) -> CloudEnvironment:
     host = host or default_platform_host

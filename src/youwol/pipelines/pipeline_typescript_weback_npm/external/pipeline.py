@@ -2,7 +2,7 @@
 from pathlib import Path
 
 # typing
-from typing import List, Optional
+from typing import Optional
 
 # third parties
 from pydantic import BaseModel
@@ -42,7 +42,7 @@ class BuildStep(PipelineStep):
         ignore=[".yw_pipeline/**", "cdn.zip", "node_modules/**", ".template/**"],
     )
 
-    artifacts: List[Artifact] = [
+    artifacts: list[Artifact] = [
         Artifact(
             id="dist",
             files=FileListing(

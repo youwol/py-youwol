@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from urllib import parse
 
 # typing
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Optional, Union
 
 # third parties
 from jwt import InvalidTokenError, PyJWKClientError
@@ -26,7 +26,7 @@ class JwtProvider(ABC):
     @abstractmethod
     async def get_token_and_openid_base_url(
         self, request: Request, context: Context
-    ) -> Tuple[Optional[str], str]:
+    ) -> tuple[Optional[str], str]:
         raise NotImplementedError()
 
 
@@ -36,7 +36,7 @@ class JwtProviderBearer(JwtProvider):
 
     async def get_token_and_openid_base_url(
         self, request: Request, context: Context
-    ) -> Tuple[Optional[str], str]:
+    ) -> tuple[Optional[str], str]:
         header_value = request.headers.get("Authorization")
 
         if not header_value:
@@ -58,7 +58,7 @@ class JwtProviderCookie(JwtProvider):
 
     async def get_token_and_openid_base_url(
         self, request: Request, context: Context
-    ) -> Tuple[Optional[str], str]:
+    ) -> tuple[Optional[str], str]:
         tokens_id = request.cookies.get("yw_jwt")
 
         if not tokens_id:
@@ -81,7 +81,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
     def __init__(
         self,
         app: ASGIApp,
-        jwt_providers: Union[JwtProvider, List[JwtProvider]],
+        jwt_providers: Union[JwtProvider, list[JwtProvider]],
         predicate_public_path=lambda url: False,
         on_missing_token=lambda url, text: Response(
             content=f"Authentication failure : {text}", status_code=403
@@ -90,11 +90,11 @@ class AuthMiddleware(BaseHTTPMiddleware):
     ):
         super().__init__(app, dispatch)
         self.predicate_public_path = predicate_public_path
-        if not isinstance(jwt_providers, List):
+        if not isinstance(jwt_providers, list):
             jwt_providers = [jwt_providers]
         self.jwt_providers = jwt_providers
         self.on_missing_token = on_missing_token
-        self.__oidc_config_cache: Dict[str, OidcConfig] = {}
+        self.__oidc_config_cache: dict[str, OidcConfig] = {}
 
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
@@ -117,7 +117,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 except StopIteration:
                     break
 
-            if access_token is None:
+            if access_token is None or openid_base_url is None:
                 await ctx.info("No JWT providers found a token")
                 return self.on_missing_token(request.url, "No access token")
 

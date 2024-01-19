@@ -1,8 +1,9 @@
 # standard library
+from collections.abc import Awaitable
 from dataclasses import dataclass
 
 # typing
-from typing import Awaitable, Callable
+from typing import Callable, Union
 
 # Youwol utilities
 from youwol.utils import CdnClient
@@ -11,15 +12,6 @@ from youwol.utils.clients.files import FilesClient
 from youwol.utils.clients.flux.flux import FluxClient
 from youwol.utils.clients.stories.stories import StoriesClient
 from youwol.utils.clients.treedb.treedb import TreeDbClient
-
-
-@dataclass(frozen=True)
-class Constants:
-    cache_prefix: str = "assets-gateway"
-    unprotected_paths: Callable[[str], bool] = (
-        lambda url: url.path.split("/")[-1] == "healthz"
-        or url.path.split("/")[-1] == "openapi-docs"
-    )
 
 
 @dataclass(frozen=True)
@@ -34,7 +26,7 @@ class Configuration:
 
 
 class Dependencies:
-    get_configuration: Callable[[], Awaitable[Configuration]]
+    get_configuration: Callable[[], Union[Configuration, Awaitable[Configuration]]]
 
 
 async def get_configuration():

@@ -1,7 +1,20 @@
-from _typeshed import Incomplete
+# standard library
 from threading import Thread
-from watchdog.events import DirCreatedEvent as DirCreatedEvent, DirDeletedEvent as DirDeletedEvent, DirModifiedEvent as DirModifiedEvent, DirMovedEvent as DirMovedEvent, FileCreatedEvent as FileCreatedEvent, FileDeletedEvent as FileDeletedEvent, FileModifiedEvent as FileModifiedEvent, FileMovedEvent as FileMovedEvent
-from watchdog.observers.api import BaseObserver as BaseObserver, DEFAULT_EMITTER_TIMEOUT as DEFAULT_EMITTER_TIMEOUT, DEFAULT_OBSERVER_TIMEOUT as DEFAULT_OBSERVER_TIMEOUT, EventEmitter as EventEmitter
+
+# third parties
+from _typeshed import Incomplete
+from watchdog.events import DirCreatedEvent as DirCreatedEvent
+from watchdog.events import DirDeletedEvent as DirDeletedEvent
+from watchdog.events import DirModifiedEvent as DirModifiedEvent
+from watchdog.events import DirMovedEvent as DirMovedEvent
+from watchdog.events import FileCreatedEvent as FileCreatedEvent
+from watchdog.events import FileDeletedEvent as FileDeletedEvent
+from watchdog.events import FileModifiedEvent as FileModifiedEvent
+from watchdog.events import FileMovedEvent as FileMovedEvent
+from watchdog.observers.api import DEFAULT_EMITTER_TIMEOUT as DEFAULT_EMITTER_TIMEOUT
+from watchdog.observers.api import DEFAULT_OBSERVER_TIMEOUT as DEFAULT_OBSERVER_TIMEOUT
+from watchdog.observers.api import BaseObserver as BaseObserver
+from watchdog.observers.api import EventEmitter as EventEmitter
 
 logger: Incomplete
 

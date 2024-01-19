@@ -1,5 +1,5 @@
 # typing
-from typing import Annotated, Any, List, Optional
+from typing import Annotated, Any, Optional
 
 # third parties
 from fastapi import APIRouter, Depends
@@ -33,7 +33,7 @@ class SessionDetailsUserGroup(BaseModel):
 class SessionDetailsUserInfo(BaseModel):
     name: str = "temporary user"
     temp: bool = False
-    groups: List[SessionDetailsUserGroup]
+    groups: list[SessionDetailsUserGroup]
 
 
 class SessionDetails(BaseModel):
@@ -91,7 +91,7 @@ async def get_session_details(
     account_manager_url = (
         conf.account_manager_url
         if conf.account_manager_url
-        else f"{conf.keycloak_base_url}/account/"
+        else f"{conf.oidc_client.get_base_url()}/account/"
     )
 
     if yw_jwt_t:

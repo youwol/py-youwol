@@ -1,5 +1,5 @@
 # typing
-from typing import List, Union
+from typing import Union
 
 # third parties
 from pydantic import BaseModel
@@ -21,42 +21,42 @@ class Group(BaseModel):
 
 class User(BaseModel):
     name: str
-    groups: List[Group]
+    groups: list[Group]
 
 
 class GroupsResponse(BaseModel):
-    groups: List[Group]
+    groups: list[Group]
 
 
 class GetRecordsBody(BaseModel):
-    ids: List[str]
+    ids: list[str]
     groupId: str
 
 
 class RecordsTable(BaseModel):
     primaryKey: str
     id: str
-    values: List[str]
+    values: list[str]
 
 
 class RecordsKeyspace(BaseModel):
     id: str
     groupId: str
-    tables: List[RecordsTable]
+    tables: list[RecordsTable]
 
 
 class RecordsDocDb(BaseModel):
-    keyspaces: List[RecordsKeyspace]
+    keyspaces: list[RecordsKeyspace]
 
 
 class RecordsBucket(BaseModel):
     id: str
     groupId: str
-    paths: List[str]
+    paths: list[str]
 
 
 class RecordsStorage(BaseModel):
-    buckets: List[RecordsBucket]
+    buckets: list[RecordsBucket]
 
 
 class RecordsResponse(BaseModel):

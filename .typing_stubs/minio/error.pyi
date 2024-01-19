@@ -1,5 +1,8 @@
-from .xml import findtext as findtext
+# third parties
 from _typeshed import Incomplete
+
+# relative
+from .xml import findtext as findtext
 
 class MinioException(Exception): ...
 
@@ -13,7 +16,17 @@ class ServerError(MinioException):
     def status_code(self): ...
 
 class S3Error(MinioException):
-    def __init__(self, code, message, resource, request_id, host_id, response, bucket_name: Incomplete | None = ..., object_name: Incomplete | None = ...) -> None: ...
+    def __init__(
+        self,
+        code,
+        message,
+        resource,
+        request_id,
+        host_id,
+        response,
+        bucket_name: Incomplete | None = ...,
+        object_name: Incomplete | None = ...,
+    ) -> None: ...
     def __reduce__(self): ...
     @property
     def code(self): ...

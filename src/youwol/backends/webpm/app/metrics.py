@@ -1,16 +1,13 @@
 # standard library
 import re
 
-# typing
-from typing import Dict
-
 # third parties
 from prometheus_client import Counter, Gauge
 
 
 class CountVersions:
-    def __init__(self):
-        self.__counters: Dict[str, Counter] = {}
+    def __init__(self) -> None:
+        self.__counters: dict[str, Counter] = {}
 
     def inc(self, version: str):
         version_safe = re.sub(r"[^[a-zA-Z0-9_]", r"_", version)

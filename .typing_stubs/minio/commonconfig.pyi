@@ -1,10 +1,18 @@
+# standard library
+from abc import ABCMeta
+
+# third parties
+from _typeshed import Incomplete
+
+# relative
 from .error import MinioException as MinioException
 from .helpers import quote as quote
 from .sse import SseCustomerKey as SseCustomerKey
 from .time import to_http_header as to_http_header
-from .xml import SubElement as SubElement, find as find, findall as findall, findtext as findtext
-from _typeshed import Incomplete
-from abc import ABCMeta
+from .xml import SubElement as SubElement
+from .xml import find as find
+from .xml import findall as findall
+from .xml import findtext as findtext
 
 COPY: str
 REPLACE: str
@@ -35,7 +43,9 @@ class Tag:
     def toxml(self, element): ...
 
 class AndOperator:
-    def __init__(self, prefix: Incomplete | None = ..., tags: Incomplete | None = ...) -> None: ...
+    def __init__(
+        self, prefix: Incomplete | None = ..., tags: Incomplete | None = ...
+    ) -> None: ...
     @property
     def prefix(self): ...
     @property
@@ -45,7 +55,12 @@ class AndOperator:
     def toxml(self, element): ...
 
 class Filter:
-    def __init__(self, and_operator: Incomplete | None = ..., prefix: Incomplete | None = ..., tag: Incomplete | None = ...) -> None: ...
+    def __init__(
+        self,
+        and_operator: Incomplete | None = ...,
+        prefix: Incomplete | None = ...,
+        tag: Incomplete | None = ...,
+    ) -> None: ...
     @property
     def and_operator(self): ...
     @property
@@ -58,7 +73,9 @@ class Filter:
 
 class BaseRule:
     __metaclass__ = ABCMeta
-    def __init__(self, rule_filter: Incomplete | None = ..., rule_id: Incomplete | None = ...) -> None: ...
+    def __init__(
+        self, rule_filter: Incomplete | None = ..., rule_id: Incomplete | None = ...
+    ) -> None: ...
     @property
     def rule_filter(self): ...
     @property
@@ -71,7 +88,20 @@ def check_status(status) -> None: ...
 
 class ObjectConditionalReadArgs:
     __metaclass__ = ABCMeta
-    def __init__(self, bucket_name, object_name, region: Incomplete | None = ..., version_id: Incomplete | None = ..., ssec: Incomplete | None = ..., offset: Incomplete | None = ..., length: Incomplete | None = ..., match_etag: Incomplete | None = ..., not_match_etag: Incomplete | None = ..., modified_since: Incomplete | None = ..., unmodified_since: Incomplete | None = ...) -> None: ...
+    def __init__(
+        self,
+        bucket_name,
+        object_name,
+        region: Incomplete | None = ...,
+        version_id: Incomplete | None = ...,
+        ssec: Incomplete | None = ...,
+        offset: Incomplete | None = ...,
+        length: Incomplete | None = ...,
+        match_etag: Incomplete | None = ...,
+        not_match_etag: Incomplete | None = ...,
+        modified_since: Incomplete | None = ...,
+        unmodified_since: Incomplete | None = ...,
+    ) -> None: ...
     @property
     def bucket_name(self): ...
     @property
@@ -101,7 +131,20 @@ class CopySource(ObjectConditionalReadArgs):
     def of(cls, src): ...
 
 class ComposeSource(ObjectConditionalReadArgs):
-    def __init__(self, bucket_name, object_name, region: Incomplete | None = ..., version_id: Incomplete | None = ..., ssec: Incomplete | None = ..., offset: Incomplete | None = ..., length: Incomplete | None = ..., match_etag: Incomplete | None = ..., not_match_etag: Incomplete | None = ..., modified_since: Incomplete | None = ..., unmodified_since: Incomplete | None = ...) -> None: ...
+    def __init__(
+        self,
+        bucket_name,
+        object_name,
+        region: Incomplete | None = ...,
+        version_id: Incomplete | None = ...,
+        ssec: Incomplete | None = ...,
+        offset: Incomplete | None = ...,
+        length: Incomplete | None = ...,
+        match_etag: Incomplete | None = ...,
+        not_match_etag: Incomplete | None = ...,
+        modified_since: Incomplete | None = ...,
+        unmodified_since: Incomplete | None = ...,
+    ) -> None: ...
     def build_headers(self, object_size, etag) -> None: ...
     @property
     def object_size(self): ...

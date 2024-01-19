@@ -7,7 +7,7 @@ import shutil
 from pathlib import Path
 
 # typing
-from typing import List, cast
+from typing import cast
 
 # third parties
 import brotli
@@ -111,9 +111,7 @@ async def clone_project(git_url: str, branch: str, new_project_name: str, ctx: C
 
 
 async def purge_downloads(context: Context):
-    async with context.start(
-        action="purge_downloads"
-    ) as ctx:  # type: Context
+    async with context.start(action="purge_downloads") as ctx:  # type: Context
         env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
         assets_gtw = await RemoteClients.get_twin_assets_gateway_client(env=env)
         headers = ctx.headers()
@@ -265,14 +263,14 @@ def retrieve_logs(body, context: Context):
 
     test_name = body["testName"]
     file_name = body["file"]
-    nodes: List[Log] = [
+    nodes: list[Log] = [
         NodeLogResponse(
             **Log.from_log_entry(log).dict(), failed=log.context_id in errors
         )
         for log in root_logs + nodes_logs
         if test_name in log.labels and file_name in log.labels
     ]
-    leafs: List[Log] = [
+    leafs: list[Log] = [
         LeafLogResponse(**Log.from_log_entry(log).dict())
         for log in leaf_logs
         if test_name in log.labels and file_name in log.labels

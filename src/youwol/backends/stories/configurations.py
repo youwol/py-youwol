@@ -1,8 +1,9 @@
 # standard library
+from collections.abc import Awaitable
 from dataclasses import dataclass
 
 # typing
-from typing import Awaitable, Callable, Dict, Optional, Union
+from typing import Callable, Optional, Union
 
 # Youwol utilities
 from youwol.utils import (
@@ -28,10 +29,6 @@ Storage = Union[StorageClient, LocalStorageClient]
 class Constants:
     namespace: str = "stories"
     cache_prefix: str = "stories-backend_"
-    unprotected_paths: Callable[[str], bool] = (
-        lambda url: url.path.split("/")[-1] == "healthz"
-        or url.path.split("/")[-1] == "openapi-docs"
-    )
     default_owner = "/youwol-users"
     text_content_type = "text/plain"
     db_schema_documents = DOCUMENTS_TABLE
@@ -73,7 +70,7 @@ class Configuration:
     doc_db_stories: DocDb
     doc_db_documents: DocDb
     assets_gtw_client: AssetsGatewayClient
-    admin_headers: Optional[Dict[str, str]] = None
+    admin_headers: Optional[dict[str, str]] = None
 
 
 class Dependencies:

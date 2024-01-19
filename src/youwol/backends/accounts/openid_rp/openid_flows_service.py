@@ -1,5 +1,5 @@
 # typing
-from typing import Callable, Optional, Tuple
+from typing import Callable, Optional
 
 # Youwol utilities
 from youwol.utils import CacheClient
@@ -22,6 +22,11 @@ class InvalidLogoutToken(RuntimeError):
 class FlowStateNotFound(RuntimeError):
     def __init__(self) -> None:
         super().__init__("Flow state not found")
+
+
+class TokenNotFound(RuntimeError):
+    def __init__(self) -> None:
+        super().__init__("Token not found")
 
 
 class OpenidFlowsService:
@@ -61,8 +66,12 @@ class OpenidFlowsService:
 
     async def handle_authorization_flow_callback(
         self, flow_ref: str, code: str, callback_uri: str
-    ) -> Tuple[Tokens, str]:
-        flow_state_data = self.__cache.get(AuthorizationFlow.cache_key(flow_ref))
+    ) -> tuple[Tokens, str]:
+        flow_cache_key = AuthorizationFlow.cache_key(flow_ref)
+        flow_state_data = self.__cache.get(flow_cache_key)
+
+        if not isinstance(flow_state_data, dict):
+            raise ValueError(f"Cached value for key {flow_cache_key} is not a `dict`")
 
         if flow_state_data is None:
             raise FlowStateNotFound()
@@ -111,6 +120,9 @@ class OpenidFlowsService:
 
         tokens = await self.__tokens_manager.restore_tokens(tokens_id=tokens_id)
 
+        if tokens is None:
+            raise TokenNotFound()
+
         url = await self.__oidc_client.logout_url(
             state=logout_flow.ref,
             redirect_uri=callback_uri,
@@ -119,11 +131,17 @@ class OpenidFlowsService:
 
         return url
 
-    def handle_logout_flow_callback(self, flow_ref: str) -> Tuple[str, bool]:
-        flow_state_data = self.__cache.get(LogoutFlow.cache_key(flow_ref))
+    def handle_logout_flow_callback(self, flow_ref: str) -> tuple[str, bool]:
+        logout_flow_cache_key = LogoutFlow.cache_key(flow_ref)
+        flow_state_data = self.__cache.get(logout_flow_cache_key)
 
         if flow_state_data is None:
             raise FlowStateNotFound()
+
+        if not isinstance(flow_state_data, dict):
+            raise ValueError(
+                f"Cached value for key {logout_flow_cache_key} is not a `dict`"
+            )
 
         flow_state = LogoutFlow(cache=self.__cache, **flow_state_data)
         target_uri = flow_state.target_uri

@@ -9,7 +9,7 @@ from pathlib import Path
 from threading import Thread
 
 # typing
-from typing import Callable, List, Optional, Union
+from typing import Callable, Optional, Union
 
 # third parties
 from watchdog.events import (
@@ -35,13 +35,13 @@ from youwol.utils import Context, log_info
 
 
 class ExplicitProjectsFinderHandler(ProjectsFinderHandler):
-    paths: Union[List[ConfigPath], Callable[[PathsBook], List[ConfigPath]]]
+    paths: Union[list[ConfigPath], Callable[[PathsBook], list[ConfigPath]]]
     paths_book: PathsBook
     on_projects_count_update: OnProjectsCountUpdate
 
     def __init__(
         self,
-        paths: Union[List[ConfigPath], Callable[[], List[ConfigPath]]],
+        paths: Union[list[ConfigPath], Callable[[], list[ConfigPath]]],
         paths_book: PathsBook,
         on_projects_count_update: OnProjectsCountUpdate,
     ):
@@ -61,15 +61,15 @@ class ExplicitProjectsFinderHandler(ProjectsFinderHandler):
 
 class RecursiveFinderEventHandler(FileSystemEventHandler):
     context: Context
-    paths: List[Path]
-    ignored_patterns: List[str]
+    paths: list[Path]
+    ignored_patterns: list[str]
     paths_book: PathsBook
     on_projects_count_update: OnProjectsCountUpdate
 
     def __init__(
         self,
-        paths: List[Path],
-        ignored_patterns: List[str],
+        paths: list[Path],
+        ignored_patterns: list[str],
         paths_book: PathsBook,
         on_projects_count_update: OnProjectsCountUpdate,
         context: Context,
@@ -134,8 +134,8 @@ class RecursiveFinderEventHandler(FileSystemEventHandler):
 
 
 class RecursiveProjectsFinderThread(Thread):
-    paths: List[Path]
-    ignored_patterns: List[str]
+    paths: list[Path]
+    ignored_patterns: list[str]
     paths_book: PathsBook
     on_projects_count_update: OnProjectsCountUpdate
 
@@ -147,8 +147,8 @@ class RecursiveProjectsFinderThread(Thread):
 
     def __init__(
         self,
-        paths: List[Path],
-        ignored_patterns: List[str],
+        paths: list[Path],
+        ignored_patterns: list[str],
         paths_book: PathsBook,
         on_projects_count_update: OnProjectsCountUpdate,
     ):
@@ -191,16 +191,16 @@ class RecursiveProjectsFinderThread(Thread):
 
 
 class RecursiveProjectFinderHandler(ProjectsFinderHandler):
-    paths: List[Path]
-    ignored_patterns = List[str]
+    paths: list[Path]
+    ignored_patterns = list[str]
     paths_book: PathsBook
     on_projects_count_update: OnProjectsCountUpdate
     thread: Optional[RecursiveProjectsFinderThread]
 
     def __init__(
         self,
-        paths: List[Path],
-        ignored_patterns: List[str],
+        paths: list[Path],
+        ignored_patterns: list[str],
         paths_book: PathsBook,
         on_projects_count_update: OnProjectsCountUpdate,
     ):

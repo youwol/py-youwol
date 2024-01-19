@@ -3,7 +3,7 @@ import sys
 import traceback
 
 # typing
-from typing import List, Union
+from typing import Union
 
 # third parties
 from colorama import Fore, Style
@@ -12,7 +12,7 @@ from pydantic import BaseModel
 
 class ErrorResponse(BaseModel):
     reason: str
-    hints: List[str] = []
+    hints: list[str] = []
 
 
 class Check(BaseModel):
@@ -51,7 +51,7 @@ class CheckDatabasesFolderHealthy(Check):
 class ConfigurationLoadingStatus(BaseModel):
     path: str
     validated: bool = False
-    checks: List[Check]
+    checks: list[Check]
 
 
 class ConfigurationLoadingException(Exception):

@@ -1,6 +1,3 @@
-# typing
-from typing import List
-
 # third parties
 from fastapi import APIRouter
 
@@ -50,7 +47,7 @@ class FluxDeployment(BackendDeployment):
     def name(self) -> str:
         return "flux"
 
-    def middlewares(self) -> List[FastApiMiddleware]:
+    def middlewares(self) -> list[FastApiMiddleware]:
         return [auth_middleware]
 
 

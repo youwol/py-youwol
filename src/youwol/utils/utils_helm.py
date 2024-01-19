@@ -30,7 +30,7 @@ async def helm_list(
     namespace: Optional[str],
     kube_context: str,
     selector: Optional[Selector],
-    context: Optional[Context],
+    context: Context,
 ):
     cmd = f"helm list --kube-context {kube_context}"
     if namespace:
@@ -60,8 +60,8 @@ async def helm_dry_run(
     namespace: str,
     values_file: Path,
     chart_folder: Path,
+    context: Context,
     args="",
-    context: Context = None,
 ):
     async with context.start(action="helm_dry_run") as ctx:
         cmd = (
@@ -79,9 +79,9 @@ async def helm_install(
     namespace: str,
     values_file: Path,
     chart_folder: Path,
+    context: Context,
     timeout=120,
     args="",
-    context: Context = None,
 ):
     return await helm_install_or_upgrade(
         release_name=release_name,
@@ -101,9 +101,9 @@ async def helm_upgrade(
     namespace: str,
     values_file: Path,
     chart_folder: Path,
+    context: Context,
     timeout=120,
     args="",
-    context: Context = None,
 ):
     return await helm_install_or_upgrade(
         release_name=release_name,
@@ -118,11 +118,13 @@ async def helm_upgrade(
 
 
 async def helm_uninstall(
-    release_name: str, kube_context: str, namespace: str, context: Context = None
+    release_name: str,
+    kube_context: str,
+    namespace: str,
+    context: Context,
 ):
     cmd = f"helm uninstall --namespace {namespace} --kube-context {kube_context} {release_name}"
-    if context:
-        await context.info(text=cmd)
+    await context.info(text=cmd)
     await execute_shell_cmd(cmd, context)
 
 
@@ -132,9 +134,9 @@ async def helm_install_or_upgrade(
     values_file: Path,
     chart_folder: Path,
     kube_context: str,
+    context: Context,
     timeout=120,
     args="",
-    context: Context = None,
 ):
     async with context.start(action="helm_install_or_upgrade") as ctx:
         cmd = (

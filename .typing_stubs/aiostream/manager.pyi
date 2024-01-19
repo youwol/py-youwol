@@ -1,6 +1,10 @@
-from .aiter_utils import AsyncExitStack as AsyncExitStack, anext as anext
-from .core import streamcontext as streamcontext
+# third parties
 from _typeshed import Incomplete
+
+# relative
+from .aiter_utils import AsyncExitStack as AsyncExitStack
+from .aiter_utils import anext as anext
+from .core import streamcontext as streamcontext
 
 class TaskGroup:
     def __init__(self) -> None: ...

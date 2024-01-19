@@ -4,13 +4,13 @@ import io
 import json
 
 # typing
-from typing import Dict, List, Optional
+from typing import Any
 
 # third parties
 from fastapi import APIRouter, Depends, File, Form, HTTPException
 from fastapi import Query as QueryParam
-from fastapi import UploadFile
 from semantic_version import NpmSpec, Version
+from starlette.datastructures import UploadFile
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -45,7 +45,7 @@ from youwol.backends.cdn.utils import (
 from youwol.backends.cdn.utils_indexing import get_version_number_str
 
 # Youwol utilities
-from youwol.utils import JSON, PackagesNotFound
+from youwol.utils import PackagesNotFound
 from youwol.utils.clients.docdb.models import Query, QueryBody, WhereClause
 from youwol.utils.context import Context
 from youwol.utils.http_clients.cdn_backend import (
@@ -84,7 +84,11 @@ async def publish_library(
 
     async with Context.start_ep(request=request, with_labels=["Publish"]) as ctx:
         return await publish_package(
-            file.file, file.filename, content_encoding, configuration, ctx
+            file=file.file,
+            filename=file.filename if file.filename else "uploaded_file",
+            content_encoding=content_encoding,
+            configuration=configuration,
+            context=ctx,
         )
 
 
@@ -130,8 +134,7 @@ async def get_library_info(
     max_count: int = QueryParam(1000, alias="max-count"),
     configuration: Configuration = Depends(get_configuration),
 ):
-    response: Optional[ListVersionsResponse] = None
-    async with Context.start_ep(request=request, response=lambda: response) as ctx:
+    async with Context.start_ep(request=request) as ctx:
         name = to_package_name(library_id)
         # If a semver is requested we basically fetch all versions and proceed with filtering afterward using NpmSpec.
         # It would be interesting to proceed with the versions filtering directly from the CQL query to scylla-db.
@@ -309,11 +312,11 @@ async def resolve_loading_tree(
     body: LoadingGraphBody,
     configuration: Configuration = Depends(get_configuration),
 ):
-    versions_cache: Dict[LibName, List[str]] = {}
-    full_data_cache: Dict[ExportedKey, LibraryResolved] = {}
-    resolutions_cache: Dict[QueryKey, ResolvedQuery] = {}
+    versions_cache: dict[LibName, list[str]] = {}
+    full_data_cache: dict[ExportedKey, LibraryResolved] = {}
+    resolutions_cache: dict[QueryKey, ResolvedQuery] = {}
 
-    def to_libraries_resolved(input_elements: List[JSON]):
+    def to_libraries_resolved(input_elements: list[dict[str, Any]]):
         return [
             LibraryResolved(
                 name=element["library_name"],
@@ -338,8 +341,11 @@ async def resolve_loading_tree(
 
     async with Context.start_ep(request=request, body=body) as ctx:
         await ctx.info(text="Start resolving loading graph", data=body)
+        empty: list[str] = []
         extra_index = (
-            await decode_extra_index(body.extraIndex, ctx) if body.extraIndex else []
+            await decode_extra_index(body.extraIndex, ctx)
+            if body.extraIndex
+            else list(empty)
         )
         root_name = "!!root!!"
         # This is for backward compatibility when single lib version download were assumed
@@ -381,10 +387,10 @@ async def resolve_loading_tree(
             lib for lib in resolved_libraries if lib.name != root_name
         ]
         items_dict = {
-            get_full_exported_symbol(d.name, d.version): [
+            get_full_exported_symbol(d.name, d.version): (
                 to_package_id(d.name),
                 get_url(d),
-            ]
+            )
             for d in resolved_libraries
         }
 

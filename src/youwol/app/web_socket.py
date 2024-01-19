@@ -2,9 +2,6 @@
 from dataclasses import dataclass, field
 from enum import Enum
 
-# typing
-from typing import List
-
 # third parties
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
@@ -15,8 +12,8 @@ from youwol.utils.context import WsContextReporter
 
 @dataclass(frozen=False)
 class WebSocketsStore:
-    logs: List[WebSocket] = field(default_factory=list)
-    data: List[WebSocket] = field(default_factory=list)
+    logs: list[WebSocket] = field(default_factory=list)
+    data: list[WebSocket] = field(default_factory=list)
 
 
 global_ws_store = WebSocketsStore()

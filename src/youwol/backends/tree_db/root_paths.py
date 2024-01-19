@@ -4,8 +4,10 @@ import itertools
 import json
 import uuid
 
+from collections.abc import Coroutine
+
 # typing
-from typing import Coroutine, List, Optional, Set, Tuple, cast
+from typing import cast
 
 # third parties
 from fastapi import APIRouter, Depends, HTTPException
@@ -33,6 +35,7 @@ from youwol.backends.tree_db.utils import (
 
 # Youwol utilities
 from youwol.utils import (
+    AnyDict,
     ensure_group_permission,
     get_all_individual_groups,
     private_group_id,
@@ -75,11 +78,12 @@ async def healthz():
 async def get_groups(request: Request):
     user = user_info(request)
     groups = get_all_individual_groups(user["memberof"])
-    groups = [Group(id=private_group_id(user), path="private")] + [
-        Group(id=str(to_group_id(g)), path=g) for g in groups if g
-    ]
-
-    return GroupsResponse(groups=groups)
+    return GroupsResponse(
+        groups=(
+            [Group(id=private_group_id(user), path="private")]
+            + [Group(id=str(to_group_id(g)), path=g) for g in groups if g]
+        )
+    )
 
 
 async def _create_drive(
@@ -108,9 +112,8 @@ async def create_drive(
     drive: DriveBody,
     configuration: Configuration = Depends(get_configuration),
 ):
-    response: Optional[DriveResponse] = None
     async with Context.start_ep(
-        request=request, action="create drive", body=drive, response=lambda: response
+        request=request, action="create drive", body=drive
     ) as ctx:  # type: Context
         response = await _create_drive(
             group_id=group_id, drive=drive, configuration=configuration, context=ctx
@@ -126,12 +129,10 @@ async def list_drives(
     group_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
-    response: Optional[DrivesResponse] = None
     async with Context.start_ep(
         request=request,
         action="list_drives",
         with_attributes={"groupId": group_id},
-        response=lambda: response,
     ) as ctx:  # type: Context
         ensure_group_permission(request=request, group_id=group_id)
 
@@ -157,13 +158,11 @@ async def update_drive(
     body: RenameBody,
     configuration: Configuration = Depends(get_configuration),
 ):
-    response: Optional[DriveResponse] = None
     async with Context.start_ep(
         request=request,
         action="update_drive",
         body=body,
         with_attributes={"drive_id": drive_id},
-        response=lambda: response,
     ) as ctx:  # type: Context
         docdb = configuration.doc_dbs.drives_db
         doc = await db_get(
@@ -217,12 +216,10 @@ async def get_drive(
     drive_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
-    response: Optional[DriveResponse] = None
     async with Context.start_ep(
         request=request,
         action="get_drive",
         with_attributes={"drive_id": drive_id},
-        response=lambda: response,
     ) as ctx:  # type: Context
         response = await _get_drive(
             drive_id=drive_id, configuration=configuration, context=ctx
@@ -390,13 +387,11 @@ async def create_folder(
     folder: FolderBody,
     configuration: Configuration = Depends(get_configuration),
 ):
-    response: Optional[FolderResponse] = None
     async with Context.start_ep(
         request=request,
         action="create_folder",
         body=folder,
         with_attributes={"parent_folder_id": parent_folder_id},
-        response=lambda: response,
     ) as ctx:  # type: Context
         response = await _create_folder(
             parent_folder_id=parent_folder_id,
@@ -416,13 +411,11 @@ async def update_folder(
     body: RenameBody,
     configuration: Configuration = Depends(get_configuration),
 ):
-    response: Optional[FolderResponse] = None
     async with Context.start_ep(
         request=request,
         action="update_folder",
         body=body,
         with_attributes={"folder_id": folder_id},
-        response=lambda: response,
     ) as ctx:  # type: Context
         folders_db = configuration.doc_dbs.folders_db
         doc = await db_get(
@@ -453,12 +446,10 @@ async def get_folder(
     folder_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
-    response: Optional[FolderResponse] = None
     async with Context.start_ep(
         request=request,
         action="get_folder",
         with_attributes={"folder_id": folder_id},
-        response=lambda: response,
     ) as ctx:  # type: Context
         response = await _get_folder(
             folder_id=folder_id, configuration=configuration, context=ctx
@@ -500,13 +491,11 @@ async def create_item(
     item: ItemBody,
     configuration: Configuration = Depends(get_configuration),
 ):
-    response: Optional[ItemResponse] = None
     async with Context.start_ep(
         request=request,
         action="create_item",
         body=item,
         with_attributes={"folder_id": folder_id},
-        response=lambda: response,
     ) as ctx:  # type: Context
         return await _create_item(
             folder_id=folder_id, item=item, configuration=configuration, context=ctx
@@ -520,13 +509,11 @@ async def update_item(
     body: RenameBody,
     configuration: Configuration = Depends(get_configuration),
 ):
-    response: Optional[ItemResponse] = None
     async with Context.start_ep(
         request=request,
         action="update_item",
         body=body,
         with_attributes={"item_id": item_id},
-        response=lambda: response,
     ) as ctx:  # type: Context
         items_db = configuration.doc_dbs.items_db
         doc = await db_get(
@@ -554,12 +541,10 @@ async def get_item(
     item_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
-    response: Optional[ItemResponse] = None
     async with Context.start_ep(
         request=request,
         action="get_item",
         with_attributes={"item_id": item_id},
-        response=lambda: response,
     ) as ctx:  # type: Context
         response = await _get_item(
             item_id=item_id, configuration=configuration, context=ctx
@@ -575,12 +560,10 @@ async def get_items_by_asset_id(
     asset_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
-    response: Optional[ItemsResponse] = None
     async with Context.start_ep(
         request=request,
         action="get_item",
         with_attributes={"assetId": asset_id},
-        response=lambda: response,
     ) as ctx:  # type: Context
         docdb = configuration.doc_dbs.items_db
         items = await db_query(
@@ -624,12 +607,10 @@ async def get_path(
     item_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
-    response: Optional[PathResponse] = None
     async with Context.start_ep(
         request=request,
         action="get_path",
         with_attributes={"item_id": item_id},
-        response=lambda: response,
     ) as ctx:  # type: Context
         item = await _get_item(
             item_id=item_id, configuration=configuration, context=ctx
@@ -655,12 +636,10 @@ async def get_path_folder(
     folder_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
-    response: Optional[PathResponse] = None
     async with Context.start_ep(
         request=request,
         action="get_path_folder",
         with_attributes={"folder_id": folder_id},
-        response=lambda: response,
     ) as ctx:  # type: Context
         folder = await _get_folder(
             folder_id=folder_id, configuration=configuration, context=ctx
@@ -682,13 +661,12 @@ async def move(
     body: MoveItemBody,
     configuration: Configuration = Depends(get_configuration),
 ):
-    response: Optional[MoveResponse] = None
-    async with Context.start_ep(
-        request=request, action="move", body=body, response=lambda: response
-    ) as ctx:  # type: Context
+    async with Context.start_ep(request=request, action="move", body=body) as ctx:
         items_db = configuration.doc_dbs.items_db
         folders_db = configuration.doc_dbs.folders_db
-
+        items: list[AnyDict]
+        folders: list[AnyDict]
+        to_folder_or_drive: EntityResponse
         items, folders, to_folder_or_drive = await asyncio.gather(
             db_query(
                 docdb=items_db,
@@ -805,13 +783,10 @@ async def borrow(
     body: BorrowBody,
     configuration: Configuration = Depends(get_configuration),
 ):
-    response = Optional[ItemResponse]
-
     async with Context.start_ep(
         request=request,
         action="borrow item",
         body=body,
-        response=lambda: response,
         with_attributes={"item_id": item_id},
     ) as ctx:
         item = await _get_item(
@@ -905,9 +880,8 @@ async def get_entity(
     include_items: bool = QueryParam(True, alias="include-items"),
     configuration: Configuration = Depends(get_configuration),
 ):
-    response: Optional[EntityResponse] = None
     async with Context.start_ep(
-        request=request, action="get_entity", response=lambda: response
+        request=request, action="get_entity"
     ) as ctx:  # type: Context
         response = await _get_entity(
             entity_id=entity_id,
@@ -961,9 +935,8 @@ async def children(
     folder_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
-    response: Optional[ChildrenResponse] = None
     async with Context.start_ep(
-        request=request, action="children", response=lambda: response
+        request=request, action="children"
     ) as ctx:  # type: Context
         response = await _children(
             folder_id=folder_id, configuration=configuration, context=ctx
@@ -1008,9 +981,8 @@ async def list_deleted(
     drive_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
-    response: Optional[ChildrenResponse] = None
     async with Context.start_ep(
-        request=request, action="list_deleted", response=lambda: response
+        request=request, action="list_deleted"
     ) as ctx:  # type: Context
         response = await _list_deleted(
             drive_id=drive_id, configuration=configuration, context=ctx
@@ -1146,11 +1118,9 @@ async def purge_drive(
     drive_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
-    response: Optional[PurgeResponse] = None
     async with Context.start_ep(
         request=request,
         action="purge_drive",
-        response=lambda: response,
         with_attributes={"drive_id": drive_id},
     ) as ctx:  # type: Context
         dbs = configuration.doc_dbs
@@ -1223,11 +1193,11 @@ async def purge_folder(
     request: Request,
     drive_id: str,
     folder_id: str,
-    skip_folders: Set[str],
-    skip_items: Set[str],
+    skip_folders: set[str],
+    skip_items: set[str],
     configuration: Configuration,
     context: Context,
-) -> Tuple[List[Coroutine], List[Coroutine], List[ItemResponse]]:
+) -> tuple[list[Coroutine], list[Coroutine], list[ItemResponse]]:
     async with context.start(action="purge folder") as ctx:
         doc_dbs = configuration.doc_dbs
         content = await _children(

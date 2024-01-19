@@ -7,7 +7,7 @@ from enum import Enum
 from threading import Thread
 
 # typing
-from typing import Any, Dict
+from typing import Any
 
 # third parties
 from pydantic import BaseModel
@@ -46,7 +46,7 @@ def downloading_pbar(env: YouwolEnvironment):
 
 
 async def process_download_asset(
-    queue: asyncio.Queue, factories: Dict[str, Any], pbar: tqdm
+    queue: asyncio.Queue, factories: dict[str, Any], pbar: tqdm
 ):
     async def on_error(text, data, _ctx: Context):
         log_error("Failed to download asset", data)

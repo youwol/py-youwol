@@ -9,12 +9,13 @@ import shutil
 import tempfile
 import zipfile
 
+from collections.abc import Iterable
 from fnmatch import fnmatch
 from os import PathLike
 from pathlib import Path
 
 # typing
-from typing import IO, Callable, Iterable, List, Optional, Set, Tuple, Union, cast
+from typing import IO, Callable, Optional, Union, cast
 
 # third parties
 import aiohttp
@@ -22,16 +23,19 @@ import yaml
 
 from pydantic import BaseModel
 
+# relative
+from .utils import JSON
+
 
 class FileListing(BaseModel):
-    include: List[str]
-    ignore: List[str] = []
+    include: list[str]
+    ignore: list[str] = []
 
 
 flatten = itertools.chain.from_iterable
 
 
-def list_files(folder: Path, rec=True) -> List[Path]:
+def list_files(folder: Path, rec=True) -> list[Path]:
     return [
         Path(p)
         for p in glob.glob(str(folder) + "/**/*", recursive=rec)
@@ -44,11 +48,11 @@ def parse_json(path: Union[str, Path]):
 
 
 def parse_yaml(path: Union[str, Path]):
-    with open(path, "r", encoding="UTF-8") as stream:
+    with open(path, encoding="UTF-8") as stream:
         return yaml.safe_load(stream)
 
 
-def write_json(data: json, path: Path):
+def write_json(data: JSON, path: Path):
     with open(path, "w", encoding="UTF-8") as fp:
         json.dump(data, fp, indent=4)
 
@@ -68,8 +72,8 @@ def copy_file(source: Path, destination: Path, create_folders: bool = False):
 
 
 def matching_files(
-    folder: Union[Path, str], patterns: Union[List[str], FileListing]
-) -> Set[Path]:
+    folder: Union[Path, str], patterns: Union[list[str], FileListing]
+) -> list[Path]:
     folder = Path(folder)
 
     def fix_pattern(pattern):
@@ -96,7 +100,7 @@ def matching_files(
     def to_skip_branch(path: Path):
         return any(fnmatch(str(path), pattern) for pattern in patterns_folder_ignore)
 
-    selected = []
+    selected: list[Path] = []
     for root, dirs, files in os.walk(folder):
         root_path = Path(root)
         relative_root_path = root_path.relative_to(folder)
@@ -131,14 +135,13 @@ def files_check_sum(paths: Iterable[Union[str, Path]]):
     for path in sorted(paths, key=lambda p: str(p).lower()):
         sha_hash.update(str(path).encode())
         sha_hash = md5_update_from_file(path, sha_hash)
-    sha_hash = sha_hash.hexdigest()
-    return sha_hash
+    return sha_hash.hexdigest()
 
 
 def create_zip_file(
     path: Path,
-    files_to_zip: List[Tuple[Path, str]],
-    with_data: List[Tuple[str, Union[str, bytes]]] = None,
+    files_to_zip: list[tuple[Path, str]],
+    with_data: Optional[list[tuple[str, Union[str, bytes]]]] = None,
 ):
     with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as zipper:
         for path_file, name in files_to_zip:
@@ -170,9 +173,9 @@ def do_nothing_on_missing_dir(_path: Path):
 
 def ensure_dir_exists(
     path: Optional[Union[str, Path]],
-    root_candidates: Union[Union[str, Path], List[Union[str, Path]]],
+    root_candidates: Union[Union[str, Path], list[Union[str, Path]]],
     default_root: Optional[Union[str, Path]] = None,
-    create: Optional[Callable[[Path], None]] = default_create_dir,
+    create: Callable[[Path], None] = default_create_dir,
 ) -> Path:
     path = path if path else "."
     (final_path, exists) = existing_path_or_default(
@@ -190,7 +193,7 @@ def ensure_dir_exists(
 
 def ensure_file_exists(
     path: Union[str, Path],
-    root_candidates: Union[Union[str, Path], List[Union[str, Path]]],
+    root_candidates: Union[Union[str, Path], list[Union[str, Path]]],
     default_root: Optional[Union[str, Path]] = None,
     default_content: Optional[str] = None,
 ) -> Path:
@@ -216,15 +219,15 @@ def ensure_file_exists(
 
 def existing_path_or_default(
     path: Union[str, Path],
-    root_candidates: Union[Union[str, Path], List[Union[str, Path]]],
+    root_candidates: Union[Union[str, Path], list[Union[str, Path]]],
     default_root: Optional[Union[str, Path]] = None,
-) -> (Path, bool):
+) -> tuple[Path, bool]:
     typed_path = Path(path)
 
     if typed_path.is_absolute():
         return typed_path, typed_path.exists()
 
-    if not isinstance(root_candidates, List):
+    if not isinstance(root_candidates, list):
         root_candidates = [root_candidates]
 
     root_candidates_idx = 0
@@ -269,7 +272,7 @@ def extract_zip_file(
         for chunk in iter(lambda: file.read(10000), b""):
             f.write(chunk)
 
-    compressed_size = zip_path.stat().st_size
+    compressed_size = Path(zip_path).stat().st_size
 
     with zipfile.ZipFile(zip_path, "r") as zip_ref:
         zip_ref.extractall(dir_path)

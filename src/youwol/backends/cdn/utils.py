@@ -11,7 +11,7 @@ import tempfile
 from pathlib import Path
 
 # typing
-from typing import IO, Dict, List, Optional, Union
+from typing import IO, NamedTuple, Optional, Union
 
 # third parties
 import brotli
@@ -30,6 +30,7 @@ from youwol.backends.cdn.utils_indexing import (
 
 # Youwol utilities
 from youwol.utils import (
+    AnyDict,
     CommandException,
     PublishPackageError,
     QueryBody,
@@ -90,7 +91,7 @@ async def prepare_files_to_post(
     base_path: Path,
     package_path: Path,
     zip_path: Path,
-    paths: List[Path],
+    paths: list[Path],
     need_compression,
     context: Context,
 ):
@@ -249,10 +250,10 @@ async def publish_package(
         base_path = Path("libraries") / library_id / version
         file_system = configuration.file_system
 
-        paths = flatten(
+        paths_chained = flatten(
             [[Path(root) / f for f in files] for root, _, files in os.walk(temp_dir)]
         )
-        paths = [p for p in paths if p != zip_path]
+        paths = [p for p in paths_chained if p != zip_path]
         await context.info(
             text=f"Prepare {len(paths)} files to publish", data={"paths": paths}
         )
@@ -267,7 +268,7 @@ async def publish_package(
         )
         # the fingerprint in the md5 checksum of the included files after having eventually being compressed
         os.remove(zip_path)
-        md5_stamp = md5_from_folder(temp_dir)
+        md5_stamp = md5_from_folder(Path(temp_dir))
         await context.info(text=f"md5_stamp={md5_stamp}")
 
         async with context.start(action="Upload data in storage") as ctx:
@@ -348,12 +349,14 @@ async def publish_package(
 
 
 async def create_explorer_data(
-    dir_path: Path, root_path: Path, forms: List[FormData], context: Context
-) -> Dict[str, ExplorerResponse]:
-    def compute_attributes_rec(content: ExplorerResponse, all_data, result):
+    dir_path: Path, root_path: Path, forms: list[FormData], context: Context
+) -> dict[str, ExplorerResponse]:
+    def compute_attributes_rec(
+        content: ExplorerResponse, all_data: dict[str, ExplorerResponse]
+    ):
         size_files = sum(file.size for file in content.files)
         attributes = [
-            compute_attributes_rec(all_data[folder.path], all_data, result)
+            compute_attributes_rec(all_data[folder.path], all_data)
             for folder in content.folders
         ]
         size_folders = [attr[0] for attr in attributes]
@@ -369,11 +372,16 @@ async def create_explorer_data(
         action="create explorer data", with_attributes={"path": str(root_path)}
     ) as ctx:
         data = {}
-        forms_data_dict = {
-            f"{Path(form.objectName).relative_to(root_path)}": {
-                "size": form.objectSize,
-                "encoding": form.content_encoding,
-            }
+
+        class Attr(NamedTuple):
+            size: int
+            encoding: str
+
+        forms_data_dict: dict[str, Attr] = {
+            f"{Path(form.objectName).relative_to(root_path)}": Attr(
+                size=form.objectSize,
+                encoding=form.content_encoding,
+            )
             for form in forms
         }
 
@@ -384,7 +392,11 @@ async def create_explorer_data(
                 size=-1,
                 filesCount=-1,
                 files=[
-                    FileResponse(name=f, **forms_data_dict[f"{base_path}{f}"])
+                    FileResponse(
+                        name=f,
+                        size=forms_data_dict[f"{base_path}{f}"].size,
+                        encoding=forms_data_dict[f"{base_path}{f}"].encoding,
+                    )
                     for f in files
                 ],
                 folders=[
@@ -395,10 +407,13 @@ async def create_explorer_data(
                 ],
             )
         data[""].files.append(
-            FileResponse(name=original_zip_file, **forms_data_dict[original_zip_file])
+            FileResponse(
+                name=original_zip_file,
+                size=forms_data_dict[original_zip_file].size,
+                encoding=forms_data_dict[original_zip_file].encoding,
+            )
         )
-        results = {}
-        compute_attributes_rec(data[""], data, results)
+        compute_attributes_rec(data[""], data)
         await ctx.info(
             "folders tree re-constructed",
             data={k: f"{len(d.files)} file(s)" for k, d in data.items()},
@@ -483,7 +498,7 @@ def chunks(lst, n):
         yield lst[i : i + n]
 
 
-async def post_storage_by_chunk(storage, forms: List[FormData], count, headers):
+async def post_storage_by_chunk(storage, forms: list[FormData], count, headers):
     for i, chunk in enumerate(chunks(forms, count)):
         progress = 100 * i / (len(forms) / count)
         print(f"post files chunk, progress: {progress}")
@@ -664,7 +679,7 @@ def get_path(library_id: str, version: str, rest_of_path: str):
     return f"libraries/{name.replace('@', '')}/{version}/{rest_of_path}"
 
 
-def library_model_from_doc(d: Dict[str, str]):
+def library_model_from_doc(d: AnyDict):
     return Library(
         name=d["library_name"],
         version=d["version"],

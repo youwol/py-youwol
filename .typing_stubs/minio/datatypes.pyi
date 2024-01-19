@@ -1,9 +1,17 @@
+# third parties
+from _typeshed import Incomplete
+
+# relative
 from .credentials import Credentials as Credentials
 from .helpers import check_bucket_name as check_bucket_name
-from .signer import get_credential_string as get_credential_string, post_presign_v4 as post_presign_v4
-from .time import from_iso8601utc as from_iso8601utc, to_amz_date as to_amz_date, to_iso8601utc as to_iso8601utc
-from .xml import find as find, findall as findall, findtext as findtext
-from _typeshed import Incomplete
+from .signer import get_credential_string as get_credential_string
+from .signer import post_presign_v4 as post_presign_v4
+from .time import from_iso8601utc as from_iso8601utc
+from .time import to_amz_date as to_amz_date
+from .time import to_iso8601utc as to_iso8601utc
+from .xml import find as find
+from .xml import findall as findall
+from .xml import findtext as findtext
 
 JSONDecodeError = ValueError
 
@@ -24,7 +32,22 @@ class ListAllMyBucketsResult:
     def fromxml(cls, element): ...
 
 class Object:
-    def __init__(self, bucket_name, object_name, last_modified: Incomplete | None = ..., etag: Incomplete | None = ..., size: Incomplete | None = ..., metadata: Incomplete | None = ..., version_id: Incomplete | None = ..., is_latest: Incomplete | None = ..., storage_class: Incomplete | None = ..., owner_id: Incomplete | None = ..., owner_name: Incomplete | None = ..., content_type: Incomplete | None = ..., is_delete_marker: bool = ...) -> None: ...
+    def __init__(
+        self,
+        bucket_name,
+        object_name,
+        last_modified: Incomplete | None = ...,
+        etag: Incomplete | None = ...,
+        size: Incomplete | None = ...,
+        metadata: Incomplete | None = ...,
+        version_id: Incomplete | None = ...,
+        is_latest: Incomplete | None = ...,
+        storage_class: Incomplete | None = ...,
+        owner_id: Incomplete | None = ...,
+        owner_name: Incomplete | None = ...,
+        content_type: Incomplete | None = ...,
+        is_delete_marker: bool = ...,
+    ) -> None: ...
     @property
     def bucket_name(self): ...
     @property
@@ -54,7 +77,13 @@ class Object:
     @property
     def content_type(self): ...
     @classmethod
-    def fromxml(cls, element, bucket_name, is_delete_marker: bool = ..., encoding_type: Incomplete | None = ...): ...
+    def fromxml(
+        cls,
+        element,
+        bucket_name,
+        is_delete_marker: bool = ...,
+        encoding_type: Incomplete | None = ...,
+    ): ...
 
 def parse_list_objects(response, bucket_name: Incomplete | None = ...): ...
 
@@ -74,7 +103,13 @@ class CompleteMultipartUploadResult:
     def http_headers(self): ...
 
 class Part:
-    def __init__(self, part_number, etag, last_modified: Incomplete | None = ..., size: Incomplete | None = ...) -> None: ...
+    def __init__(
+        self,
+        part_number,
+        etag,
+        last_modified: Incomplete | None = ...,
+        size: Incomplete | None = ...,
+    ) -> None: ...
     @property
     def part_number(self): ...
     @property

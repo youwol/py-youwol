@@ -11,13 +11,10 @@ import zipfile
 from pathlib import Path
 from zipfile import ZipFile
 
-# typing
-from typing import Optional
-
 # third parties
 from fastapi import APIRouter, Depends, File, HTTPException
 from fastapi import Query as RequestQuery
-from fastapi import UploadFile
+from starlette.datastructures import UploadFile
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -486,11 +483,9 @@ async def access_info(
     asset_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
-    response = Optional[AccessInfoResp]
     max_policies_count = 1000
     async with Context.start_ep(
         request=request,
-        response=lambda: response,
         with_attributes={"asset_id": asset_id},
     ) as ctx:
         docdb_access = configuration.doc_db_access_policy
@@ -569,10 +564,9 @@ async def access_info(
 
         consumer_info = ConsumerInfo(permissions=permissions)
 
-        response = AccessInfoResp(
+        return AccessInfoResp(
             owningGroup=owning_group, ownerInfo=owner_info, consumerInfo=consumer_info
         )
-        return response
 
 
 @router.delete("/assets/{asset_id}", summary="delete an asset")

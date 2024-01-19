@@ -2,8 +2,10 @@
 import asyncio
 import json
 
+from collections.abc import Mapping
+
 # typing
-from typing import Any, Dict, Mapping, Optional, cast
+from typing import Any, Optional, cast
 
 # third parties
 from aiohttp import ClientSession, FormData
@@ -245,7 +247,7 @@ async def upload_asset(
     options: Optional[Any],
     context: Context,
 ):
-    upload_factories: Dict[str, any] = {
+    upload_factories: dict[str, any] = {
         "data": UploadDataTask,
         "flux-project": UploadFluxProjectTask,
         "story": UploadStoryTask,
@@ -279,8 +281,8 @@ async def upload_asset(
             text="Asset & treedb item retrieved",
             data={"treedbItem": tree_item, "asset": asset},
         )
-        asset = cast(Dict, asset)
-        tree_item = cast(Dict, tree_item)
+        asset = cast(dict, asset)
+        tree_item = cast(dict, tree_item)
 
         factory: UploadTask = (
             upload_factories[asset["kind"]](

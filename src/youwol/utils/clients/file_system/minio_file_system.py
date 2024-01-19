@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 # typing
-from typing import List, Tuple, Union
+from typing import Optional, Union
 
 # third parties
 from minio import Minio, S3Error
@@ -117,7 +117,10 @@ class MinioFileSystem(FileSystemInterface):
             )
 
     async def get_object(
-        self, object_id: str, ranges_bytes: List[Tuple[int, int]] = None, **kwargs
+        self,
+        object_id: str,
+        ranges_bytes: Optional[list[tuple[int, int]]] = None,
+        **kwargs,
     ):
         object_id = self.get_object_path(object_id)
         if ranges_bytes and len(ranges_bytes) > 1:

@@ -1,9 +1,10 @@
 # standard library
+from collections.abc import Awaitable
 from dataclasses import dataclass
 from pathlib import Path
 
 # typing
-from typing import Any, Awaitable, Callable, Union
+from typing import Any, Callable, Optional, Union
 
 # third parties
 from aiohttp import ClientResponse, FormData
@@ -15,7 +16,7 @@ from youwol.utils.clients.request_executor import (
     bytes_reader,
     json_reader,
 )
-from youwol.utils.exceptions import raise_exception_from_response
+from youwol.utils.exceptions import upstream_exception_from_response
 
 
 @dataclass(frozen=True)
@@ -126,7 +127,7 @@ class AssetsClient:
         asset_id: str,
         media_type: str,
         name: str,
-        reader: Callable[[ClientResponse], Awaitable[Any]] = None,
+        reader: Optional[Callable[[ClientResponse], Awaitable[Any]]] = None,
         **kwargs,
     ):
         async def _reader(resp: ClientResponse):
@@ -135,7 +136,7 @@ class AssetsClient:
                     return await reader(resp)
                 return resp.read()
 
-            await raise_exception_from_response(resp, **kwargs)
+            raise await upstream_exception_from_response(resp, **kwargs)
 
         return await self.request_executor.get(
             url=f"{self.url_base}/assets/{asset_id}/{media_type}/{name}",

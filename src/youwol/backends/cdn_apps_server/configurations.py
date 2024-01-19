@@ -1,8 +1,9 @@
 # standard library
+from collections.abc import Awaitable
 from dataclasses import dataclass
 
 # typing
-from typing import Awaitable, Callable
+from typing import Callable, Union
 
 # Youwol utilities
 from youwol.utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
@@ -14,7 +15,7 @@ class Configuration:
 
 
 class Dependencies:
-    get_configuration: Callable[[], Awaitable[Configuration]]
+    get_configuration: Callable[[], Union[Configuration, Awaitable[Configuration]]]
 
 
 async def get_configuration() -> Configuration:

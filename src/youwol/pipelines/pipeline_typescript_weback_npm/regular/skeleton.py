@@ -8,7 +8,7 @@ from base64 import b64encode
 from pathlib import Path
 
 # typing
-from typing import Dict, NamedTuple
+from typing import NamedTuple
 
 # Youwol application
 from youwol.app.environment import ProjectTemplate
@@ -44,7 +44,7 @@ class Files(NamedTuple):
     pipeline_file_template_app = ".yw_pipeline/yw_pipeline.app.txt"
 
 
-async def user_inputs_sanity_checks(parameters: Dict[str, str], context: Context):
+async def user_inputs_sanity_checks(parameters: dict[str, str], context: Context):
     async with context.start("user_inputs_sanity_checks") as ctx:
         if Keys.name not in parameters:
             raise RuntimeError("Expect 'name' in parameters")
@@ -329,7 +329,7 @@ def app_ts_webpack_template(folder: Path):
 
 async def generate_ts_webpack_project(
     folder: Path,
-    parameters: Dict[str, str],
+    parameters: dict[str, str],
     package_type: PackageType,
     context: Context,
 ):

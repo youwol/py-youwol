@@ -1,15 +1,16 @@
 # standard library
 from abc import ABC, abstractmethod
+from collections.abc import Awaitable
 from dataclasses import dataclass
 
 # typing
-from typing import Any, Awaitable, Callable, Dict, Generic, Optional, TypeVar, Union
+from typing import Any, Callable, Generic, Optional, TypeVar, Union
 
 # third parties
 from aiohttp import ClientResponse, ClientSession
 
 # Youwol utilities
-from youwol.utils.exceptions import raise_exception_from_response
+from youwol.utils.exceptions import upstream_exception_from_response
 from youwol.utils.types import JSON
 
 TClientResponse = TypeVar("TClientResponse")
@@ -21,8 +22,8 @@ class RequestExecutor(ABC, Generic[TClientResponse]):
         self,
         url: str,
         default_reader: Callable[[TClientResponse], Awaitable[Any]],
-        custom_reader: Callable[[TClientResponse], Awaitable[Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        custom_reader: Optional[Callable[[TClientResponse], Awaitable[Any]]] = None,
+        headers: Optional[dict[str, str]] = None,
         **kwargs,
     ):
         pass
@@ -32,8 +33,8 @@ class RequestExecutor(ABC, Generic[TClientResponse]):
         self,
         url: str,
         default_reader: Callable[[TClientResponse], Awaitable[Any]],
-        custom_reader: Callable[[TClientResponse], Awaitable[Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        custom_reader: Optional[Callable[[TClientResponse], Awaitable[Any]]] = None,
+        headers: Optional[dict[str, str]] = None,
         **kwargs,
     ):
         pass
@@ -43,8 +44,8 @@ class RequestExecutor(ABC, Generic[TClientResponse]):
         self,
         url: str,
         default_reader: Callable[[TClientResponse], Awaitable[Any]],
-        custom_reader: Callable[[TClientResponse], Awaitable[Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        custom_reader: Optional[Callable[[TClientResponse], Awaitable[Any]]] = None,
+        headers: Optional[dict[str, str]] = None,
         **kwargs,
     ):
         pass
@@ -54,8 +55,8 @@ class RequestExecutor(ABC, Generic[TClientResponse]):
         self,
         url: str,
         default_reader: Callable[[TClientResponse], Awaitable[Any]],
-        custom_reader: Callable[[TClientResponse], Awaitable[Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        custom_reader: Optional[Callable[[TClientResponse], Awaitable[Any]]] = None,
+        headers: Optional[dict[str, str]] = None,
         **kwargs,
     ):
         pass
@@ -64,7 +65,7 @@ class RequestExecutor(ABC, Generic[TClientResponse]):
 @dataclass(frozen=True)
 class AioHttpExecutor(RequestExecutor[ClientResponse]):
     client_session: Union[ClientSession, Callable[[], ClientSession]]
-    access_token: Callable[[], Awaitable[str]] = None
+    access_token: Optional[Callable[[], Awaitable[str]]] = None
 
     @staticmethod
     def _get_session():
@@ -79,7 +80,7 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
         async with self.client_session() as session:
             return await request(session)
 
-    async def _resolve_headers(self, headers: Optional[Dict[str, str]]):
+    async def _resolve_headers(self, headers: Optional[dict[str, str]]):
         static_headers = headers or {}
         access_token = await self.access_token() if self.access_token else None
         dynamic_headers = (
@@ -92,8 +93,8 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
         method: str,
         url: str,
         default_reader: Callable[[ClientResponse], Awaitable[Any]],
-        custom_reader: Callable[[ClientResponse], Awaitable[Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        custom_reader: Optional[Callable[[ClientResponse], Awaitable[Any]]] = None,
+        headers: Optional[dict[str, str]] = None,
         **kwargs,
     ):
         resolved_headers = await self._resolve_headers(headers)
@@ -112,8 +113,8 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
         self,
         url: str,
         default_reader: Callable[[ClientResponse], Awaitable[Any]],
-        custom_reader: Callable[[ClientResponse], Awaitable[Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        custom_reader: Optional[Callable[[ClientResponse], Awaitable[Any]]] = None,
+        headers: Optional[dict[str, str]] = None,
         **kwargs,
     ):
         return await self._request(
@@ -130,7 +131,7 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
         url: str,
         default_reader: Callable[[ClientResponse], Any],
         custom_reader: Optional[Callable[[ClientResponse], Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
         **kwargs,
     ):
         return await self._request(
@@ -147,7 +148,7 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
         url: str,
         default_reader: Callable[[ClientResponse], Any],
         custom_reader: Optional[Callable[[ClientResponse], Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
         **kwargs,
     ):
         return await self._request(
@@ -164,7 +165,7 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
         url: str,
         default_reader: Callable[[ClientResponse], Any],
         custom_reader: Optional[Callable[[ClientResponse], Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
         **kwargs,
     ):
         return await self._request(
@@ -182,7 +183,7 @@ async def text_reader(resp: ClientResponse) -> str:
         resp_text = await resp.text()
         return resp_text
 
-    await raise_exception_from_response(resp, url=resp.url)
+    raise await upstream_exception_from_response(resp, url=resp.url)
 
 
 async def json_reader(resp: ClientResponse) -> JSON:
@@ -190,7 +191,7 @@ async def json_reader(resp: ClientResponse) -> JSON:
         resp_json = await resp.json()
         return resp_json
 
-    await raise_exception_from_response(resp, url=resp.url)
+    raise await upstream_exception_from_response(resp, url=resp.url)
 
 
 async def bytes_reader(resp: ClientResponse) -> bytes:
@@ -198,7 +199,7 @@ async def bytes_reader(resp: ClientResponse) -> bytes:
         resp_bytes = await resp.read()
         return resp_bytes
 
-    await raise_exception_from_response(resp, url=resp.url)
+    raise await upstream_exception_from_response(resp, url=resp.url)
 
 
 async def auto_reader(resp: ClientResponse) -> Union[JSON, str, bytes]:
@@ -216,4 +217,4 @@ async def auto_reader(resp: ClientResponse) -> Union[JSON, str, bytes]:
 
         return await resp.read()
 
-    await raise_exception_from_response(resp)
+    raise await upstream_exception_from_response(resp)

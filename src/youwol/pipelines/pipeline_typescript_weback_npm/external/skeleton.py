@@ -6,7 +6,7 @@ from base64 import b64encode
 from pathlib import Path
 
 # typing
-from typing import Dict, NamedTuple
+from typing import NamedTuple
 
 # third parties
 import aiohttp
@@ -91,7 +91,7 @@ async def fetch_package_json(name: str, version: str):
 
 
 async def generate_external_npm_template(
-    folder: Path, parameters: Dict[str, str], context: Context
+    folder: Path, parameters: dict[str, str], context: Context
 ):
     async with context.start("Generate external npm project"):
         name, version = parameters[Keys.name], parameters[Keys.version]

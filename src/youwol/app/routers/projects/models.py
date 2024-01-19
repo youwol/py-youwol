@@ -1,9 +1,10 @@
 # standard library
+from collections.abc import Mapping
 from enum import Enum
 from pathlib import Path
 
 # typing
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Optional
 
 # third parties
 from pydantic import BaseModel
@@ -38,17 +39,17 @@ class FailureImportException(Failure):
 
 
 class ListProjectsResponse(BaseModel):
-    projects: List[Project]
+    projects: list[Project]
 
 
 class ArtifactResponse(BaseModel):
     id: str
     path: Path
-    links: List[Link] = []
+    links: list[Link] = []
 
 
 class ArtifactsResponse(BaseModel):
-    artifacts: List[ArtifactResponse]
+    artifacts: list[ArtifactResponse]
 
 
 class PipelineStepStatusResponse(BaseModel):
@@ -56,26 +57,26 @@ class PipelineStepStatusResponse(BaseModel):
     flowId: str
     stepId: PipelineStepId
     artifactFolder: Path
-    artifacts: List[ArtifactResponse]
+    artifacts: list[ArtifactResponse]
     manifest: Optional[Manifest] = None
     status: PipelineStepStatus
 
 
 class PipelineStatusResponse(BaseModel):
     projectId: str
-    steps: List[PipelineStepStatusResponse]
+    steps: list[PipelineStepStatusResponse]
 
 
 class ChildToParentConnections(BaseModel):
     id: str
-    parentIds: List[str]
+    parentIds: list[str]
 
 
 class DependenciesResponse(BaseModel):
-    above: List[str]
-    below: List[str]
-    dag: List[ChildToParentConnections]
-    simpleDag: List[ChildToParentConnections]
+    above: list[str]
+    below: list[str]
+    dag: list[ChildToParentConnections]
+    simpleDag: list[ChildToParentConnections]
 
 
 class ProjectStatusResponse(BaseModel):
@@ -96,7 +97,7 @@ class CdnVersionResponse(BaseModel):
 
 class CdnResponse(BaseModel):
     name: str
-    versions: List[CdnVersionResponse]
+    versions: list[CdnVersionResponse]
 
 
 class Event(Enum):
@@ -114,7 +115,7 @@ class PipelineStepEvent(BaseModel):
 
 class CreateProjectFromTemplateBody(BaseModel):
     type: str
-    parameters: Dict[str, str]
+    parameters: dict[str, str]
 
 
 class UpdateConfigurationResponse(BaseModel):

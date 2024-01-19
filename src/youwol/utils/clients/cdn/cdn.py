@@ -2,11 +2,12 @@
 import functools
 import hashlib
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
 # typing
-from typing import Iterable, List, Union
+from typing import Any, Optional, Union
 
 # third parties
 from aiohttp import FormData
@@ -33,8 +34,7 @@ def files_check_sum(paths: Iterable[Path]):
     for path in sorted(paths, key=lambda p: str(p).lower()):
         sha_hash.update(path.name.encode())
         sha_hash = md5_update_from_file(path, sha_hash)
-    sha_hash = sha_hash.hexdigest()
-    return sha_hash
+    return sha_hash.hexdigest()
 
 
 @dataclass(frozen=True)
@@ -71,7 +71,7 @@ class CdnClient:
     def push_url(self):
         return f"{self.url_base}/publish_libraries"
 
-    async def query_packs(self, namespace: str = None, **kwargs):
+    async def query_packs(self, namespace: Optional[str] = None, **kwargs):
         url = (
             self.packs_url
             if not namespace
@@ -90,7 +90,7 @@ class CdnClient:
             **kwargs,
         )
 
-    async def query_dependencies_latest(self, libraries: List[str], **kwargs):
+    async def query_dependencies_latest(self, libraries: list[str], **kwargs):
         return await self.request_executor.post(
             url=self.dependencies_url,
             default_reader=json_reader,
@@ -98,7 +98,7 @@ class CdnClient:
             **kwargs,
         )
 
-    async def query_loading_graph(self, body: any, **kwargs):
+    async def query_loading_graph(self, body: Any, **kwargs):
         return await self.request_executor.post(
             url=self.loading_graph_url,
             default_reader=json_reader,
@@ -114,7 +114,11 @@ class CdnClient:
         )
 
     async def get_library_info(
-        self, library_id: str, semver: str = None, max_count: int = None, **kwargs
+        self,
+        library_id: str,
+        semver: Optional[str] = None,
+        max_count: Optional[int] = None,
+        **kwargs,
     ):
         query_params = [
             (k, v)

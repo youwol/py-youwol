@@ -1,7 +1,18 @@
-from .commonconfig import BaseRule as BaseRule, DISABLED as DISABLED, check_status as check_status
-from .xml import Element as Element, SubElement as SubElement, find as find, findall as findall, findtext as findtext
-from _typeshed import Incomplete
+# standard library
 from abc import ABCMeta
+
+# third parties
+from _typeshed import Incomplete
+
+# relative
+from .commonconfig import DISABLED as DISABLED
+from .commonconfig import BaseRule as BaseRule
+from .commonconfig import check_status as check_status
+from .xml import Element as Element
+from .xml import SubElement as SubElement
+from .xml import find as find
+from .xml import findall as findall
+from .xml import findtext as findtext
 
 class Status:
     __metaclass__ = ABCMeta
@@ -77,7 +88,16 @@ class AccessControlTranslation:
     def toxml(self, element): ...
 
 class Destination:
-    def __init__(self, bucket_arn, access_control_translation: Incomplete | None = ..., account: Incomplete | None = ..., encryption_config: Incomplete | None = ..., metrics: Incomplete | None = ..., replication_time: Incomplete | None = ..., storage_class: Incomplete | None = ...) -> None: ...
+    def __init__(
+        self,
+        bucket_arn,
+        access_control_translation: Incomplete | None = ...,
+        account: Incomplete | None = ...,
+        encryption_config: Incomplete | None = ...,
+        metrics: Incomplete | None = ...,
+        replication_time: Incomplete | None = ...,
+        storage_class: Incomplete | None = ...,
+    ) -> None: ...
     @property
     def bucket_arn(self): ...
     @property
@@ -97,7 +117,18 @@ class Destination:
     def toxml(self, element): ...
 
 class Rule(BaseRule):
-    def __init__(self, destination, status, delete_marker_replication: Incomplete | None = ..., existing_object_replication: Incomplete | None = ..., rule_filter: Incomplete | None = ..., rule_id: Incomplete | None = ..., prefix: Incomplete | None = ..., priority: Incomplete | None = ..., source_selection_criteria: Incomplete | None = ...) -> None: ...
+    def __init__(
+        self,
+        destination,
+        status,
+        delete_marker_replication: Incomplete | None = ...,
+        existing_object_replication: Incomplete | None = ...,
+        rule_filter: Incomplete | None = ...,
+        rule_id: Incomplete | None = ...,
+        prefix: Incomplete | None = ...,
+        priority: Incomplete | None = ...,
+        source_selection_criteria: Incomplete | None = ...,
+    ) -> None: ...
     @property
     def destination(self): ...
     @property

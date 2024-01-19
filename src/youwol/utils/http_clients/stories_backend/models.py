@@ -1,5 +1,5 @@
 # typing
-from typing import Dict, List, Optional
+from typing import Optional
 
 # third parties
 from pydantic import BaseModel
@@ -72,7 +72,7 @@ class GetContentResp(Content):
 
 
 class GetChildrenResp(BaseModel):
-    documents: List[GetDocumentResp]
+    documents: list[GetDocumentResp]
 
 
 class ContentBody(Content):
@@ -115,13 +115,13 @@ Url = str
 
 class LoadingGraphResponse(BaseModel):
     graphType: str
-    lock: List[Library]
+    lock: list[Library]
     # the innest List should be Tuple[str, Url] => fastapi fails to parse it to create open-api doc
-    definition: List[List[List[str]]]
+    definition: list[list[list[str]]]
 
 
 class Requirements(BaseModel):
-    plugins: List[str]
+    plugins: list[str]
     loadingGraph: Optional[LoadingGraphResponse] = None
 
 
@@ -132,7 +132,7 @@ class PostPluginResponse(BaseModel):
 
 
 class UpgradePluginsResponse(BaseModel):
-    pluginsUpgraded: Dict[str, str]
+    pluginsUpgraded: dict[str, str]
     requirements: Requirements
 
 
@@ -144,7 +144,7 @@ class StoryResp(BaseModel):
     storyId: str
     rootDocumentId: str
     title: str
-    authors: List[str]
+    authors: list[str]
     requirements: Requirements
 
 

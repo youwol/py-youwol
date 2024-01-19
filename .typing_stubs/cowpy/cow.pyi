@@ -1,3 +1,4 @@
+# third parties
 from _typeshed import Incomplete
 
 logger: Incomplete
@@ -13,7 +14,13 @@ def get_eyes(sfw: bool = ..., sort: bool = ...): ...
 def not_safe_for_work(cow: str = ..., eyes: str = ...): ...
 
 class Cowacter:
-    def __init__(self, eyes: str = ..., thoughts: bool = ..., tongue: bool = ..., body: Incomplete | None = ...) -> None: ...
+    def __init__(
+        self,
+        eyes: str = ...,
+        thoughts: bool = ...,
+        tongue: bool = ...,
+        body: Incomplete | None = ...,
+    ) -> None: ...
     def milk(self, msg): ...
 
 class Beavis(Cowacter):

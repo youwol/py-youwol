@@ -1,5 +1,8 @@
-from _typeshed import Incomplete
+# standard library
 from collections.abc import Generator
+
+# third parties
+from _typeshed import Incomplete
 
 def iterate(it): ...
 async def preserve(ait) -> Generator[Incomplete, None, None]: ...

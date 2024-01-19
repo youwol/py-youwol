@@ -2,7 +2,7 @@
 from pathlib import Path
 
 # typing
-from typing import Any, Dict, List, NamedTuple, Optional, Union
+from typing import Any, NamedTuple, Optional, Union
 
 # third parties
 from pydantic import BaseModel
@@ -30,7 +30,7 @@ def get_exported_symbol(name: str):
     return exportedSymbols[name] if name in exportedSymbols else name
 
 
-def patch_loading_graph(loading_graph: Dict[str, Any]):
+def patch_loading_graph(loading_graph: dict[str, Any]):
     if loading_graph["graphType"] == "sequential-v1":
         #  add missing apiKey & exportedSymbol in 'lock' attribute
         for lock in loading_graph["lock"]:
@@ -90,7 +90,7 @@ class PublishLibrariesResponse(BaseModel):
     filesCount: int
     librariesCount: int
     compressedSize: int
-    namespaces: List[str]
+    namespaces: list[str]
 
 
 class Release(BaseModel):
@@ -101,21 +101,21 @@ class Release(BaseModel):
 
 class ListVersionsResponse(BaseModel):
     name: str
-    versions: List[str]
+    versions: list[str]
     namespace: str
     id: str
-    releases: List[Release] = []
+    releases: list[Release] = []
 
 
 class ListLibsResponse(BaseModel):
-    libraries: List[ListVersionsResponse]
+    libraries: list[ListVersionsResponse]
 
 
 Url = str
 
 
 class DeleteBody(BaseModel):
-    librariesName: List[str]
+    librariesName: list[str]
 
 
 class DeleteLibraryResponse(BaseModel):
@@ -124,7 +124,7 @@ class DeleteLibraryResponse(BaseModel):
 
 class LoadingGraphResponse(BaseModel):
     graphType: str
-    definition: List[List[Url]]
+    definition: list[list[Url]]
 
 
 class Library(BaseModel):
@@ -136,30 +136,30 @@ class Library(BaseModel):
     fingerprint: str
     # exportedSymbol is deprecated, use 'aliases' instead
     exportedSymbol: str
-    aliases: List[str]
+    aliases: list[str]
     apiKey: str
 
 
 class LoadingGraphResponseV1(BaseModel):
     graphType: str
-    lock: List[Library]
-    definition: List[
-        List[Any]
+    lock: list[Library]
+    definition: list[
+        list[Any]
     ]  # 'Any' is actually Tuple[str, Url], but it leads to 500 when rendering the docs
 
 
 class DependenciesResponse(BaseModel):
-    libraries: Dict[str, str]
+    libraries: dict[str, str]
     loadingGraph: LoadingGraphResponse
 
 
 class DependenciesResponseV1(BaseModel):
-    libraries: Dict[str, str]
+    libraries: dict[str, str]
     loadingGraph: LoadingGraphResponseV1
 
 
 class DependenciesLatestBody(BaseModel):
-    libraries: List[str]
+    libraries: list[str]
 
 
 class LibVersionsBody(BaseModel):
@@ -172,7 +172,7 @@ class LibraryQuery(BaseModel):
 
 
 class LibraryResolved(Library):
-    dependencies: List[LibraryQuery]
+    dependencies: list[LibraryQuery]
     bundle: str
     exportedSymbol: str
     apiKey: str
@@ -182,14 +182,14 @@ class LibraryResolved(Library):
 
 
 class LoadingGraphBody(BaseModel):
-    libraries: Union[List[LibraryQuery], Dict[str, str]]
-    using: Dict[str, str] = {}
+    libraries: Union[list[LibraryQuery], dict[str, str]]
+    using: dict[str, str] = {}
     extraIndex: Optional[str]
 
 
 class LoadingGraphBodyV1(BaseModel):
-    libraries: List[LibraryQuery]
-    using: Dict[str, str] = {}
+    libraries: list[LibraryQuery]
+    using: dict[str, str] = {}
 
 
 class FileResponse(BaseModel):
@@ -213,8 +213,8 @@ class ExplorerResponse(BaseModel):
     filesCount: int = (
         -1
     )  # prior to 06/07/2022 this property was not computed during publish
-    files: List[FileResponse] = []
-    folders: List[FolderResponse] = []
+    files: list[FileResponse] = []
+    folders: list[FolderResponse] = []
 
 
 LIBRARIES_TABLE = TableBody(

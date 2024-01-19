@@ -4,7 +4,7 @@ import asyncio
 from itertools import groupby
 
 # typing
-from typing import List, NamedTuple
+from typing import NamedTuple
 
 # third parties
 from fastapi import HTTPException
@@ -60,7 +60,7 @@ class TargetPackage(NamedTuple):
         )
 
 
-def get_latest_local_cdn_version(env: YouwolEnvironment) -> List[TargetPackage]:
+def get_latest_local_cdn_version(env: YouwolEnvironment) -> list[TargetPackage]:
     db_path = env.backends_configuration.cdn_backend.doc_db.data
     data = sorted(db_path["documents"], key=lambda d: d["library_name"])
     groups = [list(g) for _, g in groupby(data, key=lambda d: d["library_name"])]
@@ -133,7 +133,7 @@ async def check_update(local_package: TargetPackage, context: Context):
 
 
 async def check_updates_from_queue(
-    queue: asyncio.Queue, all_updates: List[CheckUpdateResponse], context: Context
+    queue: asyncio.Queue, all_updates: list[CheckUpdateResponse], context: Context
 ):
     while not queue.empty():
         local_package: TargetPackage = queue.get_nowait()

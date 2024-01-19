@@ -3,7 +3,7 @@ import asyncio
 import base64
 
 # typing
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 # third parties
 from starlette.middleware.base import RequestResponseEndpoint
@@ -107,7 +107,7 @@ class Download(AbstractLocalCloudDispatch):
 
 class UpdateApplication(AbstractLocalCloudDispatch):
     @staticmethod
-    def retrieve_package_version_path(params: List[str]):
+    def retrieve_package_version_path(params: list[str]):
         if params[0].startswith("@"):
             # e.g. @bar/foo/latest/dist/bundle.js
             package_name = f"{params[0]}/{params[1]}"

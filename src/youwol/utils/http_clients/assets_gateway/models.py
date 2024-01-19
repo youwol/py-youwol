@@ -1,5 +1,5 @@
 # typing
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 # third parties
 from pydantic import BaseModel
@@ -19,40 +19,39 @@ class Group(BaseModel):
 
 class User(BaseModel):
     name: str
-    groups: List[Group]
+    groups: list[Group]
 
 
 class GroupsResponse(BaseModel):
-    groups: List[Group]
+    groups: list[Group]
 
 
 class Metadata(BaseModel):
     description: str
-    images: List[str]
-    thumbnails: List[str]
+    images: list[str]
+    thumbnails: list[str]
     kind: str
     name: str
     groupId: str
-    tags: List[str]
+    tags: list[str]
 
 
 class PermissionsResponse(BaseModel):
     read: bool
     write: bool
     share: bool
-    expiration: Union[int, None]
 
 
 class AssetResponse(BaseModel):
     assetId: str
     description: str
-    images: List[str]
-    thumbnails: List[str]
+    images: list[str]
+    thumbnails: list[str]
     kind: str
     name: str
     rawId: str
     groupId: str
-    tags: List[str]
+    tags: list[str]
     permissions: Optional[PermissionsResponse]
 
 
@@ -62,16 +61,16 @@ class AssetWithPermissionResponse(AssetResponse):
 
 class NewAssetResponse(AssetResponse):
     itemId: str
-    rawResponse: Optional[Dict[str, Any]]
+    rawResponse: Optional[dict[str, Any]]
 
 
 class AssetsResponse(BaseModel):
-    assets: List[AssetResponse]
+    assets: list[AssetResponse]
 
 
 class ImportAssetsBody(BaseModel):
     folderId: str
-    assetIds: List[str]
+    assetIds: list[str]
 
 
 class DriveResponse(BaseModel):
@@ -97,7 +96,7 @@ class DefaultDriveResponse(BaseModel):
 
 
 class DrivesResponse(BaseModel):
-    drives: List[DriveResponse]
+    drives: list[DriveResponse]
 
 
 class FolderResponse(BaseModel):
@@ -144,12 +143,12 @@ class ItemResponse(BaseModel):
 
 
 class ItemsResponse(BaseModel):
-    items: List[ItemResponse]
+    items: list[ItemResponse]
 
 
 class ChildrenResponse(BaseModel):
-    items: List[ItemResponse]
-    folders: List[FolderResponse]
+    items: list[ItemResponse]
+    folders: list[FolderResponse]
 
 
 class DeletedItemResponse(BaseModel):
@@ -161,8 +160,8 @@ class DeletedItemResponse(BaseModel):
 
 
 class DeletedResponse(BaseModel):
-    folders: List[FolderResponse]
-    items: List[DeletedItemResponse]
+    folders: list[FolderResponse]
+    items: list[DeletedItemResponse]
 
 
 class MoveBody(BaseModel):
@@ -184,18 +183,18 @@ class QueryTreeBody(BaseModel):
 
 class QueryFlatBody(BaseModel):
     maxResults: int
-    whereClauses: List[Any]
+    whereClauses: list[Any]
 
 
 class UpdateAssetBody(BaseModel):
     name: Optional[str] = None
-    tags: Optional[List[str]] = None
+    tags: Optional[list[str]] = None
     description: Optional[str] = None
 
 
 class AccessBody(BaseModel):
     accessPolicy: Optional[str] = None
-    tags: Optional[List[str]] = None
+    tags: Optional[list[str]] = None
     description: Optional[str] = None
 
 
@@ -221,7 +220,7 @@ class ExposingGroup(BaseModel):
 
 
 class OwnerInfo(BaseModel):
-    exposingGroups: List[ExposingGroup]
+    exposingGroups: list[ExposingGroup]
     defaultAccess: GroupAccess
 
 

@@ -1,6 +1,3 @@
-# typing
-from typing import List
-
 # third parties
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
@@ -21,7 +18,7 @@ class LocalCloudHybridizerMiddleware(BaseHTTPMiddleware):
     def __init__(
         self,
         app: ASGIApp,
-        dynamic_dispatch_rules: List[AbstractLocalCloudDispatch],
+        dynamic_dispatch_rules: list[AbstractLocalCloudDispatch],
         disabling_header: str,
     ) -> None:
         super().__init__(app)

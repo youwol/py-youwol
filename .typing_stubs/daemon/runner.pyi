@@ -1,6 +1,11 @@
-from . import pidfile as pidfile
-from .daemon import DaemonContext as DaemonContext, basestring as basestring, unicode as unicode
+# third parties
 from _typeshed import Incomplete
+
+# relative
+from . import pidfile as pidfile
+from .daemon import DaemonContext as DaemonContext
+from .daemon import basestring as basestring
+from .daemon import unicode as unicode
 
 ProcessLookupError = NotImplemented
 __metaclass__ = type

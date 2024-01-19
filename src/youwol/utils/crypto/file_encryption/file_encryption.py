@@ -2,29 +2,18 @@
 from pathlib import Path
 
 # typing
-from typing import Optional
+from typing import BinaryIO, Callable, Optional
 
 # relative
-from .constantes import (
-    ALGO_HEADER_LENGTH,
-    Algo,
-    algo_from_byte,
-    algo_to_byte,
-    default_algo,
-)
-from .exceptions import (
-    AlgoOperationMissing,
-    BadAlgo,
-    FileEmpty,
-    FileNotFound,
-    UnknownAlgo,
-)
+from .constantes import ALGO_HEADER_LENGTH, Algo, default_algo
+from .exceptions import AlgoOperationMissing, BadAlgo, FileEmpty, FileNotFound
 from .null import null_decrypt_from_file, null_encrypt_into_file, null_generate_key
 from .siv_256 import (
     siv_256_decrypt_from_file,
     siv_256_encrypt_into_file,
     siv_256_generate_key,
 )
+from .utils import algo_from_byte, algo_to_byte
 
 
 def encrypt_into_file(
@@ -49,8 +38,6 @@ def decrypt_from_file(
     with path.open(mode="rb") as fp:
         byte = fp.read(ALGO_HEADER_LENGTH)
         algo = algo_from_byte(byte)
-        if algo is None:
-            raise UnknownAlgo(f"Byte(s) '{byte.hex(' ')}' does not match any algo")
         if expected_algo is not None and algo != expected_algo:
             raise BadAlgo(expected=expected_algo, actual=algo)
         fp.seek(0)
@@ -67,13 +54,13 @@ def generate_key(algo: Algo = default_algo) -> str:
     return fn()
 
 
-encryption = {
+encryption: dict[Algo, Callable[[BinaryIO, str, str], None]] = {
     Algo.SIV_256: siv_256_encrypt_into_file,
     Algo.NULL: null_encrypt_into_file,
 }
 
 
-decryption = {
+decryption: dict[Algo, Callable[[BinaryIO, str], str]] = {
     Algo.SIV_256: siv_256_decrypt_from_file,
     Algo.NULL: null_decrypt_from_file,
 }

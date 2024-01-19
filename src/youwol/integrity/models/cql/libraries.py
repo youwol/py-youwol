@@ -1,9 +1,6 @@
 # standard library
 from dataclasses import dataclass, field
 
-# typing
-from typing import List
-
 # relative
 from .common import OwnerColumns, Table
 
@@ -12,16 +9,16 @@ from .common import OwnerColumns, Table
 class LibrariesRow(OwnerColumns, Table):
     library_name: str
     version_number: str
-    aliases: List[str] = field(default_factory=list)
+    aliases: list[str] = field(default_factory=list)
     bundle: str
     bundle_min: str
-    dependencies: List[str]
+    dependencies: list[str]
     description: str
     fingerprint: str
     library_id: str
     namespace: str
     path: str
-    tags: List[str]
+    tags: list[str]
     type: str
     version: str
 
@@ -29,7 +26,7 @@ class LibrariesRow(OwnerColumns, Table):
         return f"{self.library_id}"
 
     @staticmethod
-    def get_key_columns() -> List[str]:
+    def get_key_columns() -> list[str]:
         return [
             "library_name",
             "owner_id",
@@ -39,5 +36,5 @@ class LibrariesRow(OwnerColumns, Table):
         ]
 
     @staticmethod
-    def get_keyspace_table() -> (str, str):
+    def get_keyspace_table() -> tuple[str, str]:
         return "prod_cdn", "libraries"

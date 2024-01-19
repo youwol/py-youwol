@@ -3,9 +3,6 @@ import asyncio
 import itertools
 import shutil
 
-# typing
-from typing import List
-
 # third parties
 from fastapi import APIRouter
 from starlette.requests import Request
@@ -133,7 +130,7 @@ async def collect_updates(request: Request):
         )
         for package in local_packages_latest:
             queue.put_nowait(package)
-        updates: List[CheckUpdateResponse] = []
+        updates: list[CheckUpdateResponse] = []
         tasks = [
             asyncio.create_task(
                 check_updates_from_queue(queue=queue, all_updates=updates, context=ctx)

@@ -1,5 +1,5 @@
 # typing
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 # third parties
 import aiohttp
@@ -42,8 +42,8 @@ class ServiceAccountClient:
         self,
         method: str,
         path: str,
-        params: Optional[Dict[str, Any]] = None,
-        json: Optional[Dict[str, Any]] = None,
+        params: Optional[dict[str, Any]] = None,
+        json: Optional[dict[str, Any]] = None,
         expected_status: int = 200,
         parse_response=True,
     ) -> Optional[Any]:
@@ -71,7 +71,7 @@ class ServiceAccountClient:
                     return await resp.json()
                 return None
 
-    async def _get(self, path: str, params: Dict[str, Any]):
+    async def _get(self, path: str, params: dict[str, Any]):
         return await self.__request(method="GET", path=path, params=params)
 
     async def _put(
@@ -79,7 +79,7 @@ class ServiceAccountClient:
         path: str,
         json: Any,
         parse_response: bool = True,
-        params: Optional[Dict[str, Any]] = None,
+        params: Optional[dict[str, Any]] = None,
         expected_status: int = 204,
     ):
         return await self.__request(

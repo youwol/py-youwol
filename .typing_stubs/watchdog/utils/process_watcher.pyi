@@ -1,3 +1,4 @@
+# third parties
 from _typeshed import Incomplete
 from watchdog.utils import BaseThread as BaseThread
 

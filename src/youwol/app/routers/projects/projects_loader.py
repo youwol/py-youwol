@@ -1,12 +1,10 @@
-from __future__ import annotations
-
 # standard library
 import traceback
 
 from pathlib import Path
 
 # typing
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 # third parties
 from pydantic import BaseModel
@@ -38,13 +36,13 @@ Result = Union[Project, Failure]
 
 
 class FailuresReport(BaseModel):
-    directoriesNotFound: List[FailureDirectoryNotFound] = []
-    pipelinesNotFound: List[FailurePipelineNotFound] = []
-    importExceptions: List[FailureImportException] = []
+    directoriesNotFound: list[FailureDirectoryNotFound] = []
+    pipelinesNotFound: list[FailurePipelineNotFound] = []
+    importExceptions: list[FailureImportException] = []
 
 
 class ProjectsLoadingResults(BaseModel):
-    results: List[Project]
+    results: list[Project]
     failures: FailuresReport
 
 
@@ -53,7 +51,7 @@ class ProjectLoader:
 
     handler: Optional[ProjectsFinderHandler] = None
 
-    projects_list: List[Project] = []
+    projects_list: list[Project] = []
     failures_report: FailuresReport = FailuresReport()
 
     @staticmethod
@@ -63,7 +61,7 @@ class ProjectLoader:
         )
 
     @staticmethod
-    async def sync_projects(update: (List[Path], List[Path]), env: YouwolEnvironment):
+    async def sync_projects(update: (list[Path], list[Path]), env: YouwolEnvironment):
         # First element of the update is path of new projects, second is path of removed projects
         new_maybe_projects = await load_projects(
             paths=update[0], env=env, context=ProjectLoader.context
@@ -97,7 +95,7 @@ class ProjectLoader:
     async def initialize(env: YouwolEnvironment):
         # This method is called whenever a new YouwolEnvironment is loaded
 
-        async def sync_projects(update: (List[Path], List[Path])):
+        async def sync_projects(update: (list[Path], list[Path])):
             return await ProjectLoader.sync_projects(update, env)
 
         ProjectLoader.stop()
@@ -117,7 +115,7 @@ class ProjectLoader:
             return ProjectLoader.status()
 
     @staticmethod
-    async def get_cached_projects() -> List[Project]:
+    async def get_cached_projects() -> list[Project]:
         return ProjectLoader.projects_list
 
     @staticmethod
@@ -127,8 +125,8 @@ class ProjectLoader:
 
 
 async def load_projects(
-    paths: List[Path], env: YouwolEnvironment, context: Context
-) -> List[Result]:
+    paths: list[Path], env: YouwolEnvironment, context: Context
+) -> list[Result]:
     async with context.start(action="load_projects") as ctx:
         return [
             await get_project(dir_candidate, [], env, ctx) for dir_candidate in paths
@@ -137,7 +135,7 @@ async def load_projects(
 
 async def get_project(
     project_path: Path,
-    additional_python_src_paths: List[Path],
+    additional_python_src_paths: list[Path],
     env: YouwolEnvironment,
     context: Context,
 ) -> Union[Project, Failure]:

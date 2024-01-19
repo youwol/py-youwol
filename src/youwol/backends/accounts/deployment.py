@@ -1,6 +1,3 @@
-# typing
-from typing import List
-
 # third parties
 from fastapi import APIRouter
 
@@ -17,7 +14,6 @@ from youwol.backends.common.use_keycloak_admin import (
     keycloak_admin_base_url,
     keycloak_admin_client,
 )
-from youwol.backends.common.use_openid_base_url import openid_base_url
 from youwol.backends.common.use_openid_client import oidc_client
 
 # Youwol utilities
@@ -29,7 +25,6 @@ class AccountsDeployment(BackendDeployment):
         return get_router(
             Configuration(
                 openid_client=oidc_client,
-                openid_base_url=openid_base_url,
                 keycloak_admin_client=keycloak_admin_client,
                 keycloak_admin_base_url=keycloak_admin_base_url,
                 auth_cache=auth_cache,
@@ -46,7 +41,7 @@ class AccountsDeployment(BackendDeployment):
     def name(self) -> str:
         return "accounts"
 
-    def middlewares(self) -> List[FastApiMiddleware]:
+    def middlewares(self) -> list[FastApiMiddleware]:
         return [
             get_auth_middleware_with_cookie(public_path="/api/accounts/openid_rp/"),
         ]

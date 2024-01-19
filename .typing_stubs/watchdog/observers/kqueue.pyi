@@ -1,6 +1,21 @@
+# third parties
 from _typeshed import Incomplete
-from watchdog.events import DirCreatedEvent as DirCreatedEvent, DirDeletedEvent as DirDeletedEvent, DirModifiedEvent as DirModifiedEvent, DirMovedEvent as DirMovedEvent, EVENT_TYPE_CREATED as EVENT_TYPE_CREATED, EVENT_TYPE_DELETED as EVENT_TYPE_DELETED, EVENT_TYPE_MOVED as EVENT_TYPE_MOVED, FileCreatedEvent as FileCreatedEvent, FileDeletedEvent as FileDeletedEvent, FileModifiedEvent as FileModifiedEvent, FileMovedEvent as FileMovedEvent, generate_sub_moved_events as generate_sub_moved_events
-from watchdog.observers.api import BaseObserver as BaseObserver, DEFAULT_EMITTER_TIMEOUT as DEFAULT_EMITTER_TIMEOUT, DEFAULT_OBSERVER_TIMEOUT as DEFAULT_OBSERVER_TIMEOUT, EventEmitter as EventEmitter
+from watchdog.events import EVENT_TYPE_CREATED as EVENT_TYPE_CREATED
+from watchdog.events import EVENT_TYPE_DELETED as EVENT_TYPE_DELETED
+from watchdog.events import EVENT_TYPE_MOVED as EVENT_TYPE_MOVED
+from watchdog.events import DirCreatedEvent as DirCreatedEvent
+from watchdog.events import DirDeletedEvent as DirDeletedEvent
+from watchdog.events import DirModifiedEvent as DirModifiedEvent
+from watchdog.events import DirMovedEvent as DirMovedEvent
+from watchdog.events import FileCreatedEvent as FileCreatedEvent
+from watchdog.events import FileDeletedEvent as FileDeletedEvent
+from watchdog.events import FileModifiedEvent as FileModifiedEvent
+from watchdog.events import FileMovedEvent as FileMovedEvent
+from watchdog.events import generate_sub_moved_events as generate_sub_moved_events
+from watchdog.observers.api import DEFAULT_EMITTER_TIMEOUT as DEFAULT_EMITTER_TIMEOUT
+from watchdog.observers.api import DEFAULT_OBSERVER_TIMEOUT as DEFAULT_OBSERVER_TIMEOUT
+from watchdog.observers.api import BaseObserver as BaseObserver
+from watchdog.observers.api import EventEmitter as EventEmitter
 from watchdog.utils import platform as platform
 from watchdog.utils.dirsnapshot import DirectorySnapshot as DirectorySnapshot
 

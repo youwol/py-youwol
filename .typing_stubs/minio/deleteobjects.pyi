@@ -1,5 +1,11 @@
-from .xml import Element as Element, SubElement as SubElement, findall as findall, findtext as findtext
+# third parties
 from _typeshed import Incomplete
+
+# relative
+from .xml import Element as Element
+from .xml import SubElement as SubElement
+from .xml import findall as findall
+from .xml import findtext as findtext
 
 class DeleteObject:
     def __init__(self, name, version_id: Incomplete | None = ...) -> None: ...
@@ -10,7 +16,9 @@ class DeleteRequest:
     def toxml(self, element): ...
 
 class DeletedObject:
-    def __init__(self, name, version_id, delete_marker, delete_marker_version_id) -> None: ...
+    def __init__(
+        self, name, version_id, delete_marker, delete_marker_version_id
+    ) -> None: ...
     @property
     def name(self): ...
     @property

@@ -1,5 +1,8 @@
-from _typeshed import Incomplete
+# standard library
 from collections.abc import Generator
+
+# third parties
+from _typeshed import Incomplete
 
 class MaxIdentifier:
     def __eq__(self, other): ...
@@ -25,7 +28,16 @@ class Version:
     prerelease: Incomplete
     build: Incomplete
     partial: Incomplete
-    def __init__(self, version_string: Incomplete | None = ..., major: Incomplete | None = ..., minor: Incomplete | None = ..., patch: Incomplete | None = ..., prerelease: Incomplete | None = ..., build: Incomplete | None = ..., partial: bool = ...) -> None: ...
+    def __init__(
+        self,
+        version_string: Incomplete | None = ...,
+        major: Incomplete | None = ...,
+        minor: Incomplete | None = ...,
+        patch: Incomplete | None = ...,
+        prerelease: Incomplete | None = ...,
+        build: Incomplete | None = ...,
+        partial: bool = ...,
+    ) -> None: ...
     def next_major(self): ...
     def next_minor(self): ...
     def next_patch(self): ...
@@ -159,13 +171,16 @@ class Range(Matcher):
     target: Incomplete
     prerelease_policy: Incomplete
     build_policy: Incomplete
-    def __init__(self, operator, target, prerelease_policy=..., build_policy=...) -> None: ...
+    def __init__(
+        self, operator, target, prerelease_policy=..., build_policy=...
+    ) -> None: ...
     def match(self, version): ...
     def __hash__(self): ...
     def __eq__(self, other): ...
 
 class SimpleSpec(BaseSpec):
     SYNTAX: str
+
     class Parser:
         NUMBER: str
         NAIVE_SPEC: Incomplete
@@ -190,10 +205,12 @@ class LegacySpec(SimpleSpec):
     @property
     def specs(self): ...
     def __iter__(self): ...
+
 Spec = LegacySpec
 
 class NpmSpec(BaseSpec):
     SYNTAX: str
+
     class Parser:
         JOINER: str
         HYPHEN: str

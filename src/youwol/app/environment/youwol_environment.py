@@ -3,11 +3,12 @@ import importlib.metadata
 import json
 import os
 
+from collections.abc import Awaitable
 from dataclasses import dataclass
 from pathlib import Path
 
 # typing
-from typing import Any, Awaitable, Dict, List, Optional
+from typing import Any, Optional
 
 # third parties
 from colorama import Fore, Style
@@ -61,22 +62,22 @@ from .projects_finders import auto_detect_projects
 class YouwolEnvironment(BaseModel):
     httpPort: int
     events: Events
-    customMiddlewares: List[CustomMiddleware]
+    customMiddlewares: list[CustomMiddleware]
 
     projects: Projects
-    commands: Dict[str, Command]
+    commands: dict[str, Command]
 
     currentConnection: Connection
 
-    remotes: List[CloudEnvironment]
+    remotes: list[CloudEnvironment]
 
     pathsBook: PathsBook
-    routers: List[FastApiRouter] = []
+    routers: list[FastApiRouter] = []
 
     backends_configuration: BackendConfigurations
 
-    cache_user: Dict[str, Any] = {}
-    cache_py_youwol: Dict[str, Any] = {}
+    cache_user: dict[str, Any] = {}
+    cache_py_youwol: dict[str, Any] = {}
 
     tokens_storage: TokensStorage
 
@@ -165,7 +166,7 @@ class YouwolEnvironmentFactory:
         return conf
 
     @staticmethod
-    async def reload(connection: Connection = None):
+    async def reload(connection: Optional[Connection] = None):
         cached = YouwolEnvironmentFactory.__cached_config
         conf = await safe_load(
             path=cached.pathsBook.config,

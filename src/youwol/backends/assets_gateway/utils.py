@@ -2,7 +2,7 @@
 from datetime import datetime
 
 # typing
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 # third parties
 from pydantic import BaseModel
@@ -22,7 +22,7 @@ from youwol.utils.http_clients.assets_gateway import (
 
 
 def to_asset_resp(
-    asset, permissions: PermissionsResponse = None
+    asset, permissions: Optional[PermissionsResponse] = None
 ) -> Union[AssetResponse, AssetWithPermissionResponse]:
     group_id = asset["groupId"] if "groupId" in asset else to_group_id(asset["scope"])
     if permissions:
@@ -64,8 +64,8 @@ class AssetImg(BaseModel):
 class AssetMeta(BaseModel):
     name: Union[str, None] = None
     description: Union[str, None] = None
-    images: Union[List[AssetImg], None] = None  # name, bytes
+    images: Union[list[AssetImg], None] = None  # name, bytes
     kind: Union[str, None] = None
     groupId: Union[str, None] = None
-    tags: Union[List[str], None] = None
-    dynamic_fields: Optional[Dict[str, Union[str, float, int]]] = None
+    tags: Union[list[str], None] = None
+    dynamic_fields: Optional[dict[str, Union[str, float, int]]] = None

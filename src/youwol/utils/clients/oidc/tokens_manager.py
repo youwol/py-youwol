@@ -28,7 +28,7 @@ class TokensStorage(ABC):
     @abstractmethod
     async def get_by_sid(
         self, session_id: str
-    ) -> (Optional[str], Optional[TokensData]):
+    ) -> tuple[Optional[str], Optional[TokensData]]:
         pass
 
     @abstractmethod
@@ -123,22 +123,26 @@ class TokensManager:
         self,
         tokens_id: str,
     ) -> Optional[Tokens]:
+        result = None
+
         tokens_data = await self.__storage.get(tokens_id)
         if tokens_data is None:
-            return None
-        result = Tokens(
+            return result
+
+        tokens = Tokens(
             tokens_id=tokens_id,
             storage=self.__storage,
             oidc_client=self.__oidc_client,
             tokens_data=tokens_data,
         )
+
         try:
-            await result.access_token()
+            await tokens.access_token()
+            result = tokens
         except RuntimeError:
             await self.__storage.delete(
                 tokens_id=tokens_id, session_id=tokens_data.session_state
             )
-            result = None
         return result
 
     async def restore_tokens_from_session_id(
@@ -164,9 +168,12 @@ class TokensStorageCache(TokensStorage):
         return f"{TokensStorageCache._CACHE_SID_KEY_PREFIX}_{session_id}"
 
     async def get(self, tokens_id: str) -> Optional[TokensData]:
-        data = self.__cache.get(TokensStorageCache.cache_token_key(tokens_id))
+        cache_token_key = TokensStorageCache.cache_token_key(tokens_id)
+        data = self.__cache.get(cache_token_key)
         if data is None:
             return None
+        if not isinstance(data, dict):
+            raise ValueError(f"Cached value for key {cache_token_key} is not a `dict`")
         try:
             return TokensData(
                 id_token=str(data["id_token"]),
@@ -177,7 +184,7 @@ class TokensStorageCache(TokensStorage):
                 refresh_expires_at=float(data["refresh_expires_at"]),
             )
         except KeyError:
-            self.__cache.delete(TokensStorageCache.cache_token_key(tokens_id))
+            self.__cache.delete(cache_token_key)
             return None
 
     async def delete(self, tokens_id: str, session_id: str) -> None:
@@ -186,10 +193,13 @@ class TokensStorageCache(TokensStorage):
 
     async def get_by_sid(
         self, session_id: str
-    ) -> (Optional[str], Optional[TokensData]):
-        tokens_id: str = self.__cache.get(TokensStorageCache.cache_sid_key(session_id))
+    ) -> tuple[Optional[str], Optional[TokensData]]:
+        cache_sid_key = TokensStorageCache.cache_sid_key(session_id)
+        tokens_id = self.__cache.get(cache_sid_key)
         if tokens_id is None:
             return None, None
+        if not isinstance(tokens_id, str):
+            raise ValueError(f"Cached value for key {cache_sid_key} is not a `str`")
         return tokens_id, await self.get(tokens_id)
 
     async def store(self, tokens_id: str, data: TokensData) -> None:
@@ -233,6 +243,8 @@ class SessionLessTokenManager:
     async def get_access_token(self) -> str:
         now = datetime.datetime.now().timestamp()
         token_data = self.__cache.get(self.__cache_key)
+        if not isinstance(token_data, dict):
+            raise ValueError(f"Cached value for key {self.__cache_key} is not a `dict`")
         if token_data is None or int(token_data["expires_at"]) < int(now):
             sessionless_tokens_data = await self.__oidc_client.client_credentials_flow()
             expires_at = (

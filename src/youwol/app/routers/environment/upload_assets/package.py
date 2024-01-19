@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 
 # typing
-from typing import List, NamedTuple, Optional
+from typing import NamedTuple, Optional
 
 # third parties
 from fastapi import HTTPException
@@ -34,8 +34,8 @@ class Library(BaseModel):
     assetId: str
     libraryName: str
     namespace: str
-    treeItems: List[TreeItem]
-    releases: List[Release]
+    treeItems: list[TreeItem]
+    releases: list[Release]
     rawId: str
 
 
@@ -91,7 +91,7 @@ class UploadPackageOptions(NamedTuple):
     If provided, only these versions will be considered to publish
     """
 
-    versions: Optional[List[str]] = None
+    versions: Optional[list[str]] = None
 
 
 @dataclass
@@ -169,7 +169,7 @@ class UploadPackageTask(UploadTask):
                 await ctx.info(text=f"{library_name}#{version}: synchronization done")
                 # await check_package_status(package=local_package, context=context, target_versions=[version])
 
-    async def create_raw(self, data: List[str], folder_id: str, context: Context):
+    async def create_raw(self, data: list[str], folder_id: str, context: Context):
         async with context.start(action="UploadPackageTask.create_raw") as ctx:
             versions = data
             for version in versions:
@@ -177,6 +177,6 @@ class UploadPackageTask(UploadTask):
                     folder_id=folder_id, version=version, context=ctx
                 )
 
-    async def update_raw(self, data: List[str], folder_id: str, context: Context):
+    async def update_raw(self, data: list[str], folder_id: str, context: Context):
         async with context.start(action="UploadPackageTask.update_raw") as ctx:
             await self.create_raw(data=data, folder_id=folder_id, context=ctx)

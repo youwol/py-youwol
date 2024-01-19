@@ -6,10 +6,11 @@ import os
 import tempfile
 import zipfile
 
+from collections.abc import Coroutine, Mapping
 from pathlib import Path
 
 # typing
-from typing import Coroutine, List, Mapping, Tuple, Union
+from typing import Any, Union
 
 # third parties
 from fastapi import HTTPException, UploadFile
@@ -18,10 +19,10 @@ from fastapi import HTTPException, UploadFile
 from youwol.backends.flux.backward_compatibility import (
     convert_project_to_current_version,
 )
-from youwol.backends.flux.configurations import Configuration, Constants
+from youwol.backends.flux.configurations import Constants
 
 # Youwol utilities
-from youwol.utils import JSON, DocDb, Storage, base64, log_info, write_json
+from youwol.utils import JSON, DocDb, Storage, base64, write_json
 from youwol.utils.http_clients.cdn_backend import patch_loading_graph
 from youwol.utils.http_clients.flux_backend import (
     BuilderRendering,
@@ -39,29 +40,26 @@ Group = str
 ProjectId = str
 
 
-async def init_resources(config: Configuration):
-    log_info("Ensure database resources")
-    headers = config.admin_headers if config.admin_headers else {}
-
-    log_info("Successfully retrieved authorization for resources creation")
-    await asyncio.gather(
-        config.doc_db_component.ensure_table(headers=headers),
-        config.doc_db.ensure_table(headers=headers),
-        config.storage.ensure_bucket(headers=headers),
-    )
-    log_info("resources initialization done")
-
-
 def read_json(folder: Path, name: str) -> JSON:
     return json.loads((folder / name).read_text())
 
 
 def create_project_from_json(folder: Path) -> Project:
     description = read_json(folder, "description.json")
+    if not isinstance(description, dict):
+        raise ValueError("description.json is not a JSON dictionary")
     workflow = read_json(folder, "workflow.json")
+    if not isinstance(workflow, dict):
+        raise ValueError("workflow.json is not a JSON dictionary")
     builder_rendering = read_json(folder, "builderRendering.json")
+    if not isinstance(builder_rendering, dict):
+        raise ValueError("builder_rendering.json is not a JSON dictionary")
     runner_rendering = read_json(folder, "runnerRendering.json")
+    if not isinstance(runner_rendering, dict):
+        raise ValueError("runner_rendering.json is not a JSON dictionary")
     requirements = read_json(folder, "requirements.json")
+    if not isinstance(requirements, dict):
+        raise ValueError("requirements.json is not a JSON dictionary")
     return Project(
         name=description["name"],
         schemaVersion=description["schemaVersion"]
@@ -77,12 +75,12 @@ def create_project_from_json(folder: Path) -> Project:
 
 def update_project(
     project_id: str,
-    owner: Union[str, None],
+    owner: str,
     project: Project,
     storage: Storage,
     docdb: DocDb,
     headers: Mapping[str, str],
-) -> List[Coroutine]:
+) -> list[Coroutine]:
     base_path = f"projects/{project_id}"
     description = {
         "description": project.description,
@@ -129,7 +127,6 @@ def update_project(
             headers=headers,
         ),
     ]
-    post_files_request = [req for req in post_files_request if req]
     document = create_project_document(
         project_id=project_id,
         name=project.name,
@@ -140,7 +137,7 @@ def update_project(
     )
 
     docdb_request = docdb.create_document(doc=document, owner=owner, headers=headers)
-    return [*post_files_request, docdb_request]
+    return [*[req for req in post_files_request if req], docdb_request]
 
 
 def update_metadata(
@@ -148,14 +145,14 @@ def update_metadata(
     name: str,
     description: str,
     schema_version: str,
-    owner: Union[str, None],
+    owner: str,
     requirements: Requirements,
     storage: Storage,
     docdb: DocDb,
     headers: Mapping[str, str],
-) -> List[Coroutine]:
+) -> list[Coroutine]:
     base_path = f"projects/{project_id}"
-    description = {
+    struct_description = {
         "description": description,
         "schemaVersion": schema_version,
         "name": name,
@@ -171,23 +168,22 @@ def update_metadata(
         else None,
         storage.post_json(
             path=f"{base_path}/description.json",
-            json=description,
+            json=struct_description,
             owner=owner,
             headers=headers,
         ),
     ]
-    post_files_request = [req for req in post_files_request if req]
     document = create_project_document(
         project_id=project_id,
         name=name,
-        description=description["description"],
+        description=struct_description["description"],
         packages=requirements.fluxPacks,
         bucket=storage.bucket_name,
         path=base_path,
     )
 
     docdb_request = docdb.create_document(doc=document, owner=owner, headers=headers)
-    return [*post_files_request, docdb_request]
+    return [*[req for req in post_files_request if req], docdb_request]
 
 
 async def retrieve_project(
@@ -195,7 +191,7 @@ async def retrieve_project(
     owner: Union[None, str],
     storage: Storage,
     headers: Mapping[str, str],
-) -> (Project, Group, dict):
+) -> Project:
     (
         workflow,
         builder_rendering,
@@ -230,7 +226,7 @@ async def retrieve_project(
         ),
     )
 
-    deprecated_data = {}
+    deprecated_data = DeprecatedData(rootLayerTree={})
     if "rootLayerTree" in workflow:
         deprecated_data = DeprecatedData(rootLayerTree=workflow["rootLayerTree"])
     if requirements["loadingGraph"]["graphType"] != "sequential-v2":
@@ -256,12 +252,12 @@ async def retrieve_project(
 
 async def update_component(
     component_id: str,
-    owner: Union[str, None],
+    owner: str,
     component: Component,
     storage: Storage,
     doc_db_component: DocDb,
     headers: Mapping[str, str],
-) -> any:
+) -> Any:
     base_path = f"components/{component_id}"
     description = {
         "description": component.description,
@@ -455,7 +451,7 @@ def create_component_document(
     }
 
 
-async def get_json_files(base_path: str, files: List[str], storage, headers):
+async def get_json_files(base_path: str, files: list[str], storage, headers):
     futures = [
         storage.get_json(path=base_path + "/" + f, headers=headers) for f in files
     ]
@@ -463,7 +459,7 @@ async def get_json_files(base_path: str, files: List[str], storage, headers):
 
 
 async def post_json_files(
-    base_path: str, files: List[Tuple[str, any]], storage, headers
+    base_path: str, files: list[tuple[str, Any]], storage, headers
 ):
     futures = [
         storage.post_json(path=base_path + "/" + name, json=data, headers=headers)

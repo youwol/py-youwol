@@ -2,12 +2,13 @@
 import uuid
 
 # typing
-from typing import List, Optional
+from typing import Optional
 
 # third parties
 from aiohttp import ClientResponse
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
+from starlette.datastructures import UploadFile
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -48,7 +49,7 @@ class NewEmptyAssetBody(BaseModel):
     kind: str
     name: str = ""
     description: str = ""
-    tags: List[str] = []
+    tags: list[str] = []
 
 
 @router.get(
@@ -116,7 +117,10 @@ async def post_asset_files(
             )
 
         form = await request.form()
-        data = await form.get("file").read()
+        file = form.get("file")
+        if not isinstance(file, UploadFile):
+            raise ValueError("Field `file` of form is not of type `UploadFile`")
+        data = await file.read()
         return await assets_db.add_zip_files(
             asset_id=asset_id,
             data=data,
@@ -361,7 +365,10 @@ async def post_image(
         ensure_group_permission(request=request, group_id=asset["groupId"])
 
         form = await request.form()
-        src = await form.get("file").read()
+        file = form.get("file")
+        if not isinstance(file, UploadFile):
+            raise ValueError("Field `file` of form is not of type `UploadFile`")
+        src = await file.read()
         return await configuration.assets_client.post_image(
             asset_id=asset_id,
             filename=filename,

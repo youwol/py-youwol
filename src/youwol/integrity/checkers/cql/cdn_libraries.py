@@ -1,9 +1,6 @@
 # standard library
 import sys
 
-# typing
-from typing import List
-
 # third parties
 import semantic_version
 
@@ -17,7 +14,7 @@ from ...models import LibrariesRow
 from .commons import check_owner
 
 
-def check(session: CqlSession) -> List[Correction]:
+def check(session: CqlSession) -> list[Correction]:
     corrections: list[Correction] = []
     for row_data in session.execute(q="SELECT * FROM prod_cdn.libraries"):
         row = LibrariesRow(**row_data)
@@ -47,9 +44,9 @@ def check_version_number(row: LibrariesRow) -> Correction | None:
 
 def _version_number_from_version(version: str) -> str:
     delta = 0
-    version = semantic_version.Version(version)
-    if version.prerelease:
-        prerelease = version.prerelease[0]
+    semver = semantic_version.Version(version)
+    if semver.prerelease:
+        prerelease = semver.prerelease[0]
         # 'next' deprecated: for backward compatibility (10/03/2022)
         delta = (
             1
@@ -60,7 +57,7 @@ def _version_number_from_version(version: str) -> str:
         )
 
     version_number_int = (
-        version.major * 10_000_000 + version.minor * 10_000 + version.patch * 10 + delta
+        semver.major * 10_000_000 + semver.minor * 10_000 + semver.patch * 10 + delta
     )
     return f"{version_number_int:010d}"
 

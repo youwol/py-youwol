@@ -1,9 +1,21 @@
+# third parties
 from _typeshed import Incomplete
 from deepdiff import DeepDiff as DeepDiff
 from deepdiff.anyset import AnySet as AnySet
-from deepdiff.helper import dict_ as dict_, get_doc as get_doc, not_found as not_found, np_array_factory as np_array_factory, np_ndarray as np_ndarray, numbers as numbers, numpy_dtype_string_to_type as numpy_dtype_string_to_type, numpy_dtypes as numpy_dtypes, short_repr as short_repr, strings as strings
-from deepdiff.path import GET as GET, GETATTR as GETATTR
-from deepdiff.serialization import pickle_dump as pickle_dump, pickle_load as pickle_load
+from deepdiff.helper import dict_ as dict_
+from deepdiff.helper import get_doc as get_doc
+from deepdiff.helper import not_found as not_found
+from deepdiff.helper import np_array_factory as np_array_factory
+from deepdiff.helper import np_ndarray as np_ndarray
+from deepdiff.helper import numbers as numbers
+from deepdiff.helper import numpy_dtype_string_to_type as numpy_dtype_string_to_type
+from deepdiff.helper import numpy_dtypes as numpy_dtypes
+from deepdiff.helper import short_repr as short_repr
+from deepdiff.helper import strings as strings
+from deepdiff.path import GET as GET
+from deepdiff.path import GETATTR as GETATTR
+from deepdiff.serialization import pickle_dump as pickle_dump
+from deepdiff.serialization import pickle_load as pickle_load
 
 logger: Incomplete
 VERIFICATION_MSG: str
@@ -36,7 +48,19 @@ class Delta:
     log_errors: Incomplete
     serializer: Incomplete
     deserializer: Incomplete
-    def __init__(self, diff: Incomplete | None = ..., delta_path: Incomplete | None = ..., delta_file: Incomplete | None = ..., deserializer=..., log_errors: bool = ..., mutate: bool = ..., raise_errors: bool = ..., safe_to_import: Incomplete | None = ..., serializer=..., verify_symmetry: bool = ...) -> None: ...
+    def __init__(
+        self,
+        diff: Incomplete | None = ...,
+        delta_path: Incomplete | None = ...,
+        delta_file: Incomplete | None = ...,
+        deserializer=...,
+        log_errors: bool = ...,
+        mutate: bool = ...,
+        raise_errors: bool = ...,
+        safe_to_import: Incomplete | None = ...,
+        serializer=...,
+        verify_symmetry: bool = ...,
+    ) -> None: ...
     post_process_paths_to_convert: Incomplete
     def reset(self) -> None: ...
     root: Incomplete

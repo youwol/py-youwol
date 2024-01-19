@@ -1,9 +1,6 @@
 # standard library
 from enum import Enum
 
-# typing
-from typing import List
-
 # third parties
 from pydantic import BaseModel
 
@@ -23,17 +20,17 @@ class CdnVersionLight(BaseModel):
 class CdnPackage(BaseModel):
     name: str
     id: str
-    versions: List[CdnVersion]
+    versions: list[CdnVersion]
 
 
 class CdnPackageLight(BaseModel):
     name: str
     id: str
-    versions: List[CdnVersionLight]
+    versions: list[CdnVersionLight]
 
 
 class CdnStatusResponse(BaseModel):
-    packages: List[CdnPackageLight]
+    packages: list[CdnPackageLight]
 
 
 class CdnPackageResponse(CdnPackage):
@@ -60,7 +57,7 @@ class CheckUpdateResponse(BaseModel):
 
 
 class CheckUpdatesResponse(BaseModel):
-    updates: List[CheckUpdateResponse]
+    updates: list[CheckUpdateResponse]
 
 
 class DownloadPackageBody(BaseModel):
@@ -69,7 +66,7 @@ class DownloadPackageBody(BaseModel):
 
 
 class DownloadPackagesBody(BaseModel):
-    packages: List[DownloadPackageBody]
+    packages: list[DownloadPackageBody]
     checkUpdateStatus: bool
 
 
@@ -78,7 +75,7 @@ class ResetCdnBody(BaseModel):
 
 
 class ResetCdnResponse(BaseModel):
-    deletedPackages: List[str]
+    deletedPackages: list[str]
 
 
 class HardResetDbStatus(BaseModel):
@@ -97,7 +94,7 @@ class HardResetCdnResponse(BaseModel):
 class DownloadedPackageResponse(BaseModel):
     packageName: str
     version: str
-    versions: List[str]
+    versions: list[str]
     fingerprint: str
 
 

@@ -8,7 +8,7 @@ from json import JSONDecodeError
 from pathlib import Path
 
 # typing
-from typing import Dict, Optional
+from typing import Optional
 
 # Youwol utilities
 from youwol.utils.clients.oidc.tokens_manager import TokensData, TokensStorage
@@ -71,8 +71,8 @@ class PathBase(ABC):
 
 class TokensStoragePathBase(TokensStorage, ABC):
     def __init__(self):
-        self.__tokens_data: Dict[str, TokensData] = {}
-        self.__session_ids: Dict[str, str] = {}
+        self.__tokens_data: dict[str, TokensData] = {}
+        self.__session_ids: dict[str, str] = {}
 
     @abstractmethod
     def _get_path_like(self) -> PathBase:
@@ -98,7 +98,7 @@ class TokensStoragePathBase(TokensStorage, ABC):
 
     async def get_by_sid(
         self, session_id: str
-    ) -> (Optional[str], Optional[TokensData]):
+    ) -> tuple[Optional[str], Optional[TokensData]]:
         with atomic_access:
             if session_id not in self.__session_ids:
                 return None, None

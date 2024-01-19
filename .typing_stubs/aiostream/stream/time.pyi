@@ -1,5 +1,8 @@
-from _typeshed import Incomplete
+# standard library
 from collections.abc import Generator
+
+# third parties
+from _typeshed import Incomplete
 
 async def spaceout(source, interval) -> Generator[Incomplete, None, None]: ...
 async def timeout(source, timeout) -> Generator[Incomplete, None, None]: ...

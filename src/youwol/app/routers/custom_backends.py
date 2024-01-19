@@ -1,8 +1,10 @@
 # standard library
 import inspect
 
+from collections.abc import Awaitable
+
 # typing
-from typing import Awaitable, Callable, List, Union, cast
+from typing import Callable, Union, cast
 
 # third parties
 from fastapi import APIRouter, FastAPI
@@ -14,7 +16,7 @@ from youwol.utils.servers.fast_api import FastApiRouter
 router = APIRouter()
 
 
-async def install_routers(routers: List[FastApiRouter], ctx: Context):
+async def install_routers(routers: list[FastApiRouter], ctx: Context):
     for r in routers:
         type_fct = Callable[[Context], Union[APIRouter, Awaitable[APIRouter]]]
         # Not sure why the typing.cast below is required
