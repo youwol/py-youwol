@@ -169,7 +169,7 @@ pathspec==0.12.1
     #   yamllint
 pdoc3==0.10.0
     # via youwol (pyproject.toml)
-pillow==10.1.0
+pillow==10.2.0
     # via youwol (pyproject.toml)
 pip-api==0.0.30
     # via pip-audit
