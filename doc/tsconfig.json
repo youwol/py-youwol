@@ -1,0 +1,9 @@
+{
+    "extends": "@youwol/tsconfig/tsconfig.json",
+    "compilerOptions": {
+        "baseUrl": ".",
+        "paths": {
+            "@rxVDomConfig": ["./rx-vdom-config"]
+        }
+    }
+}
