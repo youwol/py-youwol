@@ -1,4 +1,5 @@
 # standard library
+import functools
 import os
 import time
 
@@ -9,10 +10,25 @@ from pathlib import Path
 from typing import Optional, cast
 
 # third parties
+import griffe
+
 from fastapi import APIRouter, Query
 from fastapi.responses import FileResponse
+from griffe.dataclasses import Module
 from pydantic import BaseModel
 from starlette.requests import Request
+
+# Youwol application
+from youwol.app.routers.system.documentation import (
+    format_module_doc,
+    init_classes,
+    youwol_module,
+)
+from youwol.app.routers.system.documentation_models import (
+    DocCache,
+    DocChildModulesResponse,
+    DocModuleResponse,
+)
 
 # Youwol utilities
 from youwol.utils import JSON
@@ -385,3 +401,84 @@ def get_status(log: LogEntry, logger: InMemoryReporter):
         return NodeLogStatus.Unresolved
 
     return NodeLogStatus.Succeeded
+
+
+@router.get(
+    "/documentation/{rest_of_path:path}",
+    summary="Retrieves the documentation of a given module from this python package.",
+    response_model=DocModuleResponse,
+)
+async def get_documentation(request: Request, rest_of_path: str) -> DocModuleResponse:
+    """
+    Retrieves the documentation of a given module from this youwol package.
+
+    Only documented symbols are exposed in the documentation (modules, classes, functions, variables, attributes,
+    *etc.*). The returned module documentation provides the list of its submodules, that can be latter queried for
+    documentation if needed.
+
+    Guidelines for documenting python code:
+
+    *  Use <a href="https://mkdocstrings.github.io/griffe/docstrings/" target="_blank">Google style</a>
+     documentation for functions.
+    *  Class attributes documentation comes after their declaration, do not include it in class documentation.
+    *  For cross-reference of symbols, use a mark-down link with url given by **$Kind:$Path** where:
+        *  **$Kind** is either `@yw-nav-mod`, `@yw-nav-class`, `@yw-nav-attr`, `@yw-nav-meth`, `@yw-nav-func`,
+        `@yw-nav-glob`, to respectively link symbol of kind module, class, class' attribute,  class' method,
+         function, global variable.
+        *  **$Path** is the full (including file) 'pythonic' path to the symbol, starting with `youwol`.
+
+    Note:
+        Some section id acts as identifier for rendering: `example`, `warning`
+
+    Parameters:
+        request: incoming request
+        rest_of_path: path of the module separated with **'/'**; e.g. 'youwol/app/environment'. If empty, returns
+            an 'empty' response with 'youwol' as unique child module
+             (see <a href="@yw-nav-attr:youwol.app.routers.system.models.DocModuleResponse.childrenModules">
+            DocModuleResponse.childrenModules</a>)
+
+    Return:
+        Module documentation
+    """
+
+    async with Context.start_ep(request=request):
+        init_classes()
+        DocCache.global_doc = DocCache.global_doc or cast(
+            Module, griffe.load(youwol_module, submodules=True)
+        )
+
+        if rest_of_path in DocCache.modules_doc:
+            return DocCache.modules_doc[rest_of_path]
+        root = rest_of_path == ""
+        module_name = (
+            rest_of_path.strip("/")
+            .replace("/", ".")
+            .replace(youwol_module, "")
+            .strip(".")
+        )
+        module_doc = functools.reduce(
+            lambda acc, e: acc.modules[e] if e else acc,
+            module_name.split("."),
+            DocCache.global_doc,
+        )
+        griffe_doc = cast(Module, module_doc)
+        if root:
+            return DocModuleResponse(
+                name="",
+                path="",
+                docstring=[],
+                childrenModules=[
+                    DocChildModulesResponse(
+                        name=youwol_module,
+                        path=youwol_module,
+                        isLeaf=False,
+                    )
+                ],
+                classes=[],
+                functions=[],
+                attributes=[],
+            )
+
+        doc_response = format_module_doc(griffe_doc=griffe_doc, path=module_name)
+        DocCache.modules_doc[rest_of_path] = doc_response
+        return doc_response
