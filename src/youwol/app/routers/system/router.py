@@ -12,7 +12,7 @@ from typing import Optional, cast
 # third parties
 import griffe
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import FileResponse
 from griffe.dataclasses import Module
 from pydantic import BaseModel
@@ -456,11 +456,17 @@ async def get_documentation(request: Request, rest_of_path: str) -> DocModuleRes
             .replace(youwol_module, "")
             .strip(".")
         )
-        module_doc = functools.reduce(
-            lambda acc, e: acc.modules[e] if e else acc,
-            module_name.split("."),
-            DocCache.global_doc,
-        )
+        try:
+            module_doc = functools.reduce(
+                lambda acc, e: acc.modules[e] if e else acc,
+                module_name.split("."),
+                DocCache.global_doc,
+            )
+        except KeyError:
+            raise HTTPException(
+                status_code=404,
+                detail=f"The module '{module_name}' is not part of youwol.",
+            )
         griffe_doc = cast(Module, module_doc)
         if root:
             return DocModuleResponse(

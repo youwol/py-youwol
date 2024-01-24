@@ -123,10 +123,26 @@ def format_module_doc(griffe_doc: Module, path: str) -> DocModuleResponse:
     )
 
 
+def get_symbol_path(griffe_doc: Union[Class, Function, Attribute, Module]) -> str:
+    path = griffe_doc.name
+    it = griffe_doc
+    while it.parent:
+        path = f"{it.parent.name}.{path}"
+        it = it.parent
+
+    return path
+
+
 def get_docstring_sections(
     griffe_doc: Union[Class, Function, Attribute, Module]
 ) -> List[DocstringSection]:
-    docstring_text = griffe_doc.docstring.value
+    if not griffe_doc.docstring:
+        # This should not normally happen because only symbols with docstring are reported.
+        # However, it is possible to request the documentation of a module that do not
+        # have docstring.
+        log_error(f"No docstring available for '{get_symbol_path(griffe_doc)}'")
+
+    docstring_text = griffe_doc.docstring.value if griffe_doc.docstring else ""
 
     docstring = Docstring(
         docstring_text,
