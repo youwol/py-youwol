@@ -1,3 +1,8 @@
+"""
+This module defines helping utilities for working with youwol.
+
+"""
+
 # relative
 from .clients import *
 from .context import *

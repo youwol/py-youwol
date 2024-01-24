@@ -15,6 +15,21 @@ from youwol.utils.types import AnyDict
 
 
 class YouWolException(HTTPException):
+    """
+    Base class for handled exceptions within YouWol: they usually correspond to errors originated from wrong user inputs
+    (e.g. requesting a non-existent resource).
+
+    If not caught, they end up being converted into a JSON response by the function
+    [youwol_exception_handler](@yw-nav-func:youwol.utils.exceptions.youwol_exception_handler).
+
+    When these exceptions propagate through services, they are wrapped using
+    [UpstreamResponseException](@yw-nav-class:youwol.utils.exceptions.UpstreamResponseException): its
+    [detail attribute](@yw-nav-attr:youwol.utils.exceptions.UpstreamResponseException.detail) present a recursive
+    structure that depicts the chain of calls within the services from which the exception happened
+    (see [upstream_exception_from_response](@yw-nav-func:youwol.utils.exceptions.upstream_exception_from_response)).
+
+    """
+
     exceptionType = "YouWolException"
 
     def __init__(self, status_code: int, detail: Any, **_):
@@ -251,13 +266,35 @@ class InvalidInput(YouWolException):
 
 
 class UpstreamResponseException(YouWolException):
+    """
+    Represents an exception that has been generated from an HTTP call to a service.
+
+    They are most of the time created using the function
+    [upstream_exception_from_response](@yw-nav-func:youwol.utils.exceptions.upstream_exception_from_response).
+
+    It is common that the underlying exception being itself an
+    [UpstreamResponseException](@yw-nav-class:youwol.utils.exceptions.UpstreamResponseException), such that
+    the `detail` attribute of the class presents a recursive structure that depicts the callstack of
+    services from which the original exception initiated.
+    """
+
     exceptionType = "UpstreamResponseException"
 
     # do not change case in 'exceptionType': UpstreamResponseException needs to be
     # 'auto-constructable' from its details
     def __init__(
-        self, status: int, url: str, detail: Any, exceptionType: str, **kwargs
+        self, status: int, url: str, detail: Any, exceptionType: str, **kwargs: AnyDict
     ):  # NOSONAR
+        """
+        Initialize a new instance.
+
+        Parameters:
+            status: [Status code](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status).
+            url: URL of the HTTP call
+            detail: Details of the exception
+            exceptionType: Class name of the exception
+            kwargs: keywords arguments forwarded to the base class constructor.
+        """
         super().__init__(
             status_code=status,
             detail={
@@ -292,7 +329,23 @@ YouwolExceptions: list[type[YouWolException]] = [
 ]
 
 
-async def youwol_exception_handler(request: Request, exc: YouWolException):
+async def youwol_exception_handler(
+    request: Request, exc: YouWolException
+) -> JSONResponse:
+    """
+    Handler for [YouWolException](@yw-nav-class:youwol.utils.exceptions.YouWolException).
+    Those are somehow 'expected' exceptions, due to for instance a wrong inputs when calling an HTTP endpoint.
+
+    No bug report is proposed in this case (by opposition to
+    [unexpected_exception_handler](@yw-nav-func:youwol.utils.exceptions.unexpected_exception_handler)).
+
+    Parameters:
+        request: Associated request from which the exception happened.
+        exc: The exception generated.
+
+    Return:
+        JSON representation of the exception.
+    """
     if request.state and request.state.context:
         await request.state.context.info("Trigger youwol_exception_handler")
     content = {
@@ -304,6 +357,22 @@ async def youwol_exception_handler(request: Request, exc: YouWolException):
 
 
 async def unexpected_exception_handler(request: Request, exc: Exception):
+    """
+    Handler for [Exception](https://docs.python.org/3/library/exceptions.html#Exception) that are not
+    [YouWolException](@yw-nav-class:youwol.utils.exceptions.YouWolException).
+
+    Those are somehow 'unexpected' exceptions, due to for instance a default in code implementation.
+
+    When reaching this point, a bug report is proposed.
+
+    Parameters:
+        request: Associated request from which the exception happened.
+        exc: The exception generated.
+
+    Return:
+        JSON representation of the exception.
+    """
+
     if request.state and request.state.context:
         await request.state.context.info("Trigger youwol_developer_exception_handler")
     print(traceback.format_exc())

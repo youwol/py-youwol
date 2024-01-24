@@ -14,9 +14,22 @@ from youwol.utils.exceptions import upstream_exception_from_response
 from youwol.utils.types import JSON
 
 TClientResponse = TypeVar("TClientResponse")
+"""
+Type var definition for a response of a request,
+used as template parameter of [RequestExecutor](@yw-nav-class:youwol.utils.clients.request_executor.RequestExecutor).
+
+E.g. in case of aiohttp executor, it is
+[ClientResponse](https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientResponse).
+"""
 
 
 class RequestExecutor(ABC, Generic[TClientResponse]):
+    """
+    Abstract class for requests executor.
+
+    It has a class template type `Generic[TClientResponse]`.
+    """
+
     @abstractmethod
     async def get(
         self,
@@ -26,7 +39,18 @@ class RequestExecutor(ABC, Generic[TClientResponse]):
         headers: Optional[dict[str, str]] = None,
         **kwargs,
     ):
-        pass
+        """
+        Execute a `GET` request.
+
+        Parameters:
+            url: URL of the request.
+            default_reader: the default reader to parse the response.
+            custom_reader: if provided, this custom reader is used in place of the `default_reader`.
+            headers: headers to use with the request
+
+        Return:
+            The type of the response depends on the `default_reader` or `̀custom_reader` if provided.
+        """
 
     @abstractmethod
     async def post(
@@ -37,7 +61,18 @@ class RequestExecutor(ABC, Generic[TClientResponse]):
         headers: Optional[dict[str, str]] = None,
         **kwargs,
     ):
-        pass
+        """
+        Execute a `POST` request.
+
+        Parameters:
+            url: URL of the request.
+            default_reader: the default reader to parse the response.
+            custom_reader: if provided, this custom reader is used in place of the `default_reader`.
+            headers: headers to use with the request
+
+        Return:
+            The type of the response depends on the `default_reader` or `̀custom_reader` if provided.
+        """
 
     @abstractmethod
     async def put(
@@ -48,7 +83,18 @@ class RequestExecutor(ABC, Generic[TClientResponse]):
         headers: Optional[dict[str, str]] = None,
         **kwargs,
     ):
-        pass
+        """
+        Execute a `PUT` request.
+
+        Parameters:
+            url: URL of the request.
+            default_reader: the default reader to parse the response.
+            custom_reader: if provided, this custom reader is used in place of the `default_reader`.
+            headers: headers to use with the request
+
+        Return:
+            The type of the response depends on the `default_reader` or `̀custom_reader` if provided.
+        """
 
     @abstractmethod
     async def delete(
@@ -59,12 +105,41 @@ class RequestExecutor(ABC, Generic[TClientResponse]):
         headers: Optional[dict[str, str]] = None,
         **kwargs,
     ):
-        pass
+        """
+        Execute a `DELETE` request.
+
+        Parameters:
+            url: URL of the request.
+            default_reader: the default reader to parse the response.
+            custom_reader: if provided, this custom reader is used in place of the `default_reader`.
+            headers: headers to use with the request
+
+        Return:
+            The type of the response depends on the `default_reader` or `̀custom_reader` if provided.
+        """
 
 
 @dataclass(frozen=True)
 class AioHttpExecutor(RequestExecutor[ClientResponse]):
+    """
+    Request executor using [AioHTTP](https://docs.aiohttp.org/en/stable/) instantiated using the template parameter
+    [ClientResponse](https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientResponse)..
+
+    Helpers regarding readers are available, see
+    [text_reader](@yw-nav-func:youwol.utils.clients.request_executor.text_reader),
+    [json_reader](@yw-nav-func:youwol.utils.clients.request_executor.json_reader),
+    [bytes_reader](@yw-nav-func:youwol.utils.clients.request_executor.bytes_reader),
+    [auto_reader](@yw-nav-func:youwol.utils.clients.request_executor.auto_reader).
+    """
+
     client_session: Union[ClientSession, Callable[[], ClientSession]]
+    """
+    Client session from [AioHTTP](https://docs.aiohttp.org/en/stable/).
+
+    If an instance is provided, it is used as it is to send requests.
+
+    If a callable is provided, the callable is triggered each time a request is send to retrieve a new client session.
+    """
     access_token: Optional[Callable[[], Awaitable[str]]] = None
 
     @staticmethod
@@ -117,6 +192,9 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
         headers: Optional[dict[str, str]] = None,
         **kwargs,
     ):
+        """
+        See [RequestExecutor.post](@yw-nav-func:youwol.utils.clients.request_executor.RequestExecutor.get).
+        """
         return await self._request(
             "GET",
             url=url,
@@ -134,6 +212,9 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
         headers: Optional[dict[str, str]] = None,
         **kwargs,
     ):
+        """
+        See [RequestExecutor.post](@yw-nav-func:youwol.utils.clients.request_executor.RequestExecutor.post).
+        """
         return await self._request(
             "POST",
             url=url,
@@ -151,6 +232,9 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
         headers: Optional[dict[str, str]] = None,
         **kwargs,
     ):
+        """
+        See [RequestExecutor.put](@yw-nav-func:youwol.utils.clients.request_executor.RequestExecutor.put).
+        """
         return await self._request(
             "PUT",
             url=url,
@@ -168,6 +252,9 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
         headers: Optional[dict[str, str]] = None,
         **kwargs,
     ):
+        """
+        See [RequestExecutor.delete](@yw-nav-func:youwol.utils.clients.request_executor.RequestExecutor.delete).
+        """
         return await self._request(
             "DELETE",
             url=url,
@@ -179,6 +266,16 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
 
 
 async def text_reader(resp: ClientResponse) -> str:
+    """
+    Text reader from aiohttp's
+    [ClientResponse](https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientResponse).
+
+    Parameters:
+        resp: The response.
+
+    Return:
+        The content as string.
+    """
     if resp.status < 300:
         resp_text = await resp.text()
         return resp_text
@@ -187,6 +284,16 @@ async def text_reader(resp: ClientResponse) -> str:
 
 
 async def json_reader(resp: ClientResponse) -> JSON:
+    """
+    JSON reader from aiohttp's
+    [ClientResponse](https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientResponse).
+
+    Parameters:
+        resp: The response.
+
+    Return:
+        The content as JSON.
+    """
     if resp.status < 300:
         resp_json = await resp.json()
         return resp_json
@@ -195,6 +302,16 @@ async def json_reader(resp: ClientResponse) -> JSON:
 
 
 async def bytes_reader(resp: ClientResponse) -> bytes:
+    """
+    Bytes reader from aiohttp's
+    [ClientResponse](https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientResponse).
+
+    Parameters:
+        resp: The response.
+
+    Return:
+        The content as bytes.
+    """
     if resp.status < 300:
         resp_bytes = await resp.read()
         return resp_bytes
@@ -203,6 +320,16 @@ async def bytes_reader(resp: ClientResponse) -> bytes:
 
 
 async def auto_reader(resp: ClientResponse) -> Union[JSON, str, bytes]:
+    """
+    Automatic selection of reader from the response's `content_type`.
+    See code implementation regarding switching strategy.
+
+    Parameters:
+        resp: The response.
+
+    Return:
+        The content as JSON, string or bytes (default).
+    """
     if resp.status < 300:
         content_type = resp.content_type
 

@@ -10,7 +10,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 # Youwol utilities
-from youwol.utils import get_content_encoding, get_content_type
+from youwol.utils import AnyDict, get_content_encoding, get_content_type
 from youwol.utils.clients.file_system.interfaces import Metadata
 from youwol.utils.context import Context
 from youwol.utils.http_clients.files_backend import (
@@ -31,10 +31,29 @@ async def healthz():
     return {"status": "file-backend serving"}
 
 
-@router.post("/files", response_model=PostFileResponse, summary="create a new file")
+@router.post("/files", response_model=PostFileResponse, summary="Upload a file.")
 async def upload(
     request: Request, configuration: Configuration = Depends(get_configuration)
-):
+) -> PostFileResponse:
+    """
+    Upload a file.
+
+    Parameters:
+        request: Incoming request. It should be associated with a form having the attributes:
+            *  `file`: The content of the file as bytes.
+            *  `file_id`: Optional, a provided file's ID (if not provided generate a `uuid`)
+            *  `file_name`: The name of the file.
+            *  `content_type`: Optional, the content type.
+            If not provided it is guessed from the extension of the name (see
+            [get_content_type](@yw-nav-func:youwol.utils.utils.get_content_type)).
+            *  `content_encoding`: Optional, the content encoding.
+            If not provided it is guessed from the extension of the name (see
+            [get_content_encoding](@yw-nav-func:youwol.utils.utils.get_content_encoding)).
+        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.files.configurations.Configuration).
+
+    Return:
+        File information
+    """
     async with Context.start_ep(request=request):
         form = await request.form()
         file = form.get("file")
@@ -78,13 +97,24 @@ async def upload(
 @router.get(
     "/files/{file_id}/info",
     response_model=GetInfoResponse,
-    summary="get file stats information",
+    summary="Retrieve file's metadata.",
 )
 async def get_info(
     request: Request,
     file_id: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> AnyDict:
+    """
+    Retrieve file's metadata.
+
+    Parameters:
+        request: Incoming request.
+        file_id: File's ID.
+        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.files.configurations.Configuration).
+
+    Return:
+        The file's metadata.
+    """
     async with Context.start_ep(request=request):
         return await configuration.file_system.get_info(object_id=file_id)
 
@@ -96,6 +126,18 @@ async def update_metadata(
     body: PostMetadataBody,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    Update file's metadata.
+
+    Parameters:
+        request: Incoming request.
+        file_id: File's ID.
+        body: metadata description.
+        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.files.configurations.Configuration).
+
+    Return:
+        Empty JSON.
+    """
     async with Context.start_ep(request=request):
         await configuration.file_system.set_metadata(
             object_id=file_id, metadata=Metadata(**body.dict())
@@ -103,12 +145,23 @@ async def update_metadata(
         return {}
 
 
-@router.get("/files/{file_id}", summary="get file content")
+@router.get("/files/{file_id}", summary="Retrieve file's content.")
 async def get_file(
     request: Request,
     file_id: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> Response:
+    """
+    Retrieve file's content.
+
+    Parameters:
+        request: Incoming request.
+        file_id: File's ID.
+        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.files.configurations.Configuration).
+
+    Return:
+        The file's content.
+    """
     async with Context.start_ep(
         request=request, with_attributes={"fileId": file_id}
     ) as ctx:
@@ -127,12 +180,23 @@ async def get_file(
         )
 
 
-@router.delete("/files/{file_id}", summary="remove a file")
+@router.delete("/files/{file_id}", summary="Remove a file.")
 async def remove_file(
     request: Request,
     file_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    Remove a file.
+
+    Parameters:
+        request: Incoming request.
+        file_id: File's ID.
+        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.files.configurations.Configuration).
+
+    Return:
+        Empty JSON.
+    """
     async with Context.start_ep(request=request):
         await configuration.file_system.remove_object(object_id=file_id)
         return {}

@@ -36,17 +36,55 @@ Result = Union[Project, Failure]
 
 
 class FailuresReport(BaseModel):
+    """
+    Describes failures for projects that failed to load.
+    """
+
     directoriesNotFound: list[FailureDirectoryNotFound] = []
+    """
+    *List[[FailureDirectoryNotFound](@yw-nav-class:youwol.app.routers.projects.models.FailureDirectoryNotFound)]*
+
+    Failure because of a directory not found.
+    """
     pipelinesNotFound: list[FailurePipelineNotFound] = []
+    """
+    *List[[FailurePipelineNotFound](@yw-nav-class:youwol.app.routers.projects.models.FailurePipelineNotFound)]*
+
+    Failure because of a `yw_pipeline.py` file not found.
+    """
     importExceptions: list[FailureImportException] = []
+    """
+    *List[[FailureImportException](@yw-nav-class:youwol.app.routers.projects.models.FailureImportException)]*
+
+    Failure because of an exception while parsing `yw_pipeline.py`.
+    """
 
 
 class ProjectsLoadingResults(BaseModel):
+    """
+    Describes the status of the projects loaded in the current workspace.
+    """
+
     results: list[Project]
+    """
+    *List[[Project](@yw-nav-class:youwol.app.routers.projects.models_project.Project)]*
+
+    The list of projects that loaded successfully.
+    """
     failures: FailuresReport
+    """
+    *List[[FailuresReport](@yw-nav-class:youwol.app.routers.projects.projects_loader.FailuresReport)]*
+
+    The list of projects that did not loaded successfully.
+    """
 
 
 class ProjectLoader:
+    """
+    Singleton managing projects loading, and eventually auto-discovering of new/removed projects
+    (see [RecursiveProjectFinder](@yw-nav-class:youwol.app.environment.models.models_config.RecursiveProjectFinder)).
+    """
+
     context = Context(logs_reporters=[], data_reporters=[WsDataStreamer()])
 
     handler: Optional[ProjectsFinderHandler] = None

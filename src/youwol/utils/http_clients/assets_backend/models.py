@@ -19,8 +19,18 @@ class HealthzResponse(BaseModel):
 
 
 class ReadPolicyEnum(str, Enum):
+    """
+    The read policy values.
+    """
+
     forbidden = "forbidden"
+    """
+    The asset can not be read.
+    """
     authorized = "authorized"
+    """
+    The asset can be read.
+    """
     owning = "owning"
     expiration_date = "expiration-date"
 
@@ -45,22 +55,55 @@ SharePolicyEnumFactory = {
 
 
 class AccessPolicyBody(BaseModel):
+    """
+    Body to update an access policy for an asset & group.
+    """
+
     read: ReadPolicyEnum
+    """
+    Whether the asset can be read by the group.
+    """
     share: SharePolicyEnum
+    """
+    Whether the asset can be shared by the group.
+    """
     parameters: Mapping[str, Any] = {}
 
 
 class AccessPolicyResp(BaseModel):
+    """
+    Describes access policy for an asset w/ particular group.
+    """
+
     read: ReadPolicyEnum
+    """
+    Read policy.
+    """
     share: SharePolicyEnum
+    """
+    Share policy.
+    """
     parameters: Mapping[str, Any] = {}
     timestamp: Union[int, None]
 
 
 class PermissionsResp(BaseModel):
+    """
+    Describes the permission of a user to consume an asset.
+    """
+
     write: bool
+    """
+    Write permission enabled or not.
+    """
     read: bool
+    """
+    Read permission enabled or not.
+    """
     share: bool
+    """
+    Share permission enabled or not.
+    """
     expiration: Union[int, None]
 
 
@@ -75,8 +118,18 @@ class User(BaseModel):
 
 
 class OwningGroup(BaseModel):
+    """
+    Describes the owning group of an asset.
+    """
+
     name: str
+    """
+    Group's name.
+    """
     groupId: str
+    """
+    Group's ID.
+    """
 
 
 class GroupAccess(BaseModel):
@@ -92,18 +145,50 @@ class ExposingGroup(BaseModel):
 
 
 class OwnerInfo(BaseModel):
+    """
+    Describes information related to permissions regarding an asset for owners of the asset
+    (users subscribed to the asset's owning group).
+    """
+
     exposingGroups: list[ExposingGroup]
+    """
+    Groups exposing the asset.
+    """
     defaultAccess: GroupAccess
+    """
+    Default access.
+    """
 
 
 class ConsumerInfo(BaseModel):
+    """
+    Describes information related to permissions regarding an asset for users that are not owners of the asset
+    (users subscribed to the asset's owning group).
+    """
+
     permissions: PermissionsResp
+    """
+    Description of the permissions the user has over the asset.
+    """
 
 
 class AccessInfoResp(BaseModel):
+    """
+    Access information summary on an asset.
+    """
+
     owningGroup: OwningGroup
+    """
+    The owning group.
+    """
     ownerInfo: Union[None, OwnerInfo]
+    """
+    Owner information, only available for owners of the asset.
+    """
     consumerInfo: ConsumerInfo
+    """
+    Consumer information, available for all.
+    """
 
 
 class FormData(NamedTuple):
@@ -115,41 +200,129 @@ class FormData(NamedTuple):
 
 
 class AssetResponse(BaseModel):
+    """
+    Asset description.
+    """
+
     assetId: str
+    """
+    Asset's ID.
+    """
     kind: str
+    """
+    Asset's kind.
+    """
     rawId: str
+    """
+    Asset's raw-id (relevant when the asset is associated to an entity in another database for its 'raw' content).
+    """
     name: str
+    """
+    Asset's name.
+    """
     images: list[str]
+    """
+    Asset's images URL.
+    """
     thumbnails: list[str]
+    """
+    Asset's thumbnails URL.
+    """
     tags: list[str]
+    """
+    Asset's tags.
+    """
     description: str
+    """
+    Asset's description.
+    """
     groupId: str
+    """
+    Owning group ID.
+    """
 
 
 class NewAssetBody(BaseModel):
+    """
+    Body to create a new asset.
+    """
+
     assetId: Optional[str] = None
+    """
+    Asset's ID, if not provided use a generated uuid.
+    """
     rawId: str
+    """
+    If the asset is associated to an entity in another database, it is the ID of this entity.
+    """
     kind: str
+    """
+    Kind of this asset.
+    """
     groupId: Optional[str] = None
+    """
+    Group ID in which the asset belongs.
+    """
     name: str = ""
+    """
+    Name of the asset.
+    """
     description: str = ""
+    """
+    Description of the asset.
+    """
     tags: list[str] = []
+    """
+    Tags of the asset.
+    """
     defaultAccessPolicy: AccessPolicyBody = AccessPolicyBody(
         read=ReadPolicyEnum.forbidden, share=SharePolicyEnum.forbidden, parameters={}
     )
+    """
+    Default access policy.
+    """
 
 
 class PostAssetBody(BaseModel):
+    """
+    Body to update an asset.
+    """
+
     name: Optional[str] = None
+    """
+    New name if provided.
+    """
     description: Optional[str] = None
+    """
+    New description if provided.
+    """
     tags: Optional[list[str]] = None
+    """
+    New tags if provided.
+    """
     groupId: Optional[str] = None
+    """
+    New owning group ID if provided.
+    """
     defaultAccessPolicy: Optional[AccessPolicyBody] = None
+    """
+    New default access policy if provided.
+    """
 
 
 class AddFilesResponse(BaseModel):
+    """
+    Describes files imported and associated to an asset.
+    """
+
     filesCount: int
+    """
+    Number of files.
+    """
     totalBytes: int
+    """
+    Total size.
+    """
 
 
 WhereClause = dict
@@ -187,6 +360,10 @@ ASSETS_TABLE = TableBody(
     partition_key=["asset_id"],
     clustering_columns=[],
 )
+"""
+Table definition for the assets service regarding the indexation of assets.
+"""
+
 
 ACCESS_HISTORY = TableBody(
     name="access_history",
@@ -220,3 +397,6 @@ ACCESS_POLICY = TableBody(
         clustering_order=[OrderingClause(name="consumer_group_id", order="ASC")]
     ),
 )
+"""
+Table definition for the assets service regarding the indexation of assets policies.
+"""

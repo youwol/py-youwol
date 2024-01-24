@@ -10,7 +10,18 @@ from youwol.utils.clients.docdb import DocDbClient, LocalDocDbClient
 from youwol.utils.clients.storage import LocalStorageClient, StorageClient
 
 DocDb = Union[DocDbClient, LocalDocDbClient]
+"""
+See [LocalDocDb](@yw-nav-class:youwol.utils.clients.docdb.local_docdb.LocalDocDbClient) or
+[RemoteDocDb](@yw-nav-class:youwol.utils.clients.docdb.docdb.DocDbClient).
+"""
+
 Storage = Union[StorageClient, LocalStorageClient]
+"""
+Deprecated, new code should use
+[LocalDocDb](@yw-nav-class:youwol.utils.clients.file_system.local_file_system.LocalFileSystem) or
+[RemoteDocDb](@yw-nav-class:youwol.utils.clients.file_system.minio_file_system.MinioFileSystem).
+
+"""
 Cache = Union[CacheClient, LocalCacheClient, RedisCacheClient]
 
 

@@ -64,6 +64,11 @@ async def create_drive(
     drive: DriveBody,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [tree_db.create_drive](@yw-nav-func:youwol.backends.tree_db.root_paths.create_drive)
+    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         ensure_group_permission(request=request, group_id=group_id)
         return await configuration.treedb_client.create_drive(
@@ -81,6 +86,11 @@ async def list_drives(
     group_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    Forward to
+    [tree_db.get_drives](@yw-nav-func:youwol.backends.tree_db.root_paths.get_drives)
+    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.treedb_client.get_drives(
             group_id=group_id,
@@ -97,6 +107,11 @@ async def update_drive(
     body: RenameBody,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [tree_db.update_drive](@yw-nav-func:youwol.backends.tree_db.root_paths.update_drive)
+    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         drive = await configuration.treedb_client.get_drive(
             drive_id=drive_id, headers=ctx.headers()
@@ -115,6 +130,11 @@ async def get_drive(
     drive_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    Forward to
+    [tree_db.get_drive](@yw-nav-func:youwol.backends.tree_db.root_paths.get_drive)
+    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.treedb_client.get_drive(
             drive_id=drive_id,
@@ -132,6 +152,11 @@ async def get_default_drive(
     group_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    Forward to
+    [tree_db.get_default_drive](@yw-nav-func:youwol.backends.tree_db.root_paths.get_default_drive)
+    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.treedb_client.get_default_drive(
             group_id=group_id,
@@ -147,6 +172,11 @@ async def get_default_drive(
 async def get_default_user_drive(
     request: Request, configuration: Configuration = Depends(get_configuration)
 ):
+    """
+    Forward to
+    [tree_db.get_default_user_drive](@yw-nav-func:youwol.backends.tree_db.root_paths.get_default_user_drive)
+    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.treedb_client.get_default_user_drive(
             headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
@@ -164,6 +194,11 @@ async def create_folder(
     body: FolderBody,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    Forward to
+    [tree_db.create_folder](@yw-nav-func:youwol.backends.tree_db.root_paths.create_folder)
+    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         folder = await configuration.treedb_client.get_folder(
             folder_id=parent_folder_id, headers=ctx.headers()
@@ -186,6 +221,11 @@ async def update_folder(
     body: RenameBody,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [tree_db.update_folder](@yw-nav-func:youwol.backends.tree_db.root_paths.update_folder)
+    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         folder = await configuration.treedb_client.get_folder(
             folder_id=folder_id, headers=ctx.headers()
@@ -207,6 +247,11 @@ async def get_folder(
     folder_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    Forward to
+    [tree_db.get_folder](@yw-nav-func:youwol.backends.tree_db.root_paths.get_folder)
+    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.treedb_client.get_folder(
             folder_id=folder_id,
@@ -223,6 +268,11 @@ async def create_item(
     item: ItemBody,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [tree_db.create_item](@yw-nav-func:youwol.backends.tree_db.root_paths.create_item)
+    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         folder = await configuration.treedb_client.get_folder(
             folder_id=folder_id, headers=ctx.headers()
@@ -243,6 +293,14 @@ async def update_item(
     body: RenameBody,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [tree_db.update_item](@yw-nav-func:youwol.backends.tree_db.root_paths.update_item)
+    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+
+    Note:
+        The name of the asset is also updated using the new provided name.
+    """
     async with Context.start_ep(request=request) as ctx:
         item = await configuration.treedb_client.get_item(
             item_id=item_id, headers=ctx.headers()
@@ -277,6 +335,11 @@ async def get_item(
     item_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    Forward to
+    [tree_db.get_item](@yw-nav-func:youwol.backends.tree_db.root_paths.get_item)
+    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.treedb_client.get_item(
             item_id=item_id,
@@ -294,6 +357,11 @@ async def get_items_by_related_id(
     asset_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    Forward to
+    [tree_db.get_items_from_asset](@yw-nav-func:youwol.backends.tree_db.root_paths.get_items_from_asset)
+    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.treedb_client.get_items_from_asset(
             asset_id=asset_id,
@@ -311,6 +379,11 @@ async def get_path(
     item_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    Forward to
+    [tree_db.get_path](@yw-nav-func:youwol.backends.tree_db.root_paths.get_path)
+    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.treedb_client.get_path(
             item_id=item_id,
@@ -328,6 +401,11 @@ async def get_path_folder(
     folder_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    Forward to
+    [tree_db.get_path_folder](@yw-nav-func:youwol.backends.tree_db.root_paths.get_path_folder)
+    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.treedb_client.get_path_folder(
             folder_id=folder_id,
@@ -341,6 +419,14 @@ async def move(
     body: MoveItemBody,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [tree_db.get_path_folder](@yw-nav-func:youwol.backends.tree_db.root_paths.get_path_folder)
+    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+
+    Note:
+        If the item is moved in a different group, update permissions accordingly.
+    """
     asset_client = configuration.assets_client
     async with Context.start_ep(request=request) as ctx:
         treedb_client = configuration.treedb_client
@@ -382,6 +468,15 @@ async def borrow(
     body: BorrowBody,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [tree_db.borrow](@yw-nav-func:youwol.backends.tree_db.root_paths.borrow)
+    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+
+    Note:
+        To be borrowed, the asset should be associated to an access policy with `share` enabled.
+        Borrowing in a new group add a new access policy for the asset for this group.
+    """
     async with Context.start_ep(request=request) as ctx:
         tree_db, assets_db = configuration.treedb_client, configuration.assets_client
 
@@ -473,6 +568,11 @@ async def get_entity(
     include_items: bool = Query(True, alias="include-items"),
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    Forward to
+    [tree_db.get_entity](@yw-nav-func:youwol.backends.tree_db.root_paths.get_entity)
+    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.treedb_client.get_entity(
             entity_id=entity_id,
@@ -493,6 +593,11 @@ async def children(
     folder_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    Forward to
+    [tree_db.get_children](@yw-nav-func:youwol.backends.tree_db.root_paths.get_children)
+    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.treedb_client.get_children(
             folder_id=folder_id,
@@ -510,6 +615,11 @@ async def list_deleted(
     drive_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    Forward to
+    [tree_db.get_deleted](@yw-nav-func:youwol.backends.tree_db.root_paths.get_deleted)
+    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.treedb_client.get_deleted(
             drive_id=drive_id,
@@ -523,6 +633,12 @@ async def queue_delete_item(
     item_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [tree_db.remove_item](@yw-nav-func:youwol.backends.tree_db.root_paths.remove_item)
+    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    """
+
     async with Context.start_ep(request=request) as ctx:
         item = await configuration.treedb_client.get_item(
             item_id=item_id, headers=ctx.headers()
@@ -541,6 +657,11 @@ async def queue_delete_folder(
     folder_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [tree_db.remove_folder](@yw-nav-func:youwol.backends.tree_db.root_paths.remove_folder)
+    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         folder = await configuration.treedb_client.get_folder(
             folder_id=folder_id, headers=ctx.headers()
@@ -559,6 +680,11 @@ async def delete_drive(
     drive_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [tree_db.delete_drive](@yw-nav-func:youwol.backends.tree_db.root_paths.delete_drive)
+    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    """
     async with Context.start_ep(request=request) as ctx:
         drive = await configuration.treedb_client.get_drive(
             drive_id=drive_id, headers=ctx.headers()
@@ -581,6 +707,15 @@ async def purge_drive(
     drive_id: str,
     configuration: Configuration = Depends(get_configuration),
 ):
+    """
+    If permissions are granted, forward to
+    [tree_db.purge_drive](@yw-nav-func:youwol.backends.tree_db.root_paths.purge_drive)
+    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+
+    Note:
+        For each item deleted, it also deletes the asset, the 'raw' part, and synchronize permissions & access policies.
+    """
+
     async def erase_flux_project(raw_id: str, context: Context):
         await delete_project_impl(
             project_id=raw_id, purge=False, configuration=configuration, context=context

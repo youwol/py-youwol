@@ -28,12 +28,57 @@ args = parser.parse_args()
 
 
 class MainArguments(NamedTuple):
+    """
+    Optional arguments that can be set when starting youwol.
+
+    Inline help for arguments description can be displayed using:
+    ```shell
+    youwol --help
+    ```
+    """
+
     port: int
+    """
+    Specify the port, exposed as **--port**.
+
+    **Example**
+    ```shell
+    youwol --port=2003
+    ```
+    """
     config_path: Path
+    """
+    Path to the configuration file, exposed as **--conf**.
+
+    **Example**
+    ```shell
+    youwol --conf='~/Projects/youwol/configuration.py'
+    ```
+    """
+
     daemonize: bool = False
+    """
+    Whether to run youwol in [daemonized](https://en.wikipedia.org/wiki/Daemon_(computing)) mode,
+     exposed as **--daemonize**.
+
+    **Example**
+    ```shell
+    youwol --daemonize=true
+    ```
+    """
     email: Optional[str] = None
+
     execution_folder = Path(os.getcwd())
     verbose: bool = False
+    """
+    Configure uvicorn logging to "info", exposed as **--verbose**.
+
+    **Example**
+    ```shell
+    youwol --verbose=true
+    ```
+    """
+
     init: bool = False
 
 

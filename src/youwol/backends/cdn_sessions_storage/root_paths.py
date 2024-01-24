@@ -14,7 +14,7 @@ from youwol.backends.cdn_sessions_storage.configurations import (
 from youwol.backends.cdn_sessions_storage.utils import get_path
 
 # Youwol utilities
-from youwol.utils import JSON
+from youwol.utils import JSON, AnyDict
 from youwol.utils.context import Context
 
 router = APIRouter(tags=["cdn-sessions-storage"])
@@ -33,19 +33,6 @@ async def post_data_generic(
     namespace: Optional[str] = None,
     configuration: Configuration = Depends(get_configuration),
 ):
-    """
-
-    Args:
-        request: incoming request
-        package: name of the package (without include namespace)
-        name: name of the data
-        body: json data
-        namespace: optional namespace of the package
-        configuration: service's configuration
-
-    Returns:
-        empty response '{}'
-    """
     async with Context.start_ep(
         request=request, with_attributes={"name": name, "package": package}
     ) as ctx:
@@ -67,7 +54,21 @@ async def post_data_no_namespace(
     name: str,
     body: JSON,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> AnyDict:
+    """
+    Create a new entry for the current user from a particular application or library.
+
+    Parameters:
+        request: Incoming request.
+        package: Name of the package that post the data (the owner, without namespace).
+        name: Name of the data.
+        body: JSON data.
+        configuration: Injected
+            [Configuration](@yw-nav-class:youwol.backends.cdn_sessions_storage.configurations.Configuration).
+
+    Returns:
+        Empty JSON.
+    """
     return await post_data_generic(
         request=request,
         package=package,
@@ -85,7 +86,22 @@ async def post_data_with_namespace(
     name: str,
     body: JSON,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> AnyDict:
+    """
+    Create a new entry for the current user from a particular application or library.
+
+    Parameters:
+        request: Incoming request.
+        namespace: Namespace of the package.
+        package: Name of the package that post the data (the owner, without namespace).
+        name: Name of the data.
+        body: JSON data.
+        configuration: Injected
+            [Configuration](@yw-nav-class:youwol.backends.cdn_sessions_storage.configurations.Configuration).
+
+    Returns:
+        Empty JSON.
+    """
     return await post_data_generic(
         request=request,
         namespace=namespace,
@@ -122,7 +138,20 @@ async def delete_data_no_namespace(
     package: str,
     name: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> AnyDict:
+    """
+    Delete an entry.
+
+    Parameters:
+        request: Incoming request.
+        package: Name of the package that post the data (the owner, without namespace).
+        name: Name of the data.
+        configuration: Injected
+            [Configuration](@yw-nav-class:youwol.backends.cdn_sessions_storage.configurations.Configuration).
+
+    Returns:
+        Empty JSON.
+    """
     return await delete_data_generic(
         request=request, package=package, name=name, configuration=configuration
     )
@@ -135,7 +164,21 @@ async def delete_data_with_namespace(
     package: str,
     name: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> AnyDict:
+    """
+    Delete an entry.
+
+    Parameters:
+        request: Incoming request.
+        namespace: Namespace of the package.
+        package: Name of the package that post the data (the owner, without namespace).
+        name: Name of the data.
+        configuration: Injected
+            [Configuration](@yw-nav-class:youwol.backends.cdn_sessions_storage.configurations.Configuration).
+
+    Returns:
+        Empty JSON.
+    """
     return await delete_data_generic(
         request=request,
         namespace=namespace,
@@ -174,7 +217,20 @@ async def get_data_no_namespace(
     package: str,
     name: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> AnyDict:
+    """
+    Get an entry.
+
+    Parameters:
+        request: Incoming request.
+        package: Name of the package that post the data (the owner, without namespace).
+        name: Name of the data.
+        configuration: Injected
+            [Configuration](@yw-nav-class:youwol.backends.cdn_sessions_storage.configurations.Configuration).
+
+    Returns:
+        Empty JSON.
+    """
     return await get_data_generic(
         request=request, package=package, name=name, configuration=configuration
     )
@@ -187,7 +243,21 @@ async def get_data_with_namespace(
     package: str,
     name: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> AnyDict:
+    """
+    Get an entry.
+
+    Parameters:
+        request: Incoming request.
+        namespace: Namespace of the package.
+        package: Name of the package that post the data (the owner, without namespace).
+        name: Name of the data.
+        configuration: Injected
+            [Configuration](@yw-nav-class:youwol.backends.cdn_sessions_storage.configurations.Configuration).
+
+    Returns:
+        Empty JSON.
+    """
     return await get_data_generic(
         request=request,
         namespace=namespace,

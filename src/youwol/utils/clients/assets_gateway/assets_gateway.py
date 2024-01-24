@@ -15,27 +15,57 @@ from youwol.utils.clients.treedb.treedb import TreeDbClient
 
 @dataclass(frozen=True)
 class AssetsGatewayClient:
+    """
+    HTTP client of the [assets_gateway](@yw-nav-mod:youwol.backends.assets_gateway) service.
+
+    It provides children clients to access the proxied services.
+    """
+
     url_base: str
+    """
+    Base URL used for the request.
+    """
 
     request_executor: RequestExecutor
+    """
+    Request executor.
+    """
 
     @staticmethod
     def get_aiohttp_connector():
         return aiohttp.TCPConnector(verify_ssl=False)
 
     def get_assets_backend_router(self) -> AssetsClient:
+        """
+        Return the proxied `AssetsClient`.
+
+        Return:
+            The HTTP client
+        """
         return AssetsClient(
             url_base=f"{self.url_base}/assets-backend",
             request_executor=self.request_executor,
         )
 
     def get_treedb_backend_router(self) -> TreeDbClient:
+        """
+        Return the proxied `TreeDbClient`.
+
+        Return:
+            The HTTP client
+        """
         return TreeDbClient(
             url_base=f"{self.url_base}/treedb-backend",
             request_executor=self.request_executor,
         )
 
     def get_files_backend_router(self) -> FilesClient:
+        """
+        Return the proxied `FilesClient`.
+
+        Return:
+            The HTTP client
+        """
         return FilesClient(
             url_base=f"{self.url_base}/files-backend",
             request_executor=self.request_executor,
@@ -54,6 +84,12 @@ class AssetsGatewayClient:
         )
 
     def get_cdn_backend_router(self) -> CdnClient:
+        """
+        Return the proxied `CdnClient`.
+
+        Return:
+            The HTTP client
+        """
         return CdnClient(
             url_base=f"{self.url_base}/cdn-backend",
             request_executor=self.request_executor,

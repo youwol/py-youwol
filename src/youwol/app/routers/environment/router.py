@@ -76,15 +76,45 @@ async def cow_say():
     return cow.milk_random_cow(random.choice(quotes))
 
 
-@router.get("/configuration", response_model=YouwolEnvironment, summary="configuration")
-async def configuration(config: YouwolEnvironment = Depends(yw_config)):
+@router.get(
+    "/configuration",
+    response_model=YouwolEnvironment,
+    summary="Return the running environment.",
+)
+async def configuration(
+    config: YouwolEnvironment = Depends(yw_config),
+) -> YouwolEnvironment:
+    """
+    Return the running environment.
+
+    Parameters:
+        config: Actual environment - automatically injected.
+
+    Return:
+        The environment.
+    """
     return config
 
 
-@router.post("/configuration", summary="reload configuration")
+@router.post(
+    "/configuration",
+    response_model=EnvironmentStatusResponse,
+    summary="Trigger reload of the configuration.",
+)
 async def reload_configuration(
     request: Request,
-):
+) -> EnvironmentStatusResponse:
+    """
+    Trigger reload of the configuration.
+
+    Loaded projects are re-initialized asynchronously, related status is sent via the data web-socket
+
+    Parameters:
+        request: Incoming request.
+
+    Return:
+        The environment status.
+    """
     async with Context.start_ep(
         request=request,
         with_reporters=[LogsStreamer()],
@@ -197,8 +227,23 @@ async def custom_dispatches(
         return CustomDispatchesResponse(dispatches=dispatches)
 
 
-@router.post("/login", summary="log in as specified user")
-async def login(request: Request, body: LoginBody):
+@router.post(
+    "/login",
+    response_model=UserInfo,
+    summary="Login to a particular environment using a specific authentication mode.",
+)
+async def login(request: Request, body: LoginBody) -> UserInfo:
+    """
+    Login to a particular environment using a specific authentication mode.
+
+    Parameters:
+        request: Incoming request.
+        body: Login body.
+
+    Return:
+        User info of logged-in user.
+    """
+
     async with Context.from_request(request).start(action="login") as ctx:
         # Need to check validity of combination envId, authId
         # What happen if switch from 'DirectAuth' to 'BrowserAuth', following code will not work,

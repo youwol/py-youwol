@@ -21,6 +21,15 @@ from youwol.utils.request_info_factory import request_info
 
 
 class RootMiddleware(BaseHTTPMiddleware):
+    """
+    The first Middleware intercepting the request.
+
+    Its purpose is mostly to set up the initial [context](@yw-nav-class:youwol.utils.context.Context),
+    from the method [get_context](@yw-nav-meth:youwol.utils.middlewares.root_middleware.RootMiddleware.get_context)
+
+    The context created here is then propagated through the middlewares stack up to the end-point destination.
+    """
+
     ctx_logger: ContextReporter
 
     black_list = ["authorization"]
@@ -33,11 +42,36 @@ class RootMiddleware(BaseHTTPMiddleware):
         dispatch: Optional[DispatchFunction] = None,
         **_,
     ) -> None:
+        """
+        Constructor.
+
+        Parameters:
+            app: The FastAPI application
+            logs_reporter: The initial [logs reporter](@yw-nav-attr:youwol.utils.context.Context.logs_reporters)
+                used by the context created at incoming request and propagated up to the target end-point.
+            data_reporter: The initial [data reporter](@yw-nav-attr:youwol.utils.context.Context.data_reporters)
+                used by the context created at incoming request and propagated up to the target end-point.
+            dispatch: Optional, forwarded to the parent starlette's `BaseHTTPMiddleware`.
+
+        """
         super().__init__(app, dispatch)
         self.logs_reporters = [logs_reporter]
         self.data_reporters = [data_reporter] if data_reporter else []
 
     def get_context(self, request: Request):
+        """
+        Set up the initial context:
+            *  retrieve eventual `trace_id` and `correlation_id` from the incoming request's headers to set
+            the  [context.trace_uid](@yw-nav-attr:youwol.utils.context.Context.trace_uid) and
+             [context.parent_uid](@yw-nav-attr:youwol.utils.context.Context.parent_uid) respectively.
+             See [YouwolHeaders.get_trace_id](@yw-nav-meth:youwol.utils.utils.YouwolHeaders.get_trace_id) and
+            [YouwolHeaders.get_correlation_id](@yw-nav-meth:youwol.utils.utils.YouwolHeaders.get_correlation_id).
+            *  set up the [ContextReporter](@yw-nav-class:youwol.utils.context.ContextReporter) for both logs and data.
+
+        Parameters:
+            request: incoming request
+
+        """
         root_id = YouwolHeaders.get_correlation_id(request)
         trace_id = YouwolHeaders.get_trace_id(request)
         return ContextFactory.get_instance(
@@ -52,6 +86,16 @@ class RootMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
+        """
+        Log information w/ incoming request, dispatch the incoming request, log information w/ response.
+
+        Parameters:
+            request: incoming request
+            call_next: trigger function of the next middleware
+
+        Return:
+            HTTP Response
+        """
         context = self.get_context(request=request)
         info = request_info(request)
 

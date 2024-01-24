@@ -61,6 +61,7 @@ from youwol.utils.http_clients.cdn_backend import (
     get_exported_symbol,
 )
 from youwol.utils.http_clients.cdn_backend.utils import decode_extra_index
+from youwol.utils.types import AnyDict
 
 router = APIRouter(tags=["cdn-backend"])
 
@@ -71,16 +72,40 @@ async def healthz():
 
 
 @router.post(
-    "/publish-library", summary="upload a library", response_model=PublishResponse
+    "/publish-library",
+    summary="Publish a library from a zip file.",
+    response_model=PublishResponse,
 )
 async def publish_library(
     request: Request,
     file: UploadFile = File(...),
     content_encoding: str = Form("identity"),
     configuration: Configuration = Depends(get_configuration),
-):
-    # https://www.toptal.com/python/beginners-guide-to-concurrency-and-parallelism-in-python
-    # Publish needs to be done using a queue to let the cdn pods fully available to fetch resources
+) -> PublishResponse:
+    """
+    Publishes a library from a zip file:
+        *  Publish the files in the storage
+        *  Publish a document in the no-sql table
+        *  Publish files in the storage (under folder `/auto-generated/explorer`) to summarize the files' organization.
+
+    Requirements:
+        *  a `package.json` file is available in the zip, its location define the **reference path**.
+        Only the files in this folder and below are published.
+        *  `package.json` is a valid JSON file, including the fields:
+           *  'name' : the package name, also UID.
+           *  'version' : the package version, need to follow [semantic versioning](https://semver.org/).
+           Pre-releases allowed are defined [here](@yw-nav-class:youwol.backends.cdn.configurations.Constants).
+           *  'main' : the path of the main entry point, with respect to the **reference path**.
+
+    Parameters:
+        request: Incoming request.
+        file: Zip file including the packaged files.
+        content_encoding: Deprecated, use the default value.
+        configuration: Injected configuration of the service.
+
+    Return:
+        Publication summary.
+    """
 
     async with Context.start_ep(request=request, with_labels=["Publish"]) as ctx:
         return await publish_package(
@@ -92,13 +117,25 @@ async def publish_library(
         )
 
 
-@router.get("/download-library/{library_id}/{version}", summary="download a library")
+@router.get("/download-library/{library_id}/{version}", summary="Download a library.")
 async def download_library(
     request: Request,
     library_id: str,
     version: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> Response:
+    """
+    Downloads a library as zip file.
+
+    Parameters:
+        request: Incoming request.
+        library_id: Base64 encoded library name
+        version: explicit version (no semver allowed)
+        configuration: Injected configuration of the service.
+
+    Return:
+        Response
+    """
     async with Context.start_ep(request=request, with_labels=["Download"]) as ctx:
         version = await resolve_explicit_version(
             package_name=to_package_name(library_id),
@@ -118,13 +155,7 @@ async def download_library(
 
 @router.get(
     "/libraries/{library_id}",
-    summary="""
-Retrieve info of a library, including available versions sorted from the most recent to the oldest.
-library_id:  id of the library
-query parameters:
-   semver: semantic versioning query
-   max_count: maximum count of versions returned
-    """,
+    summary="Query library information.",
     response_model=ListVersionsResponse,
 )
 async def get_library_info(
@@ -133,7 +164,20 @@ async def get_library_info(
     semver: str = QueryParam(None),
     max_count: int = QueryParam(1000, alias="max-count"),
     configuration: Configuration = Depends(get_configuration),
-):
+) -> ListVersionsResponse:
+    """
+    Queries library information.
+
+    Parameters:
+        request: Incoming request.
+        library_id: Base64 encoded library name.
+        semver: Semantic versioning query.
+        max_count: Maximum count of versions returned.
+        configuration: Injected configuration of the service.
+
+    Return:
+        Response
+    """
     async with Context.start_ep(request=request) as ctx:
         name = to_package_name(library_id)
         # If a semver is requested we basically fetch all versions and proceed with filtering afterward using NpmSpec.
@@ -168,7 +212,7 @@ async def get_library_info(
 
 async def get_version_info_impl(
     library_id: str, version: str, configuration: Configuration, context: Context
-):
+) -> Library:
     async with context.start(
         action="get_version_info_impl",
         with_attributes={"library_id": library_id, "version": version},
@@ -198,11 +242,12 @@ async def get_version_info_impl(
                     context="Failed to retrieve a package",
                     packages=[f"{library_name}#{resolved_version}"],
                 )
+            raise e
 
 
 @router.get(
     "/libraries/{library_id}/{version}",
-    summary="return info on a specific version of a library",
+    summary="Query specific version information of a library.",
     response_model=Library,
 )
 async def get_version_info(
@@ -210,7 +255,19 @@ async def get_version_info(
     library_id: str,
     version: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> Library:
+    """
+    Queries specific version information of a library.
+
+    Parameters:
+        request: Incoming request.
+        library_id: Base64 encoded library name.
+        version: Explicit version.
+        configuration: Injected configuration of the service.
+
+    Return:
+        Response
+    """
     async with Context.start_ep(
         request=request, with_attributes={"library_id": library_id, "version": version}
     ) as ctx:
@@ -224,14 +281,25 @@ async def get_version_info(
 
 @router.delete(
     "/libraries/{library_id}",
-    summary="delete a library",
+    summary="Delete a library.",
     response_model=DeleteLibraryResponse,
 )
 async def delete_library(
     request: Request,
     library_id: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> DeleteLibraryResponse:
+    """
+    Deletes a library (all versions).
+
+    Parameters:
+        request: Incoming request.
+        library_id: Base64 encoded library name.
+        configuration: Injected configuration of the service.
+
+    Return:
+        Response
+    """
     async with Context.start_ep(
         request=request, with_attributes={"libraryId": library_id}
     ) as ctx:
@@ -261,13 +329,27 @@ async def delete_library(
         return DeleteLibraryResponse(deletedVersionsCount=len(resp_query["documents"]))
 
 
-@router.delete("/libraries/{library_id}/{version}", summary="delete a specific version")
+@router.delete(
+    "/libraries/{library_id}/{version}", summary="Delete specific version of a library."
+)
 async def delete_version(
     request: Request,
     library_id: str,
     version: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> AnyDict:
+    """
+    Deletes specific version of a library.
+
+    Parameters:
+        request: Incoming request.
+        library_id: Base64 encoded library name.
+        version: Explicit version.
+        configuration: Injected configuration of the service.
+
+    Return:
+        A dictionary with attribute `deletedCount`.
+    """
     async with Context.start_ep(
         request=request, with_attributes={"library_id": library_id, "version": version}
     ) as ctx:
@@ -304,14 +386,26 @@ async def delete_version(
 
 @router.post(
     "/queries/loading-graph",
-    summary="describes the loading graph of provided libraries",
+    summary="Resolves the loading graph of provided libraries.",
     response_model=LoadingGraphResponseV1,
 )
 async def resolve_loading_tree(
     request: Request,
     body: LoadingGraphBody,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> LoadingGraphResponseV1:
+    """
+    Resolves the loading graph of provided libraries.
+
+    Parameters:
+        request: Incoming request.
+        body: requested libraries.
+        configuration: Injected configuration of the service.
+
+    Return:
+        The loading graph.
+    """
+
     versions_cache: dict[LibName, list[str]] = {}
     full_data_cache: dict[ExportedKey, LibraryResolved] = {}
     resolutions_cache: dict[QueryKey, ResolvedQuery] = {}
@@ -418,7 +512,20 @@ async def get_entry_point(
     library_id: str,
     version: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> Response:
+    """
+    Fetches the entry point of a library..
+
+    Parameters:
+        request: Incoming request.
+        library_id: Base64 encoded library name.
+        version: semantic versioning request.
+        configuration: Injected configuration of the service.
+
+    Return:
+        Response
+    """
+
     async with Context.start_ep(
         action="fetch entry point",
         request=request,
@@ -459,7 +566,20 @@ async def get_resource(
     version: str,
     rest_of_path: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> Response:
+    """
+    Fetches a file from a library.
+
+    Parameters:
+        request: Incoming request.
+        library_id: Base64 encoded library name.
+        version: semantic versioning request.
+        rest_of_path: Path of the file within the library.
+        configuration: Injected configuration of the service.
+
+    Return:
+        Response
+    """
     if not rest_of_path:
         return await get_entry_point(
             request=request,
@@ -503,7 +623,20 @@ async def explorer_root(
     library_id: str,
     version: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> ExplorerResponse:
+    """
+    Describes the files content structure of the root folder of a library.
+
+    Parameters:
+        request: Incoming request.
+        library_id: Base64 encoded library name.
+        version: semantic versioning request.
+        configuration: Injected configuration of the service.
+
+    Return:
+        Response
+    """
+
     return await explorer(
         request=request,
         library_id=library_id,
@@ -524,7 +657,21 @@ async def explorer(
     version: str,
     rest_of_path: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> ExplorerResponse:
+    """
+    Describes the files content structure of library's folder.
+
+    Parameters:
+        request: Incoming request.
+        library_id: Base64 encoded library name.
+        version: semantic versioning request.
+        rest_of_path: path of the folder (referenced from the root folder of the library).
+        configuration: Injected configuration of the service.
+
+    Return:
+        Response
+    """
+
     async with Context.start_ep(
         action="get explorer's items",
         request=request,
@@ -549,5 +696,5 @@ async def explorer(
             if e.status_code != 404:
                 raise e
             return ExplorerResponse()
-        items = json.load(io.BytesIO(items))
-        return ExplorerResponse(**items)
+        items_json = json.load(io.BytesIO(items))
+        return ExplorerResponse(**items_json)

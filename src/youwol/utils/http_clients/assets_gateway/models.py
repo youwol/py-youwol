@@ -60,8 +60,19 @@ class AssetWithPermissionResponse(AssetResponse):
 
 
 class NewAssetResponse(AssetResponse):
+    """
+    Asset description when creating an asset using
+    [create_asset](@yw-nav-func:youwol.backends.assets_gateway.routers.assets_backend.create_asset)
+    """
+
     itemId: str
+    """
+    Item ID
+    """
     rawResponse: Optional[dict[str, Any]]
+    """
+    Response from the underlying service manager of the 'raw' part of the asset; if any.
+    """
 
 
 class AssetsResponse(BaseModel):

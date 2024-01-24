@@ -12,19 +12,36 @@ from youwol.utils.http_clients.tree_db_backend import DocDbs
 
 @dataclass(frozen=True)
 class Constants:
+    """
+    Configuration's constants for the service.
+    """
+
     namespace: str = "tree-db"
+    """
+    Namespace of the service.
+    """
     bucket: str = get_valid_bucket_name(namespace)
     default_owner = "/youwol-users"
     public_owner = "/youwol-users"
     text_content_type = "text/plain"
-    # This is the limit of children that can be fetched for a folder/drive.
-    # It has to disappear, see issue #158 files explorer: no max children count
     max_children_count = 1000
+    """
+    This is the limit of children that can be fetched for a folder/drive.
+    It has to disappear, see issue #158 files explorer: no max children count
+    """
 
 
 @dataclass(frozen=True)
 class Configuration:
+    """
+    Configuration of the service.
+    """
+
     doc_dbs: DocDbs
+    """
+    NoSql clients.
+    """
+
     admin_headers: Optional[dict[str, str]] = None
 
 
