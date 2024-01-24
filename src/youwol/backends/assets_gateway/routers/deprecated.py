@@ -83,7 +83,7 @@ async def forward_deprecated_get_json(
         async with aiohttp.ClientSession() as session:
             async with await session.get(url=url, headers=headers) as resp:
                 if resp.status == 200:
-                    return resp.json()
+                    return await resp.json()
                 raise await upstream_exception_from_response(resp)
 
 
