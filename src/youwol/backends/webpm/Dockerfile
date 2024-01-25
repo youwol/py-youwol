@@ -2,6 +2,8 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
+RUN useradd --uid 10000 webpm
+
 RUN apt-get update \
     && apt-get install -y \
         ca-certificates brotli\
@@ -20,5 +22,5 @@ COPY /src/youwol/backends/webpm /app/youwol/backends/webpm
 COPY /src/youwol/backends/webpm/default-logging.yaml /app/logging.yaml
 
 
-
+USER 10000
 ENTRYPOINT ["uvicorn", "youwol.backends.webpm.main:app", "--host", "0.0.0.0", "--no-server-header", "--log-config", "/app/logging.yaml"]

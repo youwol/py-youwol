@@ -1,6 +1,8 @@
 FROM python:3.11-slim
 
 
+RUN useradd --uid 10000 yw_app
+
 RUN apt-get update \
     && apt-get install -y \
          ca-certificates \
@@ -23,5 +25,6 @@ COPY /images/entry_point.sh /
 COPY /src/youwol/utils /opt/app/youwol/utils
 COPY /src/youwol/backends /opt/app/youwol/backends/
 
+USER 10000
 ENV YOUWOL_SOURCES_PATH=/opt/app
 ENTRYPOINT ["sh", "/entry_point.sh"]
