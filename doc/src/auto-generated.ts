@@ -5,7 +5,7 @@ const runTimeDependencies = {
         "@youwol/rx-vdom": "^1.0.1",
         "@youwol/webpm-client": "^3.0.0",
         "rxjs": "^7.5.6",
-        "@youwol/local-youwol-client": "^0.2.0",
+        "@youwol/local-youwol-client": "^0.2.1",
         "@youwol/rx-tab-views": "^0.3.0"
     },
     "includedInBundle": {}
