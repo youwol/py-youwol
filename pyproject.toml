@@ -95,12 +95,10 @@ where = [
     "src",
 ]
 include = [
-    "youwol.app*",
-    "youwol.backends*",
-    "youwol.utils*",
-    "youwol.pipelines*",
+    "youwol*",
 ]
 exclude = [
+    "youwol.integrity*",
     "youwol.backends.*.deployment*",
     "youwol.backends.mock*",
     "youwol.backends.common*",
