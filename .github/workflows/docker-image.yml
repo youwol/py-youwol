@@ -9,13 +9,13 @@ on:  # yamllint disable-line rule:truthy
 
   workflow_dispatch:
     inputs:
-      custom_tag:
+      tag:
         description: >
           An optional tag for the docker images
 
       only:
         description: >
-          Only build & publish the specified image, either 'webpm' or 'backends'.
+          Only build & publish the specified image, 'webpm' or 'backends'.
           Default to empty, i.e both images will be build & published
         default: ""
 
@@ -34,7 +34,7 @@ jobs:
             registry.gitlab.com/youwol/platform/webpm
           tags: |
             type=pep440,pattern={{version}}
-            type=raw,enable=${{ inputs.custom_tag != '' }},value=${{ inputs.custom_tag }}
+            type=raw,enable=${{ inputs.tag != '' }},value=${{ inputs.tag }}
             type=sha
           labels: |
             org.opencontainers.image.title=youwol/webpm
@@ -60,6 +60,8 @@ jobs:
           push: true
           tags: ${{ steps.docker_metadata.outputs.tags }}
           labels: ${{ steps.docker_metadat.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   backends:
     runs-on: ubuntu-latest
@@ -75,7 +77,7 @@ jobs:
             registry.gitlab.com/youwol/platform/backends
           tags: |
             type=pep440,pattern={{version}}
-            type=raw,enable=${{ inputs.custom_tag != '' }},value=${{ inputs.custom_tag }}
+            type=raw,enable=${{ inputs.tag != '' }},value=${{ inputs.tag }}
             type=sha
           labels: |
             org.opencontainers.image.title=youwol/backends
@@ -101,3 +103,5 @@ jobs:
           push: true
           tags: ${{ steps.docker_metadata.outputs.tags }}
           labels: ${{ steps.docker_metadat.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
