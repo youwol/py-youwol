@@ -1,0 +1,122 @@
+---
+
+name: Typescript
+
+on:  # yamllint disable-line rule:truthy
+  workflow_call:
+    inputs:
+      skip:
+        type: string
+        description: |
+          List of checks to skip, among audit, eslint, prettier,
+          autogen, build, doc, cleanness, tests
+        default: ''
+        required: false
+      acceptedGhsaIds:
+        type: string
+        description: |
+          List of ghsaIds to accept (they will still generate a warning)
+        required: false
+      directory:
+        type: string
+        description: |
+          Directory of typescript project, relative to py-youwol repository
+        required: true
+
+
+jobs:
+  static_analysis:
+    name: Static analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        id: checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        id: setup_node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'yarn'
+          cache-dependency-path: ${{ inputs.directory }}/yarn.lock
+
+      - name: Yarn install
+        id: yarn_install
+        env:
+          SRC_DIR: ${{ inputs.directory }}
+        run: |
+          cd "$SRC_DIR"
+          yarn --frozen-lockfile
+          echo "YARN_INSTALLED=${SRC_DIR}" >> "$GITHUB_ENV"
+        shell: sh
+
+      - name: Static Analysis
+        id: static_analysis
+        uses: youwol/nestor/ts/static_analysis@v3
+        with:
+          skip: ${{ inputs.skip }}
+          acceptedGhsaIds: ${{ inputs.acceptedGhsaIds }}
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare Py-Youwol
+        id: prepare_py-youwol
+        uses: youwol/nestor/py-youwol/prepare@v3
+
+      - name: Setup Node.js
+        id: setup_node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'yarn'
+          cache-dependency-path: ${{ inputs.directory }}/yarn.lock
+
+      - name: Yarn install
+        id: yarn_install
+        env:
+          SRC_DIR: ${{ inputs.directory }}
+        run: |
+          cd "$SRC_DIR"
+          yarn --frozen-lockfile
+          echo "YARN_INSTALLED=${SRC_DIR}" >> "$GITHUB_ENV"
+        shell: sh
+
+      - name: Build
+        id: build
+        uses: youwol/nestor/ts/build@v3
+        with:
+          skip: ${{ inputs.skip }}
+
+  tests:
+    name: Tests
+    if: "! contains(inputs.skip, 'tests')"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        id: checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        id: setup_node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'yarn'
+          cache-dependency-path: ${{ inputs.directory }}/yarn.lock
+
+      - name: Yarn install
+        id: yarn_install
+        env:
+          SRC_DIR: ${{ inputs.directory }}
+        run: |
+          cd "$SRC_DIR"
+          yarn --frozen-lockfile
+          echo "YARN_INSTALLED=${SRC_DIR}" >> "$GITHUB_ENV"
+        shell: sh
+
+      - name: Tests
+        id: tests
+        uses: youwol/nestor/ts/tests@v3
