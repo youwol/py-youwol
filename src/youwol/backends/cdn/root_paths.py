@@ -9,8 +9,8 @@ from typing import Any
 # third parties
 from fastapi import APIRouter, Depends, File, Form, HTTPException
 from fastapi import Query as QueryParam
+from fastapi import UploadFile
 from semantic_version import NpmSpec, Version
-from starlette.datastructures import UploadFile
 from starlette.requests import Request
 from starlette.responses import Response
 

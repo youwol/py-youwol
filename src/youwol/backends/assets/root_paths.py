@@ -14,7 +14,7 @@ from zipfile import ZipFile
 # third parties
 from fastapi import APIRouter, Depends, File, HTTPException
 from fastapi import Query as RequestQuery
-from starlette.datastructures import UploadFile
+from fastapi import UploadFile
 from starlette.requests import Request
 from starlette.responses import Response
 
