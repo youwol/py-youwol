@@ -269,7 +269,9 @@ click==8.1.7 \
 colorama==0.4.6 \
     --hash=sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44 \
     --hash=sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6
-    # via youwol (pyproject.toml)
+    # via
+    #   griffe
+    #   youwol (pyproject.toml)
 colorlog==6.8.0 \
     --hash=sha256:4ed23b05a1154294ac99f511fabe8c1d6d4364ec1f7fc989c7fb515ccc29d375 \
     --hash=sha256:fbb6fdf9d5685f2517f388fb29bb27d54e8654dd31f58bc2a3b217e967a95ca6
@@ -384,6 +386,10 @@ frozenlist==1.4.0 \
     # via
     #   aiohttp
     #   aiosignal
+griffe==0.39.1 \
+    --hash=sha256:6ce4ecffcf0d2f96362c5974b3f7df812da8f8d4cfcc5ebc8202ef72656fc087 \
+    --hash=sha256:ead8dfede6e6531cce6bf69090a4f3c6d36fdf923c43f8e85aa530552cef0c09
+    # via youwol (pyproject.toml)
 h11==0.14.0 \
     --hash=sha256:8f19fbbe99e72420ff35c00b27a34cb9937e902a8b810e2c88300c6f0a3b699d \
     --hash=sha256:e3fe4ac4b851c468cc8363d500db52c2ead036020723024a109d37346efaa761

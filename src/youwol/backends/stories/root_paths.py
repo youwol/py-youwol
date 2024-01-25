@@ -12,7 +12,7 @@ from pathlib import Path
 # third parties
 from fastapi import APIRouter, Depends, File, HTTPException
 from fastapi import Query as QueryParam
-from starlette.datastructures import UploadFile
+from fastapi import UploadFile
 from starlette.responses import StreamingResponse
 
 # Youwol backends

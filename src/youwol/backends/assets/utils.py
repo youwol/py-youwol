@@ -12,8 +12,8 @@ from pathlib import Path
 from typing import Any, Optional, Union
 
 # third parties
+from fastapi import UploadFile
 from PIL import Image
-from starlette.datastructures import UploadFile
 from starlette.requests import Request
 
 # Youwol backends

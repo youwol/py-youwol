@@ -7,11 +7,68 @@ on:  # yamllint disable-line rule:truthy
     tags:
       - 'v*'
 
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: >
+          An optional tag for the docker images
+
+      only:
+        description: >
+          Only build & publish the specified image, 'webpm' or 'backends'.
+          Default to empty, i.e both images will be build & published
+        default: ""
 
 jobs:
-  docker:
+  webpm:
     runs-on: ubuntu-latest
+    if: inputs.only == '' || inputs.only == 'webpm'
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Docker Metadata
+        id: docker_metadata
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            registry.gitlab.com/youwol/platform/webpm
+          tags: |
+            type=pep440,pattern={{version}}
+            type=raw,enable=${{ inputs.tag != '' }},value=${{ inputs.tag }}
+            type=sha
+          labels: |
+            org.opencontainers.image.title=youwol/webpm
+
+      - name: Setup Docker Buildx
+        id: setup_docker_buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Gitlab login
+        id: login_gitlab
+        uses: docker/login-action@v3
+        with:
+          registry: registry.gitlab.com
+          username: ${{ secrets.GITLAB_REGISTRY_USERNAME }}
+          password: ${{ secrets.GITLAB_REGISTRY_PASSWORD }}
+
+      - name: Docker Build & Push
+        id: docker_build_push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: images/webpm/Dockerfile
+          push: true
+          tags: ${{ steps.docker_metadata.outputs.tags }}
+          labels: ${{ steps.docker_metadat.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  backends:
+    runs-on: ubuntu-latest
+    if: inputs.only == '' || inputs.only == 'backends'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Docker Metadata
         id: docker_metadata
         uses: docker/metadata-action@v5
@@ -20,6 +77,8 @@ jobs:
             registry.gitlab.com/youwol/platform/backends
           tags: |
             type=pep440,pattern={{version}}
+            type=raw,enable=${{ inputs.tag != '' }},value=${{ inputs.tag }}
+            type=sha
           labels: |
             org.opencontainers.image.title=youwol/backends
 
@@ -39,7 +98,10 @@ jobs:
         id: docker_build_push
         uses: docker/build-push-action@v5
         with:
-          file: images/Dockerfile
+          context: .
+          file: images/backends/Dockerfile
           push: true
           tags: ${{ steps.docker_metadata.outputs.tags }}
           labels: ${{ steps.docker_metadat.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

@@ -15,11 +15,11 @@ from .cache import TTL, CacheClient
 class RedisCacheClient(CacheClient):
     def __init__(self, host: str, prefix: str):
         super().__init__(prefix)
-        self.cache = redis.Redis(host=host)
+        self.cache = redis.Redis(host=host, decode_responses=True)
 
     def _impl_get(self, key: str) -> Optional[str]:
         v = self.cache.get(key)
-        return str(v) if v is not None else None
+        return v if v is not None else None
 
     def _impl_set(self, key: str, value: str):
         self.cache.set(key, value)
