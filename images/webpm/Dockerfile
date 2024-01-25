@@ -23,4 +23,4 @@ COPY /src/youwol/backends/webpm/default-logging.yaml /app/logging.yaml
 
 
 USER 10000
-ENTRYPOINT ["uvicorn", "youwol.backends.webpm.main:app", "--host", "0.0.0.0", "--no-server-header", "--log-config", "/app/logging.yaml"]
+ENTRYPOINT [ "uvicorn", "youwol.backends.webpm.main:app", "--host", "0.0.0.0", "--no-server-header", "--log-config", "/opt/app/logging.yaml" ]

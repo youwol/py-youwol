@@ -21,7 +21,7 @@ RUN pip3 install --upgrade pip \
 EXPOSE 8080
 WORKDIR /opt/app
 
-COPY /images/entry_point.sh /
+COPY /images/backends/entry_point.sh /
 COPY /src/youwol/utils /opt/app/youwol/utils
 COPY /src/youwol/backends /opt/app/youwol/backends/
 
