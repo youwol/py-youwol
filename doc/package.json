@@ -1,6 +1,6 @@
 {
     "name": "@youwol/py-youwol-doc",
-    "description": "",
+    "description": "Py-youwol documentation application",
     "version": "0.1.1-wip",
     "author": "greinisch@youwol.com",
     "homepage": "https://github.com/youwol/py-youwol-doc#README.md",

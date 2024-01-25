@@ -67,7 +67,7 @@ export const setup = {
     name:'@youwol/py-youwol-doc',
         assetId:'QHlvdXdvbC9weS15b3V3b2wtZG9j',
     version:'0.1.1-wip',
-    shortDescription:"",
+    shortDescription:"Py-youwol documentation application",
     developerDocumentation:'https://platform.youwol.com/applications/@youwol/cdn-explorer/latest?package=@youwol/py-youwol-doc&tab=doc',
     npmPackage:'https://www.npmjs.com/package/@youwol/py-youwol-doc',
     sourceGithub:'https://github.com/youwol/py-youwol-doc',
