@@ -1,5 +1,4 @@
-
-## Scope 
+## Scope
 
 This section presents the fundamentals of consuming dependencies, either frontend libraries or backend services.
 It is a rapid overview, more information on each topic can be found in the section [webPM](../how-to/webpm.md).
@@ -30,7 +29,7 @@ return async ({debug}) => {
     debug('view', div)
 }`
 
-return async ({webpm}) => { 
+return async ({webpm}) => {
     const {grapes} = await webpm.install({modules:['@youwol/grapes-coding-playgrounds#^0.2.0 as grapes']})
     console.log(grapes)
     console.log(webpm)
@@ -45,11 +44,10 @@ return async ({webpm}) => {
 }
 ```
 
-
 ```javascript hl_lines="1-4"
 const { marked } = await webpm.install({
-    modules:['marked#^5.52.0 as marked'],
-    displayLoadingScreen: true
+    modules: ['marked#^5.52.0 as marked'],
+    displayLoadingScreen: true,
 })
 const output = `# Pi computation`
 
@@ -57,25 +55,24 @@ document.body.innerHTML = marked.parse(output)
 ```
 
 The code highlighted proceed to the installation of the dependencies.
-The javascript module <a href='https://www.npmjs.com/package/marked' >marked</a> is installed using the latest 
-version compatible with `^5.52.0`. 
-When installing modules, eventual direct and indirect dependencies are also downloaded and linked appropriately, 
+The javascript module <a href='https://www.npmjs.com/package/marked' >marked</a> is installed using the latest
+version compatible with `^5.52.0`.
+When installing modules, eventual direct and indirect dependencies are also downloaded and linked appropriately,
 here again using the latest compatible version available.
-The process account for the actual runtime hosted by the browser: preventing useless downloads while ensuring 
+The process account for the actual runtime hosted by the browser: preventing useless downloads while ensuring
 coexistence of multiple library's versions if needed.
 
 The remaining code is about creating an output using the markdown module just installed.
 
-
-## Python 
+## Python
 
 It is possible to install python runtime and python modules, for instance to use `numpy` add the following line:
 
 ```javascript hl_lines="3 6-13 16-17"
 const { marked } = await webpm.install({
-    modules:['marked#^5.52.0 as marked'],
-    python:['numpy'],
-    displayLoadingScreen: true
+    modules: ['marked#^5.52.0 as marked'],
+    python: ['numpy'],
+    displayLoadingScreen: true,
 })
 const src = `
 import numpy as np
@@ -96,21 +93,21 @@ document.body.innerHTML = marked.parse(output)
 
 In the example:
 
-*  the `numpy` python module is requested; requesting python modules initialize the python runtime, later accessible 
-using `webpm.python`.
-*  in the next block an approximation of PI is computed using a Monte Carlo method
-*  the value is the displayed in the output
-
+-   the `numpy` python module is requested; requesting python modules initialize the python runtime, later accessible
+    using `webpm.python`.
+-   in the next block an approximation of PI is computed using a Monte Carlo method
+-   the value is the displayed in the output
 
 ## Backends
+
 <div id="a"></div>
 
 ```javascript hl_lines="4 16 21-22"
 const { marked, pyBackend } = await webpm.install({
-    modules:['marked#^4.2.3 as marked'],
-    python:['numpy'],
-    backends:['@youwol/python-numpy#^1.0.0 as pyBackend'],
-    displayLoadingScreen: true
+    modules: ['marked#^4.2.3 as marked'],
+    python: ['numpy'],
+    backends: ['@youwol/python-numpy#^1.0.0 as pyBackend'],
+    displayLoadingScreen: true,
 })
 const src = `
 import numpy as np
@@ -121,7 +118,7 @@ len(np.argwhere(norms<0.5)) / n * 4
 `
 const pi = webpm.python.runPython(src)
 
-const piBackend = await pyBackend.fetch('/interpret',{ src})
+const piBackend = await pyBackend.fetch('/interpret', { src })
 
 const output = `# Pi computation
 

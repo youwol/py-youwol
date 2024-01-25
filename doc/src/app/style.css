@@ -8,7 +8,7 @@ html {
 
 /* No line break before first paragraph of descriptions. */
 .doc-md-description,
-.doc-md-description>p:first-child {
+.doc-md-description > p:first-child {
     display: inline;
 }
 
@@ -27,7 +27,6 @@ html {
 .doc-param-default {
     float: right;
 }
-
 
 /* Keep headings consistent. */
 h1.doc-heading,
@@ -55,7 +54,7 @@ h3.doc-heading {
 }
 
 h4.doc-heading {
-    font-size: 1.10rem;
+    font-size: 1.1rem;
 }
 
 h5.doc-heading {
@@ -66,10 +65,9 @@ h6.doc-heading {
     font-size: 1rem;
 }
 
-
 /* Symbols in Navigation and ToC. */
 :root,
-[data-md-color-scheme="default"] {
+[data-md-color-scheme='default'] {
     --doc-symbol-attribute-fg-color: #953800;
     --doc-symbol-function-fg-color: #8250df;
     --doc-symbol-method-fg-color: #8250df;
@@ -83,7 +81,7 @@ h6.doc-heading {
     --doc-symbol-module-bg-color: #5cad0f1a;
 }
 
-[data-md-color-scheme="slate"] {
+[data-md-color-scheme='slate'] {
     --doc-symbol-attribute-fg-color: #ffa657;
     --doc-symbol-function-fg-color: #d2a8ff;
     --doc-symbol-method-fg-color: #d2a8ff;
@@ -98,9 +96,9 @@ h6.doc-heading {
 }
 
 code.doc-symbol {
-    border-radius: .1rem;
-    font-size: .85em;
-    padding: 0 .3em;
+    border-radius: 0.1rem;
+    font-size: 0.85em;
+    padding: 0 0.3em;
     font-weight: bold;
 }
 
@@ -110,7 +108,7 @@ code.doc-symbol-attribute {
 }
 
 code.doc-symbol-attribute::after {
-    content: "attr";
+    content: 'attr';
 }
 
 code.doc-symbol-function {
@@ -119,7 +117,7 @@ code.doc-symbol-function {
 }
 
 code.doc-symbol-function::after {
-    content: "func";
+    content: 'func';
 }
 
 code.doc-symbol-method {
@@ -128,7 +126,7 @@ code.doc-symbol-method {
 }
 
 code.doc-symbol-method::after {
-    content: "meth";
+    content: 'meth';
 }
 
 code.doc-symbol-class {
@@ -137,7 +135,7 @@ code.doc-symbol-class {
 }
 
 code.doc-symbol-class::after {
-    content: "class";
+    content: 'class';
 }
 
 code.doc-symbol-module {
@@ -146,10 +144,10 @@ code.doc-symbol-module {
 }
 
 code.doc-symbol-module::after {
-    content: "mod";
+    content: 'mod';
 }
 
-.doc-module-name::before{
+.doc-module-name::before {
     content: 'mod';
     color: var(--doc-symbol-module-fg-color);
     background-color: var(--doc-symbol-module-bg-color);
@@ -157,7 +155,7 @@ code.doc-symbol-module::after {
     margin-right: 0.2em;
 }
 
-.doc-parameters-name::before{
+.doc-parameters-name::before {
     content: 'params';
     color: var(--doc-symbol-attribute-fg-color);
     background-color: var(--doc-symbol-attribute-bg-color);
@@ -165,7 +163,7 @@ code.doc-symbol-module::after {
     margin-right: 0.2em;
 }
 
-.doc-class-name::before{
+.doc-class-name::before {
     content: 'class';
     color: var(--doc-symbol-class-fg-color);
     background-color: var(--doc-symbol-class-bg-color);
@@ -173,7 +171,7 @@ code.doc-symbol-module::after {
     margin-right: 0.2em;
 }
 
-.doc-global-name::before{
+.doc-global-name::before {
     content: 'glob';
     color: var(--doc-symbol-attribute-fg-color);
     background-color: var(--doc-symbol-attribute-bg-color);
@@ -182,7 +180,7 @@ code.doc-symbol-module::after {
     font-size: 0.8em;
 }
 
-.doc-attribute-name::before{
+.doc-attribute-name::before {
     content: 'att';
     color: var(--doc-symbol-attribute-fg-color);
     background-color: var(--doc-symbol-attribute-bg-color);
@@ -191,7 +189,7 @@ code.doc-symbol-module::after {
     font-size: 0.8em;
 }
 
-.doc-function-name::before{
+.doc-function-name::before {
     content: 'func';
     color: var(--doc-symbol-function-fg-color);
     background-color: var(--doc-symbol-function-bg-color);
@@ -200,7 +198,7 @@ code.doc-symbol-module::after {
     font-size: 0.8em;
 }
 
-.doc-method-name::before{
+.doc-method-name::before {
     content: 'func';
     color: var(--doc-symbol-function-fg-color);
     background-color: var(--doc-symbol-function-bg-color);
@@ -209,11 +207,11 @@ code.doc-symbol-module::after {
     font-size: 0.8em;
 }
 
-.doc-class{
+.doc-class {
     margin-top: 5em;
 }
 
-.doc-function{
+.doc-function {
     margin-top: 5em;
 }
 
@@ -227,40 +225,40 @@ code.doc-symbol-module::after {
     overflow: auto;
 }
 
-.yw-tutorial-dev-portal{
-    position:sticky;
-    top:0px;
-    width:100%;
-    height:50vh;
+.yw-tutorial-dev-portal {
+    position: sticky;
+    top: 0px;
+    width: 100%;
+    height: 50vh;
     min-height: 500px;
     background-color: white;
-    z-index:100000
+    z-index: 100000;
 }
 
-.mkdocs-ts-side-nav{
+.mkdocs-ts-side-nav {
     width: 20rem;
     line-height: 1.5rem;
     font-size: 0.9rem;
     position: sticky;
-    top: 0px
+    top: 0px;
 }
 
-.fv-tree-arianeLine{
-    display:none
+.fv-tree-arianeLine {
+    display: none;
 }
-.fv-tree-expand{
-    display: none!important;
+.fv-tree-expand {
+    display: none !important;
 }
-.mkdocs-ts-top-banner{
+.mkdocs-ts-top-banner {
     max-height: 50px;
 }
 
-.mkdocs-ts-page{
+.mkdocs-ts-page {
     font-size: 1rem;
-    line-height: 1.6
+    line-height: 1.6;
 }
 
-.mkdocs-ts-expand-nav-node:hover{
+.mkdocs-ts-expand-nav-node:hover {
 }
 .mkdocs-ts-expand-nav-node {
     transition: transform 0.5s ease 0s;

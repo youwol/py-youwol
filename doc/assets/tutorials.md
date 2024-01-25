@@ -1,4 +1,3 @@
-
 This part will present youwol using a **learning-oriented** approach,
 it will be populated soon (written the 01/24/2024).
 

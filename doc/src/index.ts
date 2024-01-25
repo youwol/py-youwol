@@ -1,2 +1,2 @@
 export * from './app'
-export {setup} from './auto-generated'
+export { setup } from './auto-generated'
