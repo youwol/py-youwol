@@ -1,0 +1,75 @@
+{
+    "name": "@youwol/py-youwol-doc",
+    "description": "Py-youwol documentation application",
+    "version": "0.1.1-wip",
+    "author": "greinisch@youwol.com",
+    "homepage": "https://github.com/youwol/py-youwol-doc#README.md",
+    "main": "dist/index.html",
+    "types": "src/index.ts",
+    "scripts": {
+        "clean": "del-cli dist",
+        "auto-gen": "python template.py",
+        "build": "yarn build:dev",
+        "pre-build": "yarn clean",
+        "build:dev": "yarn pre-build && webpack --mode development",
+        "build:prod": "yarn pre-build && webpack --mode production",
+        "lint-check": "yarn lint-prettier-check && yarn lint-eslint-check",
+        "lint-prettier-check": "prettier --check ./src",
+        "lint-eslint-check": "eslint ./src",
+        "test": "jest -i",
+        "test-coverage": "jest -i --collect-coverage",
+        "doc": "typedoc",
+        "publish-npm-public": "yarn build:prod && yarn test-coverage && yarn publish --access public",
+        "start": "webpack serve"
+    },
+    "prettier": "@youwol/prettier-config",
+    "eslintConfig": {
+        "extends": [
+            "@youwol"
+        ]
+    },
+    "dependencies": {
+        "@youwol/mkdocs-ts": "^0.1.1",
+        "@youwol/rx-vdom": "^1.0.1",
+        "@youwol/webpm-client": "^3.0.0",
+        "rxjs": "^7.5.6",
+        "@youwol/local-youwol-client": "^0.2.1",
+        "@youwol/rx-tab-views": "^0.3.0"
+    },
+    "devDependencies": {
+        "@types/jest": "^29.5.6",
+        "@types/node": "^18.9.1",
+        "@types/webpack": "^5.28.0",
+        "@youwol/eslint-config": "^1.1.0",
+        "@youwol/jest-preset": "^1.0.0",
+        "@youwol/prettier-config": "^1.0.0",
+        "@youwol/tsconfig": "^1.1.0",
+        "css-loader": "^6.8.1",
+        "del-cli": "^5.1.0",
+        "file-loader": "6.2.0",
+        "html-webpack-plugin": "5.5.3",
+        "isomorphic-fetch": "^3.0.0",
+        "mini-css-extract-plugin": "^2.7.6",
+        "source-map-loader": "4.0.1",
+        "ts-loader": "9.5.0",
+        "ts-node": "10.9.2",
+        "tsx": "4.7.0",
+        "typedoc": "^0.25.7",
+        "typescript": "5.3.3",
+        "webpack": "^5.89.0",
+        "webpack-bundle-analyzer": "^4.9.1",
+        "webpack-cli": "5.1.4",
+        "webpack-dev-server": "^4.15.1"
+    },
+    "webpm": {
+        "dependencies": {
+            "@youwol/mkdocs-ts": "^0.1.1",
+            "@youwol/rx-vdom": "^1.0.1",
+            "@youwol/webpm-client": "^3.0.0",
+            "rxjs": "^7.5.6",
+            "@youwol/local-youwol-client": "^0.2.1",
+            "@youwol/rx-tab-views": "^0.3.0"
+        },
+        "aliases": []
+    }
+}

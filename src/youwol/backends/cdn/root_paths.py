@@ -425,9 +425,11 @@ async def resolve_loading_tree(
                 version=element["version"],
                 id=to_package_id(element["library_name"]),
                 fingerprint=element["fingerprint"],
-                namespace=element["library_name"].split("/")[0]
-                if "/" in element["library_name"]
-                else element["library_name"],
+                namespace=(
+                    element["library_name"].split("/")[0]
+                    if "/" in element["library_name"]
+                    else element["library_name"]
+                ),
                 type="library",
             )
             for element in input_elements

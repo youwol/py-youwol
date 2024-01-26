@@ -41,5 +41,6 @@ Refer to the function [set_environment](@yw-nav-function:youwol.pipelines.pipeli
 other targets.
 
 """
+
 # relative
 from .pipeline import *

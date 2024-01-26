@@ -135,6 +135,12 @@ jobs:
         with:
           skip: ${{ inputs.skip }}
 
+  doc_app:
+    name: Doc App
+    uses: ./.github/workflows/subdir_typescript.yml
+    with:
+      directory: doc
+
   static_analysis:
     name: Static Analysis
     runs-on: ubuntu-latest

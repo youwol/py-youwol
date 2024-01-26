@@ -133,12 +133,14 @@ async def handle(method: str, handler_id: str, req: FastAPI_Request, public=Fals
         url=str(req.url),
         ip=req.client.host if req.client else None,
         headers=headers,
-        body=Body(
-            mimeType=req.headers.get("content-type"),
-            contentBase64=base64.standard_b64encode(await req.body()).decode(),
-        )
-        if req.method != "GET"
-        else None,
+        body=(
+            Body(
+                mimeType=req.headers.get("content-type"),
+                contentBase64=base64.standard_b64encode(await req.body()).decode(),
+            )
+            if req.method != "GET"
+            else None
+        ),
     )
 
     handler.history.append(request)

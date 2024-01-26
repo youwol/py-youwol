@@ -115,9 +115,11 @@ async def process_download_asset(
                         "asset_id": asset_id,
                         "url": url,
                         "kind": kind,
-                        "error": error.detail
-                        if isinstance(error, YouWolException)
-                        else str(error),
+                        "error": (
+                            error.detail
+                            if isinstance(error, YouWolException)
+                            else str(error)
+                        ),
                     },
                     ctx,
                 )

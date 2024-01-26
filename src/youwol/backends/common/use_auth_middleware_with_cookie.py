@@ -52,8 +52,8 @@ def get_auth_middleware_with_cookie(
     }
 
     if redirect_to_login_for_path:
-        auth_middleware_args["on_missing_token"] = (
-            lambda url, text: redirect_to_login(url)
+        auth_middleware_args["on_missing_token"] = lambda url, text: (
+            redirect_to_login(url)
             if url.path.startswith(redirect_to_login_for_path)
             else Response(content=f"Authentication failure : {text}", status_code=403)
         )

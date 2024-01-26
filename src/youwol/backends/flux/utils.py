@@ -62,9 +62,9 @@ def create_project_from_json(folder: Path) -> Project:
         raise ValueError("requirements.json is not a JSON dictionary")
     return Project(
         name=description["name"],
-        schemaVersion=description["schemaVersion"]
-        if "schemaVersion" in description
-        else "0",
+        schemaVersion=(
+            description["schemaVersion"] if "schemaVersion" in description else "0"
+        ),
         description=description["description"],
         workflow=Workflow(**workflow),
         builderRendering=BuilderRendering(**builder_rendering),
@@ -88,38 +88,46 @@ def update_project(
         "schemaVersion": project.schemaVersion,
     }
     post_files_request = [
-        storage.post_json(
-            path=Constants.workflow_path(base_path),
-            json=project.workflow.dict(),
-            owner=owner,
-            headers=headers,
-        )
-        if project.workflow
-        else None,
-        storage.post_json(
-            path=Constants.builder_rendering_path(base_path),
-            json=project.builderRendering.dict(),
-            owner=owner,
-            headers=headers,
-        )
-        if project.builderRendering
-        else None,
-        storage.post_json(
-            path=Constants.runner_rendering_path(base_path),
-            json=project.runnerRendering.dict(),
-            owner=owner,
-            headers=headers,
-        )
-        if project.runnerRendering
-        else None,
-        storage.post_json(
-            path=Constants.requirements_path(base_path),
-            json=project.requirements.dict(),
-            owner=owner,
-            headers=headers,
-        )
-        if project.requirements
-        else None,
+        (
+            storage.post_json(
+                path=Constants.workflow_path(base_path),
+                json=project.workflow.dict(),
+                owner=owner,
+                headers=headers,
+            )
+            if project.workflow
+            else None
+        ),
+        (
+            storage.post_json(
+                path=Constants.builder_rendering_path(base_path),
+                json=project.builderRendering.dict(),
+                owner=owner,
+                headers=headers,
+            )
+            if project.builderRendering
+            else None
+        ),
+        (
+            storage.post_json(
+                path=Constants.runner_rendering_path(base_path),
+                json=project.runnerRendering.dict(),
+                owner=owner,
+                headers=headers,
+            )
+            if project.runnerRendering
+            else None
+        ),
+        (
+            storage.post_json(
+                path=Constants.requirements_path(base_path),
+                json=project.requirements.dict(),
+                owner=owner,
+                headers=headers,
+            )
+            if project.requirements
+            else None
+        ),
         storage.post_json(
             path=Constants.description_path(base_path),
             json=description,
@@ -158,14 +166,16 @@ def update_metadata(
         "name": name,
     }
     post_files_request = [
-        storage.post_json(
-            path=f"{base_path}/requirements.json",
-            json=requirements.dict(),
-            owner=owner,
-            headers=headers,
-        )
-        if requirements
-        else None,
+        (
+            storage.post_json(
+                path=f"{base_path}/requirements.json",
+                json=requirements.dict(),
+                owner=owner,
+                headers=headers,
+            )
+            if requirements
+            else None
+        ),
         storage.post_json(
             path=f"{base_path}/description.json",
             json=struct_description,
@@ -234,9 +244,9 @@ async def retrieve_project(
 
     project = Project(
         name=description["name"],
-        schemaVersion=description["schemaVersion"]
-        if "schemaVersion" in description
-        else "0",
+        schemaVersion=(
+            description["schemaVersion"] if "schemaVersion" in description else "0"
+        ),
         description=description["description"],
         requirements=requirements,
         workflow=Workflow(**workflow),

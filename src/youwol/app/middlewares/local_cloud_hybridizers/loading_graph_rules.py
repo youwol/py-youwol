@@ -135,9 +135,9 @@ class GetLoadingGraph(AbstractLocalCloudDispatch):
                         f"Response received from remote in {int(1000 * (end - start))} ms"
                     )
                     headers_resp = dict(resp.headers.items())
-                    headers_resp[
-                        YouwolHeaders.youwol_origin
-                    ] = env.get_remote_info().host
+                    headers_resp[YouwolHeaders.youwol_origin] = (
+                        env.get_remote_info().host
+                    )
                     content = await resp.read()
                     if not resp.ok:
                         await ctx.error(
