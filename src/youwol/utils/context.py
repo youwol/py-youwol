@@ -767,9 +767,11 @@ class ScopedContext(Context):
             await self.error(
                 text=f"Exception: {str(exc)}",
                 data={
-                    "detail": exc.detail
-                    if isinstance(exc, HTTPException)
-                    else "No detail available",
+                    "detail": (
+                        exc.detail
+                        if isinstance(exc, HTTPException)
+                        else "No detail available"
+                    ),
                     "traceback": traceback.format_exc().split("\n"),
                 },
                 labels=[Label.EXCEPTION, Label.FAILED],

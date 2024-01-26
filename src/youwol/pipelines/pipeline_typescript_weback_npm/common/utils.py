@@ -107,9 +107,11 @@ def generate_package_json(source: Path, working_path: Path, input_template: Temp
         "description": input_template.shortDescription,
         "author": input_template.author,
         "homepage": f"https://github.com/{input_template.name.replace('@', '')}#README.md",
-        "main": f"dist/{input_template.name}.js"
-        if input_template.type == PackageType.Library
-        else "dist/index.html",
+        "main": (
+            f"dist/{input_template.name}.js"
+            if input_template.type == PackageType.Library
+            else "dist/index.html"
+        ),
         "dependencies": {
             **input_template.dependencies.runTime.externals,
             **input_template.dependencies.runTime.includedInBundle,

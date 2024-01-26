@@ -16,6 +16,7 @@ Dependencies:
     *  Dependencies are gathered in the
     [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration) class.
 """
+
 # relative
 from .configurations import Configuration, Constants, Dependencies
 from .root_paths import *

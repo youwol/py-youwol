@@ -173,9 +173,11 @@ def setup_middlewares(env: YouwolEnvironment):
             ),
             JwtProviderPyYouwol(),
         ],
-        on_missing_token=lambda url, text: redirect_to_login(url)
-        if url.path.startswith("/applications")
-        else Response(content=f"Authentication failure : {text}", status_code=403),
+        on_missing_token=lambda url, text: (
+            redirect_to_login(url)
+            if url.path.startswith("/applications")
+            else Response(content=f"Authentication failure : {text}", status_code=403)
+        ),
     )
 
     fastapi_app.add_middleware(

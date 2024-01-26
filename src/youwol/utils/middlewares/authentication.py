@@ -86,7 +86,6 @@ class JwtProviderBearer(JwtProvider):
 
 
 class JwtProviderCookie(JwtProvider):
-
     """
     Json Web Token provider based on cookie.
     """

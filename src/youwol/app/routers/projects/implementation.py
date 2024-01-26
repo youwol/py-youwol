@@ -139,9 +139,11 @@ def format_artifact_response(
         links=[
             Link(
                 name=link.name,
-                url=link.url
-                if link.kind == LinkKind.plainUrl
-                else f"/admin/system/file/{path}/{link.url}",
+                url=(
+                    link.url
+                    if link.kind == LinkKind.plainUrl
+                    else f"/admin/system/file/{path}/{link.url}"
+                ),
             )
             for link in artifact.links
         ],

@@ -516,9 +516,11 @@ async def borrow(
             data={
                 "asset": asset,
                 "user_permission": user_permission,
-                "access_policy": access_policy
-                if not isinstance(access_policy, BaseException)
-                else "No policy found",
+                "access_policy": (
+                    access_policy
+                    if not isinstance(access_policy, BaseException)
+                    else "No policy found"
+                ),
             },
         )
         if not user_permission["share"]:
