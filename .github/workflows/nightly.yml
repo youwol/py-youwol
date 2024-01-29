@@ -20,7 +20,7 @@ jobs:
 
       - name: Checkout
         id: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Prepare Python 3.12
         id: prepare_python
