@@ -25,7 +25,7 @@ jobs:
 
       - name: Prepare Python 3.12
         id: prepare_python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
           cache: 'pip'
