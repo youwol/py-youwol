@@ -52,7 +52,7 @@ jobs:
 
       - name: Upload Build Artifacts
         id: upload_artifact_rc
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.get_version_details.outputs.package }}
           path: dist/youwol-${{ steps.bump_version.outputs.version }}*
@@ -60,7 +60,7 @@ jobs:
 
       - name: Upload Artifact for configuration integration tests
         id: upload_artifact_conf_integration
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.get_version_details.outputs.config_dir }}
           path: integrations/

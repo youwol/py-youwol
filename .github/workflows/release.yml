@@ -115,14 +115,14 @@ jobs:
 
       - name: Upload Artifact for Release Candidate
         id: upload_artifact_rc
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.bump_version.outputs.artifact }}
           path: dist/youwol-${{ steps.bump_version.outputs.version }}*
 
       - name: Upload Artifact for configuration integration tests
         id: upload_artifact_conf_integration
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: config_integration-tests
           path: integrations/
