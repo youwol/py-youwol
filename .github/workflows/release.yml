@@ -163,7 +163,7 @@ jobs:
 
       - name: Download artifact
         id: download_artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ${{ needs.build.outputs.artifact }}
 
@@ -213,7 +213,7 @@ jobs:
 
       - name: Download configuration for integration tests
         id: download_config
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: config_integration-tests
 
@@ -304,7 +304,7 @@ jobs:
 
       - name: Download artifact
         id: download_artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ${{ needs.build.outputs.artifact }}
 
