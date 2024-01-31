@@ -5,10 +5,11 @@ from dataclasses import dataclass
 import aiohttp
 
 # Youwol utilities
-from youwol.utils import CdnClient, RequestExecutor, json_reader
 from youwol.utils.clients.assets.assets import AssetsClient
+from youwol.utils.clients.cdn import CdnClient
 from youwol.utils.clients.files import FilesClient
 from youwol.utils.clients.flux.flux import FluxClient
+from youwol.utils.clients.request_executor import RequestExecutor, json_reader
 from youwol.utils.clients.stories.stories import StoriesClient
 from youwol.utils.clients.treedb.treedb import TreeDbClient
 
@@ -18,7 +19,7 @@ class AssetsGatewayClient:
     """
     HTTP client of the [assets_gateway](@yw-nav-mod:youwol.backends.assets_gateway) service.
 
-    It provides children clients to access the proxied services.
+    This client essentially provides clients for the proxied services by `assets_gateway`.
     """
 
     url_base: str

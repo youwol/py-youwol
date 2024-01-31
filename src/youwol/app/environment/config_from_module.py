@@ -28,7 +28,7 @@ from .errors_handling import (
     ErrorResponse,
     format_unknown_error,
 )
-from .models import Configuration
+from .models.models_config import Configuration
 from .paths import app_dirs
 from .python_dynamic_loader import get_object_from_module
 

@@ -38,6 +38,47 @@ async def upload(
     """
     Upload a file.
 
+    Example:
+        To upload a file using aioHttp & the file client
+        ```python
+        from aiohttp import FormData
+        from youwol.app import YouwolEnvironment
+
+
+        form_data = FormData()
+        form_data.add_field(
+            name="file",
+            value="the content of the file",
+            filename="the-file-name.txt",
+            content_type="text/plain",
+        )
+
+        form_data.add_field("content_type", "text/plain")
+        form_data.add_field("content_encoding", "Identity")
+        # optional: form_data.add_field("file_id", "a-unique-file-id")
+        form_data.add_field("file_name", "the-file-name.txt")
+
+        # within youwol module, a `ctx: Context` object should be available:
+        resp = await LocalClients
+        .get_files_client(env=await ctx.get('env', YouwolEnvironment))
+        .upload(
+            data=form_data,
+            params={"folder-id": folder_id},
+            headers=ctx.headers()
+        )
+        # outside youwol module, a `request: Request` object should be available:
+        resp2 = AssetsGatewayClient(
+            url_base="http://localhost:2000/api/assets-gateway",
+            request_executor=AioHttpExecutor()
+        )
+        .get_files_backend_router()
+        .upload(
+            data=form_data,
+            params={"folder-id": folder_id},
+            cookies=request.cookies
+        )
+        ```
+
     Parameters:
         request: Incoming request. It should be associated with a form having the attributes:
             *  `file`: The content of the file as bytes.

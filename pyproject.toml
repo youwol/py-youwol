@@ -128,6 +128,12 @@ exclude = [
     "templates/**/*",
     "templates/.**/*",
 ]
+"youwol.pipelines.pipeline_python_backend" = [
+    "template/.*",
+    "template/*",
+    "template/**/*",
+    "template/.**/*",
+]
 
 [tool.coverage.run]
 branch = true

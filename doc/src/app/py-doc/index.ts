@@ -81,6 +81,8 @@ export const pyYwReferenceDoc = ({
             'typing.Set': `${typingUrl}#typing.Set`,
             'typing.NamedTuple': `${typingUrl}#typing.NamedTuple`,
             'typing.Literal': `${typingUrl}#typing.Literal`,
+            'typing.Generic':
+                'https://mypy.readthedocs.io/en/stable/generics.html',
             'asyncio.Future':
                 'https://docs.python.org/3/library/asyncio-future.html',
             'aiohttp.ClientSession':

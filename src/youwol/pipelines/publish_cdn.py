@@ -21,6 +21,7 @@ from youwol.app.environment import (
     PathsBook,
     RemoteClients,
     YouwolEnvironment,
+    get_standard_youwol_env,
 )
 from youwol.app.routers.environment.upload_assets.package import UploadPackageOptions
 from youwol.app.routers.environment.upload_assets.upload import upload_asset
@@ -130,11 +131,26 @@ async def get_default_drive(context: Context) -> DefaultDriveResponse:
 
 
 class PublishCdnLocalStep(PipelineStep):
+    """
+    Publishes a list of artifacts and eventually additional assets in the local ecosystem.
+    """
+
     id: str = "cdn-local"
+    """
+    ID of the step.
+
+    Warning:
+        Flows usually reference this ID, in common scenarios it should not be modified.
+    """
 
     packagedArtifacts: list[str]
-
+    """
+    A list of artifact's IDs to include in the package.
+    """
     packagedFolders: list[str] = []
+    """
+    A list of folder's paths to include in the package (in addition to the artifacts).
+    """
 
     run: ExplicitNone = ExplicitNone()
 
@@ -169,6 +185,23 @@ class PublishCdnLocalStep(PipelineStep):
         last_manifest: Optional[Manifest],
         context: Context,
     ) -> PipelineStepStatus:
+        """
+        Retrieves the status of the step:
+        *  if the step has never been run, it is `PipelineStepStatus.none`.
+        *  if the package has never been published in the local ecosystem, it is `PipelineStepStatus.none`.
+        *  if the fingerprint computed from the project & the one corresponding to the published package are
+        equal, it is `PipelineStepStatus.OK`.
+        *  otherwise it is `PipelineStepStatus.outdated`.
+
+        Parameters:
+            project: Project for which the step is executed.
+            flow_id: ID of the flow associated.
+            last_manifest: manifest from the last execution.
+            context: Current context.
+
+        Return:
+            Manifest of the execution
+        """
         async with context.start(action="PublishCdnLocalStep.get_status") as ctx:
             env = await context.get("env", YouwolEnvironment)
             local_cdn = LocalClients.get_cdn_client(env=env)
@@ -232,6 +265,17 @@ class PublishCdnLocalStep(PipelineStep):
             return PipelineStepStatus.outdated
 
     async def execute_run(self, project: Project, flow_id: str, context: Context):
+        """
+        Trigger step execution.
+
+        Parameters:
+            project: Project for which the step is executed.
+            flow_id: ID of the flow associated.
+            context: Current context.
+
+        Return:
+            Manifest of the execution
+        """
         async with context.start(action="PublishCdnLocalStep.execute_run") as ctx:
             env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
 
@@ -417,8 +461,21 @@ async def create_sub_pipelines_publish_cdn(
 
 
 class PublishCdnRemoteStep(PipelineStep):
+    """
+    Publishes a package published in the local ecosystem into a remote ecosystem.
+    """
+
     id: str = "cdn-remote"
+    """
+    ID of the step.
+
+    Warning:
+        Flows usually reference this ID, in common scenarios it should not be modified.
+    """
     cdnTarget: CdnTarget
+    """
+    The specification of the remote ecosystem to publish the package into.
+    """
     run: ExplicitNone = ExplicitNone()
 
     async def get_status(
@@ -428,6 +485,20 @@ class PublishCdnRemoteStep(PipelineStep):
         last_manifest: Optional[Manifest],
         context: Context,
     ) -> PipelineStepStatus:
+        """
+        Retrieves the status of the step:
+        *  if the local and remote published package's fingerprint are equal, it is `PipelineStepStatus.OK`.
+        *  otherwise it is `PipelineStepStatus.outdated`.
+
+        Parameters:
+            project: Project for which the step is executed.
+            flow_id: ID of the flow associated.
+            last_manifest: manifest from the last execution.
+            context: Current context.
+
+        Return:
+            Manifest of the execution
+        """
         async with context.start(action="PublishCdnRemoteStep.get_status") as ctx:
             env = await context.get("env", YouwolEnvironment)
             local_cdn = LocalClients.get_cdn_client(env=env)
@@ -487,6 +558,17 @@ class PublishCdnRemoteStep(PipelineStep):
             return PipelineStepStatus.outdated
 
     async def execute_run(self, project: Project, flow_id: str, context: Context):
+        """
+        Trigger step execution.
+
+        Parameters:
+            project: Project for which the step is executed.
+            flow_id: ID of the flow associated.
+            context: Current context.
+
+        Return:
+            Manifest of the execution
+        """
         env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
 
         async with context.start(
@@ -517,3 +599,13 @@ class PublishCdnRemoteStep(PipelineStep):
             # # resp = await remote_gtw.cdn_get_package(library_name=project.name, version=project.version,
             # # metadata=True)
             return resp
+
+
+class Environment(BaseModel):
+    cdnTargets: list[CdnTarget] = [
+        CdnTarget(
+            name="youwol",
+            cloudTarget=get_standard_youwol_env(env_id="youwol.com"),
+            authId="browser",
+        ),
+    ]

@@ -165,11 +165,7 @@ def format_class_doc(griffe_doc: Class) -> DocClassResponse:
             DocTypeResponse(name=d.__name__, path=f"{d.__module__}.{d.__name__}")
             for d in inherited
         ],
-        bases=[
-            DocTypeResponse(name=base.name, path=base.canonical_path)
-            for base in griffe_doc.bases
-            if isinstance(base, ExprName)
-        ],
+        bases=[format_type_annotation_doc(base) for base in griffe_doc.bases],
         attributes=[
             format_attribute_doc(attr)
             for attr in griffe_doc.attributes.values()

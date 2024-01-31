@@ -211,6 +211,14 @@ class AssetResponse(BaseModel):
     kind: str
     """
     Asset's kind.
+
+    This property has a similar purpose to the usual 'extension' of files in a PC:
+    it serves at linking actions (e.g. opening applications, right click on the explorer), previews, icon, *etc.*.
+
+    These bindings can be provided through the implementation of 'installers', see for instance those implemented by
+    youwol <a href="https://github.com/youwol/installers/blob/main/src/lib/basic/index.ts" target='_blank'> here </a>.
+    Installers are referenced in the user's environment using the
+    <a href="/applications/@youwol/platform/latest" target='_blank'> platform </a> application.
     """
     rawId: str
     """

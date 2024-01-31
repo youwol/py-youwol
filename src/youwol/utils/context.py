@@ -16,7 +16,20 @@ from enum import Enum
 from types import TracebackType
 
 # typing
-from typing import Any, Callable, List, NamedTuple, Optional, Type, TypeVar, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Generic,
+    List,
+    Literal,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 # third parties
 import aiohttp
@@ -27,6 +40,9 @@ from starlette.requests import Request
 from starlette.websockets import WebSocket
 
 # Youwol utilities
+from youwol.utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
+from youwol.utils.clients.cdn_sessions_storage import CdnSessionsStorageClient
+from youwol.utils.clients.request_executor import AioHttpExecutor
 from youwol.utils.types import JSON, AnyDict
 from youwol.utils.utils import YouwolHeaders, generate_headers_downstream, to_json
 
@@ -37,7 +53,7 @@ Represents data structures that can be serialized into a json representation
 """
 
 
-class LogLevel(Enum):
+class LogLevel(str, Enum):
     """
     Available severities when loging.
     """
@@ -157,8 +173,24 @@ class LogEntry(NamedTuple):
     Timestamp: time in second since EPOC.
     """
 
+    def dict(self):
+        return {
+            "level": self.level.name,
+            "attributes": self.attributes,
+            "labels": self.labels,
+            "text": self.text,
+            "data": self.data,
+            "contextId": self.context_id,
+            "parentContextId": self.parent_context_id,
+            "timestamp": self.timestamp,
+            "traceUid": self.trace_uid,
+        }
+
 
 DataType = Union[T, Callable[[], T], Callable[[], Awaitable[T]]]
+"""
+Type definition of context's data attribute.
+"""
 
 
 class ContextReporter(ABC):
@@ -251,11 +283,32 @@ A selector function for headers: it takes a list of header's keys in argument, a
 """
 
 
+TEnvironment = TypeVar("TEnvironment")
+"""
+Generic type parameter for the [Context](@yw-nav-class:youwol.utils.context.Context) class.
+
+It defines contextual information known at 'compile' time.
+"""
+
+
 @dataclass(frozen=True)
-class Context:
+class Context(Generic[TEnvironment]):
     """
     Context objects serves at tracing the execution flow within python code and logs information as well as
     propagating contextual information.
+
+    This class has a generic type parameter `TEnvironment`, defining the type of
+    [env](@yw-nav-attr:youwol.utils.context.Context.env), a 'compile-time' resolved contextual information.
+    """
+
+    env: TEnvironment | None = None
+    """
+    This attribute is a typed, static data point established during the creation of the root context and is
+    accessible to all its child contexts.
+
+    Being 'static' implies that the attribute's value and structure are predetermined at 'compile' time.
+    It's generally better -if possible- to store information in this attribute rather than relying on dynamic
+    fields like `labels`, `attributes`, or `data`.
     """
 
     logs_reporters: list[ContextReporter] = field(default_factory=list)
@@ -327,7 +380,7 @@ class Context:
         on_exit: CallableBlock | None = None,
         on_exception: CallableBlockException | None = None,
         with_reporters: list[ContextReporter] | None = None,
-    ) -> ScopedContext:
+    ) -> ScopedContext[TEnvironment]:
         """
         Function to start a child context bound to an execution scope.
 
@@ -376,8 +429,9 @@ class Context:
             else self.logs_reporters + with_reporters
         )
 
-        return ScopedContext(
+        return ScopedContext[TEnvironment](
             action=action,
+            env=self.env,
             on_enter=on_enter,
             on_exit=on_exit,
             on_exception=on_exception,
@@ -706,7 +760,7 @@ class Context:
             If the context has not been generated from a request, return `{}`
         """
         cookies = self.request.cookies if self.request else {}
-        return {**cookies, **self.cookies}
+        return cookies
 
 
 CallableBlock = Callable[[Context], Union[Awaitable, None]]
@@ -722,10 +776,13 @@ exiting a block with exception.
 """
 
 LabelsGetter = Callable[[], set[str]]
+"""
+Type definition of a Label definition, used in [ContextFactory](@yw-nav-class:youwol.utils.context.ContextFactory).
+"""
 
 
 @dataclass(frozen=True)
-class ScopedContext(Context):
+class ScopedContext(Generic[TEnvironment], Context[TEnvironment]):
     """
     A context with lifecycle management logic (implementing async context manager API from python: `__aenter__`
     and `__aexit__`).
@@ -804,9 +861,46 @@ class ScopedContext(Context):
             await r
 
 
+@dataclass(frozen=True)
+class ProxiedBackendCtxEnv:
+    """
+    Type of the [Context.env](@yw-nav-attr:youwol.utils.context.Context.env) attribute for
+    [ProxiedBackendContext](@yw-nav-glob:youwol.utils.context.ProxiedBackendContext)
+    specialization of [Context](@yw-nav-class:youwol.utils.context.Context).
+
+    """
+
+    assets_gateway: AssetsGatewayClient
+    """
+    HTTP client.
+    """
+    sessions_storage: CdnSessionsStorageClient
+    """
+    HTTP client.
+    """
+
+
+ProxiedBackendContext = Context[ProxiedBackendCtxEnv]
+"""
+Specialization of [Context](@yw-nav-class:youwol.utils.context.Context) for detached backends
+(running on specific port) proxied by the local youwol server.
+"""
+
+
 class ContextFactory:
+    """
+    Factory to create root contexts.
+    """
+
     with_static_data: dict[str, DataType] = {}
+    """
+    The data that will be associated to all root contexts created.
+    """
+
     with_static_labels: dict[str, LabelsGetter] = {}
+    """
+    The labels that will be associated to all root contexts created.
+    """
 
     @staticmethod
     def add_labels(key: str, labels: set[str] | LabelsGetter):
@@ -822,6 +916,102 @@ class ContextFactory:
         with_labels = [label for getter in static_labels.values() for label in getter()]
 
         return Context(with_labels=with_labels, with_data=with_data, **kwargs)
+
+    @staticmethod
+    def proxied_backend_context(request: Request, **kwargs) -> ProxiedBackendContext:
+        """
+        Initializes a [Context](@yw-nav-class:youwol.utils.context.Context) instance from
+        a request for (python) backends running on specific port & proxied using a
+        [RedirectSwitch](@yw-nav-class:youwol.app.environment.models.models_config.RedirectSwitch).
+
+         It usually starts the implementation of an endpoint, e.g.:
+
+        ```python
+        @app.get("/hello-world")
+        async def hello_world(request: Request):
+            async with ContextFactory.proxied_backend_context(request).start(
+                action="/hello-world"
+            ) as ctx:
+                await ctx.info("Hello world")
+                return JSONResponse({"endpoint": "/hello-world"})
+        ```
+
+        The instance created:
+        *  defines the context's `env` attribute as
+         [ProxiedBackendCtxEnv](@yw-nav-class:youwol.utils.context.ProxiedBackendCtxEnv).
+        *  defines the context's `logs_reporter` attribute using a reporter that forward log's entries to the youwol
+        local server end point [post_log](@yw-nav-func:youwol.app.routers.system.router.post_logs).
+        In a standard configuration of youwol, they are then stored in memory and can be browsed through the
+        developer portal application.
+        *  defines the context's `data_reporter` attribute using a reporter that forward log's entries to the youwol
+         local server end point [post_data](@yw-nav-func:youwol.app.routers.system.router.post_data).
+        In a standard configuration of youwol, they are then emitted through the `/ws-data` web-socket channel
+        of youwol.
+        This serves as constructing [FuturesResponse](@yw-nav-class:youwol.utils.utils_requests.FuturesResponse) to
+        provide observable like response emitting multiple items asynchronously.
+
+        Parameters:
+            request: Incoming request.
+
+        Return:
+            A type specialisation of [Context](@yw-nav-class:youwol.utils.context.Context) with
+            [ProxiedBackendCtxEnv](@yw-nav-class:youwol.utils.context.ProxiedBackendCtxEnv) generic parameter.
+        """
+        static_data = ContextFactory.with_static_data or {}
+        static_labels = ContextFactory.with_static_labels or {}
+        with_data = kwargs if not static_data else {**static_data, **kwargs}
+        with_labels = [label for getter in static_labels.values() for label in getter()]
+
+        py_youwol_port = request.headers[YouwolHeaders.py_youwol_port]
+
+        class PyYwReporter(ContextReporter):
+            request: Request
+            url: str
+            channel: Literal["logs", "data"]
+
+            def __init__(self, channel: Literal["logs", "data"]):
+                super().__init__()
+                self.request = request
+                self.channel = channel
+                self.url = (
+                    f"http://localhost:{py_youwol_port}/admin/system/{self.channel}"
+                )
+
+            async def log(self, entry: LogEntry):
+                body = {self.channel: [entry.dict()]}
+                headers: Mapping[str, str] = {
+                    YouwolHeaders.trace_id: entry.trace_uid or "",
+                    YouwolHeaders.correlation_id: entry.context_id or "",
+                }
+                async with aiohttp.ClientSession(
+                    cookies=self.request.cookies, headers=headers
+                ) as session:
+                    t = await session.post(url=self.url, json=body)
+                    t.close()
+
+        logs_reporter = PyYwReporter(channel="logs")
+        data_reporter = PyYwReporter(channel="data")
+        http_clients = ProxiedBackendCtxEnv(
+            assets_gateway=AssetsGatewayClient(
+                url_base=f"http://localhost:{py_youwol_port}/api/assets-gateway",
+                request_executor=AioHttpExecutor(),
+            ),
+            sessions_storage=CdnSessionsStorageClient(
+                url_base=f"http://localhost:{py_youwol_port}/api/cdn-sessions-storage",
+                request_executor=AioHttpExecutor(),
+            ),
+        )
+        return Context(
+            request=request,
+            env=http_clients,
+            logs_reporters=[logs_reporter],
+            data_reporters=[data_reporter],
+            with_labels=with_labels,
+            with_data={"py_youwol_port": py_youwol_port, **with_data},
+            parent_uid=YouwolHeaders.get_correlation_id(request),
+            trace_uid=YouwolHeaders.get_trace_id(request),
+            uid=YouwolHeaders.get_correlation_id(request) or "root",
+        )
 
 
 class DeployedContextReporter(ContextReporter):

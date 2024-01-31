@@ -1,16 +1,20 @@
 # standard library
+import json
+
 from urllib.error import URLError
 from urllib.request import urlopen
 
 # typing
-from typing import Optional, TypeVar
+from typing import Any, Dict, List, Optional, TypeVar
 
 # third parties
-from aiohttp import ClientResponse, ClientSession, TCPConnector
+from aiohttp import ClientResponse, ClientSession, FormData, TCPConnector
+from pydantic import BaseModel
 from starlette.requests import Request
 from starlette.responses import Response
 
 # Youwol utilities
+from youwol.utils.context import Context
 from youwol.utils.exceptions import upstream_exception_from_response
 
 
@@ -104,3 +108,104 @@ def is_server_http_alive(url: str):
             return True
     except URLError:
         return False
+
+
+def aiohttp_file_form(
+    filename: str, content_type: str, content: Any, file_id: Optional[str] = None
+) -> FormData:
+    """
+    Create a `FormData` to upload a file (e.g. using
+    [assets_gateway](@yw-nav-func:youwol.backends.assets_gateway.routers.assets.upload))
+
+    Parameters:
+        filename: Name of the file.
+        content_type: Content type of the file, see []().
+        content: The actual content of the file.
+        file_id: An explicit file's ID if provided (generated if not).
+
+    Return:
+        The form data.
+    """
+    form_data = FormData()
+    form_data.add_field(
+        name="file",
+        value=content,
+        filename=filename,
+        content_type=content_type,
+    )
+
+    form_data.add_field("content_type", content_type)
+    form_data.add_field("content_encoding", "Identity")
+    form_data.add_field("file_id", file_id)
+    form_data.add_field("file_name", filename)
+    return form_data
+
+
+class FuturesResponse(Response):
+    """
+    This HTTP response is used when asynchronous computations (resolving after the HTTP response is returned)
+    are needed.
+
+    Example:
+        ```python
+        @app.get("/async-job")
+        async def async_job(
+            request: Request,
+            task_id: int = Query(alias="task-id", default=int(time.time() * 1e6)),
+        ):
+            async def tick_every_second(streamer: FuturesResponse, context: BackendContext):
+                async with context.start(action="tick_every_second") as ctx_ticks:
+                    for i in range(1, 11):
+                        await streamer.next(Data(content=f"Second {i}"), context=ctx_ticks)
+                        await asyncio.sleep(1)
+                    await streamer.close(context=ctx_ticks)
+
+            async with init_context(request).start(action="/async-job") as ctx:
+                response = FuturesResponse(channel_id=str(task_id))
+                await ctx.info("Use web socket to send async. messages")
+                asyncio.ensure_future(tick_every_second(response, ctx))
+                return response
+        ```
+    """
+
+    media_type = "application/json"
+
+    def __init__(
+        self,
+        channel_id: str,
+        headers: Optional[Dict[str, str]] = None,
+        media_type: Optional[str] = None,
+    ) -> None:
+        super().__init__(
+            content={"channelId": channel_id},
+            status_code=202,
+            headers=headers,
+            media_type=media_type,
+        )
+        self.channel_id = channel_id
+
+    async def next(
+        self, content: BaseModel, context: Context, labels: Optional[List[str]] = None
+    ):
+        await context.send(
+            data=content,
+            labels=[*context.with_labels, *(labels or []), self.channel_id],
+        )
+
+    async def close(self, context: Context):
+        class FuturesResponseEnd(BaseModel):
+            pass
+
+        await context.send(
+            data=FuturesResponseEnd(),
+            labels=[self.channel_id],
+        )
+
+    def render(self, content: Any) -> bytes:
+        return json.dumps(
+            content,
+            ensure_ascii=False,
+            allow_nan=False,
+            indent=None,
+            separators=(",", ":"),
+        ).encode("utf-8")

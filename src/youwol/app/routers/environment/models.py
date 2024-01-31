@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 # Youwol application
 from youwol.app.environment.errors_handling import ErrorResponse
-from youwol.app.environment.models.models_config import DispatchInfo
+from youwol.app.environment.models.flow_switches import DispatchInfo
 
 
 class UserInfo(BaseModel):

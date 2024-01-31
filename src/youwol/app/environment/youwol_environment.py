@@ -38,17 +38,15 @@ from .errors_handling import (
     ConfigurationLoadingStatus,
     ErrorResponse,
 )
-from .models import (
-    ApiConfiguration,
-    Configuration,
-    Connection,
-    CustomMiddleware,
-    Events,
-)
+from .models.models import ApiConfiguration
 from .models.models_config import (
     Authentication,
     CloudEnvironment,
     Command,
+    Configuration,
+    Connection,
+    CustomMiddleware,
+    Events,
     ExplicitProjectsFinder,
     Projects,
     TokensStoragePath,

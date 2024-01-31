@@ -2,8 +2,8 @@
 from dataclasses import dataclass
 
 # Youwol utilities
-from youwol.utils import JSON
 from youwol.utils.clients.request_executor import RequestExecutor, json_reader
+from youwol.utils.types import JSON
 
 
 @dataclass(frozen=True)

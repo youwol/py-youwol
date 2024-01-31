@@ -97,6 +97,7 @@ export class SectionHeader implements VirtualDOM<'div'> {
         const factory = {
             warning: 'fas fa-exclamation fv-text-focus',
             example: 'fas fa-code fv-text-success',
+            todos: 'fas fa-forward fv-text-success',
         }
         this.children = [
             {

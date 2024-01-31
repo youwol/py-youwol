@@ -43,7 +43,15 @@ class AssetsClient:
     async def create_asset(self, body, **kwargs):
         """
         See description in
-        [assets.resolve_loading_tree](@yw-nav-func:youwol.backends.assets.root_paths.create_asset).
+        [assets.create_asset](@yw-nav-func:youwol.backends.assets.root_paths.create_asset).
+
+        Warning:
+            When used through the
+            <a href="@yw-nav-func:youwol.utils.clients.assets_gateway.AssetsGatewayClient.get_assets_backend_router">
+            assets-gateway client
+            </a>,
+             the `params` parameters (URL query parameters) need
+            to feature a `folder-id` value: the destination folder ID of the created asset within the explorer.
         """
         return await self.request_executor.put(
             url=f"{self.url_base}/assets",

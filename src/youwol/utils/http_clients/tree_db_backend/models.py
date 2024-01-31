@@ -173,7 +173,8 @@ class DriveResponse(BaseModel):
 
 class DefaultDriveResponse(BaseModel):
     """
-    Describes a default drive with special folders ID & name.
+    Each group is assigned a default drive, primarily utilized for data reading and writing tasks.
+    This drive is linked to a specific organization and includes a set of predefined folders, as outlined here.
     """
 
     driveId: str
@@ -186,43 +187,43 @@ class DefaultDriveResponse(BaseModel):
     """
     downloadFolderId: str
     """
-    Id of the 'download' folder.
+    Id of the `/home/download` folder.
     """
     downloadFolderName: str
     """
-    Name of the 'download' folder.
+    Name of the `/home/download` folder.
     """
     homeFolderId: str
     """
-    ID of the 'home' folder.
+    ID of the `/home` folder.
     """
     homeFolderName: str
     """
-    Name of the 'home' folder.
+    Name of the `/home` folder.
     """
     tmpFolderId: str
     """
-    ID of the 'tmp' folder.
+    ID of the `/home/system/tmp` folder.
     """
     tmpFolderName: str
     """
-    Name of the 'tmp' folder.
+    Name of the `/home/system/tmp` folder.
     """
     systemFolderId: str
     """
-    ID of the 'system' folder.
+    ID of the `/home/system` folder.
     """
     systemFolderName: str
     """
-    Name of the 'system' folder.
+    Name of the `/home/system` folder.
     """
     systemPackagesFolderId: str
     """
-    ID of the 'system/package' folder.
+    ID of the `/home/system/package` folder.
     """
     systemPackagesFolderName: str
     """
-    Name of the 'system/package' folder.
+    Name of the `/home/system/package` folder.
     """
     groupId: str
     """
