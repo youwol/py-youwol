@@ -159,6 +159,9 @@ class LogEntry(NamedTuple):
 
 
 DataType = Union[T, Callable[[], T], Callable[[], Awaitable[T]]]
+"""
+Type definition of context's data attribute.
+"""
 
 
 class ContextReporter(ABC):
@@ -722,6 +725,9 @@ exiting a block with exception.
 """
 
 LabelsGetter = Callable[[], set[str]]
+"""
+Type definition of a Label definition, used in [ContextFactory](@yw-nav-class:youwol.utils.context.ContextFactory).
+"""
 
 
 @dataclass(frozen=True)

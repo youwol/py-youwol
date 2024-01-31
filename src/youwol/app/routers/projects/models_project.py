@@ -94,11 +94,30 @@ class Artifact(BaseModel):
 
 
 class PipelineStepStatus(Enum):
+    """
+    Status of a pipeline's step execution.
+    """
+
     OK = "OK"
+    """
+    In sync: inputs of the step have not changed, and produced artifacts are available.
+    """
     KO = "KO"
+    """
+    Execution leads to error.
+    """
     outdated = "outdated"
+    """
+    Execution need to be re-run: some inputs of the step changed.
+    """
     running = "running"
+    """
+    Step is actually running.
+    """
     none = "none"
+    """
+    Expected outcome of the step does not exist.
+    """
 
 
 class Manifest(BaseModel):

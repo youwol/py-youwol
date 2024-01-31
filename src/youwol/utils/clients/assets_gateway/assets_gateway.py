@@ -18,7 +18,7 @@ class AssetsGatewayClient:
     """
     HTTP client of the [assets_gateway](@yw-nav-mod:youwol.backends.assets_gateway) service.
 
-    It provides children clients to access the proxied services.
+    This client essentially provides clients for the proxied services by `assets_gateway`.
     """
 
     url_base: str

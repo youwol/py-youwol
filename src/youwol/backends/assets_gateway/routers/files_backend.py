@@ -73,10 +73,17 @@ async def upload(
     If access is granted, forwarded to
     [files.upload](@yw-nav-func:youwol.backends.files.root_paths.upload)
     endpoint of [files](@yw-nav-mod:youwol.backends.files) service.
+    Refer to the API of this function regarding inputs description (except for `folder_id` which is an extra parameter
+    required here, see below).
 
     On top of uploading the file, it:
-        *  create an asset using the [assets](@yw-nav-mod:youwol.backends.assets) service.
-        *  create an explorer item using [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    *  creates an asset using the [assets](@yw-nav-mod:youwol.backends.assets) service.
+    *  creates an explorer item using [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+
+    Warning:
+        It is mandatory to provide a `folder_id` parameter, it will allow to create the asset at the right location.
+        This is an extra parameter required on top of what
+        [files.upload](@yw-nav-func:youwol.backends.files.root_paths.upload) expects.
 
     Parameters:
         request: Incoming request.
