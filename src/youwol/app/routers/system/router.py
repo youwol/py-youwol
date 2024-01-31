@@ -261,6 +261,18 @@ class PostLogsBody(BaseModel):
     """
 
 
+class PostDataBody(BaseModel):
+    """
+    Body of the end point defined by the function
+     [post_data](@yw-nav-func:youwol.app.routers.system.router.post_data).
+    """
+
+    data: list[PostLogBody]
+    """
+    List of the data.
+    """
+
+
 @router.get("/logs/", summary="Query in-memory root logs.")
 async def query_logs(
     request: Request,
@@ -348,15 +360,13 @@ async def get_logs(request: Request, parent_id: str) -> LogsResponse:
 @router.post("/logs", summary="post logs")
 async def post_logs(request: Request, body: PostLogsBody):
     """
-    Add logs in memory.
+    Forward log entries to the [Context.logs_reporters](@yw-nav-attr:youwol.utils.context.Context.logs_reporters).
 
     Parameters:
-        request: incoming request
-        body: description of the logs to add
-
+        request: Incoming request.
+        body: The logs to add.
     """
     context = Context.from_request(request=request)
-    logger = cast(InMemoryReporter, context.logs_reporters[0])
     for log in body.logs:
         entry = LogEntry(
             level=LogLevel.INFO,
@@ -369,7 +379,35 @@ async def post_logs(request: Request, body: PostLogsBody):
             trace_uid=log.traceUid,
             timestamp=log.timestamp,
         )
-        await logger.log(entry=entry)
+        for logger in context.logs_reporters:
+            await logger.log(entry=entry)
+
+
+@router.post("/data", summary="post data")
+async def post_data(request: Request, body: PostDataBody):
+    """
+    Forward data entries to the [Context.data_reporters](@yw-nav-attr:youwol.utils.context.Context.data_reporters).
+
+    Parameters:
+        request: Incoming request.
+        body: The data to send.
+
+    """
+    context = Context.from_request(request=request)
+    for log in body.data:
+        entry = LogEntry(
+            level=LogLevel.INFO,
+            text=log.text,
+            data=log.data,
+            labels=log.labels,
+            attributes=log.attributes,
+            context_id=log.contextId,
+            parent_context_id=log.parentContextId,
+            trace_uid=log.traceUid,
+            timestamp=log.timestamp,
+        )
+        for logger in context.data_reporters:
+            await logger.log(entry=entry)
 
 
 @router.delete("/logs", summary="clear logs")
