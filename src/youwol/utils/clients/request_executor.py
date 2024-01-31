@@ -132,9 +132,9 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
     [auto_reader](@yw-nav-func:youwol.utils.clients.request_executor.auto_reader).
     """
 
-    client_session: Union[
-        ClientSession, Callable[[], ClientSession]
-    ] = lambda: ClientSession(auto_decompress=False)
+    client_session: Union[ClientSession, Callable[[], ClientSession]] = (
+        lambda: ClientSession(auto_decompress=False)
+    )
     """
     Client session from [AioHTTP](https://docs.aiohttp.org/en/stable/).
 

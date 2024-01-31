@@ -180,8 +180,7 @@ async def sync_explorer_data(
 class SyncRawDataCallableType(Protocol):
     def __call__(
         self, asset_id: str, remote_gtw: AssetsGatewayClient, caller_context: Context
-    ) -> Awaitable[None]:
-        ...
+    ) -> Awaitable[None]: ...
 
 
 async def create_asset_local(
