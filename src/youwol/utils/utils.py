@@ -45,6 +45,15 @@ class YouwolHeaders:
     Trace id (see [trace & context](https://www.w3.org/TR/trace-context/)).
     """
 
+    py_youwol_port: str = "py-youwol-port"
+    """
+    Convey the port on which py-youwol is serving on `local-host`.
+
+    This is useful when *e.g.* writing an external backends connected using
+    a [RedirectSwitch](@yw-nav-class:youwol.app.environment.models.models_config.RedirectSwitch) in which
+    requests to the youwol local server are executed.
+    """
+
     @staticmethod
     def get_correlation_id(request: Request) -> Optional[str]:
         """
