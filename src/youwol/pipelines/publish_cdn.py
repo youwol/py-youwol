@@ -21,6 +21,7 @@ from youwol.app.environment import (
     PathsBook,
     RemoteClients,
     YouwolEnvironment,
+    get_standard_youwol_env,
 )
 from youwol.app.routers.environment.upload_assets.package import UploadPackageOptions
 from youwol.app.routers.environment.upload_assets.upload import upload_asset
@@ -517,3 +518,13 @@ class PublishCdnRemoteStep(PipelineStep):
             # # resp = await remote_gtw.cdn_get_package(library_name=project.name, version=project.version,
             # # metadata=True)
             return resp
+
+
+class Environment(BaseModel):
+    cdnTargets: list[CdnTarget] = [
+        CdnTarget(
+            name="youwol",
+            cloudTarget=get_standard_youwol_env(env_id="youwol.com"),
+            authId="browser",
+        ),
+    ]
