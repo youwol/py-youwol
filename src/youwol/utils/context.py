@@ -747,7 +747,7 @@ class Context(Generic[TEnvironment]):
             If the context has not been generated from a request, return `{}`
         """
         cookies = self.request.cookies if self.request else {}
-        return {**cookies, **self.cookies}
+        return cookies
 
 
 CallableBlock = Callable[[Context], Union[Awaitable, None]]
