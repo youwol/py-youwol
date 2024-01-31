@@ -16,7 +16,20 @@ from enum import Enum
 from types import TracebackType
 
 # typing
-from typing import Any, Callable, List, NamedTuple, Optional, Type, TypeVar, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Generic,
+    List,
+    Literal,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 # third parties
 import aiohttp
@@ -27,6 +40,9 @@ from starlette.requests import Request
 from starlette.websockets import WebSocket
 
 # Youwol utilities
+from youwol.utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
+from youwol.utils.clients.cdn_sessions_storage import CdnSessionsStorageClient
+from youwol.utils.clients.request_executor import AioHttpExecutor
 from youwol.utils.types import JSON, AnyDict
 from youwol.utils.utils import YouwolHeaders, generate_headers_downstream, to_json
 
@@ -254,11 +270,32 @@ A selector function for headers: it takes a list of header's keys in argument, a
 """
 
 
+TEnvironment = TypeVar("TEnvironment")
+"""
+Generic type parameter for the [Context](@yw-nav-class:youwol.utils.context.Context) class.
+
+It defines contextual information known at 'compile' time.
+"""
+
+
 @dataclass(frozen=True)
-class Context:
+class Context(Generic[TEnvironment]):
     """
     Context objects serves at tracing the execution flow within python code and logs information as well as
     propagating contextual information.
+
+    This class has a generic type parameter `TEnvironment`, defining the type of
+    [env](@yw-nav-attr:youwol.utils.context.Context.env), a 'compile-time' resolved contextual information.
+    """
+
+    env: TEnvironment | None = None
+    """
+    This attribute is a typed, static data point established during the creation of the root context and is
+    accessible to all its child contexts.
+
+    Being 'static' implies that the attribute's value and structure are predetermined at 'compile' time.
+    It's generally better -if possible- to store information in this attribute rather than relying on dynamic
+    fields like `labels`, `attributes`, or `data`.
     """
 
     logs_reporters: list[ContextReporter] = field(default_factory=list)
@@ -330,7 +367,7 @@ class Context:
         on_exit: CallableBlock | None = None,
         on_exception: CallableBlockException | None = None,
         with_reporters: list[ContextReporter] | None = None,
-    ) -> ScopedContext:
+    ) -> ScopedContext[TEnvironment]:
         """
         Function to start a child context bound to an execution scope.
 
@@ -379,8 +416,9 @@ class Context:
             else self.logs_reporters + with_reporters
         )
 
-        return ScopedContext(
+        return ScopedContext[TEnvironment](
             action=action,
+            env=self.env,
             on_enter=on_enter,
             on_exit=on_exit,
             on_exception=on_exception,
@@ -731,7 +769,7 @@ Type definition of a Label definition, used in [ContextFactory](@yw-nav-class:yo
 
 
 @dataclass(frozen=True)
-class ScopedContext(Context):
+class ScopedContext(Generic[TEnvironment], Context[TEnvironment]):
     """
     A context with lifecycle management logic (implementing async context manager API from python: `__aenter__`
     and `__aexit__`).
