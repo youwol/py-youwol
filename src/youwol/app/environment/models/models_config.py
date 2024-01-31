@@ -42,6 +42,7 @@ from youwol.utils import (
     Context,
     ResourcesNotFoundException,
     YouWolException,
+    YouwolHeaders,
     encode_id,
     youwol_exception_handler,
 )
@@ -1289,9 +1290,13 @@ class RedirectSwitch(FlowSwitch):
     async def switch(
         self, incoming_request: Request, context: Context
     ) -> Optional[Response]:
+        # The following 'Any' is because the implementation of this class is not separated from its declaration as
+        # it should be. It prevents importing 'YouwolEnvironment' here, due to circular imports.
+        env = await context.get("env", Any)
         headers = {
             **dict(incoming_request.headers.items()),
             **context.headers(),
+            YouwolHeaders.py_youwol_port: str(env.httpPort),
         }
 
         await context.info(
