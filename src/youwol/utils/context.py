@@ -53,7 +53,7 @@ Represents data structures that can be serialized into a json representation
 """
 
 
-class LogLevel(Enum):
+class LogLevel(str, Enum):
     """
     Available severities when loging.
     """
