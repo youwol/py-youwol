@@ -1,4 +1,7 @@
 # standard library
+import re
+import shutil
+
 from pathlib import Path
 
 # typing
@@ -8,20 +11,55 @@ from typing import NamedTuple
 from youwol.app.environment import ProjectTemplate
 
 # Youwol utilities
-from youwol.utils import Context
+from youwol.utils import Context, sed_inplace
 
 
 class Keys(NamedTuple):
     name = "name"
+    port = "port"
 
 
 def template(folder: Path) -> ProjectTemplate:
+    """
+    Template generator specification for a basic project.
+
+    Example:
+        It can be referenced in your configuration like this:
+        ```python
+        from youwol.app.environment import (
+            Configuration,
+            Projects,
+            RecursiveProjectsFinder
+        )
+        from youwol.pipelines.pipeline_python_backend import template
+
+        projects_folder = Path.home() / 'Projects'
+
+        Configuration(
+            projects=Projects(
+                finder=RecursiveProjectsFinder(
+                    fromPaths=[projects_folder],
+                ),
+                templates=[template(folder=projects_folder / 'auto-generated')],
+            )
+        )
+        ```
+
+        Generation of a new project is then triggered through the developer portal applications.
+
+    Parameters:
+        folder: path of the folder in which templates are added.
+
+    Return:
+        Project's template specification.
+    """
     return ProjectTemplate(
         icon={"tag": "img", "src": pyIcon},
-        type="ts+webpack app.",
+        type="python backend",
         folder=folder,
         parameters={
             Keys.name: "Name of the service.",
+            Keys.port: "Default port to serve.",
         },
         generator=lambda _folder, params, context: generate_template(
             folder, params, context
@@ -29,8 +67,76 @@ def template(folder: Path) -> ProjectTemplate:
     )
 
 
+class Template(NamedTuple):
+    name: str
+    port: int
+
+
+async def user_inputs_sanity_checks(
+    parameters: dict[str, str], context: Context
+) -> Template:
+    def is_valid_python_package_name(name: str) -> bool:
+        pattern = r"^[a-zA-Z_]\w*$"
+        return bool(re.match(pattern, name))
+
+    async with context.start("user_inputs_sanity_checks") as ctx:
+        if Keys.name not in parameters:
+            raise RuntimeError("Expect 'name' in parameters")
+
+        if Keys.port not in parameters:
+            raise RuntimeError("Expect 'port' in parameters")
+
+        await ctx.info("Required parameters found")
+
+        if not is_valid_python_package_name(Keys.name):
+            raise RuntimeError("The name provide does not adhere to PEP 8 convention.")
+
+        port = int(parameters[Keys.port])
+        return Template(name=parameters[Keys.name], port=port)
+
+
 async def generate_template(folder: Path, parameters: dict[str, str], context: Context):
-    async with context.start("Generate python backend"):
+    async with context.start("Generate python backend") as ctx:
+        inputs = await user_inputs_sanity_checks(parameters, ctx)
+
+        def replace_patterns(file_to_sed: Path):
+            for source, replacement in [
+                ["package_name", inputs.name],
+                ["default_port", str(inputs.port)],
+            ]:
+                sed_inplace(file_to_sed, "{{" + source + "}}", replacement)
+
+        folder.mkdir(parents=True, exist_ok=True)
+
+        project_folder = folder / f"{inputs.name}_project"
+        if project_folder.exists():
+            raise RuntimeError(f"Folder {folder} already exist")
+
+        project_folder.mkdir(parents=True)
+
+        package_folder = project_folder / inputs.name
+        package_folder.mkdir(parents=True)
+
+        files = (Path(__file__).parent / "template" / "src").glob("**/*")
+        for file in files:
+            dst = package_folder / file.name.replace(".txt", "")
+            shutil.copyfile(
+                src=file,
+                dst=package_folder / file.name.replace(".txt", ""),
+            )
+            replace_patterns(dst)
+
+        shutil.copytree(
+            src=Path(__file__).parent / "template" / ".yw_pipeline",
+            dst=project_folder / ".yw_pipeline",
+        )
+        shutil.copyfile(
+            src=Path(__file__).parent / "template" / "pyproject.toml.txt",
+            dst=project_folder / "pyproject.toml",
+        )
+
+        replace_patterns(project_folder / "pyproject.toml")
+
         return parameters["name"], folder
 
 
