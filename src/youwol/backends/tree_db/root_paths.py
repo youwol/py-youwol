@@ -6,9 +6,6 @@ import uuid
 
 from collections.abc import Coroutine
 
-# typing
-from typing import cast
-
 # third parties
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi import Query as QueryParam
@@ -931,7 +928,6 @@ async def move(
         if isinstance(to_folder_or_drive, Exception):
             raise to_folder_or_drive
 
-        to_folder_or_drive = cast(EntityResponse, to_folder_or_drive)
         destination = to_folder_or_drive.entity
         destination_id = (
             destination.folderId
