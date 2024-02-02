@@ -1,6 +1,11 @@
 <!--
   formatted using prettier inside ./doc (see TG-1998):
   cd doc && yarn && yarn prettier --write --tab-width=4 ../CHANGELOG.md
+
+  All lines with an heading of second level must match the following regex, with the captured match a valid PEP 440 version string :
+      /^## \[(.*)\] − (?:(?:Unreleased)|(?:\d\d\d\d-\d\d-\d\d))$/
+  Additionally the first one of these lines is updated or created by the script `version_management.py`, and its version must be the
+  current version as declared in pyproject.toml
 -->
 
 # Changelog
@@ -10,7 +15,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-0440/).
 
-## [0.1.7rc0] - 2024-02-01
+## [0.1.7.dev] - Unreleased
 
 ### Added
 
