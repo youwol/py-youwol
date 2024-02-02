@@ -82,9 +82,7 @@ def get_classifiers_python_version() -> list[str]:
 
 
 def get_target_version():
-    if len(sys.argv) != 3:
-        raise RuntimeError("Missing param target version")
-    arg = sys.argv[2]
+    arg = sys.argv[2] if len(sys.argv) == 3 else current_version.base_version
     parsed_version = version.parse(arg)
     if (
         parsed_version.is_prerelease
