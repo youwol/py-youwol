@@ -107,7 +107,10 @@ def cmd_prepare_release_candidate():
     minor = target_version.minor
     micro = target_version.micro
     rc = "rc"
-    if current_version.pre is not None:
+    if (
+        current_version.pre is not None
+        and target_version.base_version == current_version.base_version
+    ):
         rc_nb = int(current_version.pre[1])
         if rc_nb > 0:
             rc = "rc" + str(rc_nb)
