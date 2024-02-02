@@ -395,4 +395,14 @@ def init_classes(module: ModuleType = None, visited: Set[ModuleType] = None):
 
 
 def get_classes_inheriting_from(target: Type) -> Set[Type]:
-    return {c for c in DocCache.flat_classes if issubclass(c, target) and c != target}
+    def is_inherited(c: Type):
+        if c == target:
+            return False
+        try:
+            return issubclass(c, target)
+        except TypeError:
+            # Silently fails if somehow an element of `DocCache.flat_classes` can not be used in `issubclass` as type.
+            # The return `False` is still correct.
+            return False
+
+    return {c for c in DocCache.flat_classes if is_inherited(c)}
