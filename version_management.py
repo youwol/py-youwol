@@ -2,6 +2,7 @@
 import json
 import subprocess
 import sys
+from datetime import datetime
 
 # third parties
 import tomlkit
@@ -9,6 +10,8 @@ import tomlkit
 from packaging import version
 
 PYPROJECT_TOML = "pyproject.toml"
+CHANGELOG_MD = "CHANGELOG.md"
+CHANGELOG_HEADER_LINE = 17
 PYTHON_VERSION_PREFIX = "3."
 CLASSIFIER_PYTHON_VERSION = f"Programming Language :: Python :: {PYTHON_VERSION_PREFIX}"
 
@@ -30,8 +33,32 @@ def write_version(v: str):
     debug(f"canonical version : {get_current_version()}")
 
 
+def set_changelog_section_header(v: str):
+    with open(CHANGELOG_MD, encoding="utf8") as c_r:
+        lines = c_r.readlines()
+    release_date =  datetime.today().strftime('%Y-%m-%d')
+    lines[CHANGELOG_HEADER_LINE] = f"## [{v}] − {release_date}\n"
+    with open(CHANGELOG_MD, "w", encoding="utf8") as c_w:
+        c_w.writelines(lines)
+
+
+def add_changelog_section_header(v: str):
+    with open(CHANGELOG_MD, encoding="utf8") as c_r:
+        lines = c_r.readlines()
+
+    lines = (
+        lines[:CHANGELOG_HEADER_LINE]
+        + [f"## [{v}] − Unreleased\n\n"]
+        + lines[CHANGELOG_HEADER_LINE:]
+    )
+
+    with open(CHANGELOG_MD, "w", encoding="utf8") as c_w:
+        c_w.writelines(lines)
+
+
 def git_commit(msg: str):
-    subprocess.run("git add pyproject.toml", shell=True, check=True)
+    subprocess.run(f"git add {PYPROJECT_TOML}", shell=True, check=True)
+    subprocess.run(f"git add {CHANGELOG_MD}", shell=True, check=True)
     subprocess.run(f"git commit -m '{msg}'", shell=True, check=True)
 
 
@@ -86,6 +113,7 @@ def cmd_prepare_release_candidate():
             rc = "rc" + str(rc_nb)
 
     target = f"{major}.{minor}.{micro}{rc}"
+    set_changelog_section_header(target)
     write_version(target)
     git_commit(f"🔖 release candidate {target}")
 
@@ -106,6 +134,7 @@ def cmd_restore_dev():
 
     next_version = f"{major}.{minor}.{micro}{rc}"
     dev_version = f"{next_version}.dev"
+    add_changelog_section_header(dev_version)
     write_version(dev_version)
     git_commit(f"🔖 prepare for next version {next_version}")
 
@@ -121,6 +150,7 @@ def cmd_next_dev():
 
     next_version = f"{major}.{minor}.{micro}"
     dev_version = f"{next_version}.dev"
+    add_changelog_section_header(dev_version)
     write_version(dev_version)
     git_commit(f"🔖 prepare for next version {next_version}")
 
@@ -130,6 +160,7 @@ def cmd_prepare_final():
     if current_version.pre is None:
         raise ValueError(f"{current_version} is not a release candidate")
     final_version = current_version.base_version
+    set_changelog_section_header(final_version)
     write_version(final_version)
     git_commit(f"🔖 release {final_version}")
 
