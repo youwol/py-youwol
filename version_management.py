@@ -16,7 +16,22 @@ PYTHON_VERSION_PREFIX = "3."
 CLASSIFIER_PYTHON_VERSION = f"Programming Language :: Python :: {PYTHON_VERSION_PREFIX}"
 
 
+def get_current_version():
+    with open(PYPROJECT_TOML, encoding="utf8") as f:
+        pyproject_dict = tomlkit.load(f)
+        v = version.parse(pyproject_dict.get("project").get("version"))
+        if v.is_postrelease:
+            raise ValueError(f"{v} is a post version")
+        return v
+
+
+current_version = get_current_version()
+
+messages = []
+
+
 def debug(msg: str):
+    messages.append(msg)
     sys.stderr.write(msg + "\n")
 
 
@@ -28,9 +43,9 @@ def write_version(v: str):
     with open(PYPROJECT_TOML, "w", encoding="utf8") as f_w:
         pyproject_dict.get("project")["version"] = v
         tomlkit.dump(pyproject_dict, f_w)
-        debug(f"written : {v}")
+        debug(f"final_version_string='{v}'")
 
-    debug(f"canonical version : {get_current_version()}")
+    debug(f"final_version_canonical='{get_current_version()}'")
 
 
 def set_changelog_section_header(v: str):
@@ -57,18 +72,11 @@ def add_changelog_section_header(v: str):
 
 
 def git_commit(msg: str):
+    debug_messages = "\n".join(messages)
+    commit_msg = f"{msg}\n\nversion_management.py debug logging:\n{debug_messages}"
     subprocess.run(f"git add {PYPROJECT_TOML}", shell=True, check=True)
     subprocess.run(f"git add {CHANGELOG_MD}", shell=True, check=True)
-    subprocess.run(f"git commit -m '{msg}'", shell=True, check=True)
-
-
-def get_current_version():
-    with open(PYPROJECT_TOML, encoding="utf8") as f:
-        pyproject_dict = tomlkit.load(f)
-        v = version.parse(pyproject_dict.get("project").get("version"))
-        if v.is_postrelease:
-            raise ValueError(f"{v} is a post version")
-        return v
+    subprocess.run(f'git commit -m "{commit_msg}"', shell=True, check=True)
 
 
 def get_classifiers_python_version() -> list[str]:
@@ -205,16 +213,18 @@ cmds = {
     "python_versions": cmd_python_versions,
 }
 
+
 if __name__ == "__main__":
-    current_version = get_current_version()
-    debug(f"current version : {current_version}")
+    debug(f"original_version='{current_version}'")
 
     if len(sys.argv) > 1:
         cmd = sys.argv[1]
         fn = cmds.get(cmd)
         if fn is None:
             raise ValueError(f"Unknown command {sys.argv[1]}")
-        debug(f"command : {cmd}")
+        debug(f"command='{cmd}'")
+        if len(sys.argv) > 2:
+            debug(f"argument='{sys.argv[2]}'")
         fn()
     else:
         check()
