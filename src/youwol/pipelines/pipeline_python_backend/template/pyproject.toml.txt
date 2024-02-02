@@ -47,5 +47,5 @@ requires = [
 ]
 
 [youwol]
-default-port={{default_port}}
+default-port = {{default_port}}
 
