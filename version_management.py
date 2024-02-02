@@ -12,6 +12,7 @@ from packaging import version
 PYPROJECT_TOML = "pyproject.toml"
 CHANGELOG_MD = "CHANGELOG.md"
 CHANGELOG_HEADER_LINE = 17
+NO_CHANGE_LINE = "_no change_"
 PYTHON_VERSION_PREFIX = "3."
 CLASSIFIER_PYTHON_VERSION = f"Programming Language :: Python :: {PYTHON_VERSION_PREFIX}"
 
@@ -57,18 +58,33 @@ def set_changelog_section_header(v: str):
         c_w.writelines(lines)
 
 
-def add_changelog_section_header(v: str):
+def add_changelog_section_header(v: str, squash=False):
     with open(CHANGELOG_MD, encoding="utf8") as c_r:
-        lines = c_r.readlines()
+        input_lines = c_r.readlines()
 
-    lines = (
-        lines[:CHANGELOG_HEADER_LINE]
-        + [f"## [{v}] − Unreleased\n\n"]
-        + lines[CHANGELOG_HEADER_LINE:]
-    )
+    output_lines = input_lines[:CHANGELOG_HEADER_LINE] + [
+        f"## [{v}] − Unreleased\n" + "\n"
+    ]
+
+    pos_after = CHANGELOG_HEADER_LINE
+    if input_lines[CHANGELOG_HEADER_LINE + 2].startswith("## "):
+        pos_after = CHANGELOG_HEADER_LINE + 2
+        if not squash:
+            debug(f"no_change_section='{input_lines[CHANGELOG_HEADER_LINE].strip()}'")
+            output_lines.extend(
+                [
+                    f"{input_lines[CHANGELOG_HEADER_LINE]}\n"
+                    + f"{NO_CHANGE_LINE}\n"
+                    + "\n"
+                ]
+            )
+        else:
+            debug(f"squashed_empty_section='{input_lines[CHANGELOG_HEADER_LINE].strip()}'")
+
+    output_lines.extend(input_lines[pos_after:])
 
     with open(CHANGELOG_MD, "w", encoding="utf8") as c_w:
-        c_w.writelines(lines)
+        c_w.writelines(output_lines)
 
 
 def git_commit(msg: str):
