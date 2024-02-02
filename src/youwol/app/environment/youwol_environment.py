@@ -55,6 +55,7 @@ from .models.models_config import (
 from .native_backends_config import BackendConfigurations, native_backends_config
 from .paths import PathsBook, app_dirs, ensure_config_file_exists_or_create_it
 from .projects_finders import auto_detect_projects
+from .proxied_backends import BackendsStore
 
 
 class YouwolEnvironment(BaseModel):
@@ -113,6 +114,13 @@ class YouwolEnvironment(BaseModel):
     cache_py_youwol: dict[str, Any] = {}
 
     tokens_storage: TokensStorage
+
+    proxied_backends: BackendsStore = BackendsStore()
+    """
+    The store regarding proxied backends. Proxied backends are usually standalone backend running on their
+    own port and proxied by youwol from the base path `/backends/NAME/VERSION/**` (where `NAME` and `VERSION` are 
+    the name and version of the proxied backend).
+    """
 
     def reset_databases(self):
         self.backends_configuration.reset_databases()
