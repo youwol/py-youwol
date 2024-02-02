@@ -67,7 +67,6 @@ shutil.copyfile(
 )
 for file in [
     "README.md",
-    ".gitignore",
     ".npmignore",
     ".prettierignore",
     "LICENSE",
