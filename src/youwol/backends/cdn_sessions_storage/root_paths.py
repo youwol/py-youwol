@@ -52,7 +52,6 @@ async def post_data_no_namespace(
     request: Request,
     package: str,
     name: str,
-    body: JSON,
     configuration: Configuration = Depends(get_configuration),
 ) -> AnyDict:
     """
@@ -69,6 +68,7 @@ async def post_data_no_namespace(
     Returns:
         Empty JSON.
     """
+    body = await request.json()
     return await post_data_generic(
         request=request,
         package=package,
@@ -84,7 +84,6 @@ async def post_data_with_namespace(
     namespace: str,
     package: str,
     name: str,
-    body: JSON,
     configuration: Configuration = Depends(get_configuration),
 ) -> AnyDict:
     """
@@ -102,6 +101,7 @@ async def post_data_with_namespace(
     Returns:
         Empty JSON.
     """
+    body = await request.json()
     return await post_data_generic(
         request=request,
         namespace=namespace,
@@ -217,7 +217,7 @@ async def get_data_no_namespace(
     package: str,
     name: str,
     configuration: Configuration = Depends(get_configuration),
-) -> AnyDict:
+) -> AnyDict | None:
     """
     Get an entry.
 
@@ -243,7 +243,7 @@ async def get_data_with_namespace(
     package: str,
     name: str,
     configuration: Configuration = Depends(get_configuration),
-) -> AnyDict:
+) -> AnyDict | None:
     """
     Get an entry.
 

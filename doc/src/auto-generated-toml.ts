@@ -1,4 +1,4 @@
 export const youwolInfo = {
-    version: '0.1.7.dev',
+    version: '0.1.7rc1.dev',
     pythons: ['3.9', '3.10', '3.11', '3.12'],
 }
