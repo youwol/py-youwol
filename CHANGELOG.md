@@ -17,6 +17,11 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 ## [0.1.8.dev] − Unreleased
 
+### Security
+
+-   **Dependencies vulnerabilities**:
+    -   [CVE-2023-50782] upgrade `cryptography` to 42.0.2 <!-- TG-2049 -->
+
 ## [0.1.7.dev] - Unreleased
 
 ### Added
