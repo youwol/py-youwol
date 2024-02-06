@@ -2,6 +2,7 @@
 import json
 import subprocess
 import sys
+
 from datetime import datetime
 
 # third parties
@@ -52,7 +53,7 @@ def write_version(v: str):
 def set_changelog_section_header(v: str):
     with open(CHANGELOG_MD, encoding="utf8") as c_r:
         lines = c_r.readlines()
-    release_date =  datetime.today().strftime('%Y-%m-%d')
+    release_date = datetime.today().strftime("%Y-%m-%d")
     lines[CHANGELOG_HEADER_LINE] = f"## [{v}] − {release_date}\n"
     with open(CHANGELOG_MD, "w", encoding="utf8") as c_w:
         c_w.writelines(lines)
@@ -79,7 +80,9 @@ def add_changelog_section_header(v: str, squash=False):
                 ]
             )
         else:
-            debug(f"squashed_empty_section='{input_lines[CHANGELOG_HEADER_LINE].strip()}'")
+            debug(
+                f"squashed_empty_section='{input_lines[CHANGELOG_HEADER_LINE].strip()}'"
+            )
 
     output_lines.extend(input_lines[pos_after:])
 
