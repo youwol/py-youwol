@@ -27,6 +27,8 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 TG-2057
 TG-2058
 TG-2046
+TG-1968
+TG-2044
 -->
 
 ## [0.1.7.dev] - Unreleased

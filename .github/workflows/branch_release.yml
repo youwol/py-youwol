@@ -18,14 +18,14 @@ jobs:
     steps:
       - name: Checkout
         id: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.PAT_NESTOR_PYYOUWOL_PUSH }}
           ref: main
 
       - name: Prepare Python 3.12
         id: prepare_python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
           cache: 'pip'
@@ -89,7 +89,7 @@ jobs:
     steps:
       - name: Checkout
         id: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Create Pull Request
         id: create_pr
