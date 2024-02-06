@@ -21,39 +21,39 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 ### Added
 
--   New Py-youwol documentation application **@youwol/py-youwol-doc**<!-- (TG-1923, TG-1924, TG-1925, TG-1951, TG-1952, TG-1961) -->
+-   New Py-youwol documentation application **@youwol/py-youwol-doc** <!-- TG-1923, TG-1924, TG-1925, TG-1951, TG-1952, TG-1961 -->
 
 ### Changed
 
--   Improve authentication for HTTP clients <!-- (TG-1874) -->
--   Improve error management during projects load <!-- (TG-1878) -->
+-   Improve authentication for HTTP clients <!-- TG-1874 -->
+-   Improve error management during projects load <!-- TG-1878 -->
 -   **Pipeline Typescript**:
-    -   improve step custom views API <!-- (TG-1862) -->
-    -   use caret range for shared configuration dependencies <!-- (TG-1912) -->
-    -   upgrade shared configuration `^1.2.0` for latest dependencies: <!-- (TG-1954, TG-1980) -->
+    -   improve step custom views API <!-- TG-1862 -->
+    -   use caret range for shared configuration dependencies <!-- TG-1912 -->
+    -   upgrade shared configuration `^1.2.0` for latest dependencies: <!-- TG-1954, TG-1980 -->
         -   Typescript `^5.3.3`
         -   Jest `^29.5.11`
         -   ESlint `8.56.0`
         -   Prettier `^3.2.4`
 -   **Docker images**:
-    -   use Python 3.12 <!-- (TG-1848, TG-1850) -->
-    -   run as non-privileged user <!-- (TG-1957) -->
+    -   use Python 3.12 <!-- TG-1848, TG-1850 -->
+    -   run as non-privileged user <!-- TG-1957 -->
 
 ### Fixed
 
--   Reduce verbosity in terminal when creating project <!-- (TG-1735) -->
+-   Reduce verbosity in terminal when creating project <!-- TG-1735 -->
 -   **Pipeline Typescript**:
-    -   allow modifying dependency defined by pipeline using `template.py` <!-- (TG-1911) -->
-    -   format `src/test/fake.ts` <!-- (TG-1706) -->
+    -   allow modifying dependency defined by pipeline using `template.py` <!-- TG-1911 -->
+    -   format `src/test/fake.ts` <!-- TG-1706 -->
     -   pin `@types/node` to `18.19.9`
-        for applications until [chokidar issue #1299](https://github.com/paulmillr/chokidar/issues/1299) is resolved <!-- (TG-1983) -->
+        for applications until [chokidar issue #1299](https://github.com/paulmillr/chokidar/issues/1299) is resolved <!-- TG-1983 -->
 
 ### Security
 
 -   **Dependencies vulnerabilities**:
-    -   [CVE-2023-26159] upgrade `follow-redirects` to 1.15.5 <!-- (TG-1906) -->
-    -   [CVE-2024-23334] upgrade `aiohttp` to 3.9.2 <!-- (TG-1984) -->
-    -   [CVE-2024-23829] upgrade `aiohttp` to 3.9.2 <!-- (TG-1984) -->
+    -   [CVE-2023-26159] upgrade `follow-redirects` to 1.15.5 <!-- TG-1906 -->
+    -   [CVE-2024-23334] upgrade `aiohttp` to 3.9.2 <!-- TG-1984 -->
+    -   [CVE-2024-23829] upgrade `aiohttp` to 3.9.2 <!-- TG-1984 -->
 
 <!-- Not worthy of inclusion
 TG-1881
