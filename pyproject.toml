@@ -25,7 +25,7 @@ dependencies = [
     "colorlog",
     "cowpy>=1.1.5,<2.0.0",
     "deepdiff>=5.8.1,<6.0.0",
-    "fastapi>=0.95.0,<0.96.0",
+    "fastapi>=0.109.1,<0.110.0",
     "keyring>=24.2.0,<25.0.0",
     "minio>=7.1.9,<8.0.0",
     "Pillow",
