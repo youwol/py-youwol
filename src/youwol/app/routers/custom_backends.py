@@ -1,11 +1,6 @@
 # standard library
 import inspect
 
-from collections.abc import Awaitable, Callable
-
-# typing
-from typing import Union, cast
-
 # third parties
 from fastapi import APIRouter, FastAPI
 
@@ -18,14 +13,7 @@ router = APIRouter()
 
 async def install_routers(routers: list[FastApiRouter], ctx: Context):
     for r in routers:
-        type_fct = Callable[[Context], Union[APIRouter, Awaitable[APIRouter]]]
-        # Not sure why the typing.cast below is required
-        # r.router is of type Union[APIRouter, type_fct] (see FastApiRouter)
-        child_router = (
-            r.router
-            if isinstance(r.router, APIRouter)
-            else cast(r.router, type_fct)(ctx)
-        )
+        child_router = r.router
         if inspect.isawaitable(child_router):
             child_router = await child_router
         router.include_router(router=child_router, prefix=r.base_path, tags=[])
