@@ -201,8 +201,10 @@ pycryptodome==3.19.1
     # via
     #   minio
     #   youwol (pyproject.toml)
-pydantic==1.10.9
-    # via fastapi
+pydantic==1.10.14
+    # via
+    #   fastapi
+    #   youwol (pyproject.toml)
 pydocstyle==6.3.0
     # via youwol (pyproject.toml)
 pygments==2.17.2
