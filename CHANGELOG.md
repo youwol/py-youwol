@@ -23,6 +23,10 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
     -   [CVE-2023-50782] upgrade `cryptography` to 42.0.2 <!-- TG-2049 -->
     -   [CVE-2024-24762] upgrade `fastapi` to 0.109.2, `starlette` to 0.36.3 <!-- TG-2047, TG-2048 -->
 
+<!-- Not worthy of inclusion
+TG-2057
+-->
+
 ## [0.1.7rc] − 2024-02-05
 
 ### Added
