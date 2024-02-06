@@ -267,13 +267,43 @@ jobs:
           yarn -s test --reporters=default --reporters=github-actions
         shell: sh
 
+  pipeline_ts:
+    name: Pipeline Typescript
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare repository
+        id: prepare
+        uses: youwol/nestor/py-youwol/prepare@v3
+
+      - name: Prepare todo-app-ts repository
+        id: prepare_todo-app-ts
+        uses: youwol/nestor/ts/prepare@v3
+        with:
+          repository: youwol/todo-app-ts
+          ref: ${{ inputs.todo-app-ts_ref }}
+          path: ${{ runner.temp }}/todo-app-ts
+
+      - name: Build todo-app-ts
+        id: build_todo-app-ts
+        uses: youwol/nestor/ts/build@v3
+        with:
+          skip: ${{ inputs.skip }}
+
+  doc_app:
+    name: Doc App
+    uses: ./.github/workflows/subdir_typescript.yml
+    with:
+      directory: doc
+
 
   publish:
     name: Publish ${{ needs.build.outputs.version }}
     runs-on: ubuntu-latest
     needs:
       - build
+      - pipeline_ts
       - tests
+      - doc_app
 
     steps:
       - name: Checkout release branch
