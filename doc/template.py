@@ -1,5 +1,4 @@
 # standard library
-import functools
 import shutil
 import tomllib
 
