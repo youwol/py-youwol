@@ -204,7 +204,6 @@ ignore_missing_imports = true
 
 [tool.pylint]
 disable = [
-    "E1102",
     "W0707",
     "W0719",
     "W0718",
