@@ -126,7 +126,7 @@ jobs:
         uses: youwol/nestor/ts/prepare@v3
         with:
           repository: youwol/todo-app-ts
-          ref: bug/ts-node-20-for-apps
+          ref: ${{ inputs.todo-app-ts_ref }}
           path: ${{ runner.temp }}/todo-app-ts
 
       - name: Build todo-app-ts
