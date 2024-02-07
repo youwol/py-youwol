@@ -1,9 +1,6 @@
 # standard library
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-
-# typing
-from typing import Callable, Optional, Union
 
 # Youwol utilities
 from youwol.utils import FileSystemInterface, Storage
@@ -51,11 +48,11 @@ class Configuration:
     NoSql client for this [table](@yw-nav-glob:youwol.utils.http_clients.assets_backend.models.ACCESS_POLICY)
     included in this [namespace](@yw-nav-attr:youwol.backends.assets.configurations.Constants.namespace).
     """
-    admin_headers: Optional[dict[str, str]] = None
+    admin_headers: dict[str, str] | None = None
 
 
 class Dependencies:
-    get_configuration: Callable[[], Union[Configuration, Awaitable[Configuration]]]
+    get_configuration: Callable[[], Configuration | Awaitable[Configuration]]
 
 
 async def get_configuration():

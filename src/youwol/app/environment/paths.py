@@ -2,9 +2,6 @@
 from importlib import resources
 from pathlib import Path
 
-# typing
-from typing import Optional, Union
-
 # third parties
 from appdirs import AppDirs
 from pydantic import BaseModel
@@ -90,12 +87,12 @@ class PathsBook(BaseModel):
         return self.store_node_modules / target_name
 
     @staticmethod
-    def node_modules(target_folder: Union[Path, str]) -> Path:
+    def node_modules(target_folder: Path | str) -> Path:
         return Path(target_folder) / "node_modules"
 
     @classmethod
     def node_module_dependency(
-        cls, target_folder: Union[Path, str], dependency_name: str
+        cls, target_folder: Path | str, dependency_name: str
     ) -> Path:
         if "/" in dependency_name:
             namespace, name = dependency_name.split("/")
@@ -183,7 +180,7 @@ class PathsBook(BaseModel):
 app_dirs = AppDirs(appname="py-youwol", appauthor="Youwol")
 
 
-def ensure_config_file_exists_or_create_it(path: Optional[Path]) -> (Path, bool):
+def ensure_config_file_exists_or_create_it(path: Path | None) -> (Path, bool):
     path = path if path else Path("config.py")
     (final_path, exists) = existing_path_or_default(
         path,

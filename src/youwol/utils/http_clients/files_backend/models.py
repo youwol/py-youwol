@@ -1,5 +1,4 @@
 # typing
-from typing import Optional
 
 # third parties
 from pydantic import BaseModel
@@ -63,15 +62,15 @@ class PostMetadataBody(BaseModel):
     Body to update file's metadata.
     """
 
-    fileName: Optional[str] = None
+    fileName: str | None = None
     """
     File's name.
     """
-    contentType: Optional[str] = None
+    contentType: str | None = None
     """
     Content type.
     """
-    contentEncoding: Optional[str] = None
+    contentEncoding: str | None = None
     """
     Content encoding.
     """

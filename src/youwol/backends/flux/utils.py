@@ -10,7 +10,7 @@ from collections.abc import Coroutine, Mapping
 from pathlib import Path
 
 # typing
-from typing import Any, Union
+from typing import Any
 
 # third parties
 from fastapi import HTTPException, UploadFile
@@ -198,7 +198,7 @@ def update_metadata(
 
 async def retrieve_project(
     project_id: str,
-    owner: Union[None, str],
+    owner: None | str,
     storage: Storage,
     headers: Mapping[str, str],
 ) -> Project:
@@ -330,7 +330,7 @@ async def update_component(
 
 async def retrieve_component(
     component_id: str,
-    owner: Union[None, str],
+    owner: None | str,
     storage: Storage,
     doc_db_component: DocDb,
     headers: Mapping[str, str],
@@ -385,9 +385,7 @@ async def retrieve_component(
     return component
 
 
-def extract_zip_file(
-    file: UploadFile, zip_path: Union[Path, str], dir_path: Union[Path, str]
-):
+def extract_zip_file(file: UploadFile, zip_path: Path | str, dir_path: Path | str):
     dir_path = str(dir_path)
     with open(zip_path, "ab") as f:
         for chunk in iter(lambda: file.file.read(10000), b""):

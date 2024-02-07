@@ -3,9 +3,6 @@ import os
 
 from pathlib import Path
 
-# typing
-from typing import List
-
 # Youwol utilities
 from youwol.utils import JSON
 from youwol.utils.clients.oidc.oidc_config import PublicClient
@@ -56,7 +53,7 @@ TokensStorageSystemKeyring.path</a>>
 default_port_range_start: int = 3000
 default_port_range_end: int = 4000
 default_jwt_source: str = "config"
-default_ignored_paths: List[str] = [
+default_ignored_paths: list[str] = [
     "**/dist",
     "**/py-youwol/src",
     "**/node_modules",

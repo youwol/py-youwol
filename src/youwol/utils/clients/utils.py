@@ -6,7 +6,7 @@ import json
 from collections.abc import Mapping
 
 # typing
-from typing import NamedTuple, Union
+from typing import NamedTuple
 
 # third parties
 from aiohttp import ClientResponse
@@ -14,7 +14,7 @@ from aiohttp import ClientResponse
 
 class GroupInfo(NamedTuple):
     id: str
-    owner: Union[str, None]
+    owner: str | None
     scope: str
 
 
@@ -38,7 +38,7 @@ def to_group_scope(group_id: str) -> str:
     return base64.urlsafe_b64decode(b).decode()
 
 
-def to_group_owner(group_id: str) -> Union[str, None]:
+def to_group_owner(group_id: str) -> str | None:
     if "private" in group_id:
         return None
     b = str.encode(group_id)

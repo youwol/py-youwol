@@ -5,7 +5,7 @@ import json
 from collections.abc import Mapping
 
 # typing
-from typing import Any, Union
+from typing import Any
 
 # third parties
 from fastapi import HTTPException
@@ -23,14 +23,14 @@ from youwol.utils.http_clients.tree_db_backend import (
 from .configurations import Configuration, Constants
 
 
-def to_group_id(group_path: Union[str, None]) -> str:
+def to_group_id(group_path: str | None) -> str:
     if group_path == "private" or group_path is None:
         return "private"
     b = str.encode(group_path)
     return base64.urlsafe_b64encode(b).decode()
 
 
-def to_owner(group_id: str) -> Union[str, None]:
+def to_owner(group_id: str) -> str | None:
     if group_id == "private":
         return None
     b = str.encode(group_id)
@@ -39,7 +39,7 @@ def to_owner(group_id: str) -> Union[str, None]:
 
 async def get_group(
     primary_key: str,
-    primary_value: Union[str, float, int, bool],
+    primary_value: str | float | int | bool,
     groups: list[str],
     doc_db: DocDb,
     headers: Mapping[str, str],

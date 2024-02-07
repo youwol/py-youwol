@@ -4,7 +4,7 @@ import traceback
 from abc import ABC, abstractmethod
 
 # typing
-from typing import Optional, Union, cast
+from typing import cast
 
 # third parties
 from pydantic import BaseModel
@@ -55,37 +55,35 @@ def url_match(request: Request, pattern: str):
 
 
 class RequestInfo(BaseModel):
-    message: Optional[str]
+    message: str | None
     attributes: dict[str, str] = {}
     labels: list[Label] = []
 
 
 class RequestInfoExtractor(ABC):
     @abstractmethod
-    def extract(self, request: Request) -> Optional[RequestInfo]:
+    def extract(self, request: Request) -> RequestInfo | None:
         return NotImplemented
 
 
 class PatternRequestInfoExtractor(RequestInfoExtractor):
     pattern: str
 
-    def extract(self, request: Request) -> Optional[RequestInfo]:
+    def extract(self, request: Request) -> RequestInfo | None:
         match, substitutes = url_match(request=request, pattern=self.pattern)
         if not match:
             return None
         return self.extract_from_pattern(substitutes)
 
     @abstractmethod
-    def extract_from_pattern(
-        self, substitutes: list[Union[str, list[str]]]
-    ) -> RequestInfo:
+    def extract_from_pattern(self, substitutes: list[str | list[str]]) -> RequestInfo:
         return NotImplemented
 
 
 class All(PatternRequestInfoExtractor):
     pattern = "*:/**"
 
-    def extract_from_pattern(self, substitutes: list[Union[str, list[str]]]):
+    def extract_from_pattern(self, substitutes: list[str | list[str]]):
         casted = cast(tuple[str, list[str]], substitutes)
         [method, messages] = casted
         if len(messages) != 0:
@@ -98,7 +96,7 @@ class All(PatternRequestInfoExtractor):
 class Api(PatternRequestInfoExtractor):
     pattern = "*:/api/**"
 
-    def extract_from_pattern(self, substitutes: list[Union[str, list[str]]]):
+    def extract_from_pattern(self, substitutes: list[str | list[str]]):
         casted = cast(tuple[str, list[str]], substitutes)
         [_method, [service, *_parts, last]] = casted
         return RequestInfo(message=last, attributes={"service": service})

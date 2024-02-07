@@ -1,9 +1,9 @@
 # standard library
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
 # typing
-from typing import Callable, Optional, Union
+from typing import Union
 
 # Youwol utilities
 from youwol.utils import (
@@ -70,11 +70,11 @@ class Configuration:
     doc_db_stories: DocDb
     doc_db_documents: DocDb
     assets_gtw_client: AssetsGatewayClient
-    admin_headers: Optional[dict[str, str]] = None
+    admin_headers: dict[str, str] | None = None
 
 
 class Dependencies:
-    get_configuration: Callable[[], Union[Configuration, Awaitable[Configuration]]]
+    get_configuration: Callable[[], Configuration | Awaitable[Configuration]]
 
 
 async def get_configuration():

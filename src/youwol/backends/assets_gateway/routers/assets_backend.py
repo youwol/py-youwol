@@ -1,9 +1,6 @@
 # standard library
 import uuid
 
-# typing
-from typing import Optional
-
 # third parties
 from aiohttp import ClientResponse
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -45,7 +42,7 @@ router = APIRouter(tags=["assets-gateway.flux-backend"])
 
 
 class NewEmptyAssetBody(BaseModel):
-    rawId: Optional[str]
+    rawId: str | None
     kind: str
     name: str = ""
     description: str = ""

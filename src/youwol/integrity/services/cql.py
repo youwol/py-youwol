@@ -1,5 +1,4 @@
 # typing
-from typing import Optional
 
 # third parties
 from cassandra import query
@@ -19,5 +18,5 @@ class CqlSession:
     def prepare(self, keyspace: str, q: str):
         return self.cassandra_session.prepare(keyspace=keyspace, query=q)
 
-    def execute(self, q: str, values: Optional[list] = None):
+    def execute(self, q: str, values: list | None = None):
         return self.cassandra_session.execute(query=q, parameters=values)

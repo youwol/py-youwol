@@ -2,7 +2,7 @@
 import json
 
 # typing
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 # third parties
 from fastapi import HTTPException
@@ -29,7 +29,7 @@ class PostMetadataDeprecated(AbstractLocalCloudDispatch):
         incoming_request: Request,
         call_next: RequestResponseEndpoint,
         context: Context,
-    ) -> Optional[Response]:
+    ) -> Response | None:
         match, replaced = url_match(
             request=incoming_request, pattern="POST:/api/assets-gateway/assets/*"
         )
@@ -78,7 +78,7 @@ class CreateAssetDeprecated(AbstractLocalCloudDispatch):
         incoming_request: Request,
         call_next: RequestResponseEndpoint,
         context: Context,
-    ) -> Optional[Response]:
+    ) -> Response | None:
         match, replaced = url_match(
             request=incoming_request,
             pattern="PUT:/api/assets-gateway/assets/*/location/*",

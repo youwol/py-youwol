@@ -10,7 +10,7 @@ from os import PathLike
 from pathlib import Path
 
 # typing
-from typing import Optional, Union, cast
+from typing import cast
 
 # third parties
 from fastapi import HTTPException
@@ -39,7 +39,7 @@ class LocalStorageClient:
     def bucket_path(self) -> Path:
         return self.root_path / self.bucket_name
 
-    def get_full_path(self, owner: str, path: Union[str, Path]) -> Path:
+    def get_full_path(self, owner: str, path: str | Path) -> Path:
         return self.bucket_path / owner[1:] / path
 
     async def delete_bucket(self, **_kwargs):
@@ -53,7 +53,7 @@ class LocalStorageClient:
         return True
 
     async def post_file(
-        self, form: FileData, headers: Optional[Mapping[str, str]] = None, **_kwargs
+        self, form: FileData, headers: Mapping[str, str] | None = None, **_kwargs
     ):
         if not headers:
             headers = {}
@@ -67,10 +67,10 @@ class LocalStorageClient:
 
     async def post_object(
         self,
-        path: Union[Path, str],
+        path: Path | str,
         content: bytes,
-        owner: Optional[str],
-        headers: Optional[Mapping[str, str]] = None,
+        owner: str | None,
+        headers: Mapping[str, str] | None = None,
         **_kwargs,
     ):
         if not headers:
@@ -88,10 +88,10 @@ class LocalStorageClient:
 
     async def post_json(
         self,
-        path: Union[str, Path],
+        path: str | Path,
         json: JSON,
-        owner: Optional[str],
-        headers: Optional[Mapping[str, str]] = None,
+        owner: str | None,
+        headers: Mapping[str, str] | None = None,
         **_kwargs,
     ):
         if not headers:
@@ -106,10 +106,10 @@ class LocalStorageClient:
 
     async def post_text(
         self,
-        path: Union[str, Path],
+        path: str | Path,
         text,
-        owner: Optional[str],
-        headers: Optional[Mapping[str, str]] = None,
+        owner: str | None,
+        headers: Mapping[str, str] | None = None,
         **_kwargs,
     ):
         if not headers:
@@ -124,9 +124,9 @@ class LocalStorageClient:
 
     async def delete_group(
         self,
-        prefix: Union[Path, str],
-        owner: Optional[str],
-        headers: Optional[Mapping[str, str]] = None,
+        prefix: Path | str,
+        owner: str | None,
+        headers: Mapping[str, str] | None = None,
         **_kwargs,
     ):
         if not headers:
@@ -140,9 +140,9 @@ class LocalStorageClient:
 
     async def delete(
         self,
-        path: Union[str, Path],
-        owner: Optional[str],
-        headers: Optional[Mapping[str, str]] = None,
+        path: str | Path,
+        owner: str | None,
+        headers: Mapping[str, str] | None = None,
         **_kwargs,
     ):
         if not headers:
@@ -165,9 +165,9 @@ class LocalStorageClient:
 
     async def list_files(
         self,
-        prefix: Union[str, Path],
-        owner: Optional[str],
-        headers: Optional[Mapping[str, str]] = None,
+        prefix: str | Path,
+        owner: str | None,
+        headers: Mapping[str, str] | None = None,
         **_kwargs,
     ):
         if not headers:
@@ -183,9 +183,9 @@ class LocalStorageClient:
 
     async def get_bytes(
         self,
-        path: Union[str, Path],
-        owner: Optional[str],
-        headers: Optional[Mapping[str, str]] = None,
+        path: str | Path,
+        owner: str | None,
+        headers: Mapping[str, str] | None = None,
         **_kwargs,
     ):
         if not headers:
@@ -201,9 +201,9 @@ class LocalStorageClient:
 
     async def get_json(
         self,
-        path: Union[str, Path],
-        owner: Optional[str],
-        headers: Optional[Mapping[str, str]] = None,
+        path: str | Path,
+        owner: str | None,
+        headers: Mapping[str, str] | None = None,
         **kwargs,
     ):
         return _json.loads(await self.get_bytes(path, owner, headers, **kwargs))
@@ -211,8 +211,8 @@ class LocalStorageClient:
     async def get_text(
         self,
         path: str,
-        owner: Optional[str],
-        headers: Optional[Mapping[str, str]] = None,
+        owner: str | None,
+        headers: Mapping[str, str] | None = None,
         **kwargs,
     ):
         raw = await self.get_bytes(path, owner, headers, **kwargs)

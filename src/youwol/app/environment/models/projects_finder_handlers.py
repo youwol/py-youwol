@@ -5,11 +5,9 @@ import itertools
 import time
 import traceback
 
+from collections.abc import Callable
 from pathlib import Path
 from threading import Thread
-
-# typing
-from typing import Callable, Optional, Union
 
 # third parties
 from watchdog.events import (
@@ -35,13 +33,13 @@ from youwol.utils import Context, log_info
 
 
 class ExplicitProjectsFinderHandler(ProjectsFinderHandler):
-    paths: Union[list[ConfigPath], Callable[[PathsBook], list[ConfigPath]]]
+    paths: list[ConfigPath] | Callable[[PathsBook], list[ConfigPath]]
     paths_book: PathsBook
     on_projects_count_update: OnProjectsCountUpdate
 
     def __init__(
         self,
-        paths: Union[list[ConfigPath], Callable[[], list[ConfigPath]]],
+        paths: list[ConfigPath] | Callable[[], list[ConfigPath]],
         paths_book: PathsBook,
         on_projects_count_update: OnProjectsCountUpdate,
     ):
@@ -113,7 +111,7 @@ class RecursiveFinderEventHandler(FileSystemEventHandler):
         if project_path:
             asyncio.run(self.on_projects_count_update(([], [project_path])))
 
-    def project_path(self, event: FileSystemEvent) -> Optional[Path]:
+    def project_path(self, event: FileSystemEvent) -> Path | None:
         if not any(
             isinstance(event, Type) for Type in [DirCreatedEvent, DirDeletedEvent]
         ):
@@ -195,7 +193,7 @@ class RecursiveProjectFinderHandler(ProjectsFinderHandler):
     ignored_patterns = list[str]
     paths_book: PathsBook
     on_projects_count_update: OnProjectsCountUpdate
-    thread: Optional[RecursiveProjectsFinderThread]
+    thread: RecursiveProjectsFinderThread | None
 
     def __init__(
         self,

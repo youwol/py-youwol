@@ -1,5 +1,4 @@
 # typing
-from typing import Optional
 
 # third parties
 from starlette.requests import Request
@@ -47,7 +46,7 @@ class WebpackDevServerSwitch(CdnSwitch):
 
     async def switch(
         self, incoming_request: Request, context: Context
-    ) -> Optional[Response]:
+    ) -> Response | None:
         # for webpack dev server, there are three kinds of resources:
         #   - the one built by webpack (dynamic): they are served from the 'root'
         #     For instance: '/dist/bundles.js will be served at localhost:xxxx/bundle.js

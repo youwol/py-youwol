@@ -3,9 +3,6 @@ import asyncio
 import datetime
 import functools
 
-# typing
-from typing import Optional
-
 # Youwol application
 from youwol.app.routers.projects.models_project import (
     FlowId,
@@ -66,7 +63,7 @@ class PublishNpmStep(PipelineStep):
         self,
         project: Project,
         flow_id: str,
-        last_manifest: Optional[Manifest],
+        last_manifest: Manifest | None,
         context: Context,
     ) -> PipelineStepStatus:
         async with context.start(

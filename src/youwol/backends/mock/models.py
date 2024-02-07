@@ -1,5 +1,4 @@
 # typing
-from typing import Optional
 
 # third parties
 from pydantic import BaseModel
@@ -8,7 +7,7 @@ methods = ["GET", "POST", "PUT", "DELETE"]
 
 
 class Body(BaseModel):
-    mimeType: Optional[str]
+    mimeType: str | None
     contentBase64: str
 
 
@@ -29,11 +28,11 @@ class Response(BaseModel):
 
 class Request(BaseModel):
     timestamp: int
-    ip: Optional[str]
+    ip: str | None
     method: str
     url: str
     headers: dict[str, list[str]]
-    body: Optional[Body]
+    body: Body | None
 
 
 class Handler(BaseModel):

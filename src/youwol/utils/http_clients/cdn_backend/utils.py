@@ -4,9 +4,6 @@ import base64
 from collections.abc import Iterable
 from pathlib import Path
 
-# typing
-from typing import Optional
-
 # third parties
 import brotli
 
@@ -26,7 +23,7 @@ def is_fixed_version(version: str):
 
 async def resolve_version(
     name: str, version: str, versions: Iterable[str], context: Context
-) -> Optional[str]:
+) -> str | None:
     async with context.start(
         action="resolve_version", with_attributes={"library": name}
     ) as ctx:

@@ -9,7 +9,7 @@ from pathlib import Path
 from threading import Lock
 
 # typing
-from typing import Any, Optional, Union
+from typing import Any
 
 # third parties
 from fastapi import HTTPException
@@ -134,7 +134,7 @@ class LocalDocDbClient:
         self,
         partition_keys: dict[str, Any],
         clustering_keys: dict[str, Any],
-        owner: Optional[str] = None,
+        owner: str | None = None,
         allow_filtering: bool = False,
         **kwargs,
     ) -> AnyDict:
@@ -186,9 +186,9 @@ class LocalDocDbClient:
 
     async def query(
         self,
-        query_body: Union[QueryBody, str],
-        owner: Union[str, None],
-        headers: Optional[Mapping[str, str]] = None,
+        query_body: QueryBody | str,
+        owner: str | None,
+        headers: Mapping[str, str] | None = None,
         **_kwargs,
     ) -> AnyDict:
         """
@@ -251,8 +251,8 @@ class LocalDocDbClient:
     async def create_document(
         self,
         doc: AnyDict,
-        owner: Optional[str] = None,
-        headers: Optional[dict[str, str]] = None,
+        owner: str | None = None,
+        headers: dict[str, str] | None = None,
         **_kwargs,
     ):
         """
@@ -272,8 +272,8 @@ class LocalDocDbClient:
     async def update_document(
         self,
         doc: AnyDict,
-        owner: Optional[str] = None,
-        headers: Optional[dict[str, str]] = None,
+        owner: str | None = None,
+        headers: dict[str, str] | None = None,
         **_kwargs,
     ):
         """
@@ -311,8 +311,8 @@ class LocalDocDbClient:
     async def delete_document(
         self,
         doc: dict[str, Any],
-        owner: Optional[str] = None,
-        headers: Optional[Mapping[str, str]] = None,
+        owner: str | None = None,
+        headers: Mapping[str, str] | None = None,
         **_kwargs,
     ):
         """

@@ -2,9 +2,6 @@
 from abc import ABC, abstractmethod
 from urllib import parse
 
-# typing
-from typing import Optional, Union
-
 # third parties
 from jwt import InvalidTokenError, PyJWKClientError
 from starlette.middleware.base import (
@@ -30,7 +27,7 @@ class JwtProvider(ABC):
     @abstractmethod
     async def get_token_and_openid_base_url(
         self, request: Request, context: Context
-    ) -> tuple[Optional[str], str]:
+    ) -> tuple[str | None, str]:
         """
         Abstract method declaration to retrieve JWT token.
 
@@ -60,7 +57,7 @@ class JwtProviderBearer(JwtProvider):
 
     async def get_token_and_openid_base_url(
         self, request: Request, context: Context
-    ) -> tuple[Optional[str], str]:
+    ) -> tuple[str | None, str]:
         """
         Extract the JWT token from the header 'Authorization' with bearer.
 
@@ -113,7 +110,7 @@ class JwtProviderCookie(JwtProvider):
 
     async def get_token_and_openid_base_url(
         self, request: Request, context: Context
-    ) -> tuple[Optional[str], str]:
+    ) -> tuple[str | None, str]:
         """
         Extract the JWT token from the request's cookie using
         [__tokens_manager](@yw-nav-attr:youwol.utils.middlewares.authentication.JwtProviderBearer.__tokens_manager).
@@ -151,12 +148,12 @@ class AuthMiddleware(BaseHTTPMiddleware):
     def __init__(
         self,
         app: ASGIApp,
-        jwt_providers: Union[JwtProvider, list[JwtProvider]],
+        jwt_providers: JwtProvider | list[JwtProvider],
         predicate_public_path=lambda url: False,
         on_missing_token=lambda url, text: Response(
             content=f"Authentication failure : {text}", status_code=403
         ),
-        dispatch: Optional[DispatchFunction] = None,
+        dispatch: DispatchFunction | None = None,
     ):
         """
         Initialize a new instance.

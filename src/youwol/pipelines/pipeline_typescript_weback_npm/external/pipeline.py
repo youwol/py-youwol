@@ -1,9 +1,6 @@
 # standard library
 from pathlib import Path
 
-# typing
-from typing import Optional
-
 # third parties
 from pydantic import BaseModel
 
@@ -58,8 +55,8 @@ class PipelineConfig(BaseModel):
     target: JsBundle = JsBundle(
         links=[Link(name="bundle-analysis", url="dist/bundle-analysis.html")]
     )
-    customInitStep: Optional[PipelineStep] = None
-    customBuildStep: Optional[PipelineStep] = None
+    customInitStep: PipelineStep | None = None
+    customBuildStep: PipelineStep | None = None
     publishConfig: PublishConfig = PublishConfig(packagedArtifacts=["dist"])
 
 

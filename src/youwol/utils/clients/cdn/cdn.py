@@ -6,9 +6,6 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
-# typing
-from typing import Optional, Union
-
 # third parties
 from aiohttp import FormData
 
@@ -22,7 +19,7 @@ from youwol.utils.clients.request_executor import (
 from youwol.utils.types import JSON
 
 
-def md5_update_from_file(filename: Union[str, Path], current_hash):
+def md5_update_from_file(filename: str | Path, current_hash):
     with open(str(filename), "rb") as f:
         for chunk in iter(lambda: f.read(4096), b""):
             current_hash.update(chunk)
@@ -82,7 +79,7 @@ class CdnClient:
     def push_url(self):
         return f"{self.url_base}/publish_libraries"
 
-    async def query_packs(self, namespace: Optional[str] = None, **kwargs):
+    async def query_packs(self, namespace: str | None = None, **kwargs):
         url = (
             self.packs_url
             if not namespace
@@ -121,7 +118,7 @@ class CdnClient:
             **kwargs,
         )
 
-    async def get_json(self, url: Union[Path, str], **kwargs):
+    async def get_json(self, url: Path | str, **kwargs):
         return await self.request_executor.get(
             url=f"{self.url_base}/{str(url)}",
             default_reader=json_reader,
@@ -131,8 +128,8 @@ class CdnClient:
     async def get_library_info(
         self,
         library_id: str,
-        semver: Optional[str] = None,
-        max_count: Optional[int] = None,
+        semver: str | None = None,
+        max_count: int | None = None,
         **kwargs,
     ):
         """
@@ -193,7 +190,7 @@ class CdnClient:
             **kwargs,
         )
 
-    async def publish_libraries(self, zip_path: Union[Path, str], **kwargs):
+    async def publish_libraries(self, zip_path: Path | str, **kwargs):
         with open(zip_path, "rb") as fp:
             return await self.request_executor.post(
                 url=self.push_url,

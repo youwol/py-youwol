@@ -7,9 +7,6 @@ from contextlib import AbstractContextManager
 from json import JSONDecodeError
 from pathlib import Path
 
-# typing
-from typing import Optional
-
 # Youwol utilities
 from youwol.utils.clients.oidc.tokens_manager import TokensData, TokensStorage
 
@@ -82,7 +79,7 @@ class TokensStoragePathBase(TokensStorage, ABC):
     async def _reset(self) -> None:
         pass
 
-    async def get(self, tokens_id: str) -> Optional[TokensData]:
+    async def get(self, tokens_id: str) -> TokensData | None:
         with atomic_access:
             if tokens_id not in self.__tokens_data:
                 return None
@@ -96,9 +93,7 @@ class TokensStoragePathBase(TokensStorage, ABC):
                 del self.__session_ids[session_id]
             await self.__save_data()
 
-    async def get_by_sid(
-        self, session_id: str
-    ) -> tuple[Optional[str], Optional[TokensData]]:
+    async def get_by_sid(self, session_id: str) -> tuple[str | None, TokensData | None]:
         with atomic_access:
             if session_id not in self.__session_ids:
                 return None, None

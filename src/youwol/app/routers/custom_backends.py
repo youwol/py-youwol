@@ -1,10 +1,10 @@
 # standard library
 import inspect
 
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Callable
 
 # typing
-from typing import Callable, Union, cast
+from typing import Union, cast
 
 # third parties
 from fastapi import APIRouter, FastAPI

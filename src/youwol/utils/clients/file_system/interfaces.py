@@ -5,9 +5,6 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from dataclasses import dataclass
 
-# typing
-from typing import Optional
-
 # third parties
 from pydantic import BaseModel
 
@@ -37,17 +34,17 @@ class Metadata(BaseModel):
     [FileSystemInterface](@yw-nav-class:youwol.utils.clients.file_system.interfaces.FileSystemInterface).
     """
 
-    fileName: Optional[str]
+    fileName: str | None
     """
     Filename.
     """
 
-    contentType: Optional[str]
+    contentType: str | None
     """
     Content type.
     """
 
-    contentEncoding: Optional[str]
+    contentEncoding: str | None
     """
     Content encoding.
     """
@@ -121,7 +118,7 @@ class FileSystemInterface(ABC):
     async def get_object(
         self,
         object_id: str,
-        ranges_bytes: Optional[list[tuple[int, int]]] = None,
+        ranges_bytes: list[tuple[int, int]] | None = None,
         **kwargs: AnyDict,
     ) -> bytes:
         """

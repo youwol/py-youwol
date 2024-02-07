@@ -5,7 +5,7 @@ import json
 from collections.abc import Mapping
 
 # typing
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 # third parties
 from aiohttp import ClientSession, FormData
@@ -244,7 +244,7 @@ async def synchronize_metadata(
 async def upload_asset(
     remote_assets_gtw: AssetsGatewayClient,
     asset_id: str,
-    options: Optional[Any],
+    options: Any | None,
     context: Context,
 ):
     upload_factories: dict[str, any] = {

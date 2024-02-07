@@ -4,9 +4,6 @@ import json
 
 from timeit import default_timer as timer
 
-# typing
-from typing import Optional
-
 # third parties
 import aiohttp
 
@@ -31,7 +28,7 @@ from youwol.utils.http_clients.cdn_backend.utils import encode_extra_index
 from .abstract_local_cloud_dispatch import AbstractLocalCloudDispatch
 
 
-async def get_extra_index(context: Context) -> Optional[str]:
+async def get_extra_index(context: Context) -> str | None:
     """
     This function retrieves the items from the local CDN database that can be involved when resolving loading graphs
     (when queried from the remote `cdn-backend`).
@@ -89,7 +86,7 @@ class GetLoadingGraph(AbstractLocalCloudDispatch):
         incoming_request: Request,
         call_next: RequestResponseEndpoint,
         context: Context,
-    ) -> Optional[Response]:
+    ) -> Response | None:
         """
         This dispatch match the endpoint `/api/assets-gateway/cdn-backend/queries/loading-graph`;
         it returns `None` otherwise.

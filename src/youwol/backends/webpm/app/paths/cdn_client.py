@@ -1,5 +1,4 @@
 # typing
-from typing import Optional
 
 # third parties
 from fastapi.param_functions import Depends
@@ -59,9 +58,9 @@ async def get_cdn_client_js_map(
 @router.get("/cdn-client.config.json")
 async def get_cdn_client_config_default_version(
     response: Response,
-    if_none_match: Optional[TypedHeader] = None,
+    if_none_match: TypedHeader | None = None,
     deps: Dependencies = Depends(dependenciesFactory),
-) -> Optional[ClientConfig]:
+) -> ClientConfig | None:
     return get_client_config(
         response=response,
         if_none_match=if_none_match,
@@ -72,7 +71,7 @@ async def get_cdn_client_config_default_version(
 @router.get("/{version}/cdn-client.config.json")
 async def get_cdn_client_config(
     response: Response,
-    if_none_match: Optional[TypedHeader] = None,
+    if_none_match: TypedHeader | None = None,
     deps: Dependencies = Depends(dependenciesFactory),
-) -> Optional[ClientConfig]:
+) -> ClientConfig | None:
     return get_client_config(response=response, if_none_match=if_none_match, deps=deps)

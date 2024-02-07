@@ -1,5 +1,4 @@
 # typing
-from typing import Optional
 
 # third parties
 from pydantic import BaseModel
@@ -38,7 +37,7 @@ class AbstractLocalCloudDispatch(BaseModel):
         incoming_request: Request,
         call_next: RequestResponseEndpoint,
         context: Context,
-    ) -> Optional[Response]:
+    ) -> Response | None:
         """
         Interface definition of the virtual method.
 
