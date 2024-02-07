@@ -17,6 +17,11 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 ## [0.1.8.dev] − Unreleased
 
+### Changed
+
+-   **Pipeline Typescript**:
+    -   remove pinning of `@types/node` after [chokidar bug correction](https://github.com/paulmillr/chokidar/issues/1299) <!-- TG-1983 -->
+
 ### Security
 
 -   **Dependencies vulnerabilities**:
