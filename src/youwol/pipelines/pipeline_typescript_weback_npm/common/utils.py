@@ -118,14 +118,6 @@ def generate_package_json(source: Path, working_path: Path, input_template: Temp
         },
         "devDependencies": {
             **extract_npm_dependencies_dict(dev_deps_keys),
-            **(
-                # Workaround for https://github.com/paulmillr/chokidar/issues/1299
-                # chokidar is a dependency of webpack-dev-server
-                # See TG-1983
-                {"@types/node": "18.19.8"}
-                if input_template.type == PackageType.Application
-                else {}
-            ),
             **input_template.dependencies.devTime,
         },
         "webpm": {
