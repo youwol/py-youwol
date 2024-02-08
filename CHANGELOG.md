@@ -19,6 +19,22 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 ## [0.1.7] − 2024-02-08
 
+## [0.1.7rc1] − 2024-02-06
+
+### Security
+
+-   **Dependencies vulnerabilities**:
+    -   [CVE-2023-50782] upgrade `cryptography` to 42.0.2 <!-- TG-2049 -->
+    -   [CVE-2024-24762] upgrade `fastapi` to 0.109.2, `starlette` to 0.36.3 <!-- TG-2047, TG-2048 -->
+
+<!-- Not worthy of inclusion
+TG-2057
+TG-2058
+TG-2059
+-->
+
+## [0.1.7rc] − 2024-02-05
+
 ### Added
 
 -   New Py-youwol documentation application **@youwol/py-youwol-doc** <!-- TG-1923, TG-1924, TG-1925, TG-1951, TG-1952, TG-1961 -->
@@ -54,8 +70,6 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
     -   [CVE-2023-26159] upgrade `follow-redirects` to 1.15.5 <!-- TG-1906 -->
     -   [CVE-2024-23334] upgrade `aiohttp` to 3.9.2 <!-- TG-1984 -->
     -   [CVE-2024-23829] upgrade `aiohttp` to 3.9.2 <!-- TG-1984 -->
-    -   [CVE-2023-50782] upgrade `cryptography` to 42.0.2 <!-- TG-2049 -->
-    -   [CVE-2024-24762] upgrade `fastapi` to 0.109.2, `starlette` to 0.36.3 <!-- TG-2047, TG-2048 -->
 
 <!-- Not worthy of inclusion
 TG-1881
@@ -66,9 +80,6 @@ TG-1962
 TG-1963
 TG-1981
 TG-2021
-TG-2057
-TG-2058
-TG-2059
 -->
 
 ## [0.1.6] - 2023-12-18
