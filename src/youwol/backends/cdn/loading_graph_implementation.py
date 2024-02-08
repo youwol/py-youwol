@@ -2,8 +2,7 @@
 import asyncio
 import itertools
 
-# typing
-from typing import Callable, Optional, Union
+from collections.abc import Callable
 
 # third parties
 from fastapi import HTTPException
@@ -76,7 +75,7 @@ def get_query_key(lib: LibraryQuery) -> str:
     return f"{lib.name}#{lib.version}"
 
 
-def get_full_exported_symbol(name: str, version: Union[str, Version]):
+def get_full_exported_symbol(name: str, version: str | Version):
     api_key = get_api_key(version)
     exported_name = exportedSymbols[name] if name in exportedSymbols else name
     return f"{exported_name}_APIv{api_key}"
@@ -506,7 +505,7 @@ async def get_data(
 
 
 async def raise_errors(
-    errors: list[Union[LibraryNotFound, LibraryException]], context: Context
+    errors: list[LibraryNotFound | LibraryException], context: Context
 ):
     if not errors:
         return
@@ -535,8 +534,8 @@ async def raise_errors(
 def retrieve_dependency_paths(
     known_libraries: list[LibraryResolved],
     from_package: str,
-    get_key: Callable[[Union[LibraryQuery, LibraryResolved]], str],
-    suffix: Optional[str] = None,
+    get_key: Callable[[LibraryQuery | LibraryResolved], str],
+    suffix: str | None = None,
 ) -> list[str]:
     parents = [
         lib

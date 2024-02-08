@@ -3,9 +3,6 @@ import base64
 
 from abc import ABC, abstractmethod
 
-# typing
-from typing import Optional
-
 # third parties
 from starlette.requests import Request
 
@@ -36,7 +33,7 @@ class JwtProviderDynamicIssuer(JwtProvider, ABC):
     """
 
     @abstractmethod
-    async def _get_token(self, request: Request, context: Context) -> Optional[str]:
+    async def _get_token(self, request: Request, context: Context) -> str | None:
         """
         Define abstract method interface.
 
@@ -51,7 +48,7 @@ class JwtProviderDynamicIssuer(JwtProvider, ABC):
 
     async def get_token_and_openid_base_url(
         self, request: Request, context: Context
-    ) -> tuple[Optional[str], str]:
+    ) -> tuple[str | None, str]:
         """
         Use the abstract `_get_token` method to implement
         <a href="@yw-nav-class:youwol.utils.middlewares.authentication.JwtProvider.get_token_and_openid_base_url">
@@ -77,7 +74,7 @@ class JwtProviderDelegatingDynamicIssuer(JwtProviderDynamicIssuer, ABC):
     Abstract delegating dynamic JWT provider issuer.
     """
 
-    async def _get_token(self, request: Request, context: Context) -> Optional[str]:
+    async def _get_token(self, request: Request, context: Context) -> str | None:
         """
         Use the abstract `_get_delegate` method to implement
         <a href="@yw-nav-class:youwol.app.environment.local_auth.JwtProviderDynamicIssuer._get_token">
@@ -168,7 +165,7 @@ class JwtProviderPyYouwol(JwtProviderDynamicIssuer):
     PyYouwol JWT provider.
     """
 
-    async def _get_token(self, request: Request, context: Context) -> Optional[str]:
+    async def _get_token(self, request: Request, context: Context) -> str | None:
         """
         Implement
         <a href="@yw-nav-class:youwol.app.environment.local_auth.JwtProviderDynamicIssuer._get_token">

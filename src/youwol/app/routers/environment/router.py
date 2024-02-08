@@ -5,9 +5,6 @@ import random
 
 from importlib import resources
 
-# typing
-from typing import Optional
-
 # third parties
 from cowpy import cow
 from fastapi import APIRouter, Depends
@@ -60,7 +57,7 @@ class EnvironmentStatusResponse(BaseModel):
     configuration: ConfigurationResponse
     users: list[str]
     userInfo: UserInfo
-    remoteGatewayInfo: Optional[RemoteGatewayInfo]
+    remoteGatewayInfo: RemoteGatewayInfo | None
     remotesInfo: list[RemoteGatewayInfo]
 
 

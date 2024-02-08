@@ -20,11 +20,11 @@ jobs:
 
       - name: Checkout
         id: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Prepare Python 3.12
         id: prepare_python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
           cache: 'pip'
@@ -52,7 +52,7 @@ jobs:
 
       - name: Upload Build Artifacts
         id: upload_artifact_rc
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.get_version_details.outputs.package }}
           path: dist/youwol-${{ steps.bump_version.outputs.version }}*
@@ -60,7 +60,7 @@ jobs:
 
       - name: Upload Artifact for configuration integration tests
         id: upload_artifact_conf_integration
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.get_version_details.outputs.config_dir }}
           path: integrations/
@@ -89,13 +89,13 @@ jobs:
     steps:
       - name: Prepare Python ${{ matrix.python_version }}
         id: prepare_python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python_version }}
 
       - name: Download Package
         id: download_package
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ${{ needs.build.outputs.package }}
 
@@ -145,7 +145,7 @@ jobs:
 
       - name: Download Configuration Directory
         id: download_conf
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ${{ needs.build.outputs.config_dir }}
 

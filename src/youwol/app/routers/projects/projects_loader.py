@@ -4,7 +4,7 @@ import traceback
 from pathlib import Path
 
 # typing
-from typing import Optional, Union
+from typing import Union
 
 # third parties
 from pydantic import BaseModel
@@ -87,7 +87,7 @@ class ProjectLoader:
 
     context = Context(logs_reporters=[], data_reporters=[WsDataStreamer()])
 
-    handler: Optional[ProjectsFinderHandler] = None
+    handler: ProjectsFinderHandler | None = None
 
     projects_list: list[Project] = []
     failures_report: FailuresReport = FailuresReport()
@@ -176,7 +176,7 @@ async def get_project(
     additional_python_src_paths: list[Path],
     env: YouwolEnvironment,
     context: Context,
-) -> Union[Project, Failure]:
+) -> Project | Failure:
     async with context.start(
         action="get_project", with_attributes={"folderName": project_path.name}
     ) as ctx:

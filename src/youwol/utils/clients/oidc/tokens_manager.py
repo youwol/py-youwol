@@ -3,9 +3,6 @@ import datetime
 
 from abc import ABC, abstractmethod
 
-# typing
-from typing import Optional
-
 # Youwol utilities
 from youwol.utils import AT, CacheClient
 from youwol.utils.clients.oidc.oidc_config import OidcForClient, TokensData
@@ -25,7 +22,7 @@ class TokensStorage(ABC):
     """
 
     @abstractmethod
-    async def get(self, tokens_id: str) -> Optional[TokensData]:
+    async def get(self, tokens_id: str) -> TokensData | None:
         """
         Retrieve token data based on the provided tokens identifier.
 
@@ -50,9 +47,7 @@ class TokensStorage(ABC):
         """
 
     @abstractmethod
-    async def get_by_sid(
-        self, session_id: str
-    ) -> tuple[Optional[str], Optional[TokensData]]:
+    async def get_by_sid(self, session_id: str) -> tuple[str | None, TokensData | None]:
         """
         Retrieve tokens identifier and associated token data based on the session identifier.
 
@@ -249,7 +244,7 @@ class TokensManager:
     async def restore_tokens(
         self,
         tokens_id: str,
-    ) -> Optional[Tokens]:
+    ) -> Tokens | None:
         """
         Restores tokens associated with the given tokens_id.
 
@@ -284,7 +279,7 @@ class TokensManager:
     async def restore_tokens_from_session_id(
         self,
         session_id: str,
-    ) -> Optional[Tokens]:
+    ) -> Tokens | None:
         """
         Restores tokens associated with the given session_id.
 
@@ -340,7 +335,7 @@ class TokensStorageCache(TokensStorage):
         """
         return f"{TokensStorageCache._CACHE_SID_KEY_PREFIX}_{session_id}"
 
-    async def get(self, tokens_id: str) -> Optional[TokensData]:
+    async def get(self, tokens_id: str) -> TokensData | None:
         """
         Retrieves tokens data from the cache based on the provided tokens_id.
 
@@ -380,9 +375,7 @@ class TokensStorageCache(TokensStorage):
         self.__cache.delete(TokensStorageCache.cache_token_key(tokens_id))
         self.__cache.delete(TokensStorageCache.cache_sid_key(session_id))
 
-    async def get_by_sid(
-        self, session_id: str
-    ) -> tuple[Optional[str], Optional[TokensData]]:
+    async def get_by_sid(self, session_id: str) -> tuple[str | None, TokensData | None]:
         """
         Retrieves tokens_id and tokens data from the cache based on the provided session_id.
 

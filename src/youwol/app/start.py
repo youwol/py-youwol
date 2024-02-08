@@ -4,9 +4,6 @@ import traceback
 
 from pathlib import Path
 
-# typing
-from typing import Optional
-
 # third parties
 import uvicorn
 
@@ -32,7 +29,7 @@ def assert_free_http_port(http_port: int):
         raise ValueError(f"The port {http_port} is already bound to a process")
 
 
-def start(shutdown_script_path: Optional[Path] = None):
+def start(shutdown_script_path: Path | None = None):
     uvicorn_log_level = "info" if get_main_arguments().verbose else "critical"
 
     try:

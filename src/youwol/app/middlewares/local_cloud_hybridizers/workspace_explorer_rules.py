@@ -2,7 +2,7 @@
 import asyncio
 
 # typing
-from typing import Optional, TypeVar, Union
+from typing import TypeVar
 
 # third parties
 from fastapi import HTTPException
@@ -30,7 +30,7 @@ from .abstract_local_cloud_dispatch import AbstractLocalCloudDispatch
 PydanticType = TypeVar("PydanticType")
 
 
-def cast_response(response: Union[JSON, BaseException], _type: PydanticType):
+def cast_response(response: JSON | BaseException, _type: PydanticType):
     if isinstance(response, Exception):
         raise response
     return _type(**response)
@@ -46,7 +46,7 @@ class GetChildrenDispatch(AbstractLocalCloudDispatch):
     """
 
     @staticmethod
-    def is_matching(request: Request) -> Union[None, str]:
+    def is_matching(request: Request) -> None | str:
         match, params = url_match(
             request, "GET:/api/assets-gateway/treedb-backend/folders/*/children"
         )
@@ -62,7 +62,7 @@ class GetChildrenDispatch(AbstractLocalCloudDispatch):
         incoming_request: Request,
         call_next: RequestResponseEndpoint,
         context: Context,
-    ) -> Optional[Response]:
+    ) -> Response | None:
         """
         This dispatch match the endpoint `GET:/api/assets-gateway/treedb-backend/folders/*/children`;
         it returns `None` otherwise.
@@ -173,7 +173,7 @@ class GetChildrenDispatch(AbstractLocalCloudDispatch):
 
     @staticmethod
     def decorate_with_metadata(
-        item: Union[ItemResponse, FolderResponse],
+        item: ItemResponse | FolderResponse,
         local_ids: list[str],
         remote_ids: list[str],
     ):
@@ -195,7 +195,7 @@ class MoveBorrowInRemoteFolderDispatch(AbstractLocalCloudDispatch):
         incoming_request: Request,
         call_next: RequestResponseEndpoint,
         context: Context,
-    ) -> Optional[Response]:
+    ) -> Response | None:
         env = await context.get("env", YouwolEnvironment)
         match, replaced = url_match(
             request=incoming_request,

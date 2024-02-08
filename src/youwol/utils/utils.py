@@ -3,12 +3,12 @@ import base64
 import datetime
 import itertools
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from enum import Enum
 from pathlib import Path, PosixPath
 
 # typing
-from typing import Any, Callable, Optional, Union, cast
+from typing import Any, cast
 
 # third parties
 import aiohttp
@@ -55,7 +55,7 @@ class YouwolHeaders:
     """
 
     @staticmethod
-    def get_correlation_id(request: Request) -> Optional[str]:
+    def get_correlation_id(request: Request) -> str | None:
         """
 
         Parameters:
@@ -66,7 +66,7 @@ class YouwolHeaders:
         return request.headers.get(YouwolHeaders.correlation_id, None)
 
     @staticmethod
-    def get_trace_id(request: Request) -> Optional[str]:
+    def get_trace_id(request: Request) -> str | None:
         """
 
         Parameters:
@@ -77,7 +77,7 @@ class YouwolHeaders:
         return request.headers.get(YouwolHeaders.trace_id, None)
 
     @staticmethod
-    def get_py_youwol_local_only(request: Request) -> Optional[str]:
+    def get_py_youwol_local_only(request: Request) -> str | None:
         """
 
         Parameters:
@@ -190,9 +190,7 @@ def chunks(lst, n):
         yield lst[i : i + n]
 
 
-def check_permission_or_raise(
-    target_group: Union[str, None], allowed_groups: list[str]
-):
+def check_permission_or_raise(target_group: str | None, allowed_groups: list[str]):
     if not target_group:
         return
     compatible_groups = [g for g in allowed_groups if target_group in g]
@@ -203,7 +201,7 @@ def check_permission_or_raise(
         )
 
 
-def get_content_type(file_name: Union[str, Path]) -> str:
+def get_content_type(file_name: str | Path) -> str:
     """
     Return a guessed content type from the extension.
 
@@ -239,7 +237,7 @@ def get_content_type(file_name: Union[str, Path]) -> str:
     return "application/octet-stream"
 
 
-def get_content_encoding(file_name: Union[str, Path]):
+def get_content_encoding(file_name: str | Path):
     """
     Return a guessed content encoding from the extension.
 
@@ -304,7 +302,7 @@ def is_json_leaf(v):
     )
 
 
-def to_json_rec(_obj: Union[AnyDict, list[Any], JSON]):
+def to_json_rec(_obj: AnyDict | list[Any] | JSON):
     def process_value(value):
         if is_json_leaf(value):
             return to_serializable_json_leaf(value)
@@ -327,6 +325,6 @@ def to_json_rec(_obj: Union[AnyDict, list[Any], JSON]):
     return {}
 
 
-def to_json(obj: Union[BaseModel, JSON]) -> JSON:
+def to_json(obj: BaseModel | JSON) -> JSON:
     base = obj.dict() if isinstance(obj, BaseModel) else obj
     return to_json_rec(base)

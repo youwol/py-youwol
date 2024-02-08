@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 # typing
-from typing import Any, Optional
+from typing import Any
 
 # Youwol utilities
 from youwol.utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
@@ -15,7 +15,7 @@ class UploadTask(ABC):
     remote_assets_gtw: AssetsGatewayClient
     raw_id: str
     asset_id: str
-    options: Optional[Any] = None
+    options: Any | None = None
 
     @abstractmethod
     async def get_raw(self, context: Context) -> bytes:

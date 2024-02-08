@@ -1,9 +1,6 @@
 # standard library
 from enum import Enum
 
-# typing
-from typing import Optional
-
 # third parties
 from pydantic import BaseModel
 
@@ -30,8 +27,8 @@ class UserInfo(BaseModel):
 class CustomDispatch(BaseModel):
     type: str
     name: str
-    activated: Optional[bool]
-    parameters: Optional[dict[str, str]]
+    activated: bool | None
+    parameters: dict[str, str] | None
 
 
 class CustomDispatchesResponse(BaseModel):
@@ -40,7 +37,7 @@ class CustomDispatchesResponse(BaseModel):
 
 class RemoteGatewayInfo(BaseModel):
     host: str
-    connected: Optional[bool]
+    connected: bool | None
 
 
 class SwitchConfigurationBody(BaseModel):
@@ -52,14 +49,14 @@ class SwitchResponse(BaseModel):
 
 
 class LoginBody(BaseModel):
-    authId: Optional[str]
+    authId: str | None
     """
     Id of the authentication, need to be referenced in the configuration file under the
     [CloudEnvironment](@yw-nav-class:youwol.app.environment.models.models_config.CloudEnvironment) section
      for the given `envId`.
     """
 
-    envId: Optional[str]
+    envId: str | None
     """
     Id of the environment, need to be referenced in the configuration file under the
     [CloudEnvironments](@yw-nav-class:youwol.app.environment.models.models_config.CloudEnvironments) section.

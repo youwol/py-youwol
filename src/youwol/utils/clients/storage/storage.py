@@ -5,9 +5,6 @@ import json as _json
 from dataclasses import dataclass, field
 from pathlib import Path
 
-# typing
-from typing import Union
-
 # third parties
 import aiohttp
 
@@ -127,10 +124,10 @@ class StorageClient:
 
     async def post_object(
         self,
-        path: Union[Path, str],
-        content: Union[str, bytes],
+        path: Path | str,
+        content: str | bytes,
         content_type: str,
-        owner: Union[str, None],
+        owner: str | None,
         **kwargs,
     ):
         if isinstance(content, str):
@@ -155,7 +152,7 @@ class StorageClient:
                     return await resp.read()
                 raise await upstream_exception_from_response(resp)
 
-    async def post_json(self, path: Union[Path, str], json: JSON, owner: str, **kwargs):
+    async def post_json(self, path: Path | str, json: JSON, owner: str, **kwargs):
         str_json = _json.dumps(json)
         return await self.post_object(
             path,
@@ -165,14 +162,12 @@ class StorageClient:
             **kwargs,
         )
 
-    async def post_text(self, path: Union[Path, str], text: str, owner: str, **kwargs):
+    async def post_text(self, path: Path | str, text: str, owner: str, **kwargs):
         return await self.post_object(
             path, content=text, content_type="text/html", owner=owner, **kwargs
         )
 
-    async def delete_group(
-        self, prefix: Union[Path, str], owner: Union[str, None], **kwargs
-    ):
+    async def delete_group(self, prefix: Path | str, owner: str | None, **kwargs):
         params = {"prefix": str(prefix), "recursive": "true"}
         if owner:
             params["owner"] = owner
@@ -185,7 +180,7 @@ class StorageClient:
                     return await resp.json()
                 raise await upstream_exception_from_response(resp)
 
-    async def delete(self, path: Union[Path, str], owner: Union[str, None], **kwargs):
+    async def delete(self, path: Path | str, owner: str | None, **kwargs):
         params = {"objectName": str(path)}
         if owner:
             params["owner"] = owner
@@ -200,8 +195,8 @@ class StorageClient:
 
     async def list_files(
         self,
-        prefix: Union[Path, str],
-        owner: Union[str, None],
+        prefix: Path | str,
+        owner: str | None,
         _max_results: int = 1_000_000,
         _delimiter=None,
         **kwargs,
@@ -219,9 +214,7 @@ class StorageClient:
                     return patch_files_name(files)
                 raise await upstream_exception_from_response(resp)
 
-    async def get_bytes(
-        self, path: Union[Path, str], owner: Union[str, None], **kwargs
-    ):
+    async def get_bytes(self, path: Path | str, owner: str | None, **kwargs):
         url = self.object_url
         params = {"objectName": str(path)}
         if owner:
@@ -234,10 +227,10 @@ class StorageClient:
                     return base64.decodebytes(resp_bytes)
                 raise await upstream_exception_from_response(resp)
 
-    async def get_json(self, path: Union[Path, str], owner: Union[str, None], **kwargs):
+    async def get_json(self, path: Path | str, owner: str | None, **kwargs):
         content = await self.get_bytes(path, owner, **kwargs)
         return _json.loads(content.decode("utf-8"))
 
-    async def get_text(self, path: Union[Path, str], owner: Union[str, None], **kwargs):
+    async def get_text(self, path: Path | str, owner: str | None, **kwargs):
         content = await self.get_bytes(path, owner, **kwargs)
         return content.decode("utf-8")

@@ -1,8 +1,5 @@
 # standard library
-from collections.abc import Awaitable
-
-# typing
-from typing import Callable, Union
+from collections.abc import Awaitable, Callable
 
 # relative
 from .configuration import Configuration, Dependencies
@@ -10,9 +7,9 @@ from .root_paths import router
 
 
 def get_router(
-    configuration: Union[
-        Configuration, Callable[[], Union[Configuration, Awaitable[Configuration]]]
-    ]
+    configuration: (
+        Configuration | Callable[[], Configuration | Awaitable[Configuration]]
+    )
 ):
     Dependencies.get_configuration = (
         configuration if callable(configuration) else lambda: configuration

@@ -3,9 +3,6 @@ import json
 
 from dataclasses import dataclass
 
-# typing
-from typing import Optional, Union
-
 # Youwol utilities
 from youwol.utils.types import JSON
 
@@ -22,13 +19,11 @@ class AT(int):
 class CacheClient:
     prefix: str = ""
 
-    def get(self, name: str) -> Optional[JSON]:
+    def get(self, name: str) -> JSON | None:
         val = self._impl_get(self._name_to_key(name))
         return json.loads(val) if val else None
 
-    def set(
-        self, name: str, content: JSON, expire: Union[TTL, AT, None] = None
-    ) -> None:
+    def set(self, name: str, content: JSON, expire: TTL | AT | None = None) -> None:
         key = self._name_to_key(name)
         value = json.dumps(content)
 
@@ -43,11 +38,11 @@ class CacheClient:
         key = self._name_to_key(name)
         self._impl_delete(key)
 
-    def get_ttl(self, name) -> Optional[TTL]:
+    def get_ttl(self, name) -> TTL | None:
         key = self._name_to_key(name)
         return self._impl_get_ttl(key)
 
-    def _impl_get(self, key: str) -> Optional[str]:
+    def _impl_get(self, key: str) -> str | None:
         raise NotImplementedError()
 
     def _impl_set(self, key: str, value: str):
@@ -62,7 +57,7 @@ class CacheClient:
     def _impl_delete(self, key: str):
         raise NotImplementedError()
 
-    def _impl_get_ttl(self, key: str) -> Optional[TTL]:
+    def _impl_get_ttl(self, key: str) -> TTL | None:
         raise NotImplementedError()
 
     def _name_to_key(self, name: str):

@@ -37,7 +37,7 @@ class EncryptedFileReader(ReaderBase):
         self,
         absolute_path: Path,
         key: str,
-        algo: Optional[AlgoSpec] = None,
+        algo: AlgoSpec | None = None,
     ):
         try:
             if algo == "any":
@@ -66,7 +66,7 @@ class EncryptedFileWriter(WriterBase):
         self,
         absolute_path: Path,
         key: str,
-        algo: Optional[AlgoSpec] = None,
+        algo: AlgoSpec | None = None,
     ):
         self.__path = absolute_path
         self.__key = key
@@ -97,7 +97,7 @@ class EncryptedFilePath(PathBase):
         self,
         absolute_path: Path,
         key: str,
-        algo: Optional[AlgoSpec] = None,
+        algo: AlgoSpec | None = None,
     ):
         super().__init__(absolute_path)
         self.__key = key
@@ -115,7 +115,7 @@ class TokensStorageKeyring(TokensStoragePathBase):
         self,
         absolute_path: Path,
         service: str,
-        algo: Optional[AlgoSpec] = None,
+        algo: AlgoSpec | None = None,
     ):
         super().__init__()
         self.__absolute_path = absolute_path

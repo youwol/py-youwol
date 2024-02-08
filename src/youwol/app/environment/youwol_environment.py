@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 # typing
-from typing import Any, Optional
+from typing import Any
 
 # third parties
 from colorama import Fore, Style
@@ -176,12 +176,12 @@ Configuration loaded from '{self.pathsBook.config}'
 
 @dataclass(frozen=True)
 class FwdArgumentsReload:
-    token_storage: Optional[TokensStorage] = None
-    remote_connection: Optional[Connection] = None
+    token_storage: TokensStorage | None = None
+    remote_connection: Connection | None = None
 
 
 class YouwolEnvironmentFactory:
-    __cached_config: Optional[YouwolEnvironment] = None
+    __cached_config: YouwolEnvironment | None = None
 
     @staticmethod
     async def get():
@@ -191,7 +191,7 @@ class YouwolEnvironmentFactory:
 
     @staticmethod
     async def load_from_file(
-        path: Path, fwd_args_reload: Optional[FwdArgumentsReload] = None
+        path: Path, fwd_args_reload: FwdArgumentsReload | None = None
     ):
         conf = await safe_load(path=path, fwd_args_reload=fwd_args_reload)
         await YouwolEnvironmentFactory.trigger_on_load(config=conf)
@@ -199,7 +199,7 @@ class YouwolEnvironmentFactory:
         return conf
 
     @staticmethod
-    async def reload(connection: Optional[Connection] = None):
+    async def reload(connection: Connection | None = None):
         cached = YouwolEnvironmentFactory.__cached_config
         conf = await safe_load(
             path=cached.pathsBook.config,
@@ -377,7 +377,7 @@ async def get_yw_config_starter(main_args: MainArguments):
     return conf_path
 
 
-def print_invite(conf: YouwolEnvironment, shutdown_script_path: Optional[Path]):
+def print_invite(conf: YouwolEnvironment, shutdown_script_path: Path | None):
     print(
         f"""{Fore.GREEN}Configuration loaded successfully{Style.RESET_ALL}.
 """

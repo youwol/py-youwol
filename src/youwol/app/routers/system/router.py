@@ -7,7 +7,7 @@ from enum import Enum
 from pathlib import Path
 
 # typing
-from typing import Optional, cast
+from typing import cast
 
 # third parties
 import griffe
@@ -131,7 +131,7 @@ class Log(BaseModel):
     Message.
     """
 
-    data: Optional[JSON]
+    data: JSON | None
     """
     Eventual data.
     """
@@ -141,7 +141,7 @@ class Log(BaseModel):
     ID of the context that was used to generate the log (see [Context](@yw-nav-class:youwol.utils.context.Context)).
     """
 
-    parentContextId: Optional[str]
+    parentContextId: str | None
     """
     ID of the parent context of the context that was used to generate the log
     (see [Context](@yw-nav-class:youwol.utils.context.Context)).
@@ -291,7 +291,7 @@ async def query_logs(
         logs list.
     """
 
-    response: Optional[NodeLogsResponse] = None
+    response: NodeLogsResponse | None = None
     async with Context.start_ep(
         with_attributes={"fromTimestamp": from_timestamp, "maxCount": max_count},
         response=lambda: response,

@@ -1,9 +1,9 @@
 # standard library
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
 # typing
-from typing import Callable, Union
+from typing import Union
 
 # Youwol utilities
 from youwol.utils.clients.docdb.docdb import DocDbClient as RemoteDocDb
@@ -66,7 +66,7 @@ class Configuration:
 
 
 class Dependencies:
-    get_configuration: Callable[[], Union[Configuration, Awaitable[Configuration]]]
+    get_configuration: Callable[[], Configuration | Awaitable[Configuration]]
 
 
 async def get_configuration():

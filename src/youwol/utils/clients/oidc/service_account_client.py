@@ -1,5 +1,5 @@
 # typing
-from typing import Any, Optional
+from typing import Any
 
 # third parties
 import aiohttp
@@ -26,7 +26,7 @@ class ServiceAccountClient:
         self,
         cache: CacheClient,
         oidc_client: OidcForClient,
-        base_url: Optional[str] = None,
+        base_url: str | None = None,
     ):
         self.__base_url = base_url
         self.__session_less_token_manager = SessionLessTokenManager(
@@ -42,11 +42,11 @@ class ServiceAccountClient:
         self,
         method: str,
         path: str,
-        params: Optional[dict[str, Any]] = None,
-        json: Optional[dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
+        json: dict[str, Any] | None = None,
         expected_status: int = 200,
         parse_response=True,
-    ) -> Optional[Any]:
+    ) -> Any | None:
         token = await self.__get_access_token()
         url = URL(f"{self.__base_url if self.__base_url else ''}{path}")
         if params:
@@ -79,7 +79,7 @@ class ServiceAccountClient:
         path: str,
         json: Any,
         parse_response: bool = True,
-        params: Optional[dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
         expected_status: int = 204,
     ):
         return await self.__request(

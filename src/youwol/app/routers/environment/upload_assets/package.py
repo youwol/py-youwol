@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 
 # typing
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 # third parties
 from fastapi import HTTPException
@@ -91,7 +91,7 @@ class UploadPackageOptions(NamedTuple):
     If provided, only these versions will be considered to publish
     """
 
-    versions: Optional[list[str]] = None
+    versions: list[str] | None = None
 
 
 @dataclass

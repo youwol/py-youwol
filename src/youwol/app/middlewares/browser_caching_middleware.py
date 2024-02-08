@@ -1,5 +1,4 @@
 # typing
-from typing import Optional
 
 # third parties
 from starlette.middleware.base import (
@@ -20,7 +19,7 @@ class BrowserCachingMiddleware(BaseHTTPMiddleware):
     cache = {}
 
     def __init__(
-        self, app: ASGIApp, dispatch: Optional[DispatchFunction] = None, **_
+        self, app: ASGIApp, dispatch: DispatchFunction | None = None, **_
     ) -> None:
         """
         Initializes a new instance of BrowserCachingMiddleware.

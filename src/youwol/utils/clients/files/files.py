@@ -1,9 +1,9 @@
 # standard library
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
 # typing
-from typing import Any, Callable, Optional
+from typing import Any
 
 # third parties
 from aiohttp import ClientResponse
@@ -74,7 +74,7 @@ class FilesClient:
     async def get(
         self,
         file_id: str,
-        reader: Optional[Callable[[ClientResponse], Awaitable[Any]]] = None,
+        reader: Callable[[ClientResponse], Awaitable[Any]] | None = None,
         **kwargs,
     ):
         """

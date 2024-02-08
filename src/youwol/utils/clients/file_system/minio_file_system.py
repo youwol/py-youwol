@@ -4,9 +4,6 @@ import io
 from dataclasses import dataclass
 from pathlib import Path
 
-# typing
-from typing import Optional, Union
-
 # third parties
 from minio import Minio, S3Error
 from minio.commonconfig import REPLACE, CopySource
@@ -36,7 +33,7 @@ class MinioFileSystem(FileSystemInterface):
     """
     Bucket name
     """
-    root_path: Union[str, Path] = ""
+    root_path: str | Path = ""
     """
     Reference path (in the bucket) of all operations in this class.
     """
@@ -133,7 +130,7 @@ class MinioFileSystem(FileSystemInterface):
     async def get_object(
         self,
         object_id: str,
-        ranges_bytes: Optional[list[tuple[int, int]]] = None,
+        ranges_bytes: list[tuple[int, int]] | None = None,
         **kwargs,
     ):
         object_id = self.get_object_path(object_id)

@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 
 # typing
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 parser = argparse.ArgumentParser()
 
@@ -66,7 +66,7 @@ class MainArguments(NamedTuple):
     youwol --daemonize=true
     ```
     """
-    email: Optional[str] = None
+    email: str | None = None
 
     execution_folder = Path(os.getcwd())
     verbose: bool = False

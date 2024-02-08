@@ -4,7 +4,7 @@ from enum import Enum
 from pathlib import Path
 
 # typing
-from typing import Any, Optional
+from typing import Any
 
 # third parties
 from pydantic import BaseModel
@@ -115,7 +115,7 @@ class PipelineStepStatusResponse(BaseModel):
     """
     The list of artifacts.
     """
-    manifest: Optional[Manifest] = None
+    manifest: Manifest | None = None
     """
     The manifest of the last execution.
     """

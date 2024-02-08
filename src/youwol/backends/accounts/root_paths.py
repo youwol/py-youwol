@@ -1,5 +1,5 @@
 # typing
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any
 
 # third parties
 from fastapi import APIRouter, Depends
@@ -63,8 +63,8 @@ def user_info_from_json(json: Any) -> SessionDetailsUserInfo:
 @router.get("/session", response_model=SessionDetails)
 async def get_session_details(
     request: Request,
-    yw_jwt_t: Annotated[Optional[str], Cookie()] = None,
-    yw_login_hint: Annotated[Optional[str], Cookie()] = None,
+    yw_jwt_t: Annotated[str | None, Cookie()] = None,
+    yw_login_hint: Annotated[str | None, Cookie()] = None,
     conf: Configuration = Depends(get_configuration),
 ) -> SessionDetails:
     """

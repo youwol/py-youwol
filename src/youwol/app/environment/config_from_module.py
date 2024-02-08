@@ -12,7 +12,7 @@ from importlib.util import spec_from_loader
 from pathlib import Path
 
 # typing
-from typing import Optional, cast
+from typing import cast
 
 # Youwol application
 from youwol.app.main_args import MainArguments, get_main_arguments
@@ -73,7 +73,7 @@ class IConfigurationFactory(ABC):
         return NotImplemented
 
 
-def try_last_expression_as_config(config_path: Path) -> Optional[Configuration]:
+def try_last_expression_as_config(config_path: Path) -> Configuration | None:
     """
 
     :param config_path: path of the config file

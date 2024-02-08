@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 # typing
-from typing import Dict, List, Literal, Optional, Set, Type
+from typing import Literal
 
 # third parties
 from griffe import Module
@@ -45,11 +45,11 @@ class DocDocstringSectionResponse(BaseModel):
     """
     Type of the section.
     """
-    tag: Optional[str]
+    tag: str | None
     """
     Tag name for an admonition.
     """
-    title: Optional[str]
+    title: str | None
     """
     Title name for an admonition.
     """
@@ -69,12 +69,12 @@ class DocTypeResponse(BaseModel):
     Name of the type.
     """
 
-    path: Optional[str]
+    path: str | None
     """
     path of the definition (e.g. youwol.app.environment.youwol_environment.YouwolEnvironment).
     """
 
-    generics: List[Optional[DocTypeResponse]] = []
+    generics: list[DocTypeResponse | None] = []
     """
     The list of generics type.
     """
@@ -116,12 +116,12 @@ class DocParameterResponse(BaseModel):
     Name of the parameter.
     """
 
-    type: Optional[DocTypeResponse]
+    type: DocTypeResponse | None
     """
     Type of the parameter if available.
     """
 
-    docstring: Optional[str]
+    docstring: str | None
     """
     Docstring associated if provided.
     """
@@ -132,12 +132,12 @@ class DocReturnsResponse(BaseModel):
     Description of a method's return.
     """
 
-    type: Optional[DocTypeResponse]
+    type: DocTypeResponse | None
     """
     Return type if provided.
     """
 
-    docstring: Optional[str]
+    docstring: str | None
     """
     Docstring associated if provided.
     """
@@ -153,12 +153,12 @@ class DocAttributeResponse(BaseModel):
     Name of the attribute.
     """
 
-    type: Optional[DocTypeResponse]
+    type: DocTypeResponse | None
     """
     Attribute's type if provided.
     """
 
-    docstring: List[DocDocstringSectionResponse]
+    docstring: list[DocDocstringSectionResponse]
     """
     Docstring associated if provided.
     """
@@ -192,7 +192,7 @@ class DocFunctionResponse(BaseModel):
     Name of the function.
     """
 
-    docstring: List[DocDocstringSectionResponse]
+    docstring: list[DocDocstringSectionResponse]
     """
     Docstring associated if provided.
     """
@@ -202,17 +202,17 @@ class DocFunctionResponse(BaseModel):
     Path of the function (e.g. youwol.app.environment.youwol_environment.yw_config).
     """
 
-    decorators: List[DocDecoratorResponse]
+    decorators: list[DocDecoratorResponse]
     """
     List of the decorators.
     """
 
-    parameters: List[DocParameterResponse]
+    parameters: list[DocParameterResponse]
     """
     List of the function parameters.
     """
 
-    returns: Optional[DocReturnsResponse]
+    returns: DocReturnsResponse | None
     """
     Return description.
     """
@@ -233,12 +233,12 @@ class DocClassResponse(BaseModel):
     Name of the class.
     """
 
-    docstring: List[DocDocstringSectionResponse]
+    docstring: list[DocDocstringSectionResponse]
     """
     Docstring associated.
     """
 
-    bases: List[DocTypeResponse]
+    bases: list[DocTypeResponse]
     """
     Description of the base classes.
     """
@@ -248,12 +248,12 @@ class DocClassResponse(BaseModel):
     Path of the class  (e.g. youwol.app.environment.youwol_environment.YouwolEnvironment).
     """
 
-    attributes: List[DocAttributeResponse]
+    attributes: list[DocAttributeResponse]
     """
     Description of the class's attributes.
     """
 
-    methods: List[DocFunctionResponse]
+    methods: list[DocFunctionResponse]
     """
     Description of the class's methods.
     """
@@ -263,7 +263,7 @@ class DocClassResponse(BaseModel):
     Associated code snippet.
     """
 
-    inheritedBy: List[DocTypeResponse]
+    inheritedBy: list[DocTypeResponse]
     """
     Classes inheriting this class.
     """
@@ -300,7 +300,7 @@ class DocModuleResponse(BaseModel):
     Name of the module.
     """
 
-    docstring: List[DocDocstringSectionResponse]
+    docstring: list[DocDocstringSectionResponse]
     """
     Associated docstring.
     """
@@ -310,29 +310,29 @@ class DocModuleResponse(BaseModel):
     Path of the module (e.g. youwol.app.environment).
     """
 
-    childrenModules: List[DocChildModulesResponse]
+    childrenModules: list[DocChildModulesResponse]
     """
     Description of its sub modules.
     """
 
-    attributes: List[DocAttributeResponse]
+    attributes: list[DocAttributeResponse]
     """
     Description of its attributes.
     """
 
-    classes: List[DocClassResponse]
+    classes: list[DocClassResponse]
     """
     Description of its classes.
     """
 
-    functions: List[DocFunctionResponse]
+    functions: list[DocFunctionResponse]
     """
     Description of its functions.
     """
 
 
 class DocCache:
-    flat_classes: Set[Type] = set()
+    flat_classes: set[type] = set()
     # For some symbols, we can not get the parent file automatically, they are explicitly provided here.
     module_to_file_issues = {
         # This type alias definition cause trouble to retrieve the parent file.
@@ -341,4 +341,4 @@ class DocCache:
         "youwol.utils.JSON": "youwol.utils.types.JSON"
     }
     global_doc: Module = None
-    modules_doc: Dict[str, DocModuleResponse] = {}
+    modules_doc: dict[str, DocModuleResponse] = {}

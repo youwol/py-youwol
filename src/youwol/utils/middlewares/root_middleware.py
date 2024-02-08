@@ -1,9 +1,6 @@
 # standard library
 import uuid
 
-# typing
-from typing import Optional
-
 # third parties
 from starlette.middleware.base import (
     BaseHTTPMiddleware,
@@ -38,8 +35,8 @@ class RootMiddleware(BaseHTTPMiddleware):
         self,
         app: ASGIApp,
         logs_reporter: ContextReporter,
-        data_reporter: Optional[ContextReporter],
-        dispatch: Optional[DispatchFunction] = None,
+        data_reporter: ContextReporter | None,
+        dispatch: DispatchFunction | None = None,
         **_,
     ) -> None:
         """

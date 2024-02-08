@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 
 # typing
-from typing import Any, Union
+from typing import Any
 
 # third parties
 import semantic_version
@@ -23,7 +23,7 @@ from .configurations import Constants
 flatten = itertools.chain.from_iterable
 
 
-def get_files(path: Union[Path, str]):
+def get_files(path: Path | str):
     path = str(path)
     p = ["", ""]
     minimized = [o for o in os.listdir(path) if o.endswith("min.js")]
@@ -96,7 +96,7 @@ def get_library_id(name: str, version: str) -> str:
 
 async def format_doc_db_record(
     package_path: Path, fingerprint: str, context: Context
-) -> dict[str, Union[str, list[str]]]:
+) -> dict[str, str | list[str]]:
     package_json = json.loads(package_path.read_bytes())
 
     name = package_json.get("name", None)

@@ -1,5 +1,5 @@
 # typing
-from typing import Any, Optional, Union
+from typing import Any
 
 # third parties
 from pydantic import BaseModel
@@ -52,11 +52,11 @@ class AssetResponse(BaseModel):
     rawId: str
     groupId: str
     tags: list[str]
-    permissions: Optional[PermissionsResponse]
+    permissions: PermissionsResponse | None
 
 
 class AssetWithPermissionResponse(AssetResponse):
-    permissions: Optional[PermissionsResponse]
+    permissions: PermissionsResponse | None
 
 
 class NewAssetResponse(AssetResponse):
@@ -69,7 +69,7 @@ class NewAssetResponse(AssetResponse):
     """
     Item ID
     """
-    rawResponse: Optional[dict[str, Any]]
+    rawResponse: dict[str, Any] | None
     """
     Response from the underlying service manager of the 'raw' part of the asset; if any.
     """
@@ -123,7 +123,7 @@ class DriveBody(BaseModel):
 
 class PutDriveBody(BaseModel):
     name: str
-    driveId: Optional[str] = None
+    driveId: str | None = None
 
 
 class FolderBody(BaseModel):
@@ -132,7 +132,7 @@ class FolderBody(BaseModel):
 
 class PutFolderBody(BaseModel):
     name: str
-    folderId: Optional[str] = None
+    folderId: str | None = None
 
 
 class TreeMetadata(BaseModel):
@@ -181,7 +181,7 @@ class MoveBody(BaseModel):
 
 class BorrowBody(BaseModel):
     destinationFolderId: str
-    itemId: Optional[str] = None
+    itemId: str | None = None
 
 
 class QueryTreeBody(BaseModel):
@@ -198,15 +198,15 @@ class QueryFlatBody(BaseModel):
 
 
 class UpdateAssetBody(BaseModel):
-    name: Optional[str] = None
-    tags: Optional[list[str]] = None
-    description: Optional[str] = None
+    name: str | None = None
+    tags: list[str] | None = None
+    description: str | None = None
 
 
 class AccessBody(BaseModel):
-    accessPolicy: Optional[str] = None
-    tags: Optional[list[str]] = None
-    description: Optional[str] = None
+    accessPolicy: str | None = None
+    tags: list[str] | None = None
+    description: str | None = None
 
 
 class AccessInfoBody(BaseModel):
@@ -221,7 +221,7 @@ class OwningGroup(BaseModel):
 class GroupAccess(BaseModel):
     read: ReadPolicyEnum
     share: SharePolicyEnum
-    expiration: Union[None, str]
+    expiration: None | str
 
 
 class ExposingGroup(BaseModel):
@@ -241,5 +241,5 @@ class ConsumerInfo(BaseModel):
 
 class AccessInfo(BaseModel):
     owningGroup: OwningGroup
-    ownerInfo: Union[None, OwnerInfo]
+    ownerInfo: None | OwnerInfo
     consumerInfo: ConsumerInfo
