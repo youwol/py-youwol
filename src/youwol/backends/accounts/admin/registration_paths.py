@@ -1,5 +1,5 @@
 # typing
-from typing import Annotated, Union
+from typing import Annotated
 
 # third parties
 from fastapi import Depends
@@ -65,7 +65,7 @@ async def register_from_temp_user(
 @router.get("/registration")
 async def registration_finalizer(
     target_uri: str,
-    yw_jwt: Annotated[Union[str, None], Cookie()] = None,
+    yw_jwt: Annotated[str | None, Cookie()] = None,
     conf: Configuration = Depends(get_configuration),
 ) -> Response:
     if conf.keycloak_users_management is None:

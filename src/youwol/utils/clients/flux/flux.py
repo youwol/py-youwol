@@ -1,9 +1,6 @@
 # standard library
 from dataclasses import dataclass
 
-# typing
-from typing import Optional
-
 # Youwol utilities
 from youwol.utils.clients.request_executor import (
     RequestExecutor,
@@ -33,7 +30,7 @@ class FluxClient:
             **kwargs,
         )
 
-    async def upload_project(self, data, project_id: Optional[str] = None, **kwargs):
+    async def upload_project(self, data, project_id: str | None = None, **kwargs):
         params = kwargs["params"] if "params" in kwargs else {}
         params = {**params, "project-id": project_id} if project_id else params
         kwargs["params"] = params
@@ -45,7 +42,7 @@ class FluxClient:
             **kwargs,
         )
 
-    async def download_zip(self, project_id: Optional[str] = None, **kwargs):
+    async def download_zip(self, project_id: str | None = None, **kwargs):
         return await self.request_executor.get(
             url=f"{self.url_base}/projects/{project_id}/download-zip",
             default_reader=bytes_reader,

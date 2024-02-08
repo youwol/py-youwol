@@ -11,9 +11,6 @@ import zipfile
 from collections.abc import Mapping
 from pathlib import Path
 
-# typing
-from typing import Union
-
 # third parties
 from fastapi import APIRouter, Depends, File, HTTPException
 from fastapi import Query as QueryParam
@@ -381,7 +378,7 @@ async def post_metadata(
         if metadata_body.libraries:
             libraries = {**actual_requirements.libraries, **metadata_body.libraries}
 
-            def get_package_id(factory_id: Union[str, Mapping[str, str]]):
+            def get_package_id(factory_id: str | Mapping[str, str]):
                 return (
                     "@youwol/" + factory_id.split("@")[1]
                     if isinstance(factory_id, str)

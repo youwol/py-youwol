@@ -10,26 +10,13 @@ import traceback
 import uuid
 
 from abc import ABC, abstractmethod
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
 from enum import Enum
 from types import TracebackType
 
 # typing
-from typing import (
-    Any,
-    Callable,
-    Generic,
-    List,
-    Literal,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import Any, Generic, Literal, NamedTuple, TypeVar, Union, cast
 
 # third parties
 import aiohttp
@@ -224,7 +211,7 @@ class WsContextReporter(ContextReporter):
     Base class for context reporters using web sockets.
     """
 
-    websockets_getter: Callable[[], List[WebSocket]]
+    websockets_getter: Callable[[], list[WebSocket]]
     """
     Callback that provides a list of web socket channels to use.
     This function is evaluated each time [log](@yw-nav-meth:youwol.utils.context.WsContextReporter.log) is called.
@@ -716,7 +703,7 @@ class Context(Generic[TEnvironment]):
 
         future.add_done_callback(done_callback)
 
-    async def get(self, att_name: str, _object_type: Type[T]) -> T:
+    async def get(self, att_name: str, _object_type: type[T]) -> T:
         result = self.with_data[att_name]
         if callable(result):
             result = result()
@@ -1101,7 +1088,7 @@ class PyYouwolContextReporter(ContextReporter):
     Headers associated to the POST request of the log.
     """
 
-    def __init__(self, py_youwol_port: int, headers: Optional[dict[str, str]] = None):
+    def __init__(self, py_youwol_port: int, headers: dict[str, str] | None = None):
         """
         Set the class's attributes.
 

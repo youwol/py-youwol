@@ -1,5 +1,5 @@
-# typing
-from typing import Callable
+# standard library
+from collections.abc import Callable
 
 # third parties
 from pydantic import BaseModel

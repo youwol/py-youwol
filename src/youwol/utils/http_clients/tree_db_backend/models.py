@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 
 # typing
-from typing import Any, Optional, Union
+from typing import Any
 
 # third parties
 from pydantic import BaseModel
@@ -240,7 +240,7 @@ class EntityResponse(BaseModel):
     """
     Type of the entity: `item`, `folder`, or `drive`.
     """
-    entity: Union[ItemResponse, FolderResponse, DriveResponse]
+    entity: ItemResponse | FolderResponse | DriveResponse
     """
     Associated entity.
     """
@@ -291,7 +291,7 @@ class PathResponse(BaseModel):
     Response model that describes the path on an entity.
     """
 
-    item: Optional[ItemResponse] = None
+    item: ItemResponse | None = None
     """
     the item, if applicable.
     """
@@ -360,7 +360,7 @@ class ItemBody(BaseModel):
     """
     Kind of the item
     """
-    itemId: Optional[str] = None
+    itemId: str | None = None
     """
     Explicit itemId (if needed).
     """
@@ -406,7 +406,7 @@ class BorrowBody(BaseModel):
     Body specification to borrow an entity (make a symbolic link).
     """
 
-    targetId: Optional[str] = None
+    targetId: str | None = None
     """
     Target item ID.
     """
@@ -427,7 +427,7 @@ class FolderBody(BaseModel):
     """
     kind: str = ""
     metadata: str = ""
-    folderId: Optional[str] = None
+    folderId: str | None = None
     """
     Explicit folder ID if needed.
     """
@@ -442,7 +442,7 @@ class DriveBody(BaseModel):
     """
     Name.
     """
-    driveId: Optional[str] = None
+    driveId: str | None = None
     """
     Explicit drive ID if needed.
     """

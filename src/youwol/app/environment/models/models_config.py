@@ -1,10 +1,10 @@
 # standard library
 from abc import ABC, abstractmethod
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Callable
 from pathlib import Path
 
 # typing
-from typing import Any, Callable, Optional, Union
+from typing import Any
 
 # third parties
 from pydantic import BaseModel
@@ -52,7 +52,7 @@ class Events(BaseModel):
     Gather the list of events on which user actions can be performed.
     """
 
-    onLoad: Callable[[Context], Optional[Union[Any, Awaitable[Any]]]] = None
+    onLoad: Callable[[Context], Any | Awaitable[Any] | None] = None
     """
     Event triggered when the configuration is loaded.
     """
@@ -116,7 +116,7 @@ class ProjectTemplate(BaseModel):
     A unique type id that represents the type of the project.
     """
 
-    folder: Union[str, Path]
+    folder: str | Path
     """
     Where the created project folders will be located.
     """
@@ -287,7 +287,7 @@ class ExplicitProjectsFinder(ProjectsFinder):
 
     """
 
-    fromPaths: Union[list[ConfigPath], Callable[[PathsBook], list[ConfigPath]]]
+    fromPaths: list[ConfigPath] | Callable[[PathsBook], list[ConfigPath]]
     """
     The paths in which to look for projects as direct children.
 
@@ -338,7 +338,7 @@ class Projects(BaseModel):
         ```
     """
 
-    finder: Union[ProjectsFinder, ConfigPath] = RecursiveProjectsFinder()
+    finder: ProjectsFinder | ConfigPath = RecursiveProjectsFinder()
     """
     Strategy for finding projects, most of the times the
     [RecursiveProjectsFinder](@yw-nav-class:youwol.app.environment.models.models_config.RecursiveProjectsFinder)
@@ -365,13 +365,13 @@ class AuthorizationProvider(BaseModel):
     OpenId base URL.
     """
 
-    openidClient: Union[PrivateClient, PublicClient]
+    openidClient: PrivateClient | PublicClient
     """
     openId client.
     """
 
-    keycloakAdminBaseUrl: Optional[str] = None
-    keycloakAdminClient: Optional[PrivateClient] = None
+    keycloakAdminBaseUrl: str | None = None
+    keycloakAdminClient: PrivateClient | None = None
 
 
 class Authentication(BaseModel):
@@ -614,7 +614,7 @@ class TokensStorageSystemKeyring(TokensStorageConf, BaseModel):
     Tokens storage using system's keyring.
     """
 
-    path: Optional[Union[str, Path]] = default_path_tokens_storage_encrypted
+    path: str | Path | None = default_path_tokens_storage_encrypted
     """
     The path of the system keyring encrypted file.
 
@@ -647,7 +647,7 @@ class TokensStoragePath(TokensStorageConf, BaseModel):
     Tokens storage using a TokensStorageFile.
     """
 
-    path: Optional[Union[str, Path]] = default_path_tokens_storage
+    path: str | Path | None = default_path_tokens_storage
     """
     Path where the file is saved on disk.
 
@@ -738,13 +738,13 @@ class System(BaseModel):
     ```
     """
 
-    httpPort: Optional[int] = default_http_port
+    httpPort: int | None = default_http_port
     """
     Local port on which py-youwol is served.
     It may be overriden using command line argument `--port` when starting youwol.
     """
 
-    tokensStorage: Optional[TokensStorageConf] = TokensStorageSystemKeyring()
+    tokensStorage: TokensStorageConf | None = TokensStorageSystemKeyring()
     """
     How to store JWT tokens:
 
@@ -818,22 +818,22 @@ class Command(BaseModel):
     Name of the command.
     """
 
-    do_get: Optional[Callable[[Context], Union[Awaitable[JSON], JSON]]] = None
+    do_get: Callable[[Context], Awaitable[JSON] | JSON] | None = None
     """
     The function to trigger on `GET`.
     """
 
-    do_post: Optional[Callable[[JSON, Context], Union[Awaitable[JSON], JSON]]] = None
+    do_post: Callable[[JSON, Context], Awaitable[JSON] | JSON] | None = None
     """
     The function to trigger on `POST`, the first argument of the callable is the JSON body of the command.
     """
 
-    do_put: Optional[Callable[[JSON, Context], Union[Awaitable[JSON], JSON]]] = None
+    do_put: Callable[[JSON, Context], Awaitable[JSON] | JSON] | None = None
     """
     The function to trigger on `PUT`, the first argument of the callable is the JSON body of the command.
     """
 
-    do_delete: Optional[Callable[[Context], Union[Awaitable[JSON], JSON]]] = None
+    do_delete: Callable[[Context], Awaitable[JSON] | JSON] | None = None
     """
     The function to trigger on `DELETE`.
     """
@@ -844,12 +844,12 @@ class CustomEndPoints(BaseModel):
     Extends the server by adding custom end-points.
     """
 
-    commands: Optional[list[Command]] = []
+    commands: list[Command] | None = []
     """
     A list of commands that can be triggered via HTTP requests.
     """
 
-    routers: Optional[list[FastApiRouter]] = []
+    routers: list[FastApiRouter] | None = []
     """
     Additional routers to bind to the environment.
     """
@@ -892,7 +892,7 @@ class CustomMiddleware(BaseModel, ABC):
         incoming_request: Request,
         call_next: RequestResponseEndpoint,
         context: Context,
-    ) -> Optional[Response]:
+    ) -> Response | None:
         """
         Virtual method to implement by derived class.
 
@@ -981,11 +981,11 @@ class Customization(BaseModel):
     Allows adding custom end-points to the environment.
     """
 
-    middlewares: Optional[list[CustomMiddleware]] = []
+    middlewares: list[CustomMiddleware] | None = []
     """
     Allows adding custom end-points to the environment.
     """
-    events: Optional[Events] = Events()
+    events: Events | None = Events()
     """
     Allows adding custom end-points to the environment.
     """

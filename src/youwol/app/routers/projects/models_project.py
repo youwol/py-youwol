@@ -4,12 +4,12 @@ import functools
 import itertools
 
 from abc import ABC, abstractmethod
-from collections.abc import Awaitable, Iterable
+from collections.abc import Awaitable, Callable, Iterable
 from enum import Enum
 from pathlib import Path
 
 # typing
-from typing import Any, Callable, Optional, Union, cast
+from typing import Any, Optional, Union, cast
 
 # third parties
 from pydantic import BaseModel
@@ -130,7 +130,7 @@ class Manifest(BaseModel):
     Whether the step succeeded to execute.
     """
 
-    fingerprint: Optional[str]
+    fingerprint: str | None
     """
     Fingerprint of the step.
     """
@@ -144,7 +144,7 @@ class Manifest(BaseModel):
     """
     Files path of the artifacts' files.
     """
-    cmdOutputs: Union[list[str], dict] = []
+    cmdOutputs: list[str] | dict = []
     """
     The outputs generated during step execution.
     """
@@ -188,9 +188,7 @@ class CommandPipelineStep(BaseModel):
     name of the command
     """
 
-    do_get: Optional[
-        Callable[["Project", str, Context], Union[Awaitable[JSON], JSON]]
-    ] = None
+    do_get: None | (Callable[["Project", str, Context], Awaitable[JSON] | JSON]) = None
     """
     Declare a `GET` end-point.
 
@@ -201,9 +199,9 @@ class CommandPipelineStep(BaseModel):
         *  Context : current execution [Context](@yw-nav-class:youwol.utils.context.Context)]
     """
 
-    do_post: Optional[
-        Callable[["Project", str, JSON, Context], Union[Awaitable[JSON], JSON]]
-    ] = None
+    do_post: None | (
+        Callable[["Project", str, JSON, Context], Awaitable[JSON] | JSON]
+    ) = None
     """
     Declare a `POST` end-point.
 
@@ -215,9 +213,9 @@ class CommandPipelineStep(BaseModel):
         *  Context : current execution [Context](@yw-nav-class:youwol.utils.context.Context)]
     """
 
-    do_put: Optional[
-        Callable[["Project", str, JSON, Context], Union[Awaitable[JSON], JSON]]
-    ] = None
+    do_put: None | (
+        Callable[["Project", str, JSON, Context], Awaitable[JSON] | JSON]
+    ) = None
     """
     Declare a `PUT` end-point.
 
@@ -229,9 +227,9 @@ class CommandPipelineStep(BaseModel):
         *  Context : current execution [Context](@yw-nav-class:youwol.utils.context.Context)
     """
 
-    do_delete: Optional[
-        Callable[["Project", str, Context], Union[Awaitable[JSON], JSON]]
-    ] = None
+    do_delete: None | (Callable[["Project", str, Context], Awaitable[JSON] | JSON]) = (
+        None
+    )
     """
     Declare a `DELETE` end-point.
 
@@ -256,7 +254,7 @@ class PipelineStep(BaseModel):
     List of artifacts produced by the step.
     """
 
-    sources: Union[FileListing, SourcesFctImplicit, SourcesFctExplicit] = None
+    sources: FileListing | SourcesFctImplicit | SourcesFctExplicit = None
     """
     This attribute is used to check whether the status of the step is up-to-date regarding the files that
     generated it. For instance, in a typescript project it would include all the `.ts` files as well as some
@@ -276,7 +274,7 @@ class PipelineStep(BaseModel):
     last_manifest: Optional[Manifest], context: Context,) -> PipelineStepStatus` of this class.
     """
 
-    view: Optional[Path]
+    view: Path | None
     """
     It is the path of a javascript file that returns a function generating a view, it has the following signature:
 
@@ -318,7 +316,7 @@ class PipelineStep(BaseModel):
 
     async def get_sources(
         self, project: "Project", flow_id: FlowId, context: Context
-    ) -> Optional[Iterable[Path]]:
+    ) -> Iterable[Path] | None:
         if self.sources is None:
             return None
 
@@ -339,7 +337,7 @@ class PipelineStep(BaseModel):
         self,
         project: "Project",
         flow_id: str,
-        last_manifest: Optional[Manifest],
+        last_manifest: Manifest | None,
         context: Context,
     ) -> PipelineStepStatus:
         if not last_manifest:
@@ -378,7 +376,7 @@ class PipelineStep(BaseModel):
 
         return PipelineStepStatus.OK
 
-    run: Union[str, RunImplicit, ExplicitNone]
+    run: str | RunImplicit | ExplicitNone
     """
     Action to execute when the step is run.
 
@@ -577,15 +575,15 @@ class OpenWith(Parametrization):
     *  will pass as query parameters in the application URL the parameter `id=asset['rawId']`.
     """
 
-    name: Optional[str]
+    name: str | None
     """
     name of the action
     """
-    match: Union[dict, str]
+    match: dict | str
     """
     Matching specifier.
     """
-    parameters: Union[dict, str]
+    parameters: dict | str
     """
     Parameters mapper between the asset and the URL's query parameters of the application to launch.
     """
@@ -613,12 +611,12 @@ class BrowserAppGraphics(BaseModel):
     Describes graphics regarding application.
     """
 
-    appIcon: Optional[Any]
+    appIcon: Any | None
     """
     The icon of the application provided, as json description of an html element.
     """
 
-    fileIcon: Optional[Any]
+    fileIcon: Any | None
     """
     The icon of a file that can be opened by the application, provided as json description of an html element.
     """
@@ -635,7 +633,7 @@ class BrowserAppBundle(BrowserTarget):
     """
 
     family: Family = Family.application
-    displayName: Optional[str] = None
+    displayName: str | None = None
     """
     Display name of the application, name of the project if not provided.
     """
@@ -684,7 +682,7 @@ class Pipeline(BaseModel):
     """
     The list of flowcharts the pipeline relies on; this is where the concept of connection appear.
     """
-    extends: Optional[str] = None
+    extends: str | None = None
 
     dependencies: Callable[["Project", Context], set[str]] = None
     """
@@ -739,7 +737,7 @@ class Project(BaseModel):
         projects: list["Project"],
         recursive: bool,
         context: Context,
-        ignore: Optional[list[str]] = None,
+        ignore: list[str] | None = None,
     ) -> list["Project"]:
         ignore = ignore or []
         all_dependencies = (
@@ -854,7 +852,7 @@ class Project(BaseModel):
     def get_direct_upstream_steps(
         self, flow_id: str, step_id: str
     ) -> list[PipelineStep]:
-        def get_direct_upstream_step_in_branch(branch: list[str]) -> Optional[str]:
+        def get_direct_upstream_step_in_branch(branch: list[str]) -> str | None:
             if step_id not in branch:
                 return None
 

@@ -1,5 +1,4 @@
 # typing
-from typing import Optional
 
 # third parties
 from fastapi import APIRouter, Depends, HTTPException
@@ -30,7 +29,7 @@ async def post_data_generic(
     package: str,
     name: str,
     body: JSON,
-    namespace: Optional[str] = None,
+    namespace: str | None = None,
     configuration: Configuration = Depends(get_configuration),
 ):
     async with Context.start_ep(
@@ -116,7 +115,7 @@ async def delete_data_generic(
     request: Request,
     package: str,
     name: str,
-    namespace: Optional[str] = None,
+    namespace: str | None = None,
     configuration: Configuration = Depends(get_configuration),
 ):
     async with Context.start_ep(
@@ -192,7 +191,7 @@ async def get_data_generic(
     request: Request,
     package: str,
     name: str,
-    namespace: Optional[str] = None,
+    namespace: str | None = None,
     configuration: Configuration = Depends(get_configuration),
 ):
     async with Context.start_ep(

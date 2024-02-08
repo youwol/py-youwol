@@ -4,9 +4,6 @@ import time
 
 from threading import Event, Thread
 
-# typing
-from typing import Optional
-
 # third parties
 from pydantic import BaseModel
 
@@ -26,7 +23,7 @@ class LocalCacheClient(CacheClient):
         super().__init__(prefix=prefix)
         self._cache = {}
 
-    def _impl_get(self, key: str) -> Optional[str]:
+    def _impl_get(self, key: str) -> str | None:
         return (
             self._cache[key].value
             if key in self._cache and self._cache[key].expire_at > int(time.time())
@@ -45,7 +42,7 @@ class LocalCacheClient(CacheClient):
     def _impl_delete(self, key: str):
         self._cache.pop(key, None)
 
-    def _impl_get_ttl(self, key: str) -> Optional[TTL]:
+    def _impl_get_ttl(self, key: str) -> TTL | None:
         expire_at = self._cache[key].expire_at
         if expire_at == sys.maxsize:
             return None

@@ -1,11 +1,11 @@
 # standard library
 import itertools
 
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
 # typing
-from typing import Any, Callable, Optional, Union
+from typing import Any
 
 # third parties
 from fastapi import APIRouter
@@ -25,14 +25,12 @@ class FastApiRouter(BaseModel):
     Defines a router using the fast-api library.
     """
 
-    router: Union[
-        APIRouter, Callable[[Context], Union[APIRouter, Awaitable[APIRouter]]]
-    ]
+    router: APIRouter | Callable[[Context], APIRouter | Awaitable[APIRouter]]
     """
     Defines the router.
     """
 
-    base_path: Optional[str] = ""
+    base_path: str | None = ""
     """
     Defines the base path from which the router is served.
     """

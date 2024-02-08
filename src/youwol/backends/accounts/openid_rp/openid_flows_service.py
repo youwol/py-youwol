@@ -1,5 +1,5 @@
-# typing
-from typing import Callable, Optional
+# standard library
+from collections.abc import Callable
 
 # Youwol utilities
 from youwol.utils import CacheClient
@@ -45,7 +45,7 @@ class OpenidFlowsService:
         self.__tokens_id_generator = tokens_id_generator
 
     async def init_authorization_flow(
-        self, target_uri: str, login_hint: Optional[str], callback_uri: str
+        self, target_uri: str, login_hint: str | None, callback_uri: str
     ) -> str:
         auth_flow_ref = Flow.random_ref()
 

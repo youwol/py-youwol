@@ -1,9 +1,6 @@
 # standard library
 import os
 
-# typing
-from typing import Optional
-
 # third parties
 from starlette.responses import Response
 
@@ -36,8 +33,8 @@ tokens_storage = TokensStorageCache(cache=auth_cache)
 
 
 def get_auth_middleware_with_cookie(
-    public_path: Optional[str] = None,
-    redirect_to_login_for_path: Optional[str] = None,
+    public_path: str | None = None,
+    redirect_to_login_for_path: str | None = None,
 ) -> FastApiMiddleware:
     auth_middleware_args = {
         "jwt_providers": [

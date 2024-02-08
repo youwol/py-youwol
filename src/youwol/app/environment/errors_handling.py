@@ -2,9 +2,6 @@
 import sys
 import traceback
 
-# typing
-from typing import Union
-
 # third parties
 from colorama import Fore, Style
 from pydantic import BaseModel
@@ -17,7 +14,7 @@ class ErrorResponse(BaseModel):
 
 class Check(BaseModel):
     name: str
-    status: Union[bool, ErrorResponse, None] = None
+    status: bool | ErrorResponse | None = None
 
 
 class CheckConfPath(Check):

@@ -1,10 +1,10 @@
 # standard library
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from pathlib import Path
 
 # typing
-from typing import Any, Callable, Optional, Union
+from typing import Any
 
 # third parties
 from aiohttp import ClientResponse, FormData
@@ -82,7 +82,7 @@ class AssetsClient:
     async def get_file(
         self,
         asset_id: str,
-        path: Union[Path, str],
+        path: Path | str,
         **kwargs,
     ):
         """
@@ -185,7 +185,7 @@ class AssetsClient:
         asset_id: str,
         media_type: str,
         name: str,
-        reader: Optional[Callable[[ClientResponse], Awaitable[Any]]] = None,
+        reader: Callable[[ClientResponse], Awaitable[Any]] | None = None,
         **kwargs,
     ):
         """

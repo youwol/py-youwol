@@ -1,9 +1,6 @@
 # standard library
 from contextlib import asynccontextmanager
 
-# typing
-from typing import Optional
-
 # third parties
 import aiohttp
 
@@ -42,7 +39,7 @@ class Dependencies:
 
 
 class DependenciesFactory:
-    __dependencies: Optional[Dependencies] = None
+    __dependencies: Dependencies | None = None
 
     def __call__(self) -> Dependencies:
         if self.__dependencies is None:

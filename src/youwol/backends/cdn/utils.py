@@ -11,7 +11,7 @@ import tempfile
 from pathlib import Path
 
 # typing
-from typing import IO, NamedTuple, Optional, Union
+from typing import IO, NamedTuple
 
 # third parties
 import brotli
@@ -153,7 +153,7 @@ async def format_download_form(
     dir_path: Path,
     compress: bool,
     use_os_brotli: bool,
-    rename: Optional[str],
+    rename: str | None,
     context: Context,
 ) -> FormData:
     if compress and get_content_encoding(file_path) == "br":
@@ -517,7 +517,7 @@ async def post_storage_by_chunk(storage, forms: list[FormData], count, headers):
         )
 
 
-def md5_from_file(filename: Union[str, Path]):
+def md5_from_file(filename: str | Path):
     sha_hash = hashlib.md5()
     with open(str(filename), "rb") as f:
         for chunk in iter(lambda: f.read(4096), b""):

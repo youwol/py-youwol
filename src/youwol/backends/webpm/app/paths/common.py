@@ -36,9 +36,9 @@ async def client_response_to_streaming_response(
 
 def get_client_config(
     response: Response,
-    if_none_match: Optional[str],
+    if_none_match: str | None,
     deps: Dependencies,
-) -> Optional[ClientConfig]:
+) -> ClientConfig | None:
     etag = deps.configuration.version
 
     if if_none_match == str(etag):

@@ -9,13 +9,13 @@ import shutil
 import tempfile
 import zipfile
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from fnmatch import fnmatch
 from os import PathLike
 from pathlib import Path
 
 # typing
-from typing import IO, Callable, Optional, Union, cast
+from typing import IO, cast
 
 # third parties
 import aiohttp
@@ -43,11 +43,11 @@ def list_files(folder: Path, rec=True) -> list[Path]:
     ]
 
 
-def parse_json(path: Union[str, Path]):
+def parse_json(path: str | Path):
     return json.load(open(str(path), encoding="UTF-8"))
 
 
-def parse_yaml(path: Union[str, Path]):
+def parse_yaml(path: str | Path):
     with open(path, encoding="UTF-8") as stream:
         return yaml.safe_load(stream)
 
@@ -71,9 +71,7 @@ def copy_file(source: Path, destination: Path, create_folders: bool = False):
     shutil.copyfile(cast(PathLike, source), cast(PathLike, destination))
 
 
-def matching_files(
-    folder: Union[Path, str], patterns: Union[list[str], FileListing]
-) -> list[Path]:
+def matching_files(folder: Path | str, patterns: list[str] | FileListing) -> list[Path]:
     folder = Path(folder)
 
     def fix_pattern(pattern):
@@ -114,7 +112,7 @@ def matching_files(
     return selected
 
 
-def ensure_folders(*paths: Union[str, Path]):
+def ensure_folders(*paths: str | Path):
     r = []
     for path in paths:
         p = Path(path)
@@ -123,8 +121,8 @@ def ensure_folders(*paths: Union[str, Path]):
     return r
 
 
-def files_check_sum(paths: Iterable[Union[str, Path]]):
-    def md5_update_from_file(filename: Union[str, Path], current_hash):
+def files_check_sum(paths: Iterable[str | Path]):
+    def md5_update_from_file(filename: str | Path, current_hash):
         with open(str(filename), "rb") as f:
             for chunk in iter(lambda: f.read(4096), b""):
                 current_hash.update(chunk)
@@ -141,7 +139,7 @@ def files_check_sum(paths: Iterable[Union[str, Path]]):
 def create_zip_file(
     path: Path,
     files_to_zip: list[tuple[Path, str]],
-    with_data: Optional[list[tuple[str, Union[str, bytes]]]] = None,
+    with_data: list[tuple[str, str | bytes]] | None = None,
 ):
     with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as zipper:
         for path_file, name in files_to_zip:
@@ -172,9 +170,9 @@ def do_nothing_on_missing_dir(_path: Path):
 
 
 def ensure_dir_exists(
-    path: Optional[Union[str, Path]],
-    root_candidates: Union[Union[str, Path], list[Union[str, Path]]],
-    default_root: Optional[Union[str, Path]] = None,
+    path: str | Path | None,
+    root_candidates: str | Path | list[str | Path],
+    default_root: str | Path | None = None,
     create: Callable[[Path], None] = default_create_dir,
 ) -> Path:
     path = path if path else "."
@@ -192,10 +190,10 @@ def ensure_dir_exists(
 
 
 def ensure_file_exists(
-    path: Union[str, Path],
-    root_candidates: Union[Union[str, Path], list[Union[str, Path]]],
-    default_root: Optional[Union[str, Path]] = None,
-    default_content: Optional[str] = None,
+    path: str | Path,
+    root_candidates: str | Path | list[str | Path],
+    default_root: str | Path | None = None,
+    default_content: str | None = None,
 ) -> Path:
     (final_path, exists) = existing_path_or_default(
         path, root_candidates=root_candidates, default_root=default_root
@@ -218,9 +216,9 @@ def ensure_file_exists(
 
 
 def existing_path_or_default(
-    path: Union[str, Path],
-    root_candidates: Union[Union[str, Path], list[Union[str, Path]]],
-    default_root: Optional[Union[str, Path]] = None,
+    path: str | Path,
+    root_candidates: str | Path | list[str | Path],
+    default_root: str | Path | None = None,
 ) -> tuple[Path, bool]:
     typed_path = Path(path)
 
@@ -263,8 +261,8 @@ async def get_running_py_youwol_env(py_youwol_port):
 
 def extract_zip_file(
     file: IO,
-    zip_path: Union[Path, str],
-    dir_path: Union[Path, str],
+    zip_path: Path | str,
+    dir_path: Path | str,
     delete_original=True,
 ):
     dir_path = str(dir_path)

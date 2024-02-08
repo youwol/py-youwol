@@ -1,12 +1,9 @@
 # standard library
-import functools
 import shutil
 import tomllib
 
+from collections.abc import Iterable
 from pathlib import Path
-
-# typing
-from typing import Iterable
 
 # Youwol utilities
 from youwol.utils import AnyDict, parse_json

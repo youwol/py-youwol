@@ -1,5 +1,4 @@
 # typing
-from typing import Optional
 
 # third parties
 from aiohttp import ClientSession
@@ -90,7 +89,7 @@ class FlowSwitch(BaseModel):
 
     async def switch(
         self, incoming_request: Request, context: Context
-    ) -> Optional[Response]:
+    ) -> Response | None:
         """
         Implementation logic of the switch.
 
@@ -169,7 +168,7 @@ class FlowSwitcherMiddleware(CustomMiddleware):
         incoming_request: Request,
         call_next: RequestResponseEndpoint,
         context: Context,
-    ) -> Optional[Response]:
+    ) -> Response | None:
         async with context.start(
             action=f"FlowSwitcher: {self.name}", with_labels=[Label.MIDDLEWARE]
         ) as ctx:
@@ -286,7 +285,7 @@ class CdnSwitch(FlowSwitch):
 
     async def switch(
         self, incoming_request: Request, context: Context
-    ) -> Optional[Response]:
+    ) -> Response | None:
         headers = context.headers(from_req_fwd=lambda header_keys: header_keys)
 
         asset_id = f"/{encode_id(self.packageName)}/"
@@ -307,7 +306,7 @@ class CdnSwitch(FlowSwitch):
 
     async def _forward_request(
         self, rest_of_path: str, headers: dict[str, str]
-    ) -> Optional[Response]:
+    ) -> Response | None:
         dest_url = f"http://localhost:{self.port}/{rest_of_path}"
 
         async with ClientSession(auto_decompress=False) as session:
@@ -398,7 +397,7 @@ class RedirectSwitch(FlowSwitch):
 
     async def switch(
         self, incoming_request: Request, context: Context
-    ) -> Optional[Response]:
+    ) -> Response | None:
         env = await context.get("env", YouwolEnvironment)
         headers = {
             **dict(incoming_request.headers.items()),

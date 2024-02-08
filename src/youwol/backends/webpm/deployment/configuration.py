@@ -1,9 +1,6 @@
 # standard library
 import os
 
-# typing
-from typing import Optional
-
 # third parties
 from pydantic.dataclasses import dataclass
 
@@ -23,7 +20,7 @@ class Configuration:
 
 
 class ConfigurationFactory:
-    __configuration: Optional[Configuration] = None
+    __configuration: Configuration | None = None
 
     @classmethod
     def get(cls) -> Configuration:

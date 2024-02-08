@@ -1,9 +1,6 @@
 # standard library
 from dataclasses import dataclass
 
-# typing
-from typing import Optional
-
 # third parties
 import redis
 
@@ -17,7 +14,7 @@ class RedisCacheClient(CacheClient):
         super().__init__(prefix)
         self.cache = redis.Redis(host=host, decode_responses=True)
 
-    def _impl_get(self, key: str) -> Optional[str]:
+    def _impl_get(self, key: str) -> str | None:
         v = self.cache.get(key)
         return v if v is not None else None
 
@@ -33,7 +30,7 @@ class RedisCacheClient(CacheClient):
     def _impl_delete(self, key: str):
         self.cache.delete(key)
 
-    def _impl_get_ttl(self, key: str) -> Optional[TTL]:
+    def _impl_get_ttl(self, key: str) -> TTL | None:
         exp = self.cache.ttl(key)
         if exp == "-1":
             return None

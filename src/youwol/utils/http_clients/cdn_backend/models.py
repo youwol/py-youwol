@@ -2,7 +2,7 @@
 from pathlib import Path
 
 # typing
-from typing import Any, NamedTuple, Optional, Union
+from typing import Any, NamedTuple
 
 # third parties
 from pydantic import BaseModel
@@ -17,7 +17,7 @@ from youwol.utils.clients.docdb.models import (
 )
 
 
-def get_api_key(version: Union[str, Version]):
+def get_api_key(version: str | Version):
     parsed = version if isinstance(version, Version) else Version(version)
     if parsed.major != 0:
         return f"{parsed.major}"
@@ -62,12 +62,12 @@ exportedSymbols = {
 
 
 class FormData(NamedTuple):
-    objectName: Union[str, Path]
+    objectName: str | Path
     objectData: bytes
     objectSize: int
     content_type: str
     content_encoding: str
-    owner: Union[str, None]
+    owner: str | None
 
 
 class PublishResponse(BaseModel):
@@ -288,7 +288,7 @@ class LoadingGraphBody(BaseModel):
     Body of the request to resolve loading graph.
     """
 
-    libraries: Union[list[LibraryQuery], dict[str, str]]
+    libraries: list[LibraryQuery] | dict[str, str]
     """
     The requested libraries.
     """
@@ -297,7 +297,7 @@ class LoadingGraphBody(BaseModel):
     Allows to pin the dependencies of some libraries to override the version that would normally be picked.
     In the form of a dict with key being library name and value the explicit version.
     """
-    extraIndex: Optional[str]
+    extraIndex: str | None
     """
     A brotli encoded dictionary of an extra CDN database to account for when resolving the dependencies.
     """

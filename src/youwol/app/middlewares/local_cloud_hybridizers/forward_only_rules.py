@@ -1,5 +1,4 @@
 # typing
-from typing import Optional
 
 # third parties
 from starlette.middleware.base import RequestResponseEndpoint
@@ -38,7 +37,7 @@ class ForwardOnly(AbstractLocalCloudDispatch):
         incoming_request: Request,
         call_next: RequestResponseEndpoint,
         context: Context,
-    ) -> Optional[Response]:
+    ) -> Response | None:
         """
         This dispatch match the endpoints:
          *  `GET:/api/assets-gateway/assets/**`

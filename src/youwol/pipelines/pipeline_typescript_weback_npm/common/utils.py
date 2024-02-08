@@ -6,7 +6,7 @@ import shutil
 from pathlib import Path
 
 # typing
-from typing import NamedTuple, Union, cast
+from typing import NamedTuple, cast
 
 # third parties
 import pyparsing
@@ -41,8 +41,8 @@ class FileNames(NamedTuple):
 def copy_files_folders(
     working_path: Path,
     base_template_path: Path,
-    files: list[Union[str, Path]],
-    folders: list[Union[str, Path]],
+    files: list[str | Path],
+    folders: list[str | Path],
 ):
     for file in files:
         shutil.copyfile(src=base_template_path / Path(file), dst=working_path / file)
@@ -197,7 +197,7 @@ def get_api_version(query):
 
 
 def get_externals(input_template: Template):
-    externals: dict[str, Union[str, JSON]] = {}
+    externals: dict[str, str | JSON] = {}
     exported_symbols: dict[str, JSON] = {}
 
     all_runtime = {

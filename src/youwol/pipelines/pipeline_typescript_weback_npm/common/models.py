@@ -2,9 +2,6 @@
 from enum import Enum
 from pathlib import Path
 
-# typing
-from typing import Optional
-
 # third parties
 from pydantic import BaseModel
 
@@ -140,15 +137,15 @@ class Template(BaseModel):
     type: PackageType
     version: str
     name: str
-    inPackageJson: Optional[JSON] = {}
-    exportedSymbol: Optional[str] = None
+    inPackageJson: JSON | None = {}
+    exportedSymbol: str | None = None
     shortDescription: str = ""
-    author: Optional[str]
+    author: str | None
     userGuide: bool = False
     dependencies: Dependencies = Dependencies()
     bundles: Bundles
-    testConfig: Optional[str]
-    devServer: Optional[DevServer]
+    testConfig: str | None
+    devServer: DevServer | None
 
 
 class NpmRepo(UploadTarget):

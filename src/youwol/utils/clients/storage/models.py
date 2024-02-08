@@ -2,13 +2,13 @@
 from pathlib import Path
 
 # typing
-from typing import NamedTuple, Union
+from typing import NamedTuple
 
 
 class FileData(NamedTuple):
-    objectName: Union[str, Path]
+    objectName: str | Path
     objectData: bytes
     objectSize: int
     content_type: str
     content_encoding: str
-    owner: Union[str, None]
+    owner: str | None

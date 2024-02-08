@@ -9,7 +9,7 @@ from datetime import datetime
 from pathlib import Path
 
 # typing
-from typing import Any, Optional, Union
+from typing import Any
 
 # third parties
 from fastapi import UploadFile
@@ -43,7 +43,7 @@ from youwol.utils.http_clients.assets_backend.models import (
 flatten = itertools.chain.from_iterable
 
 
-def group_scope_to_owner(scope: str) -> Union[str, None]:
+def group_scope_to_owner(scope: str) -> str | None:
     if scope == "private":
         return None
     return scope
@@ -149,8 +149,8 @@ async def switch_data(
     asset_id: str,
     asset: Any,
     kind: str,
-    from_group: Union[str, None],
-    to_group: Union[str, None],
+    from_group: str | None,
+    to_group: str | None,
     storage: Storage,
     headers: Mapping[str, str],
 ):
@@ -256,9 +256,7 @@ def format_policy(policy: AccessPolicyResp) -> GroupAccess:
     )
 
 
-def get_file_path(
-    asset_id: str, kind: str, file_path: Optional[Union[Path, str]] = None
-) -> str:
+def get_file_path(asset_id: str, kind: str, file_path: Path | str | None = None) -> str:
     return (
         f"{kind}/{asset_id}/files/{file_path}"
         if file_path

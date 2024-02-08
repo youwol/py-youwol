@@ -1,5 +1,4 @@
 # typing
-from typing import Optional
 
 # third parties
 from pydantic import BaseModel
@@ -16,7 +15,7 @@ from youwol.utils.clients.docdb.models import (
 
 
 class PutStoryBody(BaseModel):
-    storyId: Optional[str]
+    storyId: str | None
     title: str
 
 
@@ -56,9 +55,9 @@ class GlobalContent(BaseModel):
 
 
 class PostGlobalContentBody(BaseModel):
-    css: Optional[str]
-    javascript: Optional[str]
-    components: Optional[str]
+    css: str | None
+    javascript: str | None
+    components: str | None
 
 
 class GetGlobalContentResp(BaseModel):
@@ -82,13 +81,13 @@ class ContentBody(Content):
 class PutDocumentBody(BaseModel):
     title: str
     parentDocumentId: str
-    documentId: Optional[str]
-    content: Optional[ContentBody]
+    documentId: str | None
+    content: ContentBody | None
 
 
 class PostDocumentBody(BaseModel):
     title: str
-    content: Optional[ContentBody]
+    content: ContentBody | None
 
 
 class PostPluginBody(BaseModel):
@@ -122,7 +121,7 @@ class LoadingGraphResponse(BaseModel):
 
 class Requirements(BaseModel):
     plugins: list[str]
-    loadingGraph: Optional[LoadingGraphResponse] = None
+    loadingGraph: LoadingGraphResponse | None = None
 
 
 class PostPluginResponse(BaseModel):
