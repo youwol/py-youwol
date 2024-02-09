@@ -17,6 +17,11 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 ## [0.1.7.post.dev] − Unreleased
 
+### Fixed
+
+-   **Backends**
+    -   Error while retrieving token from `Redis` cache if empty <!-- TG-2064 -->
+
 ## [0.1.7] − 2024-02-08
 
 ### Added
