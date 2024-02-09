@@ -2,7 +2,7 @@
 import uuid
 
 # typing
-from typing import Annotated, Optional
+from typing import Annotated
 
 # third parties
 from fastapi import Depends, status
@@ -31,7 +31,7 @@ counter_anonymous = Counter("accounts_visitors_created", "Nb visitor profiles cr
 async def authorization_flow(
     request: Request,
     target_uri: str,
-    yw_login_hint: Annotated[Optional[str], Cookie()] = None,
+    yw_login_hint: Annotated[str | None, Cookie()] = None,
     conf: Configuration = Depends(get_configuration),
 ) -> Response:
     """
@@ -135,7 +135,7 @@ async def logout(
     request: Request,
     target_uri: str,
     forget_me: bool = False,
-    yw_jwt: Annotated[Optional[str], Cookie()] = None,
+    yw_jwt: Annotated[str | None, Cookie()] = None,
     conf: Configuration = Depends(get_configuration),
 ) -> Response:
     """
@@ -216,7 +216,7 @@ async def login(
     request: Request,
     target_uri: str,
     flow: str = "auto",
-    yw_login_hint: Annotated[Optional[str], Cookie()] = None,
+    yw_login_hint: Annotated[str | None, Cookie()] = None,
     conf: Configuration = Depends(get_configuration),
 ) -> Response:
     """

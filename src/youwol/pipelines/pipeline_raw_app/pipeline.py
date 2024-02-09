@@ -1,8 +1,6 @@
 # standard library
+from collections.abc import Callable
 from pathlib import Path
-
-# typing
-from typing import Callable, Optional
 
 # third parties
 from pydantic import BaseModel
@@ -175,7 +173,7 @@ class PackageStep(PipelineStep):
         self,
         project: "Project",
         flow_id: str,
-        last_manifest: Optional[Manifest],
+        last_manifest: Manifest | None,
         context: Context,
     ) -> PipelineStepStatus:
         status = await super().get_status(

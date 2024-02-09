@@ -151,7 +151,7 @@ jobs:
 
       - name: Checkout target branch
         id: checkout_target_branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.base_ref }}
           path: .py-youwol_target

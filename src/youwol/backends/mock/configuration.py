@@ -1,8 +1,5 @@
 # standard library
-from collections.abc import Awaitable
-
-# typing
-from typing import Callable, Union
+from collections.abc import Awaitable, Callable
 
 
 class Configuration:
@@ -12,7 +9,7 @@ class Configuration:
 
 
 class Dependencies:
-    get_configuration: Callable[[], Union[Configuration, Awaitable[Configuration]]]
+    get_configuration: Callable[[], Configuration | Awaitable[Configuration]]
 
 
 async def get_configuration():

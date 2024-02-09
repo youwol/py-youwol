@@ -5,9 +5,6 @@ import shutil
 from collections.abc import Mapping
 from pathlib import Path
 
-# typing
-from typing import Optional
-
 # third parties
 from deepdiff import DeepDiff
 
@@ -156,7 +153,7 @@ class DependenciesStep(PipelineStep):
         self,
         project: Project,
         flow_id: str,
-        last_manifest: Optional[Manifest],
+        last_manifest: Manifest | None,
         context: Context,
     ) -> PipelineStepStatus:
         async with context.start(action="get status of project's dependencies") as ctx:
@@ -285,7 +282,7 @@ class DependenciesStep(PipelineStep):
             }
 
     @staticmethod
-    def node_module_checksum(project: Project, name: str) -> Optional[str]:
+    def node_module_checksum(project: Project, name: str) -> str | None:
         node_module_folder = project.path / "node_modules" / name
         files = list_files(node_module_folder)
         return files_check_sum(files)

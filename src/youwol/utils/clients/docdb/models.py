@@ -1,5 +1,8 @@
+# standard library
+from collections.abc import Callable
+
 # typing
-from typing import Any, Callable, Optional
+from typing import Any
 
 # third parties
 from pydantic import BaseModel
@@ -147,7 +150,7 @@ class Query(BaseModel):
 class QueryBody(BaseModel):
     allow_filtering: bool = False
     max_results: int = 100
-    iterator: Optional[str] = None
+    iterator: str | None = None
     mode: str = "documents"
     distinct: list[str] = []
     select_clauses: list[SelectClause] = []

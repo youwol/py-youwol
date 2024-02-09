@@ -8,7 +8,7 @@ from collections.abc import Iterable, Mapping
 from pathlib import Path
 
 # typing
-from typing import Optional, cast
+from typing import cast
 
 # third parties
 from fastapi import HTTPException
@@ -182,7 +182,7 @@ class PublishCdnLocalStep(PipelineStep):
         self,
         project: Project,
         flow_id: str,
-        last_manifest: Optional[Manifest],
+        last_manifest: Manifest | None,
         context: Context,
     ) -> PipelineStepStatus:
         """
@@ -482,7 +482,7 @@ class PublishCdnRemoteStep(PipelineStep):
         self,
         project: Project,
         flow_id: str,
-        last_manifest: Optional[Manifest],
+        last_manifest: Manifest | None,
         context: Context,
     ) -> PipelineStepStatus:
         """

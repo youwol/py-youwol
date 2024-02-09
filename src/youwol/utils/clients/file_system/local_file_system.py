@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 # typing
-from typing import Optional, Union, cast
+from typing import cast
 
 # third parties
 from fastapi import HTTPException
@@ -39,7 +39,7 @@ class LocalFileSystem(FileSystemInterface):
     Reference path of all operations in this class.
     """
 
-    def get_full_path(self, path: Union[str, Path]) -> Path:
+    def get_full_path(self, path: str | Path) -> Path:
         return self.root_path / path
 
     async def ensure_bucket(self):
@@ -86,7 +86,7 @@ class LocalFileSystem(FileSystemInterface):
     async def get_object(
         self,
         object_id: str,
-        ranges_bytes: Optional[list[tuple[int, int]]] = None,
+        ranges_bytes: list[tuple[int, int]] | None = None,
         **kwargs,
     ):
         path = self.ensure_object_exist(object_id)

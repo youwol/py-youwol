@@ -1,8 +1,9 @@
 # standard library
+from collections.abc import Callable
 from pathlib import Path
 
 # typing
-from typing import BinaryIO, Callable, Optional
+from typing import BinaryIO
 
 # relative
 from .constantes import ALGO_HEADER_LENGTH, Algo, default_algo
@@ -29,7 +30,7 @@ def encrypt_into_file(
 
 
 def decrypt_from_file(
-    path: Path, key: str, expected_algo: Optional[Algo] = default_algo
+    path: Path, key: str, expected_algo: Algo | None = default_algo
 ) -> str:
     if not path.exists():
         raise FileNotFound(path)

@@ -2,9 +2,6 @@
 import asyncio
 import base64
 
-# typing
-from typing import Optional, Union
-
 # third parties
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
@@ -44,7 +41,7 @@ class Download(AbstractLocalCloudDispatch):
         incoming_request: Request,
         call_next: RequestResponseEndpoint,
         context: Context,
-    ) -> Optional[Response]:
+    ) -> Response | None:
         """
         This dispatch match the endpoints:
          *  `GET:/api/assets-gateway/assets-backend/assets/*/files/**`
@@ -161,7 +158,7 @@ class UpdateApplication(AbstractLocalCloudDispatch):
         incoming_request: Request,
         call_next: RequestResponseEndpoint,
         context: Context,
-    ) -> Optional[Response]:
+    ) -> Response | None:
         """
         This dispatch match the endpoint `GET:/applications/**`, it returns `None` otherwise.
 
@@ -263,8 +260,8 @@ class UpdateApplication(AbstractLocalCloudDispatch):
     async def download_needed(
         package_name: str,
         semver: str,
-        latest_local: Optional[str],
-        latest_remote: Optional[str],
+        latest_local: str | None,
+        latest_remote: str | None,
         context: Context,
     ):
         if not latest_remote and not latest_local:
@@ -291,7 +288,7 @@ class UpdateApplication(AbstractLocalCloudDispatch):
         return True
 
     @staticmethod
-    def retrieve_latest_version(resp: Union[JSON, BaseException]):
+    def retrieve_latest_version(resp: JSON | BaseException):
         return (
             resp["versions"][0]
             if not isinstance(resp, BaseException) and len(resp["versions"]) > 0

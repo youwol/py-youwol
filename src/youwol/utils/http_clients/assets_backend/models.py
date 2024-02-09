@@ -4,7 +4,7 @@ from enum import Enum
 from pathlib import Path
 
 # typing
-from typing import Any, NamedTuple, Optional, Union
+from typing import Any, NamedTuple
 
 # third parties
 from pydantic import BaseModel
@@ -84,7 +84,7 @@ class AccessPolicyResp(BaseModel):
     Share policy.
     """
     parameters: Mapping[str, Any] = {}
-    timestamp: Union[int, None]
+    timestamp: int | None
 
 
 class PermissionsResp(BaseModel):
@@ -104,7 +104,7 @@ class PermissionsResp(BaseModel):
     """
     Share permission enabled or not.
     """
-    expiration: Union[int, None]
+    expiration: int | None
 
 
 class Group(BaseModel):
@@ -135,7 +135,7 @@ class OwningGroup(BaseModel):
 class GroupAccess(BaseModel):
     read: ReadPolicyEnum
     share: SharePolicyEnum
-    expiration: Union[None, str]
+    expiration: None | str
 
 
 class ExposingGroup(BaseModel):
@@ -181,7 +181,7 @@ class AccessInfoResp(BaseModel):
     """
     The owning group.
     """
-    ownerInfo: Union[None, OwnerInfo]
+    ownerInfo: None | OwnerInfo
     """
     Owner information, only available for owners of the asset.
     """
@@ -192,7 +192,7 @@ class AccessInfoResp(BaseModel):
 
 
 class FormData(NamedTuple):
-    objectName: Union[str, Path]
+    objectName: str | Path
     objectData: bytes
     objectSize: int
     content_type: str
@@ -255,7 +255,7 @@ class NewAssetBody(BaseModel):
     Body to create a new asset.
     """
 
-    assetId: Optional[str] = None
+    assetId: str | None = None
     """
     Asset's ID, if not provided use a generated uuid.
     """
@@ -267,7 +267,7 @@ class NewAssetBody(BaseModel):
     """
     Kind of this asset.
     """
-    groupId: Optional[str] = None
+    groupId: str | None = None
     """
     Group ID in which the asset belongs.
     """
@@ -296,23 +296,23 @@ class PostAssetBody(BaseModel):
     Body to update an asset.
     """
 
-    name: Optional[str] = None
+    name: str | None = None
     """
     New name if provided.
     """
-    description: Optional[str] = None
+    description: str | None = None
     """
     New description if provided.
     """
-    tags: Optional[list[str]] = None
+    tags: list[str] | None = None
     """
     New tags if provided.
     """
-    groupId: Optional[str] = None
+    groupId: str | None = None
     """
     New owning group ID if provided.
     """
-    defaultAccessPolicy: Optional[AccessPolicyBody] = None
+    defaultAccessPolicy: AccessPolicyBody | None = None
     """
     New default access policy if provided.
     """

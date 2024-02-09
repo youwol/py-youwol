@@ -2,11 +2,9 @@
 import shutil
 import tomllib
 
+from collections.abc import Callable
 from glob import glob
 from pathlib import Path
-
-# typing
-from typing import Callable
 
 # third parties
 from pydantic import BaseModel

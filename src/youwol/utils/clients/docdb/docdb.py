@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 
 # typing
-from typing import Any, NamedTuple, Union
+from typing import Any, NamedTuple
 
 # third parties
 import aiohttp
@@ -74,8 +74,8 @@ class UpdateType(Enum):
 
 class Update(NamedTuple):
     type: UpdateType
-    current_minor: Union[int, None]
-    current_major: Union[int, None]
+    current_minor: int | None
+    current_major: int | None
     new_minor: int
     new_major: int
 
@@ -369,7 +369,7 @@ class DocDbClient:
         self,
         partition_keys: dict[str, Any],
         clustering_keys: dict[str, Any],
-        owner: Union[str, None],
+        owner: str | None,
         **kwargs,
     ) -> AnyDict:
         """
@@ -402,8 +402,8 @@ class DocDbClient:
 
     async def query(
         self,
-        query_body: Union[QueryBody, str],
-        owner: Union[str, None],
+        query_body: QueryBody | str,
+        owner: str | None,
         **kwargs,
     ) -> AnyDict:
         """
@@ -450,7 +450,7 @@ class DocDbClient:
                 )
 
     async def create_document(
-        self, doc: AnyDict, owner: Union[str, None], **kwargs
+        self, doc: AnyDict, owner: str | None, **kwargs
     ) -> AnyDict:
         """
         Create a new document in the database.
@@ -476,7 +476,7 @@ class DocDbClient:
                 )
 
     async def update_document(
-        self, doc: AnyDict, owner: Union[str, None], **kwargs
+        self, doc: AnyDict, owner: str | None, **kwargs
     ) -> AnyDict:
         """
         Update a new document in the database.
@@ -501,9 +501,7 @@ class DocDbClient:
                     resp, message="Can not update the document", params=params, doc=doc
                 )
 
-    async def delete_document(
-        self, doc: dict[str, Any], owner: Union[str, None], **kwargs
-    ):
+    async def delete_document(self, doc: dict[str, Any], owner: str | None, **kwargs):
         """
         Delete a document from the database.
 

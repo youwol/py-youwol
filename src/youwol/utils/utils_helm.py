@@ -2,7 +2,7 @@
 from pathlib import Path
 
 # typing
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 # third parties
 from pydantic.main import BaseModel
@@ -13,7 +13,7 @@ from youwol.utils.utils_shell import execute_shell_cmd
 
 
 class Selector(NamedTuple):
-    name: Optional[str]
+    name: str | None
 
 
 class Resource(BaseModel):
@@ -27,9 +27,9 @@ class Resource(BaseModel):
 
 
 async def helm_list(
-    namespace: Optional[str],
+    namespace: str | None,
     kube_context: str,
-    selector: Optional[Selector],
+    selector: Selector | None,
     context: Context,
 ):
     cmd = f"helm list --kube-context {kube_context}"

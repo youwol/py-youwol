@@ -1,9 +1,9 @@
 # standard library
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
 # typing
-from typing import Callable, Generic, Optional, TypeVar, Union
+from typing import Generic, TypeVar
 
 # Youwol utilities
 from youwol.utils.clients.file_system.interfaces import FileSystemInterface
@@ -37,11 +37,11 @@ class Configuration(Generic[FileSystemImplementation]):
     File system client using a bucket defined by this
     [namespace](@yw-nav-attr:youwol.backends.files.configurations.Constants.namespace)
     """
-    admin_headers: Optional[dict[str, str]] = None
+    admin_headers: dict[str, str] | None = None
 
 
 class Dependencies:
-    get_configuration: Callable[[], Union[Configuration, Awaitable[Configuration]]]
+    get_configuration: Callable[[], Configuration | Awaitable[Configuration]]
 
 
 async def get_configuration():

@@ -1,5 +1,5 @@
 # typing
-from typing import Annotated, Optional
+from typing import Annotated
 
 # third parties
 from fastapi import Depends
@@ -24,8 +24,8 @@ class ImpersonationDetails(BaseModel):
 @router.put("/impersonation")
 async def start_impersonate(
     details: ImpersonationDetails,
-    yw_jwt: Annotated[Optional[str], Cookie()] = None,
-    yw_jwt_t: Annotated[Optional[str], Cookie()] = None,
+    yw_jwt: Annotated[str | None, Cookie()] = None,
+    yw_jwt_t: Annotated[str | None, Cookie()] = None,
     conf: Configuration = Depends(get_configuration),
 ) -> Response:
     """
@@ -100,8 +100,8 @@ async def start_impersonate(
 
 @router.delete("/impersonation")
 async def stop_impersonation(
-    yw_jwt: Annotated[Optional[str], Cookie()] = None,
-    yw_jwt_t: Annotated[Optional[str], Cookie()] = None,
+    yw_jwt: Annotated[str | None, Cookie()] = None,
+    yw_jwt_t: Annotated[str | None, Cookie()] = None,
     conf: Configuration = Depends(get_configuration),
 ) -> Response:
     if conf.keycloak_admin_client is None:

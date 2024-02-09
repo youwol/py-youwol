@@ -1,5 +1,4 @@
 # typing
-from typing import Optional, Union
 
 # third parties
 from pydantic import BaseModel, Field
@@ -34,7 +33,7 @@ class Adaptor(BaseModel):
 class Connection(BaseModel):
     start: Slot
     end: Slot
-    adaptor: Optional[Adaptor] = None
+    adaptor: Adaptor | None = None
 
 
 class FactoryId(BaseModel):
@@ -96,9 +95,9 @@ class BuilderRendering(BaseModel):
 
 
 class EditMetadata(BaseModel):
-    name: Optional[str]
-    description: Optional[str]
-    libraries: Optional[dict[str, str]]
+    name: str | None
+    description: str | None
+    libraries: dict[str, str] | None
 
 
 Url = str
@@ -114,8 +113,8 @@ class Library(BaseModel):
 
 class LoadingGraph(BaseModel):
     graphType: str
-    lock: Optional[list[Library]] = None
-    definition: Union[list[list[Url]], list[list[list[str]]]]
+    lock: list[Library] | None = None
+    definition: list[list[Url]] | list[list[list[str]]]
 
 
 class Requirements(BaseModel):
@@ -127,7 +126,7 @@ class Requirements(BaseModel):
 
 class NewProject(BaseModel):
     name: str
-    projectId: Optional[str]
+    projectId: str | None
     description: str
 
 
@@ -181,7 +180,7 @@ class Component(BaseModel):
     fluxPacks: list[str]
     workflow: Workflow
     builderRendering: BuilderRendering
-    runnerRendering: Optional[RunnerRendering] = None
+    runnerRendering: RunnerRendering | None = None
 
 
 class Package(BaseModel):
@@ -209,8 +208,8 @@ class PostAdaptorBody(BaseModel):
 
 
 class OpenWithDescription(BaseModel):
-    match: Union[dict, str]
-    parametrized: Union[dict, str]
+    match: dict | str
+    parametrized: dict | str
 
 
 class GraphicsDescription(BaseModel):

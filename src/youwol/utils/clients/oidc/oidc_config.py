@@ -7,7 +7,7 @@ import secrets
 from dataclasses import dataclass
 
 # typing
-from typing import Any, Optional, Union
+from typing import Any, Union
 
 # third parties
 import aiohttp
@@ -223,14 +223,14 @@ class OidcConfig:
     """
     The base URL for the OIDC configuration.
     """
-    _openid_configuration: Optional[OpenIdConfiguration]
+    _openid_configuration: OpenIdConfiguration | None
     """
     OpenId configuration.
     Initialized at first call of
     [openid_configuration](@yw-nav-meth:youwol.utils.clients.oidc.oidc_config.OidcConfig.openid_configuration)
     """
 
-    _jwks_client: Optional[PyJWKClient]
+    _jwks_client: PyJWKClient | None
     """
     JSON Web Key Set (JWKS) client.
     Initialized at first call of
@@ -367,7 +367,7 @@ class OidcForClient:
         return {**params, "client_id": self.__client.client_id}
 
     async def auth_flow_url(
-        self, state: str, redirect_uri: str, login_hint: Optional[str]
+        self, state: str, redirect_uri: str, login_hint: str | None
     ) -> tuple[str, str, str]:
         """
         Generate the URL for the OpenID Authorization Code Flow request.
@@ -541,7 +541,7 @@ class OidcForClient:
         return tokens_data(data)
 
     async def logout_url(
-        self, redirect_uri: str, state: str, id_token_hint: Optional[str] = None
+        self, redirect_uri: str, state: str, id_token_hint: str | None = None
     ) -> str:
         """
         Generate the RP-Initiated Logout URL.

@@ -5,7 +5,7 @@ from urllib.error import URLError
 from urllib.request import urlopen
 
 # typing
-from typing import Any, Dict, List, Optional, TypeVar
+from typing import Any, TypeVar
 
 # third parties
 from aiohttp import ClientResponse, ClientSession, FormData, TCPConnector
@@ -88,7 +88,7 @@ async def aiohttp_to_starlette_response(resp: ClientResponse) -> Response:
 TResp = TypeVar("TResp")
 
 
-def extract_bytes_ranges(request: Request) -> Optional[list[tuple[int, int]]]:
+def extract_bytes_ranges(request: Request) -> list[tuple[int, int]] | None:
     range_header = request.headers.get("range")
     if not range_header:
         return None
@@ -111,7 +111,7 @@ def is_server_http_alive(url: str):
 
 
 def aiohttp_file_form(
-    filename: str, content_type: str, content: Any, file_id: Optional[str] = None
+    filename: str, content_type: str, content: Any, file_id: str | None = None
 ) -> FormData:
     """
     Create a `FormData` to upload a file (e.g. using
@@ -173,8 +173,8 @@ class FuturesResponse(Response):
     def __init__(
         self,
         channel_id: str,
-        headers: Optional[Dict[str, str]] = None,
-        media_type: Optional[str] = None,
+        headers: dict[str, str] | None = None,
+        media_type: str | None = None,
     ) -> None:
         super().__init__(
             content={"channelId": channel_id},
@@ -185,7 +185,7 @@ class FuturesResponse(Response):
         self.channel_id = channel_id
 
     async def next(
-        self, content: BaseModel, context: Context, labels: Optional[List[str]] = None
+        self, content: BaseModel, context: Context, labels: list[str] | None = None
     ):
         await context.send(
             data=content,

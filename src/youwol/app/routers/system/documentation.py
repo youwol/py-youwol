@@ -6,9 +6,6 @@ import inspect
 from pathlib import Path, PosixPath
 from types import ModuleType
 
-# typing
-from typing import List, Optional, Set, Type, Union
-
 # third parties
 from griffe.dataclasses import (
     Alias,
@@ -123,7 +120,7 @@ def format_module_doc(griffe_doc: Module, path: str) -> DocModuleResponse:
     )
 
 
-def get_symbol_path(griffe_doc: Union[Class, Function, Attribute, Module]) -> str:
+def get_symbol_path(griffe_doc: Class | Function | Attribute | Module) -> str:
     path = griffe_doc.name
     it = griffe_doc
     while it.parent:
@@ -134,8 +131,8 @@ def get_symbol_path(griffe_doc: Union[Class, Function, Attribute, Module]) -> st
 
 
 def get_docstring_sections(
-    griffe_doc: Union[Class, Function, Attribute, Module]
-) -> List[DocstringSection]:
+    griffe_doc: Class | Function | Attribute | Module,
+) -> list[DocstringSection]:
     if not griffe_doc.docstring:
         # This should not normally happen because only symbols with docstring are reported.
         # However, it is possible to request the documentation of a module that do not
@@ -180,7 +177,7 @@ def format_class_doc(griffe_doc: Class) -> DocClassResponse:
     )
 
 
-def format_code_doc(griffe_doc: Union[Class, Function, Attribute]) -> DocCodeResponse:
+def format_code_doc(griffe_doc: Class | Function | Attribute) -> DocCodeResponse:
     return DocCodeResponse(
         filePath=str(griffe_doc.filepath),
         startLine=griffe_doc.lineno,
@@ -234,8 +231,8 @@ def format_function_doc(griffe_doc: Function) -> DocFunctionResponse:
 
 
 def format_detailed_docstring(
-    sections: List[DocstringSection],
-) -> List[DocDocstringSectionResponse]:
+    sections: list[DocstringSection],
+) -> list[DocDocstringSectionResponse]:
     def admonition(v: DocstringSectionAdmonition) -> DocDocstringSectionResponse:
         return DocDocstringSectionResponse(
             type="admonition",
@@ -260,8 +257,8 @@ def format_detailed_docstring(
 
 
 def format_parameter_doc(
-    griffe_doc: Parameter, parameters: Optional[DocstringSectionParameters]
-) -> Optional[DocParameterResponse]:
+    griffe_doc: Parameter, parameters: DocstringSectionParameters | None
+) -> DocParameterResponse | None:
     docstring = (
         next(
             (p.description for p in parameters.value if p.name == griffe_doc.name), None
@@ -296,8 +293,8 @@ def format_attribute_doc(griffe_doc: Attribute) -> DocAttributeResponse:
 
 
 def format_type_annotation_doc(
-    griffe_doc: Union[Expr, str],
-) -> Optional[Union[DocTypeResponse, List[DocTypeResponse]]]:
+    griffe_doc: Expr | str,
+) -> DocTypeResponse | list[DocTypeResponse] | None:
     if isinstance(griffe_doc, str):
         # The case of string literals
         return DocTypeResponse(name=griffe_doc)
@@ -343,7 +340,7 @@ def format_type_annotation_doc(
     return None
 
 
-def format_docstring_doc(griffe_doc: Optional[Docstring]) -> Optional[str]:
+def format_docstring_doc(griffe_doc: Docstring | None) -> str | None:
     if not griffe_doc:
         return None
     return functools.reduce(lambda acc, e: acc + e.value, griffe_doc.parsed, "")
@@ -373,7 +370,7 @@ def patch_import_path(griffe_doc: Expr) -> str:
         return griffe_doc.canonical_path
 
 
-def init_classes(module: ModuleType = None, visited: Set[ModuleType] = None):
+def init_classes(module: ModuleType = None, visited: set[ModuleType] = None):
     if not visited:
         visited = set()
 
@@ -394,8 +391,8 @@ def init_classes(module: ModuleType = None, visited: Set[ModuleType] = None):
             init_classes(submodule, visited)
 
 
-def get_classes_inheriting_from(target: Type) -> Set[Type]:
-    def is_inherited(c: Type):
+def get_classes_inheriting_from(target: type) -> set[type]:
+    def is_inherited(c: type):
         if c == target:
             return False
         try:

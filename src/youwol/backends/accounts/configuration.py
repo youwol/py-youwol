@@ -1,10 +1,7 @@
 # standard library
 import uuid
 
-from collections.abc import Awaitable
-
-# typing
-from typing import Callable, Optional, Union
+from collections.abc import Awaitable, Callable
 
 # Youwol utilities
 from youwol.utils.clients.cache import CacheClient
@@ -26,12 +23,12 @@ class Configuration:
         openid_client: OidcForClient,
         tokens_storage: TokensStorage,
         auth_cache: CacheClient,
-        keycloak_admin_base_url: Optional[str],
-        keycloak_admin_client: Optional[OidcForClient],
+        keycloak_admin_base_url: str | None,
+        keycloak_admin_client: OidcForClient | None,
         https: bool = True,
         tokens_id_generator: Callable[[], str] = default_tokens_id_generator,
-        logout_url: Optional[str] = None,
-        account_manager_url: Optional[str] = None,
+        logout_url: str | None = None,
+        account_manager_url: str | None = None,
     ):
         self.oidc_client = openid_client
         self.keycloak_admin_client = keycloak_admin_client
@@ -60,7 +57,7 @@ class Configuration:
 
 
 class Dependencies:
-    get_configuration: Callable[[], Union[Configuration, Awaitable[Configuration]]]
+    get_configuration: Callable[[], Configuration | Awaitable[Configuration]]
 
 
 async def get_configuration() -> Configuration:
