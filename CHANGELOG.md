@@ -33,6 +33,13 @@ TG-2044
 TG-2034
 -->
 
+## [0.1.7.post] − 2024-02-09
+
+### Fixed
+
+-   **Backends**
+    -   Error while retrieving token from `Redis` cache if empty <!-- TG-2064 -->
+
 ## [0.1.7] − 2024-02-08
 
 ### Added

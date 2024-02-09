@@ -471,7 +471,7 @@ class SessionLessTokenManager:
 
         now = datetime.datetime.now().timestamp()
         token_data = self.__cache.get(self.__cache_key)
-        if not isinstance(token_data, dict):
+        if token_data is not None and not isinstance(token_data, dict):
             raise ValueError(f"Cached value for key {self.__cache_key} is not a `dict`")
         if token_data is None or int(token_data["expires_at"]) < int(now):
             sessionless_tokens_data = await self.__oidc_client.client_credentials_flow()
