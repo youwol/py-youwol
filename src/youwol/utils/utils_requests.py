@@ -25,6 +25,7 @@ async def redirect_request(
     headers=None,
 ) -> Response:
     rest_of_path = incoming_request.url.path.split(origin_base_path)[1].strip("/")
+    cookies = incoming_request.cookies
     headers = dict(incoming_request.headers.items()) if not headers else headers
     redirect_url = f"{destination_base_path}/{rest_of_path}"
 
@@ -46,29 +47,30 @@ async def redirect_request(
     )
 
     async with ClientSession(
-        connector=TCPConnector(verify_ssl=False), auto_decompress=False
+        connector=TCPConnector(verify_ssl=False),
+        auto_decompress=False,
+        cookies=cookies,
+        headers=headers,
     ) as session:
         if incoming_request.method == "GET":
-            async with await session.get(
-                url=redirect_url, params=params, headers=headers
-            ) as resp:
+            async with await session.get(url=redirect_url, params=params) as resp:
                 return await forward_response(resp)
 
         if incoming_request.method == "POST":
             async with await session.post(
-                url=redirect_url, data=data, params=params, headers=headers
+                url=redirect_url, data=data, params=params
             ) as resp:
                 return await forward_response(resp)
 
         if incoming_request.method == "PUT":
             async with await session.put(
-                url=redirect_url, data=data, params=params, headers=headers
+                url=redirect_url, data=data, params=params
             ) as resp:
                 return await forward_response(resp)
 
         if incoming_request.method == "DELETE":
             async with await session.delete(
-                url=redirect_url, data=data, params=params, headers=headers
+                url=redirect_url, data=data, params=params
             ) as resp:
                 return await forward_response(resp)
 
