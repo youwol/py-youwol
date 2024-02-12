@@ -126,7 +126,7 @@ async def dispatch_post(
     "/{backend_name}/{version_query}/{rest_of_path:path}", summary="Dispatch POST"
 )
 async def dispatch_put(
-        request: Request, backend_name: str, version_query: str, rest_of_path: str
+    request: Request, backend_name: str, version_query: str, rest_of_path: str
 ):
     """
     Dispatch.
@@ -142,7 +142,7 @@ async def dispatch_put(
     """
 
     async with Context.start_ep(
-            request=request,
+        request=request,
     ) as ctx:
         return await dispatch_impl(
             request=request,
@@ -157,7 +157,7 @@ async def dispatch_put(
     "/{backend_name}/{version_query}/{rest_of_path:path}", summary="Dispatch POST"
 )
 async def dispatch_delete(
-        request: Request, backend_name: str, version_query: str, rest_of_path: str
+    request: Request, backend_name: str, version_query: str, rest_of_path: str
 ):
     """
     Dispatch.
@@ -173,7 +173,7 @@ async def dispatch_delete(
     """
 
     async with Context.start_ep(
-            request=request,
+        request=request,
     ) as ctx:
         return await dispatch_impl(
             request=request,

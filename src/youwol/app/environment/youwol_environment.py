@@ -118,7 +118,7 @@ class YouwolEnvironment(BaseModel):
     proxied_backends: BackendsStore = BackendsStore()
     """
     The store regarding proxied backends. Proxied backends are usually standalone backend running on their
-    own port and proxied by youwol from the base path `/backends/NAME/VERSION/**` (where `NAME` and `VERSION` are 
+    own port and proxied by youwol from the base path `/backends/NAME/VERSION/**` (where `NAME` and `VERSION` are
     the name and version of the proxied backend).
     """
 

@@ -318,7 +318,7 @@ class RunStep(PipelineStep):
     ]
     """
     Commands associated to the step:
-    *  `get_info` : return the info of associated backend. 
+    *  `get_info` : return the info of associated backend.
     See [get_info](@yw-nav-meth:youwol.app.environment.proxied_backends.BackendsStore.get_info).
     *  `stop_backend` : stop the backend proxied from the associated project's name & version.
     """
