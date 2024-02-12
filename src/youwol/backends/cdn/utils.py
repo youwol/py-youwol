@@ -164,7 +164,7 @@ async def format_download_form(
         else:
             cmd = f"brotli {file_path} && mv {file_path}.br {file_path}"
             return_code, outputs = await execute_shell_cmd(cmd=cmd, context=context)
-            if return_code > 0:
+            if return_code is not None and return_code > 0:
                 raise CommandException(command=cmd, outputs=outputs)
 
     with open(str(file_path), "rb") as fp:
