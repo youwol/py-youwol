@@ -19,11 +19,11 @@
 #    - in project.optional-dependencies.publish for publishing workflow
 #
 #  * Whenever this file is updated, run this script to compile the requirements files :
-#      sh deps/manage.sh compile
+#      sh deps_manager.sh compile
 #   and commit the modifications in requirements files
 #
 #  * Upgrade the pinned versions of dependencies with :
-#      sh deps/manage.sh upgrade <package>
+#      sh deps_manager.sh upgrade <package>
 #
 
 
@@ -63,7 +63,7 @@ help_message() {
 Python requirements files management.
 
 Available actions :
-  * compile             : generate requirements files from deps/*.in
+  * compile             : generate requirements files from pyproject.toml
   * upgrade [<package>] : upgrade all packages or only specified package in existing requirements files
 
 See sources in ${self_name} for details."
