@@ -17,11 +17,25 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 ## [0.1.8.dev] − Unreleased
 
-### Changed
+### Added
 
+-   **Pipeline python backend**:
+    -  Provide first version for `setup`, `dependencies` & `run` steps. <!-- TG-2051 -->
+
+### Changed
+ 
 -   **Pipeline Typescript**:
     -   remove pinning of `@types/node` after [chokidar bug correction](https://github.com/paulmillr/chokidar/issues/1299) <!-- TG-1983 -->
 
+### Fixed
+
+-   Forward request's cookies when using `redirect_request`. <!-- TG-2072 -->
+
+### Security
+
+-   **Dependencies vulnerabilities**:
+    -   [GHSA-2jv5-9r88-3w3p] upgrade `python-multipart`. to 0.0.9 <!-- TG-2073 -->
+    
 ### Removed
 
 -   Drop support for Python 3.9 <!-- TG-2035, TG-2003 -->
