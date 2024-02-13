@@ -126,16 +126,17 @@ async def generate_template(folder: Path, parameters: dict[str, str], context: C
             )
             replace_patterns(dst)
 
-        shutil.copytree(
-            src=Path(__file__).parent / "template" / ".yw_pipeline",
-            dst=project_folder / ".yw_pipeline",
-        )
         shutil.copyfile(
             src=Path(__file__).parent / "template" / "pyproject.toml.txt",
             dst=project_folder / "pyproject.toml",
         )
 
         replace_patterns(project_folder / "pyproject.toml")
+        # Need to be at the end
+        shutil.copytree(
+            src=Path(__file__).parent / "template" / ".yw_pipeline",
+            dst=project_folder / ".yw_pipeline",
+        )
 
         return parameters["name"], folder
 

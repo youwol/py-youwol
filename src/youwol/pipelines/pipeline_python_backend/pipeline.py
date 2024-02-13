@@ -2,11 +2,14 @@
 import shutil
 import tomllib
 
+from asyncio.subprocess import Process
 from collections.abc import Callable
 from glob import glob
 from pathlib import Path
+from socket import AF_INET, SOCK_STREAM, socket
 
 # third parties
+from fastapi import HTTPException
 from pydantic import BaseModel
 
 # Youwol
@@ -16,19 +19,27 @@ import youwol
 from youwol.app.environment import YouwolEnvironment
 from youwol.app.routers.projects import (
     Artifact,
+    CommandPipelineStep,
     ExplicitNone,
     Family,
     FileListing,
     Flow,
+    FlowId,
     Pipeline,
     PipelineStep,
     Project,
-    RunImplicit,
     Target,
+    get_project_configuration,
 )
 
 # Youwol utilities
-from youwol.utils import AnyDict, Context, execute_shell_cmd, write_json
+from youwol.utils import (
+    AnyDict,
+    CommandException,
+    Context,
+    execute_shell_cmd,
+    write_json,
+)
 
 # Youwol pipelines
 from youwol.pipelines import (
@@ -140,7 +151,8 @@ class SetupStep(PipelineStep):
 
     @staticmethod
     def __auto_generated_py(pyproject: AnyDict) -> str:
-        return f"""default_port = {pyproject['youwol']['default-port']}\n"""
+        return f"""default_port = {pyproject['youwol']['default-port']}
+version = "{pyproject["project"]["version"]}" \n"""
 
 
 class DependenciesStep(PipelineStep):
@@ -202,7 +214,6 @@ class DependenciesStep(PipelineStep):
 
             await execute_shell_cmd(cmd=cmd, context=context)
             youwol_path = Path(youwol.__path__[0])
-            print(youwol_path)
 
             site_packages = glob(f"{venv_path}/lib/*/site-packages")[0]
             (Path(site_packages) / "youwol.pth").write_text(str(youwol_path.parent))
@@ -228,6 +239,50 @@ async def run_command(project: Project, context: Context) -> str:
         return f"(. venv/bin/activate && python {project.name}/main.py --yw_port={env.httpPort})"
 
 
+class NoAvailablePortError(RuntimeError):
+    """Exception raised when no available port is found in the specified range."""
+
+
+def find_available_port(start: int, end: int) -> int:
+    for port in range(start, end + 1):
+        with socket(AF_INET, SOCK_STREAM) as s:
+            try:
+                s.bind(("", port))
+                return port
+            except OSError:
+                continue
+    # Raise an exception if no port is available
+    raise NoAvailablePortError(f"No available port found in the range {start}-{end}")
+
+
+async def get_info(project: Project, context: Context):
+
+    async with context.start("get_intput_data") as ctx:
+        env = await ctx.get("env", YouwolEnvironment)
+        proxy = env.proxied_backends.get_info(
+            name=project.name, query_version=project.version
+        )
+        if not proxy:
+            raise HTTPException(status_code=404, detail="The backend is not serving")
+        return proxy
+
+
+async def stop_backend(project: Project, context: Context):
+
+    async with context.start("stop_backend") as ctx:
+        env = await ctx.get("env", YouwolEnvironment)
+        proxy = env.proxied_backends.get(
+            name=project.name, query_version=project.version
+        )
+        if proxy:
+            await env.proxied_backends.terminate(
+                name=project.name, version=project.version, context=ctx
+            )
+            return {"status": "backend terminated"}
+
+        return {"status": "backend or PID not found"}
+
+
 class RunStep(PipelineStep):
     """
     Starts the service.
@@ -241,14 +296,85 @@ class RunStep(PipelineStep):
         The flows defined in this pipelines reference this ID, in common scenarios it should not be modified.
     """
 
-    run: RunImplicit = lambda _step, project, _flow, ctx: run_command(
-        project=project, context=ctx
-    )
+    run: ExplicitNone = ExplicitNone()
     """
-    Shell command that starts the service.
+    Step execution is defined by the method `execute_run`.
+    """
+    view: str = Path(__file__).parent / "views" / "run.view.js"
+    """
+    The view of the step allows to start/stop the underlying service with different options.
+    """
+    http_commands: list[CommandPipelineStep] = [
+        CommandPipelineStep(
+            name="get_info",
+            do_get=lambda project, flow_id, ctx: get_info(project=project, context=ctx),
+        ),
+        CommandPipelineStep(
+            name="stop_backend",
+            do_get=lambda project, flow_id, ctx: stop_backend(
+                project=project, context=ctx
+            ),
+        ),
+    ]
+    """
+    Commands associated to the step:
+    *  `get_info` : return the info of associated backend.
+    See [get_info](@yw-nav-meth:youwol.app.environment.proxied_backends.BackendsStore.get_info).
+    *  `stop_backend` : stop the backend proxied from the associated project's name & version.
+    """
 
-    See [run_command](@yw-nav-func:youwol.pipelines.pipeline_python_backend.pipeline.run_command).
-    """
+    async def execute_run(self, project: Project, flow_id: FlowId, context: Context):
+        """
+        Serve the service and install the proxy.
+
+        See [run_command](@yw-nav-func:youwol.pipelines.pipeline_python_backend.pipeline.run_command).
+        """
+        async with context.start("run_command") as ctx:
+            env = await ctx.get("env", YouwolEnvironment)
+            port = find_available_port(start=2010, end=3000)
+            config = await get_project_configuration(
+                project_id=project.id, flow_id=flow_id, step_id=self.id, context=ctx
+            )
+            config = {"installDispatch": True, "autoRun": True, **config}
+
+            async def on_executed(process: Process | None, shell_ctx: Context):
+                if config["installDispatch"]:
+                    env.proxied_backends.register(
+                        name=project.name,
+                        version=project.version,
+                        port=port,
+                        process=process,
+                    )
+                    await shell_ctx.info(
+                        text=f"Dispatch installed from '/backends/{project.name}/{project.version}' "
+                        f"to 'localhost:{port}"
+                    )
+                if process:
+                    await shell_ctx.info(
+                        text=f"Backend started (pid='{process.pid}') on {port}"
+                    )
+
+            if config["autoRun"]:
+                shell_cmd = (
+                    f"(cd {project.path}"
+                    f" && . venv/bin/activate "
+                    f"&& python {project.name}/main.py --port={port} --yw_port={env.httpPort})"
+                )
+                return_code, outputs = await execute_shell_cmd(
+                    cmd=shell_cmd,
+                    context=ctx,
+                    log_outputs=True,
+                    on_executed=on_executed,
+                )
+                if return_code > 0:
+                    raise CommandException(command=shell_cmd, outputs=outputs)
+                return outputs
+
+            await on_executed(process=None, shell_ctx=ctx)
+            return [
+                f"Service not started, please serve it manually from the port {port}",
+                f"Dispatch installed from '/backends/{project.name}/{project.version}' to 'localhost:{port}",
+            ]
 
 
 default_packaging_files = FileListing(

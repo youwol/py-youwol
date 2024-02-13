@@ -1,6 +1,9 @@
 # standard library
 import asyncio
 
+from asyncio.subprocess import Process
+from collections.abc import Awaitable, Callable
+
 # third parties
 from aiostream import stream
 
@@ -15,7 +18,12 @@ class CommandException(Exception):
         super().__init__(f"{self.command} failed")
 
 
-async def execute_shell_cmd(cmd: str, context: Context, log_outputs=True):
+async def execute_shell_cmd(
+    cmd: str,
+    context: Context,
+    log_outputs=True,
+    on_executed: Callable[[Process, Context], Awaitable[None]] | None = None,
+) -> tuple[int | None, list[str]]:
     async with context.start(
         action="execute 'shell' command", with_labels=["BASH"]
     ) as ctx:
@@ -26,6 +34,8 @@ async def execute_shell_cmd(cmd: str, context: Context, log_outputs=True):
             stderr=asyncio.subprocess.PIPE,
             shell=True,
         )
+        if on_executed:
+            await on_executed(p, ctx)
         outputs = []
         async with stream.merge(p.stdout, p.stderr).stream() as messages_stream:
             async for message in messages_stream:

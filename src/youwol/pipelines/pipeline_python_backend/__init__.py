@@ -12,37 +12,6 @@ Stack:
     * **programing language**: [python](https://www.python.org/)
     * **frameworks**: [FastAPI](https://fastapi.tiangolo.com/)
 
-Warning:
-    Do not forget to provide the definition of the
-    [RedirectSwitch](@yw-nav-class:youwol.app.environment.models.models_config.RedirectSwitch)
-    associated to the backend in your configuration file.
-     E.g. for a backend served on the port `4002` and expected to be proxied on
-    `/api/foo-backend`:
-    ```python
-    from youwol.app.environment import (
-        Configuration,
-        Customization,
-        CustomMiddleware,
-        RedirectSwitch,
-        FlowSwitcherMiddleware
-    )
-    redirect_switch = RedirectSwitch(
-        origin="/api/foo-backend",
-        destination=f"http://localhost:4002"
-    )
-
-    Configuration(
-        customization=Customization(
-            middlewares=[
-                FlowSwitcherMiddleware(
-                    name="Backends",
-                    oneOf=[redirect_switch],
-                )
-            ],
-        )
-    )
-    ```
-
 Todos:
     Provides an auto-generated client on e.g. `/client`.
     This will allow to easily consume the backend from javascript

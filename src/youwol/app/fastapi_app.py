@@ -24,7 +24,7 @@ from youwol.app.middlewares import (
     BrowserCachingMiddleware,
     LocalCloudHybridizerMiddleware,
 )
-from youwol.app.routers import admin, native_backends
+from youwol.app.routers import admin, backends, native_backends
 from youwol.app.routers.environment import AssetDownloadThread
 from youwol.app.routers.environment.download_assets import (
     DownloadDataTask,
@@ -209,6 +209,9 @@ def setup_http_routers():
     fastapi_app.include_router(native_backends.router)
     fastapi_app.include_router(
         admin.router, prefix=api_configuration.base_path + "/admin"
+    )
+    fastapi_app.include_router(
+        backends.router, prefix=api_configuration.base_path + "/backends"
     )
 
     @fastapi_app.get(api_configuration.base_path + "/healthz")

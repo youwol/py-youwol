@@ -59,6 +59,9 @@ export const pyYwReferenceDoc = ({
             list: 'https://docs.python.org/3/library/stdtypes.html#lists',
             dict: 'https://docs.python.org/3/library/stdtypes.html#mapping-types-dict',
             set: 'https://docs.python.org/3/library/stdtypes.html#set',
+            tuple: 'https://docs.python.org/3/library/stdtypes.html#tuple',
+            'asyncio.subprocess.Process':
+                'https://docs.python.org/3/library/asyncio-subprocess.html',
             'collections.abc.Mapping':
                 'https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping',
             'io.BytesIO':

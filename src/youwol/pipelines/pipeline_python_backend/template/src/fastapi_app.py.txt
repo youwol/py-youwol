@@ -15,11 +15,12 @@ from youwol.utils import (ContextFactory, FuturesResponse,
                           ProxiedBackendContext, aiohttp_file_form,
                           text_reader)
 
+from {{package_name}}.auto_generated import version
 from {{package_name}}.dependencies import dependencies
 
 app: FastAPI = FastAPI(
     title="my backend",
-    root_path=f"http://localhost:{dependencies().yw_port}/api/{{package_name}}",
+    root_path=f"http://localhost:{dependencies().yw_port}/backends/{{package_name}}/{version}",
 )
 
 
