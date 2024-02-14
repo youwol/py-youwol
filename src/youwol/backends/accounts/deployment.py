@@ -11,8 +11,8 @@ from youwol.backends.common.use_auth_middleware_with_cookie import (
     tokens_storage,
 )
 from youwol.backends.common.use_keycloak_admin import (
-    keycloak_admin_base_url,
-    keycloak_admin_client,
+    KEYCLOAK_ADMIN_BASE_URL,
+    KEYCLOAK_ADMIN_CLIENT,
 )
 from youwol.backends.common.use_openid_client import oidc_client
 
@@ -25,8 +25,8 @@ class AccountsDeployment(BackendDeployment):
         return get_router(
             Configuration(
                 openid_client=oidc_client,
-                keycloak_admin_client=keycloak_admin_client,
-                keycloak_admin_base_url=keycloak_admin_base_url,
+                keycloak_admin_client=KEYCLOAK_ADMIN_CLIENT,
+                keycloak_admin_base_url=KEYCLOAK_ADMIN_BASE_URL,
                 auth_cache=auth_cache,
                 tokens_storage=tokens_storage,
             )
