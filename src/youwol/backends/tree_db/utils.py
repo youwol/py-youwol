@@ -330,3 +330,78 @@ async def entities_children(
             folders=[doc_to_folder(f) for f in folders],
             items=[doc_to_item(f) for f in items],
         )
+
+
+async def get_folder(folder_id: str, configuration: Configuration, context: Context):
+    async with context.start(action="_get_folder") as ctx:
+        doc = await db_get(
+            partition_keys={"folder_id": folder_id},
+            context=ctx,
+            docdb=configuration.doc_dbs.folders_db,
+        )
+        return doc_to_folder(doc)
+
+
+async def get_drive(drive_id: str, configuration: Configuration, context: Context):
+    async with context.start(action="_get_drive") as ctx:
+        docdb = configuration.doc_dbs.drives_db
+        doc = await db_get(
+            docdb=docdb, partition_keys={"drive_id": drive_id}, context=ctx
+        )
+
+        return DriveResponse(
+            driveId=drive_id,
+            name=doc["name"],
+            metadata=doc["metadata"],
+            groupId=doc["group_id"],
+        )
+
+
+async def get_folders_rec(
+    folder_id: str, drive_id: str, configuration: Configuration, context: Context
+):
+    drive = await get_drive(
+        drive_id=drive_id, configuration=configuration, context=context
+    )
+
+    folders = [
+        await get_folder(
+            folder_id=folder_id, configuration=configuration, context=context
+        )
+    ]
+    while folders[0].parentFolderId != folders[0].driveId:
+        folders = [
+            await get_folder(
+                folder_id=folders[0].parentFolderId,
+                configuration=configuration,
+                context=context,
+            )
+        ] + folders
+    return folders, drive
+
+
+async def list_deleted(drive_id: str, configuration: Configuration, context: Context):
+    async with context.start("_list_deleted") as ctx:  # type: Context
+        doc_dbs = configuration.doc_dbs
+        entities = await doc_dbs.deleted_db.query(
+            query_body=f"drive_id={drive_id}#100",
+            owner=Constants.public_owner,
+            headers=ctx.headers(),
+        )
+
+        folders = [
+            doc_to_folder(f, {"folder_id": f["deleted_id"]})
+            for f in entities["documents"]
+            if f["kind"] == "folder"
+        ]
+
+        items = [
+            doc_to_item(
+                f, {"item_id": f["deleted_id"], "folder_id": f["parent_folder_id"]}
+            )
+            for f in entities["documents"]
+            if f["kind"] == "item"
+        ]
+
+        response = ChildrenResponse(folders=folders, items=items)
+        return response
