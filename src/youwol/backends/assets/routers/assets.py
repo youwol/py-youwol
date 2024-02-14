@@ -83,8 +83,8 @@ async def create_asset(
         }
         await db_post(doc=doc_asset, configuration=configuration, context=ctx)
         if (
-            policy.read == ReadPolicyEnum.forbidden
-            and policy.share == SharePolicyEnum.forbidden
+            policy.read == ReadPolicyEnum.FORBIDDEN
+            and policy.share == SharePolicyEnum.FORBIDDEN
         ):
             return format_asset(doc_asset, request)
 

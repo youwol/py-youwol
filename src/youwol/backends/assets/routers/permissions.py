@@ -49,15 +49,15 @@ def get_permission(write, policies):
     if not policies:
         return PermissionsResp(write=False, read=False, share=False, expiration=None)
 
-    opened = any(policy["read"] == ReadPolicyEnum.authorized for policy in policies)
-    share = any(policy["share"] == SharePolicyEnum.authorized for policy in policies)
+    opened = any(policy["read"] == ReadPolicyEnum.AUTHORIZED for policy in policies)
+    share = any(policy["share"] == SharePolicyEnum.AUTHORIZED for policy in policies)
     if opened:
         return PermissionsResp(write=write, read=True, share=share, expiration=None)
 
     deadlines = [
         policy
         for policy in policies
-        if policy["read"] == ReadPolicyEnum.expiration_date
+        if policy["read"] == ReadPolicyEnum.EXPIRATION_DATE
     ]
     if deadlines:
         expirations = [
@@ -111,8 +111,8 @@ async def get_permissions_implementation(
 
     if (
         len(default["documents"]) > 0
-        and default["documents"][0]["read"] == ReadPolicyEnum.authorized
-        and default["documents"][0]["share"] == SharePolicyEnum.authorized
+        and default["documents"][0]["read"] == ReadPolicyEnum.AUTHORIZED
+        and default["documents"][0]["share"] == SharePolicyEnum.AUTHORIZED
     ):
         return PermissionsResp(write=False, read=True, share=True, expiration=None)
 
