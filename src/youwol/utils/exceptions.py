@@ -34,6 +34,7 @@ class YouWolException(HTTPException):
 
     def __init__(self, status_code: int, detail: Any, **_):
         HTTPException.__init__(self, status_code=status_code, detail=detail)
+        # pylint: disable-next=invalid-name
         self.exceptionType = YouWolException.exceptionType
 
     def __str__(self):
