@@ -14,7 +14,7 @@ from youwol.app.environment import LocalClients, RemoteClients, YouwolEnvironmen
 from youwol.app.routers.native_backends_config import assets_backend_config_py_youwol
 
 # Youwol backends
-from youwol.backends.assets.routers.permissions import put_access_policy_impl
+from youwol.backends.assets.routers.access import put_access_policy_impl
 
 # Youwol utilities
 from youwol.utils.clients.assets.assets import AssetsClient

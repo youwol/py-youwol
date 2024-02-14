@@ -33,7 +33,13 @@ from youwol.utils.http_clients.assets_backend import (
 from youwol.utils.types import AnyDict
 
 # relative
-from .routers import router_files, router_images, router_permissions, router_raw
+from .routers import (
+    router_access,
+    router_files,
+    router_images,
+    router_permissions,
+    router_raw,
+)
 from .utils import (
     access_policy_record_id,
     db_delete,
@@ -51,6 +57,7 @@ router.include_router(router_files)
 router.include_router(router_images)
 router.include_router(router_raw)
 router.include_router(router_permissions)
+router.include_router(router_access)
 
 
 @router.put("/assets", response_model=AssetResponse, summary="new asset")

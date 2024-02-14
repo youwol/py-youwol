@@ -275,3 +275,6 @@ async def get_asset_implementation(
         asset_id=asset_id, configuration=configuration, context=context
     )
     return format_asset(asset, request)
+
+
+flatten = itertools.chain.from_iterable
