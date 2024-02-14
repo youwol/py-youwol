@@ -470,7 +470,7 @@ async def pipeline(config: PipelineConfig, context: Context):
                 return tomllib.load(f)
 
         return Pipeline(
-            target=Target(family=Family.service),
+            target=Target(family=Family.SERVICE),
             tags=config.with_tags,
             projectName=lambda path: parse_toml(path)["project"]["name"],
             projectVersion=lambda path: parse_toml(path)["project"]["version"],

@@ -141,7 +141,7 @@ def format_artifact_response(
                 name=link.name,
                 url=(
                     link.url
-                    if link.kind == LinkKind.plainUrl
+                    if link.kind == LinkKind.PLAIN_URL
                     else f"/admin/system/file/{path}/{link.url}"
                 ),
             )
@@ -185,7 +185,7 @@ async def get_status(
                 manifest=manifest,
                 artifactFolder=path,
                 artifacts=[],
-                status=PipelineStepStatus.running,
+                status=PipelineStepStatus.RUNNING,
             )
 
         # noinspection PyBroadException

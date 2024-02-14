@@ -25,4 +25,4 @@ class InitStep(PipelineStep):
     ) -> PipelineStepStatus:
         if (project.path / "node_modules").exists():
             return PipelineStepStatus.OK
-        return PipelineStepStatus.none
+        return PipelineStepStatus.NONE

@@ -158,7 +158,7 @@ class DependenciesStep(PipelineStep):
     ) -> PipelineStepStatus:
         async with context.start(action="get status of project's dependencies") as ctx:
             if not (project.path / "node_modules").exists() or not last_manifest:
-                return PipelineStepStatus.none
+                return PipelineStepStatus.NONE
 
             all_dependencies = flatten_dependencies(project=project)
 
@@ -169,7 +169,7 @@ class DependenciesStep(PipelineStep):
                 await ctx.info(
                     text="dependencies have changed in package.json", data=diff
                 )
-                return PipelineStepStatus.outdated
+                return PipelineStepStatus.OUTDATED
 
             config = await get_project_configuration(
                 project_id=project.id, flow_id=flow_id, step_id=self.id, context=ctx
@@ -177,7 +177,7 @@ class DependenciesStep(PipelineStep):
             diff = DeepDiff(config, last_manifest.cmdOutputs.get("config", {}))
             if diff:
                 await ctx.info(text="configuration has changed", data=diff)
-                return PipelineStepStatus.outdated
+                return PipelineStepStatus.OUTDATED
 
             to_sync = config.get("synchronizedDependencies", [])
             if not to_sync:
@@ -208,7 +208,7 @@ class DependenciesStep(PipelineStep):
                 },
             )
             if not_synced_dist_artifacts:
-                return PipelineStepStatus.outdated
+                return PipelineStepStatus.OUTDATED
 
             return PipelineStepStatus.OK
 
