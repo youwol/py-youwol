@@ -1,6 +1,7 @@
 # standard library
 import base64
 import json
+import uuid
 
 from collections.abc import Mapping
 
@@ -16,6 +17,7 @@ from youwol.utils.context import Context
 from youwol.utils.http_clients.tree_db_backend import (
     ChildrenResponse,
     DriveResponse,
+    FolderBody,
     FolderResponse,
     ItemResponse,
 )
@@ -404,4 +406,34 @@ async def list_deleted(drive_id: str, configuration: Configuration, context: Con
         ]
 
         response = ChildrenResponse(folders=folders, items=items)
+        return response
+
+
+async def create_folder(
+    parent_folder_id: str,
+    folder: FolderBody,
+    configuration: Configuration,
+    context: Context,
+):
+    async with context.start(action="_create_folder") as ctx:  # type: Context
+        folders_db, _ = (
+            configuration.doc_dbs.folders_db,
+            configuration.doc_dbs.drives_db,
+        )
+        parent = await get_parent(
+            parent_id=parent_folder_id, configuration=configuration, context=ctx
+        )
+
+        doc = {
+            "folder_id": folder.folderId or str(uuid.uuid4()),
+            "name": folder.name,
+            "parent_folder_id": parent_folder_id,
+            "group_id": parent["group_id"],
+            "type": folder.kind,
+            "metadata": folder.metadata,
+            "drive_id": parent["drive_id"],
+        }
+        await db_post(docdb=folders_db, doc=doc, context=ctx)
+
+        response = doc_to_folder(doc)
         return response
