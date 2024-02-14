@@ -164,7 +164,7 @@ async def get_status(
                 projectId=project.id,
                 flowId=flow_id,
                 stepId=step.id,
-                event=Event.statusCheckStarted,
+                event=Event.STATUS_CHECK_STARTED,
             )
         ),
     ) as ctx:

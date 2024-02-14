@@ -266,17 +266,17 @@ class Event(Enum):
     Kind of event emitted by a pipeline's step.
     """
 
-    runStarted = "runStarted"
+    RUN_STARTED = "runStarted"
     """
     specifies that the run has started
     """
 
-    runDone = "runDone"
+    RUN_DONE = "runDone"
     """
     specifies that the run has finished
     """
 
-    statusCheckStarted = "statusCheckStarted"
+    STATUS_CHECK_STARTED = "statusCheckStarted"
     """
     specifies that the status check has started
     """
