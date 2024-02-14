@@ -15,8 +15,6 @@ from youwol.utils.utils_paths import existing_path_or_default
 # relative
 from .models import predefined_configs
 
-docdb_filename = "data.json"
-
 
 class PathsBook(BaseModel):
     """
