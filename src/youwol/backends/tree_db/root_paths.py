@@ -66,11 +66,6 @@ router = APIRouter(tags=["treedb-backend"])
 flatten = itertools.chain.from_iterable
 
 
-@router.get("/healthz")
-async def healthz():
-    return {"status": "treedb-backend ok"}
-
-
 @router.get(
     "/groups", response_model=GroupsResponse, summary="List user's subscribed groups."
 )
