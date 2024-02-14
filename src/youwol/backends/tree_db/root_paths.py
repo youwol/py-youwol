@@ -259,7 +259,7 @@ async def get_default_user_drive(
         Description of the drive.
     """
     user = user_info(request)
-    return await get_default_drive(
+    return await _get_default_drive(
         request=request, group_id=private_group_id(user), configuration=configuration
     )
 
@@ -297,7 +297,7 @@ async def get_drive(
         return response
 
 
-async def ensure_folder(
+async def _ensure_folder(
     name: str,
     folder_id: str,
     parent_folder_id: str,
@@ -325,27 +325,11 @@ async def ensure_folder(
             )
 
 
-@router.get(
-    "/groups/{group_id}/default-drive",
-    response_model=DefaultDriveResponse,
-    summary="Retrieves the default drive of a group.",
-)
-async def get_default_drive(
+async def _get_default_drive(
     request: Request,
     group_id: str,
     configuration: Configuration = Depends(get_configuration),
 ) -> DefaultDriveResponse:
-    """
-    Retrieves properties of the default drive of a group.
-
-    Parameters:
-        request: Incoming request.
-        group_id: ID of the parent group.
-        configuration: Injected configuration of the service.
-
-    Return:
-        Description of the drive.
-    """
     async with Context.start_ep(
         request=request,
         action="get default drive",
@@ -368,21 +352,21 @@ async def get_default_drive(
             )
 
         download, home, system = await asyncio.gather(
-            ensure_folder(
+            _ensure_folder(
                 name="Download",
                 folder_id=f"{default_drive_id}_download",
                 parent_folder_id=default_drive_id,
                 configuration=configuration,
                 context=ctx,
             ),
-            ensure_folder(
+            _ensure_folder(
                 name="Home",
                 folder_id=f"{default_drive_id}_home",
                 parent_folder_id=default_drive_id,
                 configuration=configuration,
                 context=ctx,
             ),
-            ensure_folder(
+            _ensure_folder(
                 name="System",
                 folder_id=f"{default_drive_id}_system",
                 parent_folder_id=default_drive_id,
@@ -392,14 +376,14 @@ async def get_default_drive(
         )
 
         system_packages, system_tmp = await asyncio.gather(
-            ensure_folder(
+            _ensure_folder(
                 name="Packages",
                 folder_id=f"{default_drive_id}_system_packages",
                 parent_folder_id=system.folderId,
                 configuration=configuration,
                 context=ctx,
             ),
-            ensure_folder(
+            _ensure_folder(
                 name="Tmp",
                 folder_id=f"{default_drive_id}_system_tmp",
                 parent_folder_id=system.folderId,
@@ -425,6 +409,30 @@ async def get_default_drive(
         )
         await ctx.info("Response", data=resp)
         return resp
+
+
+@router.get(
+    "/groups/{group_id}/default-drive",
+    response_model=DefaultDriveResponse,
+    summary="Retrieves the default drive of a group.",
+)
+async def get_default_drive(
+    request: Request,
+    group_id: str,
+    configuration: Configuration = Depends(get_configuration),
+) -> DefaultDriveResponse:
+    """
+    Retrieves properties of the default drive of a group.
+
+    Parameters:
+        request: Incoming request.
+        group_id: ID of the parent group.
+        configuration: Injected configuration of the service.
+
+    Return:
+        Description of the drive.
+    """
+    return await _get_default_drive(request, group_id, configuration)
 
 
 async def _create_folder(
