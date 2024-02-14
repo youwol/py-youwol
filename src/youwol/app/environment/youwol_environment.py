@@ -47,9 +47,9 @@ from .models.models_config import (
     Connection,
     CustomMiddleware,
     Events,
-    ExplicitProjectsFinder,
     Projects,
 )
+from .models.models_project import ExplicitProjectsFinder
 from .models.models_token_storage import TokensStoragePath, TokensStorageSystemKeyring
 from .native_backends_config import BackendConfigurations, native_backends_config
 from .paths import PathsBook, app_dirs, ensure_config_file_exists_or_create_it
