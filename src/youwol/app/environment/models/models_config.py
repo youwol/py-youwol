@@ -1,5 +1,5 @@
 # standard library
-from abc import ABC, abstractmethod
+from abc import ABC
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 
@@ -20,8 +20,6 @@ from youwol.app.environment.models.defaults import (
     default_path_cache_dir,
     default_path_data_dir,
     default_path_projects_dir,
-    default_path_tokens_storage,
-    default_path_tokens_storage_encrypted,
     default_platform_host,
 )
 from youwol.app.environment.models.models import (
@@ -38,13 +36,10 @@ from youwol.app.environment.paths import PathsBook
 # Youwol utilities
 from youwol.utils import JSON, Context
 from youwol.utils.clients.oidc.oidc_config import PrivateClient, PublicClient
-from youwol.utils.clients.oidc.tokens_manager import TokensStorageCache
-from youwol.utils.context import ContextFactory
 from youwol.utils.servers.fast_api import FastApiRouter
 
 # relative
-from .tokens_storage.encrypted_file import AlgoSpec, TokensStorageKeyring
-from .tokens_storage.file import TokensStorageFile
+from .models_token_storage import TokensStorageConf, TokensStorageSystemKeyring
 
 
 class Events(BaseModel):
@@ -597,78 +592,6 @@ class LocalEnvironment(BaseModel):
     See [default_path_cache_dir](@yw-nav-glob:youwol.app.environment.models.defaults.default_path_cache_dir)
      regarding default value.
     """
-
-
-class TokensStorageConf(ABC):
-    """
-    Abstract class for tokens storage.
-    """
-
-    @abstractmethod
-    async def get_tokens_storage(self):
-        pass
-
-
-class TokensStorageSystemKeyring(TokensStorageConf, BaseModel):
-    """
-    Tokens storage using system's keyring.
-    """
-
-    path: str | Path | None = default_path_tokens_storage_encrypted
-    """
-    The path of the system keyring encrypted file.
-
-    See <a href="@yw-nav-glob:youwol.app.environment.models.defaults.default_path_tokens_storage_encrypted">
-    default_path_tokens_storage_encrypted</a>
-    regarding default value.
-    """
-
-    service: str = "py-youwol"
-    """
-    Service name.
-    """
-
-    algo: AlgoSpec = "any"
-    """
-    Algorithm used for encryption.
-    """
-
-    async def get_tokens_storage(self):
-        path = self.path if isinstance(self.path, Path) else Path(self.path)
-        result = TokensStorageKeyring(
-            service=self.service, absolute_path=path, algo=self.algo
-        )
-        await result.load_data()
-        return result
-
-
-class TokensStoragePath(TokensStorageConf, BaseModel):
-    """
-    Tokens storage using a TokensStorageFile.
-    """
-
-    path: str | Path | None = default_path_tokens_storage
-    """
-    Path where the file is saved on disk.
-
-    See [default_path_tokens_storage](@yw-nav-glob:youwol.app.environment.models.defaults.default_path_tokens_storage)
-     regarding default value.
-    """
-
-    async def get_tokens_storage(self):
-        path = self.path if isinstance(self.path, Path) else Path(self.path)
-        result = TokensStorageFile(path)
-        await result.load_data()
-        return result
-
-
-class TokensStorageInMemory(TokensStorageConf):
-    """
-    In memory tokens storage.
-    """
-
-    async def get_tokens_storage(self):
-        return TokensStorageCache(cache=ContextFactory.with_static_data["auth_cache"])
 
 
 class System(BaseModel):

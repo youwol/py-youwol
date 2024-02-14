@@ -49,9 +49,8 @@ from .models.models_config import (
     Events,
     ExplicitProjectsFinder,
     Projects,
-    TokensStoragePath,
-    TokensStorageSystemKeyring,
 )
+from .models.models_token_storage import TokensStoragePath, TokensStorageSystemKeyring
 from .native_backends_config import BackendConfigurations, native_backends_config
 from .paths import PathsBook, app_dirs, ensure_config_file_exists_or_create_it
 from .projects_finders import auto_detect_projects
