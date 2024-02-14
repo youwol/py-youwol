@@ -255,11 +255,11 @@ def setup_web_sockets():
 
     @fastapi_app.websocket(api_configuration.base_path + "/ws-logs")
     async def ws_logs(ws: WebSocket):
-        await start_web_socket(ws, WsType.Log)
+        await start_web_socket(ws, WsType.LOG)
 
     @fastapi_app.websocket(api_configuration.base_path + "/ws-data")
     async def ws_data(ws: WebSocket):
-        await start_web_socket(ws, WsType.Data)
+        await start_web_socket(ws, WsType.DATA)
 
 
 def setup_exceptions_handlers():
