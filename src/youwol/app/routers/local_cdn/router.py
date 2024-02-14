@@ -15,6 +15,7 @@ from youwol.app.web_socket import LogsStreamer
 # Youwol utilities
 from youwol.utils import decode_id, encode_id
 from youwol.utils.context import Context
+from youwol.utils.http_clients.cdn_backend.utils import get_library_type
 
 # relative
 from .implementation import (
@@ -65,7 +66,10 @@ async def status(request: Request):
                 name=name,
                 id=encode_id(name),
                 versions=[
-                    CdnVersionLight(version=version_data["version"])
+                    CdnVersionLight(
+                        version=version_data["version"],
+                        type=get_library_type(version_data["type"]),
+                    )
                     for version_data in versions
                 ],
             )

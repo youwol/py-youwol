@@ -4,17 +4,20 @@ from enum import Enum
 # third parties
 from pydantic import BaseModel
 
+# Youwol utilities
+from youwol.utils.http_clients.cdn_backend import WebpmLibraryType
+
 cdn_topic = "cdn"
-
-
-class CdnVersion(BaseModel):
-    version: str
-    filesCount: int
-    entryPointSize: int  # total size, in bytes
 
 
 class CdnVersionLight(BaseModel):
     version: str
+    type: WebpmLibraryType
+
+
+class CdnVersion(CdnVersionLight):
+    filesCount: int
+    entryPointSize: int  # total size, in bytes
 
 
 class CdnPackage(BaseModel):

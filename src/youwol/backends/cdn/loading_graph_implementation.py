@@ -13,6 +13,7 @@ from semantic_version import NpmSpec, Version
 from youwol.backends.cdn.utils import (
     Configuration,
     Constants,
+    get_library_type,
     get_version_number_str,
     list_versions,
     to_package_id,
@@ -493,7 +494,7 @@ async def get_data(
             apiKey=get_api_key(version),
             fingerprint=data["fingerprint"],
             namespace=data["namespace"],
-            type=data["type"],
+            type=get_library_type(data["type"]),
             id=to_package_id(name),
             bundle=data["bundle"],
             dependencies=[

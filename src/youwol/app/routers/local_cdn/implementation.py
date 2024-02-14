@@ -28,7 +28,10 @@ from youwol.utils import encode_id
 from youwol.utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
 from youwol.utils.context import Context
 from youwol.utils.http_clients.cdn_backend import Library
-from youwol.utils.http_clients.cdn_backend.utils import resolve_version
+from youwol.utils.http_clients.cdn_backend.utils import (
+    get_library_type,
+    resolve_version,
+)
 
 # relative
 from .models import (
@@ -276,4 +279,5 @@ async def get_version_info(version_data, env: YouwolEnvironment, context: Contex
         "filesCount": files_count,
         "entryPointSize": entry_point_size or -1,
         "version": version,
+        "type": get_library_type(version_data["type"]),
     }

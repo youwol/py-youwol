@@ -2,7 +2,7 @@
 from pathlib import Path
 
 # typing
-from typing import Any, NamedTuple
+from typing import Any, Literal, NamedTuple
 
 # third parties
 from pydantic import BaseModel
@@ -15,6 +15,9 @@ from youwol.utils.clients.docdb.models import (
     TableBody,
     TableOptions,
 )
+
+WebpmLibraryType = Literal["js/wasm", "backend"]
+default_webpm_lib_type: WebpmLibraryType = "js/wasm"
 
 
 def get_api_key(version: str | Version):
@@ -202,7 +205,10 @@ class Library(BaseModel):
     """
     Namespace of the library, empty string if not applicable.
     """
-    type: str
+    type: WebpmLibraryType
+    """
+    The type of the library.
+    """
     fingerprint: str
     """
     Fingerprint.

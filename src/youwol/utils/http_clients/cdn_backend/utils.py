@@ -4,6 +4,9 @@ import base64
 from collections.abc import Iterable
 from pathlib import Path
 
+# typing
+from typing import cast
+
 # third parties
 import brotli
 
@@ -11,6 +14,10 @@ from semantic_version import NpmSpec, Version
 
 # Youwol utilities
 from youwol.utils.context import Context
+from youwol.utils.http_clients.cdn_backend import (
+    WebpmLibraryType,
+    default_webpm_lib_type,
+)
 from youwol.utils.types import JSON
 from youwol.utils.utils_paths import write_json
 
@@ -64,6 +71,7 @@ async def encode_extra_index(documents: list[JSON], context: Context):
         def flatten_elem(d: JSON) -> str:
             if not isinstance(d, dict):
                 raise ValueError("Not a dictionary")
+            lib_type = get_library_type(d["type"])
             return (
                 "&".join(
                     [d["library_name"], d["version"], d["bundle"], d["fingerprint"]]
@@ -74,6 +82,7 @@ async def encode_extra_index(documents: list[JSON], context: Context):
                 + "&["
                 + ",".join(alias for alias in d.get("aliases", []))
                 + "]"
+                + f"&{lib_type}"
             )
 
         converted = ";".join([flatten_elem(d) for d in documents])
@@ -105,8 +114,25 @@ async def decode_extra_index(documents: str, context: Context):
                 "fingerprint": props[3],
                 "dependencies": [d for d in props[4][1:-1].split(",") if d != ""],
                 "aliases": [d for d in props[5][1:-1].split(",") if d != ""],
+                # The next check is to make py-youwol<0.1.8 compatible with the remote cdn backend.
+                # Can be removed when py-youwol<0.1.8 are not supported anymore.
+                "type": (
+                    get_library_type(props[6])
+                    if len(props) > 6
+                    else default_webpm_lib_type
+                ),
             }
 
         list_documents = [unflatten_elem(d) for d in src_str.split(";")]
         await ctx.info(f"Decoded extra index with {len(list_documents)} elements")
         return list_documents
+
+
+def get_library_type(lib_type: str) -> WebpmLibraryType:
+    # This is for backward compatibility purposes.
+    # Can be replaced by `return lib_type` when TG-2081  is closed
+    return (
+        cast(WebpmLibraryType, lib_type)
+        if lib_type in {"js/wasm", "backend"}
+        else default_webpm_lib_type
+    )

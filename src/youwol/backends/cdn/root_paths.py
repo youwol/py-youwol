@@ -32,6 +32,7 @@ from youwol.backends.cdn.loading_graph_implementation import (
 )
 from youwol.backends.cdn.utils import (
     fetch_resource,
+    get_library_type,
     get_path,
     get_url,
     library_model_from_doc,
@@ -430,7 +431,7 @@ async def resolve_loading_tree(
                     if "/" in element["library_name"]
                     else element["library_name"]
                 ),
-                type="library",
+                type=get_library_type(element["type"]),
             )
             for element in input_elements
         ]
@@ -459,7 +460,7 @@ async def resolve_loading_tree(
                 LibraryResolved(
                     namespace="",
                     id="",
-                    type="",
+                    type="js/wasm",
                     exportedSymbol=root_name,
                     aliases=[root_name],
                     apiKey=get_api_key("1.0.0-does-not-matter"),
