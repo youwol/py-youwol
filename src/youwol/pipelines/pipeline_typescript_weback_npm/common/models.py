@@ -19,8 +19,8 @@ class PackageType(Enum):
     Description whether the package is an application or library
     """
 
-    Library = "Library"
-    Application = "Application"
+    LIBRARY = "Library"
+    APPLICATION = "Application"
 
 
 class RunTimeDeps(BaseModel):

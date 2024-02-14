@@ -109,7 +109,7 @@ async def generate_external_npm_template(
         template = Template(
             path=project_folder,
             version=version,
-            type=PackageType.Library,
+            type=PackageType.LIBRARY,
             name=name,
             shortDescription=target_package_json.get("description", ""),
             inPackageJson={
