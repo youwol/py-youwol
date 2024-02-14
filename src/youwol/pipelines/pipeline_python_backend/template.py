@@ -54,7 +54,7 @@ def template(folder: Path) -> ProjectTemplate:
         Project's template specification.
     """
     return ProjectTemplate(
-        icon={"tag": "img", "src": pyIcon},
+        icon={"tag": "img", "src": PY_ICON},
         type="python backend",
         folder=folder,
         parameters={
@@ -148,7 +148,7 @@ async def generate_template(folder: Path, parameters: dict[str, str], context: C
         return parameters["name"], folder
 
 
-pyIcon = (
+PY_ICON = (
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAD8AAABHCAYAAACwLp9zAAAABHNCSVQICAgIfAhkiAAAABl0RVh0U29mdHdhcm"
     "UAZ25vbWUtc2NyZWVuc2hvdO8Dvz4AAAApdEVYdENyZWF0aW9uIFRpbWUAamV1LiAyNSBqYW52LiAyMDI0IDA4OjUzOjM4JQ1HuAAAD5JJRE"
     "FUeJztm1uPHMd1x3+nqntmd4fLXdFckdQdlmjdHCuwFSuW4gRy4sRPNpAESRAD/gD5AHnI58i7gQTIk5GnGIEdI5acWEacyLYER3dIhKSVSI"
