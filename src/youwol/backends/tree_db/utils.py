@@ -14,6 +14,7 @@ from fastapi import HTTPException
 from youwol.utils import DocDb, asyncio, decode_id, get_all_individual_groups
 from youwol.utils.context import Context
 from youwol.utils.http_clients.tree_db_backend import (
+    ChildrenResponse,
     DriveResponse,
     FolderResponse,
     ItemResponse,
@@ -296,3 +297,36 @@ async def get_parent(parent_id: str, configuration: Configuration, context: Cont
         raise HTTPException(status_code=404, detail="Containing drive/folder not found")
     parent = (parent_folder + parent_drive)[0]
     return parent
+
+
+async def entities_children(
+    folder_id: str, configuration: Configuration, context: Context
+):
+    # max_count: see comment in class 'Constants'
+    max_count = Constants.max_children_count
+    async with context.start(action="_children") as ctx:  # type: Context
+        folders_db, items_db = (
+            configuration.doc_dbs.folders_db,
+            configuration.doc_dbs.items_db,
+        )
+        folders, items = await asyncio.gather(
+            db_query(
+                docdb=folders_db,
+                key="parent_folder_id",
+                value=folder_id,
+                max_count=max_count,
+                context=ctx,
+            ),
+            db_query(
+                docdb=items_db,
+                key="folder_id",
+                value=folder_id,
+                max_count=max_count,
+                context=ctx,
+            ),
+        )
+
+        return ChildrenResponse(
+            folders=[doc_to_folder(f) for f in folders],
+            items=[doc_to_item(f) for f in items],
+        )

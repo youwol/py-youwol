@@ -8,7 +8,6 @@ from collections.abc import Coroutine
 
 # third parties
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi import Query as QueryParam
 from starlette.requests import Request
 
 # Youwol backends
@@ -32,7 +31,6 @@ from youwol.backends.tree_db.utils import (
 
 # Youwol utilities
 from youwol.utils import (
-    AnyDict,
     ensure_group_permission,
     get_all_individual_groups,
     private_group_id,
@@ -47,7 +45,6 @@ from youwol.utils.http_clients.tree_db_backend import (
     DriveBody,
     DriveResponse,
     DrivesResponse,
-    EntityResponse,
     FolderBody,
     FolderResponse,
     Group,
@@ -55,14 +52,17 @@ from youwol.utils.http_clients.tree_db_backend import (
     ItemBody,
     ItemResponse,
     ItemsResponse,
-    MoveItemBody,
-    MoveResponse,
     PathResponse,
     PurgeResponse,
     RenameBody,
 )
 
+# relative
+from .routers import router_entities
+from .utils import entities_children
+
 router = APIRouter(tags=["treedb-backend"])
+router.include_router(router_entities)
 flatten = itertools.chain.from_iterable
 
 
@@ -865,139 +865,6 @@ async def get_path_folder(
 
 
 @router.post(
-    "/move",
-    response_model=MoveResponse,
-    summary="Move an entity, folder or item, from on location to another one.",
-)
-async def move(
-    request: Request,
-    body: MoveItemBody,
-    configuration: Configuration = Depends(get_configuration),
-) -> MoveResponse:
-    """
-    Move an entity, folder or item, from on location to another one.
-
-    Parameters:
-        request: Incoming request.
-        body: Move specification
-        configuration: Injected configuration of the service.
-
-    Return:
-        Description of the executed task result.
-    """
-    async with Context.start_ep(request=request, action="move", body=body) as ctx:
-        items_db = configuration.doc_dbs.items_db
-        folders_db = configuration.doc_dbs.folders_db
-        items: list[AnyDict]
-        folders: list[AnyDict]
-        to_folder_or_drive: EntityResponse
-        items, folders, to_folder_or_drive = await asyncio.gather(
-            db_query(
-                docdb=items_db,
-                key="item_id",
-                value=body.targetId,
-                max_count=1,
-                context=ctx,
-            ),
-            db_query(
-                docdb=folders_db,
-                key="folder_id",
-                value=body.targetId,
-                max_count=1,
-                context=ctx,
-            ),
-            _get_entity(
-                entity_id=body.destinationFolderId,
-                include_items=False,
-                configuration=configuration,
-                context=ctx,
-            ),
-            return_exceptions=True,
-        )
-        if len(items) + len(folders) == 0:
-            raise HTTPException(
-                status_code=404, detail="Source item or folder not found in database"
-            )
-
-        if (
-            isinstance(to_folder_or_drive, HTTPException)
-            and to_folder_or_drive.status_code == 404
-        ):
-            raise HTTPException(
-                status_code=404,
-                detail="Destination folder or drive not found in database",
-            )
-
-        if isinstance(to_folder_or_drive, Exception):
-            raise to_folder_or_drive
-
-        destination = to_folder_or_drive.entity
-        destination_id = (
-            destination.folderId
-            if isinstance(destination, FolderResponse)
-            else destination.driveId
-        )
-        target = items[0] if len(items) > 0 else folders[0]
-
-        if "parent_folder_id" in target:
-            doc = {
-                **target,
-                **{
-                    "parent_folder_id": destination_id,
-                    "group_id": destination.groupId,
-                    "drive_id": destination.driveId,
-                },
-            }
-            await db_post(docdb=folders_db, doc=doc, context=ctx)
-            if (
-                target["drive_id"] == destination.driveId
-                and target["group_id"] == destination.groupId
-            ):
-                return MoveResponse(foldersCount=1, items=[])
-            to_move = await _children(
-                folder_id=target["folder_id"], configuration=configuration, context=ctx
-            )
-
-            bodies = [
-                MoveItemBody(
-                    targetId=item.itemId, destinationFolderId=target["folder_id"]
-                )
-                for item in to_move.items
-                # For now only 'original' assets can be moved (no 'symlinks'), related to change in authorisation policy
-                # (handled by assets-gtw.treedb-backend)
-                if not item.borrowed
-            ] + [
-                MoveItemBody(
-                    targetId=item.folderId, destinationFolderId=target["folder_id"]
-                )
-                for item in to_move.folders
-            ]
-
-            results = await asyncio.gather(
-                *[
-                    move(request=request, body=body, configuration=configuration)
-                    for body in bodies
-                ]
-            )
-            all_items = list(flatten([r.items for r in results]))
-            return MoveResponse(
-                foldersCount=1 + sum(r.foldersCount for r in results), items=all_items
-            )
-
-        doc = {
-            **target,
-            **{
-                "folder_id": destination_id,
-                "group_id": destination.groupId,
-                "drive_id": destination.driveId,
-            },
-        }
-        await db_post(docdb=items_db, doc=doc, context=ctx)
-        response = MoveResponse(foldersCount=0, items=[doc_to_item(doc)])
-        return response
-
-
-@router.post(
     "/items/{item_id}/borrow", response_model=ItemResponse, summary="borrow item"
 )
 async def borrow(
@@ -1041,139 +908,6 @@ async def borrow(
         )
 
 
-async def _get_entity(
-    entity_id: str,
-    configuration: Configuration,
-    context: Context,
-    include_drives: bool = True,
-    include_folders: bool = True,
-    include_items: bool = True,
-):
-    async with context.start(action="_get_entity") as ctx:  # type: Context
-        items_db, folders_db, drives_db = (
-            configuration.doc_dbs.items_db,
-            configuration.doc_dbs.folders_db,
-            configuration.doc_dbs.drives_db,
-        )
-
-        drive = (
-            db_query(
-                docdb=drives_db,
-                key="drive_id",
-                value=entity_id,
-                max_count=1,
-                context=ctx,
-            )
-            if include_drives
-            else None
-        )
-        folder = (
-            db_query(
-                docdb=folders_db,
-                key="folder_id",
-                value=entity_id,
-                max_count=1,
-                context=ctx,
-            )
-            if include_folders
-            else None
-        )
-        item = (
-            db_query(
-                docdb=items_db, key="item_id", value=entity_id, max_count=1, context=ctx
-            )
-            if include_items
-            else None
-        )
-
-        futures = [d for d in [item, folder, drive] if d]
-        entities = list(flatten(await asyncio.gather(*futures)))
-        if not entities:
-            raise HTTPException(
-                status_code=404, detail="No entities found with corresponding id"
-            )
-        entity = entities[0]
-        if "item_id" in entity:
-            return EntityResponse(entityType="item", entity=doc_to_item(entity))
-
-        if "parent_folder_id" in entity:
-            return EntityResponse(entityType="folder", entity=doc_to_folder(entity))
-
-        return EntityResponse(entityType="drive", entity=doc_to_drive_response(entity))
-
-
-@router.get(
-    "/entities/{entity_id}",
-    response_model=EntityResponse,
-    summary="Retrieves an entity (drive, folder, or item) from its ID.",
-)
-async def get_entity(
-    request: Request,
-    entity_id: str,
-    include_drives: bool = QueryParam(True, alias="include-drives"),
-    include_folders: bool = QueryParam(True, alias="include-folders"),
-    include_items: bool = QueryParam(True, alias="include-items"),
-    configuration: Configuration = Depends(get_configuration),
-) -> EntityResponse:
-    """
-    Retrieves an entity (drive, folder, or item) from its ID.
-
-    Parameters:
-        request: Incoming request.
-        entity_id: Entity's ID.
-        include_drives: Whether to look up in drives.
-        include_folders: Whether to look up in folders.
-        include_items: Whether to look up in items.
-        configuration: Injected configuration of the service.
-
-    Return:
-        Description of the entity.
-    """
-    async with Context.start_ep(
-        request=request, action="get_entity"
-    ) as ctx:  # type: Context
-        response = await _get_entity(
-            entity_id=entity_id,
-            include_drives=include_drives,
-            include_items=include_items,
-            include_folders=include_folders,
-            configuration=configuration,
-            context=ctx,
-        )
-        return response
-
-
-async def _children(folder_id: str, configuration: Configuration, context: Context):
-    # max_count: see comment in class 'Constants'
-    max_count = Constants.max_children_count
-    async with context.start(action="_children") as ctx:  # type: Context
-        folders_db, items_db = (
-            configuration.doc_dbs.folders_db,
-            configuration.doc_dbs.items_db,
-        )
-        folders, items = await asyncio.gather(
-            db_query(
-                docdb=folders_db,
-                key="parent_folder_id",
-                value=folder_id,
-                max_count=max_count,
-                context=ctx,
-            ),
-            db_query(
-                docdb=items_db,
-                key="folder_id",
-                value=folder_id,
-                max_count=max_count,
-                context=ctx,
-            ),
-        )
-
-        return ChildrenResponse(
-            folders=[doc_to_folder(f) for f in folders],
-            items=[doc_to_item(f) for f in items],
-        )
-
-
 @router.get(
     "/folders/{folder_id}/children",
     summary="Query the children of a folder or drive.",
@@ -1198,7 +932,7 @@ async def children(
     async with Context.start_ep(
         request=request, action="children"
     ) as ctx:  # type: Context
-        response = await _children(
+        response = await entities_children(
             folder_id=folder_id, configuration=configuration, context=ctx
         )
         return response
@@ -1402,7 +1136,9 @@ async def delete_drive(
     ) as ctx:  # type: Context
         drives_db = configuration.doc_dbs.drives_db
         entities, deleted = await asyncio.gather(
-            _children(folder_id=drive_id, configuration=configuration, context=ctx),
+            entities_children(
+                folder_id=drive_id, configuration=configuration, context=ctx
+            ),
             _list_deleted(drive_id=drive_id, configuration=configuration, context=ctx),
         )
 
@@ -1522,7 +1258,7 @@ async def purge_folder(
 ) -> tuple[list[Coroutine], list[Coroutine], list[ItemResponse]]:
     async with context.start(action="purge folder") as ctx:
         doc_dbs = configuration.doc_dbs
-        content = await _children(
+        content = await entities_children(
             folder_id=folder_id, configuration=configuration, context=ctx
         )
 
