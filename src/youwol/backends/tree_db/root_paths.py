@@ -1560,32 +1560,3 @@ async def purge_folder(
             delete_folders + list(flatten([d for _, d, _ in deletion_rec_folders])),
             content.items + list(flatten([d for _, _, d in deletion_rec_folders])),
         )
-
-
-async def get_items_rec(
-    request, folder_id: str, configuration: Configuration, context: Context
-):
-    resp = await _children(
-        folder_id=folder_id, configuration=configuration, context=context
-    )
-
-    children_folders = await asyncio.gather(
-        *[
-            get_items_rec(
-                request=request,
-                folder_id=folder.folderId,
-                configuration=configuration,
-                context=context,
-            )
-            for folder in resp.folders
-        ]
-    )
-
-    folders = [folder.folderId for folder in resp.folders] + list(
-        flatten([list(folders) for items, folders in children_folders])
-    )
-    items = [item.itemId for item in resp.items] + list(
-        flatten([list(items) for items, folders in children_folders])
-    )
-
-    return items, folders
