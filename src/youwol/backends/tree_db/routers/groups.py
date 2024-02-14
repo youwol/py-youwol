@@ -28,14 +28,9 @@ from youwol.utils.http_clients.tree_db_backend import (
 )
 
 # relative
-from .routers import router_drives, router_entities, router_folders, router_items
-from .utils import create_drive, doc_to_drive_response, get_default_drive
+from ..utils import create_drive, doc_to_drive_response, get_default_drive
 
-router = APIRouter(tags=["treedb-backend"])
-router.include_router(router_entities)
-router.include_router(router_items)
-router.include_router(router_folders)
-router.include_router(router_drives)
+router = APIRouter(tags=["treedb-backend.groups"])
 
 
 @router.get(
