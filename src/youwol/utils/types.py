@@ -2,6 +2,7 @@
 from typing import Any, Union
 
 # 'Any' should be 'JSON', but pydantic scream (most likely because of recursive definition)
+# pylint: disable=invalid-name"
 JSON = Union[str, int, float, bool, None, dict[str, Any], list]
 """
 Basically means a valid JSON object.
