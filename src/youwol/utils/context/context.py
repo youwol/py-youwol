@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from types import TracebackType
 
 # typing
-from typing import Generic, Literal, Union, cast
+from typing import Generic, Literal, TypeVar, Union, cast
 
 # third parties
 import aiohttp
@@ -39,14 +39,19 @@ from .models import (
     LogLevel,
     ProxiedBackendCtxEnv,
     StringLike,
-    T,
     TContextAttr,
-    TEnvironment,
 )
+
+T = TypeVar("T")
+"""
+Generic type parameter for the [Context](@yw-nav-class:youwol.utils.context.Context) class.
+
+It defines contextual information known at 'compile' time.
+"""
 
 
 @dataclass(frozen=True)
-class Context(Generic[TEnvironment]):
+class Context(Generic[T]):
     """
     Context objects serves at tracing the execution flow within python code and logs information as well as
     propagating contextual information.
@@ -55,7 +60,7 @@ class Context(Generic[TEnvironment]):
     [env](@yw-nav-attr:youwol.utils.context.Context.env), a 'compile-time' resolved contextual information.
     """
 
-    env: TEnvironment | None = None
+    env: T | None = None
     """
     This attribute is a typed, static data point established during the creation of the root context and is
     accessible to all its child contexts.
@@ -134,7 +139,7 @@ class Context(Generic[TEnvironment]):
         on_exit: CallableBlock | None = None,
         on_exception: CallableBlockException | None = None,
         with_reporters: list[ContextReporter] | None = None,
-    ) -> ScopedContext[TEnvironment]:
+    ) -> ScopedContext[T]:
         """
         Function to start a child context bound to an execution scope.
 
@@ -183,7 +188,7 @@ class Context(Generic[TEnvironment]):
             else self.logs_reporters + with_reporters
         )
 
-        return ScopedContext[TEnvironment](
+        return ScopedContext[T](
             action=action,
             env=self.env,
             on_enter=on_enter,
@@ -531,7 +536,7 @@ exiting a block with exception.
 
 
 @dataclass(frozen=True)
-class ScopedContext(Generic[TEnvironment], Context[TEnvironment]):
+class ScopedContext(Generic[T], Context[T]):
     """
     A context with lifecycle management logic (implementing async context manager API from python: `__aenter__`
     and `__aexit__`).

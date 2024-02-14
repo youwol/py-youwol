@@ -200,14 +200,6 @@ A selector function for headers: it takes a list of header's keys in argument, a
 """
 
 
-TEnvironment = TypeVar("TEnvironment")
-"""
-Generic type parameter for the [Context](@yw-nav-class:youwol.utils.context.Context) class.
-
-It defines contextual information known at 'compile' time.
-"""
-
-
 LabelsGetter = Callable[[], set[str]]
 """
 Type definition of a Label definition, used in [ContextFactory](@yw-nav-class:youwol.utils.context.ContextFactory).
