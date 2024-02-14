@@ -51,7 +51,6 @@ from youwol.utils.http_clients.assets_backend import (
     AssetResponse,
     ConsumerInfo,
     ExposingGroup,
-    HealthzResponse,
     NewAssetBody,
     OwnerInfo,
     OwningGroup,
@@ -81,11 +80,6 @@ from .utils import (
 
 router = APIRouter(tags=["assets-backend"])
 flatten = itertools.chain.from_iterable
-
-
-@router.get("/healthz", response_model=HealthzResponse)
-async def healthz():
-    return HealthzResponse()
 
 
 @router.put("/assets", response_model=AssetResponse, summary="new asset")

@@ -28,7 +28,6 @@ from youwol.utils.http_clients.assets_backend import (
     AccessPolicyBody,
     AccessPolicyResp,
     AssetResponse,
-    HealthzResponse,
     PermissionsResp,
     PostAssetBody,
 )
@@ -47,18 +46,6 @@ class NewEmptyAssetBody(BaseModel):
     name: str = ""
     description: str = ""
     tags: list[str] = []
-
-
-@router.get(
-    "/healthz", summary="return status of the service", response_model=HealthzResponse
-)
-async def healthz(
-    request: Request, configuration: Configuration = Depends(get_configuration)
-):
-    async with Context.start_ep(request=request) as ctx:
-        return await configuration.assets_client.healthz(
-            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
-        )
 
 
 @router.put("/assets", response_model=NewAssetResponse, summary="new asset")
