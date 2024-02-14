@@ -4,14 +4,9 @@ from collections.abc import Callable
 # third parties
 from pydantic import BaseModel
 
-# Youwol application
-from youwol.app.environment import UploadTargets
-
 # Youwol pipelines
 from youwol.pipelines import CdnTarget
 from youwol.pipelines.pipeline_typescript_weback_npm.common.models import NpmRepo
-
-upload_targets = list[UploadTargets]
 
 
 class Environment(BaseModel):
