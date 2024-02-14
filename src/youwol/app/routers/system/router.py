@@ -21,9 +21,9 @@ from starlette.requests import Request
 # Youwol application
 from youwol.app.environment import YouwolEnvironment, yw_config
 from youwol.app.routers.system.documentation import (
+    YOUWOL_MODULE,
     format_module_doc,
     init_classes,
-    youwol_module,
 )
 from youwol.app.routers.system.documentation_models import (
     DocCache,
@@ -534,7 +534,7 @@ async def get_documentation(request: Request, rest_of_path: str) -> DocModuleRes
     async with Context.start_ep(request=request):
         init_classes()
         DocCache.global_doc = DocCache.global_doc or cast(
-            Module, griffe.load(youwol_module, submodules=True)
+            Module, griffe.load(YOUWOL_MODULE, submodules=True)
         )
 
         if rest_of_path in DocCache.modules_doc:
@@ -543,7 +543,7 @@ async def get_documentation(request: Request, rest_of_path: str) -> DocModuleRes
         module_name = (
             rest_of_path.strip("/")
             .replace("/", ".")
-            .replace(youwol_module, "")
+            .replace(YOUWOL_MODULE, "")
             .strip(".")
         )
         try:
@@ -565,8 +565,8 @@ async def get_documentation(request: Request, rest_of_path: str) -> DocModuleRes
                 docstring=[],
                 childrenModules=[
                     DocChildModulesResponse(
-                        name=youwol_module,
-                        path=youwol_module,
+                        name=YOUWOL_MODULE,
+                        path=YOUWOL_MODULE,
                         isLeaf=False,
                     )
                 ],
