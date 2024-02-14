@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from youwol.utils import DocDb, TableBody
 from youwol.utils.clients.docdb.models import Column, IdentifierSI, SecondaryIndex
 
-keyspace_name = "tree_db"
+KEYSPACE_NAME = "tree_db"
 
 
 @dataclass(frozen=True)
@@ -587,28 +587,28 @@ to query by parent's drive ID.
 
 def create_doc_dbs(factory_db: Any, **kwargs) -> DocDbs:
     files_db = factory_db(
-        keyspace_name=keyspace_name,
+        keyspace_name=KEYSPACE_NAME,
         table_body=FILES_TABLE,
         secondary_indexes=[FILES_TABLE_PARENT_INDEX, FILES_TABLE_RELATED_INDEX],
         **kwargs,
     )
 
     folders_db = factory_db(
-        keyspace_name=keyspace_name,
+        keyspace_name=KEYSPACE_NAME,
         table_body=FOLDERS_TABLE,
         secondary_indexes=[FOLDERS_TABLE_PARENT_INDEX],
         **kwargs,
     )
 
     drives_db = factory_db(
-        keyspace_name=keyspace_name,
+        keyspace_name=KEYSPACE_NAME,
         table_body=DRIVES_TABLE,
         secondary_indexes=[DRIVES_TABLE_PARENT_INDEX],
         **kwargs,
     )
 
     deleted_db = factory_db(
-        keyspace_name=keyspace_name,
+        keyspace_name=KEYSPACE_NAME,
         table_body=DELETED_TABLE,
         secondary_indexes=[DELETED_TABLE_DRIVE_INDEX],
         **kwargs,
