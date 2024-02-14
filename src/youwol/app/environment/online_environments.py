@@ -2,12 +2,8 @@
 
 # relative
 from .models.defaults import default_auth_provider, default_platform_host
-from .models.models_config import (
-    Authentication,
-    AuthorizationProvider,
-    BrowserAuth,
-    CloudEnvironment,
-)
+from .models.model_remote import Authentication
+from .models.models_config import AuthorizationProvider, BrowserAuth, CloudEnvironment
 
 
 def get_standard_auth_provider(host: str, **kwargs) -> AuthorizationProvider:

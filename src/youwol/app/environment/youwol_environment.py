@@ -38,9 +38,9 @@ from .errors_handling import (
     ConfigurationLoadingStatus,
     ErrorResponse,
 )
+from .models.model_remote import Authentication
 from .models.models import ApiConfiguration
 from .models.models_config import (
-    Authentication,
     CloudEnvironment,
     Command,
     Configuration,
