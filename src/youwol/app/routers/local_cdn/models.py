@@ -7,7 +7,7 @@ from pydantic import BaseModel
 # Youwol utilities
 from youwol.utils.http_clients.cdn_backend import WebpmLibraryType
 
-cdn_topic = "cdn"
+CDN_TOPIC = "cdn"
 
 
 class CdnVersionLight(BaseModel):
@@ -41,10 +41,10 @@ class CdnPackageResponse(CdnPackage):
 
 
 class UpdateStatus(Enum):
-    upToDate = "upToDate"
-    mismatch = "mismatch"
-    remoteAhead = "remoteAhead"
-    localAhead = "localAhead"
+    UP_TO_DATE = "upToDate"
+    MISMATCH = "mismatch"
+    REMOTE_AHEAD = "remoteAhead"
+    LOCAL_AHEAD = "localAhead"
 
 
 class PackageVersionInfo(BaseModel):
@@ -102,10 +102,10 @@ class DownloadedPackageResponse(BaseModel):
 
 
 class Event(Enum):
-    downloadStarted = "downloadStarted"
-    downloadDone = "downloadDone"
-    updateCheckStarted = "updateCheckStarted"
-    updateCheckDone = "updateCheckDone"
+    DOWNLOAD_STARTED = "downloadStarted"
+    DOWNLOAD_DONE = "downloadDone"
+    UPDATE_CHECK_STARTED = "updateCheckStarted"
+    UPDATE_CHECK_DONE = "updateCheckDone"
 
 
 class PackageEventResponse(BaseModel):

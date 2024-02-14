@@ -81,12 +81,12 @@ async def check_update(local_package: TargetPackage, context: Context):
         action=f"Check update for {local_package.library_name}",
         on_enter=lambda ctx_enter: ctx_enter.send(
             PackageEventResponse(
-                packageName=name, version=version, event=Event.updateCheckStarted
+                packageName=name, version=version, event=Event.UPDATE_CHECK_STARTED
             )
         ),
         on_exit=lambda ctx_exit: ctx_exit.send(
             PackageEventResponse(
-                packageName=name, version=version, event=Event.updateCheckDone
+                packageName=name, version=version, event=Event.UPDATE_CHECK_DONE
             )
         ),
         with_attributes={
@@ -112,13 +112,13 @@ async def check_update(local_package: TargetPackage, context: Context):
         )
 
         latest = remote_package["releases"][0]
-        status = UpdateStatus.mismatch
+        status = UpdateStatus.MISMATCH
         if latest["fingerprint"] == local_package.fingerprint:
-            status = UpdateStatus.upToDate
+            status = UpdateStatus.UP_TO_DATE
         elif latest["version_number"] > local_package.version_number:
-            status = UpdateStatus.remoteAhead
+            status = UpdateStatus.REMOTE_AHEAD
         elif latest["version_number"] < local_package.version_number:
-            status = UpdateStatus.localAhead
+            status = UpdateStatus.LOCAL_AHEAD
 
         await ctx.info(text=f"Status: {str(status)}")
         response = CheckUpdateResponse(
@@ -177,7 +177,7 @@ async def download_package(
     async def on_exit(ctx_exit):
         await ctx_exit.send(
             PackageEventResponse(
-                packageName=package_name, version=version, event=Event.downloadDone
+                packageName=package_name, version=version, event=Event.DOWNLOAD_DONE
             )
         )
         if check_update_status and record is not None:
@@ -209,7 +209,7 @@ async def download_package(
         with_attributes={"packageName": package_name, "packageVersion": version},
         on_enter=lambda ctx_enter: ctx_enter.send(
             PackageEventResponse(
-                packageName=package_name, version=version, event=Event.downloadStarted
+                packageName=package_name, version=version, event=Event.DOWNLOAD_STARTED
             )
         ),
         on_exit=on_exit,
