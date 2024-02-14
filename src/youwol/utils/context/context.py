@@ -4,19 +4,16 @@ from __future__ import annotations
 # standard library
 import asyncio
 import functools
-import json
 import time
 import traceback
 import uuid
 
-from abc import ABC, abstractmethod
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
-from enum import Enum
 from types import TracebackType
 
 # typing
-from typing import Any, Generic, Literal, NamedTuple, TypeVar, Union, cast
+from typing import Generic, Literal, Union, cast
 
 # third parties
 import aiohttp
@@ -24,258 +21,28 @@ import aiohttp
 from fastapi import HTTPException
 from pydantic import BaseModel
 from starlette.requests import Request
-from starlette.websockets import WebSocket
 
-# Youwol utilities
-from youwol.utils.clients.assets_gateway.assets_gateway import AssetsGatewayClient
-from youwol.utils.clients.cdn_sessions_storage import CdnSessionsStorageClient
-from youwol.utils.clients.request_executor import AioHttpExecutor
-from youwol.utils.types import JSON, AnyDict
-from youwol.utils.utils import YouwolHeaders, generate_headers_downstream, to_json
-
-JsonLike = Union[JSON, BaseModel]
-"""
-Represents data structures that can be serialized into a json representation
-(can also be `JSON` referencing `BaseModel`).
-"""
-
-
-class LogLevel(str, Enum):
-    """
-    Available severities when loging.
-    """
-
-    DEBUG = "DEBUG"
-    """
-    See [debug](@yw-nav-meth:youwol.utils.context.Context.debug).
-    """
-
-    INFO = "INFO"
-    """
-    See [info](@yw-nav-meth:youwol.utils.context.Context.info).
-    """
-
-    WARNING = "WARNING"
-    """
-    See [warning](@yw-nav-meth:youwol.utils.context.Context.warning).
-    """
-
-    ERROR = "ERROR"
-    """
-    See [error](@yw-nav-meth:youwol.utils.context.Context.error).
-    """
-
-    DATA = "DATA"
-    """
-    See [send](@yw-nav-meth:youwol.utils.context.Context.send).
-    """
-
-
-class Label(Enum):
-    STARTED = "STARTED"
-    STATUS = "STATUS"
-    INFO = "INFO"
-    LOG = "LOG"
-    APPLICATION = "APPLICATION"
-    LOG_INFO = "LOG_INFO"
-    LOG_DEBUG = "LOG_DEBUG"
-    LOG_ERROR = "LOG_ERROR"
-    LOG_WARNING = "LOG_WARNING"
-    LOG_ABORT = "LOG_ABORT"
-    DATA = "DATA"
-    DONE = "DONE"
-    EXCEPTION = "EXCEPTION"
-    FAILED = "FAILED"
-    FUTURE = "FUTURE"
-    FUTURE_SUCCEEDED = "FUTURE_SUCCEEDED"
-    FUTURE_FAILED = "FUTURE_FAILED"
-    MIDDLEWARE = "MIDDLEWARE"
-    API_GATEWAY = "API_GATEWAY"
-    ADMIN = "ADMIN"
-    END_POINT = "END_POINT"
-    TREE_DB = "TREE_DB"
-
-
-T = TypeVar("T")
-
-TContextAttr = int | str | bool
-"""
-Allowed [context](@yw-nav-class:youwol.utils.context.Context)'s attribute types.
-"""
-
-
-class LogEntry(NamedTuple):
-    """
-    LogEntry represents a log, they are created from the class
-    [Context](@yw-nav-class:youwol.utils.context.ContextReporter) when
-    [starting function](@yw-nav-meth:youwol.utils.context.Context.start) or
-    [end-point](@yw-nav-meth:youwol.utils.context.Context.start_ep) as well as
-    when logging information (e.g. [info](@yw-nav-meth:youwol.utils.context.Context.info)).
-
-    Log entries are processed by [ContextReporter](@yw-nav-class:youwol.utils.context.ContextReporter) that
-    implements the action to trigger when a log entry is created.
-    """
-
-    level: LogLevel
-    """
-    Level (e.g. debug, info, error, *etc.*).
-    """
-
-    text: str
-    """
-    Text.
-    """
-
-    data: JSON
-    """
-    Data associated to the log (set up with the `data` argument of *e.g.*
-    [info](@yw-nav-meth:youwol.utils.context.Context.info)).
-    """
-    labels: list[str]
-    """
-    Labels associated to the log (set up with the `labels` argument of *e.g.*
-    [info](@yw-nav-meth:youwol.utils.context.Context.info)).
-    """
-    attributes: dict[str, TContextAttr]
-    """
-    Attributes associated to the log (set up with the `attributes` argument of *e.g.*
-    [info](@yw-nav-meth:youwol.utils.context.Context.info)).
-    """
-    context_id: str
-    """
-    The context ID that was used to generated this entry.
-    """
-    parent_context_id: str | None
-    """
-    The parent context ID that was used to generated this entry.
-    """
-
-    trace_uid: str | None
-    """
-    Trace ID (*i.e.*  root context ID).
-    """
-
-    timestamp: float
-    """
-    Timestamp: time in second since EPOC.
-    """
-
-    def dict(self):
-        return {
-            "level": self.level.name,
-            "attributes": self.attributes,
-            "labels": self.labels,
-            "text": self.text,
-            "data": self.data,
-            "contextId": self.context_id,
-            "parentContextId": self.parent_context_id,
-            "timestamp": self.timestamp,
-            "traceUid": self.trace_uid,
-        }
-
-
-DataType = Union[T, Callable[[], T], Callable[[], Awaitable[T]]]
-"""
-Type definition of context's data attribute.
-"""
-
-
-class ContextReporter(ABC):
-    """
-    Abstract class that implements log strategy (e.g. within terminal, file, REST call, *etc.*).
-    """
-
-    @abstractmethod
-    async def log(self, entry: LogEntry):
-        """
-        Parameters:
-            entry: the og entry to process
-        """
-        return NotImplemented
-
-
-def format_message(entry: LogEntry):
-    return {
-        "level": entry.level.name,
-        "attributes": entry.attributes,
-        "labels": entry.labels,
-        "text": entry.text,
-        "data": entry.data,
-        "contextId": entry.context_id,
-        "parentContextId": entry.parent_context_id,
-    }
-
-
-class WsContextReporter(ContextReporter):
-    """
-    Base class for context reporters using web sockets.
-    """
-
-    websockets_getter: Callable[[], list[WebSocket]]
-    """
-    Callback that provides a list of web socket channels to use.
-    This function is evaluated each time [log](@yw-nav-meth:youwol.utils.context.WsContextReporter.log) is called.
-    """
-
-    mute_exceptions: bool
-    """
-    If `True` exceptions while sending the message in a web socket are not reported.
-    """
-
-    def __init__(
-        self,
-        websockets_getter: Callable[[], list[WebSocket]],
-        mute_exceptions: bool = False,
-    ):
-        """
-        Set the class's attributes.
-
-        Parameters:
-            websockets_getter: see
-                [websockets_getter](@yw-nav-attr:youwol.utils.context.WsContextReporter.websockets_getter)
-            mute_exceptions: see
-                [websockets_getter](@yw-nav-attr:youwol.utils.context.WsContextReporter.mute_exceptions)
-        """
-        self.websockets_getter = websockets_getter
-        self.mute_exceptions = mute_exceptions
-
-    async def log(self, entry: LogEntry):
-        """
-        Send a [LogEntry](@yw-nav-class:youwol.utils.context.LogEntry) in the web-socket channels.
-
-        Parameters:
-            entry: log to process.
-        """
-        message = format_message(entry)
-        websockets = self.websockets_getter()
-
-        async def dispatch():
-            try:
-                text = json.dumps(message)
-                await asyncio.gather(
-                    *[ws.send_text(text) for ws in websockets if ws],
-                    return_exceptions=self.mute_exceptions,
-                )
-            except (TypeError, OverflowError):
-                print(f"Error in JSON serialization ({__file__})")
-
-        await dispatch()
-
-
-StringLike = Any
-
-HeadersFwdSelector = Callable[[list[str]], list[str]]
-"""
-A selector function for headers: it takes a list of header's keys in argument, and return the selected keys from it.
-"""
-
-
-TEnvironment = TypeVar("TEnvironment")
-"""
-Generic type parameter for the [Context](@yw-nav-class:youwol.utils.context.Context) class.
-
-It defines contextual information known at 'compile' time.
-"""
+# relative
+from ..clients.assets_gateway.assets_gateway import AssetsGatewayClient
+from ..clients.cdn_sessions_storage import CdnSessionsStorageClient
+from ..clients.request_executor import AioHttpExecutor
+from ..types import AnyDict
+from ..utils import YouwolHeaders, generate_headers_downstream, to_json
+from .models import (
+    ContextReporter,
+    DataType,
+    HeadersFwdSelector,
+    JsonLike,
+    Label,
+    LabelsGetter,
+    LogEntry,
+    LogLevel,
+    ProxiedBackendCtxEnv,
+    StringLike,
+    T,
+    TContextAttr,
+    TEnvironment,
+)
 
 
 @dataclass(frozen=True)
@@ -762,11 +529,6 @@ Signature for [scoped context](@yw-nav-class:youwol.utils.context.ScopedContext)
 exiting a block with exception.
 """
 
-LabelsGetter = Callable[[], set[str]]
-"""
-Type definition of a Label definition, used in [ContextFactory](@yw-nav-class:youwol.utils.context.ContextFactory).
-"""
-
 
 @dataclass(frozen=True)
 class ScopedContext(Generic[TEnvironment], Context[TEnvironment]):
@@ -846,25 +608,6 @@ class ScopedContext(Generic[TEnvironment], Context[TEnvironment]):
         )
         if isinstance(r, Awaitable):
             await r
-
-
-@dataclass(frozen=True)
-class ProxiedBackendCtxEnv:
-    """
-    Type of the [Context.env](@yw-nav-attr:youwol.utils.context.Context.env) attribute for
-    [ProxiedBackendContext](@yw-nav-glob:youwol.utils.context.ProxiedBackendContext)
-    specialization of [Context](@yw-nav-class:youwol.utils.context.Context).
-
-    """
-
-    assets_gateway: AssetsGatewayClient
-    """
-    HTTP client.
-    """
-    sessions_storage: CdnSessionsStorageClient
-    """
-    HTTP client.
-    """
 
 
 ProxiedBackendContext = Context[ProxiedBackendCtxEnv]
@@ -999,226 +742,3 @@ class ContextFactory:
             trace_uid=YouwolHeaders.get_trace_id(request),
             uid=YouwolHeaders.get_correlation_id(request) or "root",
         )
-
-
-class DeployedContextReporter(ContextReporter):
-    """
-    This [ContextReporter](@yw-nav-class: youwol.utils.context.ContextReporter) logs into the standard
-    output using a format understood by most cloud providers (*e.g.* using spanId, traceId).
-    """
-
-    async def log(self, entry: LogEntry):
-        """
-        Use [print](https://docs.python.org/3/library/functions.html#print) to log a serialized version of
-         the provided entry.
-
-        Parameters:
-            entry: log entry to print.
-
-        """
-        prefix = ""
-        if str(Label.STARTED) in entry.labels:
-            prefix = "<START>"
-
-        if str(Label.DONE) in entry.labels:
-            prefix = "<DONE>"
-        base = {
-            "message": f"{prefix} {entry.text}",
-            "level": entry.level.name,
-            "spanId": entry.context_id,
-            "labels": [str(label) for label in entry.labels],
-            "traceId": entry.trace_uid,
-            "logging.googleapis.com/spanId": entry.context_id,
-            "logging.googleapis.com/trace": entry.trace_uid,
-        }
-
-        try:
-            print(json.dumps({**base, "data": entry.data}))
-        except TypeError:
-            print(
-                json.dumps(
-                    {
-                        **base,
-                        "message": f"{base['message']} (FAILED PARSING DATA IN JSON)",
-                    }
-                )
-            )
-
-
-class ConsoleContextReporter(ContextReporter):
-    """
-    This [ContextReporter](@yw-nav-class:youwol.utils.context.ContextReporter) logs into the standard
-    output.
-    """
-
-    async def log(self, entry: LogEntry):
-        """
-        Use [print](https://docs.python.org/3/library/functions.html#print) to log a serialized version of
-         the provided entry by selecting the attributes `message`, `level`, `spanId`, `labels` and `spanId.
-
-        Parameters:
-            entry: Log entry to print.
-        """
-        base = {
-            "message": entry.text,
-            "level": entry.level.name,
-            "spanId": entry.context_id,
-            "labels": [str(label) for label in entry.labels],
-            "traceId": entry.trace_uid,
-        }
-        print(json.dumps(base))
-
-
-class PyYouwolContextReporter(ContextReporter):
-    """
-    This [ContextReporter](@yw-nav-class: youwol.utils.context.ContextReporter) send logs through
-    an API call to a running youwol server in localhost.
-
-    It uses a POST request at `http://localhost:{self.py_youwol_port}/admin/system/logs` with provided headers.
-
-    See [post_logs](@yw-nav-func:youwol.app.routers.system.post_logs).
-    """
-
-    py_youwol_port: int
-    """
-    Port used on localhost to execute the POST request of the log.
-    """
-    headers: dict[str, str]
-    """
-    Headers associated to the POST request of the log.
-    """
-
-    def __init__(self, py_youwol_port: int, headers: dict[str, str] | None = None):
-        """
-        Set the class's attributes.
-
-        Parameters:
-            py_youwol_port: see
-                [py_youwol_port](@yw-nav-attr:youwol.utils.context.PyYouwolContextReporter.py_youwol_port)
-            headers: see
-                [headers](@yw-nav-attr:youwol.utils.context.PyYouwolContextReporter.headers)
-        """
-        super().__init__()
-        self.py_youwol_port = py_youwol_port
-        self.headers = headers or {}
-
-    async def log(self, entry: LogEntry):
-        """
-        Send the log to a py-youwol running server using provided
-        [port](@yw-nav-attr:youwol.utils.context.PyYouwolContextReporter.py_youwol_port) and
-        [headers](@yw-nav-attr:youwol.utils.context.PyYouwolContextReporter.headers).
-
-        Parameters:
-            entry: log entry to print.
-        """
-
-        url = f"http://localhost:{self.py_youwol_port}/admin/system/logs"
-        body = {
-            "logs": [
-                {
-                    "level": entry.level.name,
-                    "attributes": entry.attributes,
-                    "labels": entry.labels,
-                    "text": entry.text,
-                    "data": entry.data,
-                    "contextId": entry.context_id,
-                    "parentContextId": entry.parent_context_id,
-                    "timestamp": int(time.time()),
-                    "traceUid": entry.trace_uid,
-                }
-            ]
-        }
-        async with aiohttp.ClientSession(headers=self.headers) as session:
-            async with await session.post(url=url, json=body):
-                # nothing to do
-                pass
-
-
-class InMemoryReporter(ContextReporter):
-    """
-    Stores logs generated from [context](youwol.utils.context.Context) in memory.
-    """
-
-    max_count = 10000
-    """
-    Maximum count of logs kept in memory.
-    """
-
-    root_node_logs: list[LogEntry] = []
-    """
-    The list of the root logs.
-    """
-
-    node_logs: list[LogEntry] = []
-    """
-    The list of all 'node' logs: those associated to a function execution (and associated to children logs).
-
-    They are created from the context using [Context.start](@yw-nav-meth:youwol.utils.context.Context.start) or
-    [Context.start_ep](@yw-nav-meth:youwol.utils.context.Context.start_ep).
-    """
-
-    leaf_logs: list[LogEntry] = []
-    """
-    The list of all 'leaf' logs: those associated to a simple log
-     (e.g. [Context.info](@yw-nav-meth:youwol.utils.context.Context.info)).
-    """
-    errors: set[str] = set()
-    """
-    List of `context_id` associated to errors.
-    """
-    futures: set[str] = set()
-    """
-    List of `context_id` associated to futures (eventually not resolved yet).
-    """
-    futures_succeeded: set[str] = set()
-    """
-    List of `context_id` associated to succeeded futures.
-    """
-    futures_failed: set[str] = set()
-    """
-    List of `context_id` associated to failed futures.
-    """
-
-    def clear(self):
-        self.root_node_logs = []
-        self.node_logs = []
-        self.leaf_logs = []
-
-    def resize_if_needed(self, items: list[Any]):
-        if len(items) > 2 * self.max_count:
-            return items[len(items) - self.max_count :]
-        return items
-
-    async def log(self, entry: LogEntry):
-        """
-        Save the entry in memory.
-
-        Parameters:
-            entry: log entry.
-        """
-        if str(Label.LOG) in entry.labels:
-            return
-
-        if str(Label.STARTED) in entry.labels and entry.parent_context_id == "root":
-            self.root_node_logs.append(entry)
-
-        if str(Label.STARTED) in entry.labels and entry.parent_context_id != "root":
-            self.node_logs.append(entry)
-
-        if str(Label.STARTED) not in entry.labels:
-            self.leaf_logs.append(entry)
-
-        if str(Label.FAILED) in entry.labels:
-            self.errors.add(entry.context_id)
-
-        if str(Label.FUTURE) in entry.labels:
-            self.futures.add(entry.context_id)
-
-        if str(Label.FUTURE_SUCCEEDED) in entry.labels:
-            self.futures_succeeded.add(entry.context_id)
-
-        if str(Label.FUTURE_FAILED) in entry.labels:
-            self.futures_failed.add(entry.context_id)
-
-        self.root_node_logs = self.resize_if_needed(self.root_node_logs)
-        self.leaf_logs = self.resize_if_needed(self.leaf_logs)
