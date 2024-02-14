@@ -175,17 +175,17 @@ class LeafLogResponse(Log):
 
 
 class NodeLogStatus(Enum):
-    Succeeded = "Succeeded"
+    SUCCEEDED = "Succeeded"
     """
     The log has a succeeded status: it signals that the parent function has ran as expected.
     """
 
-    Failed = "Failed"
+    FAILED = "Failed"
     """
     The log has a failed status: it signals that the parent function failed, the log content explains the reason.
     """
 
-    Unresolved = "Unresolved"
+    UNRESOLVED = "Unresolved"
     """
     The log has a unresolved status: it signals that the parent function is unresolved yet, the log content
     explains the reason.
@@ -481,16 +481,16 @@ async def clear_logs(request: Request):
 
 def get_status(log: LogEntry, logger: InMemoryReporter):
     if log.context_id in logger.errors:
-        return NodeLogStatus.Failed
+        return NodeLogStatus.FAILED
 
     if log.context_id in logger.futures:
         if log.context_id in logger.futures_succeeded:
-            return NodeLogStatus.Succeeded
+            return NodeLogStatus.SUCCEEDED
         if log.context_id in logger.futures_failed:
-            return NodeLogStatus.Failed
-        return NodeLogStatus.Unresolved
+            return NodeLogStatus.FAILED
+        return NodeLogStatus.UNRESOLVED
 
-    return NodeLogStatus.Succeeded
+    return NodeLogStatus.SUCCEEDED
 
 
 @router.get(
