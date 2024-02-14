@@ -6,9 +6,6 @@ import os
 
 from pathlib import Path
 
-# typing
-from typing import Any
-
 # third parties
 import semantic_version
 
@@ -18,6 +15,7 @@ from fastapi import HTTPException
 from youwol.utils.context import Context
 
 # relative
+from ...utils.http_clients.cdn_backend import WebpmLibraryType
 from .configurations import Constants
 
 flatten = itertools.chain.from_iterable
@@ -36,31 +34,6 @@ def get_files(path: Path | str):
     if len(normal) == 1:
         p[1] = normal[0]
     return p
-
-
-def get_library_type(package_json: Any):
-    allowed_types = ["library", "flux-pack", "library-core", "application"]
-    name = package_json["name"]
-
-    if name in ["rxjs", "lodash", "reflect-metadata", "tslib", "bootstrap"]:
-        return "core_library"
-
-    if (
-        "youwol" in package_json
-        and "type" in package_json["youwol"]
-        and package_json["youwol"]["type"] in allowed_types
-    ):
-        return package_json["youwol"]["type"]
-
-    if (
-        "youwol" in package_json
-        and "type" in package_json["youwol"]
-        and package_json["youwol"]["type"] not in allowed_types
-    ):
-        raise HTTPException(
-            500, f"package.json->youwol->type must be in {allowed_types}"
-        )
-    return "library"
 
 
 def chunks(lst, n):
@@ -131,6 +104,16 @@ async def format_doc_db_record(
             return package_json["webpm"]["aliases"]
         return []
 
+    def get_webpm_type() -> WebpmLibraryType:
+        allowed_types = {"js/wasm", "pyodide", "backend"}
+        if (
+            "webpm" in package_json
+            and "type" in package_json["webpm"]
+            and package_json["webpm"]["type"] in allowed_types
+        ):
+            return package_json["webpm"]["type"]
+        return "js/wasm"
+
     namespace = "" if "@" not in name else name.split("/")[0].split("@")[1]
     path = Path("libraries") / namespace / name.split("/")[-1] / version
     dependencies = await get_webpm_dependencies()
@@ -142,7 +125,7 @@ async def format_doc_db_record(
         "aliases": get_webpm_aliases(),
         "description": package_json.get("description", ""),
         "tags": package_json.get("keywords", []),
-        "type": get_library_type(package_json),
+        "type": get_webpm_type(),
         "dependencies": [k + "#" + v for k, v in dependencies.items()],
         "bundle_min": "",
         "bundle": str(main),

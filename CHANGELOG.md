@@ -26,6 +26,7 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
  
 -   **Pipeline Typescript**:
     -   remove pinning of `@types/node` after [chokidar bug correction](https://github.com/paulmillr/chokidar/issues/1299) <!-- TG-1983 -->
+-   Component's type is either `js/wasm` or `backend`. <!-- TG-2080 -->
 
 ### Fixed
 

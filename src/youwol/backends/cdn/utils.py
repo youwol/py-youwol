@@ -62,6 +62,7 @@ from youwol.utils.http_clients.cdn_backend import (
     get_exported_symbol,
 )
 from youwol.utils.http_clients.cdn_backend.utils import (
+    get_library_type,
     is_fixed_version,
     resolve_version,
 )
@@ -685,7 +686,7 @@ def library_model_from_doc(d: AnyDict):
         version=d["version"],
         namespace=d["namespace"],
         id=to_package_id(d["library_name"]),
-        type=d["type"],
+        type=get_library_type(d["type"]),
         fingerprint=d["fingerprint"],
         exportedSymbol=get_exported_symbol(d["library_name"]),
         aliases=d.get("aliases", []),
