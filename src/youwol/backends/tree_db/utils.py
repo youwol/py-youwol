@@ -9,13 +9,16 @@ from collections.abc import Mapping
 from typing import Any
 
 # third parties
-from fastapi import HTTPException
+from fastapi import Depends, HTTPException
+from starlette.requests import Request
 
 # Youwol utilities
 from youwol.utils import DocDb, asyncio, decode_id, get_all_individual_groups
 from youwol.utils.context import Context
 from youwol.utils.http_clients.tree_db_backend import (
     ChildrenResponse,
+    DefaultDriveResponse,
+    DriveBody,
     DriveResponse,
     FolderBody,
     FolderResponse,
@@ -23,7 +26,7 @@ from youwol.utils.http_clients.tree_db_backend import (
 )
 
 # relative
-from .configurations import Configuration, Constants
+from .configurations import Configuration, Constants, get_configuration
 
 
 def to_group_id(group_path: str | None) -> str:
@@ -144,22 +147,6 @@ async def ensure_drive(
     except HTTPException as e:
         if e.status_code == 404:
             raise HTTPException(status_code=404, detail="Drive not found")
-        raise e
-
-
-async def ensure_folder(
-    folder_id: str, group_id: str, docdb_folder: DocDb, headers: dict[str, Any]
-):
-    try:
-        await docdb_folder.get_document(
-            partition_keys={"folder_id": folder_id},
-            clustering_keys={},
-            owner=group_id,
-            headers=headers,
-        )
-    except HTTPException as e:
-        if e.status_code == 404:
-            raise HTTPException(status_code=404, detail="Folder not found")
         raise e
 
 
@@ -437,3 +424,134 @@ async def create_folder(
 
         response = doc_to_folder(doc)
         return response
+
+
+async def create_drive(
+    group_id: str, drive: DriveBody, configuration: Configuration, context: Context
+):
+    async with context.start(action="_create_drive") as ctx:  # type: Context
+        docdb = configuration.doc_dbs.drives_db
+        doc = {
+            "name": drive.name,
+            "drive_id": drive.driveId or str(uuid.uuid4()),
+            "group_id": group_id,
+            "metadata": drive.metadata,
+        }
+
+        await db_post(docdb=docdb, doc=doc, context=ctx)
+        response = doc_to_drive_response(doc)
+        return response
+
+
+async def get_default_drive(
+    request: Request,
+    group_id: str,
+    configuration: Configuration = Depends(get_configuration),
+) -> DefaultDriveResponse:
+    async with Context.start_ep(
+        request=request,
+        action="get default drive",
+        with_attributes={"group_id": group_id},
+    ) as ctx:
+        default_drive_id = f"{group_id}_default-drive"
+        try:
+            await get_drive(
+                drive_id=default_drive_id, configuration=configuration, context=ctx
+            )
+        except HTTPException as e_drive:
+            if e_drive.status_code != 404:
+                raise e_drive
+            await ctx.warning("Default drive does not exist yet, start creation")
+            await create_drive(
+                group_id=group_id,
+                drive=DriveBody(name="Default drive", driveId=default_drive_id),
+                configuration=configuration,
+                context=ctx,
+            )
+
+        download, home, system = await asyncio.gather(
+            _ensure_folder(
+                name="Download",
+                folder_id=f"{default_drive_id}_download",
+                parent_folder_id=default_drive_id,
+                configuration=configuration,
+                context=ctx,
+            ),
+            _ensure_folder(
+                name="Home",
+                folder_id=f"{default_drive_id}_home",
+                parent_folder_id=default_drive_id,
+                configuration=configuration,
+                context=ctx,
+            ),
+            _ensure_folder(
+                name="System",
+                folder_id=f"{default_drive_id}_system",
+                parent_folder_id=default_drive_id,
+                configuration=configuration,
+                context=ctx,
+            ),
+        )
+
+        system_packages, system_tmp = await asyncio.gather(
+            _ensure_folder(
+                name="Packages",
+                folder_id=f"{default_drive_id}_system_packages",
+                parent_folder_id=system.folderId,
+                configuration=configuration,
+                context=ctx,
+            ),
+            _ensure_folder(
+                name="Tmp",
+                folder_id=f"{default_drive_id}_system_tmp",
+                parent_folder_id=system.folderId,
+                configuration=configuration,
+                context=ctx,
+            ),
+        )
+
+        resp = DefaultDriveResponse(
+            groupId=group_id,
+            driveId=default_drive_id,
+            driveName="Default drive",
+            downloadFolderId=download.folderId,
+            downloadFolderName=download.name,
+            homeFolderId=home.folderId,
+            homeFolderName=home.name,
+            tmpFolderId=system_tmp.folderId,
+            tmpFolderName=system_tmp.name,
+            systemFolderId=system.folderId,
+            systemFolderName=system.name,
+            systemPackagesFolderId=system_packages.folderId,
+            systemPackagesFolderName=system_packages.name,
+        )
+        await ctx.info("Response", data=resp)
+        return resp
+
+
+async def _ensure_folder(
+    name: str,
+    folder_id: str,
+    parent_folder_id: str,
+    configuration: Configuration,
+    context: Context,
+):
+    async with context.start(
+        action="ensure folder", with_attributes={"folder_id": folder_id, "name": name}
+    ) as ctx:
+        try:
+            folder_resp = await get_folder(
+                folder_id=folder_id, configuration=configuration, context=context
+            )
+            await ctx.info("Folder already exists")
+            return folder_resp
+        except HTTPException as e_folder:
+            if e_folder.status_code != 404:
+                raise e_folder
+            await ctx.warning("Folder does not exist yet, start creation")
+            return await create_folder(
+                parent_folder_id=parent_folder_id,
+                folder=FolderBody(name=name, folderId=folder_id),
+                configuration=configuration,
+                context=ctx,
+            )
