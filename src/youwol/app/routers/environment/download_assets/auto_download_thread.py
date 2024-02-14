@@ -25,10 +25,10 @@ from .models import DownloadTask
 
 
 class DownloadEventType(Enum):
-    enqueued = "enqueued"
-    started = "started"
-    succeeded = "succeeded"
-    failed = "failed"
+    ENQUEUED = "enqueued"
+    STARTED = "started"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
 
 
 class DownloadEvent(BaseModel):
@@ -54,7 +54,7 @@ async def process_download_asset(
             DownloadEvent(
                 kind=_ctx.with_attributes["kind"],
                 rawId=_ctx.with_attributes["rawId"],
-                type=DownloadEventType.failed,
+                type=DownloadEventType.FAILED,
             )
         )
 
@@ -94,13 +94,13 @@ async def process_download_asset(
             try:
                 await ctx.send(
                     DownloadEvent(
-                        kind=kind, rawId=raw_id, type=DownloadEventType.started
+                        kind=kind, rawId=raw_id, type=DownloadEventType.STARTED
                     )
                 )
                 await task.create_local_asset(context=ctx)
                 await ctx.send(
                     DownloadEvent(
-                        kind=kind, rawId=raw_id, type=DownloadEventType.succeeded
+                        kind=kind, rawId=raw_id, type=DownloadEventType.SUCCEEDED
                     )
                 )
                 pbar.update(1)
@@ -176,7 +176,7 @@ class AssetDownloadThread(Thread):
             ) as ctx:
                 await ctx.send(
                     DownloadEvent(
-                        kind=kind, rawId=raw_id, type=DownloadEventType.enqueued
+                        kind=kind, rawId=raw_id, type=DownloadEventType.ENQUEUED
                     )
                 )
                 self.download_queue.put_nowait((url, kind, raw_id, ctx, headers))
