@@ -138,7 +138,8 @@ class SetupStep(PipelineStep):
         return {
             "name": project_name,
             "version": pyproject["project"]["version"],
-            "main": f"{project_name}/main.py",
+            "main": "start.sh",
+            "webpm": {"type": "backend"},
         }
 
     @staticmethod
