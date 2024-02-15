@@ -5,7 +5,6 @@ import tomllib
 from asyncio.subprocess import Process
 from collections.abc import Callable
 from pathlib import Path
-from socket import AF_INET, SOCK_STREAM, socket
 
 # third parties
 from fastapi import HTTPException
@@ -35,6 +34,7 @@ from youwol.utils import (
     CommandException,
     Context,
     execute_shell_cmd,
+    find_available_port,
     write_json,
 )
 
@@ -211,22 +211,6 @@ class DependenciesStep(PipelineStep):
             )
 
             await execute_shell_cmd(cmd=cmd, context=context)
-
-
-class NoAvailablePortError(RuntimeError):
-    """Exception raised when no available port is found in the specified range."""
-
-
-def find_available_port(start: int, end: int) -> int:
-    for port in range(start, end + 1):
-        with socket(AF_INET, SOCK_STREAM) as s:
-            try:
-                s.bind(("", port))
-                return port
-            except OSError:
-                continue
-    # Raise an exception if no port is available
-    raise NoAvailablePortError(f"No available port found in the range {start}-{end}")
 
 
 async def get_info(project: Project, context: Context):

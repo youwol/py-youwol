@@ -19,6 +19,9 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 ### Added
 
+-   **Backend components**:
+    -  Automated backend installation and initialization upon endpoint request,
+    if available in local components. <!-- TG-2085 -->
 -   **Pipeline python backend**:
     -  Provide POC version. <!-- TG-2051, TG-2074 -->
 

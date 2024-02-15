@@ -78,6 +78,7 @@ class Label(Enum):
     ADMIN = "ADMIN"
     END_POINT = "END_POINT"
     TREE_DB = "TREE_DB"
+    START_BACKEND_SH = "START_BACKEND_SH"
 
 
 T = TypeVar("T")
