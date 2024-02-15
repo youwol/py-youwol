@@ -216,6 +216,7 @@ disable = [
 enable = [
     "I0010",
     "I0022",
+    "I0023",
 ]
 max-line-length = 120
 extension-pkg-allow-list = "cassandra"
