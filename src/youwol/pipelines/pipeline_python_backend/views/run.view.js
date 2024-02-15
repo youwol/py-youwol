@@ -11,6 +11,7 @@ class State {
     this.inputs$ = new rxjs.BehaviorSubject({})
 
     this.refresh()
+    this.port$ = new rxjs.BehaviorSubject('auto')
     this.autoRun$ = new rxjs.BehaviorSubject(true)
     this.installDispatch$ = new rxjs.BehaviorSubject(true)
     const config$ = projectsRouter.getStepConfiguration$({
@@ -19,8 +20,10 @@ class State {
       stepId,
     });
     config$.subscribe((config) => {
+      config = {autoRun: true, installDispatch: true, port:'auto', ...config}
       this.autoRun$.next(config.autoRun)
       this.installDispatch$.next(config.installDispatch)
+      this.port$.next(config.port)
     });
 
   }
@@ -30,7 +33,8 @@ class State {
     this.triggerRun({
       configuration: {
         autoRun: this.autoRun$.value,
-        installDispatch: this.installDispatch$.value
+        installDispatch: this.installDispatch$.value,
+        port: this.port$.value
       },
     });
   }
@@ -112,6 +116,33 @@ class CheckBoxView {
       }]
   }
 }
+
+class PortView{
+  tag = 'div'
+  class = 'd-flex align-items-center'
+  constructor(state, {project}){
+    this.children = [
+      {
+        tag:'div',
+        innerText: "Dispatch's port:",
+        class:'mr-2'
+      },
+      { tag: 'select',
+        onchange: (ev) => state.port$.next(ev.target.value),
+        children:[
+          { tag: 'option',
+            innerText:'auto',
+            selected: {source$:state.port$, vdomMap: (p) => p ==='auto' && 'selected'}
+          },
+          { tag: 'option',
+            innerText:'default',
+            selected: {source$:state.port$, vdomMap: (p) => p ==='default'&& 'selected'}
+          }
+        ]
+      },
+    ]
+  }
+}
 class NewInstanceView{
   tag = "div";
   constructor(state, {project}) {
@@ -124,15 +155,24 @@ class NewInstanceView{
             subject$:state.autoRun$}),
           new CheckBoxView({
             title: `Install dispatch '/backends/${project.name}/${project.version}'`,
-            subject$:state.installDispatch$})
+            subject$:state.installDispatch$}),
+          new PortView(state, {project})
         ]
       },
+      { tag: 'div', class:'my-2'},
       {
         tag: "div",
-        class:'d-flex align-items-center fv-pointer',
-        children: [{
+        class:'d-flex align-items-center fv-pointer border rounded p-1 fv-hover-text-focus',
+        style:{
+          width:'fit-content'
+        },
+        children: [
+          {
             tag:'i',
-            class: "fas fa-play",
+            class: "fas fa-check fv-text-success mr-1",
+          },{
+            tag:'div',
+            innerText: "Apply & run",
           }],
         onclick: () => {
           state.run()
