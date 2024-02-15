@@ -376,10 +376,11 @@ Definition of the project's files packaged for publication.
 
 class PackageStep(PipelineStep):
     """
-    Creates the artifact `package`, the one that will be published in local or remote ecosystems,
-    from a files listing.
+    Creates the artifact `package`, the one that will be published in local or remote ecosystems.
+    The `package` artifact includes tarball and wheel of the project as well as the `package.json` & `pyproject.toml`
+    files.
 
-    The files listing is provided by
+    The source files of the step is provided by
     [default_packaging_files](@yw-nav-glob:youwol.pipelines.pipeline_python_backend.pipeline.default_packaging_files).
     """
 
@@ -391,7 +392,7 @@ class PackageStep(PipelineStep):
         The flows defined in this pipelines reference this ID, in common scenarios it should not be modified.
     """
 
-    run: str = "echo 'Nothing to execute for packaging'"
+    run: str = "python -m build"
 
     sources: FileListing = default_packaging_files
     """
@@ -401,9 +402,23 @@ class PackageStep(PipelineStep):
         If those did not change since last execution, the step is considered in sync.
     """
 
-    artifacts: list[Artifact] = [Artifact(id="package", files=default_packaging_files)]
+    artifacts: list[Artifact] = [
+        Artifact(
+            id="package",
+            files=FileListing(
+                include=[
+                    "dist/*",
+                    "package.json",
+                    "start.sh",
+                    "install.sh",
+                    "pyproject.toml",
+                ]
+            ),
+        )
+    ]
     """
-    One artifact is defined, it is called 'package' and contains all the files of the project by default.
+    One 'package' artifact is defined, it includes tarball and wheel of the project as well as the `package.json` &
+    `pyproject.toml` files.
     """
 
 
