@@ -13,6 +13,7 @@ from pydantic import BaseModel
 
 # Youwol application
 from youwol.app.environment import YouwolEnvironment
+from youwol.app.routers.environment.router import status
 from youwol.app.routers.projects import (
     Artifact,
     CommandPipelineStep,
@@ -301,11 +302,21 @@ class RunStep(PipelineStep):
         """
         async with context.start("run_command") as ctx:
             env = await ctx.get("env", YouwolEnvironment)
-            port = find_available_port(start=2010, end=3000)
             config = await get_project_configuration(
                 project_id=project.id, flow_id=flow_id, step_id=self.id, context=ctx
             )
-            config = {"installDispatch": True, "autoRun": True, **config}
+            config = {
+                "installDispatch": True,
+                "autoRun": True,
+                "port": "auto",
+                **config,
+            }
+
+            port = find_available_port(start=2010, end=3000)
+            if config["port"] == "default":
+                with open(project.path / pyproject_file, "rb") as f:
+                    pyproject = tomllib.load(f)
+                    port = pyproject["youwol"]["default-port"]
 
             async def on_executed(process: Process | None, shell_ctx: Context):
                 if config["installDispatch"]:
@@ -314,7 +325,10 @@ class RunStep(PipelineStep):
                         version=project.version,
                         port=port,
                         process=process,
+                        install_outputs=["Backend running from sources."],
+                        server_outputs_ctx_id=shell_ctx.uid,
                     )
+                    await status(request=ctx.request, config=env)
                     await shell_ctx.info(
                         text=f"Dispatch installed from '/backends/{project.name}/{project.version}' "
                         f"to 'localhost:{port}"
