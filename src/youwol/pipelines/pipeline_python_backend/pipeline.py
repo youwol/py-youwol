@@ -4,16 +4,12 @@ import tomllib
 
 from asyncio.subprocess import Process
 from collections.abc import Callable
-from glob import glob
 from pathlib import Path
 from socket import AF_INET, SOCK_STREAM, socket
 
 # third parties
 from fastapi import HTTPException
 from pydantic import BaseModel
-
-# Youwol
-import youwol
 
 # Youwol application
 from youwol.app.environment import YouwolEnvironment
@@ -213,30 +209,6 @@ class DependenciesStep(PipelineStep):
             )
 
             await execute_shell_cmd(cmd=cmd, context=context)
-            youwol_path = Path(youwol.__path__[0])
-
-            site_packages = glob(f"{venv_path}/lib/*/site-packages")[0]
-            (Path(site_packages) / "youwol.pth").write_text(str(youwol_path.parent))
-
-
-async def run_command(project: Project, context: Context) -> str:
-    """
-    Construct the shell command to serve the backend on `localhost`:
-    *  Activates the virtual environment from the `venv` folder created with the
-    [DependenciesStep](@yw-nav-class:youwol.pipelines.pipeline_python_backend.pipeline.DependenciesStep).
-    *  Runs `python` from the `main.py` file of the package, provides `yw_port` from the current
-    [YouwolEnvironment](@yw-nav-class:youwol.app.environment.youwol_environment.YouwolEnvironment).
-
-    Parameters:
-        project: Current project.
-        context: Current context
-
-    Return:
-        The shell command.
-    """
-    async with context.start("run_command") as ctx:
-        env = await ctx.get("env", YouwolEnvironment)
-        return f"(. venv/bin/activate && python {project.name}/main.py --yw_port={env.httpPort})"
 
 
 class NoAvailablePortError(RuntimeError):
@@ -326,8 +298,6 @@ class RunStep(PipelineStep):
     async def execute_run(self, project: Project, flow_id: FlowId, context: Context):
         """
         Serve the service and install the proxy.
-
-        See [run_command](@yw-nav-func:youwol.pipelines.pipeline_python_backend.pipeline.run_command).
         """
         async with context.start("run_command") as ctx:
             env = await ctx.get("env", YouwolEnvironment)
