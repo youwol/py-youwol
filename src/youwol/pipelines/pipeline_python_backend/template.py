@@ -132,6 +132,13 @@ async def generate_template(folder: Path, parameters: dict[str, str], context: C
         )
 
         replace_patterns(project_folder / "pyproject.toml")
+
+        for file in ["install.sh", "start.sh"]:
+            shutil.copyfile(
+                src=Path(__file__).parent / "template" / file,
+                dst=project_folder / file,
+            )
+
         # Need to be at the end
         shutil.copytree(
             src=Path(__file__).parent / "template" / ".yw_pipeline",

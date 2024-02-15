@@ -4,7 +4,6 @@ import tomllib
 
 from asyncio.subprocess import Process
 from collections.abc import Callable
-from glob import glob
 from pathlib import Path
 from socket import AF_INET, SOCK_STREAM, socket
 
@@ -12,11 +11,9 @@ from socket import AF_INET, SOCK_STREAM, socket
 from fastapi import HTTPException
 from pydantic import BaseModel
 
-# Youwol
-import youwol
-
 # Youwol application
 from youwol.app.environment import YouwolEnvironment
+from youwol.app.routers.environment.router import status
 from youwol.app.routers.projects import (
     Artifact,
     CommandPipelineStep,
@@ -141,7 +138,8 @@ class SetupStep(PipelineStep):
         return {
             "name": project_name,
             "version": pyproject["project"]["version"],
-            "main": f"{project_name}/main.py",
+            "main": "start.sh",
+            "webpm": {"type": "backend"},
         }
 
     @staticmethod
@@ -213,30 +211,6 @@ class DependenciesStep(PipelineStep):
             )
 
             await execute_shell_cmd(cmd=cmd, context=context)
-            youwol_path = Path(youwol.__path__[0])
-
-            site_packages = glob(f"{venv_path}/lib/*/site-packages")[0]
-            (Path(site_packages) / "youwol.pth").write_text(str(youwol_path.parent))
-
-
-async def run_command(project: Project, context: Context) -> str:
-    """
-    Construct the shell command to serve the backend on `localhost`:
-    *  Activates the virtual environment from the `venv` folder created with the
-    [DependenciesStep](@yw-nav-class:youwol.pipelines.pipeline_python_backend.pipeline.DependenciesStep).
-    *  Runs `python` from the `main.py` file of the package, provides `yw_port` from the current
-    [YouwolEnvironment](@yw-nav-class:youwol.app.environment.youwol_environment.YouwolEnvironment).
-
-    Parameters:
-        project: Current project.
-        context: Current context
-
-    Return:
-        The shell command.
-    """
-    async with context.start("run_command") as ctx:
-        env = await ctx.get("env", YouwolEnvironment)
-        return f"(. venv/bin/activate && python {project.name}/main.py --yw_port={env.httpPort})"
 
 
 class NoAvailablePortError(RuntimeError):
@@ -326,16 +300,24 @@ class RunStep(PipelineStep):
     async def execute_run(self, project: Project, flow_id: FlowId, context: Context):
         """
         Serve the service and install the proxy.
-
-        See [run_command](@yw-nav-func:youwol.pipelines.pipeline_python_backend.pipeline.run_command).
         """
         async with context.start("run_command") as ctx:
             env = await ctx.get("env", YouwolEnvironment)
-            port = find_available_port(start=2010, end=3000)
             config = await get_project_configuration(
                 project_id=project.id, flow_id=flow_id, step_id=self.id, context=ctx
             )
-            config = {"installDispatch": True, "autoRun": True, **config}
+            config = {
+                "installDispatch": True,
+                "autoRun": True,
+                "port": "auto",
+                **config,
+            }
+
+            port = find_available_port(start=2010, end=3000)
+            if config["port"] == "default":
+                with open(project.path / pyproject_file, "rb") as f:
+                    pyproject = tomllib.load(f)
+                    port = pyproject["youwol"]["default-port"]
 
             async def on_executed(process: Process | None, shell_ctx: Context):
                 if config["installDispatch"]:
@@ -344,7 +326,10 @@ class RunStep(PipelineStep):
                         version=project.version,
                         port=port,
                         process=process,
+                        install_outputs=["Backend running from sources."],
+                        server_outputs_ctx_id=shell_ctx.uid,
                     )
+                    await status(request=ctx.request, config=env)
                     await shell_ctx.info(
                         text=f"Dispatch installed from '/backends/{project.name}/{project.version}' "
                         f"to 'localhost:{port}"
@@ -391,10 +376,11 @@ Definition of the project's files packaged for publication.
 
 class PackageStep(PipelineStep):
     """
-    Creates the artifact `package`, the one that will be published in local or remote ecosystems,
-    from a files listing.
+    Creates the artifact `package`, the one that will be published in local or remote ecosystems.
+    The `package` artifact includes tarball and wheel of the project as well as the `package.json` & `pyproject.toml`
+    files.
 
-    The files listing is provided by
+    The source files of the step is provided by
     [default_packaging_files](@yw-nav-glob:youwol.pipelines.pipeline_python_backend.pipeline.default_packaging_files).
     """
 
@@ -406,7 +392,7 @@ class PackageStep(PipelineStep):
         The flows defined in this pipelines reference this ID, in common scenarios it should not be modified.
     """
 
-    run: str = "echo 'Nothing to execute for packaging'"
+    run: str = "python -m build"
 
     sources: FileListing = default_packaging_files
     """
@@ -416,9 +402,23 @@ class PackageStep(PipelineStep):
         If those did not change since last execution, the step is considered in sync.
     """
 
-    artifacts: list[Artifact] = [Artifact(id="package", files=default_packaging_files)]
+    artifacts: list[Artifact] = [
+        Artifact(
+            id="package",
+            files=FileListing(
+                include=[
+                    "dist/*",
+                    "package.json",
+                    "start.sh",
+                    "install.sh",
+                    "pyproject.toml",
+                ]
+            ),
+        )
+    ]
     """
-    One artifact is defined, it is called 'package' and contains all the files of the project by default.
+    One 'package' artifact is defined, it includes tarball and wheel of the project as well as the `package.json` &
+    `pyproject.toml` files.
     """
 
 

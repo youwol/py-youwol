@@ -20,7 +20,7 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 ### Added
 
 -   **Pipeline python backend**:
-    -  Provide first version for `setup`, `dependencies` & `run` steps. <!-- TG-2051 -->
+    -  Provide POC version. <!-- TG-2051, TG-2074 -->
 
 ### Changed
  
