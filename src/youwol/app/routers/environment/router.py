@@ -29,6 +29,7 @@ from youwol.app.environment import (
     yw_config,
 )
 from youwol.app.environment.models import predefined_configs
+from youwol.app.environment.proxied_backends import ProxyInfo
 from youwol.app.routers.projects import ProjectLoader
 from youwol.app.web_socket import LogsStreamer
 
@@ -51,6 +52,29 @@ class ConfigurationResponse(BaseModel):
     commands: dict[str, Command]
     currentConnection: Connection
     pathsBook: PathsBook
+    proxiedBackends: list[ProxyInfo]
+
+    @staticmethod
+    def from_yw_environment(yw_env: YouwolEnvironment):
+
+        proxied_backends = [
+            ProxyInfo(
+                name=proxy.name,
+                version=proxy.version,
+                port=proxy.port,
+                pid=proxy.process and proxy.process.pid,
+            )
+            for proxy in yw_env.proxied_backends.store
+        ]
+        return ConfigurationResponse(
+            httpPort=yw_env.httpPort,
+            customMiddlewares=yw_env.customMiddlewares,
+            projects=yw_env.projects,
+            commands=yw_env.commands,
+            currentConnection=yw_env.currentConnection,
+            pathsBook=yw_env.pathsBook,
+            proxiedBackends=proxied_backends,
+        )
 
 
 class EnvironmentStatusResponse(BaseModel):
@@ -80,7 +104,7 @@ async def cow_say():
 )
 async def configuration(
     config: YouwolEnvironment = Depends(yw_config),
-) -> YouwolEnvironment:
+) -> ConfigurationResponse:
     """
     Return the running environment.
 
@@ -90,7 +114,7 @@ async def configuration(
     Return:
         The environment.
     """
-    return config
+    return ConfigurationResponse.from_yw_environment(config)
 
 
 @router.post(
@@ -179,7 +203,7 @@ async def status(request: Request, config: YouwolEnvironment = Depends(yw_config
                     memberOf=[],
                 )
             ),
-            configuration=ConfigurationResponse(**config.dict()),
+            configuration=ConfigurationResponse.from_yw_environment(config),
             remoteGatewayInfo=remote_gateway_info,
             remotesInfo=[
                 RemoteGatewayInfo(
