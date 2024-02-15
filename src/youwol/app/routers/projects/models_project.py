@@ -323,7 +323,7 @@ class PipelineStep(BaseModel):
         if isinstance(self.sources, FileListing):
             return matching_files(folder=project.path, patterns=self.sources)
         sources_fct = cast(SourcesFct, self.sources)
-        r = sources_fct(self, project, flow_id, context)
+        r = sources_fct(self, project, flow_id, context)  # pylint: disable=not-callable
         r = await r if isinstance(r, Awaitable) else r
         return (
             matching_files(folder=project.path, patterns=r)
