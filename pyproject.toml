@@ -213,6 +213,9 @@ disable = [
     "duplicate-code",
     "design",
 ]
+enable = [
+    "I0010",
+]
 max-line-length = 120
 extension-pkg-allow-list = "cassandra"
 
