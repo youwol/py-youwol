@@ -118,7 +118,8 @@ class BackendsStore:
                 # Not sure about the best option to deal with that issue. For now, we use the serving port to retrieve
                 # the actual PID of the backend's server.
                 pid_from_port = BackendsStore.get_pid_using_port(proxy.port)
-                psutil.Process(pid_from_port).terminate()
+                if pid_from_port:
+                    psutil.Process(pid_from_port).terminate()
 
             self.store = [backend for backend in self.store if backend != proxy]
 
