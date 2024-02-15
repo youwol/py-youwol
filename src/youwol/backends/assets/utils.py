@@ -266,3 +266,15 @@ def get_file_path(asset_id: str, kind: str, file_path: Path | str | None = None)
 
 async def log_asset(asset: dict[str, str], context: Context):
     await context.info(text="asset retrieved", data=asset)
+
+
+async def get_asset_implementation(
+    request: Request, asset_id: str, configuration: Configuration, context: Context
+) -> AssetResponse:
+    asset = await db_get(
+        asset_id=asset_id, configuration=configuration, context=context
+    )
+    return format_asset(asset, request)
+
+
+flatten = itertools.chain.from_iterable

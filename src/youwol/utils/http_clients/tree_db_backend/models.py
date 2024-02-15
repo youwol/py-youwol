@@ -11,11 +11,6 @@ from pydantic import BaseModel
 from youwol.utils import DocDb, TableBody
 from youwol.utils.clients.docdb.models import Column, IdentifierSI, SecondaryIndex
 
-
-class HealthzResponse(BaseModel):
-    status: str = "treedb-backend ok"
-
-
 keyspace_name = "tree_db"
 
 

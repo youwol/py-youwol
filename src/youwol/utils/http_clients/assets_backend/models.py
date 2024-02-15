@@ -14,10 +14,6 @@ from youwol.utils import TableBody
 from youwol.utils.clients.docdb.models import Column, OrderingClause, TableOptions
 
 
-class HealthzResponse(BaseModel):
-    status: str = "assets-backend ok"
-
-
 class ReadPolicyEnum(str, Enum):
     """
     The read policy values.

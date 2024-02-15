@@ -1,6 +1,7 @@
 # standard library
 import base64
 import json
+import uuid
 
 from collections.abc import Mapping
 
@@ -8,19 +9,24 @@ from collections.abc import Mapping
 from typing import Any
 
 # third parties
-from fastapi import HTTPException
+from fastapi import Depends, HTTPException
+from starlette.requests import Request
 
 # Youwol utilities
 from youwol.utils import DocDb, asyncio, decode_id, get_all_individual_groups
 from youwol.utils.context import Context
 from youwol.utils.http_clients.tree_db_backend import (
+    ChildrenResponse,
+    DefaultDriveResponse,
+    DriveBody,
     DriveResponse,
+    FolderBody,
     FolderResponse,
     ItemResponse,
 )
 
 # relative
-from .configurations import Configuration, Constants
+from .configurations import Configuration, Constants, get_configuration
 
 
 def to_group_id(group_path: str | None) -> str:
@@ -141,22 +147,6 @@ async def ensure_drive(
     except HTTPException as e:
         if e.status_code == 404:
             raise HTTPException(status_code=404, detail="Drive not found")
-        raise e
-
-
-async def ensure_folder(
-    folder_id: str, group_id: str, docdb_folder: DocDb, headers: dict[str, Any]
-):
-    try:
-        await docdb_folder.get_document(
-            partition_keys={"folder_id": folder_id},
-            clustering_keys={},
-            owner=group_id,
-            headers=headers,
-        )
-    except HTTPException as e:
-        if e.status_code == 404:
-            raise HTTPException(status_code=404, detail="Folder not found")
         raise e
 
 
@@ -296,3 +286,272 @@ async def get_parent(parent_id: str, configuration: Configuration, context: Cont
         raise HTTPException(status_code=404, detail="Containing drive/folder not found")
     parent = (parent_folder + parent_drive)[0]
     return parent
+
+
+async def entities_children(
+    folder_id: str, configuration: Configuration, context: Context
+):
+    # max_count: see comment in class 'Constants'
+    max_count = Constants.max_children_count
+    async with context.start(action="_children") as ctx:  # type: Context
+        folders_db, items_db = (
+            configuration.doc_dbs.folders_db,
+            configuration.doc_dbs.items_db,
+        )
+        folders, items = await asyncio.gather(
+            db_query(
+                docdb=folders_db,
+                key="parent_folder_id",
+                value=folder_id,
+                max_count=max_count,
+                context=ctx,
+            ),
+            db_query(
+                docdb=items_db,
+                key="folder_id",
+                value=folder_id,
+                max_count=max_count,
+                context=ctx,
+            ),
+        )
+
+        return ChildrenResponse(
+            folders=[doc_to_folder(f) for f in folders],
+            items=[doc_to_item(f) for f in items],
+        )
+
+
+async def get_folder(folder_id: str, configuration: Configuration, context: Context):
+    async with context.start(action="_get_folder") as ctx:
+        doc = await db_get(
+            partition_keys={"folder_id": folder_id},
+            context=ctx,
+            docdb=configuration.doc_dbs.folders_db,
+        )
+        return doc_to_folder(doc)
+
+
+async def get_drive(drive_id: str, configuration: Configuration, context: Context):
+    async with context.start(action="_get_drive") as ctx:
+        docdb = configuration.doc_dbs.drives_db
+        doc = await db_get(
+            docdb=docdb, partition_keys={"drive_id": drive_id}, context=ctx
+        )
+
+        return DriveResponse(
+            driveId=drive_id,
+            name=doc["name"],
+            metadata=doc["metadata"],
+            groupId=doc["group_id"],
+        )
+
+
+async def get_folders_rec(
+    folder_id: str, drive_id: str, configuration: Configuration, context: Context
+):
+    drive = await get_drive(
+        drive_id=drive_id, configuration=configuration, context=context
+    )
+
+    folders = [
+        await get_folder(
+            folder_id=folder_id, configuration=configuration, context=context
+        )
+    ]
+    while folders[0].parentFolderId != folders[0].driveId:
+        folders = [
+            await get_folder(
+                folder_id=folders[0].parentFolderId,
+                configuration=configuration,
+                context=context,
+            )
+        ] + folders
+    return folders, drive
+
+
+async def list_deleted(drive_id: str, configuration: Configuration, context: Context):
+    async with context.start("_list_deleted") as ctx:  # type: Context
+        doc_dbs = configuration.doc_dbs
+        entities = await doc_dbs.deleted_db.query(
+            query_body=f"drive_id={drive_id}#100",
+            owner=Constants.public_owner,
+            headers=ctx.headers(),
+        )
+
+        folders = [
+            doc_to_folder(f, {"folder_id": f["deleted_id"]})
+            for f in entities["documents"]
+            if f["kind"] == "folder"
+        ]
+
+        items = [
+            doc_to_item(
+                f, {"item_id": f["deleted_id"], "folder_id": f["parent_folder_id"]}
+            )
+            for f in entities["documents"]
+            if f["kind"] == "item"
+        ]
+
+        response = ChildrenResponse(folders=folders, items=items)
+        return response
+
+
+async def create_folder(
+    parent_folder_id: str,
+    folder: FolderBody,
+    configuration: Configuration,
+    context: Context,
+):
+    async with context.start(action="_create_folder") as ctx:  # type: Context
+        folders_db, _ = (
+            configuration.doc_dbs.folders_db,
+            configuration.doc_dbs.drives_db,
+        )
+        parent = await get_parent(
+            parent_id=parent_folder_id, configuration=configuration, context=ctx
+        )
+
+        doc = {
+            "folder_id": folder.folderId or str(uuid.uuid4()),
+            "name": folder.name,
+            "parent_folder_id": parent_folder_id,
+            "group_id": parent["group_id"],
+            "type": folder.kind,
+            "metadata": folder.metadata,
+            "drive_id": parent["drive_id"],
+        }
+        await db_post(docdb=folders_db, doc=doc, context=ctx)
+
+        response = doc_to_folder(doc)
+        return response
+
+
+async def create_drive(
+    group_id: str, drive: DriveBody, configuration: Configuration, context: Context
+):
+    async with context.start(action="_create_drive") as ctx:  # type: Context
+        docdb = configuration.doc_dbs.drives_db
+        doc = {
+            "name": drive.name,
+            "drive_id": drive.driveId or str(uuid.uuid4()),
+            "group_id": group_id,
+            "metadata": drive.metadata,
+        }
+
+        await db_post(docdb=docdb, doc=doc, context=ctx)
+        response = doc_to_drive_response(doc)
+        return response
+
+
+async def get_default_drive(
+    request: Request,
+    group_id: str,
+    configuration: Configuration = Depends(get_configuration),
+) -> DefaultDriveResponse:
+    async with Context.start_ep(
+        request=request,
+        action="get default drive",
+        with_attributes={"group_id": group_id},
+    ) as ctx:
+        default_drive_id = f"{group_id}_default-drive"
+        try:
+            await get_drive(
+                drive_id=default_drive_id, configuration=configuration, context=ctx
+            )
+        except HTTPException as e_drive:
+            if e_drive.status_code != 404:
+                raise e_drive
+            await ctx.warning("Default drive does not exist yet, start creation")
+            await create_drive(
+                group_id=group_id,
+                drive=DriveBody(name="Default drive", driveId=default_drive_id),
+                configuration=configuration,
+                context=ctx,
+            )
+
+        download, home, system = await asyncio.gather(
+            _ensure_folder(
+                name="Download",
+                folder_id=f"{default_drive_id}_download",
+                parent_folder_id=default_drive_id,
+                configuration=configuration,
+                context=ctx,
+            ),
+            _ensure_folder(
+                name="Home",
+                folder_id=f"{default_drive_id}_home",
+                parent_folder_id=default_drive_id,
+                configuration=configuration,
+                context=ctx,
+            ),
+            _ensure_folder(
+                name="System",
+                folder_id=f"{default_drive_id}_system",
+                parent_folder_id=default_drive_id,
+                configuration=configuration,
+                context=ctx,
+            ),
+        )
+
+        system_packages, system_tmp = await asyncio.gather(
+            _ensure_folder(
+                name="Packages",
+                folder_id=f"{default_drive_id}_system_packages",
+                parent_folder_id=system.folderId,
+                configuration=configuration,
+                context=ctx,
+            ),
+            _ensure_folder(
+                name="Tmp",
+                folder_id=f"{default_drive_id}_system_tmp",
+                parent_folder_id=system.folderId,
+                configuration=configuration,
+                context=ctx,
+            ),
+        )
+
+        resp = DefaultDriveResponse(
+            groupId=group_id,
+            driveId=default_drive_id,
+            driveName="Default drive",
+            downloadFolderId=download.folderId,
+            downloadFolderName=download.name,
+            homeFolderId=home.folderId,
+            homeFolderName=home.name,
+            tmpFolderId=system_tmp.folderId,
+            tmpFolderName=system_tmp.name,
+            systemFolderId=system.folderId,
+            systemFolderName=system.name,
+            systemPackagesFolderId=system_packages.folderId,
+            systemPackagesFolderName=system_packages.name,
+        )
+        await ctx.info("Response", data=resp)
+        return resp
+
+
+async def _ensure_folder(
+    name: str,
+    folder_id: str,
+    parent_folder_id: str,
+    configuration: Configuration,
+    context: Context,
+):
+    async with context.start(
+        action="ensure folder", with_attributes={"folder_id": folder_id, "name": name}
+    ) as ctx:
+        try:
+            folder_resp = await get_folder(
+                folder_id=folder_id, configuration=configuration, context=context
+            )
+            await ctx.info("Folder already exists")
+            return folder_resp
+        except HTTPException as e_folder:
+            if e_folder.status_code != 404:
+                raise e_folder
+            await ctx.warning("Folder does not exist yet, start creation")
+            return await create_folder(
+                parent_folder_id=parent_folder_id,
+                folder=FolderBody(name=name, folderId=folder_id),
+                configuration=configuration,
+                context=ctx,
+            )

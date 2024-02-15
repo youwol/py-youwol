@@ -1,4 +1,5 @@
 # noinspection SpellCheckingInspection
+# pylint: disable=too-many-lines
 icons_smileys_people = [
     ["😀", " Grinning Face"],
     ["😃", " Grinning Face with Big Eyes"],

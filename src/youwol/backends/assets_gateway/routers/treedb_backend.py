@@ -24,7 +24,6 @@ from youwol.utils.http_clients.tree_db_backend import (
     EntityResponse,
     FolderBody,
     FolderResponse,
-    HealthzResponse,
     ItemBody,
     ItemResponse,
     ItemsResponse,
@@ -41,18 +40,6 @@ from .flux_backend import delete_project_impl
 from .stories_backend import delete_story_impl
 
 router = APIRouter(tags=["assets-gateway.flux-backend"])
-
-
-@router.get(
-    "/healthz", summary="return status of the service", response_model=HealthzResponse
-)
-async def healthz(
-    request: Request, configuration: Configuration = Depends(get_configuration)
-):
-    async with Context.start_ep(request=request) as ctx:
-        return await configuration.treedb_client.healthz(
-            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
-        )
 
 
 @router.put(
