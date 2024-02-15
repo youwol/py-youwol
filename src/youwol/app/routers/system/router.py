@@ -12,13 +12,14 @@ from typing import cast
 # third parties
 import griffe
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse
 from griffe.dataclasses import Module
 from pydantic import BaseModel
 from starlette.requests import Request
 
 # Youwol application
+from youwol.app.environment import YouwolEnvironment, yw_config
 from youwol.app.routers.system.documentation import (
     format_module_doc,
     init_classes,
@@ -32,7 +33,7 @@ from youwol.app.routers.system.documentation_models import (
 
 # Youwol utilities
 from youwol.utils import JSON
-from youwol.utils.context import Context, InMemoryReporter, LogEntry, LogLevel
+from youwol.utils.context import Context, InMemoryReporter, Label, LogEntry, LogLevel
 
 router = APIRouter()
 
@@ -271,6 +272,57 @@ class PostDataBody(BaseModel):
     """
     List of the data.
     """
+
+
+class BackendLogsResponse(BaseModel):
+    logs: list[Log]
+    server_outputs: list[str]
+    install_outputs: list[str] | None
+
+
+@router.get("/backends/{name}/{version}/logs/", summary="Query in-memory root logs.")
+async def query_backend_logs(
+    request: Request,
+    name: str,
+    version: str,
+    env: YouwolEnvironment = Depends(yw_config),
+) -> BackendLogsResponse:
+    """
+    Query in-memory logs for a given backend at given version, returned ordered w/ last emitted first.
+
+    Parameters:
+        request: incoming request
+        name: Name if the backend
+        version: Version of the backend
+        env: Injected current YouwolEnvironment
+    Return:
+        logs list.
+    """
+    async with Context.start_ep(
+        request=request,
+    ):
+        logs: list[Log] = []
+        proxy = env.proxied_backends.get(name=name, query_version=version)
+        if not proxy:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Backend {name} at version {version} not included in proxies.",
+            )
+        for ctx_id in proxy.endpoint_ctx_id:
+            inner_logs = await get_logs(request=request, parent_id=ctx_id)
+            logs.extend(
+                [log for log in inner_logs.logs if str(Label.STARTED) in log.labels]
+            )
+
+        std_outputs = await get_logs(
+            request=request, parent_id=proxy.server_outputs_ctx_id
+        )
+
+        return BackendLogsResponse(
+            logs=sorted(logs, key=lambda n: n.timestamp),
+            server_outputs=[log.text for log in std_outputs.logs],
+            install_outputs=proxy.install_outputs,
+        )
 
 
 @router.get("/logs/", summary="Query in-memory root logs.")
