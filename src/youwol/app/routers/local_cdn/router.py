@@ -25,6 +25,7 @@ from .implementation import (
     get_version_info,
 )
 from .models import (
+    CDN_TOPIC,
     CdnPackageLight,
     CdnPackageResponse,
     CdnStatusResponse,
@@ -39,7 +40,6 @@ from .models import (
     PackageEventResponse,
     ResetCdnBody,
     ResetCdnResponse,
-    cdn_topic,
 )
 
 router = APIRouter()
@@ -53,7 +53,7 @@ router = APIRouter()
 async def status(request: Request):
     async with Context.from_request(request).start(
         action="CDN status",
-        with_attributes={"topic": cdn_topic},
+        with_attributes={"topic": CDN_TOPIC},
         with_reporters=[LogsStreamer()],
     ) as ctx:
         env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
@@ -88,7 +88,7 @@ async def status(request: Request):
 async def package_info(request: Request, package_id: str):
     async with Context.from_request(request).start(
         action="package info",
-        with_attributes={"topic": cdn_topic, "packageId": package_id},
+        with_attributes={"topic": CDN_TOPIC, "packageId": package_id},
         with_reporters=[LogsStreamer()],
     ) as ctx:
         package_name = decode_id(package_id)
@@ -213,7 +213,7 @@ async def smooth_reset(request: Request, body: ResetCdnBody):
                     PackageEventResponse(
                         packageName=package["name"],
                         version=version,
-                        event=Event.updateCheckStarted,
+                        event=Event.UPDATE_CHECK_STARTED,
                     )
                 )
 

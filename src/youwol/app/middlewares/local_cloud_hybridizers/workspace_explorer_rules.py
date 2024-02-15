@@ -27,10 +27,10 @@ from youwol.utils.request_info_factory import url_match
 # relative
 from .abstract_local_cloud_dispatch import AbstractLocalCloudDispatch
 
-PydanticType = TypeVar("PydanticType")
+T = TypeVar("T")
 
 
-def cast_response(response: JSON | BaseException, _type: PydanticType):
+def cast_response(response: JSON | BaseException, _type: T):
     if isinstance(response, Exception):
         raise response
     return _type(**response)

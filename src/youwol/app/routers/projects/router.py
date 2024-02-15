@@ -375,7 +375,7 @@ async def run_pipeline_step_implementation(
                 projectId=project_id,
                 flowId=flow_id,
                 stepId=step_id,
-                event=Event.runStarted,
+                event=Event.RUN_STARTED,
             )
         )
 
@@ -394,7 +394,7 @@ async def run_pipeline_step_implementation(
                     projectId=project_id,
                     flowId=flow_id,
                     stepId=step_id,
-                    event=Event.runDone,
+                    event=Event.RUN_DONE,
                 )
             )
 

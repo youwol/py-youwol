@@ -6,7 +6,7 @@ from urllib.error import URLError
 from urllib.request import urlopen
 
 # typing
-from typing import Any, TypeVar
+from typing import Any
 
 # third parties
 from aiohttp import ClientResponse, ClientSession, FormData, TCPConnector
@@ -86,9 +86,6 @@ async def aiohttp_to_starlette_response(resp: ClientResponse) -> Response:
             headers=dict(resp.headers.items()),
         )
     raise await upstream_exception_from_response(resp, url=resp.url)
-
-
-TResp = TypeVar("TResp")
 
 
 def extract_bytes_ranges(request: Request) -> list[tuple[int, int]] | None:

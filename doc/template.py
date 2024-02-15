@@ -39,7 +39,7 @@ dev_deps = {}
 
 template = Template(
     path=folder_path,
-    type=PackageType.Application,
+    type=PackageType.APPLICATION,
     name=pkg_json["name"],
     version=pkg_json["version"],
     shortDescription=pkg_json["description"],

@@ -30,11 +30,11 @@ class LinkKind(Enum):
     The kind of link.
     """
 
-    artifactFile = "artifactFile"
+    ARTIFACT_FILE = "artifactFile"
     """
     The link refers to a file in an artifact.
     """
-    plainUrl = "plainUrl"
+    PLAIN_URL = "plainUrl"
     """
     The link is an absolute URL.
     """
@@ -68,7 +68,7 @@ class Link(BaseModel):
     """
     URL of the link, can reference either a file on disk, or can be an absolute URL.
     """
-    kind: LinkKind = LinkKind.artifactFile
+    kind: LinkKind = LinkKind.ARTIFACT_FILE
     """
     The kind of the link.
     """
@@ -106,15 +106,15 @@ class PipelineStepStatus(Enum):
     """
     Execution leads to error.
     """
-    outdated = "outdated"
+    OUTDATED = "outdated"
     """
     Execution need to be re-run: some inputs of the step changed.
     """
-    running = "running"
+    RUNNING = "running"
     """
     Step is actually running.
     """
-    none = "none"
+    NONE = "none"
     """
     Expected outcome of the step does not exist.
     """
@@ -344,7 +344,7 @@ class PipelineStep(BaseModel):
             await context.info(
                 text="No manifest found, status is PipelineStepStatus.none"
             )
-            return PipelineStepStatus.none
+            return PipelineStepStatus.NONE
 
         env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
         artifacts = [
@@ -358,7 +358,7 @@ class PipelineStep(BaseModel):
         ]
 
         if any(not path.exists() for path in artifacts):
-            return PipelineStepStatus.none
+            return PipelineStepStatus.NONE
 
         await context.info(text="Manifest retrieved", data=last_manifest)
 
@@ -372,7 +372,7 @@ class PipelineStep(BaseModel):
                 text="Outdated entry",
                 data={"actual fp": fingerprint, "saved fp": last_manifest.fingerprint},
             )
-            return PipelineStepStatus.outdated
+            return PipelineStepStatus.OUTDATED
 
         return PipelineStepStatus.OK
 
@@ -474,15 +474,15 @@ class Family(Enum):
     [Pipeline](@yw-nav-class:youwol.app.routers.projects.models_project.Pipeline).
     """
 
-    application = "application"
+    APPLICATION = "application"
     """
     A frontend application.
     """
-    library = "library"
+    LIBRARY = "library"
     """
     A frontend library.
     """
-    service = "service"
+    SERVICE = "service"
     """
     A backend service.
     """
@@ -518,7 +518,7 @@ class BrowserLibBundle(BrowserTarget):
     Describes run-time metadata for a front-end libraries.
     """
 
-    family: Family = Family.library
+    family: Family = Family.LIBRARY
 
 
 JsBundle = BrowserLibBundle
@@ -632,7 +632,7 @@ class BrowserAppBundle(BrowserTarget):
     Describes run-time metadata for a front-end application: name, graphics, and how the application can be triggered.
     """
 
-    family: Family = Family.application
+    family: Family = Family.APPLICATION
     displayName: str | None = None
     """
     Display name of the application, name of the project if not provided.
@@ -651,7 +651,7 @@ BrowserApp = BrowserAppBundle
 
 
 class MicroService(Target):
-    family: str = Family.service
+    family: str = Family.SERVICE
 
 
 class Pipeline(BaseModel):

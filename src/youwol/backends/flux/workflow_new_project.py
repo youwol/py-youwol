@@ -1,10 +1,10 @@
 # Youwol utilities
 from youwol.utils.http_clients.flux_backend import FactoryId, Module, Workflow
 
-root_id = "root-component"
+ROOT_ID = "root-component"
 # noinspection SpellCheckingInspection
 html = f"""
-<div id='Component_{root_id}' class='flux-element flux-component' data-gjs-name='{root_id}'>
+<div id='Component_{ROOT_ID}' class='flux-element flux-component' data-gjs-name='{ROOT_ID}'>
     <div class='d-flex flex-column justify-content-around text-center h-100 fv-bg-background fv-text-primary'
     data-gjs-name='welcome-page' >
         <img is="fv-img" width='250px' class="mx-auto" data-gjs-name='youwol-logo' src="/api/assets-gateway/raw/package/
@@ -20,7 +20,7 @@ QHlvdXdvbC9mbHV4LXlvdXdvbC1lc3NlbnRpYWxz/latest/assets/images/logo_YouWol_Platfo
     </div>
 </div>
 """
-css = f"""#Component_{root_id}{{
+css = f"""#Component_{ROOT_ID}{{
     width: 100%;
     height: 100%;
     padding: 15px

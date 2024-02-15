@@ -74,14 +74,14 @@ class PublishNpmStep(PipelineStep):
             exit_code, outputs = await execute_shell_cmd(cmd=cmd, context=ctx)
 
             if exit_code != 0 and "E404" in outputs[0]:
-                return PipelineStepStatus.none
+                return PipelineStepStatus.NONE
 
             if exit_code != 0:
                 raise CommandException(command=cmd, outputs=outputs)
 
             flat_output = functools.reduce(lambda acc, e: acc + e, outputs, "")
             if f'"{project.version}"' not in flat_output:
-                return PipelineStepStatus.none
+                return PipelineStepStatus.NONE
 
             exit_code, outputs = await execute_shell_cmd(
                 cmd=f"npm view {project.name}@{project.version} dist.shasum",
@@ -96,5 +96,5 @@ class PublishNpmStep(PipelineStep):
             return (
                 PipelineStepStatus.OK
                 if shasum_published == shasum_project
-                else PipelineStepStatus.outdated
+                else PipelineStepStatus.OUTDATED
             )

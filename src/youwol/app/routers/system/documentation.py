@@ -54,8 +54,8 @@ from youwol.app.routers.system.documentation_models import (
 # Youwol utilities
 from youwol.utils import log_error
 
-__init__filename = "__init__.py"
-youwol_module = "youwol"
+INIT_FILENAME = "__init__.py"
+YOUWOL_MODULE = "youwol"
 
 
 def is_leaf_module(path: str) -> bool:
@@ -70,7 +70,7 @@ def is_leaf_module(path: str) -> bool:
         k
         for k, v in no_alias.items()
         if isinstance(v.filepath, PosixPath)
-        and v.filepath.name == __init__filename
+        and v.filepath.name == INIT_FILENAME
         and v.docstring
     ]
     return len(children) == 0
@@ -86,7 +86,7 @@ def format_module_doc(griffe_doc: Module, path: str) -> DocModuleResponse:
         )
         for k, v in no_alias.items()
         if isinstance(v.filepath, PosixPath)
-        and v.filepath.name == __init__filename
+        and v.filepath.name == INIT_FILENAME
         and v.docstring
     ]
     files = {k: v for k, v in no_alias.items() if k not in true_modules}
@@ -347,12 +347,12 @@ def format_docstring_doc(griffe_doc: Docstring | None) -> str | None:
 
 
 def patch_import_path(griffe_doc: Expr) -> str:
-    if youwol_module not in griffe_doc.canonical_path:
+    if YOUWOL_MODULE not in griffe_doc.canonical_path:
         return griffe_doc.canonical_path
 
     parent_module = ".".join(griffe_doc.canonical_path.split(".")[0:-1])
     my_module = importlib.import_module(parent_module)
-    if __init__filename not in str(my_module):
+    if INIT_FILENAME not in str(my_module):
         return griffe_doc.canonical_path
     module_file_path = Path(my_module.__file__).parent
 
@@ -381,13 +381,13 @@ def init_classes(module: ModuleType = None, visited: set[ModuleType] = None):
     for name, obj in inspect.getmembers(module):
         if (
             not name.startswith("__")
-            and youwol_module in str(obj)
+            and YOUWOL_MODULE in str(obj)
             and inspect.isclass(obj)
         ):
             DocCache.flat_classes.add(obj)
 
     for _, submodule in inspect.getmembers(module, inspect.ismodule):
-        if youwol_module in str(submodule) and submodule not in visited:
+        if YOUWOL_MODULE in str(submodule) and submodule not in visited:
             init_classes(submodule, visited)
 
 

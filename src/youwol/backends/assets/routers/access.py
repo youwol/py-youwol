@@ -29,7 +29,9 @@ from youwol.utils.http_clients.assets_backend import (
     AccessPolicyBody,
     AccessPolicyResp,
     ReadPolicyEnum,
+    ReadPolicyEnumFactory,
     SharePolicyEnum,
+    SharePolicyEnumFactory,
 )
 from youwol.utils.types import AnyDict
 
@@ -193,9 +195,9 @@ async def get_access_policy(
                 )
             doc = resp["documents"][0]
             return AccessPolicyResp(
-                read=ReadPolicyEnum[doc["read"]],
+                read=ReadPolicyEnumFactory[doc["read"]],
                 parameters=json.loads(doc["parameters"]),
-                share=SharePolicyEnum[doc["share"]],
+                share=SharePolicyEnumFactory[doc["share"]],
                 timestamp=doc["timestamp"],
             )
 
@@ -204,9 +206,9 @@ async def get_access_policy(
         )
         if is_child_group(child_group_id=group_id, parent_group_id=asset["group_id"]):
             return AccessPolicyResp(
-                read=ReadPolicyEnum.owning,
+                read=ReadPolicyEnum.OWNING,
                 parameters={},
-                share=SharePolicyEnum.authorized,
+                share=SharePolicyEnum.AUTHORIZED,
                 timestamp=None,
             )
 
@@ -242,16 +244,16 @@ async def get_access_policy(
         )
         if not documents:
             return AccessPolicyResp(
-                read=ReadPolicyEnum.forbidden,
+                read=ReadPolicyEnum.FORBIDDEN,
                 parameters={},
-                share=SharePolicyEnum.forbidden,
+                share=SharePolicyEnum.FORBIDDEN,
                 timestamp=None,
             )
 
         doc = documents[0]
         return AccessPolicyResp(
-            read=ReadPolicyEnum[doc["read"]],
+            read=ReadPolicyEnumFactory[doc["read"]],
             parameters=json.loads(doc["parameters"]),
-            share=SharePolicyEnum[doc["share"]],
+            share=SharePolicyEnumFactory[doc["share"]],
             timestamp=doc["timestamp"],
         )

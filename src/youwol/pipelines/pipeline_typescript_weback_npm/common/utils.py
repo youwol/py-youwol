@@ -59,7 +59,7 @@ def generate_package_json(source: Path, working_path: Path, input_template: Temp
 
     package_json_app = (
         parse_json(source.parent / "package.app.json")
-        if input_template.type == PackageType.Application
+        if input_template.type == PackageType.APPLICATION
         else parse_json(source.parent / FileNames.package_json)
     )
     load_main_externals = {
@@ -98,7 +98,7 @@ def generate_package_json(source: Path, working_path: Path, input_template: Temp
     ]
     dev_deps_keys = (
         [*dev_common_deps, *dev_app_deps_keys]
-        if input_template.type == PackageType.Application
+        if input_template.type == PackageType.APPLICATION
         else dev_common_deps
     )
     values = {
@@ -109,7 +109,7 @@ def generate_package_json(source: Path, working_path: Path, input_template: Temp
         "homepage": f"https://github.com/{input_template.name.replace('@', '')}#README.md",
         "main": (
             f"dist/{input_template.name}.js"
-            if input_template.type == PackageType.Library
+            if input_template.type == PackageType.LIBRARY
             else "dist/index.html"
         ),
         "dependencies": {
@@ -125,7 +125,7 @@ def generate_package_json(source: Path, working_path: Path, input_template: Temp
             "aliases": input_template.bundles.mainModule.aliases,
         },
     }
-    if input_template.type == PackageType.Application:
+    if input_template.type == PackageType.APPLICATION:
         package_json["scripts"] = {
             **package_json["scripts"],
             **package_json_app["scripts"],
@@ -142,7 +142,7 @@ def generate_package_json(source: Path, working_path: Path, input_template: Temp
 def get_imports_from_submodules(
     input_template: Template, all_runtime_deps: dict[str, str]
 ):
-    src_folder = "lib" if input_template.type == PackageType.Library else "app"
+    src_folder = "lib" if input_template.type == PackageType.LIBRARY else "app"
     base_path = input_template.path / "src" / src_folder
 
     def clean_import_name(name):
@@ -221,7 +221,7 @@ def get_externals(input_template: Template):
             "apiKey": dep_api_version,
             "exportedSymbol": symbol_name,
         }
-        if input_template.type == PackageType.Library:
+        if input_template.type == PackageType.LIBRARY:
             externals[name] = {
                 "commonjs": name,
                 "commonjs2": name,
@@ -237,7 +237,7 @@ def get_externals(input_template: Template):
         ):
             continue
         parts = sub_module["path"].split("/")
-        if input_template.type == PackageType.Library:
+        if input_template.type == PackageType.LIBRARY:
             symbol_name = externals[sub_module["package"]]["root"]
             externals[import_path] = {
                 "commonjs": import_path,
@@ -257,7 +257,7 @@ def generate_webpack_config(source: Path, working_path: Path, input_template: Te
     filename = working_path / "webpack.config.ts"
     shutil.copyfile(source, filename)
 
-    if input_template.type == PackageType.Application:
+    if input_template.type == PackageType.APPLICATION:
         sed_inplace(
             filename, '"{{devServer.port}}"', str(input_template.devServer.port)
         )

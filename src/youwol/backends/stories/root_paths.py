@@ -22,6 +22,9 @@ from youwol.backends.stories.configurations import (
     get_configuration,
 )
 from youwol.backends.stories.utils import (
+    ZIP_DATA_FILENAME,
+    ZIP_GLOBAL_CONTENT_FILENAME,
+    ZIP_REQUIREMENTS_FILENAME,
     create_default_global_contents,
     delete_docdb_docs_from_page,
     delete_from_page,
@@ -35,9 +38,6 @@ from youwol.backends.stories.utils import (
     position_start,
     query_document,
     query_story,
-    zip_data_filename,
-    zip_global_content_filename,
-    zip_requirements_filename,
 )
 
 # Youwol utilities
@@ -112,7 +112,7 @@ async def publish_story(
                 raise InvalidInput(error="Bad zip file")
 
             await ctx.info("Zip file extracted successfully")
-            data = parse_json(dir_path / zip_data_filename)
+            data = parse_json(dir_path / ZIP_DATA_FILENAME)
             await ctx.info("Story data recovered", data=data)
             story = data["story"]
             story_id = story["story_id"]
@@ -132,9 +132,9 @@ async def publish_story(
                 for doc in documents
             }
             await ctx.info("Story contents recovered", data=contents)
-            requirements = parse_json(dir_path / zip_requirements_filename)
+            requirements = parse_json(dir_path / ZIP_REQUIREMENTS_FILENAME)
             await ctx.info("Story requirements recovered", data=requirements)
-            global_content = parse_json(dir_path / zip_global_content_filename)
+            global_content = parse_json(dir_path / ZIP_GLOBAL_CONTENT_FILENAME)
             await ctx.info("Global contents recovered", data=requirements)
             await asyncio.gather(
                 doc_db_stories.create_document(
@@ -229,12 +229,12 @@ async def download_zip(
         data = {"story": story, "documents": [root_doc, *documents]}
         with tempfile.TemporaryDirectory() as tmp_folder:
             base_path = Path(tmp_folder)
-            write_json(data=data, path=base_path / zip_data_filename)
+            write_json(data=data, path=base_path / ZIP_DATA_FILENAME)
             write_json(
-                data=requirements.dict(), path=base_path / zip_requirements_filename
+                data=requirements.dict(), path=base_path / ZIP_REQUIREMENTS_FILENAME
             )
             write_json(
-                data=global_content, path=base_path / zip_global_content_filename
+                data=global_content, path=base_path / ZIP_GLOBAL_CONTENT_FILENAME
             )
             for doc in data["documents"]:
                 storage_path = get_document_path(
@@ -248,8 +248,8 @@ async def download_zip(
             zipper = zipfile.ZipFile(base_path / "story.zip", "w", zipfile.ZIP_DEFLATED)
             all_files = [
                 "data.json",
-                zip_requirements_filename,
-                zip_global_content_filename,
+                ZIP_REQUIREMENTS_FILENAME,
+                ZIP_GLOBAL_CONTENT_FILENAME,
             ] + [f"{doc['content_id']}.json" for doc in data["documents"]]
             for filename in all_files:
                 zipper.write(base_path / filename, arcname=filename)

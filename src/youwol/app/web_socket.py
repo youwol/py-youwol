@@ -76,11 +76,11 @@ class WsType(Enum):
     Web socket channel type.
     """
 
-    Log = "Log"
+    LOG = "Log"
     """
     Channel related to message that do not convey logical meaning for an application.
     """
-    Data = "Data"
+    DATA = "Data"
     """
     Channel related to message that do convey logical meaning for an application.
     """
@@ -100,7 +100,7 @@ async def start_web_socket(ws: WebSocket, ws_type: WsType):
             * `Data` if coming from `/ws-data`
             * `Log` if coming from `/ws-logs`
     """
-    channels = global_ws_store.data if ws_type == WsType.Data else global_ws_store.logs
+    channels = global_ws_store.data if ws_type == WsType.DATA else global_ws_store.logs
     channels.append(ws)
 
     await ws.accept()

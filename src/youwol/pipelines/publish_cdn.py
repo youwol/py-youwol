@@ -209,7 +209,7 @@ class PublishCdnLocalStep(PipelineStep):
                 await ctx.info(
                     text="No manifest found, the step has not yet been triggered"
                 )
-                return PipelineStepStatus.none
+                return PipelineStepStatus.NONE
 
             try:
                 local_lib_info = await local_cdn.get_library_info(
@@ -221,11 +221,11 @@ class PublishCdnLocalStep(PipelineStep):
                     text="The package has not been published yet in the local cdn"
                 )
                 if e.status_code == 404:
-                    return PipelineStepStatus.none
+                    return PipelineStepStatus.NONE
                 raise e
 
             if project.version not in local_lib_info["versions"]:
-                return PipelineStepStatus.none
+                return PipelineStepStatus.NONE
 
             local_version_info = await local_cdn.get_version_info(
                 library_id=encode_id(project.publishName),
@@ -249,7 +249,7 @@ class PublishCdnLocalStep(PipelineStep):
                         "saved manifest's fingerprint": last_manifest.fingerprint,
                     },
                 )
-                return PipelineStepStatus.outdated
+                return PipelineStepStatus.OUTDATED
 
             if last_manifest.cmdOutputs["srcFilesFingerprint"] != src_files_fingerprint:
                 await context.info(
@@ -262,7 +262,7 @@ class PublishCdnLocalStep(PipelineStep):
                     },
                 )
 
-            return PipelineStepStatus.outdated
+            return PipelineStepStatus.OUTDATED
 
     async def execute_run(self, project: Project, flow_id: str, context: Context):
         """
@@ -527,13 +527,13 @@ class PublishCdnRemoteStep(PipelineStep):
                 and remote_info.status_code == 404
             ):
                 await ctx.info(text="Package not found in remote CDN => status is none")
-                return PipelineStepStatus.none
+                return PipelineStepStatus.NONE
 
             if isinstance(local_info, HTTPException) and local_info.status_code == 404:
                 await ctx.info(
                     text="Package not found in local CDN => status is outdated"
                 )
-                return PipelineStepStatus.outdated
+                return PipelineStepStatus.OUTDATED
 
             if isinstance(remote_info, Exception):
                 await ctx.error(text=f"Error retrieving remote info: {remote_info}")
@@ -555,7 +555,7 @@ class PublishCdnRemoteStep(PipelineStep):
             await ctx.info(
                 text="Local CDN fingerprint does not match remote CDN fingerprint => status is outdated"
             )
-            return PipelineStepStatus.outdated
+            return PipelineStepStatus.OUTDATED
 
     async def execute_run(self, project: Project, flow_id: str, context: Context):
         """

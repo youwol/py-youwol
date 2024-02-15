@@ -21,9 +21,9 @@ from starlette.requests import Request
 # Youwol application
 from youwol.app.environment import YouwolEnvironment, yw_config
 from youwol.app.routers.system.documentation import (
+    YOUWOL_MODULE,
     format_module_doc,
     init_classes,
-    youwol_module,
 )
 from youwol.app.routers.system.documentation_models import (
     DocCache,
@@ -175,17 +175,17 @@ class LeafLogResponse(Log):
 
 
 class NodeLogStatus(Enum):
-    Succeeded = "Succeeded"
+    SUCCEEDED = "Succeeded"
     """
     The log has a succeeded status: it signals that the parent function has ran as expected.
     """
 
-    Failed = "Failed"
+    FAILED = "Failed"
     """
     The log has a failed status: it signals that the parent function failed, the log content explains the reason.
     """
 
-    Unresolved = "Unresolved"
+    UNRESOLVED = "Unresolved"
     """
     The log has a unresolved status: it signals that the parent function is unresolved yet, the log content
     explains the reason.
@@ -481,16 +481,16 @@ async def clear_logs(request: Request):
 
 def get_status(log: LogEntry, logger: InMemoryReporter):
     if log.context_id in logger.errors:
-        return NodeLogStatus.Failed
+        return NodeLogStatus.FAILED
 
     if log.context_id in logger.futures:
         if log.context_id in logger.futures_succeeded:
-            return NodeLogStatus.Succeeded
+            return NodeLogStatus.SUCCEEDED
         if log.context_id in logger.futures_failed:
-            return NodeLogStatus.Failed
-        return NodeLogStatus.Unresolved
+            return NodeLogStatus.FAILED
+        return NodeLogStatus.UNRESOLVED
 
-    return NodeLogStatus.Succeeded
+    return NodeLogStatus.SUCCEEDED
 
 
 @router.get(
@@ -534,7 +534,7 @@ async def get_documentation(request: Request, rest_of_path: str) -> DocModuleRes
     async with Context.start_ep(request=request):
         init_classes()
         DocCache.global_doc = DocCache.global_doc or cast(
-            Module, griffe.load(youwol_module, submodules=True)
+            Module, griffe.load(YOUWOL_MODULE, submodules=True)
         )
 
         if rest_of_path in DocCache.modules_doc:
@@ -543,7 +543,7 @@ async def get_documentation(request: Request, rest_of_path: str) -> DocModuleRes
         module_name = (
             rest_of_path.strip("/")
             .replace("/", ".")
-            .replace(youwol_module, "")
+            .replace(YOUWOL_MODULE, "")
             .strip(".")
         )
         try:
@@ -565,8 +565,8 @@ async def get_documentation(request: Request, rest_of_path: str) -> DocModuleRes
                 docstring=[],
                 childrenModules=[
                     DocChildModulesResponse(
-                        name=youwol_module,
-                        path=youwol_module,
+                        name=YOUWOL_MODULE,
+                        path=YOUWOL_MODULE,
                         isLeaf=False,
                     )
                 ],

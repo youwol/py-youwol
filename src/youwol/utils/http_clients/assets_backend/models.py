@@ -19,34 +19,34 @@ class ReadPolicyEnum(str, Enum):
     The read policy values.
     """
 
-    forbidden = "forbidden"
+    FORBIDDEN = "forbidden"
     """
     The asset can not be read.
     """
-    authorized = "authorized"
+    AUTHORIZED = "authorized"
     """
     The asset can be read.
     """
-    owning = "owning"
-    expiration_date = "expiration-date"
+    OWNING = "owning"
+    EXPIRATION_DATE = "expiration-date"
 
 
 ReadPolicyEnumFactory = {
-    "forbidden": ReadPolicyEnum.forbidden,
-    "authorized": ReadPolicyEnum.authorized,
-    "owning": ReadPolicyEnum.owning,
-    "expiration-date": ReadPolicyEnum.expiration_date,
+    "forbidden": ReadPolicyEnum.FORBIDDEN,
+    "authorized": ReadPolicyEnum.AUTHORIZED,
+    "owning": ReadPolicyEnum.OWNING,
+    "expiration-date": ReadPolicyEnum.EXPIRATION_DATE,
 }
 
 
 class SharePolicyEnum(str, Enum):
-    forbidden = "forbidden"
-    authorized = "authorized"
+    FORBIDDEN = "forbidden"
+    AUTHORIZED = "authorized"
 
 
 SharePolicyEnumFactory = {
-    "forbidden": SharePolicyEnum.forbidden,
-    "authorized": SharePolicyEnum.authorized,
+    "forbidden": SharePolicyEnum.FORBIDDEN,
+    "authorized": SharePolicyEnum.AUTHORIZED,
 }
 
 
@@ -280,7 +280,7 @@ class NewAssetBody(BaseModel):
     Tags of the asset.
     """
     defaultAccessPolicy: AccessPolicyBody = AccessPolicyBody(
-        read=ReadPolicyEnum.forbidden, share=SharePolicyEnum.forbidden, parameters={}
+        read=ReadPolicyEnum.FORBIDDEN, share=SharePolicyEnum.FORBIDDEN, parameters={}
     )
     """
     Default access policy.
@@ -344,22 +344,22 @@ class ParsedFile(NamedTuple):
     name: str
 
 
-scylla_db_text = "text"
-scylla_db_list_text = "list<text>"
+SCYLLA_DB_TEXT = "text"
+SCYLLA_DB_LIST_TEXT = "list<text>"
 
 ASSETS_TABLE = TableBody(
     name="entities",
     version="0.0",
     columns=[
-        Column(name="asset_id", type=scylla_db_text),
-        Column(name="related_id", type=scylla_db_text),
-        Column(name="group_id", type=scylla_db_text),
-        Column(name="kind", type=scylla_db_text),
-        Column(name="name", type=scylla_db_text),
-        Column(name="images", type=scylla_db_list_text),
-        Column(name="thumbnails", type=scylla_db_list_text),
-        Column(name="tags", type=scylla_db_list_text),
-        Column(name="description", type=scylla_db_text),
+        Column(name="asset_id", type=SCYLLA_DB_TEXT),
+        Column(name="related_id", type=SCYLLA_DB_TEXT),
+        Column(name="group_id", type=SCYLLA_DB_TEXT),
+        Column(name="kind", type=SCYLLA_DB_TEXT),
+        Column(name="name", type=SCYLLA_DB_TEXT),
+        Column(name="images", type=SCYLLA_DB_LIST_TEXT),
+        Column(name="thumbnails", type=SCYLLA_DB_LIST_TEXT),
+        Column(name="tags", type=SCYLLA_DB_LIST_TEXT),
+        Column(name="description", type=SCYLLA_DB_TEXT),
     ],
     partition_key=["asset_id"],
     clustering_columns=[],

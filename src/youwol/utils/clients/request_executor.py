@@ -13,7 +13,7 @@ from aiohttp import ClientResponse, ClientSession
 from youwol.utils.exceptions import upstream_exception_from_response
 from youwol.utils.types import JSON
 
-TClientResponse = TypeVar("TClientResponse")
+T = TypeVar("T")
 """
 Type var definition for a response of a request,
 used as template parameter of [RequestExecutor](@yw-nav-class:youwol.utils.clients.request_executor.RequestExecutor).
@@ -23,7 +23,7 @@ E.g. in case of aiohttp executor, it is
 """
 
 
-class RequestExecutor(ABC, Generic[TClientResponse]):
+class RequestExecutor(ABC, Generic[T]):
     """
     Abstract class for requests executor.
 
@@ -34,8 +34,8 @@ class RequestExecutor(ABC, Generic[TClientResponse]):
     async def get(
         self,
         url: str,
-        default_reader: Callable[[TClientResponse], Awaitable[Any]],
-        custom_reader: Callable[[TClientResponse], Awaitable[Any]] | None = None,
+        default_reader: Callable[[T], Awaitable[Any]],
+        custom_reader: Callable[[T], Awaitable[Any]] | None = None,
         headers: dict[str, str] | None = None,
         **kwargs,
     ):
@@ -56,8 +56,8 @@ class RequestExecutor(ABC, Generic[TClientResponse]):
     async def post(
         self,
         url: str,
-        default_reader: Callable[[TClientResponse], Awaitable[Any]],
-        custom_reader: Callable[[TClientResponse], Awaitable[Any]] | None = None,
+        default_reader: Callable[[T], Awaitable[Any]],
+        custom_reader: Callable[[T], Awaitable[Any]] | None = None,
         headers: dict[str, str] | None = None,
         **kwargs,
     ):
@@ -78,8 +78,8 @@ class RequestExecutor(ABC, Generic[TClientResponse]):
     async def put(
         self,
         url: str,
-        default_reader: Callable[[TClientResponse], Awaitable[Any]],
-        custom_reader: Callable[[TClientResponse], Awaitable[Any]] | None = None,
+        default_reader: Callable[[T], Awaitable[Any]],
+        custom_reader: Callable[[T], Awaitable[Any]] | None = None,
         headers: dict[str, str] | None = None,
         **kwargs,
     ):
@@ -100,8 +100,8 @@ class RequestExecutor(ABC, Generic[TClientResponse]):
     async def delete(
         self,
         url: str,
-        default_reader: Callable[[TClientResponse], Awaitable[Any]],
-        custom_reader: Callable[[TClientResponse], Awaitable[Any]] | None = None,
+        default_reader: Callable[[T], Awaitable[Any]],
+        custom_reader: Callable[[T], Awaitable[Any]] | None = None,
         headers: dict[str, str] | None = None,
         **kwargs,
     ):

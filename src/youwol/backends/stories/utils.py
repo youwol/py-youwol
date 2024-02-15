@@ -24,9 +24,9 @@ from youwol.utils.http_clients.stories_backend import (
 # relative
 from .configurations import Configuration, Constants, DocDb, Storage
 
-zip_data_filename = "data.json"
-zip_requirements_filename = "requirements.json"
-zip_global_content_filename = "global-contents.json"
+ZIP_DATA_FILENAME = "data.json"
+ZIP_REQUIREMENTS_FILENAME = "requirements.json"
+ZIP_GLOBAL_CONTENT_FILENAME = "global-contents.json"
 
 
 async def query_story(story_id: str, doc_db_stories: DocDb, context: Context):
