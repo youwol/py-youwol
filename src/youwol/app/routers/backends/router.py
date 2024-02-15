@@ -4,6 +4,7 @@ from starlette.requests import Request
 
 # Youwol application
 from youwol.app.environment import YouwolEnvironment
+from youwol.app.routers.backends.implementation import ensure_running
 
 # Youwol utilities
 from youwol.utils import Context, YouwolHeaders, redirect_request
@@ -15,13 +16,18 @@ async def dispatch_impl(
     request: Request,
     backend_name: str,
     version_query: str,
-    rest_of_path: str,
     context: Context,
 ):
 
     env = await context.get("env", YouwolEnvironment)
-    await context.info(text=f"Dispatch to {rest_of_path}")
-    backend = env.proxied_backends.get(name=backend_name, query_version=version_query)
+    backend = await ensure_running(
+        request=request,
+        backend_name=backend_name,
+        version_query=version_query,
+        timeout=10,
+        context=context,
+    )
+    backend.endpoint_ctx_id.append(context.parent_uid)
     if not backend:
         return HTTPException(
             status_code=404,
@@ -35,7 +41,7 @@ async def dispatch_impl(
     }
     destination = f"http://localhost:{backend.port}"
     await context.info(
-        text=f"Redirecting request from '{request.url}' to '{destination}'",
+        text=f"Redirecting to {destination}",
         data={
             "origin": request.url.path,
             "destination": destination,
@@ -63,9 +69,7 @@ async def dispatch_impl(
 @router.get(
     "/{backend_name}/{version_query}/{rest_of_path:path}", summary="Dispatch GET."
 )
-async def dispatch_get(
-    request: Request, backend_name: str, version_query: str, rest_of_path: str
-):
+async def dispatch_get(request: Request, backend_name: str, version_query: str):
     """
     Dispatch.
 
@@ -73,7 +77,6 @@ async def dispatch_get(
         request: incoming request
         backend_name: target backend's name
         version_query: semantic versioning query
-        rest_of_path: the path on which the API call will be redirected
 
     Return:
         The response
@@ -86,7 +89,6 @@ async def dispatch_get(
             request=request,
             backend_name=backend_name,
             version_query=version_query,
-            rest_of_path=rest_of_path,
             context=ctx,
         )
 
@@ -94,9 +96,7 @@ async def dispatch_get(
 @router.post(
     "/{backend_name}/{version_query}/{rest_of_path:path}", summary="Dispatch POST"
 )
-async def dispatch_post(
-    request: Request, backend_name: str, version_query: str, rest_of_path: str
-):
+async def dispatch_post(request: Request, backend_name: str, version_query: str):
     """
     Dispatch.
 
@@ -104,7 +104,6 @@ async def dispatch_post(
         request: incoming request
         backend_name: target backend's name
         version_query: semantic versioning query
-        rest_of_path: the path on which the API call will be redirected
 
     Return:
         The response
@@ -117,7 +116,6 @@ async def dispatch_post(
             request=request,
             backend_name=backend_name,
             version_query=version_query,
-            rest_of_path=rest_of_path,
             context=ctx,
         )
 
@@ -125,9 +123,7 @@ async def dispatch_post(
 @router.put(
     "/{backend_name}/{version_query}/{rest_of_path:path}", summary="Dispatch POST"
 )
-async def dispatch_put(
-    request: Request, backend_name: str, version_query: str, rest_of_path: str
-):
+async def dispatch_put(request: Request, backend_name: str, version_query: str):
     """
     Dispatch.
 
@@ -135,7 +131,6 @@ async def dispatch_put(
         request: incoming request
         backend_name: target backend's name
         version_query: semantic versioning query
-        rest_of_path: the path on which the API call will be redirected
 
     Return:
         The response
@@ -148,7 +143,6 @@ async def dispatch_put(
             request=request,
             backend_name=backend_name,
             version_query=version_query,
-            rest_of_path=rest_of_path,
             context=ctx,
         )
 
@@ -156,9 +150,7 @@ async def dispatch_put(
 @router.delete(
     "/{backend_name}/{version_query}/{rest_of_path:path}", summary="Dispatch POST"
 )
-async def dispatch_delete(
-    request: Request, backend_name: str, version_query: str, rest_of_path: str
-):
+async def dispatch_delete(request: Request, backend_name: str, version_query: str):
     """
     Dispatch.
 
@@ -166,7 +158,6 @@ async def dispatch_delete(
         request: incoming request
         backend_name: target backend's name
         version_query: semantic versioning query
-        rest_of_path: the path on which the API call will be redirected
 
     Return:
         The response
@@ -179,6 +170,5 @@ async def dispatch_delete(
             request=request,
             backend_name=backend_name,
             version_query=version_query,
-            rest_of_path=rest_of_path,
             context=ctx,
         )

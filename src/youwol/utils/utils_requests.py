@@ -1,6 +1,7 @@
 # standard library
 import json
 
+from socket import AF_INET, SOCK_STREAM, socket
 from urllib.error import URLError
 from urllib.request import urlopen
 
@@ -211,3 +212,19 @@ class FuturesResponse(Response):
             indent=None,
             separators=(",", ":"),
         ).encode("utf-8")
+
+
+class NoAvailablePortError(RuntimeError):
+    """Exception raised when no available port is found in the specified range."""
+
+
+def find_available_port(start: int, end: int) -> int:
+    for port in range(start, end + 1):
+        with socket(AF_INET, SOCK_STREAM) as s:
+            try:
+                s.bind(("", port))
+                return port
+            except OSError:
+                continue
+    # Raise an exception if no port is available
+    raise NoAvailablePortError(f"No available port found in the range {start}-{end}")
