@@ -139,10 +139,10 @@ async def reload_configuration(
     async with Context.start_ep(
         request=request,
         with_reporters=[LogsStreamer()],
-    ):
+    ) as ctx:
         env = await YouwolEnvironmentFactory.reload()
         asyncio.ensure_future(ProjectLoader.initialize(env=env))
-        return await status(request, env)
+        return await get_status_impl(request=request, context=ctx)
 
 
 @router.get(
@@ -171,16 +171,16 @@ async def load_predefined_config_file(request: Request, rest_of_path: str):
                 fwd_args_reload=FwdArgumentsReload(token_storage=env.tokens_storage),
             )
             asyncio.ensure_future(ProjectLoader.initialize(env=env))
-            return await status(request, env)
+            return await get_status_impl(request=request, context=ctx)
 
 
-@router.get("/status", summary="status")
-async def status(request: Request, config: YouwolEnvironment = Depends(yw_config)):
-    async with Context.start_ep(
-        request=request,
-        with_reporters=[LogsStreamer()],
+async def get_status_impl(request: Request, context: Context):
+    async with context.start(
+        action="get_status", with_reporters=[LogsStreamer()]
     ) as ctx:
-        remote_gateway_info = config.get_remote_info()
+
+        env = await ctx.get("env", YouwolEnvironment)
+        remote_gateway_info = env.get_remote_info()
         if remote_gateway_info:
             remote_gateway_info = RemoteGatewayInfo(
                 host=remote_gateway_info.host, connected=True
@@ -188,7 +188,7 @@ async def status(request: Request, config: YouwolEnvironment = Depends(yw_config
         data = request.state.user_info
         users = [
             auth.userName
-            for auth in config.get_remote_info().authentications
+            for auth in env.get_remote_info().authentications
             if isinstance(auth, DirectAuth)
         ]
         response = EnvironmentStatusResponse(
@@ -203,20 +203,29 @@ async def status(request: Request, config: YouwolEnvironment = Depends(yw_config
                     memberOf=[],
                 )
             ),
-            configuration=ConfigurationResponse.from_yw_environment(config),
+            configuration=ConfigurationResponse.from_yw_environment(env),
             remoteGatewayInfo=remote_gateway_info,
             remotesInfo=[
                 RemoteGatewayInfo(
                     host=remote.host,
-                    connected=(remote.host == config.get_remote_info().host),
+                    connected=(remote.host == env.get_remote_info().host),
                 )
-                for remote in config.remotes
+                for remote in env.remotes
             ],
         )
         # disable projects loading for now
         # await ctx.send(ProjectsLoadingResults(results=await ProjectLoader.get_results(config, ctx)))
         await ctx.send(response)
         return response
+
+
+@router.get("/status", summary="status")
+async def status(request: Request):
+    async with Context.start_ep(
+        request=request,
+        with_reporters=[LogsStreamer()],
+    ) as ctx:
+        return await get_status_impl(request=request, context=ctx)
 
 
 @router.get(
@@ -272,7 +281,7 @@ async def login(request: Request, body: LoginBody) -> UserInfo:
         env = await YouwolEnvironmentFactory.reload(
             Connection(authId=body.authId, envId=body.envId)
         )
-        await status(request, env)
+        await get_status_impl(request=request, context=ctx)
         tokens = await get_connected_local_tokens(context=ctx)
         access_token = await tokens.access_token()
         access_token_decoded = await OidcConfig(

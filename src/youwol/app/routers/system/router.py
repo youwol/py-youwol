@@ -20,6 +20,8 @@ from starlette.requests import Request
 
 # Youwol application
 from youwol.app.environment import YouwolEnvironment, yw_config
+from youwol.app.routers.backends.implementation import INSTALL_MANIFEST_FILE
+from youwol.app.routers.environment.router import get_status_impl
 from youwol.app.routers.system.documentation import (
     YOUWOL_MODULE,
     format_module_doc,
@@ -278,6 +280,138 @@ class BackendLogsResponse(BaseModel):
     logs: list[Log]
     server_outputs: list[str]
     install_outputs: list[str] | None
+
+
+class UninstallResponse(BaseModel):
+    """
+    Response model when calling [uninstall](@yw-nav-func:youwol.app.routers.system.router.uninstall)
+    """
+
+    name: str
+    """
+    Backend name.
+    """
+
+    version: str
+    """
+    Backend version.
+    """
+
+    backendTerminated: bool
+    """
+    Whether the backend has been terminated (if it was running when uninstalled).
+    """
+    wasInstalled: bool
+    """
+    Whether the backend was already installed.
+    """
+
+
+class TerminateResponse(BaseModel):
+    """
+    Response model when calling [terminate](@yw-nav-func:youwol.app.routers.system.router.terminate)
+    """
+
+    name: str
+    """
+    Backend name.
+    """
+
+    version: str
+    """
+    Backend version.
+    """
+
+    wasRunning: bool
+    """
+    Whether the backend was running.
+    """
+
+
+@router.delete(
+    "/backends/{name}/{version}/terminate",
+    summary="Terminate a backend",
+    response_model=TerminateResponse,
+)
+async def terminate(
+    request: Request,
+    name: str,
+    version: str,
+    env: YouwolEnvironment = Depends(yw_config),
+):
+    """
+    Terminate a backend.
+
+    Parameters:
+        request: incoming request.
+        name: Name if the backend.
+        version: Version of the backend.
+        env: Injected current YouwolEnvironment.
+    Return:
+        Termination details.
+    """
+    async with Context.start_ep(
+        request=request,
+    ) as ctx:
+        proxied = env.proxied_backends.get(name=name, query_version=version)
+        if proxied:
+            await env.proxied_backends.terminate(
+                name=name, version=version, context=ctx
+            )
+            await get_status_impl(request=request, context=ctx)
+
+        return TerminateResponse(
+            name=name, version=version, wasRunning=proxied is not None
+        )
+
+
+@router.delete(
+    "/backends/{name}/{version}/uninstall",
+    summary="Uninstall a backend",
+    response_model=UninstallResponse,
+)
+async def uninstall(
+    request: Request,
+    name: str,
+    version: str,
+    env: YouwolEnvironment = Depends(yw_config),
+):
+    """
+    Uninstall a backend, eventually terminate it if running.
+
+    Parameters:
+        request: incoming request.
+        name: Name if the backend.
+        version: Version of the backend.
+        env: Injected current YouwolEnvironment.
+    Return:
+        Uninstallation details.
+    """
+    async with Context.start_ep(
+        request=request,
+    ) as ctx:
+        proxied = env.proxied_backends.get(name=name, query_version=version)
+        if proxied:
+            await env.proxied_backends.terminate(
+                name=name, version=version, context=ctx
+            )
+            await get_status_impl(request=request, context=ctx)
+
+        manifest = (
+            env.pathsBook.local_cdn_component(name=name, version=version)
+            / INSTALL_MANIFEST_FILE
+        )
+        manifest_removed = False
+        if manifest.exists():
+            manifest_removed = True
+            manifest.unlink()
+
+        return UninstallResponse(
+            name=name,
+            version=version,
+            backendTerminated=proxied is not None,
+            wasInstalled=manifest_removed,
+        )
 
 
 @router.get("/backends/{name}/{version}/logs/", summary="Query in-memory root logs.")

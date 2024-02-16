@@ -659,7 +659,7 @@ class Pipeline(BaseModel):
     Describes a pipeline.
     """
 
-    target: Target
+    target: Target | Callable[["Project"], Target]
     """
     The pipeline [target](@yw-nav-class:youwol.app.routers.projects.models_project.Target).
     """

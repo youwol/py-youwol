@@ -12,7 +12,7 @@ from pydantic import BaseModel
 
 # Youwol application
 from youwol.app.environment import YouwolEnvironment
-from youwol.app.routers.environment.router import status
+from youwol.app.routers.environment.router import get_status_impl
 from youwol.app.routers.projects import (
     Artifact,
     CommandPipelineStep,
@@ -21,6 +21,8 @@ from youwol.app.routers.projects import (
     FileListing,
     Flow,
     FlowId,
+    Link,
+    LinkKind,
     Pipeline,
     PipelineStep,
     Project,
@@ -313,7 +315,7 @@ class RunStep(PipelineStep):
                         install_outputs=["Backend running from sources."],
                         server_outputs_ctx_id=shell_ctx.uid,
                     )
-                    await status(request=ctx.request, config=env)
+                    await get_status_impl(request=ctx.request, context=shell_ctx)
                     await shell_ctx.info(
                         text=f"Dispatch installed from '/backends/{project.name}/{project.version}' "
                         f"to 'localhost:{port}"
@@ -470,7 +472,16 @@ async def pipeline(config: PipelineConfig, context: Context):
                 return tomllib.load(f)
 
         return Pipeline(
-            target=Target(family=Family.SERVICE),
+            target=lambda project: Target(
+                family=Family.SERVICE,
+                links=[
+                    Link(
+                        name="Swagger",
+                        url=f"/backends/{project.name}/{project.version}/docs",
+                        kind=LinkKind.PLAIN_URL,
+                    )
+                ],
+            ),
             tags=config.with_tags,
             projectName=lambda path: parse_toml(path)["project"]["name"],
             projectVersion=lambda path: parse_toml(path)["project"]["version"],

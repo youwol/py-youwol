@@ -1,5 +1,6 @@
 # third parties
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 from starlette.requests import Request
 
 # Youwol application
@@ -10,6 +11,14 @@ from youwol.app.routers.backends.implementation import ensure_running
 from youwol.utils import Context, YouwolHeaders, redirect_request
 
 router = APIRouter()
+
+
+class BackendResponse(BaseModel):
+    name: str
+    version: str
+    url: str
+    method: str
+    statusCode: int
 
 
 async def dispatch_impl(
@@ -48,19 +57,21 @@ async def dispatch_impl(
             "py_youwol_port": env.httpPort,
         },
     )
-
+    origin_base_path = f"/backends/{backend_name}/{version_query}"
     resp = await redirect_request(
         incoming_request=request,
         origin_base_path=f"/backends/{backend_name}/{version_query}",
         destination_base_path=destination,
         headers=headers,
     )
-    await context.info(
-        "Got response from backend",
-        data={
-            "headers": dict(resp.headers.items()),
-            "status": resp.status_code,
-        },
+    await context.send(
+        BackendResponse(
+            name=backend.name,
+            version=backend.version,
+            statusCode=resp.status_code,
+            url=request.url.path.replace(origin_base_path, f"localhost:{backend.port}"),
+            method=request.method,
+        )
     )
 
     return resp
