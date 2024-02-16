@@ -21,6 +21,8 @@ from youwol.app.routers.projects import (
     FileListing,
     Flow,
     FlowId,
+    Link,
+    LinkKind,
     Pipeline,
     PipelineStep,
     Project,
@@ -470,7 +472,16 @@ async def pipeline(config: PipelineConfig, context: Context):
                 return tomllib.load(f)
 
         return Pipeline(
-            target=Target(family=Family.SERVICE),
+            target=lambda project: Target(
+                family=Family.SERVICE,
+                links=[
+                    Link(
+                        name="Swagger",
+                        url=f"/backends/{project.name}/{project.version}/docs",
+                        kind=LinkKind.PLAIN_URL,
+                    )
+                ],
+            ),
             tags=config.with_tags,
             projectName=lambda path: parse_toml(path)["project"]["name"],
             projectVersion=lambda path: parse_toml(path)["project"]["version"],

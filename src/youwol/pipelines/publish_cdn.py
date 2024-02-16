@@ -73,8 +73,8 @@ async def create_cdn_zip(
             text="create CDN zip: files recovered",
             data={"files": [f"{name} -> {str(path)}" for path, name in zip_files]},
         )
-
-        yw_metadata = to_json(project.pipeline.target)
+        target = project.pipeline.target
+        yw_metadata = to_json(target(project) if callable(target) else target)
         await ctx.info(text="Append target metadata", data=yw_metadata)
         create_zip_file(
             path=zip_path,
