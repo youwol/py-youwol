@@ -54,6 +54,16 @@ class PathsBook(BaseModel):
         """
         return self.local_storage / "cdn" / "youwol-users"
 
+    def local_cdn_component(self, name: str, version: str) -> Path:
+        """
+        Parameters:
+            name: Name of the package
+            version: Version of the package
+        Return:
+            The folder path associated to the component in the CDN database.
+        """
+        return self.local_cdn_storage / "libraries" / name / version
+
     @property
     def local_stories_storage(self) -> Path:
         return self.local_storage / "stories" / "youwol-users"
