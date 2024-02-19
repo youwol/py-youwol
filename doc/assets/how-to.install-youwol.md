@@ -14,7 +14,7 @@ If you want, you can install from the sources instead of using Pypi package - th
 
 `pipx install <path-to-py-youwol-src> --editable`
 
--   where `path-to-py-youwol-src` is the path of the py-youwol folder (e.g. cloned from <a target='_blank' href='https://github.com/youwol/py-youwol'> here </a>)
+- where `path-to-py-youwol-src` is the path of the py-youwol folder (e.g. cloned from <a target='_blank' href='https://github.com/youwol/py-youwol'> here </a>)
 
 Once installed, you can run the application from anywhere with `youwol`.
 

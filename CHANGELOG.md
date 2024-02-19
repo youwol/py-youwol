@@ -19,36 +19,36 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 ### Added
 
--   **Backend components**:
-    -   Automated backend installation and initialization upon endpoint request,
-        if available in local components. <!-- TG-2085 -->
-    -   Provide notifications using web-socket regarding installation. <!-- TG-2094 -->
-    -   Provide endpoints to `terminate` & `uninstall` backends. <!-- TG-2100 -->-
--   **Pipeline python backend**:
-    -   Provide POC version. <!-- TG-2051, TG-2074 -->
-    -   Add a `Swagger` link to the published component to open the service's 'Swagger UI'. <!-- TG-2098 -->
+- **Backend components**:
+  - Automated backend installation and initialization upon endpoint request,
+    if available in local components. <!-- TG-2085 -->
+  - Provide notifications using web-socket regarding installation. <!-- TG-2094 -->
+  - Provide endpoints to `terminate` & `uninstall` backends. <!-- TG-2100 -->-
+- **Pipeline python backend**:
+  - Provide POC version. <!-- TG-2051, TG-2074 -->
+  - Add a `Swagger` link to the published component to open the service's 'Swagger UI'. <!-- TG-2098 -->
 
 ### Changed
 
--   **Pipeline Typescript**:
-    -   upgrade shared configuration `^1.2.1` for latest dependencies:
-        -   ESlint `^8.56.0` <!-- TG-1997 -->
-        -   Prettier `^3.2.5` <!-- TG-2070 -->
-    -   remove pinning of `@types/node` after [chokidar bug correction](https://github.com/paulmillr/chokidar/issues/1299) <!-- TG-1983 -->
--   Component's type is either `js/wasm` or `backend`. <!-- TG-2080 -->
+- **Pipeline Typescript**:
+  - upgrade shared configuration `^1.2.1` for latest dependencies:
+    - ESlint `^8.56.0` <!-- TG-1997 -->
+    - Prettier `^3.2.5` <!-- TG-2070 -->
+  - remove pinning of `@types/node` after [chokidar bug correction](https://github.com/paulmillr/chokidar/issues/1299) <!-- TG-1983 -->
+- Component's type is either `js/wasm` or `backend`. <!-- TG-2080 -->
 
 ### Fixed
 
--   Forward request's cookies when using `redirect_request`. <!-- TG-2072 -->
+- Forward request's cookies when using `redirect_request`. <!-- TG-2072 -->
 
 ### Security
 
--   **Dependencies vulnerabilities**:
-    -   [GHSA-2jv5-9r88-3w3p] upgrade `python-multipart`. to 0.0.9 <!-- TG-2073 -->
+- **Dependencies vulnerabilities**:
+  - [GHSA-2jv5-9r88-3w3p] upgrade `python-multipart`. to 0.0.9 <!-- TG-2073 -->
 
 ### Removed
 
--   Drop support for Python 3.9 <!-- TG-2035, TG-2003 -->
+- Drop support for Python 3.9 <!-- TG-2035, TG-2003 -->
 
 <!-- Not worthy of inclusion
 TG-2046
@@ -67,48 +67,48 @@ TG-1998
 
 ### Fixed
 
--   **Backends**
-    -   Error while retrieving token from `Redis` cache if empty <!-- TG-2064 -->
+- **Backends**
+  - Error while retrieving token from `Redis` cache if empty <!-- TG-2064 -->
 
 ## [0.1.7] − 2024-02-08
 
 ### Added
 
--   New Py-youwol documentation application **@youwol/py-youwol-doc** <!-- TG-1923, TG-1924, TG-1925, TG-1951, TG-1952, TG-1961 -->
+- New Py-youwol documentation application **@youwol/py-youwol-doc** <!-- TG-1923, TG-1924, TG-1925, TG-1951, TG-1952, TG-1961 -->
 
 ### Changed
 
--   Improve authentication for HTTP clients <!-- TG-1874 -->
--   Improve error management during projects load <!-- TG-1878 -->
--   **Pipeline Typescript**:
-    -   improve step custom views API <!-- TG-1862 -->
-    -   use caret range for shared configuration dependencies <!-- TG-1912 -->
-    -   upgrade shared configuration `^1.2.0` for latest dependencies: <!-- TG-1954, TG-1980 -->
-        -   Typescript `^5.3.3`
-        -   Jest `^29.5.11`
-        -   ESlint `8.56.0`
-        -   Prettier `^3.2.4`
--   **Docker images**:
-    -   use Python 3.12 <!-- TG-1848, TG-1850 -->
-    -   run as non-privileged user <!-- TG-1957 -->
+- Improve authentication for HTTP clients <!-- TG-1874 -->
+- Improve error management during projects load <!-- TG-1878 -->
+- **Pipeline Typescript**:
+  - improve step custom views API <!-- TG-1862 -->
+  - use caret range for shared configuration dependencies <!-- TG-1912 -->
+  - upgrade shared configuration `^1.2.0` for latest dependencies: <!-- TG-1954, TG-1980 -->
+    - Typescript `^5.3.3`
+    - Jest `^29.5.11`
+    - ESlint `8.56.0`
+    - Prettier `^3.2.4`
+- **Docker images**:
+  - use Python 3.12 <!-- TG-1848, TG-1850 -->
+  - run as non-privileged user <!-- TG-1957 -->
 
 ### Fixed
 
--   Reduce verbosity in terminal when creating project <!-- TG-1735 -->
--   **Pipeline Typescript**:
-    -   allow modifying dependency defined by pipeline using `template.py` <!-- TG-1911 -->
-    -   format `src/test/fake.ts` <!-- TG-1706 -->
-    -   pin `@types/node` to `18.19.9`
-        for applications until [chokidar issue #1299](https://github.com/paulmillr/chokidar/issues/1299) is resolved <!-- TG-1983 -->
+- Reduce verbosity in terminal when creating project <!-- TG-1735 -->
+- **Pipeline Typescript**:
+  - allow modifying dependency defined by pipeline using `template.py` <!-- TG-1911 -->
+  - format `src/test/fake.ts` <!-- TG-1706 -->
+  - pin `@types/node` to `18.19.9`
+    for applications until [chokidar issue #1299](https://github.com/paulmillr/chokidar/issues/1299) is resolved <!-- TG-1983 -->
 
 ### Security
 
--   **Dependencies vulnerabilities**:
-    -   [CVE-2023-26159] upgrade `follow-redirects` to 1.15.5 <!-- TG-1906 -->
-    -   [CVE-2024-23334] upgrade `aiohttp` to 3.9.2 <!-- TG-1984 -->
-    -   [CVE-2024-23829] upgrade `aiohttp` to 3.9.2 <!-- TG-1984 -->
-    -   [CVE-2023-50782] upgrade `cryptography` to 42.0.2 <!-- TG-2049 -->
-    -   [CVE-2024-24762] upgrade `fastapi` to 0.109.2, `starlette` to 0.36.3 <!-- TG-2047, TG-2048 -->
+- **Dependencies vulnerabilities**:
+  - [CVE-2023-26159] upgrade `follow-redirects` to 1.15.5 <!-- TG-1906 -->
+  - [CVE-2024-23334] upgrade `aiohttp` to 3.9.2 <!-- TG-1984 -->
+  - [CVE-2024-23829] upgrade `aiohttp` to 3.9.2 <!-- TG-1984 -->
+  - [CVE-2023-50782] upgrade `cryptography` to 42.0.2 <!-- TG-2049 -->
+  - [CVE-2024-24762] upgrade `fastapi` to 0.109.2, `starlette` to 0.36.3 <!-- TG-2047, TG-2048 -->
 
 <!-- Not worthy of inclusion
 TG-1881

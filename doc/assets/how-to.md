@@ -2,8 +2,8 @@ This part present youwol using a **problem-oriented** approach.
 
 For users that do not plan contributing to projects, only the following sections are worth reading:
 
--   [Install YouWol](@nav/how-to/install-youwol): the different options to install youwol.
--   [Start YouWol](@nav/how-to/start-youwol): how to start youwol, most importantly how to reference the configuration file.
+- [Install YouWol](@nav/how-to/install-youwol): the different options to install youwol.
+- [Start YouWol](@nav/how-to/start-youwol): how to start youwol, most importantly how to reference the configuration file.
 
 <!--
 For developers, the following sections are relevant:
