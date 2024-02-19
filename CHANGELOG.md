@@ -31,6 +31,9 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 ### Changed
 
 -   **Pipeline Typescript**:
+    -   upgrade shared configuration `^1.2.1` for latest dependencies:
+        -   ESlint `^8.56.0` <!-- TG-1997 -->
+        -   Prettier `^3.2.5` <!-- TG-2070 -->
     -   remove pinning of `@types/node` after [chokidar bug correction](https://github.com/paulmillr/chokidar/issues/1299) <!-- TG-1983 -->
 -   Component's type is either `js/wasm` or `backend`. <!-- TG-2080 -->
 
@@ -57,6 +60,7 @@ TG-2032
 TG-2090
 TG-2097
 TG-2099
+TG-1998
 -->
 
 ## [0.1.7.post] − 2024-02-09
