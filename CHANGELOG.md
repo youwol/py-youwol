@@ -20,16 +20,16 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 ### Added
 
 -   **Backend components**:
-    -  Automated backend installation and initialization upon endpoint request,
-    if available in local components. <!-- TG-2085 -->
-    -  Provide notifications using web-socket regarding installation. <!-- TG-2094 -->
-    -  Provide endpoints to `terminate` & `uninstall` backends. <!-- TG-2100 -->
+    -   Automated backend installation and initialization upon endpoint request,
+        if available in local components. <!-- TG-2085 -->
+    -   Provide notifications using web-socket regarding installation. <!-- TG-2094 -->
+    -   Provide endpoints to `terminate` & `uninstall` backends. <!-- TG-2100 -->-
 -   **Pipeline python backend**:
-    -  Provide POC version. <!-- TG-2051, TG-2074 -->
-    -  Add a `Swagger` link to the published component to open the service's 'Swagger UI'. <!-- TG-2098 -->
+    -   Provide POC version. <!-- TG-2051, TG-2074 -->
+    -   Add a `Swagger` link to the published component to open the service's 'Swagger UI'. <!-- TG-2098 -->
 
 ### Changed
- 
+
 -   **Pipeline Typescript**:
     -   remove pinning of `@types/node` after [chokidar bug correction](https://github.com/paulmillr/chokidar/issues/1299) <!-- TG-1983 -->
 -   Component's type is either `js/wasm` or `backend`. <!-- TG-2080 -->
@@ -42,7 +42,7 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 -   **Dependencies vulnerabilities**:
     -   [GHSA-2jv5-9r88-3w3p] upgrade `python-multipart`. to 0.0.9 <!-- TG-2073 -->
-    
+
 ### Removed
 
 -   Drop support for Python 3.9 <!-- TG-2035, TG-2003 -->
