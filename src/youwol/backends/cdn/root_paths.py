@@ -67,11 +67,6 @@ from youwol.utils.types import AnyDict
 router = APIRouter(tags=["cdn-backend"])
 
 
-@router.get("/healthz")
-async def healthz():
-    return {"status": "cdn-backend ok"}
-
-
 @router.post(
     "/publish-library",
     summary="Publish a library from a zip file.",

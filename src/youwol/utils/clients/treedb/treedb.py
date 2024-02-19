@@ -20,14 +20,6 @@ class TreeDbClient:
     Request executor.
     """
 
-    async def healthz(self, headers: dict[str, str], **kwargs):
-        return await self.request_executor.get(
-            url=f"{self.url_base}/healthz",
-            default_reader=json_reader,
-            headers=headers,
-            **kwargs,
-        )
-
     async def get_drives(self, group_id: str, headers: dict[str, str], **kwargs):
         """
         See description in

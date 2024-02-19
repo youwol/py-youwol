@@ -70,11 +70,6 @@ router = APIRouter(tags=["flux-backend"])
 flatten = itertools.chain.from_iterable
 
 
-@router.get("/healthz")
-async def healthz():
-    return {"status": "flux-backend serving"}
-
-
 @router.get(
     "/projects", response_model=Projects, summary="retrieve the list of projects"
 )

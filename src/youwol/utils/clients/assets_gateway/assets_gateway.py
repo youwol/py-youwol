@@ -9,7 +9,7 @@ from youwol.utils.clients.assets.assets import AssetsClient
 from youwol.utils.clients.cdn import CdnClient
 from youwol.utils.clients.files import FilesClient
 from youwol.utils.clients.flux.flux import FluxClient
-from youwol.utils.clients.request_executor import RequestExecutor, json_reader
+from youwol.utils.clients.request_executor import RequestExecutor
 from youwol.utils.clients.stories.stories import StoriesClient
 from youwol.utils.clients.treedb.treedb import TreeDbClient
 
@@ -94,11 +94,4 @@ class AssetsGatewayClient:
         return CdnClient(
             url_base=f"{self.url_base}/cdn-backend",
             request_executor=self.request_executor,
-        )
-
-    async def healthz(self, **kwargs):
-        return await self.request_executor.get(
-            url=f"{self.url_base}/healthz",
-            default_reader=json_reader,
-            **kwargs,
         )

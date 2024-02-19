@@ -79,11 +79,6 @@ router = APIRouter(tags=["stories-backend"])
 flatten = itertools.chain.from_iterable
 
 
-@router.get("/healthz")
-async def healthz():
-    return {"status": "stories-backend serving"}
-
-
 @router.post(
     "/stories", response_model=StoryResp, summary="publish a story from zip file"
 )

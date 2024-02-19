@@ -7,7 +7,6 @@ from fastapi import APIRouter
 from fastapi import Request as FastAPI_Request
 from fastapi import Response as FastAPI_Response
 from fastapi import status
-from starlette.responses import JSONResponse
 
 # relative
 from .models import Body, Handler, Request, status_200_OK, status_204_NoContent
@@ -19,11 +18,6 @@ handlers: dict[str, Handler] = {}
 
 def ref(method: str, handler_id: str, public: bool):
     return f"{method}:{handler_id}{(':public' if public else '')}"
-
-
-@router.get("/healthz")
-async def healthz():
-    return JSONResponse(status_code=200, content={"status": "mock backend ok"})
 
 
 @router.put("/admin/pub/{handler_id}")

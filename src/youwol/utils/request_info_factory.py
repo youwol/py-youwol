@@ -130,7 +130,7 @@ class CdnAppsServer(PatternRequestInfoExtractor):
         try:
             [_, [a, b, *_]] = substitutes
         except ValueError:
-            # e.g., for the 'healthz' end-point
+            # Is this deprecated ?
             [_, a] = substitutes
             return RequestInfo(
                 message=f"application ({a})",
