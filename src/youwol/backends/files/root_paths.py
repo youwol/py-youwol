@@ -26,11 +26,6 @@ router = APIRouter(tags=["files-backend"])
 flatten = itertools.chain.from_iterable
 
 
-@router.get("/healthz")
-async def healthz():
-    return {"status": "file-backend serving"}
-
-
 @router.post("/files", response_model=PostFileResponse, summary="Upload a file.")
 async def upload(
     request: Request, configuration: Configuration = Depends(get_configuration)

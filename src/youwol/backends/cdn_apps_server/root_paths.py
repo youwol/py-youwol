@@ -51,11 +51,6 @@ async def get_raw_resource(
             raise await upstream_exception_from_response(resp)
 
 
-@router.get("/healthz")
-async def healthz():
-    return {"status": "cdn-apps-server ok"}
-
-
 @router.get("/{rest_of_path:path}")
 async def catch_all_no_namespace(request: Request, rest_of_path: str) -> Response:
     """

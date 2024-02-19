@@ -6,7 +6,6 @@ from fastapi import APIRouter, Depends
 from fastapi.params import Cookie
 from pydantic import BaseModel
 from starlette.requests import Request
-from starlette.responses import JSONResponse, Response
 
 # Youwol backends
 from youwol.backends.accounts.configuration import Configuration, get_configuration
@@ -18,11 +17,6 @@ from youwol.utils import get_all_individual_groups, private_group_id, to_group_i
 from .utils import url_for
 
 router = APIRouter(tags=["accounts"])
-
-
-@router.get("/healthz")
-async def root() -> Response:
-    return JSONResponse(status_code=200, content={"status": "accounts backend ok"})
 
 
 class SessionDetailsUserGroup(BaseModel):

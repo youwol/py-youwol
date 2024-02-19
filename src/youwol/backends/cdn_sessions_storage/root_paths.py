@@ -19,11 +19,6 @@ from youwol.utils.context import Context
 router = APIRouter(tags=["cdn-sessions-storage"])
 
 
-@router.get("/healthz")
-async def healthz():
-    return {"status": "cdn-sessions-storage ok"}
-
-
 async def post_data_generic(
     request: Request,
     package: str,

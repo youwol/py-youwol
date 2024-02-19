@@ -35,11 +35,6 @@ class AssetsClient:
     Request executor.
     """
 
-    async def healthz(self, **kwargs):
-        return await self.request_executor.get(
-            url=f"{self.url_base}/healthz", default_reader=json_reader, **kwargs
-        )
-
     async def create_asset(self, body, **kwargs):
         """
         See description in

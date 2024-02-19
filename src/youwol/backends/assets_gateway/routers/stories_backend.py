@@ -45,14 +45,6 @@ from youwol.utils.http_clients.stories_backend import (
 router = APIRouter(tags=["assets-gateway.stories-backend"])
 
 
-@router.get("/healthz")
-async def healthz(
-    request: Request, configuration: Configuration = Depends(get_configuration)
-):
-    async with Context.start_ep(request=request) as ctx:
-        return await configuration.stories_client.healthz(headers=ctx.headers())
-
-
 @router.put("/stories", response_model=NewAssetResponse, summary="create a new story")
 async def put_story(
     request: Request,

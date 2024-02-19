@@ -67,8 +67,3 @@ router.include_router(
     prefix="/assets-backend",
     dependencies=[Depends(get_configuration)],
 )
-
-
-@router.get("/healthz")
-async def healthz():
-    return {"status": "assets-gateway ok"}

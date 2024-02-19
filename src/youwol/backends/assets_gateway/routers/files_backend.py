@@ -53,16 +53,6 @@ mime_types_images = [
 ]
 
 
-@router.get("/healthz")
-async def healthz(
-    request: Request, configuration: Configuration = Depends(get_configuration)
-):
-    async with Context.start_ep(request=request) as ctx:  # type: Context
-        return await configuration.files_client.healthz(
-            headers=ctx.headers(from_req_fwd=lambda header_keys: header_keys)
-        )
-
-
 @router.post("/files", response_model=NewAssetResponse, summary="create a new file")
 async def upload(
     request: Request,
