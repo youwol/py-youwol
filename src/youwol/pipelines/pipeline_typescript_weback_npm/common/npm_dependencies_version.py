@@ -1,16 +1,16 @@
 def extract_npm_dependencies_dict(names: list[str]):
     dependencies = {
         "@types/jest": "^29.5.6",
-        "@types/node": "^20.11.10",  # peer dependency for @youwol/tsconfig
+        "@types/node": "^20.11.19",  # peer dependency for @youwol/tsconfig
         "@types/webpack": "^5.28.0",
         "@youwol/cdn-client": "^2.1.0",
-        "@youwol/eslint-config": "^1.2.0",
+        "@youwol/eslint-config": "^1.2.1",
         "@youwol/flux-view": "^1.2.0",
         "@youwol/http-clients": "^3.0.0",
-        "@youwol/jest-preset": "^1.2.0",
-        "@youwol/prettier-config": "^1.2.0",
+        "@youwol/jest-preset": "^1.2.1",
+        "@youwol/prettier-config": "^1.2.1",
         "@youwol/rx-vdom": "^1.0.1",
-        "@youwol/tsconfig": "^1.2.0",
+        "@youwol/tsconfig": "^1.2.1",
         "@youwol/webpm-client": "^3.0.0",
         "css-loader": "^6.8.1",
         "del-cli": "^5.1.0",
@@ -22,7 +22,7 @@ def extract_npm_dependencies_dict(names: list[str]):
         "source-map-loader": "4.0.1",
         "ts-loader": "9.5.0",
         "ts-node": "10.9.2",  # peer dependency for @youwol/tsconfig
-        "tsx": "4.7.0",
+        "tsx": "4.7.1",  # peer dependency for @youwol/tsconfig
         "typedoc": "^0.25.7",
         "typescript": "5.3.3",  # peer dependency for @youwol/tsconfig
         "webpack": "^5.89.0",

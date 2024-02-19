@@ -37,14 +37,14 @@ collaborative space for research and development, fostering innovation.
 
 The solution is built on three foundational concepts:
 
--   **Online Ecosystem**: This ecosystem brings together a range of assets, including front-end applications/libraries,
-    backend services, and data. They get installed in your PC transparently upon request (usually when accessing a URL).
--   **Dynamic linking**: While regular web application are statically linked to front-end libraries or backend services,
-    in youwol dependencies are linked dynamically. _E.g._ an application always get the latest compatible version of a dependency,
-    including a version that may only exist in your computer (e.g. before publishing it).
--   **Local Python-Based Server**: Serving as the orchestrator, this server facilitates access and potential downloads
-    of various assets from the ecosystem to the user's PC.
-    It provides services for data management, user sessions, authentications, and maintains flexibility to meet diverse developer needs.
+- **Online Ecosystem**: This ecosystem brings together a range of assets, including front-end applications/libraries,
+  backend services, and data. They get installed in your PC transparently upon request (usually when accessing a URL).
+- **Dynamic linking**: While regular web application are statically linked to front-end libraries or backend services,
+  in youwol dependencies are linked dynamically. _E.g._ an application always get the latest compatible version of a dependency,
+  including a version that may only exist in your computer (e.g. before publishing it).
+- **Local Python-Based Server**: Serving as the orchestrator, this server facilitates access and potential downloads
+  of various assets from the ecosystem to the user's PC.
+  It provides services for data management, user sessions, authentications, and maintains flexibility to meet diverse developer needs.
 
 <!--
 The essence of YouWol lies in fostering collaboration:
@@ -73,8 +73,8 @@ any application available in the ecosystem can be loaded through the URL:
 
 where:
 
--   `$APP_VERSION` is the name of the application.
--   `$APP_VERSION` is the version requests, or a semver query.
+- `$APP_VERSION` is the name of the application.
+- `$APP_VERSION` is the version requests, or a semver query.
 
 More information regarding installation can be found [here](@nav/how-to/install-youwol.md),
 command line options to start youwol are explained [here](@nav/how-to/start-youwol.md).

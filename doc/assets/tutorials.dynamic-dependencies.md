@@ -46,8 +46,8 @@ return async ({webpm}) => {
 
 ```javascript hl_lines="1-4"
 const { marked } = await webpm.install({
-    modules: ['marked#^5.52.0 as marked'],
-    displayLoadingScreen: true,
+  modules: ['marked#^5.52.0 as marked'],
+  displayLoadingScreen: true,
 })
 const output = `# Pi computation`
 
@@ -70,9 +70,9 @@ It is possible to install python runtime and python modules, for instance to use
 
 ```javascript hl_lines="3 6-13 16-17"
 const { marked } = await webpm.install({
-    modules: ['marked#^5.52.0 as marked'],
-    python: ['numpy'],
-    displayLoadingScreen: true,
+  modules: ['marked#^5.52.0 as marked'],
+  python: ['numpy'],
+  displayLoadingScreen: true,
 })
 const src = `
 import numpy as np
@@ -93,10 +93,10 @@ document.body.innerHTML = marked.parse(output)
 
 In the example:
 
--   the `numpy` python module is requested; requesting python modules initialize the python runtime, later accessible
-    using `webpm.python`.
--   in the next block an approximation of PI is computed using a Monte Carlo method
--   the value is the displayed in the output
+- the `numpy` python module is requested; requesting python modules initialize the python runtime, later accessible
+  using `webpm.python`.
+- in the next block an approximation of PI is computed using a Monte Carlo method
+- the value is the displayed in the output
 
 ## Backends
 
@@ -104,10 +104,10 @@ In the example:
 
 ```javascript hl_lines="4 16 21-22"
 const { marked, pyBackend } = await webpm.install({
-    modules: ['marked#^4.2.3 as marked'],
-    python: ['numpy'],
-    backends: ['@youwol/python-numpy#^1.0.0 as pyBackend'],
-    displayLoadingScreen: true,
+  modules: ['marked#^4.2.3 as marked'],
+  python: ['numpy'],
+  backends: ['@youwol/python-numpy#^1.0.0 as pyBackend'],
+  displayLoadingScreen: true,
 })
 const src = `
 import numpy as np
