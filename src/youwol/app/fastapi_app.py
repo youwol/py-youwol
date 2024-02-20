@@ -46,6 +46,7 @@ from youwol.utils import (
     factory_local_cache,
     unexpected_exception_handler,
     youwol_exception_handler,
+    yw_doc_version,
 )
 from youwol.utils.clients.oidc.tokens_manager import TokensManager
 from youwol.utils.context import Context, ContextFactory, InMemoryReporter
@@ -176,6 +177,7 @@ def setup_middlewares(env: YouwolEnvironment):
         on_missing_token=lambda url, text: (
             redirect_to_login(url)
             if url.path.startswith("/applications")
+            or url.path in ["/", "/doc", "/healthz"]
             else Response(content=f"Authentication failure : {text}", status_code=403)
         ),
     )
@@ -222,6 +224,13 @@ def setup_http_routers():
     async def home():
         return RedirectResponse(
             status_code=308, url="/applications/@youwol/platform/latest"
+        )
+
+    @fastapi_app.get(api_configuration.base_path + "/doc")
+    async def doc():
+        return RedirectResponse(
+            status_code=308,
+            url=f"/applications/@youwol/py-youwol-doc/{yw_doc_version()}",
         )
 
 

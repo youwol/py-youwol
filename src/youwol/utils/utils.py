@@ -1,7 +1,9 @@
 # standard library
 import base64
 import datetime
+import importlib.metadata
 import itertools
+import tomllib
 
 from collections.abc import Callable, Iterable
 from enum import Enum
@@ -17,6 +19,9 @@ from fastapi import HTTPException
 from pydantic import BaseModel
 from starlette.datastructures import Headers
 from starlette.requests import Request
+
+# Youwol
+import youwol
 
 # Youwol utilities
 from youwol.utils.clients.utils import to_group_id
@@ -328,3 +333,71 @@ def to_json_rec(_obj: AnyDict | list[Any] | JSON):
 def to_json(obj: BaseModel | JSON) -> JSON:
     base = obj.dict() if isinstance(obj, BaseModel) else obj
     return to_json_rec(base)
+
+
+def yw_version() -> str:
+    """
+    Retrieves the version of the `youwol` module currently in use.
+
+    This function attempts to determine the version of YouWol in the following order:
+    1. Checks if YouWol is running from source by looking for the 'pyproject.toml' file
+    in the expected directory structure. If found, it reads the version directly from this file.
+    2. If not running from source, it attempts to retrieve the installed package version using `importlib.metadata`.
+
+    Return:
+        The version of the `youwol` module, following Semantic Versioning.
+
+    Raise:
+        `ModuleNotFoundError`: If it fails to locate the YouWol module in the environment,
+            indicating that YouWol is neither installed as a package nor running from source.
+            This exception suggests that there is a configuration or installation issue that needs to be addressed.
+    """
+
+    py_yw_folder = Path(youwol.__file__).parent / ".." / ".."
+    if (py_yw_folder / "pyproject.toml").exists():
+        # If this file exist and is defining a project 'youwol',
+        # it is assumed that youwol is running from sources
+        with open(py_yw_folder / "pyproject.toml", "rb") as f:
+            data = tomllib.load(f)
+            if data["project"]["name"] == "youwol":
+                return data["project"]["version"]
+
+    try:
+        return importlib.metadata.version("youwol")
+    except importlib.metadata.PackageNotFoundError:
+        pass
+
+    raise ModuleNotFoundError(
+        "The module youwol is neither installed nor running from sources"
+    )
+
+
+def yw_doc_version() -> str:
+    """
+    Retrieves the version of the YouWol documentation app.
+
+    This function determines the version of the YouWol documentation app based on the version of the YouWol platform.
+    Due to limitations in the semantic versioning supported for components in the CDN-backend service,
+    a transformation is required from the YouWol version to the documentation app version.
+    See [publish_library](@yw-nav-func:cdn.root_paths.publish_library).
+
+    Return:
+        Documentation app. version.
+
+    Raise:
+        `ModuleNotFoundError`: if the `youwol` module can not be found,
+        see [yw_version](@yw-nav-func:yw_version).
+    """
+    version = yw_version()
+
+    wip_suffixes = [".dev", "rc"]
+    for suffix in wip_suffixes:
+        if suffix in version:
+            return f"{version.split(suffix)[0]}-wip"
+
+    final_suffixes = [".post"]
+    for suffix in final_suffixes:
+        if suffix in version:
+            return f"{version.split(suffix)[0]}"
+
+    return version
