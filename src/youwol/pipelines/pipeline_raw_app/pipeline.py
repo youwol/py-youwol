@@ -43,7 +43,7 @@ class Environment(BaseModel):
 
 def set_environment(environment: Environment = Environment()):
     """
-    Set the global [environment](@yw-nav-class:youwol.pipelines.pipeline_raw_app.Environment) of the pipeline
+    Set the global [environment](@yw-nav-class:pipeline_raw_app.pipeline.Environment) of the pipeline
     (the remote CDN targets).
 
     Example:

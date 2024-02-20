@@ -42,7 +42,7 @@ INSTALL_MANIFEST_FILE = "install.manifest.txt"
 
 class InstallBackendEvent(BaseModel):
     """
-    Represents an event associated to a pipeline step.
+    Represents an event associated to a backend installation.
     """
 
     installId: str

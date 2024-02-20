@@ -73,7 +73,7 @@ class ProjectsLoadingResults(BaseModel):
     """
     failures: FailuresReport
     """
-    *List[[FailuresReport](@yw-nav-class:youwol.app.routers.projects.projects_loader.FailuresReport)]*
+    *List[[FailuresReport](@yw-nav-class:FailuresReport)]*
 
     The list of projects that did not loaded successfully.
     """
@@ -82,7 +82,7 @@ class ProjectsLoadingResults(BaseModel):
 class ProjectLoader:
     """
     Singleton managing projects loading, and eventually auto-discovering of new/removed projects
-    (see [RecursiveProjectFinder](@yw-nav-class:youwol.app.environment.models.models_config.RecursiveProjectFinder)).
+    (see [RecursiveProjectsFinder](@yw-nav-class:RecursiveProjectsFinder)).
     """
 
     context = Context(logs_reporters=[], data_reporters=[WsDataStreamer()])

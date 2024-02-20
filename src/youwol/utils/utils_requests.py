@@ -115,11 +115,11 @@ def aiohttp_file_form(
 ) -> FormData:
     """
     Create a `FormData` to upload a file (e.g. using
-    [assets_gateway](@yw-nav-func:youwol.backends.assets_gateway.routers.assets.upload))
+    [assets_gateway](@yw-nav-func:assets_gateway.routers.assets_backend.zip_all_files))
 
     Parameters:
         filename: Name of the file.
-        content_type: Content type of the file, see []().
+        content_type: Content type of the file.
         content: The actual content of the file.
         file_id: An explicit file's ID if provided (generated if not).
 

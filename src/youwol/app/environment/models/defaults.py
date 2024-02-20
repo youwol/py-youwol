@@ -20,33 +20,33 @@ default_openid_client_id: str = "tbd_test_openid_connect_js"
 default_path_data_dir: Path = Path("./databases")
 """
 Default path used in
-[LocalEnvironment.dataDir](@yw-nav-attr:youwol.app.environment.models.models_config.LocalEnvironment)
+[LocalEnvironment.dataDir](@yw-nav-attr:models_config.LocalEnvironment.dataDir)
 """
 
 default_path_cache_dir: Path = Path("./system")
 """
 Default path used in
-[LocalEnvironment.cacheDir](@yw-nav-attr:youwol.app.environment.models.models_config.LocalEnvironment.cacheDir)
+[LocalEnvironment.cacheDir](@yw-nav-attr:models_config.LocalEnvironment.cacheDir)
 """
 
 default_path_projects_dir: Path = Path("Projects") / Path("youwol")
 """
 Default path used in
-<a href="@yw-nav-attr:youwol.app.environment.models.models_config.RecursiveProjectsFinder.fromPaths">
+<a href="@yw-nav-attr:RecursiveProjectsFinder.fromPaths">
 RecursiveProjectsFinder.fromPaths</a>
 """
 
 default_path_tokens_storage: Path = Path("./tokens_storage.json")
 """
 Default path used in
-[TokensStoragePath.path](@yw-nav-attr:youwol.app.environment.models.models_config.TokensStoragePath.path)
+[TokensStoragePath.path](@yw-nav-attr:TokensStoragePath.path)
 """
 
 
 default_path_tokens_storage_encrypted: Path = Path("./tokens_storage.json.encrypted")
 """
 Default path used in
-<a href="@yw-nav-attr:youwol.app.environment.models.models_config.TokensStorageSystemKeyring.path">
+<a href="@yw-nav-attr:TokensStorageSystemKeyring.path">
 TokensStorageSystemKeyring.path</a>>
 """
 
@@ -61,14 +61,14 @@ default_ignored_paths: list[str] = [
 ]
 """
 Default path used in
-<a href="@yw-nav-attr:youwol.app.environment.models.models_config.RecursiveProjectsFinder.ignoredPatterns">
+<a href="@yw-nav-attr:RecursiveProjectsFinder.ignoredPatterns">
 RecursiveProjectsFinder.ignoredPatterns></a>.
 """
 
 
 def default_auth_provider(platform_host: str = default_platform_host) -> JSON:
     """
-    Return an [authProvider](@yw-nav-attr:youwol.app.environment.models.models_config.CloudEnvironment.authProvider)
+    Return an [authProvider](@yw-nav-attr:CloudEnvironment.authProvider)
     specification associated to a KeyCloak accounts manager.
 
     Parameters:

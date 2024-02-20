@@ -21,8 +21,8 @@ class RootMiddleware(BaseHTTPMiddleware):
     """
     The first Middleware intercepting the request.
 
-    Its purpose is mostly to set up the initial [context](@yw-nav-class:youwol.utils.context.Context),
-    from the method [get_context](@yw-nav-meth:youwol.utils.middlewares.root_middleware.RootMiddleware.get_context)
+    Its purpose is mostly to set up the initial [context](@yw-nav-class:Context),
+    from the method [get_context](@yw-nav-meth:RootMiddleware.get_context)
 
     The context created here is then propagated through the middlewares stack up to the end-point destination.
     """

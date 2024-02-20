@@ -6,15 +6,15 @@ This module defines the YouWol server application
 
 It encompasses the following submodules:
 
-- [`environment`](@yw-nav-mod:youwol.app.environment): Components regarding runtime information of the
+- [`environment`](@yw-nav-mod:app.environment): Components regarding runtime information of the
 current environment.
-- [`middlewares`](@yw-nav-mod:youwol.app.middlewares): The middlewares used in the local server.
-- [`routers`](@yw-nav-mod:youwol.app.routers): The HTTP routers, specifying the available endpoints for
+- [`middlewares`](@yw-nav-mod:app.middlewares): The middlewares used in the local server.
+- [`routers`](@yw-nav-mod:app.routers): The HTTP routers, specifying the available endpoints for
  the local server.
 
 Communication with the local server can be achieved through two mechanisms:
 
-- **HTTP calls**: Utilized for most endpoints defined in the [`routers`](@yw-nav-mod:youwol.app.routers).
+- **HTTP calls**: Utilized for most endpoints defined in the [`routers`](@yw-nav-mod:app.routers).
 Each HTTP call results in a single HTTP response.
 - **Web Sockets**: Employed for sending updates related to tasks handled by the server, such as asset downloads,
  step execution, and logs. Web Sockets are also useful for transmitting updates and results from lengthy computations.

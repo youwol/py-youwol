@@ -8,13 +8,28 @@ from youwol.utils import Storage
 
 @dataclass(frozen=True)
 class Constants:
+    """
+    Configuration's constants for the service.
+    """
+
     namespace: str = "cdn-sessions-storage"
+    """
+    namespace of the service
+    """
     default_owner: str = "/youwol-users"
 
 
 @dataclass(frozen=True)
 class Configuration:
+    """
+    Configuration of the service.
+    """
+
     storage: Storage
+    """
+    File system client using a bucket defined by this
+    [namespace](@yw-nav-attr:cdn_sessions_storage.configurations.Constants.namespace).
+    """
 
 
 class Dependencies:

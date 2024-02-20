@@ -225,7 +225,7 @@ async def resolve_loading_tree(
 ):
     """
     Forward to
-    [cdn.query_loading_graph](@yw-nav-func:youwol.backends.cdn.root_paths.query_loading_graph)
+    [cdn.query_loading_graph](@yw-nav-func:cdn.root_paths.resolve_loading_tree)
     of [cdn](@yw-nav-mod:youwol.backends.cdn) service.
     """
     async with Context.start_ep(request=request) as ctx:
@@ -311,7 +311,7 @@ async def get_explorer(
 ):
     """
     If permissions are granted, forward to
-    [cdn.get_explorer](@yw-nav-func:youwol.backends.cdn.root_paths.get_explorer)
+    [cdn.get_explorer](@yw-nav-func:get_explorer)
     of [cdn](@yw-nav-mod:youwol.backends.cdn) service.
     """
     async with Context.start_ep(

@@ -33,11 +33,11 @@ class PipelineFactory(IPipelineFactory):
 ```
 
 Additional options regarding packaging can be defined within
-[PipelineConfig](@yw-nav-class:youwol.pipelines.pipeline_raw_app.PipelineConfig).
+[PipelineConfig](@yw-nav-class:pipeline_raw_app.pipeline.PipelineConfig).
 
 The pipeline is globally configured by default to publish in the remote CDN `platform.youwol.com` using
-[browser based authentication](@yw-nav-class:youwol.app.environment.models.models_config.BrowserAuth).
-Refer to the function [set_environment](@yw-nav-function:youwol.pipelines.pipeline_raw_app.set_environment) to specify
+[browser based authentication](@yw-nav-class:BrowserAuth).
+Refer to the function [set_environment](@yw-nav-func:pipeline_raw_app.pipeline.set_environment) to specify
 other targets.
 
 """

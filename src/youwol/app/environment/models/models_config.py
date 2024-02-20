@@ -102,7 +102,7 @@ class LocalEnvironment(BaseModel):
     """
     Defines folder location in which persisted data are saved.
 
-    See [default_path_data_dir](@yw-nav-glob:youwol.app.environment.models.defaults.default_path_data_dir)
+    See [default_path_data_dir](@yw-nav-glob:default_path_data_dir)
      regarding default value.
     value.
     """
@@ -111,7 +111,7 @@ class LocalEnvironment(BaseModel):
     """
     Defines folder location of cached data.
 
-    See [default_path_cache_dir](@yw-nav-glob:youwol.app.environment.models.defaults.default_path_cache_dir)
+    See [default_path_cache_dir](@yw-nav-glob:default_path_cache_dir)
      regarding default value.
     """
 
@@ -140,7 +140,7 @@ class System(BaseModel):
     *  it connects to `platform.youwol.com` to download missing assets, using a browser based authentication
     (through cookies)
     *  it persists the assets in a common place on your computer
-    (see [LocalEnvironment](@yw-nav-class:youwol.app.environment.models.models_config.LocalEnvironment))
+    (see [LocalEnvironment](@yw-nav-class:models_config.LocalEnvironment))
 
     The above example is equivalent to:
     ```python
@@ -193,12 +193,12 @@ class System(BaseModel):
     """
     How to store JWT tokens:
 
-    * <a href="@yw-nav-class:youwol.app.environment.models.models_config.TokensStorageSystemKeyring">
+    * <a href="@yw-nav-class:TokensStorageSystemKeyring">
      TokensStorageSystemKeyring()</a>:
     use system keyring
-    * [TokensStoragePath()](@yw-nav-class:youwol.app.environment.models.models_config.TokensStoragePath) :
+    * [TokensStoragePath()](@yw-nav-class:TokensStoragePath) :
      store in file
-    * [TokensStorageInMemory()](@yw-nav-class:youwol.app.environment.models.models_config.TokensStorageInMemory) :
+    * [TokensStorageInMemory()](@yw-nav-class:TokensStorageInMemory) :
      store in memory
     """
 
@@ -303,7 +303,7 @@ class CustomEndPoints(BaseModel):
 class CustomMiddleware(BaseModel, ABC):
     """
     Abstract class to define middleware, see for instance the
-    [FlowSwitcherMiddleware](@yw-nav-class:youwol.app.environment.models.models_config.FlowSwitcherMiddleware).
+    [FlowSwitcherMiddleware](@yw-nav-class:FlowSwitcherMiddleware).
 
     Derived implementation must provide the **dispatch** method.
 
@@ -344,7 +344,7 @@ class CustomMiddleware(BaseModel, ABC):
         Attributes:
             incoming_request: incoming [Request](https://fastapi.tiangolo.com/reference/request/)
             call_next: trigger the next target in the call stack
-            context: [Context](@yw-nav-class:youwol.utils.context.Context)
+            context: [Context](@yw-nav-class:Context)
 
         Return:
             The response
@@ -417,7 +417,7 @@ class Customization(BaseModel):
         *  **events**: allows to react to some events, here the `onLoad` event (configuration loaded).
         *  **middlewares**: attribute provide the ability to plug custom middlewares.
         *  **endPoints**: attribute allows to add end-points to the youwol server, usually as
-        [Command](@yw-nav-class:youwol.app.environment.models.models_config.Command).
+        [Command](@yw-nav-class:Command).
 
     """
 

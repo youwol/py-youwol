@@ -53,7 +53,7 @@ class ProxiedBackend(BaseModel):
 
 class ProxyInfo(BaseModel):
     """
-    Info regarding a [ProxiedBackend](@yw-nav-class:youwol.app.environment.proxied_backends.ProxiedBackend).
+    Info regarding a [ProxiedBackend](@yw-nav-class:ProxiedBackend).
     """
 
     name: str
