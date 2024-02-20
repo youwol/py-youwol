@@ -331,8 +331,43 @@ class DocModuleResponse(BaseModel):
     """
 
 
+class DocCrossLinkErrorResponse(BaseModel):
+    """
+    Describes an error regarding cross-linking in docstrings.
+    """
+
+    path: str
+    """
+    Canonical path of the symbol bound to the associated docstring.
+    """
+    startLine: int
+    """
+    Start line number of the associated docstring in the file.
+    """
+    endLine: int
+    """
+    End line number of the associated docstring in the file.
+    """
+    error: str
+    """
+    Error description.
+    """
+
+
+class DocAnalysisResponse(BaseModel):
+    """
+    Analysis report of the youwol's inlined documentation.
+    """
+
+    crossLinkErrors: list[DocCrossLinkErrorResponse]
+    """
+    Errors regarding cross-links.
+    """
+
+
 class DocCache:
     flat_classes: set[type] = set()
+    all_symbols: list[str] = []
     # For some symbols, we can not get the parent file automatically, they are explicitly provided here.
     module_to_file_issues = {
         # This type alias definition cause trouble to retrieve the parent file.
