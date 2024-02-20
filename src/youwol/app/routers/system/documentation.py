@@ -1,10 +1,16 @@
 # standard library
+import dataclasses
 import functools
 import importlib
 import inspect
+import os
+import re
 
 from pathlib import Path, PosixPath
 from types import ModuleType
+
+# typing
+from typing import Literal, cast
 
 # third parties
 from griffe.dataclasses import (
@@ -58,10 +64,58 @@ INIT_FILENAME = "__init__.py"
 YOUWOL_MODULE = "youwol"
 
 
+@dataclasses.dataclass(frozen=True)
+class ModuleElements:
+    modules: list[Module]
+    files: list[Module]
+    classes: list[Class]
+    functions: list[Function]
+    attributes: list[Attribute]
+
+
+def extract_module(griffe_doc: Module) -> ModuleElements:
+
+    no_alias = {k: v for k, v in griffe_doc.modules.items() if not isinstance(v, Alias)}
+
+    modules = [
+        v
+        for k, v in no_alias.items()
+        if isinstance(v.filepath, PosixPath)
+        and v.filepath.name == INIT_FILENAME
+        and v.docstring
+    ]
+    files = [v for k, v in no_alias.items() if k not in modules]
+    classes = [
+        c
+        for v in files
+        for c in v.classes.values()
+        if isinstance(c, Class) and c.docstring
+    ]
+    functions = [
+        f
+        for v in files
+        for f in v.functions.values()
+        if isinstance(f, Function) and f.docstring
+    ]
+    attributes = [
+        a
+        for v in files
+        for a in v.attributes.values()
+        if isinstance(a, Attribute) and a.docstring
+    ]
+    return ModuleElements(
+        modules=modules,
+        files=files,
+        classes=classes,
+        functions=functions,
+        attributes=attributes,
+    )
+
+
 def is_leaf_module(path: str) -> bool:
     module_doc = functools.reduce(
         lambda acc, e: acc.modules[e] if e else acc,
-        path.split("."),
+        path.replace("youwol.", "").split("."),
         DocCache.global_doc,
     )
 
@@ -77,43 +131,19 @@ def is_leaf_module(path: str) -> bool:
 
 
 def format_module_doc(griffe_doc: Module, path: str) -> DocModuleResponse:
-    no_alias = {k: v for k, v in griffe_doc.modules.items() if not isinstance(v, Alias)}
-    true_modules = [
-        DocChildModulesResponse(
-            name=k,
-            path=f"{path}.{k}",
-            isLeaf=is_leaf_module(path=f"{path}.{k}"),
-        )
-        for k, v in no_alias.items()
-        if isinstance(v.filepath, PosixPath)
-        and v.filepath.name == INIT_FILENAME
-        and v.docstring
-    ]
-    files = {k: v for k, v in no_alias.items() if k not in true_modules}
-    classes = [
-        format_class_doc(c)
-        for v in files.values()
-        for c in v.classes.values()
-        if isinstance(c, Class) and c.docstring
-    ]
-    functions = [
-        format_function_doc(f)
-        for v in files.values()
-        for f in v.functions.values()
-        if isinstance(f, Function) and f.docstring
-    ]
-    attributes = [
-        format_attribute_doc(a)
-        for v in files.values()
-        for a in v.attributes.values()
-        if isinstance(a, Attribute) and a.docstring
-    ]
+
+    elements = extract_module(griffe_doc=griffe_doc)
+    modules = [format_child_module_doc(m) for m in elements.modules]
+    classes = [format_class_doc(c) for c in elements.classes]
+    functions = [format_function_doc(f) for f in elements.functions]
+    attributes = [format_attribute_doc(a) for a in elements.attributes]
     sections = get_docstring_sections(griffe_doc)
+
     return DocModuleResponse(
         name=griffe_doc.name,
         path=path,
-        docstring=format_detailed_docstring(sections=sections),
-        childrenModules=sorted(true_modules, key=lambda m: m.name),
+        docstring=format_detailed_docstring(sections=sections, parent=griffe_doc),
+        childrenModules=sorted(modules, key=lambda m: m.name),
         attributes=sorted(attributes, key=lambda m: m.name),
         classes=sorted(classes, key=lambda c: c.name),
         functions=sorted(functions, key=lambda c: c.name),
@@ -148,6 +178,14 @@ def get_docstring_sections(
     return docstring.parse("google")
 
 
+def format_child_module_doc(griffe_doc: Module) -> DocChildModulesResponse:
+    return DocChildModulesResponse(
+        name=griffe_doc.name,
+        path=griffe_doc.canonical_path,
+        isLeaf=is_leaf_module(path=griffe_doc.canonical_path),
+    )
+
+
 def format_class_doc(griffe_doc: Class) -> DocClassResponse:
     parent_module = ".".join(griffe_doc.canonical_path.split(".")[0:-1])
     my_module = importlib.import_module(parent_module)
@@ -156,7 +194,9 @@ def format_class_doc(griffe_doc: Class) -> DocClassResponse:
 
     return DocClassResponse(
         name=griffe_doc.name,
-        docstring=format_detailed_docstring(get_docstring_sections(griffe_doc)),
+        docstring=format_detailed_docstring(
+            get_docstring_sections(griffe_doc), parent=griffe_doc
+        ),
         path=str(griffe_doc.path),
         inheritedBy=[
             DocTypeResponse(name=d.__name__, path=f"{d.__module__}.{d.__name__}")
@@ -206,13 +246,15 @@ def format_function_doc(griffe_doc: Function) -> DocFunctionResponse:
         None,
     )
 
-    formatted = format_detailed_docstring(sections)
+    formatted = format_detailed_docstring(sections, parent=griffe_doc)
     returns_doc = None
     if returns:
         try:
             returns_doc = DocReturnsResponse(
                 type=format_type_annotation_doc(griffe_doc.returns),
-                docstring=returns.value.description,
+                docstring=replace_links(
+                    returns.value.description, from_module=griffe_doc.canonical_path
+                ),
             )
         except Exception as e:
             log_error(f"Failed to parse return of function {griffe_doc.name}: {e}")
@@ -224,25 +266,91 @@ def format_function_doc(griffe_doc: Function) -> DocFunctionResponse:
             DocDecoratorResponse(path=d.value.path) for d in griffe_doc.decorators
         ],
         path=str(griffe_doc.path),
-        parameters=[format_parameter_doc(p, params) for p in griffe_doc.parameters],
+        parameters=[
+            format_parameter_doc(p, params, function=griffe_doc)
+            for p in griffe_doc.parameters
+        ],
         returns=returns_doc,
         code=format_code_doc(griffe_doc),
     )
 
 
+cross_ref_pattern = re.compile(
+    r"\[(.*?)]\(@yw-nav-(mod|class|attr|meth|glob|func):(.*?)\)"
+)
+
+CrossLink = Literal["mod", "class", "attr", "meth", "func", "glob"]
+
+
+def get_cross_link_candidates(
+    link_type: CrossLink, short_link: str, all_symbols: list[str]
+):
+
+    short_link_sanitized = (
+        short_link if short_link.startswith("youwol") else f".{short_link}"
+    )
+    parent = ".".join(short_link_sanitized.split(".")[0:-1])
+
+    return (
+        [s for s in all_symbols if s.endswith(short_link_sanitized)]
+        if link_type in {"mod", "class", "func", "glob"}
+        else [s for s in all_symbols if s.endswith(parent)]
+    )
+
+
+def replace_links(text: str, from_module: str) -> str:
+
+    def pick_best_candidate(candidates: list[str]) -> str | None:
+        if not candidates:
+            return None
+
+        if len(candidates) == 1:
+            return candidates[0]
+        longest_prefix = [
+            os.path.commonprefix([from_module, candidate]) for candidate in candidates
+        ]
+        best_index, _ = max(enumerate(longest_prefix), key=lambda x: len(x[1]))
+        return candidates[best_index]
+
+    def replace_function(match):
+        title = match.group(1)
+        link_type: CrossLink = match.group(2)
+        short_link: str = match.group(3)
+        candidates = get_cross_link_candidates(
+            link_type=match.group(2),
+            short_link=match.group(3),
+            all_symbols=DocCache.all_symbols,
+        )
+
+        best = pick_best_candidate(candidates)
+        if link_type in {"mod", "class", "func", "glob"}:
+            return f"[{title}](@yw-nav-{link_type}:{best or short_link})"
+
+        if not best:
+            return f"[{title}](@yw-nav-{link_type}:{short_link})"
+
+        return f"[{title}](@yw-nav-{link_type}:{best}.{short_link.split('.')[-1]})"
+
+    return re.sub(cross_ref_pattern, replace_function, text)
+
+
 def format_detailed_docstring(
-    sections: list[DocstringSection],
+    sections: list[DocstringSection], parent: Function | Class | Attribute | Module
 ) -> list[DocDocstringSectionResponse]:
     def admonition(v: DocstringSectionAdmonition) -> DocDocstringSectionResponse:
         return DocDocstringSectionResponse(
             type="admonition",
             title=v.title,
             tag=v.value.annotation,
-            text=v.value.description,
+            text=replace_links(v.value.description, from_module=parent.canonical_path),
         )
 
     def text(v: DocstringSectionText) -> DocDocstringSectionResponse:
-        return DocDocstringSectionResponse(type="text", title=v.title, text=v.value)
+        return DocDocstringSectionResponse(
+            type="text",
+            title=v.title,
+            text=replace_links(v.value, from_module=parent.canonical_path),
+        )
 
     def factory(v: DocstringSection):
         if isinstance(v, DocstringSectionAdmonition):
@@ -257,7 +365,9 @@ def format_detailed_docstring(
 
 
 def format_parameter_doc(
-    griffe_doc: Parameter, parameters: DocstringSectionParameters | None
+    griffe_doc: Parameter,
+    parameters: DocstringSectionParameters | None,
+    function: Function,
 ) -> DocParameterResponse | None:
     docstring = (
         next(
@@ -269,13 +379,14 @@ def format_parameter_doc(
     return DocParameterResponse(
         name=griffe_doc.name,
         type=format_type_annotation_doc(griffe_doc.annotation),
-        docstring=docstring,
+        docstring=docstring
+        and replace_links(docstring, from_module=function.canonical_path),
     )
 
 
 def format_attribute_doc(griffe_doc: Attribute) -> DocAttributeResponse:
     sections = get_docstring_sections(griffe_doc)
-    docstring = format_detailed_docstring(sections=sections)
+    docstring = format_detailed_docstring(sections=sections, parent=griffe_doc)
     if not griffe_doc.annotation:
         return DocAttributeResponse(
             name=griffe_doc.name,
@@ -389,6 +500,22 @@ def init_classes(module: ModuleType = None, visited: set[ModuleType] = None):
     for _, submodule in inspect.getmembers(module, inspect.ismodule):
         if YOUWOL_MODULE in str(submodule) and submodule not in visited:
             init_classes(submodule, visited)
+
+
+def init_symbols(module: Module, depth=0, max_depth=10) -> list[str]:
+    if depth > max_depth:
+        raise RecursionError("Maximum recursion depth reached")
+
+    elements = extract_module(griffe_doc=module)
+    functions = [f.canonical_path for f in elements.functions]
+    classes = [c.canonical_path for c in elements.classes]
+    attributes = [a.canonical_path for a in elements.attributes]
+    sub_modules = [
+        e
+        for module in elements.modules
+        for e in init_symbols(module=module, depth=depth + 1, max_depth=max_depth)
+    ]
+    return [module.canonical_path, *functions, *classes, *attributes, *sub_modules]
 
 
 def get_classes_inheriting_from(target: type) -> set[type]:

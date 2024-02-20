@@ -26,6 +26,7 @@ from youwol.app.routers.system.documentation import (
     YOUWOL_MODULE,
     format_module_doc,
     init_classes,
+    init_symbols,
 )
 from youwol.app.routers.system.documentation_models import (
     DocCache,
@@ -670,7 +671,7 @@ async def get_documentation(request: Request, rest_of_path: str) -> DocModuleRes
         DocCache.global_doc = DocCache.global_doc or cast(
             Module, griffe.load(YOUWOL_MODULE, submodules=True)
         )
-
+        DocCache.all_symbols = init_symbols(DocCache.global_doc)
         if rest_of_path in DocCache.modules_doc:
             return DocCache.modules_doc[rest_of_path]
         root = rest_of_path == ""

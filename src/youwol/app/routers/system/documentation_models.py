@@ -333,6 +333,7 @@ class DocModuleResponse(BaseModel):
 
 class DocCache:
     flat_classes: set[type] = set()
+    all_symbols: list[str] = []
     # For some symbols, we can not get the parent file automatically, they are explicitly provided here.
     module_to_file_issues = {
         # This type alias definition cause trouble to retrieve the parent file.
