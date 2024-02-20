@@ -48,6 +48,7 @@ from youwol.app.routers.system.documentation_models import (
     DocChildModulesResponse,
     DocClassResponse,
     DocCodeResponse,
+    DocCrossLinkErrorResponse,
     DocDecoratorResponse,
     DocDocstringSectionResponse,
     DocFunctionResponse,
@@ -530,3 +531,59 @@ def get_classes_inheriting_from(target: type) -> set[type]:
             return False
 
     return {c for c in DocCache.flat_classes if is_inherited(c)}
+
+
+def check_documentation(
+    module: Module, depth=0, max_depth=10, all_symbols=None
+) -> list[DocCrossLinkErrorResponse]:
+    all_symbols = all_symbols or init_symbols(module)
+
+    if depth > max_depth:
+        raise RecursionError("Maximum recursion depth reached")
+
+    def analyze(docstring: Docstring, match: list[str]):
+        candidates = get_cross_link_candidates(
+            link_type=cast(CrossLink, match[1]),
+            short_link=match[2],
+            all_symbols=all_symbols,
+        )
+        params = {
+            "path": docstring.parent.canonical_path,
+            "startLine": docstring.lineno,
+            "endLine": docstring.endlineno,
+        }
+        if not candidates:
+            return DocCrossLinkErrorResponse(
+                error=f"No candidate found for {match[2]}", **params
+            )
+        if len(candidates) > 1:
+            return DocCrossLinkErrorResponse(
+                error=f"Multiple candidates found for {match[2]}: {candidates}",
+                **params,
+            )
+        return None
+
+    elements = extract_module(griffe_doc=module)
+    docstrings = [
+        f.docstring
+        for f in [module, *elements.functions, *elements.classes, *elements.attributes]
+    ]
+    all_matches = [
+        (docstring, cross_ref_pattern.findall(docstring.value))
+        for docstring in docstrings
+    ]
+    errors = [
+        analyze(docstring=docstring, match=match)
+        for docstring, matches in all_matches
+        for match in matches
+    ]
+    errors = [e for e in errors if e is not None]
+    sub_modules = [
+        e
+        for module in elements.modules
+        for e in check_documentation(
+            module=module, depth=depth + 1, max_depth=max_depth, all_symbols=all_symbols
+        )
+    ]
+
+    return [*errors, *sub_modules]

@@ -24,11 +24,13 @@ from youwol.app.routers.backends.implementation import INSTALL_MANIFEST_FILE
 from youwol.app.routers.environment.router import get_status_impl
 from youwol.app.routers.system.documentation import (
     YOUWOL_MODULE,
+    check_documentation,
     format_module_doc,
     init_classes,
     init_symbols,
 )
 from youwol.app.routers.system.documentation_models import (
+    DocAnalysisResponse,
     DocCache,
     DocChildModulesResponse,
     DocModuleResponse,
@@ -113,7 +115,7 @@ class QueryRootLogsBody(BaseModel):
 
 class Log(BaseModel):
     """
-    Base class for logs generated from a [context](@yw-nav-class:youwol.utils.context.Context) object.
+    Base class for logs generated from a [context](@yw-nav-class:Context) object.
     """
 
     level: str
@@ -142,13 +144,13 @@ class Log(BaseModel):
 
     contextId: str
     """
-    ID of the context that was used to generate the log (see [Context](@yw-nav-class:youwol.utils.context.Context)).
+    ID of the context that was used to generate the log (see [Context](@yw-nav-class:Context)).
     """
 
     parentContextId: str | None
     """
     ID of the parent context of the context that was used to generate the log
-    (see [Context](@yw-nav-class:youwol.utils.context.Context)).
+    (see [Context](@yw-nav-class:Context)).
     """
 
     timestamp: float
@@ -173,7 +175,7 @@ class LeafLogResponse(Log):
     [parentContextId](@yw-nav-attr:youwol.app.routers.system.router.Log.parentContextId)
     the [contextId](@yw-nav-attr:youwol.app.routers.system.router.Log.contextId) of this log.
 
-    It is created when using *e.g.* [Context.info](@yw-nav-meth:youwol.utils.context.Context.info).
+    It is created when using *e.g.* [Context.info](@yw-nav-meth:Context.info).
     """
 
 
@@ -200,7 +202,7 @@ class NodeLogResponse(Log):
     A 'node' log is associated to a function execution, it is likely associated to children: the logs generated
     within the function.
 
-    It is created when using *e.g.* [Context.start](@yw-nav-meth:youwol.utils.context.Context.start).
+    It is created when using *e.g.* [Context.start](@yw-nav-meth:Context.start).
 
     The children logs have as
     [parentContextId](@yw-nav-attr:youwol.app.routers.system.router.Log.parentContextId)
@@ -547,7 +549,7 @@ async def get_logs(request: Request, parent_id: str) -> LogsResponse:
 @router.post("/logs", summary="post logs")
 async def post_logs(request: Request, body: PostLogsBody):
     """
-    Forward log entries to the [Context.logs_reporters](@yw-nav-attr:youwol.utils.context.Context.logs_reporters).
+    Forward log entries to the [Context.logs_reporters](@yw-nav-attr:Context.logs_reporters).
 
     Parameters:
         request: Incoming request.
@@ -573,7 +575,7 @@ async def post_logs(request: Request, body: PostLogsBody):
 @router.post("/data", summary="post data")
 async def post_data(request: Request, body: PostDataBody):
     """
-    Forward data entries to the [Context.data_reporters](@yw-nav-attr:youwol.utils.context.Context.data_reporters).
+    Forward data entries to the [Context.data_reporters](@yw-nav-attr:Context.data_reporters).
 
     Parameters:
         request: Incoming request.
@@ -626,6 +628,25 @@ def get_status(log: LogEntry, logger: InMemoryReporter):
         return NodeLogStatus.UNRESOLVED
 
     return NodeLogStatus.SUCCEEDED
+
+
+@router.get(
+    "/documentation-check",
+    summary="Check the inlined youwol documentation.",
+    response_model=DocAnalysisResponse,
+)
+async def documentation_check(request: Request):
+    """
+    Check the inlined youwol documentation.
+
+    Parameters:
+        request: Incoming request
+    Return:
+        Analysis report.
+    """
+    async with Context.start_ep(request=request):
+        root = cast(Module, griffe.load(YOUWOL_MODULE, submodules=True))
+        return DocAnalysisResponse(crossLinkErrors=check_documentation(root))
 
 
 @router.get(
