@@ -18,13 +18,13 @@ router = APIRouter(tags=["assets-gateway"])
 """
 Router of the service, it includes contributions from 4 children router:
 *  Under `api/assets-gateway/cdn-backend` are exposed the endpoints of the
-[cdn-backend](@yw-nav-mod:youwol.backends.cdn-backend) service.
+[cdn-backend](@yw-nav-mod:backends.cdn) service.
 *  Under `api/assets-gateway/assets-backend` are exposed the endpoints of the
-[assets-backend](@yw-nav-mod:youwol.backends.assets-backend) service.
+[assets-backend](@yw-nav-mod:youwol.backends.assets) service.
 *  Under `api/assets-gateway/files-backend` are exposed the endpoints of the
-[files-backend](@yw-nav-mod:youwol.backends.files-backend) service.
+[files-backend](@yw-nav-mod:backends.files) service.
 *  Under `api/assets-gateway/treedb-backend` are exposed the endpoints of the
-[tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+[tree_db](@yw-nav-mod:backends.tree_db) service.
 """
 
 

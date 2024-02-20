@@ -68,7 +68,7 @@ async def create_asset(
         body: Asset description.
         folder_id: Folder ID (from files explorer) in which the asset is located in the file explorer.
             If not provided, use the 'downloadFolder' of the user's
-            [default drive](@yw-nav-class:youwol.backends.tree_db.root_paths.get_default_user_drive).
+            [default drive](@yw-nav-class:tree_db.routers.drives.get_default_user_drive).
         configuration: Injected
             [Configuration](@yw-nav-class:youwol.backends.assets_gateway.configurations.Configuration).
 
@@ -112,7 +112,7 @@ async def post_asset_files(
 ):
     """
     If permissions are granted, forward to
-    [assets.add_zip_files](@yw-nav-func:youwol.backends.assets.root_paths.add_zip_files)
+    [assets.add_zip_files](@yw-nav-func:post_asset_files)
     of [assets](@yw-nav-mod:youwol.backends.assets) service.
     """
     async with Context.start_ep(request=request) as ctx:
@@ -146,7 +146,7 @@ async def get_file(
 ):
     """
     If permissions are granted, forward to
-    [assets.get_file](@yw-nav-func:youwol.backends.assets.root_paths.get_file)
+    [assets.get_file](@yw-nav-func:backends.assets.routers.files.get_file)
     of [assets](@yw-nav-mod:youwol.backends.assets) service.
     """
     async with Context.start_ep(request=request) as ctx:
@@ -175,7 +175,7 @@ async def delete_files(
 ):
     """
     If permissions are granted, forward to
-    [assets.delete_files](@yw-nav-func:youwol.backends.assets.root_paths.delete_files)
+    [assets.delete_files](@yw-nav-func:assets.routers.files.delete_files)
     of [assets](@yw-nav-mod:youwol.backends.assets) service.
     """
     async with Context.start_ep(request=request) as ctx:
@@ -202,7 +202,7 @@ async def zip_all_files(
 ):
     """
     If permissions are granted, forward to
-    [assets.get_zip_files](@yw-nav-func:youwol.backends.assets.root_paths.get_zip_files)
+    [assets.get_zip_files](@yw-nav-func:add_zip_files)
     of [assets](@yw-nav-mod:youwol.backends.assets) service.
     """
     async with Context.start_ep(request=request) as ctx:
@@ -233,7 +233,7 @@ async def post_asset(
 ):
     """
     If permissions are granted, forward to
-    [assets.post_asset](@yw-nav-func:youwol.backends.assets.root_paths.post_asset)
+    [assets.post_asset](@yw-nav-func:assets.routers.assets.post_asset)
     of [assets](@yw-nav-mod:youwol.backends.assets) service.
     """
     async with Context.start_ep(request=request) as ctx:
@@ -260,7 +260,7 @@ async def delete_asset(
 ):
     """
     If permissions are granted, forward to
-    [assets.delete_asset](@yw-nav-func:youwol.backends.assets.root_paths.delete_asset)
+    [assets.delete_asset](@yw-nav-func:assets.routers.assets.delete_asset)
     of [assets](@yw-nav-mod:youwol.backends.assets) service.
     """
     async with Context.start_ep(request=request) as ctx:
@@ -285,7 +285,7 @@ async def get_asset(
 ):
     """
     If permissions are granted, forward to
-    [assets.get_asset](@yw-nav-func:youwol.backends.assets.root_paths.get_asset)
+    [assets.get_asset](@yw-nav-func:assets.routers.assets.get_asset)
     of [assets](@yw-nav-mod:youwol.backends.assets) service.
     """
     async with Context.start_ep(request=request) as ctx:
@@ -305,7 +305,7 @@ async def put_access_policy(
 ):
     """
     If permissions are granted, forward to
-    [assets.put_access_policy](@yw-nav-func:youwol.backends.assets.root_paths.put_access_policy)
+    [assets.put_access_policy](@yw-nav-func:assets.routers.access.put_access_policy)
     of [assets](@yw-nav-mod:youwol.backends.assets) service.
     """
     async with Context.start_ep(request=request) as ctx:
@@ -331,7 +331,7 @@ async def delete_access_policy(
 ):
     """
     If permissions are granted, forward to
-    [assets.delete_access_policy](@yw-nav-func:youwol.backends.assets.root_paths.delete_access_policy)
+    [assets.delete_access_policy](@yw-nav-func:assets.routers.access.delete_access_policy)
     of [assets](@yw-nav-mod:youwol.backends.assets) service.
     """
     async with Context.start_ep(request=request) as ctx:
@@ -360,7 +360,7 @@ async def get_access_policy(
 ):
     """
     If permissions are granted, forward to
-    [assets.get_access_policy](@yw-nav-func:youwol.backends.assets.root_paths.get_access_policy)
+    [assets.get_access_policy](@yw-nav-func:assets.routers.access.get_access_policy)
     of [assets](@yw-nav-mod:youwol.backends.assets) service.
     """
     async with Context.start_ep(request=request) as ctx:
@@ -383,7 +383,7 @@ async def get_permissions(
 ):
     """
     If permissions are granted, forward to
-    [assets.get_permissions](@yw-nav-func:youwol.backends.assets.root_paths.get_permissions)
+    [assets.get_permissions](@yw-nav-func:assets.routers.permissions.get_permissions)
     of [assets](@yw-nav-mod:youwol.backends.assets) service.
     """
     async with Context.start_ep(request=request) as ctx:
@@ -405,7 +405,7 @@ async def get_access_info(
 ):
     """
     If permissions are granted, forward to
-    [assets.access_info](@yw-nav-func:youwol.backends.assets.root_paths.access_info)
+    [assets.access_info](@yw-nav-func:access_info)
     of [assets](@yw-nav-mod:youwol.backends.assets) service.
     """
     async with Context.start_ep(request=request) as ctx:
@@ -424,7 +424,7 @@ async def post_image(
 ):
     """
     If permissions are granted, forward to
-    [assets.post_image](@yw-nav-func:youwol.backends.assets.root_paths.post_image)
+    [assets.post_image](@yw-nav-func:assets.routers.images.post_image)
     of [assets](@yw-nav-mod:youwol.backends.assets) service.
     """
     async with Context.start_ep(request=request) as ctx:
@@ -455,7 +455,7 @@ async def remove_image(
 ):
     """
     If permissions are granted, forward to
-    [assets.remove_image](@yw-nav-func:youwol.backends.assets.root_paths.remove_image)
+    [assets.remove_image](@yw-nav-func:assets.routers.images.remove_image)
     of [assets](@yw-nav-mod:youwol.backends.assets) service.
     """
     async with Context.start_ep(request=request) as ctx:
@@ -481,8 +481,8 @@ async def get_media(
 ):
     """
     If permissions are granted, forward to
-    [assets.get_media_image](@yw-nav-func:youwol.backends.assets.root_paths.get_media_image) or
-    [assets.get_media_thumbnail](@yw-nav-func:youwol.backends.assets.root_paths.get_media_thumbnail)
+    [assets.get_media_image](@yw-nav-func:get_media_image) or
+    [assets.get_media_thumbnail](@yw-nav-func:get_media_thumbnail)
     (depending on `media_type`)
     of [assets](@yw-nav-mod:youwol.backends.assets) service.
     """

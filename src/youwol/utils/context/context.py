@@ -44,7 +44,7 @@ from .models import (
 
 T = TypeVar("T")
 """
-Generic type parameter for the [Context](@yw-nav-class:youwol.utils.context.Context) class.
+Generic type parameter for the [Context](@yw-nav-class:Context) class.
 
 It defines contextual information known at 'compile' time.
 """
@@ -57,7 +57,7 @@ class Context(Generic[T]):
     propagating contextual information.
 
     This class has a generic type parameter `TEnvironment`, defining the type of
-    [env](@yw-nav-attr:youwol.utils.context.Context.env), a 'compile-time' resolved contextual information.
+    [env](@yw-nav-attr:Context.env), a 'compile-time' resolved contextual information.
     """
 
     env: T | None = None
@@ -84,7 +84,7 @@ class Context(Generic[T]):
     request: Request | None = None
     """
     If the context was initiated with an incoming request (using the method
-    [start_ep](@yw-nav-meth:youwol.utils.context.Context.start_ep)), it stores the original
+    [start_ep](@yw-nav-meth:Context.start_ep)), it stores the original
     [Request](https://fastapi.tiangolo.com/reference/request/) object.
     """
 
@@ -118,7 +118,7 @@ class Context(Generic[T]):
     with_headers: dict[str, str] = field(default_factory=dict)
     """
     Defines some headers that will gets forwarded to children context and retrieved using the method
-    [headers](@yw-nav-attr:youwol.utils.context.Context.headers).
+    [headers](@yw-nav-attr:Context.headers).
     """
 
     with_cookies: dict[str, str] = field(default_factory=dict)
@@ -524,13 +524,13 @@ class Context(Generic[T]):
 
 CallableBlock = Callable[[Context], Union[Awaitable, None]]
 """
-Signature for [scoped context](@yw-nav-class:youwol.utils.context.ScopedContext)'s callable when
+Signature for [scoped context](@yw-nav-class:ScopedContext)'s callable when
 entering or exiting a block.
 """
 
 CallableBlockException = Callable[[Exception, Context], Union[Awaitable, None]]
 """
-Signature for [scoped context](@yw-nav-class:youwol.utils.context.ScopedContext)'s callable when
+Signature for [scoped context](@yw-nav-class:ScopedContext)'s callable when
 exiting a block with exception.
 """
 
@@ -541,8 +541,8 @@ class ScopedContext(Generic[T], Context[T]):
     A context with lifecycle management logic (implementing async context manager API from python: `__aenter__`
     and `__aexit__`).
 
-    `ScopedContext` are created using the method [start](@yw-nav-meth:youwol.utils.context.Context.start) and
-    [start_ep](@yw-nav-meth:youwol.utils.context.Context.start_ep).
+    `ScopedContext` are created using the method [start](@yw-nav-meth:Context.start) and
+    [start_ep](@yw-nav-meth:Context.start_ep).
     """
 
     action: str | None = None
@@ -617,7 +617,7 @@ class ScopedContext(Generic[T], Context[T]):
 
 ProxiedBackendContext = Context[ProxiedBackendCtxEnv]
 """
-Specialization of [Context](@yw-nav-class:youwol.utils.context.Context) for detached backends
+Specialization of [Context](@yw-nav-class:Context) for detached backends
 (running on specific port) proxied by the local youwol server.
 """
 
@@ -655,9 +655,9 @@ class ContextFactory:
     @staticmethod
     def proxied_backend_context(request: Request, **kwargs) -> ProxiedBackendContext:
         """
-        Initializes a [Context](@yw-nav-class:youwol.utils.context.Context) instance from
+        Initializes a [Context](@yw-nav-class:Context) instance from
         a request for (python) backends running on specific port & proxied using a
-        [RedirectSwitch](@yw-nav-class:youwol.app.environment.models.models_config.RedirectSwitch).
+        [RedirectSwitch](@yw-nav-class:RedirectSwitch).
 
          It usually starts the implementation of an endpoint, e.g.:
 
@@ -673,24 +673,24 @@ class ContextFactory:
 
         The instance created:
         *  defines the context's `env` attribute as
-         [ProxiedBackendCtxEnv](@yw-nav-class:youwol.utils.context.ProxiedBackendCtxEnv).
+         [ProxiedBackendCtxEnv](@yw-nav-class:ProxiedBackendCtxEnv).
         *  defines the context's `logs_reporter` attribute using a reporter that forward log's entries to the youwol
-        local server end point [post_log](@yw-nav-func:youwol.app.routers.system.router.post_logs).
+        local server end point [post_log](@yw-nav-func:post_logs).
         In a standard configuration of youwol, they are then stored in memory and can be browsed through the
         developer portal application.
         *  defines the context's `data_reporter` attribute using a reporter that forward log's entries to the youwol
-         local server end point [post_data](@yw-nav-func:youwol.app.routers.system.router.post_data).
+         local server end point [post_data](@yw-nav-func:post_data).
         In a standard configuration of youwol, they are then emitted through the `/ws-data` web-socket channel
         of youwol.
-        This serves as constructing [FuturesResponse](@yw-nav-class:youwol.utils.utils_requests.FuturesResponse) to
+        This serves as constructing [FuturesResponse](@yw-nav-class:FuturesResponse) to
         provide observable like response emitting multiple items asynchronously.
 
         Parameters:
             request: Incoming request.
 
         Return:
-            A type specialisation of [Context](@yw-nav-class:youwol.utils.context.Context) with
-            [ProxiedBackendCtxEnv](@yw-nav-class:youwol.utils.context.ProxiedBackendCtxEnv) generic parameter.
+            A type specialisation of [Context](@yw-nav-class:Context) with
+            [ProxiedBackendCtxEnv](@yw-nav-class:ProxiedBackendCtxEnv) generic parameter.
         """
         static_data = ContextFactory.with_static_data or {}
         static_labels = ContextFactory.with_static_labels or {}

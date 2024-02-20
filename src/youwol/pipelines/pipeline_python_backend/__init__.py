@@ -3,7 +3,7 @@ The purpose of this [pipeline](@yw-nav-func:youwol.pipelines.pipeline_python_bac
 is to package and publish a custom python backend.
 They are running separately from the youwol server on specific port,
 and proxied from the youwol server using a
-[RedirectSwitch](@yw-nav-class:youwol.app.environment.models.models_config.RedirectSwitch).
+[RedirectSwitch](@yw-nav-class:RedirectSwitch).
 
 A simple project's template generator is provided through this
 [function](@yw-nav-func:youwol.pipelines.pipeline_python_backend.template.template).

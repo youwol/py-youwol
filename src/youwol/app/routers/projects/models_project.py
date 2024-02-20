@@ -196,7 +196,7 @@ class CommandPipelineStep(BaseModel):
 
         *  Project : reference on the [Project](@yw-nav-class:youwol.app.routers.projects.models_project.Project)
         *  str : flow ID
-        *  Context : current execution [Context](@yw-nav-class:youwol.utils.context.Context)]
+        *  Context : current execution [Context](@yw-nav-class:Context)]
     """
 
     do_post: None | (
@@ -210,7 +210,7 @@ class CommandPipelineStep(BaseModel):
         *  Project : reference on the [Project](@yw-nav-class:youwol.app.routers.projects.models_project.Project)
         *  str : flow ID
         *  JSON : body of the POST
-        *  Context : current execution [Context](@yw-nav-class:youwol.utils.context.Context)]
+        *  Context : current execution [Context](@yw-nav-class:Context)]
     """
 
     do_put: None | (
@@ -224,7 +224,7 @@ class CommandPipelineStep(BaseModel):
         *  Project : reference on the [Project](@yw-nav-class:youwol.app.routers.projects.models_project.Project)
         *  str : flow ID
         *  JSON : body of the PUT
-        *  Context : current execution [Context](@yw-nav-class:youwol.utils.context.Context)
+        *  Context : current execution [Context](@yw-nav-class:Context)
     """
 
     do_delete: None | (Callable[["Project", str, Context], Awaitable[JSON] | JSON]) = (
@@ -236,7 +236,7 @@ class CommandPipelineStep(BaseModel):
     Arguments of the callable:
         *  Project : reference on the [Project](@yw-nav-class:youwol.app.routers.projects.models_project.Project)
         *  str : flow ID
-        *  Context : current execution [Context](@yw-nav-class:youwol.utils.context.Context)
+        *  Context : current execution [Context](@yw-nav-class:Context)
     """
 
 
@@ -591,7 +591,7 @@ class OpenWith(Parametrization):
 
 class Execution(BaseModel):
     """
-    Describes the execution mode of a [BrowserApp](@yw-nav-class:youwol.app.routers.projects.models_project.BrowserApp)
+    Describes the execution mode of a [BrowserAppBundle](@yw-nav-class:BrowserAppBundle)
     application.
     """
 

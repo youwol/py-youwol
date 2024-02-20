@@ -95,8 +95,8 @@ class ProjectsFinder(BaseModel):
 
     Derived classes need to implement the **'handler'** method.
 
-    See [RecursiveProjectsFinder](@yw-nav-class:youwol.app.environment.models.models_config.RecursiveProjectsFinder) and
-    [ExplicitProjectsFinder](@yw-nav-class:youwol.app.environment.models.models_config.ExplicitProjectsFinder).
+    See [RecursiveProjectsFinder](@yw-nav-class:RecursiveProjectsFinder) and
+    [ExplicitProjectsFinder](@yw-nav-class:ExplicitProjectsFinder).
     """
 
     def handler(
@@ -175,14 +175,14 @@ class RecursiveProjectsFinder(ProjectsFinder):
     All projects below these paths will be discovered.
 
     By default uses
-    [default_path_projects_dir](@yw-nav-glob:youwol.app.environment.models.defaults.default_path_projects_dir).
+    [default_path_projects_dir](@yw-nav-glob:default_path_projects_dir).
     """
 
     ignoredPatterns: list[str] = default_ignored_paths
     """
     List of ignored patterns to discard folder when traversing the tree.
 
-    By default uses [default_ignored_paths](@yw-nav-glob:youwol.app.environment.models.defaults.default_ignored_paths).
+    By default uses [default_ignored_paths](@yw-nav-glob:default_ignored_paths).
 
     See [fnmatch](https://docs.python.org/3/library/fnmatch.html) regarding the patterns specification.
     """
@@ -208,7 +208,7 @@ class ExplicitProjectsFinder(ProjectsFinder):
 
      > ⚠️ Changes in directories content is not watched: projects added/removed from provided paths do not trigger
      updates.
-     The [RecursiveProjectsFinder](@yw-nav-class:youwol.app.environment.models.models_config.RecursiveProjectsFinder)
+     The [RecursiveProjectsFinder](@yw-nav-class:RecursiveProjectsFinder)
      class allows such features.
 
      Example:
@@ -238,7 +238,7 @@ class ExplicitProjectsFinder(ProjectsFinder):
     """
     The paths in which to look for projects as direct children.
 
-    Can be provided as a function that gets the [PathsBook](@yw-nav-class:youwol.app.environment.paths.PathsBook)
+    Can be provided as a function that gets the [PathsBook](@yw-nav-class:PathsBook)
     instance - useful when looking for folder's location depending on some typical paths of youwol.
     """
 
@@ -288,10 +288,10 @@ class Projects(BaseModel):
     finder: ProjectsFinder | ConfigPath = RecursiveProjectsFinder()
     """
     Strategy for finding projects, most of the times the
-    [RecursiveProjectsFinder](@yw-nav-class:youwol.app.environment.models.models_config.RecursiveProjectsFinder)
+    [RecursiveProjectsFinder](@yw-nav-class:RecursiveProjectsFinder)
     strategy is employed.
     The less employed
-    [ExplicitProjectsFinder](@yw-nav-class:youwol.app.environment.models.models_config.ExplicitProjectsFinder)
+    [ExplicitProjectsFinder](@yw-nav-class:ExplicitProjectsFinder)
     can also be used.
     """
 

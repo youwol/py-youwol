@@ -36,14 +36,14 @@ class Authentication(BaseModel):
     Virtual base class for authentication modes.
 
     See
-    [BrowserAuth](@yw-nav-class:youwol.app.environment.models.models_config.BrowserAuth) or
-    [DirectAuth](@yw-nav-class:youwol.app.environment.models.models_config.DirectAuth)
+    [BrowserAuth](@yw-nav-class:BrowserAuth) or
+    [DirectAuth](@yw-nav-class:DirectAuth)
     """
 
     authId: str
     """
     Unique id of the authentication for encapsulating in
-    [CloudEnvironment](@yw-nav-class:youwol.app.environment.models.models_config.CloudEnvironment).
+    [CloudEnvironment](@yw-nav-class:CloudEnvironment).
     """
 
 
@@ -117,7 +117,7 @@ class CloudEnvironment(BaseModel):
     Specification of the authorization provider.
 
     For a Keycloak authentication provider including a properly configured `youwol` realm, the function
-     [default_auth_provider](@yw-nav-func:youwol.app.environment.models.defaults.default_auth_provider) is available.
+     [default_auth_provider](@yw-nav-func:default_auth_provider) is available.
     """
 
     authentications: list[Authentication]
@@ -134,13 +134,13 @@ class Connection(BaseModel):
     envId: str
     """
     Reference an environment ID provided in
-     [CloudEnvironments](@yw-nav-attr:youwol.app.environment.models.models_config.CloudEnvironments.environments).
+     [CloudEnvironments](@yw-nav-attr:CloudEnvironments.environments).
     """
 
     authId: str
     """
     Reference an authentication ID provided in the
-     [CloudEnvironment](@yw-nav-class:youwol.app.environment.models.models_config.CloudEnvironment) with ID `envId`.
+     [CloudEnvironment](@yw-nav-class:CloudEnvironment) with ID `envId`.
     """
 
 
@@ -202,7 +202,7 @@ class CloudEnvironments(BaseModel):
     Connection used when py-youwol is started.
 
     To switch connection after youwol has started, see end-point
-     [Login](@yw-nav-func:youwol.app.routers.environment.router.login).
+     [Login](@yw-nav-func:login).
     """
 
     environments: list[CloudEnvironment]
@@ -242,7 +242,7 @@ class LocalEnvironment(BaseModel):
     """
     Defines folder location in which persisted data are saved.
 
-    See [default_path_data_dir](@yw-nav-glob:youwol.app.environment.models.defaults.default_path_data_dir)
+    See [default_path_data_dir](@yw-nav-glob:default_path_data_dir)
      regarding default value.
     value.
     """
@@ -251,6 +251,6 @@ class LocalEnvironment(BaseModel):
     """
     Defines folder location of cached data.
 
-    See [default_path_cache_dir](@yw-nav-glob:youwol.app.environment.models.defaults.default_path_cache_dir)
+    See [default_path_cache_dir](@yw-nav-glob:default_path_cache_dir)
      regarding default value.
     """

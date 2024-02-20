@@ -39,7 +39,7 @@ class TokensStorageSystemKeyring(TokensStorageConf, BaseModel):
     """
     The path of the system keyring encrypted file.
 
-    See <a href="@yw-nav-glob:youwol.app.environment.models.defaults.default_path_tokens_storage_encrypted">
+    See <a href="@yw-nav-glob:default_path_tokens_storage_encrypted">
     default_path_tokens_storage_encrypted</a>
     regarding default value.
     """
@@ -72,7 +72,7 @@ class TokensStoragePath(TokensStorageConf, BaseModel):
     """
     Path where the file is saved on disk.
 
-    See [default_path_tokens_storage](@yw-nav-glob:youwol.app.environment.models.defaults.default_path_tokens_storage)
+    See [default_path_tokens_storage](@yw-nav-glob:default_path_tokens_storage)
      regarding default value.
     """
 

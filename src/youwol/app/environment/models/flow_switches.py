@@ -27,7 +27,7 @@ from youwol.utils import (
 
 class DispatchInfo(BaseModel):
     """
-    Summary of the state of a [FlowSwitch](@yw-nav-class:youwol.app.environment.models.models_config.FlowSwitch)
+    Summary of the state of a [FlowSwitch](@yw-nav-class:FlowSwitch)
     (used as displayed info).
     """
 
@@ -50,14 +50,14 @@ class DispatchInfo(BaseModel):
 class FlowSwitch(BaseModel):
     """
     Abstract class used in
-    [FlowSwitcherMiddleware](@yw-nav-class:youwol.app.environment.models.models_config.FlowSwitcherMiddleware),
+    [FlowSwitcherMiddleware](@yw-nav-class:FlowSwitcherMiddleware),
      to provides the ability to interrupt the normal flow of a request by redirecting it to another target end-point.
 
     In youwol, it is implemented in:
 
-    *  [CdnSwitch](@yw-nav-class:youwol.app.environment.models.models_config.CdnSwitch): redirect request to a package
+    *  [CdnSwitch](@yw-nav-class:CdnSwitch): redirect request to a package
     normally served from the CDN to a particular port from `localhost`.
-    *  [RedirectSwitch](@yw-nav-class:youwol.app.environment.models.models_config.RedirectSwitch): redirect an HTTP call
+    *  [RedirectSwitch](@yw-nav-class:RedirectSwitch): redirect an HTTP call
     from a given destination to a particular port from `localhost`.
 
     Derived classes should provide implementation for the methods **info**, **is_matching** and **switch**.
@@ -81,7 +81,7 @@ class FlowSwitch(BaseModel):
 
         Parameters:
             incoming_request: incoming [request](https://fastapi.tiangolo.com/reference/request/)
-            context: current [context](@yw-nav-class:youwol.utils.context.Context)
+            context: current [context](@yw-nav-class:Context)
         Return:
             `True` if the switch match against the request, `False` otherwise
         """
@@ -95,7 +95,7 @@ class FlowSwitch(BaseModel):
 
         Parameters:
             incoming_request: incoming [request](https://fastapi.tiangolo.com/reference/request/)
-            context: current [context](@yw-nav-class:youwol.utils.context.Context)
+            context: current [context](@yw-nav-class:Context)
         Return:
             The response
         """
@@ -105,7 +105,7 @@ class FlowSwitch(BaseModel):
 class FlowSwitcherMiddleware(CustomMiddleware):
     """
     This middleware will eventually switch from an original targeted end-point to another destination if
-    one, and only one, [oneOf](@yw-nav-attr:youwol.app.environment.models.models_config.FlowSwitcherMiddleware.oneOf)
+    one, and only one, [oneOf](@yw-nav-attr:FlowSwitcherMiddleware.oneOf)
      element match against the original request.
 
      Example:
@@ -145,10 +145,10 @@ class FlowSwitcherMiddleware(CustomMiddleware):
         ```
         In the above snippet to FlowSwitcherMiddleware middleware are added:
 
-        *  the first one ([CdnSwitch](@yw-nav-class:youwol.app.environment.models.models_config.CdnSwitch))
+        *  the first one ([CdnSwitch](@yw-nav-class:CdnSwitch))
         redirect any request to the frontend application `@youwol/foo-app` (normally served from the CDN database)
          to a local dev-server serving on port `4001`.
-        *  the second one ([RedirectSwitch](@yw-nav-class:youwol.app.environment.models.models_config.RedirectSwitch))
+        *  the second one ([RedirectSwitch](@yw-nav-class:RedirectSwitch))
          redirect any request to `/api/foo-backend/**` to the destination `http://localhost:4002`.
 
     """
@@ -202,7 +202,7 @@ class FlowSwitcherMiddleware(CustomMiddleware):
 
 class CdnSwitch(FlowSwitch):
     """
-    This [FlowSwitch]((@yw-nav-class:youwol.app.environment.models.models_config.FlowSwitch) target request to elements
+    This [FlowSwitch]((@yw-nav-class:FlowSwitch) target request to elements
      in the  CDN database (frontend applications usually) and redirect it to particular port from `localhost`
      (usually on which a dev. server of the application is running).
 
@@ -211,7 +211,7 @@ class CdnSwitch(FlowSwitch):
 
     Example:
         Below is a typical example of usage of CdnSwitch within a
-        [FlowSwitcherMiddleware](@yw-nav-class:youwol.app.environment.models.models_config.FlowSwitcherMiddleware):
+        [FlowSwitcherMiddleware](@yw-nav-class:FlowSwitcherMiddleware):
 
         ```python hl_lines="5 14"
         from youwol.app.environment import (
@@ -325,12 +325,12 @@ class CdnSwitch(FlowSwitch):
 
 class RedirectSwitch(FlowSwitch):
     """
-    This [FlowSwitch](@yw-nav-class:youwol.app.environment.models.models_config.FlowSwitch) target requests with url
+    This [FlowSwitch](@yw-nav-class:FlowSwitch) target requests with url
     that starts with a predefined 'origin' to a corresponding 'destination' (the rest of the path appended to it).
 
     Example:
         Below is a typical example of usage of RedirectSwitch within a
-        [FlowSwitcherMiddleware](@yw-nav-class:youwol.app.environment.models.models_config.FlowSwitcherMiddleware):
+        [FlowSwitcherMiddleware](@yw-nav-class:FlowSwitcherMiddleware):
 
         ```python hl_lines="5 8-11 18"
         from youwol.app.environment import (

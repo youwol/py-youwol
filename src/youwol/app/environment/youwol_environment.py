@@ -65,20 +65,20 @@ class YouwolEnvironment(BaseModel):
     httpPort: int
     """
     Serving port,
-    defined from the [Configuration](@yw-nav-attr:youwol.app.environment.models.models_config.System.httpPort).
+    defined from the [Configuration](@yw-nav-attr:System.httpPort).
     """
 
     events: Events
     """
     Plugged events,
-    defined from the [Configuration](@yw-nav-attr:youwol.app.environment.models.models_config.Customization.events).
+    defined from the [Configuration](@yw-nav-attr:Customization.events).
     """
 
     customMiddlewares: list[CustomMiddleware]
     """
     Custom middlewares,
     defined from the
-     [Configuration](@yw-nav-attr:youwol.app.environment.models.models_config.Customization.middlewares).
+     [Configuration](@yw-nav-attr:Customization.middlewares).
     """
 
     projects: Projects
@@ -89,7 +89,7 @@ class YouwolEnvironment(BaseModel):
     commands: dict[str, Command]
     """
     The list of commands,
-    defined from the [Configuration](@yw-nav-attr:youwol.app.environment.models.models_config.CustomEndPoints.commands).
+    defined from the [Configuration](@yw-nav-attr:CustomEndPoints.commands).
     """
 
     currentConnection: Connection
@@ -100,7 +100,7 @@ class YouwolEnvironment(BaseModel):
     remotes: list[CloudEnvironment]
     """
     The list of available remotes,
-    defined from the [Configuration](@yw-nav-attr:youwol.app.environment.models.models_config.System.cloudEnvironments).
+    defined from the [Configuration](@yw-nav-attr:System.cloudEnvironments).
     """
 
     pathsBook: PathsBook

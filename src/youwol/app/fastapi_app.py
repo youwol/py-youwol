@@ -117,22 +117,22 @@ class CustomMiddlewareWrapper(BaseHTTPMiddleware):
 
 def setup_middlewares(env: YouwolEnvironment):
     """
-    Set up the middlewares stack of the [application](@yw-nav-glob:youwol.app.fastapi_app.fastapi_app):
-    *  [RootMiddleware](@yw-nav-class:youwol.utils.middlewares.root_middleware.RootMiddleware) using
-    [InMemoryReporter](@yw-nav-class:youwol.utils.context.InMemoryReporter) for `logs_reporter` and
-    [WsDataStreamer](@yw-nav-class:youwol.app.web_socket.WsDataStreamer) for `data_reporter`.
-    *  [AuthMiddleware](@yw-nav-class:youwol.utils.middlewares.authentication.AuthMiddleware)
+    Set up the middlewares stack of the [application](@yw-nav-glob:fastapi_app):
+    *  [RootMiddleware](@yw-nav-class:RootMiddleware) using
+    [InMemoryReporter](@yw-nav-class:InMemoryReporter) for `logs_reporter` and
+    [WsDataStreamer](@yw-nav-class:WsDataStreamer) for `data_reporter`.
+    *  [AuthMiddleware](@yw-nav-class:AuthMiddleware)
     using
-    [JwtProviderBearerDynamicIssuer](@yw-nav-class:youwol.app.environment.local_auth.JwtProviderBearerDynamicIssuer),
-    [JwtProviderCookieDynamicIssuer](@yw-nav-class:youwol.app.environment.local_auth.JwtProviderCookieDynamicIssuer),
-    [JwtProviderPyYouwol](@yw-nav-class:youwol.app.environment.local_auth.JwtProviderPyYouwol)
-    *  <a href="@yw-nav-class:youwol.app.middlewares.browser_caching_middleware.BrowserCachingMiddleware">
+    [JwtProviderBearerDynamicIssuer](@yw-nav-class:JwtProviderBearerDynamicIssuer),
+    [JwtProviderCookieDynamicIssuer](@yw-nav-class:JwtProviderCookieDynamicIssuer),
+    [JwtProviderPyYouwol](@yw-nav-class:JwtProviderPyYouwol)
+    *  <a href="@yw-nav-class:BrowserCachingMiddleware">
     BrowserCachingMiddleware</a>
-    *  the list of [custom middlewares](@yw-nav-class:youwol.app.environment.models.models_config.CustomMiddleware)
+    *  the list of [custom middlewares](@yw-nav-class:CustomMiddleware)
     defined in the configuration file.
-    *  the <a href="@yw-nav-class:youwol.app.middlewares.hybridizer_middleware.LocalCloudHybridizerMiddleware">
+    *  the <a href="@yw-nav-class:LocalCloudHybridizerMiddleware">
     local/cloud hybrid middleware</a>
-     using various [dispatches](@yw-nav-mod:youwol.app.middlewares.local_cloud_hybridizers).
+     using various [dispatches](@yw-nav-mod:local_cloud_hybridizers).
 
     Parameters:
         env: the current environment, used to inject user defined middlewares.
@@ -187,23 +187,23 @@ def setup_middlewares(env: YouwolEnvironment):
 
 def setup_http_routers():
     """
-    Set up the routers of the [application](@yw-nav-glob:youwol.app.fastapi_app.fastapi_app):
+    Set up the routers of the [application](@yw-nav-glob:fastapi_app):
     *  [native backends router](@yw-nav-mod:youwol.backends): these routers include the core services of youwol,
     they define services that are available in local and remote environments.
-    Beside [cdn_app_server](@ywn-nav-mod:youwol.backends.cdn_app_server) that is served
+    Beside [cdn_app_server](@ywn-nav-mod:cdn_app_server) that is served
     under `/applications`, the other services are served under `/api/$SERVICE_NAME` (where `$SERVICE_NAME` is the name
     of the corresponding service).
-    *  [local youwol router](@yw-nav-mod:youwol.app.routers): these routers correspond to the services specific to
+    *  [local youwol router](@yw-nav-mod:app.routers): these routers correspond to the services specific to
     the local youwol server, they are served under `/admin`.
     **These services are not available in the online environment.**
     *  the routes `/healthz` and `/`
 
     Notes:
         While in the local server all services are exposed, in the online environment access to the services
-        [tree_db](@yw-nav-mod:youwol.backends.tree_db),
-        [files](@yw-nav-mod:youwol.backends.files), [assets](@yw-nav-mod:youwol.backends.assets) and
-        [cdn](@yw-nav-mod:youwol.backends.cdn) are **only exposed through
-        the [assets-gateway](@yw-nav-mod:youwol.backends.assets_gateway) service**.
+        [tree_db](@yw-nav-mod:backends.tree_db),
+        [files](@yw-nav-mod:backends.files), [assets](@yw-nav-mod:backends.assets) and
+        [cdn](@yw-nav-mod:backends.cdn) are **only exposed through
+        the [assets-gateway](@yw-nav-mod:backends.assets_gateway) service**.
 
     """
     fastapi_app.include_router(native_backends.router)

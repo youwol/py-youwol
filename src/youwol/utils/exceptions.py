@@ -26,7 +26,7 @@ class YouWolException(HTTPException):
     [UpstreamResponseException](@yw-nav-class:youwol.utils.exceptions.UpstreamResponseException): its
     [detail attribute](@yw-nav-attr:youwol.utils.exceptions.UpstreamResponseException.detail) present a recursive
     structure that depicts the chain of calls within the services from which the exception happened
-    (see [upstream_exception_from_response](@yw-nav-func:youwol.utils.exceptions.upstream_exception_from_response)).
+    (see [upstream_exception_from_response](@yw-nav-func:upstream_exception_from_response)).
 
     """
 
@@ -271,7 +271,7 @@ class UpstreamResponseException(YouWolException):
     Represents an exception that has been generated from an HTTP call to a service.
 
     They are most of the time created using the function
-    [upstream_exception_from_response](@yw-nav-func:youwol.utils.exceptions.upstream_exception_from_response).
+    [upstream_exception_from_response](@yw-nav-func:upstream_exception_from_response).
 
     It is common that the underlying exception being itself an
     [UpstreamResponseException](@yw-nav-class:youwol.utils.exceptions.UpstreamResponseException), such that
@@ -390,6 +390,13 @@ async def unexpected_exception_handler(request: Request, exc: Exception):
 async def upstream_exception_from_response(
     raw_resp: ClientResponse, **kwargs
 ) -> UpstreamResponseException:
+    """
+    Format an `UpstreamResponseException` from http responses.
+
+    Parameters:
+        raw_resp: Client response.
+        kwargs: Forwarded to `UpstreamResponseException` constructor.
+    """
     resp = None
 
     try:
