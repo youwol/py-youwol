@@ -1,5 +1,4 @@
 # standard library
-import importlib.metadata
 import json
 import os
 
@@ -27,6 +26,7 @@ from youwol.app.web_socket import WsDataStreamer
 from youwol.utils.clients.oidc.tokens_manager import TokensStorage
 from youwol.utils.context import ContextFactory, InMemoryReporter
 from youwol.utils.servers.fast_api import FastApiRouter
+from youwol.utils.utils import yw_version
 from youwol.utils.utils_paths import ensure_dir_exists
 
 # relative
@@ -164,8 +164,8 @@ class YouwolEnvironment(BaseModel):
 
         version = ""
         try:
-            version = f"{importlib.metadata.version('youwol')}"
-        except importlib.metadata.PackageNotFoundError:
+            version = yw_version()
+        except ModuleNotFoundError:
             pass
 
         return f"""Running with youwol {version}: {youwol}
@@ -396,8 +396,8 @@ The desktop application is available at:
 http://localhost:{conf.httpPort}/applications/@youwol/platform/latest
 The developer portal is available at:
 http://localhost:{conf.httpPort}/applications/@youwol/developer-portal/%5E0.2.0
-For a Py-YouWol interactive tour:
-http://localhost:{conf.httpPort}/applications/@youwol/stories/latest?id=9e664525-1dac-45af-83c6-f4b4ef3866af&mode=reader
+Regarding Py-YouWol documentation:
+http://localhost:{conf.httpPort}/doc
 """
     )
     print(msg)
