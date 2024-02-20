@@ -30,6 +30,8 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 - **Documentation**:
   - Cross-links w/ youwol's symbols in docstrings more tolerant. <!-- TG 2128 -->
   - Add `admin/system/documentation-check` end point. <!-- TG 2129 -->
+  - sync. documentation version with `youwol` version. <!-- TG 2131 -->
+  - serve documentation from `/doc`. <!-- TG 2130 -->
   
 ### Changed
 
