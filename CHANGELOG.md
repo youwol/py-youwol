@@ -50,6 +50,7 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 - **Dependencies vulnerabilities**:
   - [GHSA-2jv5-9r88-3w3p] upgrade `python-multipart`. to 0.0.9 <!-- TG-2073 -->
+  - [CVE-2024-26130] upgrade `cryptography`. to 42.0.4 <!-- TG-2134 -->
 
 ### Removed
 
