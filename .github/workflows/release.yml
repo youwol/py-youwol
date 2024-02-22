@@ -170,14 +170,18 @@ jobs:
       - name: Install from wheel
         if: ${{ contains(matrix.install_from, 'wheel') }}
         id: install_wheel
+        env:
+          PYTHON_BIN: python${{ matrix.python_version }}
         run: |
-          pipx install ./youwol-*.whl
+          pipx install ./youwol-*.whl --python $PYTHON_BIN
 
       - name: Install from sources
         if: ${{ contains(matrix.install_from, 'sources') }}
         id: install_sources
+        env:
+          PYTHON_BIN: python${{ matrix.python_version }}
         run: |
-          pipx install ./youwol*.tar.gz
+          pipx install ./youwol-*.tar.gz --python $PYTHON_BIN
 
       - name: Prepare http-clients
         id: prepare_http-clients
