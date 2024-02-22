@@ -3,7 +3,6 @@ import base64
 import datetime
 import importlib.metadata
 import itertools
-import tomllib
 
 from collections.abc import Callable, Iterable
 from enum import Enum
@@ -22,6 +21,9 @@ from starlette.requests import Request
 
 # Youwol
 import youwol
+
+# Youwol Surrogate for next versions of Python
+from youwol.utils.python_next.v3_12 import tomllib
 
 # Youwol utilities
 from youwol.utils.clients.utils import to_group_id

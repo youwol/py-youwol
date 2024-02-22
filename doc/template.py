@@ -1,10 +1,12 @@
 # standard library
 import json
 import shutil
-import tomllib
 
 from collections.abc import Iterable
 from pathlib import Path
+
+# Youwol Surrogate for next versions of Python
+from youwol.utils.python_next.v3_12 import tomllib
 
 # Youwol utilities
 from youwol.utils import AnyDict, parse_json, write_json, yw_doc_version

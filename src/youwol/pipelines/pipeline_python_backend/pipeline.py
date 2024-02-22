@@ -1,6 +1,5 @@
 # standard library
 import shutil
-import tomllib
 
 from asyncio.subprocess import Process
 from collections.abc import Callable
@@ -9,6 +8,9 @@ from pathlib import Path
 # third parties
 from fastapi import HTTPException
 from pydantic import BaseModel
+
+# Youwol Surrogate for next versions of Python
+from youwol.utils.python_next.v3_12 import tomllib
 
 # Youwol application
 from youwol.app.environment import YouwolEnvironment
