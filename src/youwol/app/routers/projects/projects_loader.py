@@ -183,7 +183,7 @@ async def get_project(
         if not project_path.exists():
             error = FailureDirectoryNotFound(path=project_path)
             await ctx.error(text="Can not find project's directory", data=error)
-            log_error("Can not find project's directory", {"path": project_path})
+            log_error("Can not find project's directory", {"path": str(project_path)})
             return error
 
         pipeline_path = project_path / PROJECT_PIPELINE_DIRECTORY / "yw_pipeline.py"
