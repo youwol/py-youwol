@@ -45,11 +45,13 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 ### Fixed
 
 - Forward request's cookies when using `redirect_request`. <!-- TG-2072 -->
+- Ensure python scripts execution has correct environment variable `PYTHONPATH` <!-- TG-2136 -->
 
 ### Security
 
 - **Dependencies vulnerabilities**:
   - [GHSA-2jv5-9r88-3w3p] upgrade `python-multipart`. to 0.0.9 <!-- TG-2073 -->
+  - [CVE-2024-26130] upgrade `cryptography`. to 42.0.4 <!-- TG-2134 -->
 
 ### Removed
 
@@ -69,6 +71,9 @@ TG-1998
 TG-2083
 TG-2093
 TG-2132
+TG-2139
+TG-2135
+TG-2138
 -->
 
 ## [0.1.7.post] − 2024-02-09

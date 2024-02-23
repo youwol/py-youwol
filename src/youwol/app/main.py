@@ -10,7 +10,7 @@ import lockfile
 # Youwol application
 from youwol.app.main_args import get_main_arguments
 from youwol.app.shut_down import shutdown_daemon_script
-from youwol.app.wrapper import ensure_venv_python_in_path
+from youwol.app.wrapper import ensure_env_for_python
 
 
 def assert_python():
@@ -31,7 +31,7 @@ def assert_python():
 
 def main():
     assert_python()
-    ensure_venv_python_in_path()
+    ensure_env_for_python()
     if get_main_arguments().daemonize:
         shutdown_script_path = Path().cwd() / "py-youwol.shutdown.sh"
         # noinspection PyPackageRequirements

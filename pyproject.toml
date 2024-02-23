@@ -43,7 +43,8 @@ dependencies = [
     "semantic_version>=2.10.0,<3.0.0",
     "watchdog>=2.1.9,<3.0.0",
     "prometheus-client",
-    "griffe>=0.39.1,<0.40"
+    "griffe>=0.39.1,<0.40",
+    "tomlkit>=0.12.3,<0.13",
 ]
 
 [project.optional-dependencies]
@@ -76,7 +77,6 @@ qa = [
 publish = [
     "pdoc3",
     "build",
-    "tomlkit",
     "twine",
 ]
 
@@ -149,6 +149,7 @@ debug = [
 profile = "black"
 lines_between_types = 1
 known_typing = "typing"
+known_yw_python_next = "youwol.utils.python_next"
 known_yw_app = "youwol.app"
 known_yw_backends = "youwol.backends"
 known_yw_utils = "youwol.utils"
@@ -159,6 +160,7 @@ sections = [
     "TYPING",
     "THIRDPARTY",
     "FIRSTPARTY",
+    "YW_PYTHON_NEXT",
     "YW_APP",
     "YW_BACKENDS",
     "YW_UTILS",
@@ -169,6 +171,7 @@ import_heading_future = "future"
 import_heading_stdlib = "standard library"
 import_heading_typing = "typing"
 import_heading_thirdparty = "third parties"
+import_heading_yw_python_next = "Youwol Surrogate for next versions of Python"
 import_heading_firstparty = "Youwol"
 import_heading_yw_app = "Youwol application"
 import_heading_yw_backends = "Youwol backends"
