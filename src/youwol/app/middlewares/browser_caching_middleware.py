@@ -77,7 +77,5 @@ class BrowserCachingMiddleware(BaseHTTPMiddleware):
             response.set_cookie("youwol-config-digest", digest)
             response.headers["Vary"] = "Youwol-Config-Digest, Cookie"
             response.headers["Cache-Control"] = "max-age=3600"
-        if "/api/assets-gateway/raw/" in request.url.path and request.method == "GET":
-            response.headers["Cache-Control"] = "no-cache, no-store"
 
         return response
