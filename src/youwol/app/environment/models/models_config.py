@@ -1,3 +1,7 @@
+"""
+This file gathers top level [configuration](@yw-nav-class:models_config.Configuration)'s models.
+"""
+
 # standard library
 from abc import ABC
 from collections.abc import Awaitable, Callable

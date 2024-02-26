@@ -1,3 +1,8 @@
+"""
+This file gathers [TokensStorageConf](@yw-nav-class:models_token_storage.TokensStorageConf) related models of the
+[configuration](@yw-nav-class:models_config.Configuration).
+"""
+
 # standard library
 from abc import ABC, abstractmethod
 from pathlib import Path
