@@ -34,6 +34,7 @@ externals_deps = {
     "rxjs": "^7.5.6",
     "@youwol/local-youwol-client": "^0.2.1",
     "@youwol/rx-tab-views": "^0.3.0",
+    "@youwol/http-primitives": "^0.2.3",
 }
 
 in_bundle_deps = {}
