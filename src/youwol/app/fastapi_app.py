@@ -156,7 +156,10 @@ def setup_middlewares(env: YouwolEnvironment):
     for middleware in reversed(env.customMiddlewares):
         fastapi_app.add_middleware(CustomMiddlewareWrapper, model_config=middleware)
 
-    fastapi_app.add_middleware(BrowserCachingMiddleware)
+    fastapi_app.add_middleware(
+        BrowserCachingMiddleware,
+        config_dependant_browser_caching=env.features.configDependantBrowserCaching,
+    )
     fastapi_app.add_middleware(
         AuthMiddleware,
         predicate_public_path=lambda url: url.path.startswith(

@@ -33,6 +33,8 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
   - sync. documentation version with `youwol` version. <!-- TG 2131 -->
   - serve documentation from `/doc`. <!-- TG 2130 -->
   - module's symbols grouped by file. <!-- TG 2143 -->
+- **Experimental**
+  - Configuration dependant browser caching (disabled by default) <!-- TG-2126 -->
   
 ### Changed
 
@@ -75,6 +77,7 @@ TG-2132
 TG-2139
 TG-2135
 TG-2138
+TG-2125
 -->
 
 ## [0.1.7.post] − 2024-02-09

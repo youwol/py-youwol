@@ -37,6 +37,7 @@ from .model_remote import (
     CloudEnvironments,
     Connection,
 )
+from .models_features import Features
 from .models_project import Projects
 from .models_token_storage import TokensStorageConf, TokensStorageSystemKeyring
 
@@ -484,4 +485,9 @@ class Configuration(BaseModel):
     customization: Customization = Customization()
     """
     Various handles for customization (*e.g.* middleware, commands, ...)
+    """
+
+    features: Features = Features()
+    """
+    Application Features
     """
