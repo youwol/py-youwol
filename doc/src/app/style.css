@@ -1,6 +1,9 @@
 html {
     font-size: 18px;
 }
+.CodeMirror {
+    height: auto !important;
+}
 /* Avoid breaking parameter names, etc. in table cells. */
 .doc-contents td code {
     word-break: normal !important;
@@ -207,12 +210,8 @@ code.doc-symbol-module::after {
     font-size: 0.8em;
 }
 
-.doc-class {
-    margin-top: 5em;
-}
-
-.doc-function {
-    margin-top: 5em;
+.doc-item {
+    margin-top: 3em;
 }
 
 /* Initially hide the scrollbar for the element */

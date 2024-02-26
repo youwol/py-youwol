@@ -16,7 +16,7 @@ export class PyClassView implements VirtualDOM<'div'> {
     public readonly router: Router
     public readonly configuration: Configuration
     public readonly tag = 'div'
-    public readonly class = 'doc-class'
+    public readonly class = 'doc-class doc-item'
     public readonly children: ChildrenLike
     constructor(params: {
         fromModule: Routers.System.DocModuleResponse
