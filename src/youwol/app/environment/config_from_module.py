@@ -47,15 +47,14 @@ class IConfigurationFactory(ABC):
     object as last statement of the python configuration file.
 
     Example:
-
-        ```python
+        <code-snippet language="python">
         from youwol.app.environment import Configuration, IConfigurationFactory
         from youwol.app.main_args import MainArguments
 
         class ConfigurationFactory(IConfigurationFactory):
             async def get(self, main_args: MainArguments) -> Configuration:
                 return Configuration()
-        ```
+        </code-snippet>
 
         Derived class should implement the **get** method.
     """

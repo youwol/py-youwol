@@ -40,7 +40,7 @@ class ProjectTemplate(BaseModel):
     In most practical cases, project template generator are exposed by python packages and consumed in the configuration
     file, for instance regarding the typescript pipeline of youwol:
 
-    ```python hl_lines="5 11"
+    <code-snippet language="python" highlightedLines="5 11">
     from youwol.app.environment import (
         Configuration,
         Projects,
@@ -54,7 +54,7 @@ class ProjectTemplate(BaseModel):
             templates=[app_ts_webpack_template(folder=projects_folder)],
         )
     )
-    ```
+    </code-snippet>
 
     """
 
@@ -115,7 +115,7 @@ class RecursiveProjectsFinder(ProjectsFinder):
     Strategy to discover all projects below the provided paths with optional continuous watching.
 
     Example:
-        ```python hl_lines="6 13-17"
+        <code-snippet language="python" highlightedLines="6 13-17">
         from pathlib import Path
 
         from youwol.app.environment import (
@@ -135,7 +135,7 @@ class RecursiveProjectsFinder(ProjectsFinder):
                 )
             )
         )
-        ```
+        </code-snippet>
 
     **Troubleshooting**
 
@@ -217,7 +217,7 @@ class ExplicitProjectsFinder(ProjectsFinder):
      class allows such features.
 
      Example:
-        ```python hl_lines="6 13-15"
+        <code-snippet language="python" highlightedLines="6 13-15">
         from pathlib import Path
 
         from youwol.app.environment import (
@@ -235,7 +235,7 @@ class ExplicitProjectsFinder(ProjectsFinder):
                 )
             )
         )
-        ```
+        </code-snippet>
 
     """
 
@@ -267,7 +267,7 @@ class Projects(BaseModel):
     Example:
         A typical example of this section of the configuration looks like:
 
-        ```python hl_lines="5 6 8 13 14 15 16 17 18"
+        <code-snippet language="python" highlightedLines="5 6 8 13 14 15 16 17 18">
         from pathlib import Path
 
         from youwol.app.environment import (
@@ -287,7 +287,7 @@ class Projects(BaseModel):
                 templates=[app_ts_webpack_template(folder=projects_folder)],
             )
         )
-        ```
+        </code-snippet>
     """
 
     finder: ProjectsFinder | ConfigPath = RecursiveProjectsFinder()

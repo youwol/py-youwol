@@ -9,10 +9,10 @@ run-time.
 Note:
     The current environment is available each time an instance of [Context](@yw-nav-class:Context)
     is, using:
-    ```python
+    <code-snippet language="python">
     ctx: Context # some instance of Context
     yw_env = await ctx.get('env', YouwolEnvironment)
-    ```
+    </code-snippet>
 """
 
 # relative

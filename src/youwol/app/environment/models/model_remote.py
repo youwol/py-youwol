@@ -82,7 +82,7 @@ class CloudEnvironment(BaseModel):
     Example:
         The standard youwol cloud environment connected using a browser connection or a direct connection:
 
-        ```python
+        <code-snippet language="python">
         from pathlib import Path
 
         from youwol.app.environment import (
@@ -104,7 +104,7 @@ class CloudEnvironment(BaseModel):
                 DirectAuth(authId="bar", userName="bar", password="bar-pwd"),
             ],
         )
-        ```
+        </code-snippet>
     """
 
     envId: str
@@ -159,7 +159,7 @@ class CloudEnvironments(BaseModel):
     Example:
         Below is an example declaring 2 cloud environments, one related to a hypothetical remote environment of
         a company `foo`, and the second the regular youwol remote environment :
-        ```python
+        <code-snippet language="python">
 
         from pathlib import Path
 
@@ -199,7 +199,7 @@ class CloudEnvironments(BaseModel):
                 )
             )
         )
-        ```
+        <code-snippet>
     """
 
     defaultConnection: Connection
@@ -222,7 +222,7 @@ class LocalEnvironment(BaseModel):
     If paths are relatives, they are referenced with respect to the parent folder of the configuration file.
 
     Example:
-        ```python
+        <code-snippet language="python">
         from pathlib import Path
 
         from youwol.app.environment import (
@@ -239,7 +239,7 @@ class LocalEnvironment(BaseModel):
                 )
             )
         )
-        ```
+        </code-snippet>
 
     """
 

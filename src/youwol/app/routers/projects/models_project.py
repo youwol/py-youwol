@@ -450,9 +450,9 @@ class Flow(BaseModel):
 
     **Example**
 
-    ```python
+    <code-snippet language="python">
     flow = Flow(name='flow', steps=['init > build > publish', 'init > doc > publish'])
-    ```
+    </code-snippet>
     Where `init`, `build`, `doc`, `publish` refers to ID of steps included in the
      [Pipeline](@yw-nav-class:youwol.app.routers.projects.models_project.Pipeline).
     """

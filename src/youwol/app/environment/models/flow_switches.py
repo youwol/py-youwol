@@ -114,7 +114,7 @@ class FlowSwitcherMiddleware(CustomMiddleware):
      element match against the original request.
 
      Example:
-        ```python hl_lines="5-7 9-16 22-29"
+        <code-snippet language="python" highlightedLines="5-7 9-16 22-29">
         from youwol.app.environment import (
             Configuration,
             Customization,
@@ -147,7 +147,7 @@ class FlowSwitcherMiddleware(CustomMiddleware):
                 ],
             )
         )
-        ```
+        </code-snippet>
         In the above snippet to FlowSwitcherMiddleware middleware are added:
 
         *  the first one ([CdnSwitch](@yw-nav-class:CdnSwitch))
@@ -218,7 +218,7 @@ class CdnSwitch(FlowSwitch):
         Below is a typical example of usage of CdnSwitch within a
         [FlowSwitcherMiddleware](@yw-nav-class:FlowSwitcherMiddleware):
 
-        ```python hl_lines="5 14"
+        <code-snippet language="python" highlightedLines="5 14">
         from youwol.app.environment import (
             Configuration,
             Customization,
@@ -237,7 +237,7 @@ class CdnSwitch(FlowSwitch):
                 ],
             )
         )
-        ```
+        </code-snippet>
         Each time a resource from `@youwol/foo-app` is queried, it will be redirected to `localhost:4001`.
     """
 
@@ -337,7 +337,7 @@ class RedirectSwitch(FlowSwitch):
         Below is a typical example of usage of RedirectSwitch within a
         [FlowSwitcherMiddleware](@yw-nav-class:FlowSwitcherMiddleware):
 
-        ```python hl_lines="5 8-11 18"
+        <code-snippet language="python" highlightedLines="5 8-11 18">
         from youwol.app.environment import (
             Configuration,
             Customization,
@@ -360,7 +360,7 @@ class RedirectSwitch(FlowSwitch):
                 ],
             )
         )
-        ```
+        </code-snippet>
         Each time a request to `/api/foo-backend/**` is intercepted, it will be redirected to `localhost:4002`.
     """
 
