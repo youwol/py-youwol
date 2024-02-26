@@ -158,7 +158,7 @@ def setup_middlewares(env: YouwolEnvironment):
 
     fastapi_app.add_middleware(
         BrowserCachingMiddleware,
-        config_dependant_browser_caching=env.features.config_dependant_browser_caching,
+        config_dependant_browser_caching=env.features.configDependantBrowserCaching,
     )
     fastapi_app.add_middleware(
         AuthMiddleware,

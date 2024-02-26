@@ -488,3 +488,6 @@ class Configuration(BaseModel):
     """
 
     features: Features = Features()
+    """
+    Application Features
+    """

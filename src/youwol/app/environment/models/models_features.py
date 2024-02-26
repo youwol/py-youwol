@@ -1,7 +1,9 @@
-# standard library
-from dataclasses import dataclass
+# third parties
+from pydantic import BaseModel
 
 
-@dataclass(frozen=True, kw_only=True)
-class Features:
-    config_dependant_browser_caching: bool = False
+class Features(BaseModel):
+    """Application Features"""
+
+    configDependantBrowserCaching: bool = False
+    """ Tie the browser caching to the configuration """
