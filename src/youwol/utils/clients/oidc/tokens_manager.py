@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 # Youwol utilities
 from youwol.utils import AT, CacheClient
 from youwol.utils.clients.oidc.oidc_config import OidcForClient, TokensData
+from youwol.utils.crypto.digest import DigestExclude
 
 
 class TokensExpiredError(RuntimeError):
@@ -13,7 +14,7 @@ class TokensExpiredError(RuntimeError):
         super().__init__("Tokens expired")
 
 
-class TokensStorage(ABC):
+class TokensStorage(ABC, DigestExclude):
     """
     Abstract base class for defining the interface of a TokensStorage.
 

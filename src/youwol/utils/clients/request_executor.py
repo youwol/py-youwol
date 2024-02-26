@@ -10,6 +10,7 @@ from typing import Any, Generic, TypeVar
 from aiohttp import ClientResponse, ClientSession
 
 # Youwol utilities
+from youwol.utils.crypto.digest import DigestExclude
 from youwol.utils.exceptions import upstream_exception_from_response
 from youwol.utils.types import JSON
 
@@ -23,7 +24,7 @@ E.g. in case of aiohttp executor, it is
 """
 
 
-class RequestExecutor(ABC, Generic[T]):
+class RequestExecutor(ABC, Generic[T], DigestExclude):
     """
     Abstract class for requests executor.
 

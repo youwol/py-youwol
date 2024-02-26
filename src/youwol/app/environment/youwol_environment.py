@@ -25,6 +25,7 @@ from youwol.app.web_socket import WsDataStreamer
 # Youwol utilities
 from youwol.utils.clients.oidc.tokens_manager import TokensStorage
 from youwol.utils.context import ContextFactory, InMemoryReporter
+from youwol.utils.crypto.digest import compute_digest
 from youwol.utils.servers.fast_api import FastApiRouter
 from youwol.utils.utils import yw_version
 from youwol.utils.utils_paths import ensure_dir_exists
@@ -189,6 +190,16 @@ class FwdArgumentsReload:
 
 class YouwolEnvironmentFactory:
     __cached_config: YouwolEnvironment | None = None
+    __cached_config_digest: str | None = None
+
+    @staticmethod
+    def __set(cached_config: YouwolEnvironment):
+        YouwolEnvironmentFactory.__cached_config = cached_config
+        digest = compute_digest(
+            cached_config,
+            trace_path_root="YouwolEnvFactory__set",
+        )
+        YouwolEnvironmentFactory.__cached_config_digest = digest.hex()
 
     @staticmethod
     async def get():
@@ -197,12 +208,16 @@ class YouwolEnvironmentFactory:
         return config
 
     @staticmethod
+    def get_digest():
+        return YouwolEnvironmentFactory.__cached_config_digest
+
+    @staticmethod
     async def load_from_file(
         path: Path, fwd_args_reload: FwdArgumentsReload | None = None
     ):
         conf = await safe_load(path=path, fwd_args_reload=fwd_args_reload)
         await YouwolEnvironmentFactory.trigger_on_load(config=conf)
-        YouwolEnvironmentFactory.__cached_config = conf
+        YouwolEnvironmentFactory.__set(conf)
         return conf
 
     @staticmethod
@@ -216,7 +231,7 @@ class YouwolEnvironmentFactory:
         )
 
         await YouwolEnvironmentFactory.trigger_on_load(config=conf)
-        YouwolEnvironmentFactory.__cached_config = conf
+        YouwolEnvironmentFactory.__set(conf)
         return conf
 
     @staticmethod
@@ -224,7 +239,7 @@ class YouwolEnvironmentFactory:
         path = await get_yw_config_starter(get_main_arguments())
         conf = await safe_load(path=path)
 
-        YouwolEnvironmentFactory.__cached_config = conf
+        YouwolEnvironmentFactory.__set(conf)
         await YouwolEnvironmentFactory.trigger_on_load(config=conf)
         return YouwolEnvironmentFactory.__cached_config
 
@@ -247,7 +262,7 @@ class YouwolEnvironmentFactory:
             ),
             tokens_storage=conf.tokens_storage,
         )
-        YouwolEnvironmentFactory.__cached_config = new_conf
+        YouwolEnvironmentFactory.__set(new_conf)
 
     @staticmethod
     async def trigger_on_load(config: YouwolEnvironment):

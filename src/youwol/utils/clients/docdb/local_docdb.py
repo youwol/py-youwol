@@ -23,6 +23,7 @@ from youwol.utils.clients.docdb.models import (
     WhereClause,
 )
 from youwol.utils.clients.utils import get_default_owner
+from youwol.utils.crypto.digest import DigestExclude
 from youwol.utils.http_clients.cdn_backend.utils import (
     create_local_scylla_db_docs_file_if_needed,
 )
@@ -48,7 +49,7 @@ def get_local_nosql_instance(
 
 
 @dataclass(frozen=True)
-class LocalDocDbClient:
+class LocalDocDbClient(DigestExclude):
     """
     Local indexed database implementation following [scyllaDB](https://www.scylladb.com/) concepts and supported
      by a single JSON file.
