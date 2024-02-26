@@ -14,6 +14,7 @@ export class PyAttributeView implements VirtualDOM<'div'> {
     public readonly router: Router
     public readonly configuration: Configuration
     public readonly tag = 'div'
+    public readonly class: string
     public readonly children: ChildrenLike
     constructor(params: {
         router: Router
@@ -24,6 +25,10 @@ export class PyAttributeView implements VirtualDOM<'div'> {
         type: 'attribute' | 'global'
     }) {
         Object.assign(this, params)
+        this.class =
+            params.type == 'attribute'
+                ? 'doc-attribute doc-item'
+                : 'doc-global doc-item'
 
         const headerChildren: AnyVirtualDOM[] = [
             { tag: 'div', innerText: ':', class: 'mx-4' },
@@ -43,7 +48,7 @@ export class PyAttributeView implements VirtualDOM<'div'> {
                 class: 'd-flex align-items-center',
                 children: [
                     new HeaderView({
-                        tag: params.type === 'attribute' ? 'h3' : 'h2',
+                        tag: params.type === 'attribute' ? 'h4' : 'h3',
                         withClass:
                             params.type === 'attribute'
                                 ? 'doc-attribute-name'

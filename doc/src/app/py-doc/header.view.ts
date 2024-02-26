@@ -39,7 +39,7 @@ export class HeaderView implements VirtualDOM<HeadingLevel> {
                     fontWeight: 'bolder',
                 },
                 class: `doc doc-object-name ${this.withClass}`,
-                innerText: this.text,
+                children: [{ tag: 'span', innerText: this.text }],
             },
             ...this.withChildren,
         ]

@@ -1,4 +1,4 @@
-import { ChildrenLike, VirtualDOM } from '@youwol/rx-vdom'
+import { ChildrenLike, VirtualDOM, AnyVirtualDOM } from '@youwol/rx-vdom'
 import { Configuration } from './index'
 import { Routers } from '@youwol/local-youwol-client'
 import { PyClassView } from './class.view'
@@ -21,6 +21,19 @@ export class PyModuleView implements VirtualDOM<'div'> {
         configuration: Configuration
     }) {
         Object.assign(this, params)
+        const getFile = ({ path }) => {
+            return path.split('.').slice(-2)[0]
+        }
+        const files = [
+            ...new Set(
+                [
+                    ...this.moduleDoc.attributes,
+                    ...this.moduleDoc.functions,
+                    ...this.moduleDoc.classes,
+                ].map(getFile),
+            ),
+        ].sort((a: string, b: string) => a.localeCompare(b))
+
         this.children = [
             new HeaderView({
                 tag: 'h1',
@@ -40,46 +53,77 @@ export class PyModuleView implements VirtualDOM<'div'> {
             },
             { tag: 'div', class: 'my-3' },
             separatorView,
-            { tag: 'div', class: 'my-5' },
-            {
-                tag: 'div',
-                children: this.moduleDoc.attributes.map(
-                    (attDoc) =>
-                        new PyAttributeView({
-                            fromModule: this.moduleDoc,
-                            attDoc,
-                            router: this.router,
-                            configuration: this.configuration,
-                            parent: this.moduleDoc,
-                            type: 'global',
+            ...[...files].map((file): AnyVirtualDOM => {
+                const attributes = this.moduleDoc.attributes.filter(
+                    (a) => getFile(a) == file,
+                )
+                const classes = this.moduleDoc.classes.filter(
+                    (a) => getFile(a) == file,
+                )
+                const functions = this.moduleDoc.functions.filter(
+                    (a) => getFile(a) == file,
+                )
+                const fileDoc = this.moduleDoc.files.find((f) => {
+                    return f.path.split('.').slice(-1)[0] == file
+                })
+                return {
+                    tag: 'div' as const,
+                    children: [
+                        { tag: 'div', class: 'my-5' },
+                        new HeaderView({
+                            tag: 'h2',
+                            withClass: 'doc-file-name fas fa-file',
+                            text: `  ${file}.py`,
+                            doc: this.moduleDoc,
+                            originPath: this.moduleDoc.path,
                         }),
-                ),
-            },
-            {
-                tag: 'div',
-                children: this.moduleDoc.functions.map(
-                    (functionDoc) =>
-                        new PyFunctionView({
-                            fromModule: this.moduleDoc,
-                            functionDoc,
-                            router: this.router,
-                            configuration: this.configuration,
-                            type: 'function',
-                        }),
-                ),
-            },
-            {
-                tag: 'div',
-                children: this.moduleDoc.classes.map(
-                    (classDoc) =>
-                        new PyClassView({
-                            fromModule: this.moduleDoc,
-                            classDoc,
+                        new PyDocstringView({
+                            docstring: fileDoc.docstring || '',
                             router: this.router,
                             configuration: this.configuration,
                         }),
-                ),
-            },
+                        {
+                            tag: 'div',
+                            children: attributes.map(
+                                (attDoc) =>
+                                    new PyAttributeView({
+                                        fromModule: this.moduleDoc,
+                                        attDoc,
+                                        router: this.router,
+                                        configuration: this.configuration,
+                                        parent: this.moduleDoc,
+                                        type: 'global',
+                                    }),
+                            ),
+                        },
+                        {
+                            tag: 'div',
+                            children: functions.map(
+                                (functionDoc) =>
+                                    new PyFunctionView({
+                                        fromModule: this.moduleDoc,
+                                        functionDoc,
+                                        router: this.router,
+                                        configuration: this.configuration,
+                                        type: 'function',
+                                    }),
+                            ),
+                        },
+                        {
+                            tag: 'div',
+                            children: classes.map(
+                                (classDoc) =>
+                                    new PyClassView({
+                                        fromModule: this.moduleDoc,
+                                        classDoc,
+                                        router: this.router,
+                                        configuration: this.configuration,
+                                    }),
+                            ),
+                        },
+                    ],
+                }
+            }),
         ]
     }
 }
