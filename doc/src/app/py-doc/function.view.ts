@@ -32,7 +32,7 @@ export class PyFunctionView implements VirtualDOM<'div'> {
                 : 'doc-method doc-item'
         this.children = [
             new HeaderView({
-                tag: params.type == 'function' ? 'h2' : 'h3',
+                tag: params.type == 'function' ? 'h3' : 'h4',
                 withClass:
                     params.type == 'function'
                         ? 'doc-function-name'

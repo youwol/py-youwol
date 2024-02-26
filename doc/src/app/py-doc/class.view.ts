@@ -28,7 +28,7 @@ export class PyClassView implements VirtualDOM<'div'> {
 
         this.children = [
             new HeaderView({
-                tag: 'h2',
+                tag: 'h3',
                 withClass: 'doc-class-name',
                 doc: this.classDoc,
                 originPath: this.fromModule.path,
