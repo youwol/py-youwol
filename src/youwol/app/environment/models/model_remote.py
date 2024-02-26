@@ -1,3 +1,8 @@
+"""
+This file gathers [configuration](@yw-nav-class:models_config.Configuration)'s models related to remote environments
+and authorizations.
+"""
+
 # third parties
 from pydantic import BaseModel
 

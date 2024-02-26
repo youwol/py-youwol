@@ -1,3 +1,8 @@
+"""
+This file gathers [configuration](@yw-nav-class:models_config.Configuration)'s models related to
+[FlowSwitch](@yw-nav-class:FlowSwitch).
+"""
+
 # typing
 
 # third parties

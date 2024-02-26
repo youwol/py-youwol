@@ -1,3 +1,8 @@
+"""
+This file gathers [project](@yw-nav-class:models_project.Project) related models of the
+[configuration](@yw-nav-class:models_config.Configuration).
+"""
+
 # standard library
 from collections.abc import Awaitable, Callable
 from pathlib import Path

@@ -1,3 +1,8 @@
+"""
+This file gathers most of the non-trivial defaults values of the
+[configuration](@yw-nav-class:models_config.Configuration).
+"""
+
 # standard library
 import os
 
