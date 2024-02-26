@@ -1,6 +1,6 @@
 import { ChildrenLike, VirtualDOM } from '@youwol/rx-vdom'
 import { BehaviorSubject } from 'rxjs'
-import { Router, parseMd } from '@youwol/mkdocs-ts'
+import { parseMd, Router } from '@youwol/mkdocs-ts'
 import { Routers } from '@youwol/local-youwol-client'
 import { Configuration } from './index'
 
@@ -69,7 +69,7 @@ export class PyCodeView implements VirtualDOM<'div'> {
     public readonly tag = 'div'
     public readonly class = 'fv-border-primary rounded'
     public readonly style = {
-        fontSize: '0.8rem',
+        fontSize: '0.9rem',
     }
     public readonly children: ChildrenLike
     public readonly expanded$ = new BehaviorSubject(false)
@@ -96,10 +96,7 @@ export class PyCodeView implements VirtualDOM<'div'> {
                         class: 'ml-1 mr-1 mt-1',
                         children: [
                             parseMd({
-                                src:
-                                    '```python\n' +
-                                    removeDocString(this.codeDoc.content) +
-                                    '\n```\n',
+                                src: `<code-snippet language="python">${this.codeDoc.content}</code-snippet>`,
                                 router: this.router,
                             }),
                         ],
@@ -108,8 +105,4 @@ export class PyCodeView implements VirtualDOM<'div'> {
             },
         ]
     }
-}
-
-function removeDocString(code: string) {
-    return code.replace(/"""[\s\S]*?"""\n/g, '"""').replace(/"""/g, '')
 }
