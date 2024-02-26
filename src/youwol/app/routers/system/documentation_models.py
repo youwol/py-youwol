@@ -290,6 +290,23 @@ class DocChildModulesResponse(BaseModel):
     """
 
 
+class DocFileResponse(BaseModel):
+    name: str
+    """
+    Name of the file  (e.g. `youwol_environment`).
+    """
+
+    path: str
+    """
+    Path of the file  (e.g. `youwol.app.environment.youwol_environment`).
+    """
+
+    docstring: list[DocDocstringSectionResponse]
+    """
+    Docstring associated.
+    """
+
+
 class DocModuleResponse(BaseModel):
     """
     Full description of a module.
@@ -328,6 +345,11 @@ class DocModuleResponse(BaseModel):
     functions: list[DocFunctionResponse]
     """
     Description of its functions.
+    """
+
+    files: list[DocFileResponse]
+    """
+    Description of its files.
     """
 
 

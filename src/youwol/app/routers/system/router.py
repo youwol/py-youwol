@@ -729,6 +729,7 @@ async def get_documentation(request: Request, rest_of_path: str) -> DocModuleRes
                 classes=[],
                 functions=[],
                 attributes=[],
+                files=[],
             )
 
         doc_response = format_module_doc(griffe_doc=griffe_doc, path=module_name)

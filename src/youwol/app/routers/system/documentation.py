@@ -51,6 +51,7 @@ from youwol.app.routers.system.documentation_models import (
     DocCrossLinkErrorResponse,
     DocDecoratorResponse,
     DocDocstringSectionResponse,
+    DocFileResponse,
     DocFunctionResponse,
     DocModuleResponse,
     DocParameterResponse,
@@ -138,6 +139,7 @@ def format_module_doc(griffe_doc: Module, path: str) -> DocModuleResponse:
     classes = [format_class_doc(c) for c in elements.classes]
     functions = [format_function_doc(f) for f in elements.functions]
     attributes = [format_attribute_doc(a) for a in elements.attributes]
+    files = [format_file_doc(f) for f in elements.files]
     sections = get_docstring_sections(griffe_doc)
 
     return DocModuleResponse(
@@ -148,6 +150,7 @@ def format_module_doc(griffe_doc: Module, path: str) -> DocModuleResponse:
         attributes=sorted(attributes, key=lambda m: m.name),
         classes=sorted(classes, key=lambda c: c.name),
         functions=sorted(functions, key=lambda c: c.name),
+        files=sorted(files, key=lambda c: c.name),
     )
 
 
@@ -184,6 +187,16 @@ def format_child_module_doc(griffe_doc: Module) -> DocChildModulesResponse:
         name=griffe_doc.name,
         path=griffe_doc.canonical_path,
         isLeaf=is_leaf_module(path=griffe_doc.canonical_path),
+    )
+
+
+def format_file_doc(griffe_doc: Module) -> DocFileResponse:
+    return DocFileResponse(
+        name=griffe_doc.name,
+        path=griffe_doc.canonical_path,
+        docstring=format_detailed_docstring(
+            get_docstring_sections(griffe_doc), parent=griffe_doc
+        ),
     )
 
 
@@ -566,7 +579,14 @@ def check_documentation(
     elements = extract_module(griffe_doc=module)
     docstrings = [
         f.docstring
-        for f in [module, *elements.functions, *elements.classes, *elements.attributes]
+        for f in [
+            module,
+            *elements.functions,
+            *elements.classes,
+            *elements.attributes,
+            *elements.files,
+        ]
+        if f.docstring
     ]
     all_matches = [
         (docstring, cross_ref_pattern.findall(docstring.value))
