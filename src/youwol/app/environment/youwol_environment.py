@@ -50,6 +50,7 @@ from .models.models_config import (
     Events,
     Projects,
 )
+from .models.models_features import Features
 from .models.models_project import ExplicitProjectsFinder
 from .models.models_token_storage import TokensStoragePath, TokensStorageSystemKeyring
 from .native_backends_config import BackendConfigurations, native_backends_config
@@ -121,6 +122,8 @@ class YouwolEnvironment(BaseModel):
     own port and proxied by youwol from the base path `/backends/NAME/VERSION/**` (where `NAME` and `VERSION` are
     the name and version of the proxied backend).
     """
+
+    features: Features
 
     def reset_databases(self):
         self.backends_configuration.reset_databases()
@@ -390,6 +393,7 @@ async def safe_load(
             local_nosql=paths_book.databases / "docdb",
         ),
         tokens_storage=fwd_args_reload.token_storage,
+        features=config.features,
     )
 
 
