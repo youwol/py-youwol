@@ -82,7 +82,7 @@ class LocalEnvironment(BaseModel):
     If paths are relatives, they are referenced with respect to the parent folder of the configuration file.
 
     Example:
-        ```python
+        <code-snippet language='python'>
         from pathlib import Path
 
         from youwol.app.environment import (
@@ -99,8 +99,7 @@ class LocalEnvironment(BaseModel):
                 )
             )
         )
-        ```
-
+        </code-snippet>
     """
 
     dataDir: ConfigPath = default_path_data_dir
@@ -127,7 +126,7 @@ class System(BaseModel):
 
     The default value is most of the time adapted for most users:
 
-    ```python hl_lines="5 9"
+    <code-snippet language="python" highlightedLines="5 9">
     from pathlib import Path
 
     from youwol.app.environment import (
@@ -138,7 +137,7 @@ class System(BaseModel):
     Configuration(
         system=System()
     )
-    ```
+    </code-snippet>
     In a nutshell:
 
     *  it defines the serving http port to `2000`
@@ -148,7 +147,7 @@ class System(BaseModel):
     (see [LocalEnvironment](@yw-nav-class:models_config.LocalEnvironment))
 
     The above example is equivalent to:
-    ```python
+    <code-snippet language="python">
     from pathlib import Path
 
     from youwol.app.environment import (
@@ -185,7 +184,7 @@ class System(BaseModel):
             localEnvironment=LocalEnvironment()
         )
     )
-    ```
+    </code-snippet>
     """
 
     httpPort: int | None = default_http_port
@@ -234,7 +233,7 @@ class Command(BaseModel):
     `/admin/custom-commands/$NAME`, where `$NAME` is the name of the command.
 
     Example:
-        ```python hl_lines="4 12-19"
+        <code-snippet language="python" highlightedLines="4 12-19">
         from youwol.app.environment import (
             Configuration,
             Customization,
@@ -258,7 +257,7 @@ class Command(BaseModel):
                 )
             )
         )
-        ```
+        </code-snippet>
         In the above example, two commands (one `GET` and one `POST`) are defined,
          both exposed from `/admin/custom-commands/example`.
     """
@@ -314,7 +313,7 @@ class CustomMiddleware(BaseModel, ABC):
 
     Example:
         Below is a typical example
-        ```python
+        <code-snippet language="python">
         from starlette.middleware.base import RequestResponseEndpoint
         from starlette.requests import Request
         from youwol.app.environment import (
@@ -334,7 +333,7 @@ class CustomMiddleware(BaseModel, ABC):
                 ) as ctx:
                     await ctx.info("Hello")
                     return await call_next(incoming_request)
-        ```
+        </code-snippet>
     """
 
     async def dispatch(
@@ -368,7 +367,7 @@ class Customization(BaseModel):
     Example:
         Below is an example spanning most of the attribute of the class:
 
-        ```python
+        <code-snippet language="python">
         from youwol.app.environment import (
             Configuration,
             Customization,
@@ -415,7 +414,7 @@ class Customization(BaseModel):
                 )
             )
         )
-        ```
+        </code-snippet>
 
         In a nutshell:
 
@@ -447,16 +446,14 @@ class Configuration(BaseModel):
 
     Every parameter is optional, to provide the default configuration:
 
-    ```python
-
+    <code-snippet language="python">
     from youwol.app.environment import Configuration
 
     Configuration()
-    ```
+    </code-snippet>
 
     Which is equivalent to:
-    ```python
-
+    <code-snippet language="python">
     from youwol.app.environment import Configuration, System, Projects, Customization
 
     Configuration(
@@ -464,7 +461,7 @@ class Configuration(BaseModel):
         projects=Projects(),
         customization=Customization()
     )
-    ```
+    </code-snippet>
     """
 
     system: System = System()
