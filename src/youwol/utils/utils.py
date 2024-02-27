@@ -392,7 +392,8 @@ def yw_doc_version() -> str:
     """
     version = yw_version()
 
-    wip_suffixes = [".dev", "rc"]
+    # Order does matter in the following list, e.g. `0.1.8rc1.dev` -> `0.1.8-wip`
+    wip_suffixes = ["rc", ".dev"]
     for suffix in wip_suffixes:
         if suffix in version:
             return f"{version.split(suffix)[0]}-wip"
