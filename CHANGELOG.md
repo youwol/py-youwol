@@ -50,6 +50,7 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 - Forward request's cookies when using `redirect_request`. <!-- TG-2072 -->
 - Ensure python scripts execution has correct environment variable `PYTHONPATH` <!-- TG-2136 -->
+- Fix documentation versioning for `.dev` release candidates. <!-- TG 2151 -->
 
 ### Security
 
