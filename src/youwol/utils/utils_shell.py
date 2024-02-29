@@ -1,5 +1,6 @@
 # standard library
 import asyncio
+import os
 
 from asyncio.subprocess import Process
 from collections.abc import Awaitable, Callable
@@ -18,11 +19,17 @@ class CommandException(Exception):
         super().__init__(f"{self.command} failed")
 
 
+def clone_environ(env_variables: dict[str, str]) -> dict[str, str]:
+    env = os.environ.copy()
+    return {**env, **env_variables}
+
+
 async def execute_shell_cmd(
     cmd: str,
     context: Context,
     log_outputs=True,
     on_executed: Callable[[Process, Context], Awaitable[None]] | None = None,
+    **kwargs,
 ) -> tuple[int | None, list[str]]:
     async with context.start(
         action="execute 'shell' command", with_labels=["BASH"]
@@ -33,6 +40,7 @@ async def execute_shell_cmd(
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             shell=True,
+            **kwargs,
         )
         if on_executed:
             await on_executed(p, ctx)

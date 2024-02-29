@@ -37,6 +37,7 @@ from youwol.utils import (
     AnyDict,
     CommandException,
     Context,
+    clone_environ,
     execute_shell_cmd,
     find_available_port,
     write_json,
@@ -339,6 +340,7 @@ class RunStep(PipelineStep):
                     context=ctx,
                     log_outputs=True,
                     on_executed=on_executed,
+                    env=clone_environ(env_variables={"PYTHONPATH": str(project.path)}),
                 )
                 if return_code > 0:
                     raise CommandException(command=shell_cmd, outputs=outputs)
