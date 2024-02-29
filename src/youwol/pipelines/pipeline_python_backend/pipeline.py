@@ -211,13 +211,12 @@ class DependenciesStep(PipelineStep):
                 shutil.rmtree(venv_path)
 
             cmd = (
-                f"( cd {str(project.path)} "
-                f"&& python3 -m venv {VENV_NAME} "
+                f"(python3 -m venv {VENV_NAME} "
                 f"&& . {VENV_NAME}/bin/activate "
                 f"&& pip install -r ./requirements.txt)"
             )
 
-            await execute_shell_cmd(cmd=cmd, context=context)
+            await execute_shell_cmd(cmd=cmd, context=context, cwd=project.path)
 
 
 async def get_info(project: Project, context: Context):
@@ -332,8 +331,7 @@ class RunStep(PipelineStep):
 
             if config["autoRun"]:
                 shell_cmd = (
-                    f"(cd {project.path}"
-                    f" && . {VENV_NAME}/bin/activate "
+                    f"(. {VENV_NAME}/bin/activate "
                     f"&& python {project.name}/main.py --port={port} --yw_port={env.httpPort})"
                 )
                 return_code, outputs = await execute_shell_cmd(
@@ -342,6 +340,7 @@ class RunStep(PipelineStep):
                     log_outputs=True,
                     on_executed=on_executed,
                     env=clone_environ(env_variables={"PYTHONPATH": str(project.path)}),
+                    cwd=project.path,
                 )
                 if return_code > 0:
                     raise CommandException(command=shell_cmd, outputs=outputs)
