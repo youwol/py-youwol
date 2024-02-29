@@ -17,6 +17,15 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 ## [0.1.8rc1.dev] − Unreleased
 
+### Fixed
+
+- Sync. typescript pipeline's `template.py` generator with youwol API updates. <!-- TG-2167 -->
+- python backend pipeline: ensure python scripts execution has correct environment variable `PYTHONPATH` <!-- TG-2168 -->
+
+<!-- Not worthy of inclusion
+TG-2169
+-->
+
 ## [0.1.8rc] − 2024-02-27
 
 ### Added

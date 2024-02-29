@@ -37,6 +37,7 @@ from youwol.utils import (
     AnyDict,
     CommandException,
     Context,
+    clone_environ,
     execute_shell_cmd,
     find_available_port,
     write_json,
@@ -69,6 +70,7 @@ def get_environment() -> Environment:
 
 
 PYPROJECT_FILE = "pyproject.toml"
+VENV_NAME = ".venv"
 
 
 class SetupStep(PipelineStep):
@@ -160,7 +162,7 @@ version = "{pyproject["project"]["version"]}" \n"""
 
 class DependenciesStep(PipelineStep):
     """
-    Creates a virtual environment `venv` in the project's folder and
+    Creates a virtual environment `.venv` in the project's folder and
     installs the dependencies from the `requirements.txt` file in it.
     """
 
@@ -204,18 +206,17 @@ class DependenciesStep(PipelineStep):
             action="DependenciesStep",
         ):
             # this is all temporary until py-youwol#0.1.7 is released
-            venv_path = project.path / "venv"
+            venv_path = project.path / VENV_NAME
             if venv_path.exists():
                 shutil.rmtree(venv_path)
 
             cmd = (
-                f"( cd {str(project.path)} "
-                f"&& python3 -m venv venv "
-                f"&& . venv/bin/activate "
+                f"(python3 -m venv {VENV_NAME} "
+                f"&& . {VENV_NAME}/bin/activate "
                 f"&& pip install -r ./requirements.txt)"
             )
 
-            await execute_shell_cmd(cmd=cmd, context=context)
+            await execute_shell_cmd(cmd=cmd, context=context, cwd=project.path)
 
 
 async def get_info(project: Project, context: Context):
@@ -330,8 +331,7 @@ class RunStep(PipelineStep):
 
             if config["autoRun"]:
                 shell_cmd = (
-                    f"(cd {project.path}"
-                    f" && . venv/bin/activate "
+                    f"(. {VENV_NAME}/bin/activate "
                     f"&& python {project.name}/main.py --port={port} --yw_port={env.httpPort})"
                 )
                 return_code, outputs = await execute_shell_cmd(
@@ -339,6 +339,8 @@ class RunStep(PipelineStep):
                     context=ctx,
                     log_outputs=True,
                     on_executed=on_executed,
+                    env=clone_environ(env_variables={"PYTHONPATH": str(project.path)}),
+                    cwd=project.path,
                 )
                 if return_code > 0:
                     raise CommandException(command=shell_cmd, outputs=outputs)
@@ -356,7 +358,7 @@ default_packaging_files = FileListing(
         "*",
         "*/**",
     ],
-    ignore=["cdn.zip", "./.*", ".*/*", "**/.*/*", "venv"],
+    ignore=["cdn.zip", "./.*", ".*/*", "**/.*/*", VENV_NAME],
 )
 """
 Definition of the project's files packaged for publication.
