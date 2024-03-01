@@ -19,7 +19,7 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 ### Fixed
 
-- Prevent digest infinite recursion <!-- TG-2166 -->
+- Prevent digest infinite recursion and handle more types <!-- TG-2166 -->
 
 ## [0.1.8.dev] − Unreleased
 

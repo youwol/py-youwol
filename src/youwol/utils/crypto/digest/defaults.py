@@ -3,7 +3,13 @@ import hashlib
 import inspect
 
 from pathlib import Path
-from types import CoroutineType, FunctionType
+from types import (
+    BuiltinFunctionType,
+    CoroutineType,
+    FunctionType,
+    MethodDescriptorType,
+    MethodType,
+)
 
 # typing
 from typing import Any
@@ -53,6 +59,29 @@ default_updaters: list[HashUpdater] = [
         predicate=lambda v: inspect.isfunction(v),  # pylint: disable=unnecessary-lambda
         fn_value_to_bytes=lambda v: v.__code__.co_code,
     ),
+    UpdaterScalar[MethodType](
+        v_type="METHOD",
+        # `predicate=inspect.isfunction is not correctly typed`
+        predicate=lambda v: inspect.ismethod(v),  # pylint: disable=unnecessary-lambda
+        fn_value_to_bytes=lambda v: v.__func__.__code__.co_code,
+    ),
+    UpdaterScalar[BuiltinFunctionType](
+        v_type="BUILTIN",
+        # `predicate=inspect.isbuiltin is not correctly typed`
+        predicate=lambda v: inspect.isbuiltin(v),  # pylint: disable=unnecessary-lambda
+        fn_value_to_bytes=lambda v: v.__qualname__.encode(),
+    ),
+    UpdaterScalar[MethodDescriptorType](
+        v_type="METH_QUAL",
+        predicate=lambda v: inspect.ismethoddescriptor(v)
+        and hasattr(v, "__qualname__"),
+        fn_value_to_bytes=lambda v: v.__qualname__.encode(),
+    ),
+    UpdaterScalar[MethodDescriptorType](
+        v_type="METH_FUNC",
+        predicate=lambda v: inspect.ismethoddescriptor(v) and hasattr(v, "__func__"),
+        fn_value_to_bytes=lambda v: v.__func__.__qualname__.encode(),
+    ),
     UpdaterScalar[CoroutineType](
         v_type="COROUTINE",
         # `predicate=inspect.iscoroutine is not correctly typed`
@@ -93,13 +122,23 @@ default_updaters: list[HashUpdater] = [
     ),
     UpdaterDictEntry(),
     UpdaterComposite[object](
-        predicate=lambda v: hasattr(v, "__class__"),
+        predicate=lambda v: hasattr(v, "__class__") and hasattr(v, "__dict__"),
         v_type="OBJECT",
         fn_trace_suffix=lambda v: f"({v.__class__.__name__})",
         fn_members=lambda v: [
             MemberComposite(v=i, trace_suffix=f"=>{k}")
             for k, i in sorted(v.__dict__.items())
             if k != "__pydantic_initialised__"
+        ],
+    ),
+    UpdaterComposite[object](
+        predicate=lambda v: hasattr(v, "__class__"),
+        v_type="DIR",
+        fn_trace_suffix=lambda v: f"({v.__class__.__name__})",
+        fn_members=lambda v: [
+            encapsulated_dict_entry(key=attr, value=getattr(v, attr))
+            for attr in dir(v)
+            if not attr.startswith("__")
         ],
     ),
 ]
