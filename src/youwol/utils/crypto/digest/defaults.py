@@ -9,24 +9,18 @@ from types import CoroutineType, FunctionType
 from typing import Any
 
 # relative
-from .implementations import (
+from .computation import DigestComputation, HashUpdater
+from .helpers import (
     MemberComposite,
     UpdaterComposite,
     UpdaterDictEntry,
     UpdaterScalar,
     encapsulated_dict_entry,
-    update_hash_any,
 )
-from .traces import noop_fn_trace
-from .types import (
-    DigestComputationParams,
-    DigestExclude,
-    FnHash,
-    FnTrace,
-    UpdateWithDigestValue,
-)
+from .traces import noop_trace
+from .types import DigestExclude, FnHash, FnTrace
 
-default_updaters: list[UpdateWithDigestValue] = [
+default_updaters: list[HashUpdater] = [
     UpdaterScalar[DigestExclude](
         v_type="EXCLUDE",
         predicate=lambda v: isinstance(v, DigestExclude),
@@ -93,7 +87,8 @@ default_updaters: list[UpdateWithDigestValue] = [
         predicate=lambda v: isinstance(v, dict),
         v_type="DICT",
         fn_members=lambda v: [
-            encapsulated_dict_entry(k=key, v=value) for key, value in sorted(v.items())
+            encapsulated_dict_entry(key=key, value=value)
+            for key, value in sorted(v.items())
         ],
     ),
     UpdaterDictEntry(),
@@ -111,24 +106,23 @@ default_updaters: list[UpdateWithDigestValue] = [
 
 DEFAULT_HASH_FUNCTION: FnHash = hashlib.sha1
 
-DEFAULT_FN_TRACE: FnTrace = noop_fn_trace
+DEFAULT_FN_TRACE: FnTrace = noop_trace
 
 DEFAULT_TRACE_PATH_ROOT = "ROOT"
 
 
 def compute_digest(
     v: Any,
-    hash_updaters: list[UpdateWithDigestValue] | None = None,
+    hash_updaters: list[HashUpdater] | None = None,
     fn_hash: FnHash = DEFAULT_HASH_FUNCTION,
     fn_trace: FnTrace = DEFAULT_FN_TRACE,
     trace_path_root: str = DEFAULT_TRACE_PATH_ROOT,
 ) -> bytes:
-    """Compute the digest of a value with the default parameters"""
-    computation = DigestComputationParams(
+    """Compute the digest of a value with the default parameters,
+    or those supplied by the caller"""
+    return DigestComputation(
         updaters=(hash_updaters if hash_updaters else default_updaters),
         hash=(fn_hash(trace_path_root.encode())),
         trace_path=trace_path_root,
         fn_trace=fn_trace,
-    )
-    update_hash_any(v, computation=computation)
-    return computation.digest()
+    ).compute(v)
