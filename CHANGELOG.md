@@ -22,7 +22,7 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 - Sync. typescript pipeline's `template.py` generator with youwol API updates. <!-- TG-2167 -->
 - python backend pipeline: ensure python scripts execution has correct environment variable `PYTHONPATH` <!-- TG-2168 -->
 - Emit 'components update' signal when publishing a project in local database. <!-- TG-2175 -->
-- Prevent digest infinite recursion <!-- TG-2166 -->
+- Prevent digest infinite recursion and handle more types <!-- TG-2166 -->
 
 <!-- Not worthy of inclusion
 TG-2169
