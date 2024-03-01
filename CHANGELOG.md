@@ -17,6 +17,10 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 ## [0.1.9.dev] − Unreleased
 
+### Fixed
+
+- Prevent digest infinite recursion <!-- TG-2166 -->
+
 ## [0.1.8.dev] − Unreleased
 
 ### Added
