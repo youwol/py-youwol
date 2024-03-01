@@ -45,17 +45,18 @@ from .models import (
 router = APIRouter()
 
 
-@router.get(
-    "/status",
-    summary="Provides description of available packages",
-    response_model=CdnStatusResponse,
-)
-async def status(request: Request):
-    async with Context.from_request(request).start(
-        action="CDN status",
-        with_attributes={"topic": CDN_TOPIC},
-        with_reporters=[LogsStreamer()],
-    ) as ctx:
+async def emit_local_cdn_status(context: Context) -> CdnStatusResponse:
+    """
+    Emit the current [CdnStatusResponse](@yw-nav-class:CdnStatusResponse) via the
+    [data web-socket channels](@yw-nav-attr:WebSocketsStore.data).
+
+    Parameters:
+        context: Current context.
+
+    Return:
+        The local CDN status.
+    """
+    async with context.start(action="refresh_local_cdn_status") as ctx:
         env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
         cdn_docs = env.backends_configuration.cdn_backend.doc_db.data["documents"]
         cdn_sorted = sorted(cdn_docs, key=lambda d: d["library_name"])
@@ -78,6 +79,20 @@ async def status(request: Request):
         response = CdnStatusResponse(packages=packages)
         await ctx.send(response)
         return response
+
+
+@router.get(
+    "/status",
+    summary="Provides description of available packages",
+    response_model=CdnStatusResponse,
+)
+async def status(request: Request):
+    async with Context.from_request(request).start(
+        action="CDN status",
+        with_attributes={"topic": CDN_TOPIC},
+        with_reporters=[LogsStreamer()],
+    ) as ctx:
+        return await emit_local_cdn_status(context=ctx)
 
 
 @router.get(

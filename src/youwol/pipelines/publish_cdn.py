@@ -26,6 +26,7 @@ from youwol.app.environment import (
 from youwol.app.routers.environment.upload_assets.package import UploadPackageOptions
 from youwol.app.routers.environment.upload_assets.upload import upload_asset
 from youwol.app.routers.local_cdn import download_package
+from youwol.app.routers.local_cdn.router import emit_local_cdn_status
 from youwol.app.routers.projects.models_project import (
     BrowserApp,
     ExplicitNone,
@@ -338,6 +339,7 @@ class PublishCdnLocalStep(PipelineStep):
             resp["asset"] = asset
             resp["access"] = access
             resp["explorerItem"] = explorer_item
+            await emit_local_cdn_status(context=ctx)
             return resp
 
     @staticmethod
