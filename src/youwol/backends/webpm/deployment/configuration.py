@@ -61,5 +61,5 @@ class ConfigurationFactory:
     def __get_value_from_env(key) -> str:
         v = os.environ.get(key)
         if v is None:
-            raise ValueError(f"Missing environment value {v}")
+            raise ValueError(f"Missing environment value {key}")
         return v
