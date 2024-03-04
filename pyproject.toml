@@ -129,6 +129,10 @@ exclude = [
     "templates/.**/*",
 ]
 "youwol.pipelines.pipeline_python_backend" = [
+    "views/.*",
+    "views/*",
+    "views/**/*",
+    "views/.**/*",
     "template/.*",
     "template/*",
     "template/**/*",

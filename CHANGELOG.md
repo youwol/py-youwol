@@ -17,6 +17,10 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 ## [0.1.8rc2.dev] − Unreleased
 
+### Fixed
+
+- python backend pipeline: include javascript views within youwol package. <!-- TG-2185 -->
+
 ## [0.1.8rc1] − 2024-03-04
 
 ### Fixed
