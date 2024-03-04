@@ -14,7 +14,7 @@ from youwol.utils.python_next.v3_12 import tomllib
 
 # Youwol application
 from youwol.app.environment import YouwolEnvironment
-from youwol.app.routers.environment.router import get_status_impl
+from youwol.app.routers.environment.router import emit_environment_status
 from youwol.app.routers.projects import (
     Artifact,
     CommandPipelineStep,
@@ -318,7 +318,7 @@ class RunStep(PipelineStep):
                         install_outputs=["Backend running from sources."],
                         server_outputs_ctx_id=shell_ctx.uid,
                     )
-                    await get_status_impl(request=ctx.request, context=shell_ctx)
+                    await emit_environment_status(context=shell_ctx)
                     await shell_ctx.info(
                         text=f"Dispatch installed from '/backends/{project.name}/{project.version}' "
                         f"to 'localhost:{port}"

@@ -1,6 +1,9 @@
 # standard library
 from enum import Enum
 
+# typing
+from typing import Literal
+
 # third parties
 from pydantic import BaseModel
 
@@ -35,9 +38,39 @@ class CustomDispatchesResponse(BaseModel):
     dispatches: dict[str, list[DispatchInfo]]
 
 
-class RemoteGatewayInfo(BaseModel):
+class AuthenticationResponse(BaseModel):
+    """
+    Response model corresponding to [Authentication](@yw-nav-class:model_remote.Authentication).
+    """
+
+    authId: str
+    """
+    Authentication's ID.
+    """
+    type: Literal["BrowserAuth", "DirectAuth"]
+    """
+    Authentication's type.
+    """
+
+
+class CloudEnvironmentResponse(BaseModel):
+    """
+    Response model corresponding to [CloudEnvironment](@yw-nav-class:CloudEnvironment).
+    """
+
+    envId: str
+    """
+    Environment Id, see [CloudEnvironment.envId](@yw-nav-attr:CloudEnvironment.envId).
+    """
     host: str
-    connected: bool | None
+    """
+    Host, see [CloudEnvironment.host](@yw-nav-attr:CloudEnvironment.host).
+    """
+    authentications: list[AuthenticationResponse]
+    """
+    Available authentication modes, see
+    [CloudEnvironment.authentications](@yw-nav-attr:CloudEnvironment.authentications).
+    """
 
 
 class SwitchConfigurationBody(BaseModel):

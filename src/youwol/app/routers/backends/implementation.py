@@ -21,7 +21,7 @@ from starlette.requests import Request
 # Youwol application
 from youwol.app.environment import YouwolEnvironment
 from youwol.app.environment.proxied_backends import ProxiedBackend
-from youwol.app.routers.environment.router import get_status_impl
+from youwol.app.routers.environment.router import emit_environment_status
 from youwol.app.routers.local_cdn.router import package_info
 from youwol.app.web_socket import LogsStreamer
 
@@ -284,7 +284,7 @@ async def ensure_running(
                 install_outputs=install_outputs,
                 server_outputs_ctx_id=std_outputs_ctx_id,
             )
-            await get_status_impl(request=request, context=ctx)
+            await emit_environment_status(context=ctx)
             return proxy
         except TimeoutError:
             process.terminate()
