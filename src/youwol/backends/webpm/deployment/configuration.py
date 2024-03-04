@@ -7,7 +7,6 @@ from pydantic.dataclasses import dataclass
 
 @dataclass(frozen=True, kw_only=True)
 class Configuration:
-    version: str
     oidc_issuer: str
     client_id: str
     client_secret: str
@@ -40,7 +39,6 @@ class ConfigurationFactory:
     def set_from_env(cls) -> None:
         cls.set(
             Configuration(
-                version=cls.__get_value_from_env("VERSION"),
                 oidc_issuer=cls.__get_value_from_env("OIDC_ISSUER"),
                 client_id=cls.__get_value_from_env("CLIENT_ID"),
                 client_secret=cls.__get_value_from_env("CLIENT_SECRET"),

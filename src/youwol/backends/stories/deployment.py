@@ -45,9 +45,6 @@ class StoriesDeployment(BackendDeployment):
     def prefix(self) -> str:
         return "/api/stories"
 
-    def version(self) -> str:
-        return "0.1.7"
-
     def name(self) -> str:
         return "stories"
 

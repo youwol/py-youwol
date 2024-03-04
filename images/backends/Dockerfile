@@ -19,7 +19,10 @@ COPY /requirements-docker.txt /opt/app
 RUN pip3 install --upgrade pip \
     && pip3 install --no-cache-dir --upgrade -r "/opt/app/requirements-docker.txt"
 
+COPY /pyproject.toml /opt/app
+# TODO: For youwol.utils.yw_version(), should be simplify − TG-2184
 COPY /src/youwol/utils /opt/app/youwol/utils
+COPY /src/youwol/__init__.py /opt/app/youwol
 
 
 

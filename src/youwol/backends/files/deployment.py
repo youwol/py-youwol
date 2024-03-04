@@ -27,9 +27,6 @@ class FilesDeployment(BackendDeployment):
     def prefix(self) -> str:
         return "/api/files"
 
-    def version(self) -> str:
-        return "0.1.4"
-
     def name(self) -> str:
         return "files"
 
