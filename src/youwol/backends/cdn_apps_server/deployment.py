@@ -21,9 +21,6 @@ class CdnAppsServerDeployment(BackendDeployment):
     def prefix(self) -> str:
         return "/applications"
 
-    def version(self) -> str:
-        return "0.1.4"
-
     def name(self) -> str:
         return "cdn-apps-server"
 

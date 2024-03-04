@@ -37,9 +37,6 @@ class CdnDeployment(BackendDeployment):
     def prefix(self) -> str:
         return "/api/cdn"
 
-    def version(self) -> str:
-        return "0.3.8"
-
     def name(self) -> str:
         return "cdn"
 

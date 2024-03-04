@@ -51,9 +51,6 @@ class AssetsGatewayDeployment(BackendDeployment):
     def prefix(self) -> str:
         return "/api/assets-gateway"
 
-    def version(self) -> str:
-        return "1.1.54"
-
     def name(self) -> str:
         return "assets-gateway"
 

@@ -11,6 +11,7 @@ from starlette.responses import JSONResponse
 from starlette.routing import BaseRoute, Route
 
 # Youwol utilities
+from youwol.utils import yw_version
 from youwol.utils.servers.fast_api import FastApiMiddleware
 
 
@@ -19,9 +20,8 @@ class BackendDeployment(ABC):
     def router(self) -> APIRouter:
         raise NotImplementedError()
 
-    @abstractmethod
     def version(self) -> str:
-        raise NotImplementedError()
+        return yw_version()
 
     @abstractmethod
     def name(self) -> str:
