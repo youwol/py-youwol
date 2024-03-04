@@ -139,7 +139,7 @@ jobs:
     name: Doc App
     uses: ./.github/workflows/subdir_typescript.yml
     with:
-      directory: doc
+      directory: doc/front-app
 
   static_analysis:
     name: Static Analysis
