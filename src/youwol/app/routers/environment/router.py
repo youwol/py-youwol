@@ -10,7 +10,7 @@ from typing import Any, Literal, cast
 
 # third parties
 from cowpy import cow
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from starlette.requests import Request
@@ -23,6 +23,7 @@ from youwol.app.environment import (
     DirectAuth,
     FlowSwitcherMiddleware,
     FwdArgumentsReload,
+    NeedInteractiveSession,
     PathsBook,
     RemoteClients,
     YouwolEnvironment,
@@ -405,7 +406,8 @@ async def custom_dispatches(
 )
 async def login(request: Request, body: LoginBody) -> UserInfo:
     """
-    Login to a particular environment using a specific authentication mode.
+    Login to a particular environment using a specific authentication mode (referenced
+    from the configuration's models [CloudEnvironment](@yw-nav-class:CloudEnvironment)).
 
     Parameters:
         request: Incoming request.
@@ -413,21 +415,33 @@ async def login(request: Request, body: LoginBody) -> UserInfo:
 
     Return:
         User info of logged-in user.
+
+    Raise:
+        422: When a browser interactive session is needed but not available.
     """
 
     async with Context.from_request(request).start(action="login") as ctx:
-        # Need to check validity of combination envId, authId
-        # What happen if switch from 'DirectAuth' to 'BrowserAuth', following code will not work,
-        # should a somehow a redirect takes place?
+        env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
+        actual_connection = env.currentConnection
         env = await YouwolEnvironmentFactory.reload(
             Connection(authId=body.authId, envId=body.envId)
         )
-        await get_status_impl(request=request, context=ctx)
-        tokens = await get_connected_local_tokens(context=ctx)
+        try:
+            tokens = await get_connected_local_tokens(context=ctx)
+        except NeedInteractiveSession:
+            await YouwolEnvironmentFactory.reload(actual_connection)
+            raise HTTPException(
+                status_code=422,
+                detail=f"Need a browser interactive session for env '{body.envId}' that is not available in "
+                f"tokens storage.",
+            )
         access_token = await tokens.access_token()
         access_token_decoded = await OidcConfig(
             env.get_remote_info().authProvider.openidBaseUrl
         ).token_decode(access_token)
+
+        await emit_environment_status(context=ctx)
+
         return UserInfo(
             id=access_token_decoded["sub"],
             # Does not make sense, see comments on UserInfo
