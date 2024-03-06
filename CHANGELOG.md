@@ -17,6 +17,11 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 ## [0.1.9.dev] − Unreleased
 
+### Added
+
+- **Backend components**:
+  -  automatic local installation of missing backends when requesting `backends/$NAME/$SEMVER/**`. <!-- TG-2195 -->
+
 ### Changed
 
 - Sanitize `EnvironmentStatusResponse` API from `admin/environment/status` endpoint. <!-- TG-2183 -->
