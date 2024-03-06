@@ -1,29 +1,23 @@
-# standard library
-import asyncio
-import base64
-
 # third parties
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
 
 # Youwol application
-from youwol.app.environment import LocalClients, RemoteClients, YouwolEnvironment
+from youwol.app.environment import LocalClients, YouwolEnvironment
 from youwol.app.routers.environment.download_assets.auto_download_thread import (
     AssetDownloadThread,
 )
 from youwol.app.routers.router_remote import redirect_api_remote
 
-# Youwol backends
-from youwol.backends.cdn.utils_indexing import get_version_number
-
 # Youwol utilities
-from youwol.utils import JSON, YouwolHeaders, aiohttp_to_starlette_response, decode_id
+from youwol.utils import YouwolHeaders, aiohttp_to_starlette_response, decode_id
 from youwol.utils.context import Context
 from youwol.utils.request_info_factory import url_match
 
 # relative
 from .abstract_local_cloud_dispatch import AbstractLocalCloudDispatch
+from .common import package_latest_info
 
 
 class Download(AbstractLocalCloudDispatch):
@@ -192,54 +186,14 @@ class UpdateApplication(AbstractLocalCloudDispatch):
                     "App with explicit version required -> proceed normally"
                 )
                 return await call_next(incoming_request)
-
-            asset_id = base64.urlsafe_b64encode(str.encode(package_name)).decode()
-
             env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
-            remote_assets_gtw = await RemoteClients.get_twin_assets_gateway_client(
-                env=env
+            download_info = await package_latest_info(
+                package_name=package_name, semver=semver, context=ctx
             )
-            remote_cdn = remote_assets_gtw.get_cdn_backend_router()
-            local_cdn = LocalClients.get_cdn_client(env=env)
 
-            async with ctx.start(
-                action=f"Recover local & remote latest version matching semver '{semver}'"
-            ):
-                version_info_local, version_info_remote = await asyncio.gather(
-                    local_cdn.get_library_info(
-                        library_id=asset_id,
-                        semver=semver,
-                        max_count=1,
-                        headers=ctx.headers(),
-                    ),
-                    remote_cdn.get_library_info(
-                        library_id=asset_id,
-                        semver=semver,
-                        max_count=1,
-                        headers=ctx.headers(),
-                    ),
-                    return_exceptions=True,
-                )
-
-            latest_local = self.retrieve_latest_version(version_info_local)
-            latest_remote = self.retrieve_latest_version(version_info_remote)
-
-            if not await self.download_needed(
-                package_name=package_name,
-                semver=semver,
-                latest_local=latest_local,
-                latest_remote=latest_remote,
-                context=ctx,
-            ):
+            if not download_info.download_needed:
                 return await call_next(incoming_request)
 
-            await ctx.info(
-                f"A newer version of '{package_name}#{semver}' is available to download",
-                data={
-                    "latest_remote": latest_remote,
-                    "latest_local": latest_local or "No matching local version",
-                },
-            )
             # Forward the same request except for the version that is now fixed to the resolved one.
             # It will then be intercepted by the 'Download' AbstractLocalCloudDispatch to fetch the entry point &
             # proceed with the package download.
@@ -247,50 +201,11 @@ class UpdateApplication(AbstractLocalCloudDispatch):
                 await LocalClients.get_assets_gateway_client(env)
                 .get_cdn_backend_router()
                 .get_resource(
-                    library_id=asset_id,
-                    version=latest_remote,
+                    library_id=download_info.asset_id,
+                    version=download_info.latest_remote,
                     rest_of_path="",
                     headers=ctx.headers(),
                     custom_reader=aiohttp_to_starlette_response,
                 )
             )
             return resp
-
-    @staticmethod
-    async def download_needed(
-        package_name: str,
-        semver: str,
-        latest_local: str | None,
-        latest_remote: str | None,
-        context: Context,
-    ):
-        if not latest_remote and not latest_local:
-            # not necessarily an error, e.g. maybe a latter middleware will handle this case
-            await context.warning(
-                f"Application '{package_name}#{semver}' not found in remote or local environments, proceed normally."
-            )
-            return False
-
-        if latest_local and not latest_remote:
-            await context.info(
-                f"{package_name} not available in remote environment, proceed normally."
-            )
-            return False
-
-        if latest_local and get_version_number(latest_local) >= get_version_number(
-            latest_remote
-        ):
-            await context.info(
-                f"Local version {latest_local} of {package_name} up-to-date or above w/ remote, proceed normally."
-            )
-            return False
-
-        return True
-
-    @staticmethod
-    def retrieve_latest_version(resp: JSON | BaseException):
-        return (
-            resp["versions"][0]
-            if not isinstance(resp, BaseException) and len(resp["versions"]) > 0
-            else None
-        )
