@@ -59,7 +59,7 @@ async def process_download_asset(
         )
 
     while True:
-        url, kind, raw_id, context, _ = await queue.get()
+        url, kind, raw_id, context = await queue.get()
 
         env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
         asset_id = encode_id(raw_id)
@@ -162,9 +162,8 @@ class AssetDownloadThread(Thread):
             task = self.event_loop.create_task(coroutine)
             tasks.append(task)
 
-    def enqueue_asset(
-        self, url: str, kind: str, raw_id: str, context: Context, headers
-    ):
+    def enqueue_asset(self, url: str, kind: str, raw_id: str, context: Context):
+
         async def enqueue_asset():
             async with context.start(
                 action=f"Enqueue download task of type '{kind}'",
@@ -179,7 +178,7 @@ class AssetDownloadThread(Thread):
                         kind=kind, rawId=raw_id, type=DownloadEventType.ENQUEUED
                     )
                 )
-                self.download_queue.put_nowait((url, kind, raw_id, ctx, headers))
+                self.download_queue.put_nowait((url, kind, raw_id, ctx))
 
         asyncio.run_coroutine_threadsafe(enqueue_asset(), self.event_loop)
 
