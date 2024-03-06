@@ -25,6 +25,10 @@ class DownloadPackageTask(DownloadTask):
             self.version = self.url.split("/api/assets-gateway/cdn-backend/resources/")[
                 1
             ].split("/")[1]
+        if "/backends/" in self.url:
+            rest_of_path = self.url.split("/backends/")[1]
+            # rest_of_path is like '${backend_name}/${version}/**'
+            self.version = rest_of_path.split("/")[1]
 
         self.package_name = decode_id(self.raw_id)
 

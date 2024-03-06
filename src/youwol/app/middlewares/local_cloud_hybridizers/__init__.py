@@ -14,6 +14,7 @@ YouwolEnvironment.currentConnection</a> (to the remote ecosystem).
 
 # relative
 from .abstract_local_cloud_dispatch import *
+from .custom_backends import *
 from .deprecated_rules import *
 from .download_rules import *
 from .forward_only_rules import *
