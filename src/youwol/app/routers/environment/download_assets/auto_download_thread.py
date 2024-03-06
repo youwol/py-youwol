@@ -47,6 +47,21 @@ def downloading_pbar(env: YouwolEnvironment):
 async def process_download_asset(
     queue: asyncio.Queue, factories: dict[str, Any], pbar: tqdm
 ):
+    """
+    Asynchronously process asset download tasks from a queue.
+
+    This coroutine continuously retrieves download tasks from the provided queue and processes each
+    one according to the asset kind specified. It handles the asset download process, including checking
+    if the asset is up-to-date, initiating the download, and logging the download status (started, succeeded, failed).
+
+    Parameters:
+        queue: The queue from which download tasks are retrieved. Each item in the queue
+            is expected to be a tuple containing the URL, kind, raw ID, and context of the asset to download.
+        factories: A dictionary mapping asset kinds to their respective factory functions
+            or classes, which are used to create download tasks for assets of that kind.
+        pbar: A tqdm progress bar instance used to visually track the progress of asset downloads.
+    """
+
     async def on_error(text, data, _ctx: Context):
         log_error("Failed to download asset", data)
         await _ctx.error(text=text, data=data)
@@ -130,10 +145,43 @@ async def process_download_asset(
 
 
 class AssetDownloadThread(Thread):
-    event_loop = asyncio.new_event_loop()
-    download_queue = asyncio.Queue()
+    """
+    A thread class designed to manage the asynchronous downloading of assets in a separate event loop.
 
-    def is_downloading(self, url: str, kind: str, raw_id: str, env: YouwolEnvironment):
+    This class encapsulates the functionality required to enqueue asset download tasks, monitor their progress,
+    and report on their completion status. It utilizes an asyncio event loop running in a separate thread
+    to handle concurrent downloads, manage a download queue, and support reporting through a designated reporter
+    instance.
+    """
+
+    event_loop = asyncio.new_event_loop()
+    """
+    An asyncio event loop that runs in this thread.
+    """
+    download_queue = asyncio.Queue()
+    """
+    A queue for managing download tasks.
+    """
+    reporter = AssetDownloadCompletionReporter()
+    """
+    An instance for reporting download events and statuses
+    """
+
+    def is_downloading(
+        self, url: str, kind: str, raw_id: str, env: YouwolEnvironment
+    ) -> bool:
+        """
+        Checks if an asset is currently being downloaded.
+
+        Parameters:
+            url: Original asset request's URL that triggered the download.
+            kind: Kind of the asset.
+            raw_id: Raw ID of the asset.
+            env: Current YouwolEnvironment.
+
+        Return:
+            Whether the asset is currently being downloaded.
+        """
         if CACHE_DOWNLOADING_KEY not in env.cache_py_youwol:
             return False
         asset_id = encode_id(raw_id)
@@ -163,6 +211,18 @@ class AssetDownloadThread(Thread):
             tasks.append(task)
 
     def enqueue_asset(self, url: str, kind: str, raw_id: str, context: Context):
+        """
+        Enqueues an asset for downloading.
+
+        Parameters:
+            url: Original asset request's URL that triggered the download.
+            kind: Kind of the asset.
+            raw_id: Raw ID of the asset.
+            context: Current context.
+
+        Return:
+            Whether the asset is currently being downloaded.
+        """
 
         async def enqueue_asset():
             async with context.start(
