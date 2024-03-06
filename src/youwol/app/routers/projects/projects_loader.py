@@ -187,6 +187,12 @@ async def get_project(
             return error
 
         pipeline_path = project_path / PROJECT_PIPELINE_DIRECTORY / "yw_pipeline.py"
+        if not pipeline_path.exists():
+            error = FailurePipelineNotFound(path=project_path)
+            message = f"Can not find pipeline's definition file '{pipeline_path}'."
+            await ctx.error(text=message, data=error)
+            log_error(message, {"path": str(project_path)})
+            return error
 
         async def handle_import_error(import_error: FailureImportException):
             import_error_message = "Failed to import project"
