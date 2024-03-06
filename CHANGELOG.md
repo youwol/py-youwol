@@ -15,7 +15,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-0440/).
 
-## [0.1.8rc3.dev] − Unreleased
+## [0.1.8rc3] − 2024-03-06
 
 ## [0.1.8rc2] − 2024-03-06
 
