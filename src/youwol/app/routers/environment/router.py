@@ -2,13 +2,17 @@
 import asyncio
 import itertools
 import random
+import shutil
+import tempfile
 
 from importlib import resources
+from pathlib import Path
 
 # typing
 from typing import Any, Literal, cast
 
 # third parties
+from aiohttp import ClientSession
 from cowpy import cow
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import PlainTextResponse
@@ -46,6 +50,7 @@ from .models import (
     CloudEnvironmentResponse,
     CustomDispatchesResponse,
     LoginBody,
+    SwitchConfigurationBody,
     UserInfo,
 )
 from .upload_assets.upload import upload_asset
@@ -299,6 +304,63 @@ async def load_predefined_config_file(request: Request, rest_of_path: str):
             )
             asyncio.ensure_future(ProjectLoader.initialize(env=env))
             return await emit_environment_status(context=ctx)
+
+
+@router.post(
+    "/configurations/switch",
+    summary="Switch to a new configuration from a URL pointing to its content.",
+)
+async def switch_configuration(
+    request: Request, body: SwitchConfigurationBody
+) -> EnvironmentStatusResponse:
+    """
+    Switch to a new configuration from a URL pointing to its content.
+
+    Warning:
+        There are few limitations for now regarding the flexibility to switch configuration:
+          *  The url should point to a 'standalone' configuration: no external symbols (beyond those available in the
+          youwol's python environment) can be referenced.
+          *  The new configuration is not able to change the serving HTTP port of youwol.
+          *  Switch involving change in remote host using
+           [browser based authentication](@yw-nav-class:model_remote.BrowserAuth) may not necessarily work. To function,
+           a session ID corresponding to the new targeted host should be available in the
+           [TokensStorage](@yw-nav-class:TokensStorage).
+          *  [Custom Middlewares](@yw-nav-class:models_config.CustomMiddleware) changes are not effective.
+
+    Parameters:
+        request: Incoming request.
+        body: Specifies the new configuration to switch to, essentially an URL pointing to the content of the new
+        configuration file.
+
+    Return:
+        The environment status.
+    """
+    async with Context.start_ep(
+        request=request,
+        with_reporters=[LogsStreamer()],
+    ) as ctx:
+        tmp_folder = Path(tempfile.gettempdir()) / "youwol" / "tmp_configs"
+        shutil.rmtree(tmp_folder, ignore_errors=True)
+        tmp_folder.mkdir(parents=True, exist_ok=True)
+        env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
+        async with ClientSession(
+            headers=ctx.headers(), cookies=ctx.cookies()
+        ) as client:
+            async with client.get(
+                url=f"http://localhost:{env.httpPort}{body.url}"
+            ) as resp:
+                content = await resp.text()
+                path = tmp_folder / body.url.split("/")[-1]
+                path.write_text(content)
+                env = await YouwolEnvironmentFactory.load_from_file(
+                    path,
+                    fwd_args_reload=FwdArgumentsReload(
+                        token_storage=env.tokens_storage, http_port=env.httpPort
+                    ),
+                )
+
+                asyncio.ensure_future(ProjectLoader.initialize(env=env))
+                return await emit_environment_status(context=ctx)
 
 
 async def emit_environment_status(context: Context) -> EnvironmentStatusResponse:

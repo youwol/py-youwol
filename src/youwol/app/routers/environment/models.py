@@ -74,7 +74,14 @@ class CloudEnvironmentResponse(BaseModel):
 
 
 class SwitchConfigurationBody(BaseModel):
-    path: list[str]
+    """
+    Body of the endpoint [`admin.environment.configuration.switch`](@yw-nav-func:switch_configuration).
+    """
+
+    url: str
+    """
+    URL pointing to the configuration content.
+    """
 
 
 class SwitchResponse(BaseModel):
