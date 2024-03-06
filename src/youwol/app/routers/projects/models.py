@@ -17,9 +17,22 @@ PipelineStepId = str
 
 
 class Failure(BaseModel):
+    """
+    Base class of project loading failures.
+    """
+
     path: Path
+    """
+    Project folder's path.
+    """
     failure: str = "generic"
+    """
+    Failure type.
+    """
     message: str
+    """
+    Message.
+    """
 
 
 class FailurePipelineNotFound(Failure):
@@ -28,7 +41,13 @@ class FailurePipelineNotFound(Failure):
     """
 
     failure: str = "pipeline_not_found"
-    message: str = "Pipeline not found"
+    """
+    Failure type.
+    """
+    message: str = "Pipeline `.yw_pipeline/yw_pipeline.py` not found"
+    """
+    Message.
+    """
 
 
 class FailureDirectoryNotFound(Failure):
@@ -37,7 +56,13 @@ class FailureDirectoryNotFound(Failure):
     """
 
     failure: str = "directory_not_found"
+    """
+    Failure type.
+    """
     message: str = "Project's directory not found"
+    """
+    Message.
+    """
 
 
 class FailureImportException(Failure):
@@ -46,8 +71,17 @@ class FailureImportException(Failure):
     """
 
     failure: str = "import"
+    """
+    Failure type.
+    """
     traceback: str
+    """
+    Traceback of the exception.
+    """
     exceptionType: str
+    """
+    Exception type.
+    """
 
 
 class ListProjectsResponse(BaseModel):

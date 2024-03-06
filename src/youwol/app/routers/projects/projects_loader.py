@@ -177,6 +177,24 @@ async def get_project(
     env: YouwolEnvironment,
     context: Context,
 ) -> Project | Failure:
+    """
+    Retrieves project information and pipeline definition from the specified project directory.
+
+    This function reads the project directory at the given `project_path`, validates its structure, and attempts
+    to import the pipeline definition file. Upon successful import, it constructs a Project object representing
+    the project, including its pipeline instance.
+
+    Parameters:
+        project_path: The path to the project directory.
+        additional_python_src_paths: Additional paths to search for Python source files required
+            for importing the pipeline definition.
+        env: The current youwol environment.
+        context: The current context.
+
+    Return:
+        An instance of the Project class representing the retrieved project information,
+        or a Failure object indicating any encountered errors during the retrieval process.
+    """
     async with context.start(
         action="get_project", with_attributes={"folderName": project_path.name}
     ) as ctx:
