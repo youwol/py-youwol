@@ -20,6 +20,7 @@ dependencies = [
     "aiostream>=0.4.4,<0.5.0",
     "appdirs>=1.4.4,<2.0.0",
     "Brotli>=1.0.9,<2.0.0",
+    "build>=1.1.1,<2.0.0",
     "colorama>=0.4.5,<0.5.0",
     "colorlog",
     "cowpy>=1.1.5,<2.0.0",
@@ -129,6 +130,10 @@ exclude = [
     "templates/.**/*",
 ]
 "youwol.pipelines.pipeline_python_backend" = [
+    "views/.*",
+    "views/*",
+    "views/**/*",
+    "views/.**/*",
     "template/.*",
     "template/*",
     "template/**/*",
