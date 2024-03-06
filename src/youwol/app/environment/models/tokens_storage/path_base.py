@@ -154,7 +154,7 @@ class TokensStoragePathBase(TokensStorage, ABC):
             "session_ids": self.__session_ids,
         }
         with self._get_path_like().open_w() as fp:
-            json.dump(data, fp)
+            json.dump(data, fp, indent=4)
 
     async def __reset(self) -> None:
         await self._reset()

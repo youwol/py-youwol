@@ -17,9 +17,14 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 ## [0.1.9.dev] − Unreleased
 
+### Changed
+
+- Sanitize `EnvironmentStatusResponse` API from `admin/environment/status` endpoint. <!-- TG-2183 -->
+
 ### Fixed
 
 - Prevent digest infinite recursion and handle more types <!-- TG-2166 -->
+- Fix wrong evaluation order of JWT providers in `AuthMiddleware`. <!-- TG-2194 -->
 
 ## [0.1.8.dev] − Unreleased
 

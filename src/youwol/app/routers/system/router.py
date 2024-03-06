@@ -21,7 +21,7 @@ from starlette.requests import Request
 # Youwol application
 from youwol.app.environment import YouwolEnvironment, yw_config
 from youwol.app.routers.backends.implementation import INSTALL_MANIFEST_FILE
-from youwol.app.routers.environment.router import get_status_impl
+from youwol.app.routers.environment.router import emit_environment_status
 from youwol.app.routers.system.documentation import (
     YOUWOL_MODULE,
     check_documentation,
@@ -361,7 +361,7 @@ async def terminate(
             await env.proxied_backends.terminate(
                 name=name, version=version, context=ctx
             )
-            await get_status_impl(request=request, context=ctx)
+            await emit_environment_status(context=ctx)
 
         return TerminateResponse(
             name=name, version=version, wasRunning=proxied is not None
@@ -398,7 +398,7 @@ async def uninstall(
             await env.proxied_backends.terminate(
                 name=name, version=version, context=ctx
             )
-            await get_status_impl(request=request, context=ctx)
+            await emit_environment_status(context=ctx)
 
         manifest = (
             env.pathsBook.local_cdn_component(name=name, version=version)
