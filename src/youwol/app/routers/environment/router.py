@@ -293,7 +293,9 @@ async def load_predefined_config_file(request: Request, rest_of_path: str):
             env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
             env = await YouwolEnvironmentFactory.load_from_file(
                 path=path,
-                fwd_args_reload=FwdArgumentsReload(token_storage=env.tokens_storage),
+                fwd_args_reload=FwdArgumentsReload(
+                    token_storage=env.tokens_storage, http_port=env.httpPort
+                ),
             )
             asyncio.ensure_future(ProjectLoader.initialize(env=env))
             return await emit_environment_status(context=ctx)
