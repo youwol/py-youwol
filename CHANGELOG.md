@@ -30,6 +30,7 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 - Prevent digest infinite recursion and handle more types <!-- TG-2166 -->
 - Fix wrong evaluation order of JWT providers in `AuthMiddleware`. <!-- TG-2194 -->
+- Discriminates `FailurePipelineNotFound` from `FailureImportException`. <!-- TG-2196 -->
 
 ## [0.1.8.dev] − Unreleased
 
