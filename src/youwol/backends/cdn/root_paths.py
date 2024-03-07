@@ -216,7 +216,7 @@ async def get_version_info_impl(
         library_name = to_package_name(library_id)
         _, resolved_version, _ = await resolve_resource(
             library_id=library_id,
-            input_version=version,
+            input_semver=version,
             configuration=configuration,
             context=ctx,
         )
@@ -531,7 +531,7 @@ async def get_entry_point(
     ) as ctx:
         package_name, version, max_age = await resolve_resource(
             library_id=library_id,
-            input_version=version,
+            input_semver=version,
             configuration=configuration,
             context=ctx,
         )
@@ -593,7 +593,7 @@ async def get_resource(
         await ctx.info(f"Target resource: '{rest_of_path}'")
         _, version, max_age = await resolve_resource(
             library_id=library_id,
-            input_version=version,
+            input_semver=version,
             configuration=configuration,
             context=ctx,
         )

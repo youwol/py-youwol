@@ -63,6 +63,7 @@ default_ignored_paths: list[str] = [
     "**/py-youwol/src",
     "**/node_modules",
     "**/.template",
+    "**/.venv",
 ]
 """
 Default path used in

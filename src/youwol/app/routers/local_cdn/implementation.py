@@ -230,7 +230,10 @@ async def download_package(
         )
         versions = info.versions
         version = await resolve_version(
-            name=package_name, version=version, versions=versions, context=ctx_download
+            name=package_name,
+            input_semver=version,
+            versions=versions,
+            context=ctx_download,
         )
         record = await get_version_info_impl(
             library_id=to_package_id(package_name),

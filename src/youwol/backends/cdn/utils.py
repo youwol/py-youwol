@@ -65,6 +65,7 @@ from youwol.utils.http_clients.cdn_backend.utils import (
     get_library_type,
     is_fixed_version,
     resolve_version,
+    to_std_npm_spec,
 )
 from youwol.utils.utils_paths import extract_zip_file
 
@@ -618,7 +619,7 @@ async def resolve_explicit_version(
     )
     version = await resolve_version(
         name=package_name,
-        version=input_version,
+        input_semver=input_version,
         versions=versions_resp.versions,
         context=context,
     )
@@ -631,24 +632,65 @@ async def resolve_explicit_version(
     return version
 
 
-async def resolve_caching_max_age(version: str, context: Context):
-    if "-wip" in version or not is_fixed_version(version=version):
+async def resolve_caching_max_age(semver: str, context: Context):
+    """
+    This function resolves the caching max age based on the provided semantic version. If the version contains "-wip"
+    postfix, or it's not a fixed version, indicating a work-in-progress or non-specific version query, the caching
+    max age is set to 0; otherwise, it's set to a default value of one year (31536000 seconds).
+
+    Parameters:
+        semver: The semantic versioning string for which the caching max age needs to be resolved.
+        context: An execution context object for logging the resolution process.
+
+    Return:
+        The resolved caching max age in seconds.
+    """
+    if "-wip" in semver or not is_fixed_version(semver=semver):
         await context.info("WIP or semantic versioning query => max_age set to 0")
         return "0"
     return "31536000"
 
 
 async def resolve_resource(
-    library_id: str, input_version: str, configuration: Configuration, context: Context
+    library_id: str, input_semver: str, configuration: Configuration, context: Context
 ):
+    """
+    This function resolves a resource (library) based on the provided library identifier and semantic versioning range.
+    It first converts the input_semver to a standard NPM specification
+    (see [to_std_npm_spec](@yw-nav-func:to_std_npm_spec)), and returns
+    the package name, semver, and caching max age.
+    See [resolve_caching_max_age](@yw-nav-func:resolve_caching_max_age) regarding caching max age strategy.
+
+    Parameters:
+        library_id: The identifier of the library for which the resource needs to be resolved.
+        input_semver: The semantic versioning range or fixed version number for the resource.
+        configuration: The service's configuration.
+        context: An execution context object for logging and tracking the resolution process.
+
+    Return:
+        A tuple containing the resolved package name, version, and caching max age.
+
+
+    Raises:
+    - HTTPException: If the provided semantic version cannot be parsed into an NPM specification.
+
+    """
     package_name = to_package_name(library_id)
-    if is_fixed_version(input_version):
-        max_age = await resolve_caching_max_age(version=input_version, context=context)
-        return package_name, input_version, max_age
+    try:
+        semver = to_std_npm_spec(input_semver)
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail=f"The provided semver {input_semver} can not be parsed using NPM specification.",
+        )
+
+    if is_fixed_version(semver):
+        max_age = await resolve_caching_max_age(semver=semver, context=context)
+        return package_name, semver, max_age
 
     version = await resolve_explicit_version(
         package_name=package_name,
-        input_version=input_version,
+        input_version=semver,
         configuration=configuration,
         context=context,
     )
