@@ -9,6 +9,7 @@ from fastapi import Response as FastAPI_Response
 from fastapi import status
 
 # relative
+from ...utils.servers.request import get_real_client_ip
 from .models import Body, Handler, Request, status_200_OK, status_204_NoContent
 
 router = APIRouter(tags=["mock"])
@@ -148,7 +149,7 @@ async def handle(method: str, handler_id: str, req: FastAPI_Request, public=Fals
             timestamp=int(datetime.datetime.now().timestamp()),
             method=method,
             url=str(req.url),
-            ip=req.client.host if req.client else None,
+            ip=get_real_client_ip(req),
             headers={k: req.headers.getlist(k) for k in req.headers.keys()},
             body=(
                 Body(

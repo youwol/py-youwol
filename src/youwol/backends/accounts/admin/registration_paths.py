@@ -10,6 +10,7 @@ from starlette.responses import JSONResponse, RedirectResponse, Response
 
 # Youwol utilities
 from youwol.utils.clients.oidc.service_account_client import UnexpectedResponseStatus
+from youwol.utils.servers.request import get_real_client_ip
 
 # relative
 from ..configuration import Configuration, get_configuration
@@ -55,6 +56,7 @@ async def register_from_temp_user(
             email=details.email,
             client_id=conf.oidc_client.client_id(),
             target_uri=redirect_uri,
+            ip=get_real_client_ip(request),
         )
     except UnexpectedResponseStatus as e:
         return JSONResponse(status_code=e.actual, content=e.content)
@@ -64,6 +66,7 @@ async def register_from_temp_user(
 
 @router.get("/registration")
 async def registration_finalizer(
+    request: Request,
     target_uri: str,
     yw_jwt: Annotated[str | None, Cookie()] = None,
     conf: Configuration = Depends(get_configuration),
@@ -87,7 +90,9 @@ async def registration_finalizer(
         )
 
     try:
-        await conf.keycloak_users_management.finalize_user(sub=await tokens.sub())
+        await conf.keycloak_users_management.finalize_user(
+            sub=await tokens.sub(), ip=get_real_client_ip(request)
+        )
     except UnexpectedResponseStatus as e:
         return JSONResponse(status_code=e.actual, content=e.content)
 

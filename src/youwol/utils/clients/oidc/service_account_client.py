@@ -43,7 +43,7 @@ class ServiceAccountClient:
         method: str,
         path: str,
         params: dict[str, Any] | None = None,
-        json: dict[str, Any] | None = None,
+        json: Any = None,
         expected_status: int = 200,
         parse_response=True,
     ) -> Any | None:
@@ -71,7 +71,7 @@ class ServiceAccountClient:
                     return await resp.json()
                 return None
 
-    async def _get(self, path: str, params: dict[str, Any]):
+    async def _get(self, path: str, params: dict[str, Any] | None = None):
         return await self.__request(method="GET", path=path, params=params)
 
     async def _put(

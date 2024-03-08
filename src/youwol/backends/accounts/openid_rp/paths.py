@@ -12,6 +12,9 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, RedirectResponse, Response
 from starlette.status import HTTP_204_NO_CONTENT
 
+# Youwol utilities
+from youwol.utils.servers.request import get_real_client_ip
+
 # relative
 from ..configuration import Configuration, get_configuration
 from ..root_paths import router
@@ -249,13 +252,14 @@ async def login(
         return await authorization_flow(request, target_uri, yw_login_hint, conf)
 
     if flow == "temp":
-        return await login_as_temp_user(target_uri, conf)
+        return await login_as_temp_user(request, target_uri, conf)
 
     return JSONResponse(status_code=400, content={"invalid request", "unknown flow"})
 
 
 @router.get("/openid_rp/temp_user")
 async def login_as_temp_user(
+    request: Request,
     target_uri: str = "/",
     conf: Configuration = Depends(get_configuration),
 ) -> Response:
@@ -276,12 +280,16 @@ async def login_as_temp_user(
             content={"forbidden": "No administration right on the server side"},
         )
 
-    user_name = f"{uuid.uuid4()}@temp.youwol.com"
+    username = f"{uuid.uuid4()}@temp.youwol.com"
     password = str(uuid.uuid4())
-    await conf.keycloak_users_management.create_user(user_name, password)
+    await conf.keycloak_users_management.create_user(
+        username=username,
+        password=password,
+        ip=get_real_client_ip(request),
+    )
 
     tokens = await conf.openid_flows.direct_auth_flow(
-        username=user_name, password=password
+        username=username, password=password
     )
 
     response = RedirectResponse(url=target_uri, status_code=307)
