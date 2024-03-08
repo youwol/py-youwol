@@ -168,7 +168,8 @@ class PublishCdnLocalStep(PipelineStep):
         files_folders = [
             Path(p)
             for folder in self.packagedFolders
-            for p in glob.glob(f"{project.path / folder}/*.*")
+            for p in glob.glob(f"{project.path / folder}/**", recursive=True)
+            if Path(p).is_file()
         ]
         return list(flatten(files_artifacts)) + files_folders
 

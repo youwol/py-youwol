@@ -15,6 +15,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-0440/).
 
+## [0.1.9.dev] − Unreleased
+
+### Added
+
+- **Backend components**:
+  -  automatic local installation of missing backends when requesting `backends/$NAME/$SEMVER/**`. <!-- TG-2195 -->
+
+### Changed
+
+- Sanitize `EnvironmentStatusResponse` API from `admin/environment/status` endpoint. <!-- TG-2183 -->
+
+### Fixed
+
+- Prevent digest infinite recursion and handle more types <!-- TG-2166 -->
+- Fix wrong evaluation order of JWT providers in `AuthMiddleware`. <!-- TG-2194 -->
+- Discriminates `FailurePipelineNotFound` from `FailureImportException`. <!-- TG-2196 -->
+- In pipeline operations involving the local CDN publishing with the packagedFolders option, files located not only
+  within the designated packaged folders but also within their subdirectories are now considered. <!-- TG-1683 -->
+
+<!-- Not worthy of inclusion
+TG-2091 : 🔥 [app.env] => remove deprecated re-export
+TG-1218 : 🥅 [backends.cdn] => robustify semver resolution.
+TG-2201 : 🙈 [app.env] => default_ignored_paths includes .venv
+-->
+
 ## [0.1.8] − 2024-03-07
 
 ### Added

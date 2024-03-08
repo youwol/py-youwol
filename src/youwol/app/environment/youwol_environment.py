@@ -189,6 +189,7 @@ Configuration loaded from '{self.pathsBook.config}'
 class FwdArgumentsReload:
     token_storage: TokensStorage | None = None
     remote_connection: Connection | None = None
+    http_port: int | None = None
 
 
 class YouwolEnvironmentFactory:
@@ -218,6 +219,17 @@ class YouwolEnvironmentFactory:
     async def load_from_file(
         path: Path, fwd_args_reload: FwdArgumentsReload | None = None
     ):
+        cached = YouwolEnvironmentFactory.__cached_config
+        if fwd_args_reload.http_port and fwd_args_reload.http_port != cached.httpPort:
+            raise ValueError(
+                "Can not `load_from_file` a Configuration that changes the serving HTTP port."
+            )
+
+        fwd_args_reload = FwdArgumentsReload(
+            token_storage=fwd_args_reload.token_storage,
+            remote_connection=fwd_args_reload.remote_connection,
+            http_port=cached.httpPort,
+        )
         conf = await safe_load(path=path, fwd_args_reload=fwd_args_reload)
         await YouwolEnvironmentFactory.trigger_on_load(config=conf)
         YouwolEnvironmentFactory.__set(conf)
@@ -229,7 +241,8 @@ class YouwolEnvironmentFactory:
         conf = await safe_load(
             path=cached.pathsBook.config,
             fwd_args_reload=FwdArgumentsReload(
-                remote_connection=connection or cached.currentConnection
+                remote_connection=connection or cached.currentConnection,
+                http_port=cached.httpPort,
             ),
         )
 
@@ -375,10 +388,11 @@ async def safe_load(
         or await tokens_storage_conf.get_tokens_storage(),
         remote_connection=fwd_args_reload.remote_connection
         or system.cloudEnvironments.defaultConnection,
+        http_port=fwd_args_reload.http_port or system.httpPort,
     )
 
     return YouwolEnvironment(
-        httpPort=system.httpPort,
+        httpPort=fwd_args_reload.http_port,
         routers=customization.endPoints.routers,
         currentConnection=fwd_args_reload.remote_connection,
         events=customization.events,

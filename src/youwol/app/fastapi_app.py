@@ -144,6 +144,7 @@ def setup_middlewares(env: YouwolEnvironment):
             local_cloud_hybridizer.workspace_explorer_rules.GetChildrenDispatch(),
             local_cloud_hybridizer.workspace_explorer_rules.MoveBorrowInRemoteFolderDispatch(),
             local_cloud_hybridizer.loading_graph_rules.GetLoadingGraph(),
+            local_cloud_hybridizer.custom_backends.DownloadBackend(),
             local_cloud_hybridizer.download_rules.UpdateApplication(),
             local_cloud_hybridizer.download_rules.Download(),
             local_cloud_hybridizer.forward_only_rules.ForwardOnly(),
@@ -167,6 +168,7 @@ def setup_middlewares(env: YouwolEnvironment):
         ),
         jwt_providers=[
             JwtProviderBearerDynamicIssuer(),
+            JwtProviderPyYouwol(),
             JwtProviderCookieDynamicIssuer(
                 tokens_manager=TokensManager(
                     storage=env.tokens_storage,
@@ -175,7 +177,6 @@ def setup_middlewares(env: YouwolEnvironment):
                     ).for_client(env.get_remote_info().authProvider.openidClient),
                 ),
             ),
-            JwtProviderPyYouwol(),
         ],
         on_missing_token=lambda url, text: (
             redirect_to_login(url)
@@ -234,6 +235,13 @@ def setup_http_routers():
         return RedirectResponse(
             status_code=308,
             url=f"/applications/@youwol/py-youwol-doc/{yw_doc_version()}",
+        )
+
+    @fastapi_app.get(api_configuration.base_path + "/co-lab")
+    async def colab():
+        return RedirectResponse(
+            status_code=308,
+            url="/applications/@youwol/co-lab/^0.1.5",
         )
 
 
