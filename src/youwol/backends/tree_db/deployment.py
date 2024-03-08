@@ -28,9 +28,6 @@ class TreeDBDeployment(BackendDeployment):
     def prefix(self) -> str:
         return "/api/tree-db"
 
-    def version(self) -> str:
-        return "0.3.16"
-
     def name(self) -> str:
         return "tree-db"
 

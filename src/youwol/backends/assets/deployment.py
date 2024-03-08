@@ -55,9 +55,6 @@ class AssetsDeployment(BackendDeployment):
     def prefix(self) -> str:
         return "/api/assets"
 
-    def version(self) -> str:
-        return "1.0.0"
-
     def name(self) -> str:
         return "assets"
 

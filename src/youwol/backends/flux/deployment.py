@@ -41,9 +41,6 @@ class FluxDeployment(BackendDeployment):
     def prefix(self) -> str:
         return "/api/flux"
 
-    def version(self) -> str:
-        return "0.1.19"
-
     def name(self) -> str:
         return "flux"
 

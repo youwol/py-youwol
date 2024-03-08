@@ -355,7 +355,19 @@ def yw_version() -> str:
             This exception suggests that there is a configuration or installation issue that needs to be addressed.
     """
 
+    # pylint: disable-next=fixme
+    # TODO: should be simplify / more standard − TG-2184
     py_yw_folder = Path(youwol.__file__).parent / ".." / ".."
+    if (py_yw_folder / "pyproject.toml").exists():
+        # If this file exist and is defining a project 'youwol',
+        # it is assumed that youwol is running from sources
+        with open(py_yw_folder / "pyproject.toml", "rb") as f:
+            data = tomllib.load(f)
+            if data["project"]["name"] == "youwol":
+                return data["project"]["version"]
+
+    # For docker images
+    py_yw_folder = Path(youwol.__file__).parent / ".."
     if (py_yw_folder / "pyproject.toml").exists():
         # If this file exist and is defining a project 'youwol',
         # it is assumed that youwol is running from sources

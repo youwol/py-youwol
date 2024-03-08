@@ -40,7 +40,7 @@ TG-1218 : 🥅 [backends.cdn] => robustify semver resolution.
 TG-2201 : 🙈 [app.env] => default_ignored_paths includes .venv
 -->
 
-## [0.1.8.dev] − Unreleased
+## [0.1.8] − 2024-03-07
 
 ### Added
 
@@ -76,6 +76,15 @@ TG-2201 : 🙈 [app.env] => default_ignored_paths includes .venv
 - Forward request's cookies when using `redirect_request`. <!-- TG-2072 -->
 - Ensure python scripts execution has correct environment variable `PYTHONPATH` <!-- TG-2136 -->
 - Fix documentation versioning for `.dev` release candidates. <!-- TG 2151 -->
+- **Pipeline python backend**:
+  - include javascript views within youwol package. <!-- TG-2185 -->
+  - `package` step: add required `build` module in python environment. <!-- TG-2186 --> 
+
+- Sync. typescript pipeline's `template.py` generator with youwol API updates. <!-- TG-2167 -->
+- python backend pipeline: ensure python scripts execution has correct environment variable `PYTHONPATH` <!-- TG-2168 -->
+- Emit 'components update' signal when publishing a project in local database. <!-- TG-2175 -->
+- Prevent digest infinite recursion and handle more types <!-- TG-2166 -->
+
 
 ### Security
 
@@ -106,6 +115,7 @@ TG-2135
 TG-2138
 TG-2125
 TG-2148
+TG-2169
 -->
 
 ## [0.1.7.post] − 2024-02-09

@@ -35,9 +35,6 @@ class AccountsDeployment(BackendDeployment):
     def prefix(self) -> str:
         return "/api/accounts"
 
-    def version(self) -> str:
-        return "1.1.0"
-
     def name(self) -> str:
         return "accounts"
 

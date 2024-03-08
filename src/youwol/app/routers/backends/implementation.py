@@ -29,6 +29,7 @@ from youwol.app.web_socket import LogsStreamer
 from youwol.utils import (
     Context,
     Label,
+    clone_environ,
     encode_id,
     execute_shell_cmd,
     find_available_port,
@@ -172,6 +173,7 @@ async def start_backend_shell(
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             shell=True,
+            env=clone_environ(env_variables={"PYTHONPATH": ""}),
         )
 
         async def collect_outputs():
