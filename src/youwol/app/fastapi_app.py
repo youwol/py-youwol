@@ -20,10 +20,7 @@ from youwol.app.environment import (
     api_configuration,
     yw_config,
 )
-from youwol.app.middlewares import (
-    BrowserCachingMiddleware,
-    LocalCloudHybridizerMiddleware,
-)
+from youwol.app.middlewares import BrowserMiddleware, LocalCloudHybridizerMiddleware
 from youwol.app.routers import admin, backends, native_backends
 from youwol.app.routers.environment import AssetDownloadThread
 from youwol.app.routers.environment.download_assets import (
@@ -158,7 +155,7 @@ def setup_middlewares(env: YouwolEnvironment):
         fastapi_app.add_middleware(CustomMiddlewareWrapper, model_config=middleware)
 
     fastapi_app.add_middleware(
-        BrowserCachingMiddleware,
+        BrowserMiddleware,
         config_dependant_browser_caching=env.features.configDependantBrowserCaching,
     )
     fastapi_app.add_middleware(
