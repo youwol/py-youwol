@@ -97,8 +97,8 @@ class Log(BaseModel):
 class LeafLogResponse(Log):
     """
     A leaf log corresponds to a message - there is no log that will have as
-    [parentContextId](@yw-nav-attr:youwol.app.routers.system.router.Log.parentContextId)
-    the [contextId](@yw-nav-attr:youwol.app.routers.system.router.Log.contextId) of this log.
+    [parentContextId](@yw-nav-attr:youwol.app.routers.system.models.Log.parentContextId)
+    the [contextId](@yw-nav-attr:youwol.app.routers.system.models.Log.contextId) of this log.
 
     It is created when using *e.g.* [Context.info](@yw-nav-meth:Context.info).
     """
@@ -130,8 +130,8 @@ class NodeLogResponse(Log):
     It is created when using *e.g.* [Context.start](@yw-nav-meth:Context.start).
 
     The children logs have as
-    [parentContextId](@yw-nav-attr:youwol.app.routers.system.router.Log.parentContextId)
-    the [contextId](@yw-nav-attr:youwol.app.routers.system.router.Log.contextId) of this log.
+    [parentContextId](@yw-nav-attr:youwol.app.routers.system.models.Log.parentContextId)
+    the [contextId](@yw-nav-attr:youwol.app.routers.system.models.Log.contextId) of this log.
     """
 
     failed: bool
