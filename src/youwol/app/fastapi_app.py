@@ -40,6 +40,7 @@ from youwol.utils import (
     OidcConfig,
     YouWolException,
     YouwolHeaders,
+    encode_id,
     factory_local_cache,
     unexpected_exception_handler,
     youwol_exception_handler,
@@ -233,6 +234,18 @@ def setup_http_routers():
             status_code=308,
             url=f"/applications/@youwol/py-youwol-doc/{yw_doc_version()}",
         )
+
+    def install_webpm_route(route: str):
+        @fastapi_app.get(f"{api_configuration.base_path}/{route}")
+        async def webpm_resource():
+            webpm_id = encode_id("@youwol/webpm-client")
+            return RedirectResponse(
+                status_code=308,
+                url=f"/api/assets-gateway/raw/package/{webpm_id}/^3.0.0/dist/@youwol/{route}",
+            )
+
+    for route in ["webpm-client.js", "webpm-client.config.json", "webpm-client.js.map"]:
+        install_webpm_route(route)
 
     @fastapi_app.get(api_configuration.base_path + "/co-lab")
     async def colab():
