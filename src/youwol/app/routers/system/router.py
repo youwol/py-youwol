@@ -1,4 +1,5 @@
 # standard library
+import asyncio
 import functools
 import os
 import time
@@ -18,7 +19,11 @@ from starlette.requests import Request
 
 # Youwol application
 from youwol.app.environment import YouwolEnvironment, yw_config
-from youwol.app.routers.backends.implementation import INSTALL_MANIFEST_FILE
+from youwol.app.routers.backends.implementation import (
+    INSTALL_MANIFEST_FILE,
+    download_install_backend,
+    ensure_running,
+)
 from youwol.app.routers.environment.router import emit_environment_status
 from youwol.app.routers.system.documentation import (
     YOUWOL_MODULE,
@@ -34,7 +39,9 @@ from youwol.app.routers.system.documentation_models import (
     DocModuleResponse,
 )
 from youwol.app.routers.system.models import (
+    BackendInstallResponse,
     BackendLogsResponse,
+    BackendsGraphInstallResponse,
     FolderContentBody,
     FolderContentResp,
     LeafLogResponse,
@@ -51,6 +58,7 @@ from youwol.app.routers.system.models import (
 
 # Youwol utilities
 from youwol.utils.context import Context, InMemoryReporter, Label, LogEntry, LogLevel
+from youwol.utils.http_clients.cdn_backend import LoadingGraphResponseV1
 
 router = APIRouter()
 
@@ -93,6 +101,88 @@ async def folder_content(body: FolderContentBody) -> FolderContentResp:
         files=[item for item in items if os.path.isfile(path / item)],
         folders=[item for item in items if os.path.isdir(path / item)],
     )
+
+
+@router.post(
+    "/backends/install",
+    response_model=BackendsGraphInstallResponse,
+    summary="Install the backends part of a loading graph from a cdn-backend response.",
+)
+async def install_graph(
+    request: Request, body: LoadingGraphResponseV1
+) -> BackendsGraphInstallResponse:
+    """
+    This function processes the backend part of a loading graph's definition to install and ensure the running state
+    of each backend component defined within.
+    It respects the hierarchical structure of the loading graph, ensuring that each layer of dependencies is correctly
+    installed and started in sequence.
+    Operations on backends within the same layer are performed concurrently, for efficient parallel execution.
+
+    Note:
+        Loading graph definitions are retrieved using this [endpoint](@yw-nav-func:root_paths.resolve_loading_tree) of
+        the [`cdn-backend`](@yw-nav-mod:backends.cdn) service.
+
+    Parameters:
+        request: Incoming request.
+        body: An object containing the lock and definition of the loading graph, which specifies the backend components
+         to be installed and their dependencies.
+
+    Return:
+        Description of the backends installed, including their client bundle.
+
+    Raise:
+    - Potential exceptions from download_install_backend and ensure_running functions, including network errors,
+      installation failures, and timeouts in starting backends.
+    """
+
+    async with Context.start_ep(
+        request=request,
+    ) as ctx:
+
+        backends_dict = {
+            entity.id: entity for entity in body.lock if entity.type == "backend"
+        }
+        sub_graph = [
+            [
+                (backends_dict[backend[0]], f"/backends/{backend[1]}")
+                for backend in layer
+                if backend[0] in backends_dict
+            ]
+            for layer in body.definition
+        ]
+        sub_graph = [graph for graph in sub_graph if len(graph) > 0]
+        flat = [d for layer in sub_graph for d in layer]
+        await asyncio.gather(
+            *[
+                download_install_backend(
+                    backend_name=backend.name,
+                    version=backend.version,
+                    url=url,
+                    context=ctx,
+                )
+                for backend, url in flat
+            ]
+        )
+        for layer in sub_graph:
+            await asyncio.gather(
+                *[
+                    ensure_running(
+                        request=ctx.request,
+                        backend_name=lib.name,
+                        version_query=lib.version,
+                        timeout=300,
+                        context=ctx,
+                    )
+                    for lib, _ in layer
+                ]
+            )
+
+        return BackendsGraphInstallResponse(
+            backends=[
+                BackendInstallResponse.from_lib_info(backend=backend)
+                for backend in backends_dict.values()
+            ]
+        )
 
 
 @router.delete(

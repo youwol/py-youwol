@@ -21,6 +21,7 @@ from starlette.requests import Request
 # Youwol application
 from youwol.app.environment import YouwolEnvironment
 from youwol.app.environment.proxied_backends import ProxiedBackend
+from youwol.app.routers.environment import AssetDownloadThread
 from youwol.app.routers.environment.router import emit_environment_status
 from youwol.app.routers.local_cdn.router import package_info
 from youwol.app.web_socket import LogsStreamer
@@ -291,3 +292,62 @@ async def ensure_running(
         except TimeoutError:
             process.terminate()
             raise StartBackendTimeout(outputs=outputs, ctx_id=context.uid)
+
+
+class DownloadBackendFailed(Exception):
+    """
+    Exception raised when backend downloading failed.
+    """
+
+    def __init__(self, name: str, version: str, context_id: str):
+        """
+        Initializes the instance.
+
+        Parameters:
+            name: The name of the backend.
+            version: The specific version of the backend.
+            context_id: Context ID referencing the function that handled the download.
+        """
+        super().__init__(f"Backend '{name}' at version {version} failed to download.")
+        self.context_id = context_id
+        self.name = name
+        self.version = version
+
+
+async def download_install_backend(
+    backend_name: str, url: str, version: str, context: Context
+) -> None:
+    """
+    Downloads and installs a backend from the provided URL.
+
+    Parameters:
+        backend_name: The name of the backend.
+        url: The entry point URL.
+        version: The specific version of the backend.
+        context: The current context.
+
+    Raise:
+        [`DownloadBackendFailed`](DownloadBackendFailed): If the download of the backend fails.
+    """
+    async with context.start(
+        action="download_install",
+        with_attributes={"backend": backend_name, "version": version},
+    ) as ctx:
+        env = await ctx.get("env", YouwolEnvironment)
+        download_thread = await ctx.get("download_thread", AssetDownloadThread)
+
+        folder = env.pathsBook.local_cdn_component(name=backend_name, version=version)
+        if not folder.exists():
+            status = await download_thread.wait_asset(
+                url=url, kind="package", raw_id=encode_id(backend_name), context=ctx
+            )
+            if not status.succeeded:
+                raise DownloadBackendFailed(
+                    name=backend_name, version=version, context_id=status.context_id
+                )
+
+        folder = env.pathsBook.local_cdn_component(name=backend_name, version=version)
+        if not (folder / ".venv").exists():
+            await install_backend_shell(
+                folder=folder, name=backend_name, version=version, context=ctx
+            )

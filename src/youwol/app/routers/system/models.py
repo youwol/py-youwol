@@ -6,6 +6,8 @@ from pydantic import BaseModel
 
 # Youwol utilities
 from youwol.utils import JSON, LogEntry
+from youwol.utils.http_clients.cdn_backend import Library
+from youwol.utils.utils_requests import FuturesResponseEnd
 
 
 class FolderContentResp(BaseModel):
@@ -254,3 +256,79 @@ class TerminateResponse(BaseModel):
     """
     Whether the backend was running.
     """
+
+
+class BackendInstallResponse(BaseModel):
+    """
+    Response model of a backend installation from
+    [`/admin/system/backends/install`](system.router.install_graph).
+    """
+
+    name: str
+    """
+    The backend name.
+    """
+    version: str
+    """
+    The backend specific version.
+    """
+    exportedClientSymbol: str
+    """
+    Exported symbol of the client's bundle.
+    """
+    clientBundle: str
+    """
+    Client's bundle.
+    """
+
+    @staticmethod
+    def from_lib_info(backend: Library):
+        url_base = f"/backends/{backend.name}/{backend.version}"
+        exported_symbol = f"{backend.name}_APIv{backend.apiKey}"
+        return BackendInstallResponse(
+            name=backend.name,
+            version=backend.version,
+            exportedClientSymbol=exported_symbol,
+            clientBundle=f"""
+return async ({{window, webpmClient, wsData$}}) => {{
+
+    const {{rxjs}} = await webpmClient.install({{modules:["rxjs#^7.5.6 as rxjs"]}})
+    const {{mergeMap, filter, takeWhile, from}} = rxjs
+    const symbol = "{exported_symbol}"
+    const resp$ = (url, options) => from(fetch(`{url_base}/${{url}}`, options))
+    const respJson$ = (url, options) => resp$(url, options).pipe(
+        mergeMap((resp) => from(resp.json()))
+    )
+    const respText$ = (url, options) => resp$(url, options).pipe(
+        mergeMap((resp) => from(resp.text()))
+    )
+    window[symbol] = {{
+        name: "{backend.name}",
+        version: "{backend.version}",
+        urlBase: "{url_base}",
+        fetch: (url, options) => fetch(`{url_base}/${{url}}`),
+        fromFetch:  (url, options) => resp$(url, options),
+        fromFetchJson:  (url, options) => respJson$(url, options),
+        fromFetchText:  (url, options) => respText$(url, options),
+        channel: (url, options) => {{
+            return respJson$(url, options).pipe(
+                mergeMap(({{channelId}}) => {{
+                    return wsData$.pipe(
+                        filter(({{labels, attributes}}) => labels.includes(channelId)),
+                        takeWhile((m) => !m.labels.includes("{FuturesResponseEnd.__name__}"))
+                    )
+                }}),
+            )
+        }}
+    }}
+}}
+""",
+        )
+
+
+class BackendsGraphInstallResponse(BaseModel):
+    """
+    Response model of [`/admin/system/backends/install`](system.router.install_graph).
+    """
+
+    backends: list[BackendInstallResponse]
