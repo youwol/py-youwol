@@ -251,7 +251,7 @@ def setup_http_routers():
     async def colab():
         return RedirectResponse(
             status_code=308,
-            url="/applications/@youwol/co-lab/^0.1.5",
+            url="/applications/@youwol/co-lab/^0.2.0",
         )
 
 
