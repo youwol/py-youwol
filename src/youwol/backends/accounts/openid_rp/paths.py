@@ -12,6 +12,10 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, RedirectResponse, Response
 from starlette.status import HTTP_204_NO_CONTENT
 
+# Youwol utilities
+from youwol.utils.clients.oidc.service_account_client import UnexpectedResponseStatus
+from youwol.utils.servers.request import get_real_client_ip
+
 # relative
 from ..configuration import Configuration, get_configuration
 from ..root_paths import router
@@ -30,7 +34,7 @@ counter_anonymous = Counter("accounts_visitors_created", "Nb visitor profiles cr
 @router.get("/openid_rp/auth")
 async def authorization_flow(
     request: Request,
-    target_uri: str,
+    target_uri: str = "/",
     yw_login_hint: Annotated[str | None, Cookie()] = None,
     conf: Configuration = Depends(get_configuration),
 ) -> Response:
@@ -50,7 +54,9 @@ async def authorization_flow(
     :return:
     """
     login_hint = (
-        yw_login_hint[5:] if yw_login_hint and yw_login_hint[:5] == "user:" else None
+        yw_login_hint[5:]
+        if yw_login_hint and yw_login_hint.startswith("user:")
+        else None
     )
 
     redirect_uri = await conf.openid_flows.init_authorization_flow(
@@ -107,6 +113,21 @@ async def authorization_flow_callback(
             return JSONResponse(
                 status_code=400, content={"invalid param": "Invalid state"}
             )
+
+        if tokens.is_temp():
+            if conf.keycloak_users_management is None:
+                return JSONResponse(
+                    status_code=403,
+                    content={"forbidden": "no administration right on the server side"},
+                )
+            try:
+                await conf.keycloak_users_management.finalize_user(
+                    sub=await tokens.sub(), ip=get_real_client_ip(request)
+                )
+            except UnexpectedResponseStatus as e:
+                return JSONResponse(status_code=e.actual, content=e.content)
+
+        await tokens.refresh()
 
         response = RedirectResponse(url=target_uri, status_code=307)
         response.set_cookie(
@@ -249,13 +270,14 @@ async def login(
         return await authorization_flow(request, target_uri, yw_login_hint, conf)
 
     if flow == "temp":
-        return await login_as_temp_user(target_uri, conf)
+        return await login_as_temp_user(request, target_uri, conf)
 
     return JSONResponse(status_code=400, content={"invalid request", "unknown flow"})
 
 
 @router.get("/openid_rp/temp_user")
 async def login_as_temp_user(
+    request: Request,
     target_uri: str = "/",
     conf: Configuration = Depends(get_configuration),
 ) -> Response:
@@ -276,12 +298,16 @@ async def login_as_temp_user(
             content={"forbidden": "No administration right on the server side"},
         )
 
-    user_name = f"{uuid.uuid4()}@temp.youwol.com"
+    username = f"{uuid.uuid4()}@temp.youwol.com"
     password = str(uuid.uuid4())
-    await conf.keycloak_users_management.create_user(user_name, password)
+    await conf.keycloak_users_management.create_user(
+        username=username,
+        password=password,
+        ip=get_real_client_ip(request),
+    )
 
     tokens = await conf.openid_flows.direct_auth_flow(
-        username=user_name, password=password
+        username=username, password=password
     )
 
     response = RedirectResponse(url=target_uri, status_code=307)

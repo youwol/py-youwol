@@ -1,15 +1,14 @@
 # typing
-from typing import Annotated
 
 # third parties
 from fastapi import Depends
-from fastapi.params import Cookie
 from pydantic import BaseModel
 from starlette.requests import Request
-from starlette.responses import JSONResponse, RedirectResponse, Response
+from starlette.responses import JSONResponse, Response
 
 # Youwol utilities
 from youwol.utils.clients.oidc.service_account_client import UnexpectedResponseStatus
+from youwol.utils.servers.request import get_real_client_ip
 
 # relative
 from ..configuration import Configuration, get_configuration
@@ -21,7 +20,7 @@ ONE_YEAR_IN_SECONDS = 365 * 24 * 60 * 60
 
 class RegistrationDetails(BaseModel):
     email: str
-    target_uri: str
+    target_uri: str | None = None
 
 
 @router.put("/registration")
@@ -41,12 +40,10 @@ async def register_from_temp_user(
             status_code=400, content={"invalid request": "not a temporary user"}
         )
 
-    params = {"target_uri": details.target_uri}
     redirect_uri = url_for(
         request=request,
-        function_name="registration_finalizer",
+        function_name="authorization_flow",
         https=conf.https,
-        **params,
     )
 
     try:
@@ -55,55 +52,15 @@ async def register_from_temp_user(
             email=details.email,
             client_id=conf.oidc_client.client_id(),
             target_uri=redirect_uri,
+            ip=get_real_client_ip(request),
         )
     except UnexpectedResponseStatus as e:
         return JSONResponse(status_code=e.actual, content=e.content)
 
-    return Response(status_code=202)
-
-
-@router.get("/registration")
-async def registration_finalizer(
-    target_uri: str,
-    yw_jwt: Annotated[str | None, Cookie()] = None,
-    conf: Configuration = Depends(get_configuration),
-) -> Response:
-    if conf.keycloak_users_management is None:
-        return JSONResponse(
-            status_code=403,
-            content={"forbidden": "no administration right on the server side"},
-        )
-
-    if yw_jwt is None:
-        return JSONResponse(status_code=403, content="no cookie")
-
-    tokens = await conf.tokens_manager.restore_tokens(
-        tokens_id=yw_jwt,
-    )
-
-    if tokens is None:
-        return JSONResponse(
-            status_code=400, content={"invalid state": "no tokens found"}
-        )
-
-    try:
-        await conf.keycloak_users_management.finalize_user(sub=await tokens.sub())
-    except UnexpectedResponseStatus as e:
-        return JSONResponse(status_code=e.actual, content=e.content)
-
-    await tokens.refresh()
-
-    response = RedirectResponse(target_uri, status_code=307)
-    response.set_cookie(
-        "yw_jwt",
-        tokens.id(),
-        secure=True,
-        httponly=True,
-        max_age=tokens.remaining_time(),
-    )
+    response = Response(status_code=202)
     response.set_cookie(
         "yw_login_hint",
-        f"user:{await tokens.username()}",
+        f"user:{details.email}",
         secure=True,
         httponly=True,
         max_age=ONE_YEAR_IN_SECONDS,

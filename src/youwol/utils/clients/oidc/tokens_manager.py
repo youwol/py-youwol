@@ -120,6 +120,12 @@ class Tokens:
         decoded_id_token = await self.__oidc_client.token_decode(self.__data.id_token)
         return str(decoded_id_token["upn"])
 
+    async def is_temp(self) -> bool:
+        """Indicate if the token has a claim temp, which means the user registration must be finalized"""
+        self.__assert_refresh_not_expired()
+        decoded_id_token = await self.__oidc_client.token_decode(self.__data.id_token)
+        return decoded_id_token["temp"] if "temp" in decoded_id_token else False
+
     async def sub(self) -> str:
         """
         Returns the subject identifier associated with the ID token.
