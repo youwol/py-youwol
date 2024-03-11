@@ -21,6 +21,8 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 - **Backend components**:
   -  automatic local installation of missing backends when requesting `backends/$NAME/$SEMVER/**`. <!-- TG-2195 -->
+  -  explicit local installation on `admin/system/backends/install` using CDN's loading graph response. 
+  <!-- TG-2205 -->
 
 ### Changed
 
@@ -40,6 +42,7 @@ TG-1218 : 🥅 [backends.cdn] => robustify semver resolution.
 TG-2201 : 🙈 [app.env] => default_ignored_paths includes .venv
 TG-1507
 TG-2210
+TG-2205 : ✨ [utils.context] => init `attributes`, `labels` from request. 
 -->
 
 ## [0.1.8] − 2024-03-07
