@@ -39,6 +39,7 @@ TG-2091 : 🔥 [app.env] => remove deprecated re-export
 TG-1218 : 🥅 [backends.cdn] => robustify semver resolution.
 TG-2201 : 🙈 [app.env] => default_ignored_paths includes .venv
 TG-1507
+TG-2210
 -->
 
 ## [0.1.8] − 2024-03-07
