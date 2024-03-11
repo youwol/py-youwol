@@ -20,10 +20,7 @@ from youwol.app.environment import (
     api_configuration,
     yw_config,
 )
-from youwol.app.middlewares import (
-    BrowserCachingMiddleware,
-    LocalCloudHybridizerMiddleware,
-)
+from youwol.app.middlewares import BrowserMiddleware, LocalCloudHybridizerMiddleware
 from youwol.app.routers import admin, backends, native_backends
 from youwol.app.routers.environment import AssetDownloadThread
 from youwol.app.routers.environment.download_assets import (
@@ -43,6 +40,7 @@ from youwol.utils import (
     OidcConfig,
     YouWolException,
     YouwolHeaders,
+    encode_id,
     factory_local_cache,
     unexpected_exception_handler,
     youwol_exception_handler,
@@ -158,7 +156,7 @@ def setup_middlewares(env: YouwolEnvironment):
         fastapi_app.add_middleware(CustomMiddlewareWrapper, model_config=middleware)
 
     fastapi_app.add_middleware(
-        BrowserCachingMiddleware,
+        BrowserMiddleware,
         config_dependant_browser_caching=env.features.configDependantBrowserCaching,
     )
     fastapi_app.add_middleware(
@@ -237,11 +235,23 @@ def setup_http_routers():
             url=f"/applications/@youwol/py-youwol-doc/{yw_doc_version()}",
         )
 
+    def install_webpm_route(route: str):
+        @fastapi_app.get(f"{api_configuration.base_path}/{route}")
+        async def webpm_resource():
+            webpm_id = encode_id("@youwol/webpm-client")
+            return RedirectResponse(
+                status_code=308,
+                url=f"/api/assets-gateway/raw/package/{webpm_id}/^3.0.0/dist/@youwol/{route}",
+            )
+
+    for route in ["webpm-client.js", "webpm-client.config.json", "webpm-client.js.map"]:
+        install_webpm_route(route)
+
     @fastapi_app.get(api_configuration.base_path + "/co-lab")
     async def colab():
         return RedirectResponse(
             status_code=308,
-            url="/applications/@youwol/co-lab/^0.1.5",
+            url="/applications/@youwol/co-lab/^0.2.0",
         )
 
 

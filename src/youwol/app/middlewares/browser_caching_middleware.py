@@ -1,6 +1,12 @@
+# standard library
+import json
+import urllib.parse
+
 # typing
+from typing import Literal
 
 # third parties
+from pydantic import BaseModel
 from starlette.middleware.base import (
     BaseHTTPMiddleware,
     DispatchFunction,
@@ -10,16 +16,46 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp
 
+# Youwol application
+from youwol.app.environment.youwol_environment import (
+    YouwolEnvironment,
+    YouwolEnvironmentFactory,
+)
+
 # Youwol utilities
+from youwol.utils import Context
 from youwol.utils.crypto.digest import compute_digest
 
-# relative
-from ..environment.youwol_environment import YouwolEnvironmentFactory
 
-
-class BrowserCachingMiddleware(BaseHTTPMiddleware):
+class LocalYouwolCookie(BaseModel):
     """
-    Middleware to control browser caching.
+    Model representation of the local YouWol environment cookie.
+    """
+
+    type: Literal["local"] = "local"
+    """
+    A literal indicator of the environment type, which is always 'local' for instances of this class.
+    """
+
+    port: int
+    """
+    The port number on which the local YouWol server is running.
+    """
+
+    wsDataUrl: str
+    """
+    The WebSocket URL used for data communications with the local YouWol server.
+    """
+
+    wsLogUrl: str
+    """
+    The WebSocket URL used for log communications with the local YouWol server.
+    """
+
+
+class BrowserMiddleware(BaseHTTPMiddleware):
+    """
+    Middleware to control interaction with browser regarding caching, cookies, *etc.*.
     """
 
     cache = {}
@@ -32,7 +68,7 @@ class BrowserCachingMiddleware(BaseHTTPMiddleware):
         **_,
     ) -> None:
         """
-        Initializes a new instance of BrowserCachingMiddleware.
+        Initializes a new instance of BrowserMiddleware.
 
         Parameters:
            app: The ASGI application, forwarded to `BaseHTTPMiddleware`.
@@ -46,9 +82,8 @@ class BrowserCachingMiddleware(BaseHTTPMiddleware):
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
         """
-        Middleware logic to control browser caching.
-        For now, it disables browser cache by setting the header `Cache-Control` to `no-cache, no-store`
-        for destination matching `/api/assets-gateway/raw/**`.
+        Middleware logic to control interaction with browser:
+            *  set up the [`youwol` cookie](@yw-nav-class:LocalYouwolCookie).
 
         Parameters:
             request: The incoming request.
@@ -77,5 +112,14 @@ class BrowserCachingMiddleware(BaseHTTPMiddleware):
             response.set_cookie("youwol-config-digest", digest)
             response.headers["Vary"] = "Youwol-Config-Digest, Cookie"
             response.headers["Cache-Control"] = "max-age=3600"
+
+        context: Context = request.state.context
+        env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
+        yw_cookie = LocalYouwolCookie(
+            port=env.httpPort, wsDataUrl="ws-data", wsLogUrl="ws-log"
+        )
+        response.set_cookie(
+            "youwol", urllib.parse.quote(json.dumps(yw_cookie.__dict__))
+        )
 
         return response

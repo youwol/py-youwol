@@ -141,6 +141,12 @@ def aiohttp_file_form(
     return form_data
 
 
+class FuturesResponseEnd(BaseModel):
+    """
+    Model to indicate the streaming's end of a [FuturesResponse](FuturesResponse).
+    """
+
+
 class FuturesResponse(Response):
     """
     This HTTP response is used when asynchronous computations (resolving after the HTTP response is returned)
@@ -193,8 +199,6 @@ class FuturesResponse(Response):
         )
 
     async def close(self, context: Context):
-        class FuturesResponseEnd(BaseModel):
-            pass
 
         await context.send(
             data=FuturesResponseEnd(),

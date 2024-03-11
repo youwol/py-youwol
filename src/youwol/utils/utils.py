@@ -3,6 +3,7 @@ import base64
 import datetime
 import importlib.metadata
 import itertools
+import json
 
 from collections.abc import Callable, Iterable
 from enum import Enum
@@ -27,6 +28,7 @@ from youwol.utils.python_next.v3_12 import tomllib
 
 # Youwol utilities
 from youwol.utils.clients.utils import to_group_id
+from youwol.utils.context.models import TContextAttr
 from youwol.utils.types import JSON, AnyDict
 
 flatten = itertools.chain.from_iterable
@@ -50,6 +52,16 @@ class YouwolHeaders:
     trace_id: str = "x-trace-id"
     """
     Trace id (see [trace & context](https://www.w3.org/TR/trace-context/)).
+    """
+
+    trace_labels: str = "x-trace-labels"
+    """
+    Labels to associate with the trace, provided as a JSON array.
+    """
+
+    trace_attributes: str = "x-trace-attributes"
+    """
+    Attributes to associate with the trace, provided as a JSON dict.
     """
 
     py_youwol_port: str = "py-youwol-port"
@@ -82,6 +94,47 @@ class YouwolHeaders:
             Trace id of the request, if provided.
         """
         return request.headers.get(YouwolHeaders.trace_id, None)
+
+    @staticmethod
+    def get_trace_labels(request: Request) -> list[str]:
+        """
+
+        Parameters:
+            request: Incoming request.
+
+        Return:
+            Trace's labels from the request's headers, if provided.
+
+        Raise:
+            `ValueError` when decoding the labels header failed.
+        """
+        raw = request.headers.get(YouwolHeaders.trace_labels, "[]")
+        labels = json.loads(raw)
+        if not isinstance(labels, list):
+            raise ValueError("Trace label's header should be provided as an array.")
+        return [str(label) for label in labels]
+
+    @staticmethod
+    def get_trace_attributes(request: Request) -> dict[str, TContextAttr]:
+        """
+
+        Parameters:
+            request: Incoming request.
+
+        Return:
+            Trace's attributes from the request's headers, if provided.
+
+        Raise:
+            `ValueError` when decoding the attributes header failed.
+        """
+        raw = request.headers.get(YouwolHeaders.trace_attributes, "{}")
+
+        attributes = json.loads(raw)
+        if not isinstance(attributes, dict):
+            raise ValueError(
+                "Trace attribute's header should be provided as a dictionary."
+            )
+        return attributes
 
     @staticmethod
     def get_py_youwol_local_only(request: Request) -> str | None:

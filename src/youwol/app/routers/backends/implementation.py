@@ -21,6 +21,7 @@ from starlette.requests import Request
 # Youwol application
 from youwol.app.environment import YouwolEnvironment
 from youwol.app.environment.proxied_backends import ProxiedBackend
+from youwol.app.routers.environment import AssetDownloadThread
 from youwol.app.routers.environment.router import emit_environment_status
 from youwol.app.routers.local_cdn.router import package_info
 from youwol.app.web_socket import LogsStreamer
@@ -39,6 +40,27 @@ from youwol.utils import (
 router = APIRouter()
 
 INSTALL_MANIFEST_FILE = "install.manifest.txt"
+
+
+class DownloadBackendEvent(BaseModel):
+    """
+    Represents an event associated to a backend start.
+    """
+
+    name: str
+    """
+    Name of the backend.
+    """
+
+    version: str
+    """
+    Version of the backend.
+    """
+
+    event: Literal["started", "succeeded", "failed"]
+    """
+    Event type.
+    """
 
 
 class InstallBackendEvent(BaseModel):
@@ -62,6 +84,27 @@ class InstallBackendEvent(BaseModel):
     """
 
     event: Literal["started", "failed", "succeeded"]
+    """
+    Event type.
+    """
+
+
+class StartBackendEvent(BaseModel):
+    """
+    Represents an event associated to a backend start.
+    """
+
+    name: str
+    """
+    Name of the backend.
+    """
+
+    version: str
+    """
+    Version of the backend.
+    """
+
+    event: Literal["starting", "listening", "failed"]
     """
     Event type.
     """
@@ -216,11 +259,18 @@ async def ensure_running(
 ) -> ProxiedBackend:
 
     env = await context.get("env", YouwolEnvironment)
-    backend = env.proxied_backends.get(name=backend_name, query_version=version_query)
-    if backend:
-        return backend
 
     async with context.start(action="ensure_running") as ctx:
+        backend = env.proxied_backends.get(
+            name=backend_name, query_version=version_query
+        )
+        if backend:
+            await ctx.send(
+                data=StartBackendEvent(
+                    name=backend_name, version=backend.version, event="listening"
+                )
+            )
+            return backend
 
         package = await package_info(
             request=request, package_id=encode_id(backend_name)
@@ -261,6 +311,11 @@ async def ensure_running(
         await ctx.info(text=f"Start backend from '{folder}' on port {port}")
 
         outputs = []
+        await ctx.send(
+            data=StartBackendEvent(
+                name=backend_name, version=latest_version_backend, event="starting"
+            )
+        )
         process, std_outputs_ctx_id = await start_backend_shell(
             name=backend_name,
             version=latest_version_backend,
@@ -274,10 +329,22 @@ async def ensure_running(
             is_ready = await asyncio.wait_for(wait_readiness(port, process), timeout)
             if not is_ready:
                 await asyncio.sleep(1)
+                await ctx.send(
+                    data=StartBackendEvent(
+                        name=backend_name,
+                        version=latest_version_backend,
+                        event="failed",
+                    )
+                )
                 raise StartBackendCrashed(
                     return_code=process.returncode, outputs=outputs, ctx_id=context.uid
                 )
 
+            await ctx.send(
+                data=StartBackendEvent(
+                    name=backend_name, version=latest_version_backend, event="listening"
+                )
+            )
             proxy = env.proxied_backends.register(
                 name=backend_name,
                 version=latest_version_backend,
@@ -291,3 +358,77 @@ async def ensure_running(
         except TimeoutError:
             process.terminate()
             raise StartBackendTimeout(outputs=outputs, ctx_id=context.uid)
+
+
+class DownloadBackendFailed(Exception):
+    """
+    Exception raised when backend downloading failed.
+    """
+
+    def __init__(self, name: str, version: str, context_id: str):
+        """
+        Initializes the instance.
+
+        Parameters:
+            name: The name of the backend.
+            version: The specific version of the backend.
+            context_id: Context ID referencing the function that handled the download.
+        """
+        super().__init__(f"Backend '{name}' at version {version} failed to download.")
+        self.context_id = context_id
+        self.name = name
+        self.version = version
+
+
+async def download_install_backend(
+    backend_name: str, url: str, version: str, context: Context
+) -> None:
+    """
+    Downloads and installs a backend from the provided URL.
+
+    Parameters:
+        backend_name: The name of the backend.
+        url: The entry point URL.
+        version: The specific version of the backend.
+        context: The current context.
+
+    Raise:
+        [`DownloadBackendFailed`](DownloadBackendFailed): If the download of the backend fails.
+    """
+    async with context.start(
+        action="download_install",
+        with_attributes={"backend": backend_name, "version": version},
+    ) as ctx:
+        env = await ctx.get("env", YouwolEnvironment)
+        download_thread = await ctx.get("download_thread", AssetDownloadThread)
+
+        folder = env.pathsBook.local_cdn_component(name=backend_name, version=version)
+        if not folder.exists():
+            await ctx.send(
+                DownloadBackendEvent(
+                    name=backend_name, version=version, event="started"
+                )
+            )
+            status = await download_thread.wait_asset(
+                url=url, kind="package", raw_id=encode_id(backend_name), context=ctx
+            )
+            if not status.succeeded:
+                await ctx.send(
+                    DownloadBackendEvent(
+                        name=backend_name, version=version, event="failed"
+                    )
+                )
+                raise DownloadBackendFailed(
+                    name=backend_name, version=version, context_id=status.context_id
+                )
+
+            await ctx.send(
+                DownloadBackendEvent(
+                    name=backend_name, version=version, event="succeeded"
+                )
+            )
+        folder = env.pathsBook.local_cdn_component(name=backend_name, version=version)
+        if not (folder / ".venv").exists():
+            await install_backend_shell(
+                folder=folder, name=backend_name, version=version, context=ctx
+            )

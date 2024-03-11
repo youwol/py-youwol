@@ -1,9 +1,9 @@
 # standard library
+import asyncio
 import functools
 import os
 import time
 
-from enum import Enum
 from pathlib import Path
 
 # typing
@@ -15,12 +15,15 @@ import griffe
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse
 from griffe.dataclasses import Module
-from pydantic import BaseModel
 from starlette.requests import Request
 
 # Youwol application
 from youwol.app.environment import YouwolEnvironment, yw_config
-from youwol.app.routers.backends.implementation import INSTALL_MANIFEST_FILE
+from youwol.app.routers.backends.implementation import (
+    INSTALL_MANIFEST_FILE,
+    download_install_backend,
+    ensure_running,
+)
 from youwol.app.routers.environment.router import emit_environment_status
 from youwol.app.routers.system.documentation import (
     YOUWOL_MODULE,
@@ -35,37 +38,29 @@ from youwol.app.routers.system.documentation_models import (
     DocChildModulesResponse,
     DocModuleResponse,
 )
+from youwol.app.routers.system.models import (
+    BackendInstallResponse,
+    BackendLogsResponse,
+    BackendsGraphInstallResponse,
+    FolderContentBody,
+    FolderContentResp,
+    LeafLogResponse,
+    Log,
+    LogsResponse,
+    NodeLogResponse,
+    NodeLogsResponse,
+    NodeLogStatus,
+    PostDataBody,
+    PostLogsBody,
+    TerminateResponse,
+    UninstallResponse,
+)
 
 # Youwol utilities
-from youwol.utils import JSON
 from youwol.utils.context import Context, InMemoryReporter, Label, LogEntry, LogLevel
+from youwol.utils.http_clients.cdn_backend import LoadingGraphResponseV1
 
 router = APIRouter()
-
-
-class FolderContentResp(BaseModel):
-    """
-    Describes a folder content.
-    """
-
-    files: list[str]
-    """
-    List of the path files name.
-    """
-
-    folders: list[str]
-    """
-    List of folders name.
-    """
-
-
-class FolderContentBody(BaseModel):
-    """
-    Body used to query folder content
-    using [folder_content](@yw-nav-func:youwol.app.routers.system.router.folder_content).
-    """
-
-    path: str
 
 
 @router.get("/file/{rest_of_path:path}", summary="return file content")
@@ -108,227 +103,86 @@ async def folder_content(body: FolderContentBody) -> FolderContentResp:
     )
 
 
-class QueryRootLogsBody(BaseModel):
-    fromTimestamp: int
-    maxCount: int
+@router.post(
+    "/backends/install",
+    response_model=BackendsGraphInstallResponse,
+    summary="Install the backends part of a loading graph from a cdn-backend response.",
+)
+async def install_graph(
+    request: Request, body: LoadingGraphResponseV1
+) -> BackendsGraphInstallResponse:
+    """
+    This function processes the backend part of a loading graph's definition to install and ensure the running state
+    of each backend component defined within.
+    It respects the hierarchical structure of the loading graph, ensuring that each layer of dependencies is correctly
+    installed and started in sequence.
+    Operations on backends within the same layer are performed concurrently, for efficient parallel execution.
 
+    Note:
+        Loading graph definitions are retrieved using this [endpoint](@yw-nav-func:root_paths.resolve_loading_tree) of
+        the [`cdn-backend`](@yw-nav-mod:backends.cdn) service.
 
-class Log(BaseModel):
-    """
-    Base class for logs generated from a [context](@yw-nav-class:Context) object.
-    """
+    Parameters:
+        request: Incoming request.
+        body: An object containing the lock and definition of the loading graph, which specifies the backend components
+         to be installed and their dependencies.
 
-    level: str
-    """
-    Log level (info, debug, warning, error).
-    """
+    Return:
+        Description of the backends installed, including their client bundle.
 
-    attributes: dict[str, str]
-    """
-    Attributes associated to the log.
-    """
-
-    labels: list[str]
-    """
-    Labels associated to the log.
-    """
-    text: str
-    """
-    Message.
-    """
-
-    data: JSON | None
-    """
-    Eventual data.
+    Raise:
+    - Potential exceptions from download_install_backend and ensure_running functions, including network errors,
+      installation failures, and timeouts in starting backends.
     """
 
-    contextId: str
-    """
-    ID of the context that was used to generate the log (see [Context](@yw-nav-class:Context)).
-    """
+    async with Context.start_ep(
+        request=request,
+    ) as ctx:
 
-    parentContextId: str | None
-    """
-    ID of the parent context of the context that was used to generate the log
-    (see [Context](@yw-nav-class:Context)).
-    """
-
-    timestamp: float
-
-    @staticmethod
-    def from_log_entry(log_entry: LogEntry):
-        return Log(
-            level=log_entry.level.name,
-            attributes=log_entry.attributes,
-            labels=log_entry.labels,
-            text=log_entry.text,
-            data=log_entry.data,
-            contextId=log_entry.context_id,
-            parentContextId=log_entry.parent_context_id,
-            timestamp=log_entry.timestamp,
+        backends_dict = {
+            entity.id: entity for entity in body.lock if entity.type == "backend"
+        }
+        sub_graph = [
+            [
+                (backends_dict[backend[0]], f"/backends/{backend[1]}")
+                for backend in layer
+                if backend[0] in backends_dict
+            ]
+            for layer in body.definition
+        ]
+        sub_graph = [graph for graph in sub_graph if len(graph) > 0]
+        flat = [d for layer in sub_graph for d in layer]
+        await asyncio.gather(
+            *[
+                download_install_backend(
+                    backend_name=backend.name,
+                    version=backend.version,
+                    url=url,
+                    context=ctx,
+                )
+                for backend, url in flat
+            ]
         )
+        for layer in sub_graph:
+            await asyncio.gather(
+                *[
+                    ensure_running(
+                        request=ctx.request,
+                        backend_name=lib.name,
+                        version_query=lib.version,
+                        timeout=300,
+                        context=ctx,
+                    )
+                    for lib, _ in layer
+                ]
+            )
 
-
-class LeafLogResponse(Log):
-    """
-    A leaf log corresponds to a message - there is no log that will have as
-    [parentContextId](@yw-nav-attr:youwol.app.routers.system.router.Log.parentContextId)
-    the [contextId](@yw-nav-attr:youwol.app.routers.system.router.Log.contextId) of this log.
-
-    It is created when using *e.g.* [Context.info](@yw-nav-meth:Context.info).
-    """
-
-
-class NodeLogStatus(Enum):
-    SUCCEEDED = "Succeeded"
-    """
-    The log has a succeeded status: it signals that the parent function has ran as expected.
-    """
-
-    FAILED = "Failed"
-    """
-    The log has a failed status: it signals that the parent function failed, the log content explains the reason.
-    """
-
-    UNRESOLVED = "Unresolved"
-    """
-    The log has a unresolved status: it signals that the parent function is unresolved yet, the log content
-    explains the reason.
-    """
-
-
-class NodeLogResponse(Log):
-    """
-    A 'node' log is associated to a function execution, it is likely associated to children: the logs generated
-    within the function.
-
-    It is created when using *e.g.* [Context.start](@yw-nav-meth:Context.start).
-
-    The children logs have as
-    [parentContextId](@yw-nav-attr:youwol.app.routers.system.router.Log.parentContextId)
-    the [contextId](@yw-nav-attr:youwol.app.routers.system.router.Log.contextId) of this log.
-    """
-
-    failed: bool
-    """
-    Whether the function has a failed status after leaving it (deprecated, see `status` attribute).
-    """
-
-    future: bool
-    """
-    Whether the log function a future status after leaving it (deprecated, see `status` attribute).
-    """
-
-    status: NodeLogStatus
-    """
-    Status of the function after leaving it.
-    """
-
-
-class LogsResponse(BaseModel):
-    """
-    Describes a list of logs.
-    """
-
-    logs: list[Log]
-
-
-class NodeLogsResponse(BaseModel):
-    """
-    Describes a list of 'node' logs (associated to the execution of a function).
-    """
-
-    logs: list[NodeLogResponse]
-    """
-    Logs list
-    """
-
-
-class PostLogBody(Log):
-    """
-    Body for a single log description.
-    """
-
-    traceUid: str
-    """
-    This attribute is the root parent's context ID of the log (equivalent to the usual trace ID).
-    """
-
-
-class PostLogsBody(BaseModel):
-    """
-    Body of the end point defined by the function
-     [post_logs](@yw-nav-func:youwol.app.routers.system.router.post_logs).
-    """
-
-    logs: list[PostLogBody]
-    """
-    List of the logs.
-    """
-
-
-class PostDataBody(BaseModel):
-    """
-    Body of the end point defined by the function
-     [post_data](@yw-nav-func:youwol.app.routers.system.router.post_data).
-    """
-
-    data: list[PostLogBody]
-    """
-    List of the data.
-    """
-
-
-class BackendLogsResponse(BaseModel):
-    logs: list[Log]
-    server_outputs: list[str]
-    install_outputs: list[str] | None
-
-
-class UninstallResponse(BaseModel):
-    """
-    Response model when calling [uninstall](@yw-nav-func:youwol.app.routers.system.router.uninstall)
-    """
-
-    name: str
-    """
-    Backend name.
-    """
-
-    version: str
-    """
-    Backend version.
-    """
-
-    backendTerminated: bool
-    """
-    Whether the backend has been terminated (if it was running when uninstalled).
-    """
-    wasInstalled: bool
-    """
-    Whether the backend was already installed.
-    """
-
-
-class TerminateResponse(BaseModel):
-    """
-    Response model when calling [terminate](@yw-nav-func:youwol.app.routers.system.router.terminate)
-    """
-
-    name: str
-    """
-    Backend name.
-    """
-
-    version: str
-    """
-    Backend version.
-    """
-
-    wasRunning: bool
-    """
-    Whether the backend was running.
-    """
+        return BackendsGraphInstallResponse(
+            backends=[
+                BackendInstallResponse.from_lib_info(backend=backend)
+                for backend in backends_dict.values()
+            ]
+        )
 
 
 @router.delete(

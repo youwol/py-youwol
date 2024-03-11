@@ -644,13 +644,25 @@ class ContextFactory:
         )
 
     @staticmethod
-    def get_instance(**kwargs) -> Context:
+    def get_instance(
+        with_labels: list[str] | None = None,
+        with_attributes: dict[str, TContextAttr] | None = None,
+        **kwargs,
+    ) -> Context:
         static_data = ContextFactory.with_static_data or {}
         static_labels = ContextFactory.with_static_labels or {}
         with_data = kwargs if not static_data else {**static_data, **kwargs}
-        with_labels = [label for getter in static_labels.values() for label in getter()]
-
-        return Context(with_labels=with_labels, with_data=with_data, **kwargs)
+        with_labels = [
+            *[label for getter in static_labels.values() for label in getter()],
+            *(with_labels or []),
+        ]
+        with_attributes = with_attributes or {}
+        return Context(
+            with_labels=with_labels,
+            with_data=with_data,
+            with_attributes=with_attributes,
+            **kwargs,
+        )
 
     @staticmethod
     def proxied_backend_context(request: Request, **kwargs) -> ProxiedBackendContext:

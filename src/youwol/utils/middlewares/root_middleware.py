@@ -71,14 +71,20 @@ class RootMiddleware(BaseHTTPMiddleware):
         """
         root_id = YouwolHeaders.get_correlation_id(request)
         trace_id = YouwolHeaders.get_trace_id(request)
-        return ContextFactory.get_instance(
+        with_labels = YouwolHeaders.get_trace_labels(request)
+        with_attributes = YouwolHeaders.get_trace_attributes(request)
+
+        context = ContextFactory.get_instance(
             request=request,
+            with_labels=with_labels,
+            with_attributes=with_attributes,
             logs_reporters=self.logs_reporters,
             data_reporters=self.data_reporters,
             parent_uid=root_id,
             trace_uid=trace_id if trace_id else str(uuid.uuid4()),
             uid=root_id if root_id else "root",
         )
+        return context
 
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
