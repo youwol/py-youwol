@@ -32,14 +32,14 @@ test('install {{name}}', async () => {
     const notFound = originalProperties.filter((p) => !webpmPackage[p])
     if (notFound.length > 0) {
         console.warn(
-            `${notFound.length} properties out of ${originalProperties.length} of lodash are not found:`,
+            `${notFound.length} properties out of ${originalProperties.length} are not found:`,
             notFound
         );
     }
     const missing = notFound.filter((p) => !notExported.includes(p));
     if (missing.length > 0) {
         console.error(
-            `${missing.length} properties out of ${originalProperties.length} of lodash are not found but required`,
+            `${missing.length} properties out of ${originalProperties.length} are not found but required`,
             missing
         );
     }
