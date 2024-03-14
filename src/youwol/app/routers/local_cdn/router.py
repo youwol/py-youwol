@@ -1,6 +1,5 @@
 # standard library
 import asyncio
-import itertools
 import shutil
 
 # third parties
@@ -15,22 +14,20 @@ from youwol.app.web_socket import LogsStreamer
 # Youwol utilities
 from youwol.utils import decode_id, encode_id
 from youwol.utils.context import Context
-from youwol.utils.http_clients.cdn_backend.utils import get_library_type
 
 # relative
 from .implementation import (
     check_updates_from_queue,
     download_packages_from_queue,
+    emit_local_cdn_status,
     get_latest_local_cdn_version,
     get_version_info,
 )
 from .models import (
     CDN_TOPIC,
-    CdnPackageLight,
     CdnPackageResponse,
     CdnStatusResponse,
     CdnVersion,
-    CdnVersionLight,
     CheckUpdateResponse,
     CheckUpdatesResponse,
     DownloadPackagesBody,
@@ -43,42 +40,6 @@ from .models import (
 )
 
 router = APIRouter()
-
-
-async def emit_local_cdn_status(context: Context) -> CdnStatusResponse:
-    """
-    Emit the current [CdnStatusResponse](@yw-nav-class:CdnStatusResponse) via the
-    [data web-socket channels](@yw-nav-attr:WebSocketsStore.data).
-
-    Parameters:
-        context: Current context.
-
-    Return:
-        The local CDN status.
-    """
-    async with context.start(action="refresh_local_cdn_status") as ctx:
-        env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
-        cdn_docs = env.backends_configuration.cdn_backend.doc_db.data["documents"]
-        cdn_sorted = sorted(cdn_docs, key=lambda d: d["library_name"])
-        grouped = itertools.groupby(cdn_sorted, key=lambda d: d["library_name"])
-
-        packages = [
-            CdnPackageLight(
-                name=name,
-                id=encode_id(name),
-                versions=[
-                    CdnVersionLight(
-                        version=version_data["version"],
-                        type=get_library_type(version_data["type"]),
-                    )
-                    for version_data in versions
-                ],
-            )
-            for name, versions in grouped
-        ]
-        response = CdnStatusResponse(packages=packages)
-        await ctx.send(response)
-        return response
 
 
 @router.get(

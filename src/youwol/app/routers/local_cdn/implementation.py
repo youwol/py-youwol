@@ -1,5 +1,6 @@
 # standard library
 import asyncio
+import itertools
 
 from itertools import groupby
 
@@ -35,6 +36,9 @@ from youwol.utils.http_clients.cdn_backend.utils import (
 
 # relative
 from .models import (
+    CdnPackageLight,
+    CdnStatusResponse,
+    CdnVersionLight,
     CheckUpdateResponse,
     DownloadedPackageResponse,
     DownloadPackageBody,
@@ -61,6 +65,42 @@ class TargetPackage(NamedTuple):
             version_number=get_version_number(d.version),
             fingerprint=d.fingerprint,
         )
+
+
+async def emit_local_cdn_status(context: Context) -> CdnStatusResponse:
+    """
+    Emit the current [CdnStatusResponse](@yw-nav-class:CdnStatusResponse) via the
+    [data web-socket channels](@yw-nav-attr:WebSocketsStore.data).
+
+    Parameters:
+        context: Current context.
+
+    Return:
+        The local CDN status.
+    """
+    async with context.start(action="refresh_local_cdn_status") as ctx:
+        env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
+        cdn_docs = env.backends_configuration.cdn_backend.doc_db.data["documents"]
+        cdn_sorted = sorted(cdn_docs, key=lambda d: d["library_name"])
+        grouped = itertools.groupby(cdn_sorted, key=lambda d: d["library_name"])
+
+        packages = [
+            CdnPackageLight(
+                name=name,
+                id=encode_id(name),
+                versions=[
+                    CdnVersionLight(
+                        version=version_data["version"],
+                        type=get_library_type(version_data["type"]),
+                    )
+                    for version_data in versions
+                ],
+            )
+            for name, versions in grouped
+        ]
+        response = CdnStatusResponse(packages=packages)
+        await ctx.send(response)
+        return response
 
 
 def get_latest_local_cdn_version(env: YouwolEnvironment) -> list[TargetPackage]:
@@ -247,7 +287,9 @@ async def download_package(
             versions=versions,
             fingerprint=record.fingerprint,
         )
-        await ctx_download.send(response)
+        await asyncio.gather(
+            ctx_download.send(response), emit_local_cdn_status(ctx_download)
+        )
 
 
 async def get_version_info(version_data, env: YouwolEnvironment, context: Context):
