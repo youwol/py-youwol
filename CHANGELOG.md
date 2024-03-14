@@ -43,6 +43,7 @@ TG-2201 : 🙈 [app.env] => default_ignored_paths includes .venv
 TG-1507
 TG-2210
 TG-2205 : ✨ [utils.context] => init `attributes`, `labels` from request. 
+TG-2187 : 🐛 [routers.local_cdn] => add missing `emit_local_cdn_status`
 -->
 
 ## [0.1.8] − 2024-03-07

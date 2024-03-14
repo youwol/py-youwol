@@ -287,7 +287,9 @@ async def download_package(
             versions=versions,
             fingerprint=record.fingerprint,
         )
-        await ctx_download.send(response)
+        await asyncio.gather(
+            ctx_download.send(response), emit_local_cdn_status(ctx_download)
+        )
 
 
 async def get_version_info(version_data, env: YouwolEnvironment, context: Context):
