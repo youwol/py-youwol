@@ -222,10 +222,14 @@ def setup_http_routers():
     async def healthz():
         return {"status": "py-youwol ok"}
 
+    no_cache_headers = {"Cache-Control": "no-cache, no-store, must-revalidate"}
+
     @fastapi_app.get(api_configuration.base_path + "/")
     async def home():
         return RedirectResponse(
-            status_code=308, url="/applications/@youwol/platform/latest"
+            status_code=308,
+            url="/applications/@youwol/platform/latest",
+            headers=no_cache_headers,
         )
 
     @fastapi_app.get(api_configuration.base_path + "/doc")
@@ -233,6 +237,7 @@ def setup_http_routers():
         return RedirectResponse(
             status_code=308,
             url=f"/applications/@youwol/py-youwol-doc/{yw_doc_version()}",
+            headers=no_cache_headers,
         )
 
     def install_webpm_route(route: str):
@@ -242,6 +247,7 @@ def setup_http_routers():
             return RedirectResponse(
                 status_code=308,
                 url=f"/api/assets-gateway/raw/package/{webpm_id}/^3.0.0/dist/@youwol/{route}",
+                headers=no_cache_headers,
             )
 
     for route in ["webpm-client.js", "webpm-client.config.json", "webpm-client.js.map"]:
@@ -252,6 +258,7 @@ def setup_http_routers():
         return RedirectResponse(
             status_code=308,
             url="/applications/@youwol/co-lab/^0.2.0",
+            headers=no_cache_headers,
         )
 
 
