@@ -35,6 +35,14 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 - Discriminates `FailurePipelineNotFound` from `FailureImportException`. <!-- TG-2196 -->
 - In pipeline operations involving the local CDN publishing with the packagedFolders option, files located not only
   within the designated packaged folders but also within their subdirectories are now considered. <!-- TG-1683 -->
+- `GET:` `/`, `/doc`, `/co-lab`, `/webpm-client.*`: fix issue with browser caching preventing redirects to dynamically 
+  determined versions. <!-- TG-2224 -->
+
+### Security
+
+- **Dependencies vulnerabilities**:
+  - On `doc/front-app`: fix [GHSA-cxjh-pqwp-8mfp] <!-- TG-2225 -->
+
 
 <!-- Not worthy of inclusion
 TG-2091 : 🔥 [app.env] => remove deprecated re-export
