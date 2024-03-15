@@ -38,6 +38,12 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 - `GET:` `/`, `/doc`, `/co-lab`, `/webpm-client.*`: fix issue with browser caching preventing redirects to dynamically 
   determined versions. <!-- TG-2224 -->
 
+### Security
+
+- **Dependencies vulnerabilities**:
+  - On `doc/front-app`: fix [GHSA-cxjh-pqwp-8mfp] <!-- TG-2225 -->
+
+
 <!-- Not worthy of inclusion
 TG-2091 : 🔥 [app.env] => remove deprecated re-export
 TG-1218 : 🥅 [backends.cdn] => robustify semver resolution.
