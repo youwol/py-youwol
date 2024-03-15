@@ -200,7 +200,7 @@ def setup_http_routers():
     *  [local youwol router](@yw-nav-mod:app.routers): these routers correspond to the services specific to
     the local youwol server, they are served under `/admin`.
     **These services are not available in the online environment.**
-    *  the routes `/healthz` and `/`
+    *  the `GET` routes `/healthz`, `/`, `/doc`, `/webpm-client.*` and `/co-lab`
 
     Notes:
         While in the local server all services are exposed, in the online environment access to the services
