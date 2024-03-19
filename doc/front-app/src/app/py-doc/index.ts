@@ -116,6 +116,12 @@ export const pyYwReferenceDoc = ({
                 'https://github.com/jpadilla/pyjwt/tree/master?tab=readme-ov-file',
             'minio.Minio':
                 'https://min.io/docs/minio/linux/developers/python/API.html',
+            'watchdog.events.PatternMatchingEventHandler':
+                'https://pythonhosted.org/watchdog/api.html#watchdog.events.PatternMatchingEventHandler',
+            'watchdog.events.FileSystemEvent':
+                'https://pythonhosted.org/watchdog/api.html#watchdog.events.FileSystemEvent',
+            'threading.Thread':
+                'https://docs.python.org/3/library/threading.html#threading.Thread',
         },
     }
 
