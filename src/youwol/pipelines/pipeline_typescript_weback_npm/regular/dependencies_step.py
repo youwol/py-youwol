@@ -22,7 +22,7 @@ from youwol.app.routers.projects.models_project import (
     Project,
     parse_json,
 )
-from youwol.app.routers.projects.projects_loader import ProjectLoader
+from youwol.app.routers.projects.projects_resolver import ProjectLoader
 
 # Youwol utilities
 from youwol.utils import CommandException, execute_shell_cmd, files_check_sum, to_json
@@ -62,7 +62,7 @@ def patch_pipeline_generated_module(
 async def get_input_data(project: Project, flow_id: str, context: Context):
     async with context.start(action="get_input_data") as ctx:
         env = await ctx.get("env", YouwolEnvironment)
-        all_projects = await ProjectLoader.get_cached_projects()
+        all_projects = ProjectLoader.projects_list
         dependencies = await project.get_dependencies(
             recursive=True, projects=all_projects, context=ctx
         )

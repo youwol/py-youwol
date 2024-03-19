@@ -29,6 +29,7 @@ from youwol.app.environment import (
     FwdArgumentsReload,
     NeedInteractiveSession,
     PathsBook,
+    ProjectsResolver,
     RemoteClients,
     YouwolEnvironment,
     YouwolEnvironmentFactory,
@@ -74,9 +75,9 @@ class YouwolEnvironmentResponse(BaseModel):
     Custom middlewares,
     see [YouwolEnvironment.customMiddlewares](@yw-nav-attr:YouwolEnvironment.customMiddlewares).
     """
-    projects: dict[str, Any]
+    projects: ProjectsResolver
     """
-    Projects list,
+    Projects resolver,
     see [YouwolEnvironment.projects](@yw-nav-attr:YouwolEnvironment.projects).
     """
     commands: dict[str, Command]
@@ -150,7 +151,7 @@ class YouwolEnvironmentResponse(BaseModel):
         return YouwolEnvironmentResponse(
             httpPort=yw_env.httpPort,
             customMiddlewares=[m.__dict__ for m in yw_env.customMiddlewares],
-            projects=yw_env.projects.__dict__,
+            projects=yw_env.projects,
             commands=yw_env.commands,
             currentConnection=yw_env.currentConnection,
             pathsBook=yw_env.pathsBook,

@@ -328,7 +328,7 @@ async def create_app():
     setup_http_routers()
     setup_web_sockets()
     setup_exceptions_handlers()
-    asyncio.ensure_future(ProjectLoader.initialize(env=env))
+    await ProjectLoader.initialize(env=env)
 
 
 asyncio.run(create_app())

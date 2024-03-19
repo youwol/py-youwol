@@ -18,16 +18,7 @@ from youwol.app.environment.models.defaults import (
     default_ignored_paths,
     default_path_projects_dir,
 )
-from youwol.app.environment.models.models import (
-    ConfigPath,
-    OnProjectsCountUpdate,
-    ProjectsFinderHandler,
-)
-from youwol.app.environment.models.projects_finder_handlers import (
-    ExplicitProjectsFinderHandler,
-    RecursiveProjectFinderHandler,
-)
-from youwol.app.environment.paths import PathsBook
+from youwol.app.environment.models.models import ConfigPath
 
 # Youwol utilities
 from youwol.utils import Context
@@ -96,23 +87,10 @@ class ProjectTemplate(BaseModel):
 
 class ProjectsFinder(BaseModel):
     """
-    Abstract class for ProjectsFinder.
+    Strategy to discover projects below a provided folder on the user's hard drive with optional continuous watching.
 
-    Derived classes need to implement the **'handler'** method.
-
-    See [RecursiveProjectsFinder](@yw-nav-class:RecursiveProjectsFinder) and
-    [ExplicitProjectsFinder](@yw-nav-class:ExplicitProjectsFinder).
-    """
-
-    def handler(
-        self, paths_book: PathsBook, on_projects_count_update: OnProjectsCountUpdate
-    ) -> ProjectsFinderHandler:
-        raise NotImplementedError()
-
-
-class RecursiveProjectsFinder(ProjectsFinder):
-    """
-    Strategy to discover all projects below the provided paths with optional continuous watching.
+    Warning:
+        Folders whose names begin with a `.` are excluded from the search process.
 
     Example:
         <code-snippet language="python" highlightedLines="6 13-17">
@@ -121,16 +99,17 @@ class RecursiveProjectsFinder(ProjectsFinder):
         from youwol.app.environment import (
                 Configuration,
                 Projects,
-                RecursiveProjectsFinder
+                ProjectsFinder
             )
 
         projects_folder = Path.home() / 'Projects'
 
         Configuration(
             projects=Projects(
-                finder=RecursiveProjectsFinder(
-                    fromPaths=[projects_folder],
-                    ignoredPatterns=["**/dist", "**/node_modules", "**/.template"],
+                finder=ProjectsFinder(
+                    fromPaths=Path.home() / 'Projects',
+                    lookUpDepth=2
+                    lookUpIgnore=["**/dist", "**/node_modules", "**/.template"],
                     watch=True
                 )
             )
@@ -175,7 +154,12 @@ class RecursiveProjectsFinder(ProjectsFinder):
     reaching its limit and stop working.
     """
 
-    fromPaths: list[ConfigPath] = [Path.home() / default_path_projects_dir]
+    name: str | None = None
+    """
+    Reference name, if not provided the name of the associated `fromPath` folder is used.
+    """
+
+    fromPath: ConfigPath = Path.home() / default_path_projects_dir
     """
     All projects below these paths will be discovered.
 
@@ -183,7 +167,12 @@ class RecursiveProjectsFinder(ProjectsFinder):
     [default_path_projects_dir](@yw-nav-glob:default_path_projects_dir).
     """
 
-    ignoredPatterns: list[str] = default_ignored_paths
+    lookUpDepth: int = 3
+    """
+    Maximum recursion depth from starting folder.
+    """
+
+    lookUpIgnore: list[str] = default_ignored_paths
     """
     List of ignored patterns to discard folder when traversing the tree.
 
@@ -191,70 +180,20 @@ class RecursiveProjectsFinder(ProjectsFinder):
 
     See [fnmatch](https://docs.python.org/3/library/fnmatch.html) regarding the patterns specification.
     """
-    watch: bool = True
+    watch: bool = False
     """
-    Whether or not watching added/removed projects is activated.
-    """
-
-    def handler(
-        self, paths_book: PathsBook, on_projects_count_update: OnProjectsCountUpdate
-    ):
-        return RecursiveProjectFinderHandler(
-            paths=self.fromPaths,
-            ignored_patterns=self.ignoredPatterns,
-            paths_book=paths_book,
-            on_projects_count_update=on_projects_count_update,
-        )
-
-
-class ExplicitProjectsFinder(ProjectsFinder):
-    """
-    Strategy to discover all projects directly below some provided paths.
-
-     > ⚠️ Changes in directories content is not watched: projects added/removed from provided paths do not trigger
-     updates.
-     The [RecursiveProjectsFinder](@yw-nav-class:RecursiveProjectsFinder)
-     class allows such features.
-
-     Example:
-        <code-snippet language="python" highlightedLines="6 13-15">
-        from pathlib import Path
-
-        from youwol.app.environment import (
-                Configuration,
-                Projects,
-                ExplicitProjectsFinder
-            )
-
-        projects_folder = Path.home() / 'Projects'
-
-        Configuration(
-            projects=Projects(
-                finder=ExplicitProjectsFinder(
-                    fromPaths=[projects_folder]
-                )
-            )
-        )
-        </code-snippet>
-
+    If `True`, continuously watch for projects creation/deletion.
     """
 
-    fromPaths: list[ConfigPath] | Callable[[PathsBook], list[ConfigPath]]
-    """
-    The paths in which to look for projects as direct children.
+    def __init__(self, **data):
+        super().__init__(**data)
+        self.name = self.name or Path(self.fromPath).name
 
-    Can be provided as a function that gets the [PathsBook](@yw-nav-class:PathsBook)
-    instance - useful when looking for folder's location depending on some typical paths of youwol.
-    """
 
-    def handler(
-        self, paths_book: PathsBook, on_projects_count_update: OnProjectsCountUpdate
-    ):
-        return ExplicitProjectsFinderHandler(
-            paths=self.fromPaths,
-            paths_book=paths_book,
-            on_projects_count_update=on_projects_count_update,
-        )
+ConfigProjectsFinder = ProjectsFinder | ConfigPath
+"""
+Permissive type to define [Projects.finder](@yw-nav-attr:Projects.finder).
+"""
 
 
 class Projects(BaseModel):
@@ -273,7 +212,7 @@ class Projects(BaseModel):
         from youwol.app.environment import (
                 Configuration,
                 Projects,
-                RecursiveProjectsFinder
+                ProjectsFinder
             )
         from youwol.pipelines.pipeline_typescript_weback_npm import app_ts_webpack_template
 
@@ -281,8 +220,8 @@ class Projects(BaseModel):
 
         Configuration(
             projects=Projects(
-                finder=RecursiveProjectsFinder(
-                    fromPaths=[projects_folder],
+                finder=ProjectsFinder(
+                    fromPath=projects_folder,
                 ),
                 templates=[app_ts_webpack_template(folder=projects_folder)],
             )
@@ -290,14 +229,12 @@ class Projects(BaseModel):
         </code-snippet>
     """
 
-    finder: ProjectsFinder | ConfigPath = RecursiveProjectsFinder()
+    finder: list[ConfigProjectsFinder] | ConfigProjectsFinder = ProjectsFinder()
     """
-    Strategy for finding projects, most of the times the
-    [RecursiveProjectsFinder](@yw-nav-class:RecursiveProjectsFinder)
-    strategy is employed.
-    The less employed
-    [ExplicitProjectsFinder](@yw-nav-class:ExplicitProjectsFinder)
-    can also be used.
+    One or more [ProjectsFinder](@yw-nav-class:ProjectsFinder).
+
+    When a `ConfigPath` is provided as `ConfigProjectsFinder`, a default `ProjectsFinder` instance is created with
+    its `fromPath` attribute set to the provided value.
     """
 
     templates: list[ProjectTemplate] = []
