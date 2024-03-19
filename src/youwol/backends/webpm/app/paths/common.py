@@ -6,8 +6,8 @@ from aiohttp import ClientResponse
 from fastapi.params import Header
 from starlette.responses import Response, StreamingResponse
 
-# Youwol utilities
-from youwol.utils import yw_version
+# Youwol
+import youwol
 
 # relative
 from ..constantes import PROXIED_HEADERS
@@ -42,7 +42,7 @@ def get_client_config(
     if_none_match: str | None,
     deps: Dependencies,
 ) -> ClientConfig | None:
-    etag = yw_version()
+    etag = youwol.__version__
 
     if if_none_match == str(etag):
         response.status_code = 304

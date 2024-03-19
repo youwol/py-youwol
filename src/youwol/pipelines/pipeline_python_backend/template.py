@@ -11,7 +11,7 @@ from typing import NamedTuple
 from youwol.app.environment import ProjectTemplate
 
 # Youwol utilities
-from youwol.utils import Context, sed_inplace
+from youwol.utils import PYPROJECT_TOML, Context, sed_inplace
 
 
 class Keys(NamedTuple):
@@ -128,10 +128,10 @@ async def generate_template(folder: Path, parameters: dict[str, str], context: C
 
         shutil.copyfile(
             src=Path(__file__).parent / "template" / "pyproject.toml.txt",
-            dst=project_folder / "pyproject.toml",
+            dst=project_folder / PYPROJECT_TOML,
         )
 
-        replace_patterns(project_folder / "pyproject.toml")
+        replace_patterns(project_folder / PYPROJECT_TOML)
 
         for file in ["install.sh", "start.sh"]:
             shutil.copyfile(

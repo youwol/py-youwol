@@ -1,7 +1,6 @@
 # standard library
 import base64
 import datetime
-import importlib.metadata
 import itertools
 import json
 
@@ -23,15 +22,14 @@ from starlette.requests import Request
 # Youwol
 import youwol
 
-# Youwol Surrogate for next versions of Python
-from youwol.utils.python_next.v3_12 import tomllib
-
 # Youwol utilities
 from youwol.utils.clients.utils import to_group_id
 from youwol.utils.context.models import TContextAttr
 from youwol.utils.types import JSON, AnyDict
 
 flatten = itertools.chain.from_iterable
+
+PYPROJECT_TOML = "pyproject.toml"
 
 
 class YouwolHeaders:
@@ -390,53 +388,34 @@ def to_json(obj: BaseModel | JSON) -> JSON:
     return to_json_rec(base)
 
 
-def yw_version() -> str:
-    """
-    Retrieves the version of the `youwol` module currently in use.
+def yw_repo_path() -> Path | None:
+    """Return the path of the py-youwol source repository, expected to contain `pyproject.toml`.
 
-    This function attempts to determine the version of YouWol in the following order:
-    1. Checks if YouWol is running from source by looking for the 'pyproject.toml' file
-    in the expected directory structure. If found, it reads the version directly from this file.
-    2. If not running from source, it attempts to retrieve the installed package version using `importlib.metadata`.
-
-    Return:
-        The version of the `youwol` module, following Semantic Versioning.
+    At first assume running from sources, then fallback to search `pyproject.toml` in parents of
+    current working directory.
 
     Raise:
-        `ModuleNotFoundError`: If it fails to locate the YouWol module in the environment,
-            indicating that YouWol is neither installed as a package nor running from source.
-            This exception suggests that there is a configuration or installation issue that needs to be addressed.
+        `RuntimeError`: If `pyproject.toml` cannot be found
     """
 
-    # pylint: disable-next=fixme
-    # TODO: should be simplify / more standard − TG-2184
-    py_yw_folder = Path(youwol.__file__).parent / ".." / ".."
-    if (py_yw_folder / "pyproject.toml").exists():
-        # If this file exist and is defining a project 'youwol',
-        # it is assumed that youwol is running from sources
-        with open(py_yw_folder / "pyproject.toml", "rb") as f:
-            data = tomllib.load(f)
-            if data["project"]["name"] == "youwol":
-                return data["project"]["version"]
+    result = None
 
-    # For docker images
-    py_yw_folder = Path(youwol.__file__).parent / ".."
-    if (py_yw_folder / "pyproject.toml").exists():
-        # If this file exist and is defining a project 'youwol',
-        # it is assumed that youwol is running from sources
-        with open(py_yw_folder / "pyproject.toml", "rb") as f:
-            data = tomllib.load(f)
-            if data["project"]["name"] == "youwol":
-                return data["project"]["version"]
+    path_youwol__init__ = Path(youwol.__file__).resolve()
+    path_repo = path_youwol__init__.parent.parent.parent
+    if (path_repo / PYPROJECT_TOML).exists():
+        result = path_repo
+    else:
+        candidate_dir = Path.cwd().resolve()
+        while candidate_dir != candidate_dir.parent:
+            if (candidate_dir / PYPROJECT_TOML).exists():
+                result = candidate_dir
+                break
+            candidate_dir = candidate_dir.parent
 
-    try:
-        return importlib.metadata.version("youwol")
-    except importlib.metadata.PackageNotFoundError:
-        pass
+    if result is None:
+        raise RuntimeError(f"{PYPROJECT_TOML} not found")
 
-    raise ModuleNotFoundError(
-        "The module youwol is neither installed nor running from sources"
-    )
+    return result
 
 
 def yw_doc_version() -> str:
@@ -450,22 +429,18 @@ def yw_doc_version() -> str:
 
     Return:
         Documentation app. version.
-
-    Raise:
-        `ModuleNotFoundError`: if the `youwol` module can not be found,
-        see [yw_version](@yw-nav-func:yw_version).
     """
-    version = yw_version()
+    version = youwol.__version__
 
     # Order does matter in the following list, e.g. `0.1.8rc1.dev` -> `0.1.8-wip`
     wip_suffixes = ["rc", ".dev"]
     for suffix in wip_suffixes:
         if suffix in version:
-            return f"{version.split(suffix)[0]}-wip"
+            return f"{version.split(suffix, maxsplit=1)[0]}-wip"
 
     final_suffixes = [".post"]
     for suffix in final_suffixes:
         if suffix in version:
-            return f"{version.split(suffix)[0]}"
+            return f"{version.split(suffix, maxsplit=1)[0]}"
 
     return version
