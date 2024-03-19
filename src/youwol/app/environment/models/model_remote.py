@@ -32,9 +32,6 @@ class AuthorizationProvider(BaseModel):
     openId client.
     """
 
-    keycloakAdminBaseUrl: str | None = None
-    keycloakAdminClient: PrivateClient | None = None
-
 
 class Authentication(BaseModel):
     """

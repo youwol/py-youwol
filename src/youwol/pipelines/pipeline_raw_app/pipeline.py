@@ -73,11 +73,6 @@ def set_environment(environment: Environment = Environment()):
             authProvider=AuthorizationProvider(
                 openidClient=PublicClient(client_id="openid_client_id"),
                 openidBaseUrl="https://platform.bar.com/auth/realms/youwol",
-                keycloakAdminClient=PrivateClient(
-                    client_id="client_id_to_be_provided",
-                    client_secret="client_secret_to_be_provided",
-                ),
-                keycloakAdminBaseUrl="https://platform.bar.com/auth/admin/realms/youwol",
             ),
             authentications=[
                 DirectAuth(
