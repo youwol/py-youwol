@@ -133,6 +133,12 @@ async def clone_project(git_url: str, branch: str, new_project_name: str, ctx: C
     return {}
 
 
+async def exec_shell(command: str,  ctx: Context):
+    await execute_shell_cmd(
+        cmd=f"(cd {ref_folder} && {command})", context=ctx
+    )
+
+
 async def purge_downloads(context: Context):
     async with context.start(action="purge_downloads") as ctx:  # type: Context
         env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
@@ -432,6 +438,12 @@ class ConfigurationFactory(IConfigurationFactory):
                         Command(
                             name="encode-extra-index",
                             do_post=encode_extra_index,
+                        ),
+                        Command(
+                            name="exec-shell",
+                            do_post=lambda body, ctx: exec_shell(
+                                body["command"], ctx
+                            ),
                         ),
                     ]
                 ),
