@@ -3,6 +3,7 @@ import asyncio
 import json
 import os
 import shutil
+from glob import glob
 
 from pathlib import Path
 
@@ -33,11 +34,12 @@ from youwol.app.environment import (
     IConfigurationFactory,
     LocalClients,
     LocalEnvironment,
-    Projects,
     RemoteClients,
     System,
     TokensStorageInMemory,
     YouwolEnvironment,
+    ProjectsFinder,
+    Projects,
 )
 from youwol.app.main_args import MainArguments
 from youwol.app.routers.projects import ProjectLoader
@@ -65,6 +67,11 @@ from youwol.pipelines.pipeline_typescript_weback_npm import (
     lib_ts_webpack_template,
 )
 
+ref_folder = Path(__file__).parent
+projects_folder = ref_folder / "projects"
+system_folder = ref_folder / "youwol_system"
+databases_folder = ref_folder / "databases"
+
 users = [
     (os.getenv("USERNAME_INTEGRATION_TESTS"), os.getenv("PASSWORD_INTEGRATION_TESTS")),
     (
@@ -91,22 +98,38 @@ cloud_env = CloudEnvironment(
 )
 
 
+def clear_data(databases: bool):
+    shutil.rmtree(projects_folder, ignore_errors=True)
+    shutil.rmtree(system_folder, ignore_errors=True)
+    os.mkdir(projects_folder)
+    os.mkdir(system_folder)
+    if databases:
+        shutil.rmtree(databases_folder, ignore_errors=True)
+
+
 async def clone_project(git_url: str, branch: str, new_project_name: str, ctx: Context):
     folder_name = new_project_name.split("/")[-1]
-    git_folder_name = git_url.split("/")[-1].split(".")[0]
-    env = await ctx.get("env", YouwolEnvironment)
-    parent_folder = env.pathsBook.config.parent / "projects"
-    dst_folder = parent_folder / folder_name
+    dst_folder = system_folder / folder_name
     await execute_shell_cmd(
-        cmd=f"(cd {parent_folder} && git clone -b {branch} {git_url})", context=ctx
+        cmd=f"(cd {system_folder} && git clone -b {branch} {git_url} {folder_name})", context=ctx
     )
-    if not (parent_folder / git_folder_name).exists():
+    if not (system_folder / folder_name).exists():
         raise RuntimeError("Git repo not properly cloned")
 
-    os.rename(parent_folder / git_folder_name, parent_folder / folder_name)
     old_project_name = parse_json(dst_folder / "package.json")["name"]
+    # Below implementation is specific for ts/js projects
     sed_inplace(dst_folder / "package.json", old_project_name, new_project_name)
-    sed_inplace(dst_folder / "index.html", old_project_name, new_project_name)
+    src_files = [
+        *glob(f'{dst_folder}/**/*.js', recursive=True),
+        *glob(f'{dst_folder}/**/*.ts', recursive=True),
+        *glob(f'{dst_folder}/**/*.html', recursive=True),
+    ]
+    for file in src_files:
+        sed_inplace(file, old_project_name, new_project_name)
+
+    await execute_shell_cmd(
+            cmd=f"(mv {system_folder}/{folder_name} {projects_folder}/{folder_name})", context=ctx
+        )
     return {}
 
 
@@ -144,20 +167,21 @@ async def reset(ctx: Context):
     env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
     env.reset_cache()
     env.reset_databases()
-    parent_folder = env.pathsBook.config.parent
-    shutil.rmtree(parent_folder / "projects", ignore_errors=True)
-    shutil.rmtree(parent_folder / "youwol_system", ignore_errors=True)
-    os.mkdir(parent_folder / "projects")
+    clear_data(databases=False)
     await ProjectLoader.initialize(env=env)
 
 
 async def create_test_data_remote(context: Context):
     async with context.start("create_new_story_remote") as ctx:
         env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
-        host = env.get_remote_info().host
-        await ctx.info(f"selected Host for creation: {host}")
+        target_cloud = env.get_remote_info()
+        await ctx.info(f"selected Host for creation: {target_cloud.host}")
         folder_id = "private_51c42384-3582-494f-8c56-7405b01646ad_default-drive_home"
-        gtw = await RemoteClients.get_assets_gateway_client(remote_host=host)
+        gtw = await RemoteClients.get_assets_gateway_client(
+            cloud_environment=target_cloud,
+            auth_id=env.currentConnection.authId,
+            tokens_storage=env.tokens_storage
+        )
         asset_resp = await gtw.get_assets_backend_router().create_asset(
             body={
                 "rawId": "test-custom-asset",
@@ -169,7 +193,7 @@ async def create_test_data_remote(context: Context):
             params=[("folder-id", folder_id)],
             headers=ctx.headers(),
         )
-        with open(Path(__file__).parent / "test-add-files.zip", "rb").read() as data:
+        with open(ref_folder / "test-add-files.zip", "rb").read() as data:
             upload_resp = await gtw.get_assets_backend_router().add_zip_files(
                 asset_id=asset_resp["assetId"], data=data, headers=ctx.headers()
             )
@@ -220,11 +244,15 @@ async def create_test_data_remote(context: Context):
 async def erase_all_test_data_remote(context: Context):
     async with context.start("erase_all_test_data_remote") as ctx:
         env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
-        host = env.get_remote_info().host
-        await ctx.info(f"selected Host for deletion: {host}")
+        target_cloud = env.get_remote_info()
+        await ctx.info(f"selected Host for deletion: {target_cloud.host}")
         drive_id = "private_51c42384-3582-494f-8c56-7405b01646ad_default-drive"
         folder_id = f"{drive_id}_home"
-        gtw = await RemoteClients.get_assets_gateway_client(remote_host=host)
+        gtw = await RemoteClients.get_assets_gateway_client(
+            cloud_environment=target_cloud,
+            auth_id=env.currentConnection.authId,
+            tokens_storage=env.tokens_storage
+        )
         resp = await gtw.get_treedb_backend_router().get_children(
             folder_id=folder_id, headers=ctx.headers()
         )
@@ -325,6 +353,7 @@ class BrotliDecompressMiddleware(CustomMiddleware):
 
 class ConfigurationFactory(IConfigurationFactory):
     async def get(self, _main_args: MainArguments) -> Configuration:
+
         return Configuration(
             system=System(
                 httpPort=2001,
@@ -336,15 +365,19 @@ class ConfigurationFactory(IConfigurationFactory):
                     environments=[cloud_env],
                 ),
                 localEnvironment=LocalEnvironment(
-                    dataDir=Path(__file__).parent / "databases",
-                    cacheDir=Path(__file__).parent / "youwol_system",
+                    dataDir=databases_folder,
+                    cacheDir=system_folder,
                 ),
             ),
             projects=Projects(
-                finder=Path(__file__).parent,
+                finder=ProjectsFinder(
+                    fromPath=projects_folder,
+                    lookUpDepth=2,
+                    watch=True
+                ),
                 templates=[
-                    lib_ts_webpack_template(folder=Path(__file__).parent / "projects"),
-                    app_ts_webpack_template(folder=Path(__file__).parent / "projects"),
+                    lib_ts_webpack_template(folder=projects_folder),
+                    app_ts_webpack_template(folder=projects_folder),
                 ],
             ),
             customization=Customization(
