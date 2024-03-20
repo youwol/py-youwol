@@ -27,9 +27,7 @@ astroid==3.0.2
 attrs==21.4.0
     # via aiohttp
 black[d]==24.3.0
-    # via
-    #   black
-    #   youwol (pyproject.toml)
+    # via youwol (pyproject.toml)
 boolean-py==4.0
     # via license-expression
 brotli==1.0.9

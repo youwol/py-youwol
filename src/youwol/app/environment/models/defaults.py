@@ -86,6 +86,4 @@ def default_auth_provider(platform_host: str = default_platform_host) -> JSON:
     return {
         "openidBaseUrl": f"https://{platform_host}/auth/realms/youwol",
         "openidClient": PublicClient(client_id=default_openid_client_id),
-        "keycloakAdminBaseUrl": f"https://{platform_host}/auth/admin/realms/youwol",
-        "keycloakAdminClient": None,
     }

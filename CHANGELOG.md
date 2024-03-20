@@ -21,14 +21,14 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 - **Backend components**:
   -  automatic local installation of missing backends when requesting `backends/$NAME/$SEMVER/**`. <!-- TG-2195 -->
-  -  explicit local installation on `admin/system/backends/install` using CDN's loading graph response. 
-  <!-- TG-2205 -->
+  -  explicit local installation on `admin/system/backends/install` using CDN's loading graph response. <!-- TG-2205 -->
 
 ### Changed
 
 - **Breaking:** Refactor the `ProjectsFinder` API and its associated implementation to improve performance and
   flexibility. <!-- TG-2228 -->
 - Sanitize `EnvironmentStatusResponse` API from `admin/environment/status` endpoint. <!-- TG-2183 -->
+- Package Version is now dynamic and stored in attribute `youwol.__version__` <!-- TG-2184 -->
 
 ### Fixed
 
@@ -54,6 +54,8 @@ TG-1507
 TG-2210
 TG-2205 : ✨ [utils.context] => init `attributes`, `labels` from request. 
 TG-2187 : 🐛 [routers.local_cdn] => add missing `emit_local_cdn_status`
+TG-2213
+TG-2226
 -->
 
 ## [0.1.8] − 2024-03-07

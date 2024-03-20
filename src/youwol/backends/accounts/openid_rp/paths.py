@@ -298,7 +298,7 @@ async def login_as_temp_user(
             content={"forbidden": "No administration right on the server side"},
         )
 
-    username = f"{uuid.uuid4()}@temp.youwol.com"
+    username = f"support+visitor_{uuid.uuid4()}@youwol.com"
     password = str(uuid.uuid4())
     await conf.keycloak_users_management.create_user(
         username=username,

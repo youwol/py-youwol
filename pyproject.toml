@@ -1,6 +1,6 @@
 [project]
 name = "youwol"
-version = "0.1.9.dev"
+dynamic = ["version"]
 authors = [
     { name = "G. Reinisch", email = "greinisch@youwol.com" },
     { name = "J. Decharne", email = "jdecharne@youwol.com" },
@@ -105,6 +105,9 @@ exclude = [
     "youwol.backends.common*",
     "youwol.backends.webpm*"
 ]
+
+[tool.setuptools.dynamic]
+version = {attr = "youwol.__version__"}
 
 [tool.setuptools.package-data]
 "youwol.app.routers.environment" = [

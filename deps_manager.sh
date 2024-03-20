@@ -186,7 +186,7 @@ pip_upgrade_package() {
   extras=$3
   no_hashes=$4
 
-  if grep --quiet "^${package}==" "${out}"; then
+  if grep --quiet "^${package}\(\[\w*\]\)\?==" "${out}"; then
 
     opts="--upgrade-package ${package} ${pip_compile_default_opts}"
 

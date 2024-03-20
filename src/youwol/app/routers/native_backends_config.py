@@ -54,24 +54,10 @@ async def accounts_backend_config_py_youwol():
 
     oidc_config = OidcConfig(auth_provider.openidBaseUrl)
 
-    keycloak_admin_client = None
-    keycloak_admin_base_url = None
-
-    if (
-        auth_provider.keycloakAdminClient is not None
-        and auth_provider.keycloakAdminBaseUrl is not None
-    ):
-        keycloak_admin_client = oidc_config.for_client(
-            auth_provider.keycloakAdminClient
-        )
-        keycloak_admin_base_url = auth_provider.keycloakAdminBaseUrl
-
     return youwol.backends.accounts.Configuration(
         openid_client=oidc_config.for_client(
             config.get_remote_info().authProvider.openidClient
         ),
-        keycloak_admin_client=keycloak_admin_client,
-        keycloak_admin_base_url=keycloak_admin_base_url,
         auth_cache=auth_cache,
         https=False,
         tokens_id_generator=lambda: local_tokens_id(

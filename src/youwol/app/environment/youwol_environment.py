@@ -27,7 +27,6 @@ from youwol.utils.clients.oidc.tokens_manager import TokensStorage
 from youwol.utils.context import ContextFactory, InMemoryReporter
 from youwol.utils.crypto.digest import compute_digest
 from youwol.utils.servers.fast_api import FastApiRouter
-from youwol.utils.utils import yw_version
 from youwol.utils.utils_paths import ensure_dir_exists
 
 # relative
@@ -167,7 +166,7 @@ class YouwolEnvironment(BaseModel):
 
         version = ""
         try:
-            version = yw_version()
+            version = youwol.__version__
         except ModuleNotFoundError:
             pass
 
