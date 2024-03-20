@@ -3,8 +3,8 @@ import asyncio
 import json
 import os
 import shutil
-from glob import glob
 
+from glob import glob
 from pathlib import Path
 
 # typing
@@ -34,12 +34,12 @@ from youwol.app.environment import (
     IConfigurationFactory,
     LocalClients,
     LocalEnvironment,
+    Projects,
+    ProjectsFinder,
     RemoteClients,
     System,
     TokensStorageInMemory,
     YouwolEnvironment,
-    ProjectsFinder,
-    Projects,
 )
 from youwol.app.main_args import MainArguments
 from youwol.app.routers.projects import ProjectLoader
@@ -111,7 +111,8 @@ async def clone_project(git_url: str, branch: str, new_project_name: str, ctx: C
     folder_name = new_project_name.split("/")[-1]
     dst_folder = system_folder / folder_name
     await execute_shell_cmd(
-        cmd=f"(cd {system_folder} && git clone -b {branch} {git_url} {folder_name})", context=ctx
+        cmd=f"(cd {system_folder} && git clone -b {branch} {git_url} {folder_name})",
+        context=ctx,
     )
     if not (system_folder / folder_name).exists():
         raise RuntimeError("Git repo not properly cloned")
@@ -120,23 +121,22 @@ async def clone_project(git_url: str, branch: str, new_project_name: str, ctx: C
     # Below implementation is specific for ts/js projects
     sed_inplace(dst_folder / "package.json", old_project_name, new_project_name)
     src_files = [
-        *glob(f'{dst_folder}/**/*.js', recursive=True),
-        *glob(f'{dst_folder}/**/*.ts', recursive=True),
-        *glob(f'{dst_folder}/**/*.html', recursive=True),
+        *glob(f"{dst_folder}/**/*.js", recursive=True),
+        *glob(f"{dst_folder}/**/*.ts", recursive=True),
+        *glob(f"{dst_folder}/**/*.html", recursive=True),
     ]
     for file in src_files:
         sed_inplace(file, old_project_name, new_project_name)
 
     await execute_shell_cmd(
-            cmd=f"(mv {system_folder}/{folder_name} {projects_folder}/{folder_name})", context=ctx
-        )
+        cmd=f"(mv {system_folder}/{folder_name} {projects_folder}/{folder_name})",
+        context=ctx,
+    )
     return {}
 
 
-async def exec_shell(command: str,  ctx: Context):
-    await execute_shell_cmd(
-        cmd=f"(cd {ref_folder} && {command})", context=ctx
-    )
+async def exec_shell(command: str, ctx: Context):
+    await execute_shell_cmd(cmd=f"(cd {ref_folder} && {command})", context=ctx)
 
 
 async def purge_downloads(context: Context):
@@ -186,7 +186,7 @@ async def create_test_data_remote(context: Context):
         gtw = await RemoteClients.get_assets_gateway_client(
             cloud_environment=target_cloud,
             auth_id=env.currentConnection.authId,
-            tokens_storage=env.tokens_storage
+            tokens_storage=env.tokens_storage,
         )
         asset_resp = await gtw.get_assets_backend_router().create_asset(
             body={
@@ -257,7 +257,7 @@ async def erase_all_test_data_remote(context: Context):
         gtw = await RemoteClients.get_assets_gateway_client(
             cloud_environment=target_cloud,
             auth_id=env.currentConnection.authId,
-            tokens_storage=env.tokens_storage
+            tokens_storage=env.tokens_storage,
         )
         resp = await gtw.get_treedb_backend_router().get_children(
             folder_id=folder_id, headers=ctx.headers()
@@ -377,9 +377,7 @@ class ConfigurationFactory(IConfigurationFactory):
             ),
             projects=Projects(
                 finder=ProjectsFinder(
-                    fromPath=projects_folder,
-                    lookUpDepth=2,
-                    watch=True
+                    fromPath=projects_folder, lookUpDepth=2, watch=True
                 ),
                 templates=[
                     lib_ts_webpack_template(folder=projects_folder),
@@ -441,9 +439,7 @@ class ConfigurationFactory(IConfigurationFactory):
                         ),
                         Command(
                             name="exec-shell",
-                            do_post=lambda body, ctx: exec_shell(
-                                body["command"], ctx
-                            ),
+                            do_post=lambda body, ctx: exec_shell(body["command"], ctx),
                         ),
                     ]
                 ),
