@@ -416,8 +416,8 @@ def print_invite(conf: YouwolEnvironment, shutdown_script_path: Path | None):
         f"""
 The desktop application is available at:
 http://localhost:{conf.httpPort}/applications/@youwol/platform/latest
-The developer portal is available at:
-http://localhost:{conf.httpPort}/applications/@youwol/developer-portal/%5E0.2.0
+The `co-lab` portal is available at:
+http://localhost:{conf.httpPort}/co-lab
 Regarding Py-YouWol documentation:
 http://localhost:{conf.httpPort}/doc
 """

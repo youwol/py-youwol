@@ -224,29 +224,45 @@ def setup_http_routers():
 
     no_cache_headers = {"Cache-Control": "no-cache, no-store, must-revalidate"}
 
+    def add_query_parameters(target_url: str, request: Request) -> str:
+        return (
+            f"{target_url}?{request.query_params}"
+            if request.query_params
+            else target_url
+        )
+
     @fastapi_app.get(api_configuration.base_path + "/")
-    async def home():
+    async def home(request: Request):
         return RedirectResponse(
             status_code=308,
-            url="/applications/@youwol/platform/latest",
+            url=add_query_parameters(
+                target_url="/applications/@youwol/platform/latest",
+                request=request,
+            ),
             headers=no_cache_headers,
         )
 
     @fastapi_app.get(api_configuration.base_path + "/doc")
-    async def doc():
+    async def doc(request: Request):
         return RedirectResponse(
             status_code=308,
-            url=f"/applications/@youwol/py-youwol-doc/{yw_doc_version()}",
+            url=add_query_parameters(
+                target_url=f"/applications/@youwol/py-youwol-doc/{yw_doc_version()}",
+                request=request,
+            ),
             headers=no_cache_headers,
         )
 
     def install_webpm_route(route: str):
         @fastapi_app.get(f"{api_configuration.base_path}/{route}")
-        async def webpm_resource():
+        async def webpm_resource(request: Request):
             webpm_id = encode_id("@youwol/webpm-client")
             return RedirectResponse(
                 status_code=308,
-                url=f"/api/assets-gateway/raw/package/{webpm_id}/^3.0.0/dist/@youwol/{route}",
+                url=add_query_parameters(
+                    target_url=f"/api/assets-gateway/raw/package/{webpm_id}/^3.0.0/dist/@youwol/{route}",
+                    request=request,
+                ),
                 headers=no_cache_headers,
             )
 
@@ -254,10 +270,13 @@ def setup_http_routers():
         install_webpm_route(route)
 
     @fastapi_app.get(api_configuration.base_path + "/co-lab")
-    async def colab():
+    async def colab(request: Request):
+
         return RedirectResponse(
             status_code=308,
-            url="/applications/@youwol/co-lab/^0.2.0",
+            url=add_query_parameters(
+                target_url="/applications/@youwol/co-lab/^0.3.0", request=request
+            ),
             headers=no_cache_headers,
         )
 
