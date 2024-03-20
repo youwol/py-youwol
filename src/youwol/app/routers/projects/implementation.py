@@ -33,7 +33,7 @@ from .models_project import (
     PipelineStepStatus,
     Project,
 )
-from .projects_loader import ProjectLoader
+from .projects_resolver import ProjectLoader
 
 
 def is_step_running(
@@ -64,7 +64,7 @@ async def get_project_configuration(
 async def get_project_step(
     project_id: str, step_id: str, context: Context
 ) -> tuple[Project, PipelineStep]:
-    projects = await ProjectLoader.get_cached_projects()
+    projects = ProjectLoader.projects_list
     project = next((p for p in projects if p.id == project_id), None)
     if project is None:
         raise ProjectNotFound(
@@ -89,7 +89,7 @@ async def get_project_step(
 async def get_project_flow_steps(
     project_id: str, flow_id: str, context: Context
 ) -> tuple[Project, Flow, list[PipelineStep]]:
-    projects = await ProjectLoader.get_cached_projects()
+    projects = ProjectLoader.projects_list
     project = next((p for p in projects if p.id == project_id), None)
 
     if project is None:

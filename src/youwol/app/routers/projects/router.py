@@ -54,20 +54,62 @@ from .models_project import (
     PipelineStepStatus,
     Project,
 )
-from .projects_loader import ProjectLoader, ProjectsLoadingResults
+from .projects_resolver import ProjectLoader, ProjectsLoadingResults
 
 router = APIRouter()
 flatten = itertools.chain.from_iterable
 
 
-@router.get("/status", response_model=ProjectsLoadingResults, summary="status")
+@router.get(
+    "/status",
+    response_model=ProjectsLoadingResults,
+    summary="Return and emit the current status of loaded projects.",
+)
 async def status(request: Request) -> ProjectsLoadingResults:
     """
+    Return and emit (via the [data web-socket channels](@yw-nav-attr:WebSocketsStore.data)) the current status of
+    loaded projects.
+
+    Note:
+        *  This call **does not** trigger scanning from the [ProjectsFinder](@yw-nav-class:ProjectsFinder) involved
+        in the configuration. It only notifies about the current projects' loading state.
+        *  See the endpoint [index_projects](@yw-nav-func:projects.router.index_projects) to perform indexation.
+
     Parameters:
         request: Incoming request
 
     Return:
-        The description of the projects list in the workspace, it is also send via the `data` webSocket.
+        The description of the projects list in the workspace.
+    """
+    async with Context.start_ep(
+        request=request, with_reporters=[LogsStreamer()]
+    ) as ctx:
+        response = ProjectLoader.status()
+        await ctx.send(response)
+        return response
+
+
+@router.post(
+    "/index",
+    response_model=ProjectsLoadingResults,
+    summary="Perform indexation of projects.",
+)
+async def index_projects(request: Request) -> ProjectsLoadingResults:
+    """
+    Perform indexation of projects.
+
+    The updated status is returned and sent via the [data web-socket channels](@yw-nav-attr:WebSocketsStore.data).
+
+    Note:
+        *  This call **does** trigger scanning from the [ProjectsFinder](@yw-nav-class:ProjectsFinder) involved
+        in the configuration.
+        *  See the endpoint [status](@yw-nav-func:projects.router.status) to only retrieve the current status.
+
+    Parameters:
+        request: Incoming request
+
+    Return:
+        The description of the projects list in the workspace.
     """
     async with Context.start_ep(
         request=request, with_reporters=[LogsStreamer()]
@@ -139,9 +181,17 @@ async def project_status(
         with_attributes={"projectId": project_id},
         with_reporters=[LogsStreamer()],
     ) as ctx:
-        projects = await ProjectLoader.get_cached_projects()
-        project: Project = next(p for p in projects if p.id == project_id)
-
+        projects = ProjectLoader.projects_list
+        project: Project = next((p for p in projects if p.id == project_id), None)
+        if not project:
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "reason": "Can not find provided project's ID",
+                    "requestedId": project_id,
+                    "availableIds": [p.id for p in projects],
+                },
+            )
         workspace_dependencies = await resolve_project_dependencies(
             project=project, context=ctx
         )
@@ -421,7 +471,7 @@ async def run_pipeline_step_implementation(
         on_exit=on_exit,
     ) as ctx:
         env = await ctx.get("env", YouwolEnvironment)
-        projects = await ProjectLoader.get_cached_projects()
+        projects = ProjectLoader.projects_list
         paths: PathsBook = env.pathsBook
 
         project, step = await get_project_step(project_id, step_id, ctx)
@@ -597,7 +647,7 @@ async def new_project_from_template(
     request: Request,
     body: CreateProjectFromTemplateBody,
     config: YouwolEnvironment = Depends(yw_config),
-) -> CreateProjectFromTemplateResponse:
+) -> Project:
     """
     Create a new project from a specified template.
 
@@ -628,13 +678,12 @@ async def new_project_from_template(
             raise RuntimeError(f"Can not find a template of type {body.type}")
 
         await ctx.info(text="Found template generator", data=template)
-        name, _ = await template.generator(template.folder, body.parameters, ctx)
+        _, path = await template.generator(template.folder, body.parameters, ctx)
 
         response = await ProjectLoader.refresh(ctx)
         await ctx.send(response)
 
-        projects = await ProjectLoader.get_cached_projects()
-        project = next((p for p in projects if p.name == name), None)
+        project = next((p for p in response.results if p.path == path), None)
         return project
 
 

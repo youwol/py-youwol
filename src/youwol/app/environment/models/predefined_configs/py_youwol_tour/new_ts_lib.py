@@ -4,7 +4,7 @@ from youwol.app.environment import (
     Configuration,
     LocalEnvironment,
     Projects,
-    RecursiveProjectsFinder,
+    ProjectsFinder,
     System,
     get_standard_youwol_env,
 )
@@ -40,8 +40,8 @@ pipeline_ts.set_environment(
 
 Configuration(
     projects=Projects(
-        finder=RecursiveProjectsFinder(
-            fromPaths=[projects_folder],
+        finder=ProjectsFinder(
+            fromPath=projects_folder,
         ),
         templates=[lib_ts_webpack_template(folder=projects_folder)],
     ),

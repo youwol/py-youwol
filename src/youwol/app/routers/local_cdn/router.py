@@ -8,7 +8,7 @@ from starlette.requests import Request
 
 # Youwol application
 from youwol.app.environment import LocalClients, YouwolEnvironment
-from youwol.app.routers.projects.projects_loader import ProjectLoader
+from youwol.app.routers.projects.projects_resolver import ProjectLoader
 from youwol.app.web_socket import LogsStreamer
 
 # Youwol utilities
@@ -167,7 +167,7 @@ async def smooth_reset(request: Request, body: ResetCdnBody):
             data={"packages": [p["name"] for p in packages]},
         )
         if body.keepProjectPackages:
-            projects = [p.name for p in await ProjectLoader.get_cached_projects()]
+            projects = [p.name for p in ProjectLoader.projects_list]
             packages = [p for p in packages if p["name"] not in projects]
             await ctx.info(
                 "Filter out packages from local projects",

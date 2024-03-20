@@ -48,15 +48,13 @@ from .models.models_config import (
     Connection,
     CustomMiddleware,
     Events,
-    Projects,
 )
 from .models.models_features import Features
-from .models.models_project import ExplicitProjectsFinder
 from .models.models_token_storage import TokensStoragePath, TokensStorageSystemKeyring
 from .native_backends_config import BackendConfigurations, native_backends_config
 from .paths import PathsBook, app_dirs, ensure_config_file_exists_or_create_it
-from .projects_finders import auto_detect_projects
 from .proxied_backends import BackendsStore
+from .youwol_environment_models import ProjectsResolver
 
 
 class YouwolEnvironment(BaseModel):
@@ -83,9 +81,10 @@ class YouwolEnvironment(BaseModel):
      [Configuration](@yw-nav-attr:Customization.middlewares).
     """
 
-    projects: Projects
+    projects: ProjectsResolver
     """
-    The list of projects in the user's workspace.
+    References projects' lookup & creation strategies, defined from the configuration's attribute
+    [Configuration.projects](@yw-nav-attr:models.models_config.Configuration.projects).
     """
 
     commands: dict[str, Command]
@@ -329,7 +328,7 @@ async def safe_load(
 
     config: Configuration = await configuration_from_python(path)
     system = config.system
-    projects = config.projects
+    config_projects = config.projects
     customization = config.customization
     data_dir = ensure_dir_exists(
         system.localEnvironment.dataDir, root_candidates=app_dirs.user_data_dir
@@ -366,15 +365,6 @@ async def safe_load(
         with open(paths_book.packages_cache_path, "w", encoding="UTF-8") as fp:
             json.dump({}, fp)
 
-    if isinstance(projects.finder, (str, Path)):
-        #  5/12/2022: Backward compatibility code
-        root = projects.finder
-        projects.finder = ExplicitProjectsFinder(
-            fromPaths=lambda _: auto_detect_projects(
-                paths_book=paths_book, root_folder=root
-            )
-        )
-
     tokens_storage_conf = config.system.tokensStorage
     if (
         isinstance(tokens_storage_conf, TokensStoragePath)
@@ -397,7 +387,7 @@ async def safe_load(
         currentConnection=fwd_args_reload.remote_connection,
         events=customization.events,
         pathsBook=paths_book,
-        projects=projects,
+        projects=ProjectsResolver.from_configuration(config_projects=config_projects),
         commands={c.name: c for c in customization.endPoints.commands},
         customMiddlewares=customization.middlewares,
         remotes=system.cloudEnvironments.environments,

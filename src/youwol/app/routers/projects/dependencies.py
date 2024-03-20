@@ -10,7 +10,7 @@ from youwol.utils.context import Context
 # relative
 from .models import ChildToParentConnections, DependenciesResponse
 from .models_project import Project
-from .projects_loader import ProjectLoader
+from .projects_resolver import ProjectLoader
 
 
 async def check_cyclic_dependency(
@@ -29,7 +29,7 @@ async def check_cyclic_dependency(
         raise RuntimeError(f"Project {project_name} not found")
     dependencies = await package.get_dependencies(
         recursive=False,
-        projects=await ProjectLoader.get_cached_projects(),
+        projects=ProjectLoader.projects_list,
         context=context,
     )
     errors = [p for p in dependencies if p.name in forbidden]
@@ -63,7 +63,7 @@ async def sort_projects(
             dep.name in sorted_names
             for dep in await p.get_dependencies(
                 recursive=False,
-                projects=await ProjectLoader.get_cached_projects(),
+                projects=ProjectLoader.projects_list,
                 context=context,
             )
         )
@@ -94,7 +94,7 @@ class ResolvedDependencies(BaseModel):
 
 
 async def resolve_workspace_dependencies(context: Context) -> ResolvedDependencies:
-    projects = await ProjectLoader.get_cached_projects()
+    projects = ProjectLoader.projects_list
 
     parent_ids = defaultdict(list)
     for project in projects:

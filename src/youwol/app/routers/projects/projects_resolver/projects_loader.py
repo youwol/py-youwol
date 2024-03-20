@@ -4,13 +4,13 @@ import traceback
 from pathlib import Path
 
 # typing
-from typing import Union
+from typing import TypeVar, Union
 
 # third parties
 from pydantic import BaseModel
 
 # Youwol application
-from youwol.app.environment import ProjectsFinderHandler, YouwolEnvironment
+from youwol.app.environment import YouwolEnvironment
 from youwol.app.environment.python_dynamic_loader import (
     ModuleLoadingException,
     get_object_from_module,
@@ -18,17 +18,18 @@ from youwol.app.environment.python_dynamic_loader import (
 from youwol.app.web_socket import WsDataStreamer
 
 # Youwol utilities
-from youwol.utils import encode_id, log_error, log_info
+from youwol.utils import encode_id, log_info
 from youwol.utils.context import Context
 
 # relative
+from ..models_project import IPipelineFactory, Project
 from .models import (
     Failure,
     FailureDirectoryNotFound,
     FailureImportException,
     FailurePipelineNotFound,
 )
-from .models_project import IPipelineFactory, Project
+from .projects_finder_handlers import GlobalProjectsFinder
 
 PROJECT_PIPELINE_DIRECTORY = ".yw_pipeline"
 
@@ -81,65 +82,124 @@ class ProjectsLoadingResults(BaseModel):
 
 class ProjectLoader:
     """
-    Singleton managing projects loading, and eventually auto-discovering of new/removed projects
-    (see [RecursiveProjectsFinder](@yw-nav-class:RecursiveProjectsFinder)).
+    Manages loading and synchronization of projects within the Youwol environment from multiple
+    [ProjectsFinderImpl](@yw-nav-class:ProjectsFinderImpl) defined from [ProjectsFinder](@yw-nav-class:ProjectsFinder)
+    models from the configuration.
+
+    This class is responsible for loading, updating, and synchronizing projects based on changes detected in
+    the filesystem or environmental configurations.
     """
 
     context = Context(logs_reporters=[], data_reporters=[WsDataStreamer()])
-
-    handler: ProjectsFinderHandler | None = None
-
+    """
+    The context used for logging and reporting.
+    """
+    handler: GlobalProjectsFinder | None = None
+    """
+    The global projects finder instance.
+    """
     projects_list: list[Project] = []
+    """
+    A list of currently loaded projects.
+    """
     failures_report: FailuresReport = FailuresReport()
+    """
+    A report containing information about failed project operations.
+    """
 
     @staticmethod
     def status():
+        """
+        Retrieves the current loading status including projects and failures.
+        """
         return ProjectsLoadingResults(
             results=ProjectLoader.projects_list, failures=ProjectLoader.failures_report
         )
 
     @staticmethod
-    async def sync_projects(update: (list[Path], list[Path]), env: YouwolEnvironment):
-        # First element of the update is path of new projects, second is path of removed projects
+    async def sync_projects(
+        update: tuple[str, list[Path], list[Path]], env: YouwolEnvironment
+    ) -> None:
+        """
+        Synchronizes projects based on the provided update information. This function is called by
+        [ProjectsFinderImpl](@yw-nav-class:ProjectsFinderImpl) when updates in the HD filesystem involving projects
+        have been caught.
+
+        Parameters:
+            update: (i) a string indicating the name of the
+                [ProjectsFinder](@yw-nav-class:models.ProjectsFinder) that discovered  the updates, (ii) a list of
+                `Path` objects representing the projects that were added, and (iii) a list of `Path` objects
+                representing the projects that were removed.
+            env: Current environment.
+        """
+        handler_name, new_projects, deleted_projects = update
         new_maybe_projects = await load_projects(
-            paths=update[0], env=env, context=ProjectLoader.context
+            paths=new_projects, env=env, context=ProjectLoader.context
         )
         failed = [p for p in new_maybe_projects if not isinstance(p, Project)]
-        if failed:
-            log_info(f"{len(failed)} projects where not able to load properly")
+        log_info(
+            f"Projects finder '{handler_name}' : {len(new_maybe_projects) - len(failed)} OK, {len(failed)} KO."
+        )
+
         new_projects = [p for p in new_maybe_projects if isinstance(p, Project)]
         remaining_projects = [
             p
             for p in ProjectLoader.projects_list
-            if p.path not in update[0] + update[1]
+            if p.path not in new_projects + deleted_projects
         ]
         projects = remaining_projects + new_projects
         ProjectLoader.projects_list = projects
+
+        t = TypeVar("t")
+
+        def update_failures(sources: list[t], target: type[t]) -> list[t]:
+            previous = [
+                e
+                for e in sources
+                if e.path.exists()
+                and not next((f for f in failed if f.path == e.path), None)
+            ]
+            new = [p for p in failed if isinstance(p, target)]
+            return previous + new
+
+        failures = ProjectLoader.failures_report
+        dir_not_found = update_failures(
+            failures.directoriesNotFound, FailureDirectoryNotFound
+        )
+        pipelines_not_found = update_failures(
+            failures.pipelinesNotFound, FailurePipelineNotFound
+        )
+        import_exceptions = update_failures(
+            failures.importExceptions, FailureImportException
+        )
         ProjectLoader.failures_report = FailuresReport(
-            directoriesNotFound=[
-                p for p in failed if isinstance(p, FailureDirectoryNotFound)
-            ],
-            pipelinesNotFound=[
-                p for p in failed if isinstance(p, FailurePipelineNotFound)
-            ],
-            importExceptions=[
-                p for p in failed if isinstance(p, FailureImportException)
-            ],
+            directoriesNotFound=dir_not_found,
+            pipelinesNotFound=pipelines_not_found,
+            importExceptions=import_exceptions,
         )
         log_info(f"New projects count: {len(projects)}")
-        await ProjectLoader.context.send(ProjectLoader.status())
+        status = ProjectLoader.status()
+        await ProjectLoader.context.send(status)
 
     @staticmethod
     async def initialize(env: YouwolEnvironment):
-        # This method is called whenever a new YouwolEnvironment is loaded
+        """
+        Initializes the project loader with the given Youwol environment.
+        This method is called (at least) whenever a new YouwolEnvironment is loaded
+
+        Parameters:
+            env: youwol environment
+        """
 
         async def sync_projects(update: (list[Path], list[Path])):
             return await ProjectLoader.sync_projects(update, env)
 
         ProjectLoader.stop()
 
-        ProjectLoader.handler = env.projects.finder.handler(
-            paths_book=env.pathsBook, on_projects_count_update=sync_projects
+        ProjectLoader.handler = GlobalProjectsFinder(
+            finders=env.projects.finders,
+            paths_book=env.pathsBook,
+            on_projects_count_update=sync_projects,
         )
 
         ProjectLoader.projects_list = []
@@ -148,16 +208,27 @@ class ProjectLoader:
 
     @staticmethod
     async def refresh(context: Context) -> ProjectsLoadingResults:
+        """
+        Explicit refresh of the project loader, updating the project list based on the current environment.
+        The multiple [ProjectsFinderImpl](@yw-nav-class:ProjectsFinderImpl) are triggered to re-index projects.
+
+        Parameters:
+            context: Current context.
+
+        Return:
+            The projects loaded successfully and the loading failures.
+        """
         async with context.start("ProjectLoader.refresh"):
+            ProjectLoader.projects_list = []
+            ProjectLoader.failures_list = []
             await ProjectLoader.handler.refresh()
             return ProjectLoader.status()
 
     @staticmethod
-    async def get_cached_projects() -> list[Project]:
-        return ProjectLoader.projects_list
-
-    @staticmethod
     def stop():
+        """
+        Stops the multiple activated [ProjectsWatcher thread](@yw-nav-class:ProjectsWatcher) owned by this class.
+        """
         if ProjectLoader.handler:
             ProjectLoader.handler.release()
 
@@ -201,7 +272,6 @@ async def get_project(
         if not project_path.exists():
             error = FailureDirectoryNotFound(path=project_path)
             await ctx.error(text="Can not find project's directory", data=error)
-            log_error("Can not find project's directory", {"path": str(project_path)})
             return error
 
         pipeline_path = project_path / PROJECT_PIPELINE_DIRECTORY / "yw_pipeline.py"
@@ -209,16 +279,11 @@ async def get_project(
             error = FailurePipelineNotFound(path=project_path)
             message = f"Can not find pipeline's definition file '{pipeline_path}'."
             await ctx.error(text=message, data=error)
-            log_error(message, {"path": str(project_path)})
             return error
 
         async def handle_import_error(import_error: FailureImportException):
             import_error_message = "Failed to import project"
             await ctx.error(text=import_error_message, data=import_error)
-            log_error(
-                import_error_message,
-                {"path": str(import_error.path), "message": import_error.message},
-            )
             return import_error
 
         try:

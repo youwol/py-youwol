@@ -26,6 +26,8 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 ### Changed
 
+- **Breaking:** Refactor the `ProjectsFinder` API and its associated implementation to improve performance and
+  flexibility. <!-- TG-2228 -->
 - Sanitize `EnvironmentStatusResponse` API from `admin/environment/status` endpoint. <!-- TG-2183 -->
 
 ### Fixed
@@ -42,7 +44,7 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 - **Dependencies vulnerabilities**:
   - On `doc/front-app`: fix [GHSA-cxjh-pqwp-8mfp] <!-- TG-2225 -->
-
+  - [CVE-2024-21503] upgrade `black` to 24.3.0 <!-- TG-2234 -->
 
 <!-- Not worthy of inclusion
 TG-2091 : 🔥 [app.env] => remove deprecated re-export

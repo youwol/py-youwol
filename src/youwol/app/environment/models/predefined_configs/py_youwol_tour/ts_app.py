@@ -7,7 +7,7 @@ from youwol.app.environment import (
     FlowSwitcherMiddleware,
     LocalEnvironment,
     Projects,
-    RecursiveProjectsFinder,
+    ProjectsFinder,
     System,
 )
 from youwol.app.environment.models.predefined_configs.py_youwol_tour.common import (
@@ -31,8 +31,8 @@ root_folder, cache_folder, projects_folder, ecosystem_folder = init_working_fold
 
 Configuration(
     projects=Projects(
-        finder=RecursiveProjectsFinder(
-            fromPaths=[projects_folder],
+        finder=ProjectsFinder(
+            fromPath=projects_folder,
         )
     ),
     system=System(
