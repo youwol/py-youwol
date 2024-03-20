@@ -29,6 +29,8 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
   flexibility. <!-- TG-2228 -->
 - Sanitize `EnvironmentStatusResponse` API from `admin/environment/status` endpoint. <!-- TG-2183 -->
 - Package Version is now dynamic and stored in attribute `youwol.__version__` <!-- TG-2184 -->
+- A link to the `co-lab` portal is now proposed in the terminal at startup. <!-- TG-2233 -->
+- Upgrade `GET:/co-lab` target from `@youwol/co-lab#^0.2.0` to `@youwol/co-lab#^0.3.0`. <!-- TG-2231 -->
 
 ### Fixed
 
@@ -38,7 +40,8 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 - In pipeline operations involving the local CDN publishing with the packagedFolders option, files located not only
   within the designated packaged folders but also within their subdirectories are now considered. <!-- TG-1683 -->
 - `GET:` `/`, `/doc`, `/co-lab`, `/webpm-client.*`: fix issue with browser caching preventing redirects to dynamically 
-  determined versions. <!-- TG-2224 -->
+  determined versions. Also, query parameters are now properly forwarded to the redirected URL. <!-- TG-2224 -->
+  <!-- TG-2232 -->
 
 ### Security
 
@@ -46,7 +49,12 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
   - On `doc/front-app`: fix [GHSA-cxjh-pqwp-8mfp] <!-- TG-2225 -->
   - [CVE-2024-21503] upgrade `black` to 24.3.0 <!-- TG-2234 -->
 
+### Removed
+
+-  The `dev. portal` link proposed in the terminal at startup has been removed . <!-- TG-2233 -->
+
 <!-- Not worthy of inclusion
+TG-2230 : ⚰️ [app.env] => remove `py_youwol_tour` configs
 TG-2091 : 🔥 [app.env] => remove deprecated re-export
 TG-1218 : 🥅 [backends.cdn] => robustify semver resolution.
 TG-2201 : 🙈 [app.env] => default_ignored_paths includes .venv
