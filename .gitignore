@@ -23,3 +23,5 @@ tooling/test_install/**/*
 __pycache__
 /.idea/
 /*.iml
+
+/.py-youwol_target/
