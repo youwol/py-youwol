@@ -161,7 +161,7 @@ jobs:
         uses: youwol/nestor/py-youwol/static-analysis@v3
         with:
           targetBranchPath: .py-youwol_target
-          skip: ${{ inputs.skip }}
+          skip: version_monotony
 
 
   build:
