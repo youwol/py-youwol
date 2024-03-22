@@ -27,6 +27,30 @@ from youwol.utils import Context
 from youwol.utils.crypto.digest import compute_digest
 
 
+class WebPmCookie(BaseModel):
+    """
+    Defines the WebPM server configuration.
+    It is consumed by the library `@youwol/webpm`.
+    """
+
+    pathLoadingGraph: str
+    """
+    Path to retrieve the loading graphs.
+    """
+    pathResource: str
+    """
+    Path to retrieve a resource.
+    """
+    pathPypi: str
+    """
+    Path to the emulated PyPi index.
+    """
+    pathPyodide: str
+    """
+    Path to the emulated Pyodide index.
+    """
+
+
 class LocalYouwolCookie(BaseModel):
     """
     Model representation of the local YouWol environment cookie.
@@ -50,6 +74,16 @@ class LocalYouwolCookie(BaseModel):
     wsLogUrl: str
     """
     The WebSocket URL used for log communications with the local YouWol server.
+    """
+
+    origin: str
+    """
+    Origin of the server
+    """
+
+    webpm: WebPmCookie
+    """
+    WebPM server configuration.
     """
 
 
@@ -116,10 +150,17 @@ class BrowserMiddleware(BaseHTTPMiddleware):
         context: Context = request.state.context
         env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
         yw_cookie = LocalYouwolCookie(
-            port=env.httpPort, wsDataUrl="ws-data", wsLogUrl="ws-log"
+            port=env.httpPort,
+            wsDataUrl="ws-data",
+            wsLogUrl="ws-log",
+            origin=f"http://localhost:{env.httpPort}",
+            webpm=WebPmCookie(
+                pathLoadingGraph="/api/assets-gateway/cdn-backend/queries/loading-graph",
+                pathResource="/api/assets-gateway/cdn-backend/resources",
+                pathPypi="/python/pypi",
+                pathPyodide="/python/pyodide",
+            ),
         )
-        response.set_cookie(
-            "youwol", urllib.parse.quote(json.dumps(yw_cookie.__dict__))
-        )
+        response.set_cookie("youwol", urllib.parse.quote(json.dumps(yw_cookie.dict())))
 
         return response

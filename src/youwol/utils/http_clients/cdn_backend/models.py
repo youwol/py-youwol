@@ -16,7 +16,7 @@ from youwol.utils.clients.docdb.models import (
     TableOptions,
 )
 
-WebpmLibraryType = Literal["js/wasm", "backend"]
+WebpmLibraryType = Literal["js/wasm", "backend", "pyodide"]
 default_webpm_lib_type: WebpmLibraryType = "js/wasm"
 
 

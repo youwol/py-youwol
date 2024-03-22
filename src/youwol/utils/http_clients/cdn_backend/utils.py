@@ -206,6 +206,6 @@ def get_library_type(lib_type: str) -> WebpmLibraryType:
     # Can be replaced by `return lib_type` when TG-2081  is closed
     return (
         cast(WebpmLibraryType, lib_type)
-        if lib_type in {"js/wasm", "backend"}
+        if lib_type in {"js/wasm", "backend", "pyodide"}
         else default_webpm_lib_type
     )
