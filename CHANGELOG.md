@@ -22,7 +22,9 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 - **Backend components**:
   -  automatic local installation of missing backends when requesting `backends/$NAME/$SEMVER/**`. <!-- TG-2195 -->
   -  explicit local installation on `admin/system/backends/install` using CDN's loading graph response. <!-- TG-2205 -->
-
+- **Pyodide components**:
+  -  intercept Pyodide resources requests to store them within the local CDN database. <!-- TG-2238 -->
+  
 ### Changed
 
 - **Breaking:** Refactor the `ProjectsFinder` API and its associated implementation to improve performance and

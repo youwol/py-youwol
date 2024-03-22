@@ -193,6 +193,7 @@ async def publish_package(
     content_encoding,
     configuration: Configuration,
     context: Context,
+    clear: bool = True,
 ):
     if content_encoding not in ["identity", "brotli"]:
         raise HTTPException(
@@ -275,13 +276,19 @@ async def publish_package(
 
         async with context.start(action="Upload data in storage") as ctx:
             prefix = f"{base_path}/"
-            async with ctx.start(action=f"Clean minio directory {prefix}") as ctx_clean:
-                await file_system.remove_folder(
-                    prefix=f"{prefix}",
-                    raise_not_found=False,
-                    headers=ctx_clean.headers(),
+            if clear:
+                async with ctx.start(
+                    action=f"Clean minio directory {prefix}"
+                ) as ctx_clean:
+                    await file_system.remove_folder(
+                        prefix=f"{prefix}",
+                        raise_not_found=False,
+                        headers=ctx_clean.headers(),
+                    )
+            else:
+                await ctx.info(
+                    text="Caller requested to append files to existing minio directory."
                 )
-
             async with ctx.start(
                 action=f"Send {len(forms)} files to storage"
             ) as ctx_post:

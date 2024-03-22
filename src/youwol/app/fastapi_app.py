@@ -21,7 +21,7 @@ from youwol.app.environment import (
     yw_config,
 )
 from youwol.app.middlewares import BrowserMiddleware, LocalCloudHybridizerMiddleware
-from youwol.app.routers import admin, backends, native_backends
+from youwol.app.routers import admin, backends, native_backends, python
 from youwol.app.routers.environment import AssetDownloadThread
 from youwol.app.routers.environment.download_assets import (
     DownloadDataTask,
@@ -200,6 +200,10 @@ def setup_http_routers():
     *  [local youwol router](@yw-nav-mod:app.routers): these routers correspond to the services specific to
     the local youwol server, they are served under `/admin`.
     **These services are not available in the online environment.**
+    *  [pyodide router](@yw-nav-mod:app.routers.python): this router provides endpoints to emulate pyodide
+    within youwol, the purpose is to intercept all requests to python resources to persist them in the local components'
+    database. The endpoints are served under `/python`.
+    **This router is not available in the online environment.**
     *  the `GET` routes `/healthz`, `/`, `/doc`, `/webpm-client.*` and `/co-lab`
 
     Notes:
@@ -216,6 +220,10 @@ def setup_http_routers():
     )
     fastapi_app.include_router(
         backends.router, prefix=api_configuration.base_path + "/backends"
+    )
+
+    fastapi_app.include_router(
+        python.router, prefix=api_configuration.base_path + "/python"
     )
 
     @fastapi_app.get(api_configuration.base_path + "/healthz")
