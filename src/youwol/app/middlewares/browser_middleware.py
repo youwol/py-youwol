@@ -17,10 +17,7 @@ from starlette.responses import Response
 from starlette.types import ASGIApp
 
 # Youwol application
-from youwol.app.environment.youwol_environment import (
-    YouwolEnvironment,
-    YouwolEnvironmentFactory,
-)
+from youwol.app.environment.youwol_environment import YouwolEnvironment
 
 # Youwol utilities
 from youwol.utils import Context
@@ -127,10 +124,13 @@ class BrowserMiddleware(BaseHTTPMiddleware):
             The response with eventually modified headers.
         """
         response = await call_next(request)
+        context: Context = request.state.context
+        env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
+
         if self.config_dependant_browser_caching:
             digest = compute_digest(
                 {
-                    "config_digest": YouwolEnvironmentFactory.get_digest(),
+                    "config_digest": env.configDigest,
                     "user_info": (
                         {
                             "name": request.state.user_info["sub"],
@@ -147,8 +147,6 @@ class BrowserMiddleware(BaseHTTPMiddleware):
             response.headers["Vary"] = "Youwol-Config-Digest, Cookie"
             response.headers["Cache-Control"] = "max-age=3600"
 
-        context: Context = request.state.context
-        env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
         yw_cookie = LocalYouwolCookie(
             port=env.httpPort,
             wsDataUrl="ws-data",

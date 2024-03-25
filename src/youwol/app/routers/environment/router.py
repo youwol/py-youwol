@@ -150,7 +150,7 @@ class YouwolEnvironmentResponse(BaseModel):
 
         return YouwolEnvironmentResponse(
             httpPort=yw_env.httpPort,
-            customMiddlewares=[m.__dict__ for m in yw_env.customMiddlewares],
+            customMiddlewares=[m.dict() for m in yw_env.customMiddlewares],
             projects=yw_env.projects,
             commands=yw_env.commands,
             currentConnection=yw_env.currentConnection,
