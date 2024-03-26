@@ -114,7 +114,7 @@ async def authorization_flow_callback(
                 status_code=400, content={"invalid param": "Invalid state"}
             )
 
-        if tokens.is_temp():
+        if await tokens.is_temp():
             if conf.keycloak_users_management is None:
                 return JSONResponse(
                     status_code=403,

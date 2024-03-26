@@ -66,6 +66,7 @@ TG-2205 : ✨ [utils.context] => init `attributes`, `labels` from request.
 TG-2187 : 🐛 [routers.local_cdn] => add missing `emit_local_cdn_status`
 TG-2213
 TG-2226
+TG-2246
 -->
 
 ## [0.1.8] − 2024-03-07
