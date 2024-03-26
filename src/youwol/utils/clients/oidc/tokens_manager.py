@@ -124,7 +124,8 @@ class Tokens:
         """Indicate if the token has a claim temp, which means the user registration must be finalized"""
         self.__assert_refresh_not_expired()
         decoded_id_token = await self.__oidc_client.token_decode(self.__data.id_token)
-        return decoded_id_token["temp"] if "temp" in decoded_id_token else False
+        # value is actually typed `Any`, but it’s only appear when enabling strict type check with mypy
+        return decoded_id_token["temp"] is True if "temp" in decoded_id_token else False
 
     async def sub(self) -> str:
         """
