@@ -2,12 +2,18 @@
 This file gathers top level [configuration](@yw-nav-class:models_config.Configuration)'s models.
 """
 
+# future
+from __future__ import annotations
+
 # standard library
+import tempfile
+
 from abc import ABC
 from collections.abc import Awaitable, Callable
+from pathlib import Path
 
 # typing
-from typing import Any
+from typing import Any, Literal
 
 # third parties
 from pydantic import BaseModel
@@ -37,7 +43,6 @@ from .model_remote import (
     CloudEnvironments,
     Connection,
 )
-from .models_features import Features
 from .models_project import Projects
 from .models_token_storage import TokensStorageConf, TokensStorageSystemKeyring
 
@@ -120,6 +125,178 @@ class LocalEnvironment(BaseModel):
     """
 
 
+class BrowserCache(BaseModel):
+    """
+    Represents the simulated browser cache within YouWol, which is exclusively activated for `GET` requests initiated
+    by a browser.
+
+    Rationale:
+        Browser caching can circumvent certain side effects triggered during resource requests.
+        For instance, when requesting a missing resource, the server downloads it into the local database if it's
+        not already available. However, when transitioning from one configuration (e.g., `A`) to another (e.g., `B`),
+        a resource that was available in `A` but not in `B`, and is cached by the browser, won't be downloaded
+        when transitioning to `B`. Instead, it will be served from the cache, thereby bypassing the associated
+        side effects, such as the download process. Due to this behavior and a lack of configurability,
+        an explicit emulation of a browser cache has been incorporated into YouWol.
+
+    Details:
+        The cache is only populated by responses that include a header specified by
+        [YouwolHeaders.yw_browser_cache_directive](@yw-nav-attr:YouwolHeaders.yw_browser_cache_directive),
+        which is an opt-in feature from the backends that create the response.
+
+        Persisted cached elements (if `mode=='disk'`) are gathered in files on the user disk:
+        *  the folder location is defined by the attribute `cachesFolder`.
+        *  their name represents the caching key for the session, combination of:
+            *  user-provided `key` function (representing an ID relative to the YouWol configuration)
+            *  user information automatically injected by the YouWol implementation.
+        *  the entries included do not copy the responses' content, rather, they reference the path on the disk of
+        the corresponding files.
+
+        Regardless of the `mode`, a match for a response is retrieved if both:
+        *  the caching key for the session match
+        *  the target URL match
+
+        When a response is cached, any associated `Cache-Control` header is replaced by `no-cache, no-store`.
+
+        Implementation details can be found in the [BrowserCacheStore](@yw-nav-class:BrowserCacheStore) documentation.
+
+    Note:
+        By default, the configuration part of the key is the path of the local database, which should suffice for
+        most use cases and allows sharing the cache for configurations that share the same local database.
+
+        For scenario where elements of the configuration re-route some incoming requests out of their normal
+        destination, it may be necessary to adjust the attributes [key](@yw-nav-attr:BrowserCache.key) and/or
+        [ignore](@yw-nav-attr:BrowserCache.ignore).
+
+    Warning:
+        If the [key](@yw-nav-attr:BrowserCache.key) attribute reference the local database (which definitely should),
+        manual changes within the local database introduce potentials un-synchronization
+        with the persisted caching files. It can lead to resources being fetched from the cache while not existing
+        in the local databases (preventing *e.g.* their download).
+    """
+
+    key: Callable[[Configuration], Any] = (
+        lambda conf: conf.system.localEnvironment.dataDir
+    )
+    """
+    A callable that takes a `Configuration` object as input and returns an object identifying the configuration
+    part of the session caching key.
+
+    Example:
+        For a key specific to the whole configuration, you can provide:
+
+        <code-snippet>
+        cache = BrowserCache(key=lambda conf: conf)
+        </code-snippet>
+    """
+
+    mode: Literal["in-memory", "disk"] = "disk"
+    """
+    The mode of the cache, either `in-memory` or `disk`. If `in-memory` is used, the cache is always empty when YouWol
+    start.
+    """
+
+    maxCount: int = 1000
+    """
+    Approximate maximum items count in the persisted file (the max-count is ensured only when YouWol start).
+    """
+
+    cachesFolder: ConfigPath = Path(tempfile.gettempdir()) / "yw" / "browser-caches"
+    """
+    Folder used to store caching files on disk.
+    """
+
+    ignore: Callable[[Request, Configuration, Context], bool | Awaitable[bool]] = (
+        lambda _req, _resp, _ctx: False
+    )
+    """
+    If provided, the caching layer is ignored for the incoming request using the current configuration if the function
+    returns `True`.
+
+    Example:
+        It can be employed to disregard any routes aligning with a [CdnSwitch](@yw-nav-class:CdnSwitch) in
+        the configuration, if a corresponding dev-server is active.
+        However, it's worth noting that dev-servers should operate using a 'work-in-progress' version
+        (denoted by a suffix `-wip`), ensuring that caching is disabled, allowing the default configuration
+        to function smoothly.
+    """
+
+    disable_write: Callable[
+        [Request, Response, Configuration, Context], bool | Awaitable[bool]
+    ] = lambda _req, _resp, _conf, _ctx: False
+    """
+    Similar to `ignore`, except that it only disable writing within the cache. It is useful when decision regarding
+    caching can not be acted before the response have been retrieved.
+
+    Example:
+        It can be employed to disregard caching when a middleware has intercepted a request and modified the response
+        from the original one. A typical example can be a middleware applying brotli decompression:
+
+    <code-snippet language="python">
+    class BrotliDecompressMiddleware(CustomMiddleware):
+        async def dispatch(
+            self,
+            incoming_request: Request,
+            call_next: RequestResponseEndpoint,
+            context: Context,
+        ):
+            async with context.start(
+                action="BrotliDecompressMiddleware.dispatch", with_labels=[Label.MIDDLEWARE]
+            ) as ctx:  # type: Context
+                response = await call_next(incoming_request)
+                if response.headers.get("content-encoding") != "br":
+                    return response
+
+                binary = b""
+                async for data in response.body_iterator:
+                    binary += data
+                decompressed = brotli.decompress(binary)
+                headers = {
+                    **response.headers,
+                    "content-length": str(len(decompressed)),
+                    "content-encoding": "identity",
+                    "do-not-cache": "true"
+                }
+                resp = Response(decompressed.decode("utf8"), headers=headers)
+                return resp
+
+    Configuration(
+        system=System(
+            browserEnvironment=BrowserEnvironment(
+                cache=BrowserCache(
+                    disable_write = lambda _, resp, _, _: "do-not-cache" in resp.headers
+                )
+            )
+        ),
+    </code-snippet>
+
+    """
+
+
+class BrowserEnvironment(BaseModel):
+    """
+    Collects configuration options related to the browser.
+
+    This class is associated with the [BrowserMiddleware](@yw-nav-class:BrowserMiddleware),
+    which is one of the initial middlewares intercepting incoming requests in the YouWol server.
+    """
+
+    cache: BrowserCache = BrowserCache()
+    """
+    Represents the emulated browser cache within YouWol.
+    """
+    onEnter: Callable[[Request, Context], Request] | None = None
+    """
+    If provided, this function is called on the incoming request at the beginning of processing by the
+    [BrowserMiddleware](@yw-nav-class:BrowserMiddleware), allowing for potential side effects.
+    """
+    onExit: Callable[[Request, Response, Context], Response] | None = None
+    """
+    If provided, this function is called on both the incoming request and outgoing response at the end of
+    processing by the [BrowserMiddleware](@yw-nav-class:BrowserMiddleware), allowing for potential side effects.
+    """
+
+
 class System(BaseModel):
     """
     Gathers the configuration options related to downloading and storing assets in the local disk.
@@ -181,7 +358,8 @@ class System(BaseModel):
                     )
                 ],
             ),
-            localEnvironment=LocalEnvironment()
+            localEnvironment=LocalEnvironment(),
+            browserEnvironment=BrowserEnvironment()
         )
     )
     </code-snippet>
@@ -197,8 +375,7 @@ class System(BaseModel):
     """
     How to store JWT tokens:
 
-    * <a href="@yw-nav-class:TokensStorageSystemKeyring">
-     TokensStorageSystemKeyring()</a>:
+    * [TokensStorageSystemKeyring()](@yw-nav-class:TokensStorageSystemKeyring):
     use system keyring
     * [TokensStoragePath()](@yw-nav-class:TokensStoragePath) :
      store in file
@@ -224,6 +401,11 @@ class System(BaseModel):
     localEnvironment: LocalEnvironment = LocalEnvironment()
     """
     Specify how data are persisted in the computer.
+    """
+
+    browserEnvironment: BrowserEnvironment = BrowserEnvironment()
+    """
+    Features related to the interaction with the browser (most importantly regarding caching).
     """
 
 
@@ -484,7 +666,5 @@ class Configuration(BaseModel):
     Various handles for customization (*e.g.* middleware, commands, ...)
     """
 
-    features: Features = Features()
-    """
-    Application Features
-    """
+
+BrowserCache.update_forward_refs()

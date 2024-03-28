@@ -19,6 +19,9 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 ### Added
 
+- **App**:
+  -  Implemented a browser cache emulation feature to enhance performance for `GET` requests originating from browsers, 
+  while mitigating the adverse effects associated with native browser cache systems. <!-- TG-2220 -->
 - **Backend components**:
   -  automatic local installation of missing backends when requesting `backends/$NAME/$SEMVER/**`. <!-- TG-2195 -->
   -  explicit local installation on `admin/system/backends/install` using CDN's loading graph response. <!-- TG-2205 -->

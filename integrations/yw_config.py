@@ -20,6 +20,8 @@ from starlette.responses import Response
 # Youwol application
 from youwol.app.environment import (
     AuthorizationProvider,
+    BrowserCache,
+    BrowserEnvironment,
     CdnSwitch,
     CloudEnvironment,
     CloudEnvironments,
@@ -347,12 +349,13 @@ class BrotliDecompressMiddleware(CustomMiddleware):
             # noinspection PyUnresolvedReferences
             async for data in response.body_iterator:
                 binary += data
-            headers = {
-                k: v
-                for k, v in response.headers.items()
-                if k not in ["content-length", "content-encoding"]
-            }
             decompressed = brotli.decompress(binary)
+            headers = {
+                **response.headers,
+                "content-length": str(len(decompressed)),
+                "content-encoding": "identity",
+                "do-not-cache": "true",
+            }
             resp = Response(decompressed.decode("utf8"), headers=headers)
             return resp
 
@@ -373,6 +376,14 @@ class ConfigurationFactory(IConfigurationFactory):
                 localEnvironment=LocalEnvironment(
                     dataDir=databases_folder,
                     cacheDir=system_folder,
+                ),
+                browserEnvironment=BrowserEnvironment(
+                    cache=BrowserCache(
+                        mode="in-memory",
+                        # Disable write if the response has been intercepted by the `BrotliDecompressMiddleware`.
+                        disable_write=lambda req, resp, conf, ctx: "do-not-cache"
+                        in resp.headers,
+                    )
                 ),
             ),
             projects=Projects(

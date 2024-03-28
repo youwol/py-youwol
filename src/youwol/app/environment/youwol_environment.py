@@ -29,6 +29,7 @@ from youwol.utils.servers.fast_api import FastApiRouter
 from youwol.utils.utils_paths import ensure_dir_exists
 
 # relative
+from .browser_cache_store import BrowserCacheStore
 from .config_from_module import configuration_from_python
 from .errors_handling import (
     CheckDatabasesFolderHealthy,
@@ -47,7 +48,6 @@ from .models.models_config import (
     CustomMiddleware,
     Events,
 )
-from .models.models_features import Features
 from .models.models_token_storage import TokensStoragePath, TokensStorageSystemKeyring
 from .native_backends_config import BackendConfigurations, native_backends_config
 from .paths import PathsBook, app_dirs, ensure_config_file_exists_or_create_it
@@ -141,7 +141,10 @@ class YouwolEnvironment(BaseModel):
     the name and version of the proxied backend).
     """
 
-    features: Features
+    browserCacheStore: BrowserCacheStore
+    """
+    The store regarding cached resources for browser's requests.
+    """
 
     @staticmethod
     async def from_configuration(config: Configuration, options: FwdArgumentsReload):
@@ -188,7 +191,7 @@ class YouwolEnvironment(BaseModel):
             ),
             tokens_storage=options.token_storage
             or await tokens_storage_conf.get_tokens_storage(),
-            features=config.features,
+            browserCacheStore=BrowserCacheStore(yw_config=config),
         )
 
     def reset_databases(self):
@@ -206,6 +209,9 @@ class YouwolEnvironment(BaseModel):
         remote = self.get_remote_info()
         auth_id = self.currentConnection.authId
         return next(auth for auth in remote.authentications if auth.authId == auth_id)
+
+    def stop(self):
+        self.browserCacheStore.stop()
 
     def __str__(self):
         def str_middlewares():
@@ -269,6 +275,7 @@ class YouwolEnvironmentFactory:
         path: Path, fwd_args_reload: FwdArgumentsReload | None = None
     ):
         cached = YouwolEnvironmentFactory.__cached_env
+        cached.stop()
         if fwd_args_reload.http_port and fwd_args_reload.http_port != cached.httpPort:
             raise ValueError(
                 "Can not `load_from_file` a Configuration that changes the serving HTTP port."
@@ -287,6 +294,7 @@ class YouwolEnvironmentFactory:
     @staticmethod
     async def reload(connection: Connection | None = None):
         cached = YouwolEnvironmentFactory.__cached_env
+        cached.stop()
         conf = await safe_load(
             path=cached.pathsBook.config,
             fwd_args_reload=FwdArgumentsReload(
@@ -327,7 +335,7 @@ class YouwolEnvironmentFactory:
                 local_nosql=current_env.pathsBook.databases / "docdb",
             ),
             tokens_storage=current_env.tokens_storage,
-            features=current_env.features,
+            browserCacheStore=current_env.browserCacheStore,
         )
         YouwolEnvironmentFactory.__set(new_conf)
 
@@ -345,6 +353,11 @@ class YouwolEnvironmentFactory:
 
         await install_routers(config.routers, context)
         await context.info(text="Additional routers installed")
+
+    @staticmethod
+    def stop_current_env():
+        if YouwolEnvironmentFactory.__cached_env:
+            YouwolEnvironmentFactory.__cached_env.stop()
 
 
 async def yw_config() -> YouwolEnvironment:

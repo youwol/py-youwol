@@ -48,6 +48,9 @@ from youwol.utils.context import Context
 # relative
 from .models import (
     AuthenticationResponse,
+    BrowserCacheStatusResponse,
+    ClearBrowserCacheBody,
+    ClearBrowserCacheResponse,
     CloudEnvironmentResponse,
     CustomDispatchesResponse,
     LoginBody,
@@ -534,3 +537,63 @@ async def upload(
             options=None,
             context=ctx,
         )
+
+
+@router.get(
+    "/browser-cache",
+    summary="upload an asset",
+    response_model=BrowserCacheStatusResponse,
+)
+async def browser_cache_status(
+    request: Request, env: YouwolEnvironment = Depends(yw_config)
+) -> BrowserCacheStatusResponse:
+    """
+    Retrieves status of the [BrowserCacheStore](@yw-nav-class:BrowserCacheStore).
+
+    Parameters:
+        request: Incoming request.
+        env: Current environment (automatically injected).
+
+    Return:
+        Info regarding the current state of the browser's cache of YouWol.
+    """
+
+    async with Context.start_ep(
+        request=request,
+    ):
+        return BrowserCacheStatusResponse(
+            sessionKey=env.browserCacheStore.session_key(),
+            file=str(env.browserCacheStore.output_file_path()),
+            items=env.browserCacheStore.items(),
+        )
+
+
+@router.delete(
+    "/browser-cache",
+    summary="upload an asset",
+    response_model=ClearBrowserCacheResponse,
+)
+async def clear_browser_cache(
+    request: Request,
+    body: ClearBrowserCacheBody,
+    env: YouwolEnvironment = Depends(yw_config),
+) -> ClearBrowserCacheResponse:
+    """
+    Clear the [BrowserCacheStore](@yw-nav-class:BrowserCacheStore).
+
+    Parameters:
+        request: Incoming request.
+        body: Options.
+        env: Current environment (automatically injected).
+
+    Return:
+        Info regarding the current state of the browser's cache of YouWol.
+    """
+
+    async with Context.start_ep(
+        request=request,
+    ) as ctx:
+        count = await env.browserCacheStore.clear(
+            memory=body.memory, file=body.file, context=ctx
+        )
+        return ClearBrowserCacheResponse(deleted=count)

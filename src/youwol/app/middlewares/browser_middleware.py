@@ -20,8 +20,7 @@ from starlette.types import ASGIApp
 from youwol.app.environment.youwol_environment import YouwolEnvironment
 
 # Youwol utilities
-from youwol.utils import Context
-from youwol.utils.crypto.digest import compute_digest
+from youwol.utils import Context, Label
 
 
 class WebPmCookie(BaseModel):
@@ -86,16 +85,15 @@ class LocalYouwolCookie(BaseModel):
 
 class BrowserMiddleware(BaseHTTPMiddleware):
     """
-    Middleware to control interaction with browser regarding caching, cookies, *etc.*.
-    """
+    Middleware to control interaction with browser regarding caching, headers, cookies, *etc.*.
 
-    cache = {}
+    It is configured from the [BrowserCache](@yw-nav-class:models_config.BrowserCache) class.
+    """
 
     def __init__(
         self,
         app: ASGIApp,
         dispatch: DispatchFunction | None = None,
-        config_dependant_browser_caching=False,
         **_,
     ) -> None:
         """
@@ -107,14 +105,17 @@ class BrowserMiddleware(BaseHTTPMiddleware):
            dispatch: The dispatch function, forwarded to `BaseHTTPMiddleware`.
         """
         super().__init__(app, dispatch)
-        self.config_dependant_browser_caching = config_dependant_browser_caching
 
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
         """
         Middleware logic to control interaction with browser:
-            *  set up the [`youwol` cookie](@yw-nav-class:LocalYouwolCookie).
+            *  Eventually retrieves/caches responses from the [BrowserCacheStore](@yw-nav-class:BrowserCacheStore).
+            If a response is cached with `BrowserCacheStore`, `Cache-Control` header is set to `no-cache, no-store`.
+            *  Set up the [`youwol` cookie](@yw-nav-class:LocalYouwolCookie).
+            *  Apply `onEnter` and `onExit` user defined callbacks
+             (see [BrowserCache](@yw-nav-class:models_config.BrowserCache)) at the start & end of the processing.
 
         Parameters:
             request: The incoming request.
@@ -123,42 +124,53 @@ class BrowserMiddleware(BaseHTTPMiddleware):
         Returns:
             The response with eventually modified headers.
         """
-        response = await call_next(request)
-        context: Context = request.state.context
-        env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
 
-        if self.config_dependant_browser_caching:
-            digest = compute_digest(
-                {
-                    "config_digest": env.configDigest,
-                    "user_info": (
-                        {
-                            "name": request.state.user_info["sub"],
-                            "groups": request.state.user_info["memberof"],
-                        }
-                        if hasattr(request.state, "user_info")
-                        else None
-                    ),
-                },
-                trace_path_root="browser_caching_middleware",
-            ).hex()
-            response.headers["Youwol-Config-Digest"] = digest
-            response.set_cookie("youwol-config-digest", digest)
-            response.headers["Vary"] = "Youwol-Config-Digest, Cookie"
-            response.headers["Cache-Control"] = "max-age=3600"
+        def apply_final_transform(resp: Response, is_cached: bool):
+            if browser_env.onExit:
+                resp = browser_env.onExit(request, resp, ctx)
+            if is_cached:
+                resp.headers["Cache-Control"] = "no-cache, no-store"
+            return resp
 
-        yw_cookie = LocalYouwolCookie(
-            port=env.httpPort,
-            wsDataUrl="ws-data",
-            wsLogUrl="ws-log",
-            origin=f"http://localhost:{env.httpPort}",
-            webpm=WebPmCookie(
-                pathLoadingGraph="/api/assets-gateway/cdn-backend/queries/loading-graph",
-                pathResource="/api/assets-gateway/cdn-backend/resources",
-                pathPypi="/python/pypi",
-                pathPyodide="/python/pyodide",
-            ),
-        )
-        response.set_cookie("youwol", urllib.parse.quote(json.dumps(yw_cookie.dict())))
+        async with Context.from_request(request).start(
+            action="Browser middleware",
+            with_labels=[Label.MIDDLEWARE],
+        ) as ctx:
+            env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
+            browser_env = env.configuration.system.browserEnvironment
+            cache = env.browserCacheStore
+            cached_resp = await cache.try_get(request=request, context=ctx)
+            if cached_resp:
+                await ctx.info(
+                    text="Resource retrieved from cache", data=cached_resp.item
+                )
+                return apply_final_transform(cached_resp.response, is_cached=True)
 
-        return response
+            if browser_env.onEnter:
+                request = browser_env.onEnter(request, ctx)
+
+            response = await call_next(request)
+
+            yw_cookie = LocalYouwolCookie(
+                port=env.httpPort,
+                wsDataUrl="ws-data",
+                wsLogUrl="ws-log",
+                origin=f"http://localhost:{env.httpPort}",
+                webpm=WebPmCookie(
+                    pathLoadingGraph="/api/assets-gateway/cdn-backend/queries/loading-graph",
+                    pathResource="/api/assets-gateway/cdn-backend/resources",
+                    pathPypi="/python/pypi",
+                    pathPyodide="/python/pyodide",
+                ),
+            )
+            response.set_cookie(
+                "youwol", urllib.parse.quote(json.dumps(yw_cookie.dict()))
+            )
+
+            persisted = await cache.cache_if_needed(
+                request=request, response=response, context=ctx
+            )
+            if persisted:
+                await ctx.info(text="Resource persisted in cache", data=persisted)
+
+            return apply_final_transform(response, is_cached=persisted is not None)

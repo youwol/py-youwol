@@ -32,9 +32,12 @@ from youwol.backends.cdn.utils_indexing import (
 from youwol.utils import (
     AnyDict,
     CommandException,
+    LocalFileSystem,
     PublishPackageError,
     QueryBody,
     QueryIndexException,
+    YouwolHeaders,
+    YwBrowserCacheDirective,
     execute_shell_cmd,
     extract_bytes_ranges,
     generate_headers_downstream,
@@ -715,13 +718,19 @@ async def fetch_resource(
     content = await configuration.file_system.get_object(
         object_id=path, ranges_bytes=range_bytes, headers=context.headers()
     )
-
-    return format_response(
+    resp = format_response(
         content=content,
         partial_content=bool(range_bytes),
         file_id=path.split("/")[-1],
         max_age=max_age,
     )
+    if isinstance(configuration.file_system, LocalFileSystem):
+        directive = YwBrowserCacheDirective(
+            service="cdn-backend",
+            filepath=f"{configuration.file_system.root_path}/{path}",
+        )
+        YouwolHeaders.set_yw_browser_cache_directive(directive=directive, response=resp)
+    return resp
 
 
 def get_path(library_id: str, version: str, rest_of_path: str):
