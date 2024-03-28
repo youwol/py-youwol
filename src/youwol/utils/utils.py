@@ -18,6 +18,7 @@ from fastapi import HTTPException
 from pydantic import BaseModel
 from starlette.datastructures import Headers
 from starlette.requests import Request
+from starlette.responses import Response
 
 # Youwol
 import youwol
@@ -30,6 +31,21 @@ from youwol.utils.types import JSON, AnyDict
 flatten = itertools.chain.from_iterable
 
 PYPROJECT_TOML = "pyproject.toml"
+
+
+class YwBrowserCacheDirective(BaseModel):
+    """
+    Cache directive to the intention of [BrowserCacheStore](@yw-nav-class:BrowserCacheStore).
+    """
+
+    filepath: str
+    """
+    Path of the file on disk.
+    """
+    service: str
+    """
+    Name of the service that generated this directive.
+    """
 
 
 class YouwolHeaders:
@@ -69,6 +85,13 @@ class YouwolHeaders:
     This is useful when *e.g.* writing an external backends connected using
     a [RedirectSwitch](@yw-nav-class:youwol.app.environment.models.models_config.RedirectSwitch) in which
     requests to the youwol local server are executed.
+    """
+
+    yw_browser_cache_directive = "yw_browser_cache_directive"
+    """
+    This header key is to be included to enable the [BrowserCacheStore](@yw-nav-class:BrowserCacheStore) to cache
+    a response, see the function
+    [set_yw_browser_cache_directive](@yw-nav-attr:YouwolHeaders.set_yw_browser_cache_directive).
     """
 
     @staticmethod
@@ -144,6 +167,41 @@ class YouwolHeaders:
             The value of the header 'py-youwol-local-only' if included in the request.
         """
         return request.headers.get(YouwolHeaders.py_youwol_local_only, None)
+
+    @staticmethod
+    def get_youwol_browser_cache_info(
+        response: Response,
+    ) -> YwBrowserCacheDirective | None:
+        """
+        Retrieves an eventual directive regarding caching within [BrowserCacheStore](@yw-nav-class:BrowserCacheStore).
+
+        Parameters:
+            response: Response to retrieve the directive from, using the header
+            [YouwolHeaders.yw_browser_cache_directive](@yw-nav-attr:YouwolHeaders.yw_browser_cache_directive).
+
+        Return:
+            The directive if found.
+        """
+        info = response.headers.get(YouwolHeaders.yw_browser_cache_directive, None)
+        if info:
+            return YwBrowserCacheDirective(**json.loads(info))
+
+        return None
+
+    @staticmethod
+    def set_yw_browser_cache_directive(
+        response: Response, directive: YwBrowserCacheDirective
+    ) -> None:
+        """
+        Set directive for YouWol's [BrowserCacheStore](@yw-nav-class:BrowserCacheStore) to cache a response.
+
+        Parameters:
+            response: The response to instrument for caching.
+            directive: Required information about the resource to be cached.
+        """
+        response.headers.append(
+            YouwolHeaders.yw_browser_cache_directive, json.dumps(directive.dict())
+        )
 
 
 def user_info(request: Request):

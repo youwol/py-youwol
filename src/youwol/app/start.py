@@ -73,5 +73,7 @@ def start(shutdown_script_path: Path | None = None):
         download_thread.join()
         cleaner_thread.join()
         ProjectLoader.stop()
+        YouwolEnvironmentFactory.stop_current_env()
+
         if shutdown_script_path is not None:
             shutdown_script_path.unlink(missing_ok=True)

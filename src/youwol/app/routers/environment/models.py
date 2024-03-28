@@ -8,6 +8,7 @@ from typing import Literal
 from pydantic import BaseModel
 
 # Youwol application
+from youwol.app.environment.browser_cache_store import BrowserCacheItem
 from youwol.app.environment.errors_handling import ErrorResponse
 from youwol.app.environment.models.flow_switches import DispatchInfo
 
@@ -134,3 +135,52 @@ class ComponentsUpdate(BaseModel):
 class SyncComponentBody(BaseModel):
     name: str
     version: str
+
+
+class BrowserCacheStatusResponse(BaseModel):
+    """
+    Response model of the endpoint [`DELETE:/admin/environment/browser-cache`](@yw-nav-func:router.clear_browser_cache).
+    """
+
+    sessionKey: str
+    """
+    The session key for the cache, see [BrowserCache documentation](@yw-nav-attr:BrowserCache).
+    """
+
+    file: str | None
+    """
+    The file path supporting the cache (if [BrowserCache.mode](@yw-nav-attr:BrowserCache.mode) is `disk`)
+    """
+
+    items: list[BrowserCacheItem]
+    """
+    The list of items.
+    """
+
+
+class ClearBrowserCacheBody(BaseModel):
+    """
+    Body model of the endpoint [`DELETE:/admin/environment/browser-cache`](@yw-nav-func:router.clear_browser_cache).
+    """
+
+    memory: bool = True
+    """
+    Whether to clear `in-memory` items.
+    """
+
+    file: bool = False
+    """
+    Whether to delete associated file on disk (applicable only if [BrowserCache.mode](@yw-nav-attr:BrowserCache.mode)
+    is `disk`).
+    """
+
+
+class ClearBrowserCacheResponse(BaseModel):
+    """
+    Response model of the endpoint [`DELETE:/admin/environment/browser-cache`](@yw-nav-func:router.clear_browser_cache).
+    """
+
+    deleted: int
+    """
+    Number of entries deleted.
+    """

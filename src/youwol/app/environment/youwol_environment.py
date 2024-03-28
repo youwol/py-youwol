@@ -25,11 +25,11 @@ from youwol.app.web_socket import WsDataStreamer
 # Youwol utilities
 from youwol.utils.clients.oidc.tokens_manager import TokensStorage
 from youwol.utils.context import ContextFactory, InMemoryReporter
-from youwol.utils.crypto.digest import compute_digest
 from youwol.utils.servers.fast_api import FastApiRouter
 from youwol.utils.utils_paths import ensure_dir_exists
 
 # relative
+from .browser_cache_store import BrowserCacheStore
 from .config_from_module import configuration_from_python
 from .errors_handling import (
     CheckDatabasesFolderHealthy,
@@ -48,7 +48,6 @@ from .models.models_config import (
     CustomMiddleware,
     Events,
 )
-from .models.models_features import Features
 from .models.models_token_storage import TokensStoragePath, TokensStorageSystemKeyring
 from .native_backends_config import BackendConfigurations, native_backends_config
 from .paths import PathsBook, app_dirs, ensure_config_file_exists_or_create_it
@@ -56,9 +55,22 @@ from .proxied_backends import BackendsStore
 from .youwol_environment_models import ProjectsResolver
 
 
+@dataclass(frozen=True)
+class FwdArgumentsReload:
+    path: Path | None = None
+    token_storage: TokensStorage | None = None
+    remote_connection: Connection | None = None
+    http_port: int | None = None
+
+
 class YouwolEnvironment(BaseModel):
     """
     Runtime environment of the server.
+    """
+
+    configuration: Configuration
+    """
+    The configuration used to set up the environment.
     """
 
     httpPort: int
@@ -71,6 +83,8 @@ class YouwolEnvironment(BaseModel):
     """
     Plugged events,
     defined from the [Configuration](@yw-nav-attr:Customization.events).
+
+    Deprecated, should be retrieved from attribute `configuration`.
     """
 
     customMiddlewares: list[CustomMiddleware]
@@ -78,6 +92,8 @@ class YouwolEnvironment(BaseModel):
     Custom middlewares,
     defined from the
      [Configuration](@yw-nav-attr:Customization.middlewares).
+
+    Deprecated, should be retrieved from attribute `configuration`.
     """
 
     projects: ProjectsResolver
@@ -90,6 +106,8 @@ class YouwolEnvironment(BaseModel):
     """
     The list of commands,
     defined from the [Configuration](@yw-nav-attr:CustomEndPoints.commands).
+
+    Deprecated, should be retrieved from attribute `configuration`.
     """
 
     currentConnection: Connection
@@ -101,6 +119,8 @@ class YouwolEnvironment(BaseModel):
     """
     The list of available remotes,
     defined from the [Configuration](@yw-nav-attr:System.cloudEnvironments).
+
+    Deprecated, should be retrieved from attribute `configuration`.
     """
 
     pathsBook: PathsBook
@@ -121,7 +141,58 @@ class YouwolEnvironment(BaseModel):
     the name and version of the proxied backend).
     """
 
-    features: Features
+    browserCacheStore: BrowserCacheStore
+    """
+    The store regarding cached resources for browser's requests.
+    """
+
+    @staticmethod
+    async def from_configuration(config: Configuration, options: FwdArgumentsReload):
+
+        path = options.path
+        system = config.system
+        config_projects = config.projects
+        customization = config.customization
+        data_dir = ensure_dir_exists(
+            system.localEnvironment.dataDir, root_candidates=app_dirs.user_data_dir
+        )
+        cache_dir = ensure_dir_exists(
+            system.localEnvironment.cacheDir, root_candidates=app_dirs.user_cache_dir
+        )
+        paths_book = PathsBook(config=path, databases=data_dir, system=cache_dir)
+        ensure_and_check_paths(paths_book=paths_book)
+
+        tokens_storage_conf = config.system.tokensStorage
+        if (
+            isinstance(tokens_storage_conf, TokensStoragePath)
+            or isinstance(tokens_storage_conf, TokensStorageSystemKeyring)
+            and not Path(tokens_storage_conf.path).is_absolute()
+        ):
+            tokens_storage_conf.path = cache_dir / tokens_storage_conf.path
+
+        return YouwolEnvironment(
+            configuration=config,
+            httpPort=options.http_port or system.httpPort,
+            routers=customization.endPoints.routers,
+            currentConnection=options.remote_connection
+            or system.cloudEnvironments.defaultConnection,
+            events=customization.events,
+            pathsBook=paths_book,
+            projects=ProjectsResolver.from_configuration(
+                config_projects=config_projects
+            ),
+            commands={c.name: c for c in customization.endPoints.commands},
+            customMiddlewares=customization.middlewares,
+            remotes=system.cloudEnvironments.environments,
+            backends_configuration=native_backends_config(
+                local_http_port=system.httpPort,
+                local_storage=paths_book.local_storage,
+                local_nosql=paths_book.databases / "docdb",
+            ),
+            tokens_storage=options.token_storage
+            or await tokens_storage_conf.get_tokens_storage(),
+            browserCacheStore=BrowserCacheStore(yw_config=config),
+        )
 
     def reset_databases(self):
         self.backends_configuration.reset_databases()
@@ -138,6 +209,9 @@ class YouwolEnvironment(BaseModel):
         remote = self.get_remote_info()
         auth_id = self.currentConnection.authId
         return next(auth for auth in remote.authentications if auth.authId == auth_id)
+
+    def stop(self):
+        self.browserCacheStore.stop()
 
     def __str__(self):
         def str_middlewares():
@@ -183,41 +257,25 @@ Configuration loaded from '{self.pathsBook.config}'
 """
 
 
-@dataclass(frozen=True)
-class FwdArgumentsReload:
-    token_storage: TokensStorage | None = None
-    remote_connection: Connection | None = None
-    http_port: int | None = None
-
-
 class YouwolEnvironmentFactory:
-    __cached_config: YouwolEnvironment | None = None
-    __cached_config_digest: str | None = None
+    __cached_env: YouwolEnvironment | None = None
 
     @staticmethod
     def __set(cached_config: YouwolEnvironment):
-        YouwolEnvironmentFactory.__cached_config = cached_config
-        digest = compute_digest(
-            cached_config,
-            trace_path_root="YouwolEnvFactory__set",
-        )
-        YouwolEnvironmentFactory.__cached_config_digest = digest.hex()
+        YouwolEnvironmentFactory.__cached_env = cached_config
 
     @staticmethod
     async def get():
-        cached = YouwolEnvironmentFactory.__cached_config
+        cached = YouwolEnvironmentFactory.__cached_env
         config = cached or await YouwolEnvironmentFactory.init()
         return config
-
-    @staticmethod
-    def get_digest():
-        return YouwolEnvironmentFactory.__cached_config_digest
 
     @staticmethod
     async def load_from_file(
         path: Path, fwd_args_reload: FwdArgumentsReload | None = None
     ):
-        cached = YouwolEnvironmentFactory.__cached_config
+        cached = YouwolEnvironmentFactory.__cached_env
+        cached.stop()
         if fwd_args_reload.http_port and fwd_args_reload.http_port != cached.httpPort:
             raise ValueError(
                 "Can not `load_from_file` a Configuration that changes the serving HTTP port."
@@ -235,7 +293,8 @@ class YouwolEnvironmentFactory:
 
     @staticmethod
     async def reload(connection: Connection | None = None):
-        cached = YouwolEnvironmentFactory.__cached_config
+        cached = YouwolEnvironmentFactory.__cached_env
+        cached.stop()
         conf = await safe_load(
             path=cached.pathsBook.config,
             fwd_args_reload=FwdArgumentsReload(
@@ -255,26 +314,28 @@ class YouwolEnvironmentFactory:
 
         YouwolEnvironmentFactory.__set(conf)
         await YouwolEnvironmentFactory.trigger_on_load(config=conf)
-        return YouwolEnvironmentFactory.__cached_config
+        return YouwolEnvironmentFactory.__cached_env
 
     @staticmethod
     def clear_cache():
-        conf = YouwolEnvironmentFactory.__cached_config
+        current_env = YouwolEnvironmentFactory.__cached_env
         new_conf = YouwolEnvironment(
-            currentConnection=conf.currentConnection,
-            pathsBook=conf.pathsBook,
-            httpPort=conf.httpPort,
-            projects=conf.projects,
-            commands=conf.commands,
-            customMiddlewares=conf.customMiddlewares,
-            events=conf.events,
-            remotes=conf.remotes,
+            configuration=current_env.configuration,
+            currentConnection=current_env.currentConnection,
+            pathsBook=current_env.pathsBook,
+            httpPort=current_env.httpPort,
+            projects=current_env.projects,
+            commands=current_env.commands,
+            customMiddlewares=current_env.customMiddlewares,
+            events=current_env.events,
+            remotes=current_env.remotes,
             backends_configuration=native_backends_config(
-                local_http_port=conf.httpPort,
-                local_storage=conf.pathsBook.local_storage,
-                local_nosql=conf.pathsBook.databases / "docdb",
+                local_http_port=current_env.httpPort,
+                local_storage=current_env.pathsBook.local_storage,
+                local_nosql=current_env.pathsBook.databases / "docdb",
             ),
-            tokens_storage=conf.tokens_storage,
+            tokens_storage=current_env.tokens_storage,
+            browserCacheStore=current_env.browserCacheStore,
         )
         YouwolEnvironmentFactory.__set(new_conf)
 
@@ -292,6 +353,11 @@ class YouwolEnvironmentFactory:
 
         await install_routers(config.routers, context)
         await context.info(text="Additional routers installed")
+
+    @staticmethod
+    def stop_current_env():
+        if YouwolEnvironmentFactory.__cached_env:
+            YouwolEnvironmentFactory.__cached_env.stop()
 
 
 async def yw_config() -> YouwolEnvironment:
@@ -312,12 +378,24 @@ async def safe_load(
     - the user id saved in users-info.json is actually not the actual one (from remote env).
     => everything seems to work fine but the assets in remotes are not visible from local explorer
     """
-    check_system_folder_writable = CheckSystemFolderWritable()
-    check_database_folder_healthy = CheckDatabasesFolderHealthy()
+
+    config: Configuration = await configuration_from_python(path)
+    return await YouwolEnvironment.from_configuration(
+        config=config,
+        options=FwdArgumentsReload(
+            path=path,
+            token_storage=fwd_args_reload.token_storage,
+            remote_connection=fwd_args_reload.remote_connection,
+            http_port=fwd_args_reload.http_port,
+        ),
+    )
+
+
+def ensure_and_check_paths(paths_book: PathsBook):
 
     def get_status(validated: bool = False):
         return ConfigurationLoadingStatus(
-            path=str(path),
+            path=str(paths_book.config),
             validated=validated,
             checks=[
                 check_system_folder_writable,
@@ -325,18 +403,8 @@ async def safe_load(
             ],
         )
 
-    config: Configuration = await configuration_from_python(path)
-    system = config.system
-    config_projects = config.projects
-    customization = config.customization
-    data_dir = ensure_dir_exists(
-        system.localEnvironment.dataDir, root_candidates=app_dirs.user_data_dir
-    )
-    cache_dir = ensure_dir_exists(
-        system.localEnvironment.cacheDir, root_candidates=app_dirs.user_cache_dir
-    )
-
-    paths_book = PathsBook(config=path, databases=data_dir, system=cache_dir)
+    check_system_folder_writable = CheckSystemFolderWritable()
+    check_database_folder_healthy = CheckDatabasesFolderHealthy()
 
     if not os.access(paths_book.system.parent, os.W_OK):
         check_system_folder_writable.status = ErrorResponse(
@@ -363,41 +431,6 @@ async def safe_load(
     if not paths_book.packages_cache_path.exists():
         with open(paths_book.packages_cache_path, "w", encoding="UTF-8") as fp:
             json.dump({}, fp)
-
-    tokens_storage_conf = config.system.tokensStorage
-    if (
-        isinstance(tokens_storage_conf, TokensStoragePath)
-        or isinstance(tokens_storage_conf, TokensStorageSystemKeyring)
-        and not Path(tokens_storage_conf.path).is_absolute()
-    ):
-        tokens_storage_conf.path = cache_dir / tokens_storage_conf.path
-
-    fwd_args_reload = FwdArgumentsReload(
-        token_storage=fwd_args_reload.token_storage
-        or await tokens_storage_conf.get_tokens_storage(),
-        remote_connection=fwd_args_reload.remote_connection
-        or system.cloudEnvironments.defaultConnection,
-        http_port=fwd_args_reload.http_port or system.httpPort,
-    )
-
-    return YouwolEnvironment(
-        httpPort=fwd_args_reload.http_port,
-        routers=customization.endPoints.routers,
-        currentConnection=fwd_args_reload.remote_connection,
-        events=customization.events,
-        pathsBook=paths_book,
-        projects=ProjectsResolver.from_configuration(config_projects=config_projects),
-        commands={c.name: c for c in customization.endPoints.commands},
-        customMiddlewares=customization.middlewares,
-        remotes=system.cloudEnvironments.environments,
-        backends_configuration=native_backends_config(
-            local_http_port=system.httpPort,
-            local_storage=paths_book.local_storage,
-            local_nosql=paths_book.databases / "docdb",
-        ),
-        tokens_storage=fwd_args_reload.token_storage,
-        features=config.features,
-    )
 
 
 async def get_yw_config_starter(main_args: MainArguments):
