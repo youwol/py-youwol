@@ -67,6 +67,12 @@ class YouwolEnvironment(BaseModel):
     """
     Runtime environment of the server.
     """
+
+    configuration: Configuration
+    """
+    The configuration used to set up the environment.
+    """
+
     httpPort: int
     """
     Serving port,
@@ -77,6 +83,8 @@ class YouwolEnvironment(BaseModel):
     """
     Plugged events,
     defined from the [Configuration](@yw-nav-attr:Customization.events).
+
+    Deprecated, should be retrieved from attribute `configuration`.
     """
 
     customMiddlewares: list[CustomMiddleware]
@@ -84,6 +92,8 @@ class YouwolEnvironment(BaseModel):
     Custom middlewares,
     defined from the
      [Configuration](@yw-nav-attr:Customization.middlewares).
+
+    Deprecated, should be retrieved from attribute `configuration`.
     """
 
     projects: ProjectsResolver
@@ -96,6 +106,8 @@ class YouwolEnvironment(BaseModel):
     """
     The list of commands,
     defined from the [Configuration](@yw-nav-attr:CustomEndPoints.commands).
+
+    Deprecated, should be retrieved from attribute `configuration`.
     """
 
     currentConnection: Connection
@@ -107,6 +119,8 @@ class YouwolEnvironment(BaseModel):
     """
     The list of available remotes,
     defined from the [Configuration](@yw-nav-attr:System.cloudEnvironments).
+
+    Deprecated, should be retrieved from attribute `configuration`.
     """
 
     pathsBook: PathsBook
@@ -154,6 +168,7 @@ class YouwolEnvironment(BaseModel):
             tokens_storage_conf.path = cache_dir / tokens_storage_conf.path
 
         return YouwolEnvironment(
+            configuration=config,
             httpPort=options.http_port or system.httpPort,
             routers=customization.endPoints.routers,
             currentConnection=options.remote_connection
@@ -297,6 +312,7 @@ class YouwolEnvironmentFactory:
     def clear_cache():
         current_env = YouwolEnvironmentFactory.__cached_env
         new_conf = YouwolEnvironment(
+            configuration=current_env.configuration,
             currentConnection=current_env.currentConnection,
             pathsBook=current_env.pathsBook,
             httpPort=current_env.httpPort,
