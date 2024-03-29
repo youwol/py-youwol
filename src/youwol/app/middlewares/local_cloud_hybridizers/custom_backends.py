@@ -9,7 +9,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 # Youwol application
-from youwol.app.routers.environment import AssetDownloadThread
+from youwol.app.routers.environment import AssetsDownloader
 
 # Youwol utilities
 from youwol.utils import Context, encode_id
@@ -69,10 +69,10 @@ class DownloadBackend(AbstractLocalCloudDispatch):
             if not download_info.download_needed:
                 return await call_next(incoming_request)
 
-            download_thread = await ctx.get("download_thread", AssetDownloadThread)
+            assets_downloader = await ctx.get("assets_downloader", AssetsDownloader)
 
             await ctx.info("~> wait for asset download")
-            status = await download_thread.wait_asset(
+            status = await assets_downloader.wait_asset(
                 url=incoming_request.url.path, kind=kind, raw_id=raw_id, context=ctx
             )
             if not status.succeeded:

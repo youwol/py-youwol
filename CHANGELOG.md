@@ -59,6 +59,7 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 -  The `dev. portal` link proposed in the terminal at startup has been removed . <!-- TG-2233 -->
 
 <!-- Not worthy of inclusion
+TG-2251 : ♻️ [app] : simplify AssetDownloadThread
 TG-2230 : ⚰️ [app.env] => remove `py_youwol_tour` configs
 TG-2091 : 🔥 [app.env] => remove deprecated re-export
 TG-1218 : 🥅 [backends.cdn] => robustify semver resolution.

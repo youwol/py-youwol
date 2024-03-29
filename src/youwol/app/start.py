@@ -20,7 +20,7 @@ from youwol.app.routers.projects import ProjectLoader
 from youwol.utils import is_server_http_alive
 
 # relative
-from .fastapi_app import cleaner_thread, download_thread, fastapi_app
+from .fastapi_app import cleaner_thread, fastapi_app
 from .main_args import get_main_arguments
 
 
@@ -40,13 +40,6 @@ def start(shutdown_script_path: Path | None = None):
         raise e
 
     assert_free_http_port(http_port=env.httpPort)
-
-    try:
-        download_thread.go()
-    except BaseException as e:
-        print("Error while starting download thread")
-        print("".join(traceback.format_exception(type(e), value=e, tb=e.__traceback__)))
-        raise e
 
     try:
         cleaner_thread.go()
@@ -70,7 +63,6 @@ def start(shutdown_script_path: Path | None = None):
         print("".join(traceback.format_exception(type(e), value=e, tb=e.__traceback__)))
         raise e
     finally:
-        download_thread.join()
         cleaner_thread.join()
         ProjectLoader.stop()
         YouwolEnvironmentFactory.stop_current_env()

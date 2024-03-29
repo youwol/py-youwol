@@ -6,7 +6,7 @@ from starlette.responses import Response
 # Youwol application
 from youwol.app.environment import LocalClients, YouwolEnvironment
 from youwol.app.routers.environment.download_assets.auto_download_thread import (
-    AssetDownloadThread,
+    AssetsDownloader,
 )
 from youwol.app.routers.router_remote import redirect_api_remote
 
@@ -86,8 +86,8 @@ class Download(AbstractLocalCloudDispatch):
             raw_id = decode_id(asset_id)
         env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
         async with context.start(action="Download.apply") as ctx:
-            download_thread = await ctx.get("download_thread", AssetDownloadThread)
-            is_downloading = download_thread.is_downloading(
+            assets_downloader = await ctx.get("assets_downloader", AssetsDownloader)
+            is_downloading = assets_downloader.is_downloading(
                 url=incoming_request.url.path, kind=kind, raw_id=raw_id, env=env
             )
             # if downloading => do not try fetching the asset from local-db (the asset can be in invalid state).
@@ -103,7 +103,7 @@ class Download(AbstractLocalCloudDispatch):
                 )
                 resp = await redirect_api_remote(incoming_request, ctx)
                 resp.headers[YouwolHeaders.youwol_origin] = env.get_remote_info().host
-                is_downloading = download_thread.is_downloading(
+                is_downloading = assets_downloader.is_downloading(
                     url=incoming_request.url.path, kind=kind, raw_id=raw_id, env=env
                 )
                 # if by the time the remote api call responded the asset is already downloading
@@ -111,7 +111,7 @@ class Download(AbstractLocalCloudDispatch):
                 if is_downloading:
                     return resp
                 await ctx.info("~> schedule asset download")
-                download_thread.enqueue_asset(
+                await assets_downloader.enqueue_asset(
                     url=incoming_request.url.path, kind=kind, raw_id=raw_id, context=ctx
                 )
                 return resp
