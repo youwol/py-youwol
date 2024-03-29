@@ -431,8 +431,8 @@ async def package_info(request: Request, name: str) -> JSONResponse:
         )
 
         async with ClientSession(auto_decompress=True) as session:
-            black_list = ["host", "referer", "cookie"]
-            headers = {h: k for h, k in request.headers.items() if h not in black_list}
+            # this header is taken from `micropip` when it queries the same URL.
+            headers = {"Accept": "application/vnd.pypi.simple.v1+json, */*;q=0.01"}
             async with await session.get(url=url, headers=headers) as response:
                 headers_resp = dict(response.headers.items())
                 content = await response.json()
