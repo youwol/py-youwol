@@ -14,13 +14,12 @@ from youwol.app.environment.youwol_environment import (
     YouwolEnvironmentFactory,
     print_invite,
 )
-from youwol.app.routers.projects import ProjectLoader
 
 # Youwol utilities
 from youwol.utils import is_server_http_alive
 
 # relative
-from .fastapi_app import cleaner_thread, fastapi_app
+from .fastapi_app import fastapi_app
 from .main_args import get_main_arguments
 
 
@@ -41,13 +40,6 @@ def start(shutdown_script_path: Path | None = None):
 
     assert_free_http_port(http_port=env.httpPort)
 
-    try:
-        cleaner_thread.go()
-    except BaseException as e:
-        print("Error while starting cleaner thread")
-        print("".join(traceback.format_exception(type(e), value=e, tb=e.__traceback__)))
-        raise e
-
     print_invite(conf=env, shutdown_script_path=shutdown_script_path)
 
     try:
@@ -63,9 +55,5 @@ def start(shutdown_script_path: Path | None = None):
         print("".join(traceback.format_exception(type(e), value=e, tb=e.__traceback__)))
         raise e
     finally:
-        cleaner_thread.join()
-        ProjectLoader.stop()
-        YouwolEnvironmentFactory.stop_current_env()
-
         if shutdown_script_path is not None:
             shutdown_script_path.unlink(missing_ok=True)

@@ -1,5 +1,6 @@
 # standard library
 import asyncio
+import traceback
 
 # third parties
 from fastapi import Depends, FastAPI, WebSocket
@@ -17,6 +18,7 @@ from youwol.app.environment import (
     JwtProviderCookieDynamicIssuer,
     JwtProviderPyYouwol,
     YouwolEnvironment,
+    YouwolEnvironmentFactory,
     api_configuration,
     yw_config,
 )
@@ -341,11 +343,21 @@ def setup_exceptions_handlers():
 
 @fastapi_app.on_event("startup")
 async def startup_event():
+    try:
+        cleaner_thread.go()
+    except BaseException as e:
+        print("Error while starting cleaner thread")
+        print("".join(traceback.format_exception(type(e), value=e, tb=e.__traceback__)))
+        raise e
+
     await assets_downloader.start_workers()
 
 
 @fastapi_app.on_event("shutdown")
 async def shutdown_event():
+    cleaner_thread.join()
+    ProjectLoader.stop()
+    YouwolEnvironmentFactory.stop_current_env()
     await assets_downloader.stop_workers()
 
 
