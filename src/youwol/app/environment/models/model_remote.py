@@ -6,13 +6,6 @@ and authorizations.
 # third parties
 from pydantic import BaseModel
 
-# Youwol application
-from youwol.app.environment.models.defaults import (
-    default_path_cache_dir,
-    default_path_data_dir,
-)
-from youwol.app.environment.models.models import ConfigPath
-
 # Youwol utilities
 from youwol.utils.clients.oidc.oidc_config import PrivateClient, PublicClient
 
@@ -210,49 +203,4 @@ class CloudEnvironments(BaseModel):
     environments: list[CloudEnvironment]
     """
     Available (YouWol) cloud environments with which youwol can connect.
-    """
-
-
-class LocalEnvironment(BaseModel):
-    """
-    Path of folders on disk to store data.
-    If paths are relatives, they are referenced with respect to the parent folder of the configuration file.
-
-    Example:
-        <code-snippet language="python">
-        from pathlib import Path
-
-        from youwol.app.environment import (
-                Configuration,
-                System,
-                LocalEnvironment
-            )
-
-        Configuration(
-            system=System(
-                localEnvironment=LocalEnvironment(
-                    dataDir=Path.home() / 'youwol' / 'data',
-                    cacheDir=Path.home() / 'youwol' / 'cache'
-                )
-            )
-        )
-        </code-snippet>
-
-    """
-
-    dataDir: ConfigPath = default_path_data_dir
-    """
-    Defines folder location in which persisted data are saved.
-
-    See [default_path_data_dir](@yw-nav-glob:default_path_data_dir)
-     regarding default value.
-    value.
-    """
-
-    cacheDir: ConfigPath = default_path_cache_dir
-    """
-    Defines folder location of cached data.
-
-    See [default_path_cache_dir](@yw-nav-glob:default_path_cache_dir)
-     regarding default value.
     """
