@@ -21,7 +21,7 @@ from starlette.requests import Request
 # Youwol application
 from youwol.app.environment import YouwolEnvironment
 from youwol.app.environment.proxied_backends import ProxiedBackend
-from youwol.app.routers.environment import AssetDownloadThread
+from youwol.app.routers.environment import AssetsDownloader
 from youwol.app.routers.environment.router import emit_environment_status
 from youwol.app.routers.local_cdn.router import package_info
 from youwol.app.web_socket import LogsStreamer
@@ -400,7 +400,7 @@ async def download_install_backend(
         with_attributes={"backend": backend_name, "version": version},
     ) as ctx:
         env = await ctx.get("env", YouwolEnvironment)
-        download_thread = await ctx.get("download_thread", AssetDownloadThread)
+        assets_downloader = await ctx.get("assets_downloader", AssetsDownloader)
 
         folder = env.pathsBook.local_cdn_component(name=backend_name, version=version)
         if not folder.exists():
@@ -409,7 +409,7 @@ async def download_install_backend(
                     name=backend_name, version=version, event="started"
                 )
             )
-            status = await download_thread.wait_asset(
+            status = await assets_downloader.wait_asset(
                 url=url, kind="package", raw_id=encode_id(backend_name), context=ctx
             )
             if not status.succeeded:

@@ -1,5 +1,6 @@
 # standard library
 import asyncio
+import traceback
 
 # third parties
 from fastapi import Depends, FastAPI, WebSocket
@@ -17,12 +18,13 @@ from youwol.app.environment import (
     JwtProviderCookieDynamicIssuer,
     JwtProviderPyYouwol,
     YouwolEnvironment,
+    YouwolEnvironmentFactory,
     api_configuration,
     yw_config,
 )
 from youwol.app.middlewares import BrowserMiddleware, LocalCloudHybridizerMiddleware
 from youwol.app.routers import admin, backends, native_backends, python
-from youwol.app.routers.environment import AssetDownloadThread
+from youwol.app.routers.environment import AssetsDownloader
 from youwol.app.routers.environment.download_assets import (
     DownloadDataTask,
     DownloadFluxProjectTask,
@@ -74,7 +76,7 @@ The application is instrumented in the [create_app](@yw-nav-func:youwol.app.fast
 """
 
 
-download_thread = AssetDownloadThread(
+assets_downloader = AssetsDownloader(
     factories={
         "package": DownloadPackageTask,
         "flux-project": DownloadFluxProjectTask,
@@ -90,7 +92,7 @@ cleaner_thread = CleanerThread()
 auth_cache = factory_local_cache(cleaner_thread, "auth_cache")
 ContextFactory.with_static_data = {
     "env": yw_config,
-    "download_thread": download_thread,
+    "assets_downloader": assets_downloader,
     "cleaner_thread": cleaner_thread,
     "auth_cache": auth_cache,
     "fastapi_app": lambda: fastapi_app,
@@ -337,6 +339,26 @@ def setup_exceptions_handlers():
     @fastapi_app.exception_handler(Exception)
     async def unexpected_exception(request: Request, exc: Exception):
         return await unexpected_exception_handler(request, exc)
+
+
+@fastapi_app.on_event("startup")
+async def startup_event():
+    try:
+        cleaner_thread.go()
+    except BaseException as e:
+        print("Error while starting cleaner thread")
+        print("".join(traceback.format_exception(type(e), value=e, tb=e.__traceback__)))
+        raise e
+
+    await assets_downloader.start_workers()
+
+
+@fastapi_app.on_event("shutdown")
+async def shutdown_event():
+    cleaner_thread.join()
+    ProjectLoader.stop()
+    YouwolEnvironmentFactory.stop_current_env()
+    await assets_downloader.stop_workers()
 
 
 async def create_app():
