@@ -185,9 +185,10 @@ async def list_all_versions_with_cache(
             lib for lib in extra_elements if lib.version not in versions_resp.versions
         ]
         versions = sorted(
-            [*versions_resp.versions, *[lib.version for lib in extra_libs]]
+            [*versions_resp.versions, *[lib.version for lib in extra_libs]],
+            key=get_version_number,
+            reverse=True,
         )
-        versions.reverse()
         versions_resp = ListVersionsResponse(
             name=versions_resp.name,
             id=versions_resp.id,

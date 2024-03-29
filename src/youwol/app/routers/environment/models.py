@@ -76,7 +76,7 @@ class CloudEnvironmentResponse(BaseModel):
 
 class SwitchConfigurationBody(BaseModel):
     """
-    Body of the endpoint [`admin.environment.configuration.switch`](@yw-nav-func:switch_configuration).
+    Body model of the endpoint [`POST:/admin/environment/configuration/switch`](@yw-nav-func:switch_configuration).
     """
 
     url: str
@@ -90,6 +90,10 @@ class SwitchResponse(BaseModel):
 
 
 class LoginBody(BaseModel):
+    """
+    Body model of the endpoint [`POST:/admin/environment/login`](@yw-nav-func:router.login).
+    """
+
     authId: str | None
     """
     Id of the authentication, need to be referenced in the configuration file under the

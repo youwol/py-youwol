@@ -114,6 +114,10 @@ class Download(AbstractLocalCloudDispatch):
                 await assets_downloader.enqueue_asset(
                     url=incoming_request.url.path, kind=kind, raw_id=raw_id, context=ctx
                 )
+                if match[0] == "package":
+                    # resources in cdn-backend are cached within YouWol's `BrowserCacheState`.
+                    # Browser's cache interfere with it and need to be disabled.
+                    resp.headers.update({"cache-control": "no-cache, no-store"})
                 return resp
             resp.headers[YouwolHeaders.youwol_origin] = incoming_request.url.hostname
             return resp
