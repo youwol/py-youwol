@@ -23,22 +23,10 @@ from youwol.utils import Context, parse_json
 
 # Youwol pipelines
 from youwol.pipelines import (
-    CdnTarget,
+    Environment,
     PublishCdnLocalStep,
     create_sub_pipelines_publish_cdn,
 )
-
-
-class Environment(BaseModel):
-    """
-    Specifies the remote CDN targets in which the pipeline publish (using
-    [set_environment](@yw-nav-function:youwol.pipelines.pipeline_raw_app.set_environment)).
-    """
-
-    cdnTargets: list[CdnTarget] = []
-    """
-    The list of (remote) CDN targets.
-    """
 
 
 def set_environment(environment: Environment = Environment()):
