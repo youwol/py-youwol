@@ -63,6 +63,7 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 -  The `dev. portal` link proposed in the terminal at startup has been removed . <!-- TG-2233 -->
 
 <!-- Not worthy of inclusion
+TG-2262 : 🐛 [app] fix backends install can be executed twice
 TG-2260 : 🐛 [app] missing update signals from web sockets
 TG-2261 : 🐛 [app] missing actual method call in `file_path.exists`
 TG-2255 : 🐛 [pipeline.py_backend] => fix missing WS status update
