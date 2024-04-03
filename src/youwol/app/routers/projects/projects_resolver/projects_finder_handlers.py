@@ -146,9 +146,7 @@ class ProjectsWatcherEventsHandler(PatternMatchingEventHandler):
     """
 
     def __init__(
-        self,
-        owner: ProjectsFinderImpl,
-        ignored_patterns: list[str],
+        self, owner: ProjectsFinderImpl, ignored_patterns: list[str], from_path: Path
     ):
         """
         Initialize a new instance.
@@ -157,11 +155,16 @@ class ProjectsWatcherEventsHandler(PatternMatchingEventHandler):
             owner: The owner instance responsible for handling updates on project counts.
             ignored_patterns: A list of glob patterns to ignore regarding folders.
                 Folders matching these patterns will not trigger events.
+            from_path: The path from which projects' path are expressed.
+                E.g., if referencing a symbolic link, notification to the [owner](@yw-nav-class:ProjectsFinderImpl)
+                are expressed with it (and not from its absolute counterpart).
 
         Parameters are set as class attributes.
         """
         super().__init__(ignore_patterns=ignored_patterns)
         self.owner = owner
+        self.from_path = from_path
+        self.from_path_absolute = self.from_path.resolve()
 
     def on_created(self, event: FileSystemEvent):
         """
@@ -190,11 +193,11 @@ class ProjectsWatcherEventsHandler(PatternMatchingEventHandler):
             log_info(f"ProjectsWatcherEventsHandler project deleted: {project_path}")
             asyncio.run(self.owner.trigger_update(([], [project_path])))
 
-    @staticmethod
-    def project_path(event: FileSystemEvent) -> Path | None:
+    def project_path(self, event: FileSystemEvent) -> Path | None:
         """
         A utility method to extract the project path from the event's source path if the event represents
-        a project creation or deletion.
+        a project creation or deletion. Returned paths are expressed using the `from_path` attribute provided at
+        initialization (which can involved symbolic link).
 
         Parameters:
             event: source event
@@ -204,7 +207,10 @@ class ProjectsWatcherEventsHandler(PatternMatchingEventHandler):
         """
         path = Path(event.src_path)
         if path.name == "yw_pipeline.py" and path.parent.name == ".yw_pipeline":
-            return path.parent.parent
+            project_absolute_path = path.parent.parent
+            return self.from_path / project_absolute_path.relative_to(
+                self.from_path_absolute
+            )
 
         return None
 
@@ -259,7 +265,9 @@ class ProjectsWatcher(Thread):
         """
         observer = Observer()
         self.event_handler = ProjectsWatcherEventsHandler(
-            owner=self.owner, ignored_patterns=self.ignored_patterns
+            owner=self.owner,
+            ignored_patterns=self.ignored_patterns,
+            from_path=self.from_path,
         )
         observer.schedule(self.event_handler, str(self.from_path), recursive=True)
         observer.start()

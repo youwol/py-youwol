@@ -51,6 +51,8 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
   <!-- TG-2232 -->
 - Addressed an issue where version resolution was inaccurately handled under specific scenarios within the
   `cdn-backend` service. <!-- TG-2244 -->
+- Addressed an issue related to symbolic links resolution concerning ProjectsFinder when auto-discovery is enabled. 
+  <!-- TG-2270 -->
 
 ### Security
 
