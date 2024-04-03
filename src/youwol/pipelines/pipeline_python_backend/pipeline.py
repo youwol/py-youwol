@@ -213,7 +213,7 @@ class DependenciesStep(PipelineStep):
             cmd = (
                 f"(python3 -m venv {VENV_NAME} "
                 f"&& . {VENV_NAME}/bin/activate "
-                f"&& pip install -r ./requirements.txt)"
+                f"&& pip install --force-reinstall -r ./requirements.txt)"
             )
 
             await execute_shell_cmd(cmd=cmd, context=context, cwd=project.path)
@@ -242,6 +242,7 @@ async def stop_backend(project: Project, context: Context):
             await env.proxied_backends.terminate(
                 name=project.name, version=project.version, context=ctx
             )
+            await emit_environment_status(context=ctx)
             return {"status": "backend terminated"}
 
         return {"status": "backend or PID not found"}

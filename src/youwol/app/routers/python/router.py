@@ -294,6 +294,7 @@ async def try_local(info: ResourceInfo, context: Context) -> Response | None:
             headers=context.headers(),
             custom_reader=aiohttp_to_starlette_response,
         )
+        # This header will most likely be mutated by `BrowserCacheStore` as CDN resources are cached in usual scenarios.
         resp.headers.append("youwol-origin", "local")
         return resp
     except HTTPException as e:
@@ -357,6 +358,7 @@ async def get_and_persist_resource(
                 url=target_url, headers=headers
             ) as resp_head:
                 headers_resp = dict(resp_head.headers.items())
+                headers_resp["Cache-Control"] = "no-cache, no-store"
 
         return StreamingResponse(process_response(), headers=headers_resp)
 

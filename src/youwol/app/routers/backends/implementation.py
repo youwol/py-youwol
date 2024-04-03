@@ -168,10 +168,6 @@ async def install_backend_shell(
         cmd_install = f"(cd {folder} &&  sh ./install.sh)"
 
         return_code, outputs = await execute_shell_cmd(cmd=cmd_install, context=ctx)
-        if return_code > 0:
-            (folder / INSTALL_MANIFEST_FILE).write_text(
-                functools.reduce(lambda acc, e: acc + e, outputs, "")
-            )
         if return_code > 1:
             await ctx.send(
                 InstallBackendEvent(
@@ -181,6 +177,9 @@ async def install_backend_shell(
             raise InstallBackendFailed(
                 return_code=return_code, outputs=outputs, ctx_id=context.uid
             )
+        (folder / INSTALL_MANIFEST_FILE).write_text(
+            functools.reduce(lambda acc, e: acc + e, outputs, "")
+        )
 
         await ctx.send(
             InstallBackendEvent(
@@ -285,7 +284,7 @@ async def ensure_running(
         if not matching_versions:
             raise HTTPException(
                 status_code=404,
-                detail=f"No matching version fo  '{backend_name}' match selector ${version_query}",
+                detail=f"No matching version for '{backend_name}' match selector {version_query}",
             )
 
         latest_version_backend = sorted(matching_versions, key=Version, reverse=True)[0]
@@ -300,9 +299,6 @@ async def ensure_running(
                 name=backend_name,
                 version=latest_version_backend,
                 context=ctx,
-            )
-            (folder / INSTALL_MANIFEST_FILE).write_text(
-                functools.reduce(lambda acc, e: acc + e, install_outputs, "")
             )
         else:
             install_outputs = [f"Backend {backend_name} already installed"]
@@ -428,7 +424,7 @@ async def download_install_backend(
                 )
             )
         folder = env.pathsBook.local_cdn_component(name=backend_name, version=version)
-        if not (folder / ".venv").exists():
+        if not (folder / INSTALL_MANIFEST_FILE).exists():
             await install_backend_shell(
                 folder=folder, name=backend_name, version=version, context=ctx
             )

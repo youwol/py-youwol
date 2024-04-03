@@ -62,8 +62,10 @@ from youwol.utils.http_clients.cdn_backend.utils import (
 )
 
 # Youwol pipelines
-import youwol.pipelines.pipeline_typescript_weback_npm as pipeline_ts
+import youwol.pipelines.pipeline_python_backend as pipeline_py_backend
+import youwol.pipelines.pipeline_raw_app as pipeline_raw
 
+from youwol.pipelines import Environment
 from youwol.pipelines.pipeline_typescript_weback_npm import (
     app_ts_webpack_template,
     lib_ts_webpack_template,
@@ -278,7 +280,7 @@ async def erase_all_test_data_remote(context: Context):
         return {"items": resp["items"]}
 
 
-pipeline_ts.set_environment()
+pipeline_raw.set_environment(Environment(cdnTargets=[]))
 
 
 def apply_test_labels_logs(body, _ctx):
@@ -393,6 +395,7 @@ class ConfigurationFactory(IConfigurationFactory):
                 templates=[
                     lib_ts_webpack_template(folder=projects_folder),
                     app_ts_webpack_template(folder=projects_folder),
+                    pipeline_py_backend.template(folder=projects_folder),
                 ],
             ),
             customization=Customization(

@@ -27,7 +27,9 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
   -  explicit local installation on `admin/system/backends/install` using CDN's loading graph response. <!-- TG-2205 -->
 - **Pyodide components**:
   -  intercept Pyodide resources requests to store them within the local CDN database. <!-- TG-2238 -->
-  
+- **Pipelines**:
+  -  configured by default to publish in connected remote and public NPM (if applicable). <!-- TG-2254 --> 
+
 ### Changed
 
 - **Breaking:** Refactor the `ProjectsFinder` API and its associated implementation to improve performance and
@@ -61,6 +63,13 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 -  The `dev. portal` link proposed in the terminal at startup has been removed . <!-- TG-2233 -->
 
 <!-- Not worthy of inclusion
+TG-2265 : 🐛 [pipeline.py_backend] fix self-contained venvs.
+TG-2264 : 🐛 [pipeline.py_backend] fix wrong path from `generate_template`
+TG-2263 : 🐛 [app.projects] fix duplicate issue in projects list response
+TG-2262 : 🐛 [app] fix backends install can be executed twice
+TG-2260 : 🐛 [app] missing update signals from web sockets
+TG-2261 : 🐛 [app] missing actual method call in `file_path.exists`
+TG-2255 : 🐛 [pipeline.py_backend] => fix missing WS status update
 TG-2252 : 🐛 [app] set `no-cache` for downloaded components.
 TG-2251 : ♻️ [app] : simplify AssetDownloadThread
 TG-2230 : ⚰️ [app.env] => remove `py_youwol_tour` configs

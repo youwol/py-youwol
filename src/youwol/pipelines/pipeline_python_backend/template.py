@@ -145,7 +145,7 @@ async def generate_template(folder: Path, parameters: dict[str, str], context: C
             dst=project_folder / ".yw_pipeline",
         )
 
-        return parameters["name"], folder
+        return parameters["name"], project_folder
 
 
 PY_ICON = (

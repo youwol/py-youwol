@@ -112,6 +112,9 @@ class ProjectLoader:
         """
         Retrieves the current loading status including projects and failures.
         """
+        ProjectLoader.projects_list = list(
+            {p.path: p for p in ProjectLoader.projects_list}.values()
+        )
         return ProjectsLoadingResults(
             results=ProjectLoader.projects_list, failures=ProjectLoader.failures_report
         )

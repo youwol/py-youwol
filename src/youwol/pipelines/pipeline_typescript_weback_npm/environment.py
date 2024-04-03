@@ -1,17 +1,16 @@
 # standard library
 from collections.abc import Callable
 
-# third parties
-from pydantic import BaseModel
-
 # Youwol pipelines
-from youwol.pipelines import CdnTarget
-from youwol.pipelines.pipeline_typescript_weback_npm.common.models import NpmRepo
+from youwol.pipelines import Environment as CdnBaseEnv
+from youwol.pipelines.pipeline_typescript_weback_npm.common.models import (
+    NpmRepo,
+    PublicNpmRepo,
+)
 
 
-class Environment(BaseModel):
-    cdnTargets: list[CdnTarget] = []
-    npmTargets: list[NpmRepo] = []
+class Environment(CdnBaseEnv):
+    npmTargets: list[NpmRepo] = [PublicNpmRepo(name="public")]
 
 
 def set_environment(environment: Environment = Environment()):
