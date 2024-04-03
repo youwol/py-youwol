@@ -85,6 +85,12 @@ class Download(AbstractLocalCloudDispatch):
             asset_id = raw_id
             raw_id = decode_id(asset_id)
         env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
+
+        def apply_from_remote_headers(response: Response):
+            response.headers[YouwolHeaders.youwol_origin] = env.get_remote_info().host
+            if match[0] == "package":
+                response.headers.update({"cache-control": "no-cache, no-store"})
+
         async with context.start(action="Download.apply") as ctx:
             assets_downloader = await ctx.get("assets_downloader", AssetsDownloader)
             is_downloading = assets_downloader.is_downloading(
@@ -92,8 +98,9 @@ class Download(AbstractLocalCloudDispatch):
             )
             # if downloading => do not try fetching the asset from local-db (the asset can be in invalid state).
             if is_downloading:
+                await ctx.info("~> Resource is already downloading")
                 resp = await redirect_api_remote(incoming_request, ctx)
-                resp.headers[YouwolHeaders.youwol_origin] = env.get_remote_info().host
+                apply_from_remote_headers(resp)
                 return resp
 
             resp = await call_next(incoming_request)
@@ -102,22 +109,19 @@ class Download(AbstractLocalCloudDispatch):
                     "Raw data can not be locally retrieved, proceed to remote platform"
                 )
                 resp = await redirect_api_remote(incoming_request, ctx)
-                resp.headers[YouwolHeaders.youwol_origin] = env.get_remote_info().host
+                apply_from_remote_headers(resp)
                 is_downloading = assets_downloader.is_downloading(
                     url=incoming_request.url.path, kind=kind, raw_id=raw_id, env=env
                 )
                 # if by the time the remote api call responded the asset is already downloading
                 # => do not enqueue download
                 if is_downloading:
+                    await ctx.info("~> Resource is already downloading")
                     return resp
                 await ctx.info("~> schedule asset download")
                 await assets_downloader.enqueue_asset(
                     url=incoming_request.url.path, kind=kind, raw_id=raw_id, context=ctx
                 )
-                if match[0] == "package":
-                    # resources in cdn-backend are cached within YouWol's `BrowserCacheState`.
-                    # Browser's cache interfere with it and need to be disabled.
-                    resp.headers.update({"cache-control": "no-cache, no-store"})
                 return resp
             resp.headers[YouwolHeaders.youwol_origin] = incoming_request.url.hostname
             return resp
