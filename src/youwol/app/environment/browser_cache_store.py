@@ -199,7 +199,7 @@ class BrowserCacheStore:
 
         item = self._items[key]
         file_path = Path(item.file)
-        if not file_path.exists:
+        if not file_path.exists():
             self._items.pop(key)
             return
 

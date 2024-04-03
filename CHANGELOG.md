@@ -63,6 +63,7 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 -  The `dev. portal` link proposed in the terminal at startup has been removed . <!-- TG-2233 -->
 
 <!-- Not worthy of inclusion
+TG-2261 : 🐛 [app] missing actual method call in `file_path.exists`
 TG-2255 : 🐛 [pipeline.py_backend] => fix missing WS status update
 TG-2252 : 🐛 [app] set `no-cache` for downloaded components.
 TG-2251 : ♻️ [app] : simplify AssetDownloadThread
