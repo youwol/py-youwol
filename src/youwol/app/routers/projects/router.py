@@ -30,6 +30,7 @@ from youwol.utils.utils_paths import parse_json, write_json
 from .dependencies import resolve_project_dependencies
 from .implementation import (
     create_artifacts,
+    emit_projects_status,
     format_artifact_response,
     get_project_configuration,
     get_project_flow_steps,
@@ -84,9 +85,7 @@ async def status(request: Request) -> ProjectsLoadingResults:
     async with Context.start_ep(
         request=request, with_reporters=[LogsStreamer()]
     ) as ctx:
-        response = ProjectLoader.status()
-        await ctx.send(response)
-        return response
+        return await emit_projects_status(context=ctx)
 
 
 @router.post(

@@ -38,7 +38,8 @@ from youwol.app.environment import (
 )
 from youwol.app.environment.models import predefined_configs
 from youwol.app.environment.proxied_backends import ProxyInfo
-from youwol.app.routers.projects import ProjectLoader
+from youwol.app.routers.local_cdn import emit_local_cdn_status
+from youwol.app.routers.projects import ProjectLoader, emit_projects_status
 from youwol.app.web_socket import LogsStreamer
 
 # Youwol utilities
@@ -219,6 +220,18 @@ class EnvironmentStatusResponse(BaseModel):
     """
 
 
+async def on_env_changed(
+    env: YouwolEnvironment, context: Context
+) -> EnvironmentStatusResponse:
+    await ProjectLoader.initialize(env=env)
+    env_status, _, _ = await asyncio.gather(
+        emit_environment_status(context=context),
+        emit_local_cdn_status(context=context),
+        emit_projects_status(context=context),
+    )
+    return env_status
+
+
 @router.get("/cow-say", response_class=PlainTextResponse, summary="status")
 async def cow_say():
     #  https://github.com/bmc/fortunes/
@@ -275,8 +288,7 @@ async def reload_configuration(
         with_reporters=[LogsStreamer()],
     ) as ctx:
         env = await YouwolEnvironmentFactory.reload()
-        asyncio.ensure_future(ProjectLoader.initialize(env=env))
-        return await emit_environment_status(context=ctx)
+        return await on_env_changed(env=env, context=ctx)
 
 
 @router.get(
@@ -306,8 +318,7 @@ async def load_predefined_config_file(request: Request, rest_of_path: str):
                     token_storage=env.tokens_storage, http_port=env.httpPort
                 ),
             )
-            asyncio.ensure_future(ProjectLoader.initialize(env=env))
-            return await emit_environment_status(context=ctx)
+            return await on_env_changed(env=env, context=ctx)
 
 
 @router.post(
@@ -363,8 +374,7 @@ async def switch_configuration(
                     ),
                 )
 
-                asyncio.ensure_future(ProjectLoader.initialize(env=env))
-                return await emit_environment_status(context=ctx)
+                return await on_env_changed(env=env, context=ctx)
 
 
 async def emit_environment_status(context: Context) -> EnvironmentStatusResponse:

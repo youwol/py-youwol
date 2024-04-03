@@ -34,6 +34,13 @@ from .models_project import (
     Project,
 )
 from .projects_resolver import ProjectLoader
+from .projects_resolver.projects_loader import ProjectsLoadingResults
+
+
+async def emit_projects_status(context: Context) -> ProjectsLoadingResults:
+    response = ProjectLoader.status()
+    await context.send(response)
+    return response
 
 
 def is_step_running(
