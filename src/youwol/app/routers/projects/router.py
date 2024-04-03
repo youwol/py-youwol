@@ -679,6 +679,11 @@ async def new_project_from_template(
         await ctx.info(text="Found template generator", data=template)
         _, path = await template.generator(template.folder, body.parameters, ctx)
 
+        project = next((p for p in ProjectLoader.projects_list if p.path == path), None)
+        if project:
+            # The projects finder already got the project creation (watch is True)
+            return project
+
         response = await ProjectLoader.refresh(ctx)
         await ctx.send(response)
 
