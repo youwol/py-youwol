@@ -242,6 +242,7 @@ async def stop_backend(project: Project, context: Context):
             await env.proxied_backends.terminate(
                 name=project.name, version=project.version, context=ctx
             )
+            await emit_environment_status(context=ctx)
             return {"status": "backend terminated"}
 
         return {"status": "backend or PID not found"}
