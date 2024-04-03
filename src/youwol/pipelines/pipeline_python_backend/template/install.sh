@@ -24,5 +24,5 @@ python3 -m venv .venv || exit 1
 
 # Install wheel from ./dist folder
 echo "Installing module from wheel..."
-pip install "./dist/$name-$version-py3-none-any.whl" || exit 1
+pip install --force-reinstall "./dist/$name-$version-py3-none-any.whl" || exit 1
 exit 0
