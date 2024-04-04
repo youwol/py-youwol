@@ -59,6 +59,7 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 - **Dependencies vulnerabilities**:
   - On `doc/front-app`: fix [GHSA-cxjh-pqwp-8mfp] <!-- TG-2225 -->
   - [CVE-2024-21503] upgrade `black` to 24.3.0 <!-- TG-2234 -->
+  - [GHSA-44wm-f244-xhp3] upgrade `pillow` to 10.3.0 <!-- TG-2271 -->
 
 ### Removed
 
