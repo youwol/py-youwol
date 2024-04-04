@@ -175,6 +175,7 @@ class BrowserCacheStore:
         `True`.
         *  The key computed from the incoming request is associated to an item in the cache.
         *  The file associated to the item does exist on the disk.
+        *  The content-length of the file did not change since the original publication.
 
         Parameters:
             request: The incoming request.
@@ -226,6 +227,16 @@ class BrowserCacheStore:
             return BrowserCacheResponse(response=response, item=item)
 
         content = file_path.read_bytes()
+        if (
+            "content-length" in item.headers
+            and str(len(content)) != item.headers["content-length"]
+        ):
+            await context.warning(
+                text=f"The resource at {file_path} was initially chosen for caching, but its content has since changed",
+                data=item,
+            )
+            return
+
         response = Response(
             status_code=200,
             content=content,
@@ -318,6 +329,7 @@ class BrowserCacheStore:
 
         corrupted = []
         expired = []
+        duplicates = False
 
         def sanity_check(item: BrowserCacheItem | None):
             if not item or not Path(item.file).exists():
@@ -328,6 +340,8 @@ class BrowserCacheStore:
                 expired.append(item)
                 return False
             return True
+
+        max_count = self.yw_config.system.browserEnvironment.cache.maxCount
 
         with open(self._output_file_path, encoding="UTF-8") as file:
             content = file.read()
@@ -340,16 +354,29 @@ class BrowserCacheStore:
             log_info(
                 message=f"BrowserCacheStore: loaded {len(items)} documents from {self._output_file_path}"
             )
+            if len(self._items.keys()) != len(items):
+                log_info(
+                    message=f"BrowserCacheStore: found {len(items) - len(self._items.keys())} duplicated items, "
+                    f"only the latest will be kept."
+                )
+                duplicates = True
+
+            if len(self._items.keys()) > max_count:
+                log_info(
+                    message=f"BrowserCacheStore: maximum count of cached items reached "
+                    f"({self._items.keys()}/{max_count})."
+                )
+
             if corrupted:
                 log_info(
                     message=f"BrowserCacheStore: found {len(corrupted)} corrupted items, proceed to remove them"
                 )
 
-        max_count = self.yw_config.system.browserEnvironment.cache.maxCount
-        if corrupted or expired or len(items) > max_count:
-            with open(self._output_file_path, "a", encoding="UTF-8") as fp:
+        if duplicates or corrupted or expired or len(items) > max_count:
+            with open(self._output_file_path, "w", encoding="UTF-8") as fp:
                 fp.write(self._headline())
-                self._write_items(items=items[-max_count:], fp=fp)
+                items_to_keep = list(self._items.values())[-max_count:]
+                self._write_items(items=items_to_keep, fp=fp)
 
         # The pointer is kept in memory to avoid extra opening each time writing is needed.
         # The 'stop()' method is required to be called each time a config. is reloaded or when py-youwol is terminated.

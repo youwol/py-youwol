@@ -66,6 +66,7 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 -  The `dev. portal` link proposed in the terminal at startup has been removed . <!-- TG-2233 -->
 
 <!-- Not worthy of inclusion
+TG-2273 : 🐛 [app] `BrowserCacheStore`: don't serve modified files
 TG-2269 : 🐛 [app.env.backends] `psutil.net_connections()` => Access denied
 TG-2265 : 🐛 [pipeline.py_backend] fix self-contained venvs.
 TG-2264 : 🐛 [pipeline.py_backend] fix wrong path from `generate_template`
