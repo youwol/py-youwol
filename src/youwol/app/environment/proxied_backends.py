@@ -1,11 +1,13 @@
 # standard library
 import dataclasses
+import subprocess
 
 from asyncio.subprocess import Process
 
 # third parties
 import psutil
 
+from psutil import AccessDenied
 from pydantic import BaseModel
 from semantic_version import Spec, Version
 
@@ -208,7 +210,14 @@ class BackendsStore:
 
     @staticmethod
     def get_pid_using_port(port):
-        for conn in psutil.net_connections():
-            if conn.laddr.port == port:
-                return conn.pid
+        try:
+            for conn in psutil.net_connections():
+                if conn.laddr.port == port:
+                    return conn.pid
+        except AccessDenied:
+            # On e.g. macOS `psutil.net_connections()` can not be called without elevated privileges,
+            # fallback using 'lsof' in this case.
+            output = subprocess.check_output(["lsof", "-i", f"tcp:{port}", "-t"])
+            return int(output.decode().strip())
+
         return None

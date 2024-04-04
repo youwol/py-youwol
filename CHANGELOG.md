@@ -51,18 +51,22 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
   <!-- TG-2232 -->
 - Addressed an issue where version resolution was inaccurately handled under specific scenarios within the
   `cdn-backend` service. <!-- TG-2244 -->
+- Addressed an issue related to symbolic links resolution concerning ProjectsFinder when auto-discovery is enabled. 
+  <!-- TG-2270 -->
 
 ### Security
 
 - **Dependencies vulnerabilities**:
   - On `doc/front-app`: fix [GHSA-cxjh-pqwp-8mfp] <!-- TG-2225 -->
   - [CVE-2024-21503] upgrade `black` to 24.3.0 <!-- TG-2234 -->
+  - [GHSA-44wm-f244-xhp3] upgrade `pillow` to 10.3.0 <!-- TG-2271 -->
 
 ### Removed
 
 -  The `dev. portal` link proposed in the terminal at startup has been removed . <!-- TG-2233 -->
 
 <!-- Not worthy of inclusion
+TG-2269 : 🐛 [app.env.backends] `psutil.net_connections()` => Access denied
 TG-2265 : 🐛 [pipeline.py_backend] fix self-contained venvs.
 TG-2264 : 🐛 [pipeline.py_backend] fix wrong path from `generate_template`
 TG-2263 : 🐛 [app.projects] fix duplicate issue in projects list response
