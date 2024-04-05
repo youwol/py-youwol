@@ -117,7 +117,15 @@ async def generate_template(folder: Path, parameters: dict[str, str], context: C
         package_folder = project_folder / inputs.name
         package_folder.mkdir(parents=True)
 
-        files = (Path(__file__).parent / "template" / "src").glob("**/*")
+        pipeline_folder = project_folder / ".yw_pipeline"
+        pipeline_folder.mkdir(parents=True)
+
+        src_template_folder = Path(__file__).parent / "template"
+
+        # Module source files
+
+        files = (src_template_folder / "src").glob("**/*")
+
         for file in files:
             dst = package_folder / file.name.replace(".txt", "")
             shutil.copyfile(
@@ -127,11 +135,13 @@ async def generate_template(folder: Path, parameters: dict[str, str], context: C
             replace_patterns(dst)
 
         shutil.copyfile(
-            src=Path(__file__).parent / "template" / "pyproject.toml.txt",
+            src=src_template_folder / "pyproject.toml.txt",
             dst=project_folder / PYPROJECT_TOML,
         )
 
         replace_patterns(project_folder / PYPROJECT_TOML)
+
+        # Backend API scripts
 
         for file in ["install.sh", "start.sh"]:
             shutil.copyfile(
@@ -139,10 +149,12 @@ async def generate_template(folder: Path, parameters: dict[str, str], context: C
                 dst=project_folder / file,
             )
 
-        # Need to be at the end
-        shutil.copytree(
-            src=Path(__file__).parent / "template" / ".yw_pipeline",
-            dst=project_folder / ".yw_pipeline",
+        # Pipeline definition, need to be at the end (such that `ProjectFindersImpl` can 'auto-discover'
+        # a valid project when `watch` is `True`).
+
+        shutil.copyfile(
+            src=src_template_folder / ".yw_pipeline" / "yw_pipeline.py",
+            dst=pipeline_folder / "yw_pipeline.py",
         )
 
         return parameters["name"], project_folder
