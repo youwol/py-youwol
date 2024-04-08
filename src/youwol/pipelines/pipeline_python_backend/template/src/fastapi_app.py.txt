@@ -58,7 +58,7 @@ class AsyncTaskResult(BaseModel):
 @app.get("/async-job")
 async def async_job(
     request: Request,
-    task_id: int = Query(alias="task-id", default=int(time.time() * 1e6)),
+    channel_id: str = Query(alias="channel-id", default=str(time.time() * 1e6)),
 ):
     """
     How-to 'create asynchronous computations'.
@@ -68,13 +68,16 @@ async def async_job(
     application's debug panel, tab 'network').
     The endpoint does not wait for the computations to finish, it completes right away.
 
+    In order to be callable from the default javascript client, such asynchronous computations **must** declare
+    an optional query parameter with alias 'channel-id' used to instantiate the `FuturesResponse`.
+
     Parameters:
         request: Incoming request.
-        task_id: Optional provided task_id. If not provided, pick the epoch in second.
+        channel_id: Optional provided channel_id. If not provided, pick the epoch in second.
 
     Return:
          An acknowledged response (status code `202`), including the `channel_id` to be able to retrieve the results
-          of the scheduled computation from the websocket `/ws-data`.
+         of the scheduled computation from the websocket `/ws-data`.
     """
 
     async def tick_every_second(
@@ -93,7 +96,7 @@ async def async_job(
     async with ContextFactory.proxied_backend_context(request).start(
         action="/async-job"
     ) as ctx:
-        response = FuturesResponse(channel_id=str(task_id))
+        response = FuturesResponse(channel_id=channel_id)
         await ctx.info("Use web socket to send async. messages")
         asyncio.ensure_future(tick_every_second(response, ctx))
         return response

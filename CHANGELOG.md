@@ -66,6 +66,7 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 -  The `dev. portal` link proposed in the terminal at startup has been removed . <!-- TG-2233 -->
 
 <!-- Not worthy of inclusion
+TG-2284 : 🐛 [app.backends] => `client.stream` do not miss data
 TG-2285 : ✨ [utils.Context] => expose `attributes` when creating logs
 TG-2272 : 🥅 [pipelines.py_backend] => robustify `generate_template`
 TG-2273 : 🐛 [app] `BrowserCacheStore`: don't serve modified files
