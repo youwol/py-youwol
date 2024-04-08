@@ -16,6 +16,7 @@ from starlette.responses import Response
 
 # Youwol utilities
 from youwol.utils.context import Context
+from youwol.utils.context.models import TContextAttr
 from youwol.utils.exceptions import upstream_exception_from_response
 
 
@@ -175,6 +176,7 @@ class FuturesResponse(Response):
     """
 
     media_type = "application/json"
+    channelIdKey = "async-channel-id"
 
     def __init__(
         self,
@@ -191,11 +193,16 @@ class FuturesResponse(Response):
         self.channel_id = channel_id
 
     async def next(
-        self, content: BaseModel, context: Context, labels: list[str] | None = None
+        self,
+        content: BaseModel,
+        context: Context,
+        labels: list[str] | None = None,
+        attributes: dict[str, TContextAttr] | None = None,
     ):
         await context.send(
             data=content,
             labels=[*context.with_labels, *(labels or []), self.channel_id],
+            attributes={**(attributes or {}), self.channelIdKey: self.channel_id},
         )
 
     async def close(self, context: Context):

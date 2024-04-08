@@ -282,6 +282,7 @@ class Context(Generic[T]):
         level: LogLevel,
         text: str,
         labels: list[StringLike] | None = None,
+        attributes: dict[str, TContextAttr] | None = None,
         data: JsonLike | None = None,
     ):
         if not self.data_reporters and not self.logs_reporters:
@@ -297,12 +298,13 @@ class Context(Generic[T]):
         }[level]
         labels = labels or []
         labels = [str(label) for label in [*self.with_labels, label_level, *labels]]
+        attributes = {**self.with_attributes, **(attributes or {})}
         entry = LogEntry(
             level=level,
             text=text,
             data=json_data,
             labels=labels,
-            attributes=self.with_attributes,
+            attributes=attributes,
             context_id=self.uid,
             parent_context_id=self.parent_uid,
             trace_uid=self.trace_uid,
@@ -313,13 +315,19 @@ class Context(Generic[T]):
 
         await asyncio.gather(*[logger.log(entry) for logger in self.logs_reporters])
 
-    async def send(self, data: BaseModel, labels: list[StringLike] | None = None):
+    async def send(
+        self,
+        data: BaseModel,
+        labels: list[StringLike] | None = None,
+        attributes: dict[str, TContextAttr] | None = None,
+    ):
         """
         Send data.
 
         Parameters:
-            data: data to send
-            labels: additional labels associated
+            data: Data.
+            labels: Additional labels.
+            attributes: Additional attributes.
         """
 
         labels = labels or []
@@ -327,6 +335,7 @@ class Context(Generic[T]):
             level=LogLevel.DATA,
             text=f"Send data '{data.__class__.__name__}'",
             labels=[data.__class__.__name__, *labels],
+            attributes=attributes,
             data=data,
         )
 
@@ -335,70 +344,103 @@ class Context(Generic[T]):
         text: str,
         labels: list[StringLike] | None = None,
         data: JsonLike | None = None,
+        attributes: dict[str, TContextAttr] | None = None,
     ):
         """
         Log information with severity [Debug](@yw-nav-att:youwol.utils.context.LogLevel.DEBUG).
 
         Parameters:
-            text: text of the log
-            labels: additional labels associated
-            data: data to associate
+            text: Text of the log.
+            data: Associated data.
+            labels: Additional labels.
+            attributes: Additional attributes.
         """
-        await self.log(level=LogLevel.DEBUG, text=text, labels=labels, data=data)
+        await self.log(
+            level=LogLevel.DEBUG,
+            text=text,
+            labels=labels,
+            attributes=attributes,
+            data=data,
+        )
 
     async def info(
         self,
         text: str,
         labels: list[StringLike] | None = None,
         data: JsonLike | None = None,
+        attributes: dict[str, TContextAttr] | None = None,
     ):
         """
         Log information with severity [Info](@yw-nav-att:youwol.utils.context.LogLevel.INFO).
 
         Parameters:
-            text: text of the log
-            labels: additional labels associated
-            data: data to associate
+            text: Text of the log.
+            data: Associated data.
+            labels: Additional labels.
+            attributes: Additional attributes.
         """
-        await self.log(level=LogLevel.INFO, text=text, labels=labels, data=data)
+        await self.log(
+            level=LogLevel.INFO,
+            text=text,
+            labels=labels,
+            attributes=attributes,
+            data=data,
+        )
 
     async def warning(
         self,
         text: str,
         labels: list[StringLike] | None = None,
         data: JsonLike | None = None,
+        attributes: dict[str, TContextAttr] | None = None,
     ):
         """
         Log information with severity [Warning](@yw-nav-att:youwol.utils.context.LogLevel.WARNING).
 
         Parameters:
-            text: text of the log
-            labels: additional labels associated
-            data: data to associate
+            text: Text of the log.
+            data: Associated data.
+            labels: Additional labels.
+            attributes: Additional attributes.
         """
-        await self.log(level=LogLevel.WARNING, text=text, labels=labels, data=data)
+        await self.log(
+            level=LogLevel.WARNING,
+            text=text,
+            labels=labels,
+            attributes=attributes,
+            data=data,
+        )
 
     async def error(
         self,
         text: str,
         labels: list[StringLike] | None = None,
         data: JsonLike | None = None,
+        attributes: dict[str, TContextAttr] | None = None,
     ):
         """
         Log information with severity [Error](@yw-nav-att:youwol.utils.context.LogLevel.ERROR).
 
         Parameters:
-            text: text of the log
-            labels: additional labels associated
-            data: data to associate
+            text: Text of the log.
+            data: Associated data.
+            labels: Additional labels.
+            attributes: Additional attributes.
         """
-        await self.log(level=LogLevel.ERROR, text=text, labels=labels, data=data)
+        await self.log(
+            level=LogLevel.ERROR,
+            text=text,
+            labels=labels,
+            attributes=attributes,
+            data=data,
+        )
 
     async def failed(
         self,
         text: str,
         labels: list[StringLike] | None = None,
         data: JsonLike | None = None,
+        attributes: dict[str, TContextAttr] | None = None,
     ):
         """
         Log information with severity [ERROR](@yw-nav-att:youwol.utils.context.LogLevel.ERROR) and
@@ -409,13 +451,18 @@ class Context(Generic[T]):
             It is most often preferred to raise an exception.
 
         Parameters:
-            text: text of the log
-            labels: additional labels associated
-            data: data to associate
+            text: Text of the log.
+            data: Associated data.
+            labels: Additional labels.
+            attributes: Additional attributes.
         """
         labels = labels or []
         await self.log(
-            level=LogLevel.ERROR, text=text, labels=[Label.FAILED, *labels], data=data
+            level=LogLevel.ERROR,
+            text=text,
+            labels=[Label.FAILED, *labels],
+            attributes=attributes,
+            data=data,
         )
 
     async def future(
@@ -424,16 +471,18 @@ class Context(Generic[T]):
         future: asyncio.Future | None = None,
         labels: list[StringLike] | None = None,
         data: JsonLike | None = None,
+        attributes: dict[str, TContextAttr] | None = None,
     ):
         """
         Log information with severity [Info](@yw-nav-att:youwol.utils.context.LogLevel.INFO) and
         the tag `FUTURE` to indicate that an asynchronous task has been scheduled (and not awaited).
 
         Parameters:
-            text: text of the log
-            future: if provided, a log entry will also be added when the future complete (or is canceled)
-            labels: additional labels associated
-            data: data to associate
+            text: Text of the log.
+            future: If provided, a log entry will also be added when the future complete (or is canceled).
+            labels: Additional labels.
+            data: Associated data.
+            attributes: Additional attributes.
         """
 
         labels = labels or []
@@ -450,6 +499,7 @@ class Context(Generic[T]):
                         level=LogLevel.WARNING,
                         text=f"Future '{text}' cancelled",
                         labels=[*labels],
+                        attributes=attributes,
                         data=data,
                     )
                 )
@@ -459,6 +509,7 @@ class Context(Generic[T]):
                         level=LogLevel.ERROR,
                         text=f"Future '{text}' resolved with exception",
                         labels=[Label.FUTURE_FAILED, *labels],
+                        attributes=attributes,
                         data=data,
                     )
                 )
@@ -469,6 +520,7 @@ class Context(Generic[T]):
                         level=LogLevel.INFO,
                         text=f"Future '{text}' resolved successfully",
                         labels=[Label.FUTURE_SUCCEEDED, *labels],
+                        attributes=attributes,
                         data=data,
                     )
                 )

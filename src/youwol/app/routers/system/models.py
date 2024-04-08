@@ -7,7 +7,7 @@ from pydantic import BaseModel
 # Youwol utilities
 from youwol.utils import JSON, LogEntry
 from youwol.utils.http_clients.cdn_backend import Library
-from youwol.utils.utils_requests import FuturesResponseEnd
+from youwol.utils.utils_requests import FuturesResponse, FuturesResponseEnd
 
 
 class FolderContentResp(BaseModel):
@@ -292,15 +292,16 @@ class BackendInstallResponse(BaseModel):
             clientBundle=f"""
 return async ({{window, webpmClient, wsData$}}) => {{
 
-    const {{rxjs}} = await webpmClient.install({{modules:["rxjs#^7.5.6 as rxjs"]}})
-    const {{mergeMap, filter, takeWhile, from}} = rxjs
+    const {{rxjs, uuid}} = await webpmClient.install({{
+        modules:["rxjs#^7.5.6 as rxjs", "uuid#^8.3.2 as uuid"]}})
+    const {{switchMap, filter, takeWhile, from, ReplaySubject}} = rxjs
     const symbol = "{exported_symbol}"
     const resp$ = (url, options) => from(fetch(`{url_base}/${{url}}`, options))
     const respJson$ = (url, options) => resp$(url, options).pipe(
-        mergeMap((resp) => from(resp.json()))
+        switchMap((resp) => from(resp.json()))
     )
     const respText$ = (url, options) => resp$(url, options).pipe(
-        mergeMap((resp) => from(resp.text()))
+        switchMap((resp) => from(resp.text()))
     )
     window[symbol] = {{
         name: "{backend.name}",
@@ -310,13 +311,26 @@ return async ({{window, webpmClient, wsData$}}) => {{
         fromFetch:  (url, options) => resp$(url, options),
         fromFetchJson:  (url, options) => respJson$(url, options),
         fromFetchText:  (url, options) => respText$(url, options),
-        channel: (url, options) => {{
-            return respJson$(url, options).pipe(
-                mergeMap(({{channelId}}) => {{
-                    return wsData$.pipe(
-                        filter(({{labels, attributes}}) => labels.includes(channelId)),
-                        takeWhile((m) => !m.labels.includes("{FuturesResponseEnd.__name__}"))
+        stream: (url, options) => {{
+            channelId = options?.channelId || `${{uuid.v4()}}`
+            const resp$ = new ReplaySubject()
+            wsData$.pipe(
+                filter(({{labels, attributes}}) => {{
+                    return labels.includes('AsyncTaskResult') &&
+                    (
+                        labels.includes(channelId) || // deprecated, use attributes instead (youwol>=0.1.9)
+                        attributes[{FuturesResponse.channelIdKey}] === channelId
                     )
+                }}),
+                takeWhile((m) => !m.labels.includes("{FuturesResponseEnd.__name__}"))
+            ).subscribe(
+                (d) => {{resp$.next(d)}},
+                (e) => console.error(e),
+                () => resp$.complete()
+            )
+            return respJson$(url+`?channel-id=${{channelId}}`, options).pipe(
+                switchMap(({{channelId}}) => {{
+                    return resp$
                 }}),
             )
         }}
