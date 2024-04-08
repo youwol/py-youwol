@@ -179,7 +179,7 @@ def setup_middlewares(env: YouwolEnvironment):
         on_missing_token=lambda url, text: (
             redirect_to_login(url)
             if url.path.startswith("/applications")
-            or url.path in ["/", "/doc", "/healthz"]
+            or url.path in ["/", "/doc", "/healthz", "/co-lab"]
             else Response(content=f"Authentication failure : {text}", status_code=403)
         ),
     )
