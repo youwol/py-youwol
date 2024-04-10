@@ -10,7 +10,7 @@ function fromMd({
     placeholders,
 }: {
     file: string
-    placeholders?: { [k: string]: string }
+    placeholders?: { [_: string]: string }
 }) {
     return fromMarkdown({
         url: `/api/assets-gateway/raw/package/${setup.assetId}/${setup.version}/assets/${file}`,
