@@ -1,7 +1,7 @@
 import { AnyVirtualDOM, ChildrenLike, VirtualDOM } from '@youwol/rx-vdom'
 import { Routers } from '@youwol/local-youwol-client'
 import { Router } from '@youwol/mkdocs-ts'
-import { Configuration } from './index'
+import { Configuration } from './configurations'
 
 export class PyTypeView implements VirtualDOM<'div'> {
     public readonly typeDoc: Routers.System.DocTypeResponse
@@ -71,7 +71,7 @@ export class PyTypeView implements VirtualDOM<'div'> {
 
     private defaultView(children: ChildrenLike) {
         if (!this.typeDoc?.name) {
-            this.router.log({
+            console.warn('Documentation error', {
                 severity: 'Error',
                 category: "Undefined type's name",
                 message: { typeDoc: this.typeDoc, parent: this.parent },
@@ -110,7 +110,7 @@ export class LinkedTypeView implements VirtualDOM<'div'> {
             : this.configuration.externalTypes[this.path]
         const isExternal = !this.path?.startsWith('youwol') && path
         if (!path) {
-            this.router.log({
+            console.warn('Documentation Warning', {
                 severity: 'Warning',
                 category: 'Unlinked type',
                 message: this.path,

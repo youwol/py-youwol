@@ -1,5 +1,7 @@
 # standard library
+import asyncio
 import json
+import pprint
 import shutil
 import subprocess
 
@@ -12,11 +14,16 @@ import youwol
 # Youwol Surrogate for next versions of Python
 from youwol.utils.python_next.v3_12 import tomllib
 
+# Youwol application
+from youwol.app.routers.system.documentation import get_doc_implementation
+from youwol.app.routers.system.documentation_models import DocReporter
+
 # Youwol utilities
 from youwol.utils import (
     PYPROJECT_TOML,
     AnyDict,
     parse_json,
+    write_json,
     yw_doc_version,
     yw_repo_path,
 )
@@ -48,7 +55,7 @@ with open(pkg_json_path, "w", encoding="UTF-8") as fp:
 print(f"-  package's version synchronized to: {yw_doc_version()}")
 
 externals_deps = {
-    "@youwol/mkdocs-ts": "^0.2.2",
+    "@youwol/mkdocs-ts": "^0.3.2",
     "@youwol/rx-vdom": "^1.0.1",
     "@youwol/webpm-client": "^3.0.0",
     "rxjs": "^7.5.6",
@@ -161,3 +168,27 @@ def print_git_status():
 
 
 print_git_status()
+
+"""
+Below is the generation of the documentation responses of the various py-youwol modules.
+"""
+
+write_folder = Path(__file__).parent / "assets" / "api"
+shutil.rmtree(write_folder, ignore_errors=True)
+write_folder.mkdir(exist_ok=True)
+
+
+async def execute(path: str):
+    doc = await get_doc_implementation(module_path=path)
+    filepath = (write_folder / path).with_suffix(".json")
+    filepath.parent.mkdir(exist_ok=True)
+    write_json(doc.dict(), filepath)
+    await asyncio.gather(
+        *[execute(m.path.replace(".", "/")) for m in doc.childrenModules]
+    )
+    print(f"Doc created for {path}")
+    if path == "youwol":
+        pprint.pprint(DocReporter.errors)
+
+
+asyncio.run(execute("youwol"))
