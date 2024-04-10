@@ -10,3 +10,4 @@ __pycache__
 .template
 .env
 /src/tests/**/result.zip
+/assets/api
