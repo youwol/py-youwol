@@ -13,6 +13,9 @@ from types import ModuleType
 from typing import Literal, cast
 
 # third parties
+import griffe
+
+from fastapi import HTTPException
 from griffe.dataclasses import (
     Alias,
     Attribute,
@@ -607,3 +610,50 @@ def check_documentation(
     ]
 
     return [*errors, *sub_modules]
+
+
+async def get_doc_implementation(module_path: str) -> DocModuleResponse:
+    init_classes()
+    DocCache.global_doc = DocCache.global_doc or cast(
+        Module, griffe.load(YOUWOL_MODULE, submodules=True)
+    )
+    DocCache.all_symbols = init_symbols(DocCache.global_doc)
+    if module_path in DocCache.modules_doc:
+        return DocCache.modules_doc[module_path]
+    root = module_path == ""
+    module_name = (
+        module_path.strip("/").replace("/", ".").replace(YOUWOL_MODULE, "").strip(".")
+    )
+    try:
+        module_doc = functools.reduce(
+            lambda acc, e: acc.modules[e] if e else acc,
+            module_name.split("."),
+            DocCache.global_doc,
+        )
+    except KeyError:
+        raise HTTPException(
+            status_code=404,
+            detail=f"The module '{module_name}' is not part of youwol.",
+        )
+    griffe_doc = cast(Module, module_doc)
+    if root:
+        return DocModuleResponse(
+            name="",
+            path="",
+            docstring=[],
+            childrenModules=[
+                DocChildModulesResponse(
+                    name=YOUWOL_MODULE,
+                    path=YOUWOL_MODULE,
+                    isLeaf=False,
+                )
+            ],
+            classes=[],
+            functions=[],
+            attributes=[],
+            files=[],
+        )
+
+    doc_response = format_module_doc(griffe_doc=griffe_doc, path=module_name)
+    DocCache.modules_doc[module_path] = doc_response
+    return doc_response

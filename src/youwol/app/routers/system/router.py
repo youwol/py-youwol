@@ -1,6 +1,5 @@
 # standard library
 import asyncio
-import functools
 import os
 import time
 
@@ -28,14 +27,10 @@ from youwol.app.routers.environment.router import emit_environment_status
 from youwol.app.routers.system.documentation import (
     YOUWOL_MODULE,
     check_documentation,
-    format_module_doc,
-    init_classes,
-    init_symbols,
+    get_doc_implementation,
 )
 from youwol.app.routers.system.documentation_models import (
     DocAnalysisResponse,
-    DocCache,
-    DocChildModulesResponse,
     DocModuleResponse,
 )
 from youwol.app.routers.system.models import (
@@ -542,50 +537,4 @@ async def get_documentation(request: Request, rest_of_path: str) -> DocModuleRes
     """
 
     async with Context.start_ep(request=request):
-        init_classes()
-        DocCache.global_doc = DocCache.global_doc or cast(
-            Module, griffe.load(YOUWOL_MODULE, submodules=True)
-        )
-        DocCache.all_symbols = init_symbols(DocCache.global_doc)
-        if rest_of_path in DocCache.modules_doc:
-            return DocCache.modules_doc[rest_of_path]
-        root = rest_of_path == ""
-        module_name = (
-            rest_of_path.strip("/")
-            .replace("/", ".")
-            .replace(YOUWOL_MODULE, "")
-            .strip(".")
-        )
-        try:
-            module_doc = functools.reduce(
-                lambda acc, e: acc.modules[e] if e else acc,
-                module_name.split("."),
-                DocCache.global_doc,
-            )
-        except KeyError:
-            raise HTTPException(
-                status_code=404,
-                detail=f"The module '{module_name}' is not part of youwol.",
-            )
-        griffe_doc = cast(Module, module_doc)
-        if root:
-            return DocModuleResponse(
-                name="",
-                path="",
-                docstring=[],
-                childrenModules=[
-                    DocChildModulesResponse(
-                        name=YOUWOL_MODULE,
-                        path=YOUWOL_MODULE,
-                        isLeaf=False,
-                    )
-                ],
-                classes=[],
-                functions=[],
-                attributes=[],
-                files=[],
-            )
-
-        doc_response = format_module_doc(griffe_doc=griffe_doc, path=module_name)
-        DocCache.modules_doc[rest_of_path] = doc_response
-        return doc_response
+        return await get_doc_implementation(module_path=rest_of_path)
