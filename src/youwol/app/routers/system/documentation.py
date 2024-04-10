@@ -58,12 +58,10 @@ from youwol.app.routers.system.documentation_models import (
     DocFunctionResponse,
     DocModuleResponse,
     DocParameterResponse,
+    DocReporter,
     DocReturnsResponse,
     DocTypeResponse,
 )
-
-# Youwol utilities
-from youwol.utils import log_error
 
 INIT_FILENAME = "__init__.py"
 YOUWOL_MODULE = "youwol"
@@ -174,7 +172,7 @@ def get_docstring_sections(
         # This should not normally happen because only symbols with docstring are reported.
         # However, it is possible to request the documentation of a module that do not
         # have docstring.
-        log_error(f"No docstring available for '{get_symbol_path(griffe_doc)}'")
+        DocReporter.add_error(get_symbol_path(griffe_doc), "No docstring available")
 
     docstring_text = griffe_doc.docstring.value if griffe_doc.docstring else ""
 
@@ -274,7 +272,10 @@ def format_function_doc(griffe_doc: Function) -> DocFunctionResponse:
                 ),
             )
         except Exception as e:
-            log_error(f"Failed to parse return of function {griffe_doc.name}: {e}")
+            DocReporter.add_error(
+                griffe_doc.canonical_path,
+                f"Failed to parse return of function {griffe_doc.name}: {e}",
+            )
 
     return DocFunctionResponse(
         name=griffe_doc.name,
@@ -494,7 +495,7 @@ def patch_import_path(griffe_doc: Expr) -> str:
     except (RuntimeError, TypeError):
         if griffe_doc.canonical_path in DocCache.module_to_file_issues:
             return DocCache.module_to_file_issues[griffe_doc.canonical_path]
-        log_error(f"Can not find parent file of symbol {griffe_doc.canonical_path}")
+        DocReporter.add_error(griffe_doc.canonical_path, "Can not find parent file")
         return griffe_doc.canonical_path
 
 
