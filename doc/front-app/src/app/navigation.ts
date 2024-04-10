@@ -1,8 +1,8 @@
-import { fromMarkdown, Router, Views } from '@youwol/mkdocs-ts'
-import { pyYwReferenceDoc } from './py-doc'
+import { fromMarkdown, Views } from '@youwol/mkdocs-ts'
 import { setup } from '../auto-generated'
 import { youwolInfo } from '../auto-generated-toml'
 import { formatPythonVersions } from './utils'
+import { pyDocNav } from './py-doc'
 
 const tableOfContent = Views.tocView
 function fromMd({
@@ -72,13 +72,7 @@ export const navigation = {
         name: 'References',
         tableOfContent,
         html: fromMd({ file: 'references.md' }),
-        '/**': ({ path, router }: { path: string; router: Router }) =>
-            pyYwReferenceDoc({ modulePath: path, router }),
-        // '/devs': {
-        //     name: 'Developers',
-        //     html: fromMd({ file: 'references.developers.md' }),
-        //     tableOfContent,
-        // },
+        '/youwol': pyDocNav('static'),
     },
     '/change-log': {
         name: 'Change Log',

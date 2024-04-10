@@ -1,22 +1,56 @@
-import { PyYouwolClient } from '@youwol/local-youwol-client'
-import { raiseHTTPErrors } from '@youwol/http-primitives'
-import { map } from 'rxjs'
+import { map, Observable } from 'rxjs'
 import { PyModuleView } from './module.view'
-import { Router, Views } from '@youwol/mkdocs-ts'
+import { Navigation, Router, Views } from '@youwol/mkdocs-ts'
 import { AnyVirtualDOM } from '@youwol/rx-vdom'
+import { configuration } from './configurations'
+import { Routers, PyYouwolClient } from '@youwol/local-youwol-client'
+import { request$, raiseHTTPErrors } from '@youwol/http-primitives'
+import { setup } from '../../auto-generated'
 
-export interface Configuration {
-    decoratorView: ({ path }: { path: string }) => AnyVirtualDOM | undefined
-    externalTypes: { [k: string]: string }
-    codeUrl: (path: string, startLine: number) => string
+const tableOfContent = Views.tocView
+export type ServingMode = 'dynamic' | 'static'
+
+function fetchModuleDoc({
+    modulePath,
+    servingMode,
+}: {
+    modulePath: string
+    servingMode: ServingMode
+}): Observable<Routers.System.DocModuleResponse> {
+    const dynamicMode =
+        servingMode === 'dynamic' &&
+        document.location.origin.startsWith('http://localhost')
+    const basePath = `/api/assets-gateway/raw/package/${setup.assetId}/${setup.version}/assets/api`
+    const client = new PyYouwolClient().admin.system
+    const assetPath = `${basePath}/${modulePath}.json`
+    const from$ = dynamicMode
+        ? client.queryDocumentation({ path: modulePath })
+        : request$<Routers.System.DocModuleResponse>(new Request(assetPath))
+    return from$.pipe(raiseHTTPErrors())
 }
 
+export const pyDocNav: (servingMode: ServingMode) => Navigation = (
+    servingMode: ServingMode,
+) => ({
+    name: 'youwol',
+    tableOfContent,
+    html: ({ router }) =>
+        fetchModuleDoc({ modulePath: 'youwol', servingMode }).pipe(
+            map((moduleDoc: Routers.System.DocModuleResponse) => {
+                return new PyModuleView({ moduleDoc, router, configuration })
+            }),
+        ),
+    '...': ({ path, router }: { path: string; router: Router }) =>
+        pyYwReferenceDoc({ modulePath: path, servingMode, router }),
+})
 export const pyYwReferenceDoc = ({
     modulePath,
     router,
+    servingMode,
 }: {
     modulePath: string
     router: Router
+    servingMode: ServingMode
 }) => {
     const tocConvertor = (heading: HTMLHeadingElement): AnyVirtualDOM => {
         const classes = heading.firstChild
@@ -29,8 +63,10 @@ export const pyYwReferenceDoc = ({
             class: `${classes} fv-hover-text-focus`,
         }
     }
-    return client.queryDocumentation({ path: modulePath }).pipe(
-        raiseHTTPErrors(),
+    if (modulePath === '') {
+        modulePath = 'youwol'
+    }
+    return fetchModuleDoc({ modulePath, servingMode }).pipe(
         map((moduleDoc) => {
             return {
                 children:
@@ -38,11 +74,12 @@ export const pyYwReferenceDoc = ({
                         ? moduleDoc.childrenModules.map((m) => ({
                               name: m.name,
                               leaf: m.isLeaf,
+                              id: m.name,
                           }))
                         : [],
-                html: async () =>
+                html: () =>
                     new PyModuleView({ moduleDoc, router, configuration }),
-                tableOfContent: (d) =>
+                tableOfContent: (d: { html: HTMLElement; router: Router }) =>
                     Views.tocView({ ...d, domConvertor: tocConvertor }),
             }
         }),
