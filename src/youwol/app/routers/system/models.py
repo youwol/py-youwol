@@ -319,7 +319,7 @@ return async ({{window, webpmClient, wsData$}}) => {{
                     return labels.includes('AsyncTaskResult') &&
                     (
                         labels.includes(channelId) || // deprecated, use attributes instead (youwol>=0.1.9)
-                        attributes[{FuturesResponse.channelIdKey}] === channelId
+                        attributes['{FuturesResponse.channelIdKey}'] === channelId
                     )
                 }}),
                 takeWhile((m) => !m.labels.includes("{FuturesResponseEnd.__name__}"))

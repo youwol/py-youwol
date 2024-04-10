@@ -17,6 +17,11 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 ## [0.1.9rc1.dev] − Unreleased
 
+### Fixed
+
+- Fix implementation error in the javascript client of backend component regarding the `stream` function. 
+<!-- TG-2297 -->
+
 ## [0.1.9rc] − 2024-04-08
 
 ### Added
