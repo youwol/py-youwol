@@ -48,7 +48,7 @@ with open(pkg_json_path, "w", encoding="UTF-8") as fp:
 print(f"-  package's version synchronized to: {yw_doc_version()}")
 
 externals_deps = {
-    "@youwol/mkdocs-ts": "^0.2.2",
+    "@youwol/mkdocs-ts": "^0.3.2",
     "@youwol/rx-vdom": "^1.0.1",
     "@youwol/webpm-client": "^3.0.0",
     "rxjs": "^7.5.6",
