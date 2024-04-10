@@ -2,7 +2,7 @@ import { ChildrenLike, VirtualDOM } from '@youwol/rx-vdom'
 import { BehaviorSubject } from 'rxjs'
 import { parseMd, Router } from '@youwol/mkdocs-ts'
 import { Routers } from '@youwol/local-youwol-client'
-import { Configuration } from './index'
+import { Configuration } from './configurations'
 
 class PyCodeHeaderView implements VirtualDOM<'div'> {
     public readonly codeDoc: Routers.System.DocCodeResponse

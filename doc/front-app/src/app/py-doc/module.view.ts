@@ -1,5 +1,5 @@
 import { ChildrenLike, VirtualDOM, AnyVirtualDOM } from '@youwol/rx-vdom'
-import { Configuration } from './index'
+import { Configuration } from './configurations'
 import { Routers } from '@youwol/local-youwol-client'
 import { PyClassView } from './class.view'
 import { PyDocstringView } from './docstring.view'
@@ -21,6 +21,7 @@ export class PyModuleView implements VirtualDOM<'div'> {
         configuration: Configuration
     }) {
         Object.assign(this, params)
+        console.log('View', params.moduleDoc)
         const getFile = ({ path }) => {
             return path.split('.').slice(-2)[0]
         }
