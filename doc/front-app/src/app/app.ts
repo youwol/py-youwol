@@ -1,4 +1,4 @@
-import { Router, Views, Node } from '@youwol/mkdocs-ts'
+import { Router, Views, Navigation } from '@youwol/mkdocs-ts'
 import { DockableTabs } from '@youwol/rx-tab-views'
 import { BehaviorSubject } from 'rxjs'
 import { VirtualDOM } from '@youwol/rx-vdom'
@@ -52,7 +52,7 @@ export class AppView extends Views.DefaultLayoutView {
             tag: 'div',
             class: {
                 source$: appState.currentNode$,
-                vdomMap: (node: Node) => {
+                vdomMap: (node: Navigation) => {
                     return node.name == "Publish a 'raw' app." ? '' : 'd-none'
                 },
             },

@@ -1,6 +1,9 @@
 # future
 from __future__ import annotations
 
+# standard library
+from collections import defaultdict
+
 # typing
 from typing import Literal
 
@@ -399,3 +402,11 @@ class DocCache:
     }
     global_doc: Module = None
     modules_doc: dict[str, DocModuleResponse] = {}
+
+
+class DocReporter:
+    errors: dict[str, set[str]] = defaultdict(set)
+
+    @staticmethod
+    def add_error(symbol_path: str, description: str):
+        DocReporter.errors[symbol_path].add(description)

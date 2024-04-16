@@ -1,6 +1,6 @@
 import { ChildrenLike, VirtualDOM } from '@youwol/rx-vdom'
 import { Router } from '@youwol/mkdocs-ts'
-import { Configuration } from './index'
+import { Configuration } from './configurations'
 import { Routers } from '@youwol/local-youwol-client'
 import { PyTypeView } from './type.view'
 import { PyDocstringView } from './docstring.view'

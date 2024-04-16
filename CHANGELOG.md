@@ -17,6 +17,11 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 ## [0.1.10.dev] − Unreleased
 
+### Added
+
+- **Documentation**:
+  -  youwol's API documentation is now generated at build time and served statically. <!-- TG-2235 -->
+  
 ## [0.1.9] − 2024-04-16
 
 ### Added
