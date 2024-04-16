@@ -33,7 +33,7 @@ def ensure_env_for_python():
         print(
             f"WARNING: environment variable PYTHONPATH '{pythonpath}' is a non-existing path!"
         )
-    elif not Path(pythonpath).is_dir():
+    elif platform.system() != "Windows" and not Path(pythonpath).is_dir():
         print(
             f"WARNING: environment variable PYTHONPATH '{pythonpath}' is not the path of a directory!"
         )
