@@ -1,5 +1,6 @@
 # standard library
 import os
+import platform
 import sys
 
 from pathlib import Path
@@ -19,9 +20,12 @@ def ensure_env_for_python():
         print("Environment variable PYTHONPATH not set")
         pythonpath = sys.path[0]
         print(f"Setting environment variable PYTHONPATH to {pythonpath}")
-    pythonpaths = [path for path in pythonpath.split(":") if path.strip() != ""]
-    pythonpath = pythonpaths[0]
-    if len(pythonpaths) > 1:
+    python_paths_separator = ";" if platform.system() == "Windows" else ":"
+    python_paths = [
+        path for path in pythonpath.split(python_paths_separator) if path.strip() != ""
+    ]
+    pythonpath = python_paths[0]
+    if len(python_paths) > 1:
         print(
             "WARNING: using multiple path in environment variable PYTHONPATH is not yet supported!"
         )
@@ -29,7 +33,7 @@ def ensure_env_for_python():
         print(
             f"WARNING: environment variable PYTHONPATH '{pythonpath}' is a non-existing path!"
         )
-    elif not Path(pythonpath).is_dir():
+    elif platform.system() != "Windows" and not Path(pythonpath).is_dir():
         print(
             f"WARNING: environment variable PYTHONPATH '{pythonpath}' is not the path of a directory!"
         )
