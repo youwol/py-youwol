@@ -73,7 +73,7 @@ const entries = {
 export const setup = {
     name:'@youwol/py-youwol-doc',
         assetId:'QHlvdXdvbC9weS15b3V3b2wtZG9j',
-    version:'0.1.9-wip',
+    version:'0.1.9',
     shortDescription:"Py-youwol documentation application",
     developerDocumentation:'https://platform.youwol.com/applications/@youwol/cdn-explorer/latest?package=@youwol/py-youwol-doc&tab=doc',
     npmPackage:'https://www.npmjs.com/package/@youwol/py-youwol-doc',
@@ -119,7 +119,7 @@ export const setup = {
         const parameters = installParameters || {}
         const scripts = [
             ...(parameters.scripts || []),
-            `@youwol/py-youwol-doc#0.1.9-wip~dist/@youwol/py-youwol-doc/${entry.name}.js`
+            `@youwol/py-youwol-doc#0.1.9~dist/@youwol/py-youwol-doc/${entry.name}.js`
         ]
         const modules = [
             ...(parameters.modules || []),
