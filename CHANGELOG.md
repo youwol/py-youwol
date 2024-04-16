@@ -15,21 +15,6 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-0440/).
 
-## [0.1.9rc2.dev] − Unreleased
-
-### Security
-
-- **Dependencies vulnerabilities**:
-  - [GHSA-jjg7-2v4v-x38h] upgrade `idna` to 3.7 <!-- TG-2300 -->
-
-
-## [0.1.9rc1] − 2024-04-15
-
-### Fixed
-
-- Fix implementation error in the javascript client of backend component regarding the `stream` function. 
-<!-- TG-2297 -->
-
 ## [0.1.9rc] − 2024-04-08
 
 ### Added
@@ -68,6 +53,8 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
   `cdn-backend` service. <!-- TG-2244 -->
 - Addressed an issue related to symbolic links resolution concerning ProjectsFinder when auto-discovery is enabled. 
   <!-- TG-2270 -->
+- Fix implementation error in the javascript client of backend component regarding the `stream` function. 
+  <!-- TG-2297 -->
 
 ### Security
 
@@ -75,6 +62,7 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
   - On `doc/front-app`: fix [GHSA-cxjh-pqwp-8mfp] <!-- TG-2225 -->
   - [CVE-2024-21503] upgrade `black` to 24.3.0 <!-- TG-2234 -->
   - [GHSA-44wm-f244-xhp3] upgrade `pillow` to 10.3.0 <!-- TG-2271 -->
+  - [GHSA-jjg7-2v4v-x38h] upgrade `idna` to 3.7 <!-- TG-2300 -->
 
 ### Removed
 
