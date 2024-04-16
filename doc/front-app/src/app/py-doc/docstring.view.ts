@@ -1,6 +1,6 @@
 import { AnyVirtualDOM, ChildrenLike, VirtualDOM } from '@youwol/rx-vdom'
 import { Router, parseMd } from '@youwol/mkdocs-ts'
-import { Configuration } from './index'
+import { Configuration } from './configurations'
 import { Routers } from '@youwol/local-youwol-client'
 
 export class PyDocstringView implements VirtualDOM<'div'> {
