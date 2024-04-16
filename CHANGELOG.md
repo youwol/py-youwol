@@ -17,6 +17,12 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 ## [0.1.9rc2.dev] − Unreleased
 
+### Security
+
+- **Dependencies vulnerabilities**:
+  - [GHSA-jjg7-2v4v-x38h] upgrade `idna` to 3.7 <!-- TG-2300 -->
+
+
 ## [0.1.9rc1] − 2024-04-15
 
 ### Fixed
