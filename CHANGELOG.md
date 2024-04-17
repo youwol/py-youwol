@@ -21,7 +21,10 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 - **Documentation**:
   -  youwol's API documentation is now generated at build time and served statically. <!-- TG-2235 -->
-  
+- **Pipelines**:
+  -  typescript pipeline provides additional flexibility to customize auto-generated `package.json`. 
+  <!-- TG-539, TG-1260 -->
+
 ## [0.1.9] − 2024-04-16
 
 ### Added

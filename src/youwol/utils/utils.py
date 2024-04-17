@@ -446,6 +446,20 @@ def to_json(obj: BaseModel | JSON) -> JSON:
     return to_json_rec(base)
 
 
+def deep_merge(from_dict: AnyDict, with_dict: AnyDict):
+    def deep_merge_impl(dict1: AnyDict | Any, dict2: AnyDict | Any):
+        if not all(isinstance(d, dict) for d in [dict1, dict2]):
+            return dict2
+
+        merged = dict1.copy()
+        for key, value in dict2.items():
+            merged[key] = deep_merge_impl(merged.get(key, None), value)
+
+        return merged
+
+    return deep_merge_impl(from_dict, with_dict)
+
+
 def yw_repo_path() -> Path | None:
     """Return the path of the py-youwol source repository, expected to contain `pyproject.toml`.
 
