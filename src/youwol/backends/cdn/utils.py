@@ -87,7 +87,7 @@ def get_filename(d):
     # for flux packs type introspection requires class name not being mangled
     if "flux-pack" in d["library_id"]:
         return d["bundle"]
-    if d["bundle_min"] != "":
+    if d["bundle_min"]:
         return d["bundle_min"]
     return d["bundle"]
 

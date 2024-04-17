@@ -16,13 +16,13 @@ def ensure_env_for_python():
         )
         os.environ["PATH"] = f"{python_bin_dir}{os.pathsep}{os.environ['PATH']}"
     pythonpath = os.environ.get("PYTHONPATH")
-    if pythonpath is None or pythonpath == "":
+    if not pythonpath:
         print("Environment variable PYTHONPATH not set")
         pythonpath = sys.path[0]
         print(f"Setting environment variable PYTHONPATH to {pythonpath}")
     python_paths_separator = ";" if platform.system() == "Windows" else ":"
     python_paths = [
-        path for path in pythonpath.split(python_paths_separator) if path.strip() != ""
+        path for path in pythonpath.split(python_paths_separator) if path.strip()
     ]
     pythonpath = python_paths[0]
     if len(python_paths) > 1:

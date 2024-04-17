@@ -621,7 +621,7 @@ async def get_doc_implementation(module_path: str) -> DocModuleResponse:
     DocCache.all_symbols = init_symbols(DocCache.global_doc)
     if module_path in DocCache.modules_doc:
         return DocCache.modules_doc[module_path]
-    root = module_path == ""
+    root = not module_path
     module_name = (
         module_path.strip("/").replace("/", ".").replace(YOUWOL_MODULE, "").strip(".")
     )

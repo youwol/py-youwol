@@ -347,7 +347,7 @@ class BrowserCacheStore:
             content = file.read()
             lines = content.split("\n")[1:]
             items = [
-                BrowserCacheStore._decode_line(line) for line in lines if line != ""
+                BrowserCacheStore._decode_line(line) for line in lines if line
             ]
             items = [item for item in items if sanity_check(item)]
             self._items = {**self._items, **{item.key: item for item in items}}
