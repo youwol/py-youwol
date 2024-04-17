@@ -631,11 +631,11 @@ async def get_doc_implementation(module_path: str) -> DocModuleResponse:
             module_name.split("."),
             DocCache.global_doc,
         )
-    except KeyError:
+    except KeyError as exc:
         raise HTTPException(
             status_code=404,
             detail=f"The module '{module_name}' is not part of youwol.",
-        )
+        ) from exc
     griffe_doc = cast(Module, module_doc)
     if root:
         return DocModuleResponse(

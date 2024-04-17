@@ -39,7 +39,7 @@ def siv_256_encrypt_into_file(fp: BinaryIO, data: str, key: str, debug=False) ->
     try:
         key_bytes = base64.b64decode(key)
     except ValueError as e:
-        raise KeyB64DecodingFailure(e)
+        raise KeyB64DecodingFailure(e) from e
     if len(key_bytes) != SIV_KEY_SIZE:
         raise SivBadKeyLength(key_bytes)
     data_bytes = data.encode(encoding="utf-8")
@@ -75,7 +75,7 @@ def siv_256_decrypt_from_file(fp: BinaryIO, key: str, debug=False) -> str:
     try:
         key_bytes = base64.b64decode(key)
     except ValueError as e:
-        raise KeyB64DecodingFailure(e)
+        raise KeyB64DecodingFailure(e) from e
     if len(key_bytes) != SIV_KEY_SIZE:
         raise SivBadKeyLength(key_bytes)
     header = fp.read(struct.calcsize(SIV_256_PACK_FORMAT))
@@ -103,7 +103,7 @@ def siv_256_decrypt_from_file(fp: BinaryIO, key: str, debug=False) -> str:
     except ValueError as e:
         msg = str(e)
         if msg == "MAC check failed":
-            raise FileDecryptionFailed(algo=Algo.SIV_256, reason=msg)
+            raise FileDecryptionFailed(algo=Algo.SIV_256, reason=msg) from e
         raise e
     if debug:
         print(f"data:{data!r}")

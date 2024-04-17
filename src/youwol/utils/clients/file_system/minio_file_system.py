@@ -54,7 +54,7 @@ class MinioFileSystem(FileSystemInterface):
         except S3Error as e:
             raise ServerError(
                 status_code=500, detail=f"MinioFileSystem.list_buckets: {e.message}"
-            )
+            ) from e
 
     async def put_object(
         self,
@@ -86,7 +86,7 @@ class MinioFileSystem(FileSystemInterface):
         except S3Error as e:
             raise ServerError(
                 status_code=500, detail=f"MinioFileSystem.put_object: {e.message}"
-            )
+            ) from e
 
     async def get_info(self, object_id: str, **kwargs):
         object_id = self.get_object_path(object_id)
@@ -103,7 +103,7 @@ class MinioFileSystem(FileSystemInterface):
             raise ResourcesNotFoundException(
                 path=f"{self.bucket_name}:{object_id}",
                 detail=f"MinioFileSystem.get_stats: {e.message}",
-            )
+            ) from e
 
     async def set_metadata(self, object_id: str, metadata: Metadata, **kwargs):
         object_id = self.get_object_path(object_id)
@@ -125,7 +125,7 @@ class MinioFileSystem(FileSystemInterface):
             raise ResourcesNotFoundException(
                 path=f"{self.bucket_name}:{object_id}",
                 detail=f"MinioFileSystem.set_metadata: {e.message}",
-            )
+            ) from e
 
     async def get_object(
         self,
@@ -158,7 +158,7 @@ class MinioFileSystem(FileSystemInterface):
             raise ResourcesNotFoundException(
                 path=f"{self.bucket_name}:{object_id}",
                 detail=f"MinioFileSystem.get_object: {e.message}",
-            )
+            ) from e
 
     async def remove_object(self, object_id: str, **kwargs):
         object_id = self.get_object_path(object_id)
@@ -169,7 +169,7 @@ class MinioFileSystem(FileSystemInterface):
         except S3Error as e:
             raise ServerError(
                 status_code=500, detail=f"MinioFileSystem.remove_object: {e.message}"
-            )
+            ) from e
 
     async def remove_folder(self, prefix: str, raise_not_found: bool, **kwargs):
         prefix = self.get_object_path(prefix)
@@ -193,7 +193,7 @@ class MinioFileSystem(FileSystemInterface):
         except S3Error as e:
             raise ServerError(
                 status_code=500, detail=f"MinioFileSystem.remove_folder: {e.message}"
-            )
+            ) from e
 
     def get_object_path(self, object_id: str):
         return f"{str(self.root_path).strip('/')}/{object_id}"

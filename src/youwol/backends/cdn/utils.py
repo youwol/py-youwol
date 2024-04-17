@@ -230,10 +230,10 @@ async def publish_package(
         try:
             with open(package_path, encoding="UTF-8") as fp:
                 package_json = json.load(fp)
-        except ValueError:
+        except ValueError as exc:
             raise PublishPackageError(
                 "Error while loading the json file 'package.json' -> valid json file?"
-            )
+            ) from exc
 
         mandatory_fields = ["name", "version"]
         if any(field not in package_json for field in mandatory_fields):
@@ -555,10 +555,10 @@ def to_package_name(library_id: str) -> str:
     try:
         b = str.encode(library_id)
         return base64.urlsafe_b64decode(b).decode()
-    except Exception:
+    except Exception as exc:
         raise HTTPException(
             status_code=400, detail=f"'{library_id}' is not a valid library id"
-        )
+        ) from exc
 
 
 def get_url(lib: LibraryResolved) -> str:
@@ -688,11 +688,11 @@ async def resolve_resource(
     package_name = to_package_name(library_id)
     try:
         semver = to_std_npm_spec(input_semver)
-    except ValueError:
+    except ValueError as exc:
         raise HTTPException(
             status_code=400,
             detail=f"The provided semver {input_semver} can not be parsed using NPM specification.",
-        )
+        ) from exc
 
     if is_fixed_version(semver):
         max_age = await resolve_caching_max_age(semver=semver, context=context)

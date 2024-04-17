@@ -96,11 +96,11 @@ class ResourceInfo(NamedTuple):
 
         try:
             semantic_version.Version(version)
-        except ValueError:
+        except ValueError as exc:
             raise ValueError(
                 f"Pyodide package {name} has version '{version}' "
                 f"that can not be harmonized to NPM standard."
-            )
+            ) from exc
 
         return ResourceInfo(name=name, version=version, file=file)
 

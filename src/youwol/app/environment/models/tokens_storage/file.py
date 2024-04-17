@@ -16,7 +16,7 @@ class FilePath(PathBase):
         try:
             return self._path.open(mode="r")
         except FileNotFoundError as e:
-            raise TokensStoragePathBaseException(e)
+            raise TokensStoragePathBaseException(e) from e
 
 
 class TokensStorageFile(TokensStoragePathBase):

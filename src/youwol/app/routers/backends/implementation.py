@@ -351,9 +351,9 @@ async def ensure_running(
             )
             await emit_environment_status(context=ctx)
             return proxy
-        except TimeoutError:
+        except TimeoutError as exc:
             process.terminate()
-            raise StartBackendTimeout(outputs=outputs, ctx_id=context.uid)
+            raise StartBackendTimeout(outputs=outputs, ctx_id=context.uid) from exc
 
 
 class DownloadBackendFailed(Exception):

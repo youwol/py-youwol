@@ -51,7 +51,7 @@ class EncryptedFileReader(ReaderBase):
             else:
                 data = decrypt_from_file(path=absolute_path, key=key)
         except FileEncryptionException as e:
-            raise TokensStoragePathBaseException(e)
+            raise TokensStoragePathBaseException(e) from e
         self.__string_io = StringIO(initial_value=data)
 
     def read(self, *args, **kwargs) -> str:
@@ -86,7 +86,7 @@ class EncryptedFileWriter(WriterBase):
             else:
                 encrypt_into_file(data, path=self.__path, key=self.__key)
         except FileEncryptionException as e:
-            raise TokensStoragePathBaseException(e)
+            raise TokensStoragePathBaseException(e) from e
 
     def _close(self):
         return self.__string_io.close()

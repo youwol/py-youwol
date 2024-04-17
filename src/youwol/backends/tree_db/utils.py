@@ -146,7 +146,7 @@ async def ensure_drive(
         )
     except HTTPException as e:
         if e.status_code == 404:
-            raise HTTPException(status_code=404, detail="Drive not found")
+            raise HTTPException(status_code=404, detail="Drive not found") from e
         raise e
 
 

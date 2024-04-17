@@ -72,12 +72,12 @@ def get_object_from_module(
         module = importlib.util.module_from_spec(spec)
         loader.exec_module(module)
         instance = get_instance_from_module(module)
-    except Exception as e:
+    except Exception as exc:
         raise ModuleLoadingException(
             path=str(module_absolute_path),
-            message=str(e),
+            message=str(exc),
             traceback=tb.format_exc(),
-            exception_type=type(e).__name__,
-        )
+            exception_type=type(exc).__name__,
+        ) from exc
 
     return instance
