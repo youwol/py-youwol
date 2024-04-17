@@ -20,7 +20,7 @@ from youwol.backends.cdn import get_api_key
 from youwol.backends.cdn.loading_graph_implementation import exportedSymbols
 
 # Youwol utilities
-from youwol.utils import JSON, parse_json, write_json
+from youwol.utils import JSON, deep_merge, parse_json, write_json
 from youwol.utils.context import Context
 from youwol.utils.utils_paths import sed_inplace
 
@@ -132,7 +132,7 @@ def generate_package_json(source: Path, working_path: Path, input_template: Temp
         }
 
     write_json(
-        {**package_json, **values, **(input_template.inPackageJson or {})},
+        deep_merge({**package_json, **values}, input_template.inPackageJson or {}),
         working_path / FileNames.package_json,
     )
     with open(working_path / FileNames.package_json, "a", encoding="UTF-8") as file:
