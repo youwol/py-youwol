@@ -215,7 +215,7 @@ class YouwolEnvironment(BaseModel):
 
     def __str__(self):
         def str_middlewares():
-            if len(self.customMiddlewares) != 0:
+            if self.customMiddlewares:
                 return f"""
 - list of middlewares:
 {chr(10).join([f"  * {redirection}" for redirection in self.customMiddlewares])}
@@ -223,7 +223,7 @@ class YouwolEnvironment(BaseModel):
             return "- no redirections configured"
 
         def str_commands():
-            if len(self.commands.keys()) != 0:
+            if self.commands.keys():
                 return f"""
 - list of custom commands:
 {chr(10).join([f"  * http://localhost:{self.httpPort}/admin/custom-commands/{cmd}" for cmd in self.commands.keys()])}

@@ -130,7 +130,7 @@ def is_leaf_module(path: str) -> bool:
         and v.filepath.name == INIT_FILENAME
         and v.docstring
     ]
-    return len(children) == 0
+    return not children
 
 
 def format_module_doc(griffe_doc: Module, path: str) -> DocModuleResponse:

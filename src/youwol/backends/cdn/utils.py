@@ -107,7 +107,7 @@ async def prepare_files_to_post(
         return_code, outputs = await execute_shell_cmd(
             cmd="brotli --version", context=context
         )
-        use_os_brotli = return_code == 0
+        use_os_brotli = not return_code
         await context.info(
             f"Brotli compression using OS brotli: {use_os_brotli}",
             data={"outputs": outputs},

@@ -282,7 +282,7 @@ async def get_parent(parent_id: str, configuration: Configuration, context: Cont
             context=context,
         ),
     )
-    if len(parent_folder) + len(parent_drive) == 0:
+    if not parent_folder + parent_drive:
         raise HTTPException(status_code=404, detail="Containing drive/folder not found")
     parent = (parent_folder + parent_drive)[0]
     return parent

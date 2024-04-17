@@ -310,7 +310,7 @@ def check_permission_or_raise(target_group: str | None, allowed_groups: list[str
     if not target_group:
         return
     compatible_groups = [g for g in allowed_groups if target_group in g]
-    if len(compatible_groups) == 0:
+    if not compatible_groups:
         raise HTTPException(
             status_code=401,
             detail=f"scope '{target_group}' not included in user groups",

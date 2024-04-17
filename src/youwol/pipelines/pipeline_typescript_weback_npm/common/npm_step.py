@@ -73,10 +73,10 @@ class PublishNpmStep(PipelineStep):
             cmd = f"npm view {project.name} versions --json"
             exit_code, outputs = await execute_shell_cmd(cmd=cmd, context=ctx)
 
-            if exit_code != 0 and "E404" in outputs[0]:
+            if exit_code and "E404" in outputs[0]:
                 return PipelineStepStatus.NONE
 
-            if exit_code != 0:
+            if exit_code:
                 raise CommandException(command=cmd, outputs=outputs)
 
             flat_output = functools.reduce(lambda acc, e: acc + e, outputs, "")

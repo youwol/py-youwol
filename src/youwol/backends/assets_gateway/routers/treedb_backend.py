@@ -782,7 +782,7 @@ async def purge_drive(
                 for item in related_items["items"]
                 if item["borrowed"] and item["groupId"] == to_delete["groupId"]
             ]
-            if len(borrowed_items_in_group) == 0:
+            if not borrowed_items_in_group:
                 await ctx.info(
                     text="Remove access policy for (asset, group)",
                     data={"toDelete": to_delete},

@@ -163,7 +163,7 @@ class PublicNpmRepo(NpmRepo):
         exit_code, outputs = await execute_shell_cmd(
             f"(cd {project.path} && yarn publish --access public)", context=context
         )
-        if exit_code != 0:
+        if exit_code:
             raise CommandException(command=cmd, outputs=outputs)
         return outputs
 

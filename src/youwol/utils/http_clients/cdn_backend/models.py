@@ -22,9 +22,9 @@ default_webpm_lib_type: WebpmLibraryType = "js/wasm"
 
 def get_api_key(version: str | Version):
     parsed = version if isinstance(version, Version) else Version(version)
-    if parsed.major != 0:
+    if parsed.major:
         return f"{parsed.major}"
-    if parsed.minor != 0:
+    if parsed.minor:
         return f"0{parsed.minor}"
     return f"00{parsed.patch}"
 

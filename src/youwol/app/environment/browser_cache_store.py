@@ -346,9 +346,7 @@ class BrowserCacheStore:
         with open(self._output_file_path, encoding="UTF-8") as file:
             content = file.read()
             lines = content.split("\n")[1:]
-            items = [
-                BrowserCacheStore._decode_line(line) for line in lines if line
-            ]
+            items = [BrowserCacheStore._decode_line(line) for line in lines if line]
             items = [item for item in items if sanity_check(item)]
             self._items = {**self._items, **{item.key: item for item in items}}
             log_info(
