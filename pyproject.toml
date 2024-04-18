@@ -215,24 +215,31 @@ ignore_missing_imports = true
 
 [tool.pylint]
 disable = [
-    "W0719",
-    "W0718",
-    "C0116",
-    "C0114",
-    "C0115",
+    "broad-exception-raised",
+    "broad-exception-caught",
     "duplicate-code",
-    "design",
+    "missing-function-docstring",
+    "missing-module-docstring",
+    "missing-class-docstring",
+    "too-few-public-methods",
+    "too-many-arguments",
+    "too-many-locals",
+    "too-many-return-statements",
+    "too-many-instance-attributes",
+    "too-many-statements",
+    "too-many-public-methods"
 ]
 enable = [
-    "C1804",
-    "C1805",
-    "I0010",
-    "I0022",
-    "I0023",
-    "I0021",
+    "use-implicit-booleaness-not-comparison-to-string",
+    "use-implicit-booleaness-not-comparison-to-zero",
+    "bad-inline-option",
+    "deprecated-pragma",
+    "use-symbolic-message-instead",
+    "useless-suppression",
 ]
 max-line-length = 120
 extension-pkg-allow-list = "cassandra"
+min-similarity-lines = 5
 
 [tool.pylint."MESSAGES CONTROL"]
 extension-pkg-whitelist = "pydantic"
