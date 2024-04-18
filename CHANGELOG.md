@@ -25,6 +25,13 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
   -  typescript pipeline provides additional flexibility to customize auto-generated `package.json`. 
   <!-- TG-539, TG-1260 -->
 
+<!-- Not worthy of inclusion
+TG-2315 : 🚨 Enable pylint rule `raise-missing-from`
+TG-2318 : 🚨 Enable pylint rule `use-implicit-booleaness-not-comparison-to-zero`
+TG-2319 : 🚨 Enable pylint rule `use-implicit-booleaness-not-comparison-to-string`
+-->
+
+
 ## [0.1.9] − 2024-04-16
 
 ### Added
