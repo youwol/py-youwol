@@ -377,7 +377,7 @@ class ProjectsFinderImpl:
         """
         Forces a re-scan of the `from_path` to update the list of projects.
         """
-        if self.look_up_depth == 0:
+        if not self.look_up_depth:
             await self.trigger_update(([self.from_path], []))
             return
         project_paths = auto_detect_projects(

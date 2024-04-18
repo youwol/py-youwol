@@ -121,7 +121,7 @@ class TokensStoragePathBase(TokensStorage, ABC):
             try:
                 data = json.load(fp)
             except JSONDecodeError as e:
-                raise TokensStoragePathBaseException(e)
+                raise TokensStoragePathBaseException(e) from e
             if "tokens_data" in data:
                 self.__tokens_data = {
                     tokens_id: TokensData(**data["tokens_data"][tokens_id])

@@ -188,7 +188,7 @@ class QueryBody(BaseModel):
         elif "#" in remaining:
             [where_clauses_str, count_str] = query_str.split("#")
 
-        if where_clauses_str == "":
+        if not where_clauses_str:
             where_clauses = []
         else:
             where_clauses = [parse_clause(w) for w in where_clauses_str.split(",")]

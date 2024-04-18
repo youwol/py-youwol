@@ -54,7 +54,7 @@ async def record_access(
             query_body=query, owner=Constants.public_owner, headers=ctx.headers()
         )
 
-        if len(asset["documents"]) == 0:
+        if not asset["documents"]:
             raise HTTPException(
                 status_code=404, detail=f"Asset with related_id ${related_id} not found"
             )

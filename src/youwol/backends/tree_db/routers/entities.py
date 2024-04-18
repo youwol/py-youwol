@@ -82,7 +82,7 @@ async def move(
             ),
             return_exceptions=True,
         )
-        if len(items) + len(folders) == 0:
+        if not items + folders:
             raise HTTPException(
                 status_code=404, detail="Source item or folder not found in database"
             )

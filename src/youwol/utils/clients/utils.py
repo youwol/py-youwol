@@ -65,7 +65,7 @@ def ancestors_group_id(group_id):
     if scope == "private":
         return []
 
-    items = [scope for scope in scope.split("/") if scope != ""]
+    items = [scope for scope in scope.split("/") if scope]
     paths = ["/".join([""] + items[0 : i + 1]) for i, _ in enumerate(items)]
     ids = [to_group_id(p) for p in paths[0:-1]]
     ids.reverse()

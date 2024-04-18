@@ -86,7 +86,7 @@ class All(PatternRequestInfoExtractor):
     def extract_from_pattern(self, substitutes: list[str | list[str]]):
         casted = cast(tuple[str, list[str]], substitutes)
         [method, messages] = casted
-        if len(messages) != 0:
+        if messages:
             *_, last = messages
         else:
             last = "root path"

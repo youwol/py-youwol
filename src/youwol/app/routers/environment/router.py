@@ -506,13 +506,13 @@ async def login(request: Request, body: LoginBody) -> UserInfo:
         )
         try:
             tokens = await get_connected_local_tokens(context=ctx)
-        except NeedInteractiveSession:
+        except NeedInteractiveSession as exc:
             await YouwolEnvironmentFactory.reload(actual_connection)
             raise HTTPException(
                 status_code=422,
                 detail=f"Need a browser interactive session for env '{body.envId}' that is not available in "
                 f"tokens storage.",
-            )
+            ) from exc
         access_token = await tokens.access_token()
         access_token_decoded = await OidcConfig(
             env.get_remote_info().authProvider.openidBaseUrl

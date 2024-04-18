@@ -104,7 +104,7 @@ async def publish_story(
                 await ctx.error(
                     f"Extracting zip file failed {e}",
                 )
-                raise InvalidInput(error="Bad zip file")
+                raise InvalidInput(error="Bad zip file") from e
 
             await ctx.info("Zip file extracted successfully")
             data = parse_json(dir_path / ZIP_DATA_FILENAME)

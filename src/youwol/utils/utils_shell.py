@@ -5,6 +5,9 @@ import os
 from asyncio.subprocess import Process
 from collections.abc import Awaitable, Callable
 
+# typing
+from typing import cast
+
 # third parties
 from aiostream import stream
 
@@ -30,7 +33,7 @@ async def execute_shell_cmd(
     log_outputs=True,
     on_executed: Callable[[Process, Context], Awaitable[None]] | None = None,
     **kwargs,
-) -> tuple[int | None, list[str]]:
+) -> tuple[int, list[str]]:
     async with context.start(
         action="execute 'shell' command", with_labels=["BASH"]
     ) as ctx:
@@ -51,4 +54,6 @@ async def execute_shell_cmd(
                 if log_outputs:
                     await ctx.info(text=outputs[-1])
         await p.communicate()
-        return p.returncode, outputs
+        # p.returncode can not be 'None' as the process has terminated
+        return_code = cast(int, p.returncode)
+        return return_code, outputs

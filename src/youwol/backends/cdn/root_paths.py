@@ -237,7 +237,7 @@ async def get_version_info_impl(
                 raise PackagesNotFound(
                     context="Failed to retrieve a package",
                     packages=[f"{library_name}#{resolved_version}"],
-                )
+                ) from e
             raise e
 
 
@@ -677,10 +677,10 @@ async def explorer(
     ) as ctx:  # type: Context
         try:
             package_name = to_package_name(library_id)
-        except Exception:
+        except Exception as exc:
             raise HTTPException(
                 status_code=400, detail=f"'{library_id}' is not a valid library id"
-            )
+            ) from exc
 
         path = f"generated/explorer/{package_name.replace('@', '')}/{version}/{rest_of_path}/".replace(
             "//", "/"

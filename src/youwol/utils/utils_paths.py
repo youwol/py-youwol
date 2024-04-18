@@ -157,7 +157,7 @@ def default_create_dir(final_path: Path):
     try:
         final_path.mkdir(parents=True)
     except Exception as e:
-        raise PathException(f"Error while creating '{str(final_path)}' : {e}")
+        raise PathException(f"Error while creating '{str(final_path)}' : {e}") from e
 
 
 def fail_on_missing_dir(path: Path):
@@ -208,7 +208,9 @@ def ensure_file_exists(
                 final_path.parent.mkdir(parents=True, exist_ok=True)
                 final_path.write_text(default_content, encoding="UTF-8")
             except Exception as e:
-                raise PathException(f"Error while creating '{str(final_path)}' : {e}")
+                raise PathException(
+                    f"Error while creating '{str(final_path)}' : {e}"
+                ) from e
         else:
             raise PathException(f"'{str(final_path)}' does not exist")
 

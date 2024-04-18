@@ -34,7 +34,7 @@ def decrypt_from_file(
 ) -> str:
     if not path.exists():
         raise FileNotFound(path)
-    if path.stat().st_size == 0:
+    if not path.stat().st_size:
         raise FileEmpty(path)
     with path.open(mode="rb") as fp:
         byte = fp.read(ALGO_HEADER_LENGTH)

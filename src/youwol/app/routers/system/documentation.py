@@ -130,7 +130,7 @@ def is_leaf_module(path: str) -> bool:
         and v.filepath.name == INIT_FILENAME
         and v.docstring
     ]
-    return len(children) == 0
+    return not children
 
 
 def format_module_doc(griffe_doc: Module, path: str) -> DocModuleResponse:
@@ -621,7 +621,7 @@ async def get_doc_implementation(module_path: str) -> DocModuleResponse:
     DocCache.all_symbols = init_symbols(DocCache.global_doc)
     if module_path in DocCache.modules_doc:
         return DocCache.modules_doc[module_path]
-    root = module_path == ""
+    root = not module_path
     module_name = (
         module_path.strip("/").replace("/", ".").replace(YOUWOL_MODULE, "").strip(".")
     )
@@ -631,11 +631,11 @@ async def get_doc_implementation(module_path: str) -> DocModuleResponse:
             module_name.split("."),
             DocCache.global_doc,
         )
-    except KeyError:
+    except KeyError as exc:
         raise HTTPException(
             status_code=404,
             detail=f"The module '{module_name}' is not part of youwol.",
-        )
+        ) from exc
     griffe_doc = cast(Module, module_doc)
     if root:
         return DocModuleResponse(

@@ -856,7 +856,7 @@ class Project(BaseModel):
             if step_id not in branch:
                 return None
 
-            if branch.index(step_id) == 0:
+            if not branch.index(step_id):
                 return None
 
             return branch[(branch.index(step_id) - 1)]

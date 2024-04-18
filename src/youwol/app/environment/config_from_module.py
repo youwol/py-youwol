@@ -155,7 +155,7 @@ async def configuration_from_python(path: Path) -> Configuration:
             reason="There was an exception calling 'IConfigurationFactory#get()'.",
             error=err,
         )
-        raise ConfigurationLoadingException(get_status(False))
+        raise ConfigurationLoadingException(get_status(False)) from err
 
     if not isinstance(config_data, Configuration):
         check_valid_conf_fct.status = ErrorResponse(

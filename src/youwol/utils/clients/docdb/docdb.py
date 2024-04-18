@@ -531,7 +531,7 @@ class DocDbClient:
     def get_primary_key_query_parameters(self, doc: dict[str, Any]):
         if (
             len(self.table_body.partition_key) == 1
-            and len(self.table_body.clustering_columns) == 0
+            and not self.table_body.clustering_columns
         ):
             return f"?partitionKey={doc[self.table_body.partition_key[0]]}"
 

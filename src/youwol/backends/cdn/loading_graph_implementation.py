@@ -208,7 +208,7 @@ async def list_all_versions_with_cache(
         )
     except HTTPException as e:
         if e.status_code == 404 and not extra_elements:
-            raise LibraryNotFound(library=library)
+            raise LibraryNotFound(library=library) from e
 
         versions_resp = ListVersionsResponse(
             name=library.name,
@@ -259,8 +259,8 @@ async def resolve_version(
             )
         except HTTPException as e:
             if e.status_code == 404:
-                raise LibraryNotFound(library=dependency)
-            raise LibraryException(library=dependency)
+                raise LibraryNotFound(library=dependency) from e
+            raise LibraryException(library=dependency) from e
 
         if fixed:
             resolved_version = next((v for v in versions if v == version), None)

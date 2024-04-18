@@ -185,8 +185,8 @@ async def decode_extra_index(documents: str, context: Context):
                 "version": props[1],
                 "bundle": props[2],
                 "fingerprint": props[3],
-                "dependencies": [d for d in props[4][1:-1].split(",") if d != ""],
-                "aliases": [d for d in props[5][1:-1].split(",") if d != ""],
+                "dependencies": [d for d in props[4][1:-1].split(",") if d],
+                "aliases": [d for d in props[5][1:-1].split(",") if d],
                 # The next check is to make py-youwol<0.1.8 compatible with the remote cdn backend.
                 # Can be removed when py-youwol<0.1.8 are not supported anymore.
                 "type": (
