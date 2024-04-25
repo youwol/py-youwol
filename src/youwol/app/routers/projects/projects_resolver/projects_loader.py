@@ -206,7 +206,11 @@ class ProjectLoader:
         )
 
         ProjectLoader.projects_list = []
-        ProjectLoader.failures_list = []
+        ProjectLoader.failures_report = FailuresReport(
+            directoriesNotFound=[],
+            pipelinesNotFound=[],
+            importExceptions=[],
+        )
         await ProjectLoader.handler.initialize()
 
     @staticmethod
@@ -223,7 +227,11 @@ class ProjectLoader:
         """
         async with context.start("ProjectLoader.refresh"):
             ProjectLoader.projects_list = []
-            ProjectLoader.failures_list = []
+            ProjectLoader.failures_report = FailuresReport(
+                directoriesNotFound=[],
+                pipelinesNotFound=[],
+                importExceptions=[],
+            )
             await ProjectLoader.handler.refresh()
             return ProjectLoader.status()
 
