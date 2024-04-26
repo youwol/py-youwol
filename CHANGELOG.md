@@ -46,6 +46,11 @@ TG-2319 : 🚨 Enable pylint rule `use-implicit-booleaness-not-comparison-to-str
   -  intercept Pyodide resources requests to store them within the local CDN database. <!-- TG-2238 -->
 - **Pipelines**:
   -  configured by default to publish in connected remote and public NPM (if applicable). <!-- TG-2254 --> 
+  
+### Fixed
+
+- Addressed issue preventing the projects loader component to properly notify updates regarding projects loading 
+failures. <!-- TG-2267 -->
 
 ### Changed
 
