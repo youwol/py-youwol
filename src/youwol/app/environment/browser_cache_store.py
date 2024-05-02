@@ -121,46 +121,59 @@ class BrowserCacheStore:
         Return:
             The cached item if the response has been cached, otherwise None.
         """
+        async with context.start(action="BrowserCacheStore.cache_if_needed") as ctx:
+            if not await self._init_cache(request=request, context=ctx):
+                return
 
-        if not self._init_cache(request=request):
-            return
+            if not self._is_get_request_from_browser(request=request):
+                await ctx.info(
+                    "Request did not come from browser => cache layer skipped"
+                )
+                return
 
-        if not self._is_get_request_from_browser(request=request):
-            return
+            if YouwolHeaders.yw_browser_cache_directive not in response.headers:
+                await ctx.info(
+                    "Response has not `yw_browser_cache_directive` in headers"
+                )
+                return
 
-        if YouwolHeaders.yw_browser_cache_directive not in response.headers:
-            return
+            if any(
+                d in response.headers.get("cache-control")
+                for d in ["no-cache", "no-store", "max-age=0"]
+            ):
+                await ctx.info(
+                    "Response has headers including one of ['no-cache', 'no-store', 'max-age=0']"
+                )
+                return
 
-        if any(
-            d in response.headers.get("cache-control")
-            for d in ["no-cache", "no-store", "max-age=0"]
-        ):
-            return
+            if "max-age=" not in response.headers.get("cache-control"):
+                await ctx.info("Response has no max-age header")
+                return
 
-        if "max-age=" not in response.headers.get("cache-control"):
-            return
+            if await self._ignore(request, context):
+                await ctx.info("Request is included in ignored patterns.")
+                return
 
-        if await self._ignore(request, context):
-            return
+            if await self._disable_write(request, response, context):
+                await ctx.info("Request is included in disabled write patterns.")
+                return
 
-        if await self._disable_write(request, response, context):
-            return
+            key = self._get_key(request=request)
+            info = YouwolHeaders.get_youwol_browser_cache_info(response=response)
+            item = BrowserCacheItem(
+                key=key,
+                file=info.filepath,
+                headers=dict(response.headers.items()),
+                expirationTime=self._get_expiration_time(
+                    response.headers.get("cache-control")
+                ),
+            )
+            self._items[key] = item
+            if self._output_file:
+                self._write_items(items=[item], fp=self._output_file)
+                await ctx.info("Item written successfully.")
 
-        key = self._get_key(request=request)
-        info = YouwolHeaders.get_youwol_browser_cache_info(response=response)
-        item = BrowserCacheItem(
-            key=key,
-            file=info.filepath,
-            headers=dict(response.headers.items()),
-            expirationTime=self._get_expiration_time(
-                response.headers.get("cache-control")
-            ),
-        )
-        self._items[key] = item
-        if self._output_file:
-            self._write_items(items=[item], fp=self._output_file)
-
-        return item
+            return item
 
     async def try_get(
         self, request: Request, context: Context
@@ -184,65 +197,74 @@ class BrowserCacheStore:
         Return:
             The cached response & item if the function succeed, otherwise None.
         """
-        if not self._init_cache(request=request):
-            return
 
-        if not self._is_get_request_from_browser(request=request):
-            return
+        async with context.start(action="BrowserCacheStore.try_get") as ctx:
 
-        if await self._ignore(request, context):
-            return
+            if not await self._init_cache(request=request, context=ctx):
+                await ctx.error("Cache initialization failed")
+                return
 
-        key = self._get_key(request=request)
+            if not self._is_get_request_from_browser(request=request):
+                await ctx.info(
+                    "Request did not come from browser => cache layer skipped"
+                )
+                return
 
-        if key not in self._items:
-            return
+            if await self._ignore(request, ctx):
+                await ctx.info("Request is part of ignore list => cache layer skipped")
+                return
 
-        item = self._items[key]
-        file_path = Path(item.file)
-        if not file_path.exists():
-            self._items.pop(key)
-            return
+            key = self._get_key(request=request)
+            await ctx.info("Item's key retrieved", data={"key": key})
+            if key not in self._items:
+                return
 
-        range_header = request.headers.get("Range")
-        if range_header:
-            # If Range header is present, serve the requested range of bytes
-            start, end = range_header.split("=")[-1].split("-")
-            start = int(start)
-            end = int(end) if end else None
+            item = self._items[key]
+            file_path = Path(item.file)
+            if not file_path.exists():
+                self._items.pop(key)
+                return
 
-            with open(file_path, "rb") as file:
-                file.seek(start)
-                content = file.read(end - start + 1) if end else file.read()
+            range_header = request.headers.get("Range")
+            if range_header:
+                # If Range header is present, serve the requested range of bytes
+                start, end = range_header.split("=")[-1].split("-")
+                start = int(start)
+                end = int(end) if end else None
+
+                with open(file_path, "rb") as file:
+                    file.seek(start)
+                    content = file.read(end - start + 1) if end else file.read()
+
+                response = Response(
+                    content=content,
+                    status_code=206,
+                    headers={
+                        **item.headers,
+                        "Content-Range": f"bytes {start}-{end}/{file_path.stat().st_size}",
+                        YouwolHeaders.youwol_origin: "browser-cache",
+                    },
+                )
+                return BrowserCacheResponse(response=response, item=item)
+
+            content = file_path.read_bytes()
+            if (
+                "content-length" in item.headers
+                and str(len(content)) != item.headers["content-length"]
+            ):
+                await ctx.warning(
+                    text=f"The resource at {file_path} was initially chosen for caching, "
+                    f"but its content has since changed",
+                    data=item,
+                )
+                return
 
             response = Response(
+                status_code=200,
                 content=content,
-                status_code=206,
-                headers={
-                    **item.headers,
-                    "Content-Range": f"bytes {start}-{end}/{file_path.stat().st_size}",
-                    YouwolHeaders.youwol_origin: "browser-cache",
-                },
+                headers={**item.headers, YouwolHeaders.youwol_origin: "browser-cache"},
             )
             return BrowserCacheResponse(response=response, item=item)
-
-        content = file_path.read_bytes()
-        if (
-            "content-length" in item.headers
-            and str(len(content)) != item.headers["content-length"]
-        ):
-            await context.warning(
-                text=f"The resource at {file_path} was initially chosen for caching, but its content has since changed",
-                data=item,
-            )
-            return
-
-        response = Response(
-            status_code=200,
-            content=content,
-            headers={**item.headers, YouwolHeaders.youwol_origin: "browser-cache"},
-        )
-        return BrowserCacheResponse(response=response, item=item)
 
     def stop(self):
         """
@@ -301,88 +323,108 @@ class BrowserCacheStore:
 
             return items_count
 
-    def _init_cache(self, request: Request) -> bool:
-        if self._file_key:
-            # It means cache has been initialized
-            return True
+    async def _init_cache(self, request: Request, context: Context) -> bool:
 
-        if not hasattr(request.state, "user_info"):
-            return False
+        async with context.start(action="BrowserCacheStore._init_cache") as ctx:
+            if self._file_key:
+                # It means cache has been initialized
+                await ctx.info(text="Cache is already initialized")
+                return True
 
-        if self.yw_config.system.browserEnvironment.cache.mode == "in-memory":
-            _ = self._get_session_key(request)
-            # The initialization is OK, no output file is needed here.
-            return True
-
-        log_info(
-            message="BrowserCacheStore: recover cached entries from persisted file..."
-        )
-
-        cache_dir = Path(self.yw_config.system.browserEnvironment.cache.cachesFolder)
-        cache_dir.mkdir(parents=True, exist_ok=True)
-        self._output_file_path = (
-            cache_dir / self._get_session_key(request)
-        ).with_suffix(".txt")
-        if not self._output_file_path.exists():
-            with open(self._output_file_path, "a", encoding="UTF-8") as fp:
-                fp.write(self._headline())
-
-        corrupted = []
-        expired = []
-        duplicates = False
-
-        def sanity_check(item: BrowserCacheItem | None):
-            if not item or not Path(item.file).exists():
-                corrupted.append(item)
+            if not hasattr(request.state, "user_info"):
+                await ctx.error(
+                    text="Can not initialize cache: no user info retrieved from request.state"
+                )
                 return False
 
-            if time.time() > item.expirationTime:
-                expired.append(item)
-                return False
-            return True
+            if self.yw_config.system.browserEnvironment.cache.mode == "in-memory":
+                _ = self._get_session_key(request)
+                # The initialization is OK, no output file is needed here.
+                return True
 
-        max_count = self.yw_config.system.browserEnvironment.cache.maxCount
-
-        with open(self._output_file_path, encoding="UTF-8") as file:
-            content = file.read()
-            lines = content.split("\n")[1:]
-            items = [BrowserCacheStore._decode_line(line) for line in lines if line]
-            items = [item for item in items if sanity_check(item)]
-            self._items = {**self._items, **{item.key: item for item in items}}
             log_info(
-                message=f"BrowserCacheStore: loaded {len(items)} documents from {self._output_file_path}"
+                message="BrowserCacheStore: recover cached entries from persisted file..."
             )
-            if len(self._items.keys()) != len(items):
-                log_info(
-                    message=f"BrowserCacheStore: found {len(items) - len(self._items.keys())} duplicated items, "
-                    f"only the latest will be kept."
-                )
-                duplicates = True
+            await ctx.info(text="Recover cached entries from persisted file...")
+            cache_dir = Path(
+                self.yw_config.system.browserEnvironment.cache.cachesFolder
+            )
+            cache_dir.mkdir(parents=True, exist_ok=True)
+            self._output_file_path = (
+                cache_dir / self._get_session_key(request)
+            ).with_suffix(".txt")
+            if not self._output_file_path.exists():
 
-            if len(self._items.keys()) > max_count:
-                log_info(
-                    message=f"BrowserCacheStore: maximum count of cached items reached "
-                    f"({self._items.keys()}/{max_count})."
-                )
-
-            if corrupted:
-                log_info(
-                    message=f"BrowserCacheStore: found {len(corrupted)} corrupted items, proceed to remove them"
+                await ctx.info(
+                    text="Output file does not exist, proceed to creation",
+                    data={"file": self._output_file_path},
                 )
 
-        if duplicates or corrupted or expired or len(items) > max_count:
-            with open(self._output_file_path, "w", encoding="UTF-8") as fp:
-                fp.write(self._headline())
-                items_to_keep = list(self._items.values())[-max_count:]
-                self._write_items(items=items_to_keep, fp=fp)
+                with open(self._output_file_path, "a", encoding="UTF-8") as fp:
+                    fp.write(self._headline())
 
-        # The pointer is kept in memory to avoid extra opening each time writing is needed.
-        # The 'stop()' method is required to be called each time a config. is reloaded or when py-youwol is terminated.
-        # This is executed in `YouwolEnvironmentFactory`.
-        self._output_file = open(  # pylint: disable=consider-using-with
-            self._output_file_path, "a", encoding="UTF-8"
-        )
-        return True
+            corrupted = []
+            expired = []
+            duplicates = False
+
+            def sanity_check(item: BrowserCacheItem | None):
+                if not item or not Path(item.file).exists():
+                    corrupted.append(item)
+                    return False
+
+                if time.time() > item.expirationTime:
+                    expired.append(item)
+                    return False
+                return True
+
+            max_count = self.yw_config.system.browserEnvironment.cache.maxCount
+
+            with open(self._output_file_path, encoding="UTF-8") as file:
+                content = file.read()
+                lines = content.split("\n")[1:]
+                items = [BrowserCacheStore._decode_line(line) for line in lines if line]
+                items = [item for item in items if sanity_check(item)]
+                self._items = {**self._items, **{item.key: item for item in items}}
+                log_info(
+                    message=f"BrowserCacheStore: loaded {len(items)} documents from {self._output_file_path}"
+                )
+
+                await ctx.info(
+                    text="loaded {len(items)} documents from {self._output_file_path}"
+                )
+
+                if len(self._items.keys()) != len(items):
+                    log_info(
+                        message=f"BrowserCacheStore: found {len(items) - len(self._items.keys())} duplicated items, "
+                        f"only the latest will be kept."
+                    )
+                    duplicates = True
+
+                if len(self._items.keys()) > max_count:
+                    log_info(
+                        message=f"BrowserCacheStore: maximum count of cached items reached "
+                        f"({self._items.keys()}/{max_count})."
+                    )
+
+                if corrupted:
+                    log_info(
+                        message=f"BrowserCacheStore: found {len(corrupted)} corrupted items, proceed to remove them"
+                    )
+
+            if duplicates or corrupted or expired or len(items) > max_count:
+                with open(self._output_file_path, "w", encoding="UTF-8") as fp:
+                    fp.write(self._headline())
+                    items_to_keep = list(self._items.values())[-max_count:]
+                    self._write_items(items=items_to_keep, fp=fp)
+
+            # The pointer is kept in memory to avoid extra opening each time writing is needed.
+            # The 'stop()' method is required to be called each time a config. is reloaded
+            # or when py-youwol is terminated.
+            # This is executed in `YouwolEnvironmentFactory`.
+            self._output_file = open(  # pylint: disable=consider-using-with
+                self._output_file_path, "a", encoding="UTF-8"
+            )
+            return True
 
     def _get_session_key(self, request: Request):
         if self._file_key:
