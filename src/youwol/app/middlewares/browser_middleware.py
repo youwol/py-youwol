@@ -132,7 +132,7 @@ class BrowserMiddleware(BaseHTTPMiddleware):
                 resp.headers["Cache-Control"] = "no-cache, no-store"
             return resp
 
-        async with Context.from_request(request).start(
+        async with Context.from_request(request).start_middleware(
             action="Browser middleware",
             with_labels=[Label.MIDDLEWARE],
         ) as ctx:

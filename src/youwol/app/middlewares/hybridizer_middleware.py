@@ -81,7 +81,7 @@ class LocalCloudHybridizerMiddleware(BaseHTTPMiddleware):
         Return:
             The response after middleware processing.
         """
-        async with Context.from_request(request).start(
+        async with Context.from_request(request).start_middleware(
             action="attempt hybrid local/cloud dispatches",
             with_labels=[Label.MIDDLEWARE],
         ) as ctx:

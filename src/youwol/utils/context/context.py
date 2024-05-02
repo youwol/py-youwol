@@ -207,6 +207,13 @@ class Context(Generic[T]):
             with_cookies={**self.with_cookies, **(with_cookies or {})},
         )
 
+    def start_middleware(self, **kwargs):
+        # When middleware are calling 'next' this seems the only way to pass the context through
+        # see https://github.com/tiangolo/fastapi/issues/1529
+        ctx = self.start(**kwargs)
+        self.request.state.context = ctx
+        return ctx
+
     @staticmethod
     def start_ep(
         request: Request,
@@ -607,11 +614,6 @@ class ScopedContext(Generic[T], Context[T]):
         return time.time()
 
     async def __aenter__(self):
-        # When middleware are calling 'next' this seems the only way to pass the context through
-        # see https://github.com/tiangolo/fastapi/issues/1529
-        if self.request and self.request.state:
-            self.request.state.context = self
-
         await self.info(text=f"{self.action}", labels=[Label.STARTED])
         # next call initialize cache property
         _ = self.start_time

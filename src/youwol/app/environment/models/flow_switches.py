@@ -174,7 +174,7 @@ class FlowSwitcherMiddleware(CustomMiddleware):
         call_next: RequestResponseEndpoint,
         context: Context,
     ) -> Response | None:
-        async with context.start(
+        async with context.start_middleware(
             action=f"FlowSwitcher: {self.name}", with_labels=[Label.MIDDLEWARE]
         ) as ctx:
             async with ctx.start(
