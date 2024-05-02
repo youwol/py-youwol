@@ -25,6 +25,11 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
   -  typescript pipeline provides additional flexibility to customize auto-generated `package.json`. 
   <!-- TG-539, TG-1260 -->
 
+### Fixed
+
+- Resolved an issue related to context propagation within the middleware stack, which previously resulted 
+  in incorrect parenting of logs. <!-- TG-2331 -->
+
 <!-- Not worthy of inclusion
 TG-2327 : ✅ improve IT configuration for performance optimization
 TG-2315 : 🚨 Enable pylint rule `raise-missing-from`

@@ -187,7 +187,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         Return:
             HTTP response
         """
-        async with Context.from_request(request).start(
+        async with Context.from_request(request).start_middleware(
             action="Authorization middleware", with_labels=[Label.MIDDLEWARE]
         ) as ctx:
             if self.predicate_public_path(request.url):

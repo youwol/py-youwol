@@ -102,7 +102,7 @@ class RootMiddleware(BaseHTTPMiddleware):
         context = self.get_context(request=request)
         info = request_info(request)
 
-        async with context.start(
+        async with context.start_middleware(
             action=info.message,
             with_attributes={**info.attributes, "traceId": context.trace_uid},
             with_labels=[Label.API_GATEWAY, *info.labels],
