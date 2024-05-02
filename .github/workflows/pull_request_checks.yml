@@ -57,7 +57,7 @@ jobs:
     with:
       pyYouwolCoverage: true
       tsRepository: youwol/local-youwol-client
-      tsRef: feature/improve-perf-logs
+      tsRef: ${{ inputs.local-youwol-client_ref }}
       coverageOmit: '*/src/tests/*/yw_pipeline.py'
       name: local-youwol-client
     secrets: inherit
