@@ -8,7 +8,7 @@ from glob import glob
 from pathlib import Path
 
 # typing
-from typing import cast
+from typing import TypedDict, cast
 
 # third parties
 import brotli
@@ -102,13 +102,15 @@ cloud_env = CloudEnvironment(
 )
 
 
-def clear_data(databases: bool):
-    shutil.rmtree(projects_folder, ignore_errors=True)
-    shutil.rmtree(system_folder, ignore_errors=True)
-    os.mkdir(projects_folder)
-    os.mkdir(system_folder)
-    if databases:
-        shutil.rmtree(databases_folder, ignore_errors=True)
+def clear_data(projects: bool, system: bool):
+
+    if system:
+        shutil.rmtree(system_folder, ignore_errors=True)
+        os.mkdir(system_folder)
+
+    if projects:
+        shutil.rmtree(projects_folder, ignore_errors=True)
+        os.mkdir(projects_folder)
 
 
 async def clone_project(git_url: str, branch: str, new_project_name: str, ctx: Context):
@@ -173,12 +175,22 @@ async def purge_downloads(context: Context):
         return {}
 
 
-async def reset(ctx: Context):
+class BodyClear(TypedDict):
+    projects: bool
+    system: bool
+
+
+async def reset(body: BodyClear, ctx: Context):
+
     env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
     env.reset_cache()
     env.reset_databases()
-    clear_data(databases=False)
-    await ProjectLoader.initialize(env=env)
+    clear_project = body.get("projects", True)
+    clear_system = body.get("system", True)
+    clear_data(projects=clear_project, system=clear_system)
+    print(f"Databases reset, projects:{clear_project}, system:{clear_system}")
+    if clear_project:
+        await ProjectLoader.initialize(env=env)
 
 
 async def create_test_data_remote(context: Context):
@@ -284,9 +296,10 @@ pipeline_raw.set_environment(Environment(cdnTargets=[]))
 
 
 def apply_test_labels_logs(body, _ctx):
-    ContextFactory.add_labels(
-        key="labels@local-yw-clients-tests", labels={body["file"], body["testName"]}
-    )
+    file = body["file"]
+    name = body["testName"]
+    print(f"Start test {file}.{name}")
+    ContextFactory.add_labels(key="labels@local-yw-clients-tests", labels={file, name})
     return {}
 
 
@@ -408,7 +421,13 @@ class ConfigurationFactory(IConfigurationFactory):
                 ],
                 endPoints=CustomEndPoints(
                     commands=[
-                        Command(name="reset", do_get=reset),
+                        Command(
+                            name="reset",
+                            do_post=reset,
+                            do_get=lambda ctx: reset(
+                                {"projects": True, "system": True}, ctx
+                            ),
+                        ),
                         Command(
                             name="clone-project",
                             do_post=lambda body, ctx: clone_project(

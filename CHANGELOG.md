@@ -26,6 +26,7 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
   <!-- TG-539, TG-1260 -->
 
 <!-- Not worthy of inclusion
+TG-2327 : ✅ improve IT configuration for performance optimization
 TG-2315 : 🚨 Enable pylint rule `raise-missing-from`
 TG-2318 : 🚨 Enable pylint rule `use-implicit-booleaness-not-comparison-to-zero`
 TG-2319 : 🚨 Enable pylint rule `use-implicit-booleaness-not-comparison-to-string`
