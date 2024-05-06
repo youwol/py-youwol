@@ -275,7 +275,7 @@ tomlkit==0.12.3
     # via
     #   pylint
     #   youwol (pyproject.toml)
-tqdm==4.66.1
+tqdm==4.66.4
     # via youwol (pyproject.toml)
 twine==4.0.2
     # via youwol (pyproject.toml)
