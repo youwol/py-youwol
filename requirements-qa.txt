@@ -1162,9 +1162,9 @@ tomlkit==0.12.3 \
     # via
     #   pylint
     #   youwol (pyproject.toml)
-tqdm==4.66.1 \
-    --hash=sha256:d302b3c5b53d47bce91fea46679d9c3c6508cf6332229aa1e7d8653723793386 \
-    --hash=sha256:d88e651f9db8d8551a62556d3cff9e3034274ca5d66e93197cf2490e2dcb69c7
+tqdm==4.66.4 \
+    --hash=sha256:b75ca56b413b030bc3f00af51fd2c1a1a5eac6a0c1cca83cbb37a5c52abce644 \
+    --hash=sha256:e4d936c9de8727928f3be6079590e97d9abfe8d39a590be678eb5919ffc186bb
     # via youwol (pyproject.toml)
 types-appdirs==1.4.3.5 \
     --hash=sha256:337c750e423c40911d389359b4edabe5bbc2cdd5cd0bd0518b71d2839646273b \
