@@ -1,29 +1,41 @@
 
 const runTimeDependencies = {
     "externals": {
+        "@youwol/http-primitives": "^0.2.3",
+        "@youwol/local-youwol-client": "^0.2.6",
         "@youwol/mkdocs-ts": "^0.3.2",
+        "@youwol/rx-tab-views": "^0.3.0",
         "@youwol/rx-vdom": "^1.0.1",
         "@youwol/webpm-client": "^3.0.0",
-        "rxjs": "^7.5.6",
-        "@youwol/local-youwol-client": "^0.2.6",
-        "@youwol/rx-tab-views": "^0.3.0",
-        "@youwol/http-primitives": "^0.2.3"
+        "rxjs": "^7.5.6"
     },
     "includedInBundle": {}
 }
 const externals = {
+    "@youwol/http-primitives": "window['@youwol/http-primitives_APIv02']",
+    "@youwol/local-youwol-client": "window['@youwol/local-youwol-client_APIv02']",
     "@youwol/mkdocs-ts": "window['@youwol/mkdocs-ts_APIv03']",
+    "@youwol/rx-tab-views": "window['@youwol/rx-tab-views_APIv03']",
     "@youwol/rx-vdom": "window['@youwol/rx-vdom_APIv1']",
     "@youwol/webpm-client": "window['@youwol/webpm-client_APIv3']",
-    "rxjs": "window['rxjs_APIv7']",
-    "@youwol/local-youwol-client": "window['@youwol/local-youwol-client_APIv02']",
-    "@youwol/rx-tab-views": "window['@youwol/rx-tab-views_APIv03']",
-    "@youwol/http-primitives": "window['@youwol/http-primitives_APIv02']"
+    "rxjs": "window['rxjs_APIv7']"
 }
 const exportedSymbols = {
+    "@youwol/http-primitives": {
+        "apiKey": "02",
+        "exportedSymbol": "@youwol/http-primitives"
+    },
+    "@youwol/local-youwol-client": {
+        "apiKey": "02",
+        "exportedSymbol": "@youwol/local-youwol-client"
+    },
     "@youwol/mkdocs-ts": {
         "apiKey": "03",
         "exportedSymbol": "@youwol/mkdocs-ts"
+    },
+    "@youwol/rx-tab-views": {
+        "apiKey": "03",
+        "exportedSymbol": "@youwol/rx-tab-views"
     },
     "@youwol/rx-vdom": {
         "apiKey": "1",
@@ -36,18 +48,6 @@ const exportedSymbols = {
     "rxjs": {
         "apiKey": "7",
         "exportedSymbol": "rxjs"
-    },
-    "@youwol/local-youwol-client": {
-        "apiKey": "02",
-        "exportedSymbol": "@youwol/local-youwol-client"
-    },
-    "@youwol/rx-tab-views": {
-        "apiKey": "03",
-        "exportedSymbol": "@youwol/rx-tab-views"
-    },
-    "@youwol/http-primitives": {
-        "apiKey": "02",
-        "exportedSymbol": "@youwol/http-primitives"
     }
 }
 
