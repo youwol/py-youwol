@@ -31,6 +31,7 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
   in incorrect parenting of logs. <!-- TG-2331 -->
 - Resolved an issue related to inconsistent ordering of keys in auto-generated files of TypeScript pipeline. 
   <!-- TG-2336 -->
+- Resolved security issue GHSA-9wx4-h78v-vm56 in `requests` dependency. <!-- TG-2337 -->
 
 ### Security
 
