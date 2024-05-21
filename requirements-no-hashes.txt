@@ -236,7 +236,7 @@ readme-renderer==42.0
     # via twine
 redis==4.6.0
     # via youwol (pyproject.toml)
-requests==2.31.0
+requests==2.32.1
     # via
     #   cachecontrol
     #   pip-audit
