@@ -1,6 +1,7 @@
 <!--
-  formatted using prettier inside ./doc (see TG-1998):
-  cd doc && yarn && yarn prettier --write --tab-width=4 ../CHANGELOG.md
+  formatted using prettier inside ./doc/front-app:
+  $ cd doc/front-app && yarn && yarn prettier --write ../../CHANGELOG.md && cd ../..
+  $ git diff CHANGELOG.md
 
   All lines with an heading of second level must match the following regex, with the captured match a valid PEP 440 version string :
       /^## \[(.*)\] − (?:(?:Unreleased)|(?:\d\d\d\d-\d\d-\d\d))$/
