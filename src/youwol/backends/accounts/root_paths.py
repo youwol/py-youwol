@@ -2,8 +2,7 @@
 from typing import Annotated, Any
 
 # third parties
-from fastapi import APIRouter, Depends
-from fastapi.params import Cookie
+from fastapi import APIRouter, Cookie, Depends
 from pydantic import BaseModel
 from starlette.requests import Request
 

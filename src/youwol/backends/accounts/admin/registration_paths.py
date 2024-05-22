@@ -1,14 +1,18 @@
 # typing
+from typing import Annotated
 
 # third parties
-from fastapi import Depends
+from fastapi import Depends, Header
 from pydantic import BaseModel
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
 # Youwol utilities
 from youwol.utils.clients.oidc.service_account_client import UnexpectedResponseStatus
-from youwol.utils.servers.request import get_real_client_ip
+from youwol.utils.servers.request import (
+    VALUE_WHEN_REQUEST_HAS_NO_USER_AGENT_HEADER,
+    get_real_client_ip,
+)
 
 # relative
 from ..configuration import Configuration, get_configuration
@@ -27,6 +31,7 @@ class RegistrationDetails(BaseModel):
 async def register_from_temp_user(
     request: Request,
     details: RegistrationDetails,
+    user_agent: Annotated[str, Header()] = VALUE_WHEN_REQUEST_HAS_NO_USER_AGENT_HEADER,
     conf: Configuration = Depends(get_configuration),
 ) -> Response:
     if conf.keycloak_users_management is None:
@@ -53,6 +58,7 @@ async def register_from_temp_user(
             client_id=conf.oidc_client.client_id(),
             target_uri=redirect_uri,
             ip=get_real_client_ip(request),
+            user_agent=user_agent,
         )
     except UnexpectedResponseStatus as e:
         return JSONResponse(status_code=e.actual, content=e.content)
