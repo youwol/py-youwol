@@ -2,8 +2,7 @@
 from typing import Annotated
 
 # third parties
-from fastapi import Depends
-from fastapi.params import Cookie
+from fastapi import Cookie, Depends
 from pydantic import BaseModel
 from starlette.responses import JSONResponse, Response
 

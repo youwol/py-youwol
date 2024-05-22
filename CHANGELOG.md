@@ -24,6 +24,8 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 - **Pipelines**:
   -  typescript pipeline provides additional flexibility to customize auto-generated `package.json`. 
   <!-- TG-539, TG-1260 -->
+- **Registration**:
+  - record User-Agent upon account creation & registration <!-- TG-2343 -->
 
 ### Fixed
 

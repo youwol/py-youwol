@@ -15,21 +15,26 @@ TWELVE_HOURS = 12 * 60 * 60
 # Visitor creation attributes
 USER_ATTR_TEMP_USER = "temporary_user"
 USER_ATTR_TEMP_USER_IP = "temporary_user_ip"
+USER_ATTR_TEMP_USER_USER_AGENT = "temporary_user_user_agent"
 USER_ATTR_TEMP_USER_TIMESTAMP = "temporary_user_timestamp"
 
 # User creation pending attributes
 USER_ATTR_REG_PENDING = "registration_pending"
 USER_ATTR_REG_PENDING_IP = "registration_pending_ip"
+USER_ATTR_REG_PENDING_USER_AGENT = "registration_pending_user_agent"
 USER_ATTR_REG_PENDING_TIMESTAMP = "registration_pending_timestamp"
 
 # User creation finalization attributes
 USER_ATTR_FINAL_IP = "finalization_ip"
+USER_ATTR_FINAL_USER_AGENT = "finalization_user_agent"
 USER_ATTR_FINAL_TIMESTAMP = "finalization_timestamp"
 
 # In case no value in existing user attributes
 USER_ATTR_TEMP_USER_IP_UNSET = "TEMPORARY_USER_IP_UNSET"
+USER_ATTR_TEMP_USER_USER_AGENT_UNSET = "TEMPORARY_USER_USER_AGENT_UNSET"
 USER_ATTR_TEMP_USER_TIMESTAMP_UNSET = "TEMPORARY_USER_TIMESTAMP_UNSET"
 USER_ATTR_REG_PENDING_IP_UNSET = "REGISTRATION_PENDING_IP_UNSET"
+USER_ATTR_REG_PENDING_USER_AGENT_UNSET = "REGISTRATION_PENDING_USER_AGENT_UNSET"
 USER_ATTR_REG_PENDING_TIMESTAMP_UNSET = "REGISTRATION_PENDING_TIMESTAMP_UNSET"
 
 
@@ -55,7 +60,9 @@ class KeycloakUsersManagement(ServiceAccountClient):
             )
         ]
 
-    async def create_user(self, username: str, password: str, ip: str) -> None:
+    async def create_user(
+        self, username: str, password: str, ip: str, user_agent: str
+    ) -> None:
         await self._post(
             path="/users",
             json={
@@ -66,6 +73,7 @@ class KeycloakUsersManagement(ServiceAccountClient):
                 "attributes": {
                     USER_ATTR_TEMP_USER: True,
                     USER_ATTR_TEMP_USER_IP: ip,
+                    USER_ATTR_TEMP_USER_USER_AGENT: user_agent,
                     USER_ATTR_TEMP_USER_TIMESTAMP: int(time.time()),
                 },
                 "groups": ["youwol-users"],
@@ -79,12 +87,19 @@ class KeycloakUsersManagement(ServiceAccountClient):
         await self._delete(path=f"/users/{user_id}")
 
     async def register_user(
-        self, sub: str, email: str, target_uri: str, client_id: str, ip: str
+        self,
+        sub: str,
+        email: str,
+        target_uri: str,
+        client_id: str,
+        ip: str,
+        user_agent: str,
     ) -> None:
         existing_attributes = await self.__get_user_attributes_or_default(
             sub,
             {
                 USER_ATTR_TEMP_USER_IP: USER_ATTR_TEMP_USER_IP_UNSET,
+                USER_ATTR_TEMP_USER_USER_AGENT: USER_ATTR_TEMP_USER_USER_AGENT_UNSET,
                 USER_ATTR_TEMP_USER_TIMESTAMP: USER_ATTR_TEMP_USER_TIMESTAMP_UNSET,
             },
         )
@@ -99,6 +114,7 @@ class KeycloakUsersManagement(ServiceAccountClient):
                     USER_ATTR_TEMP_USER: True,
                     USER_ATTR_REG_PENDING: int(time.time()) + TWELVE_HOURS,
                     USER_ATTR_REG_PENDING_IP: ip,
+                    USER_ATTR_REG_PENDING_USER_AGENT: user_agent,
                     USER_ATTR_REG_PENDING_TIMESTAMP: int(time.time()),
                 },
                 "groups": ["youwol-users"],
@@ -116,14 +132,16 @@ class KeycloakUsersManagement(ServiceAccountClient):
             parse_response=False,
         )
 
-    async def finalize_user(self, sub: str, ip: str) -> None:
+    async def finalize_user(self, sub: str, ip: str, user_agent: str) -> None:
         existing_attributes = await self.__get_user_attributes_or_default(
             sub,
             {
                 USER_ATTR_REG_PENDING_IP: USER_ATTR_REG_PENDING_IP_UNSET,
                 USER_ATTR_REG_PENDING_TIMESTAMP: USER_ATTR_REG_PENDING_TIMESTAMP_UNSET,
+                USER_ATTR_REG_PENDING_USER_AGENT: USER_ATTR_REG_PENDING_USER_AGENT_UNSET,
                 USER_ATTR_TEMP_USER_IP: USER_ATTR_TEMP_USER_IP_UNSET,
                 USER_ATTR_TEMP_USER_TIMESTAMP: USER_ATTR_TEMP_USER_TIMESTAMP_UNSET,
+                USER_ATTR_TEMP_USER_USER_AGENT: USER_ATTR_TEMP_USER_USER_AGENT_UNSET,
             },
         )
         await self._put(
@@ -132,6 +150,7 @@ class KeycloakUsersManagement(ServiceAccountClient):
                 "attributes": {
                     **existing_attributes,
                     USER_ATTR_FINAL_IP: ip,
+                    USER_ATTR_FINAL_USER_AGENT: user_agent,
                     USER_ATTR_FINAL_TIMESTAMP: int(time.time()),
                 }
             },

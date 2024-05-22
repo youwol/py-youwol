@@ -5,8 +5,7 @@ import uuid
 from typing import Annotated
 
 # third parties
-from fastapi import Depends, status
-from fastapi.params import Cookie, Form
+from fastapi import Cookie, Depends, Form, Header, status
 from prometheus_client import Counter
 from starlette.requests import Request
 from starlette.responses import JSONResponse, RedirectResponse, Response
@@ -14,7 +13,10 @@ from starlette.status import HTTP_204_NO_CONTENT
 
 # Youwol utilities
 from youwol.utils.clients.oidc.service_account_client import UnexpectedResponseStatus
-from youwol.utils.servers.request import get_real_client_ip
+from youwol.utils.servers.request import (
+    VALUE_WHEN_REQUEST_HAS_NO_USER_AGENT_HEADER,
+    get_real_client_ip,
+)
 
 # relative
 from ..configuration import Configuration, get_configuration
@@ -79,6 +81,7 @@ async def authorization_flow_callback(
     request: Request,
     state: str,
     code: str,
+    user_agent: Annotated[str, Header()] = VALUE_WHEN_REQUEST_HAS_NO_USER_AGENT_HEADER,
     conf: Configuration = Depends(get_configuration),
 ) -> Response:
     """
@@ -122,7 +125,9 @@ async def authorization_flow_callback(
                 )
             try:
                 await conf.keycloak_users_management.finalize_user(
-                    sub=await tokens.sub(), ip=get_real_client_ip(request)
+                    sub=await tokens.sub(),
+                    ip=get_real_client_ip(request),
+                    user_agent=user_agent,
                 )
             except UnexpectedResponseStatus as e:
                 return JSONResponse(status_code=e.actual, content=e.content)
@@ -237,6 +242,7 @@ async def login(
     request: Request,
     target_uri: str,
     flow: str = "auto",
+    user_agent: Annotated[str, Header()] = VALUE_WHEN_REQUEST_HAS_NO_USER_AGENT_HEADER,
     yw_login_hint: Annotated[str | None, Cookie()] = None,
     conf: Configuration = Depends(get_configuration),
 ) -> Response:
@@ -270,7 +276,7 @@ async def login(
         return await authorization_flow(request, target_uri, yw_login_hint, conf)
 
     if flow == "temp":
-        return await login_as_temp_user(request, target_uri, conf)
+        return await login_as_temp_user(request, target_uri, user_agent, conf)
 
     return JSONResponse(status_code=400, content={"invalid request", "unknown flow"})
 
@@ -279,6 +285,7 @@ async def login(
 async def login_as_temp_user(
     request: Request,
     target_uri: str = "/",
+    user_agent: Annotated[str, Header()] = VALUE_WHEN_REQUEST_HAS_NO_USER_AGENT_HEADER,
     conf: Configuration = Depends(get_configuration),
 ) -> Response:
     """
@@ -304,6 +311,7 @@ async def login_as_temp_user(
         username=username,
         password=password,
         ip=get_real_client_ip(request),
+        user_agent=user_agent,
     )
 
     tokens = await conf.openid_flows.direct_auth_flow(
