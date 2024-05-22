@@ -20,31 +20,37 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 ### Added
 
 - **Documentation**:
-  -  youwol's API documentation is now generated at build time and served statically. <!-- TG-2235 -->
+  - youwol's API documentation is now generated at build time and served statically. <!-- TG-2235 -->
 - **Pipelines**:
-  -  typescript pipeline provides additional flexibility to customize auto-generated `package.json`. 
-  <!-- TG-539, TG-1260 -->
+  - typescript pipeline provides additional flexibility to customize auto-generated
+  `package.json`. <!-- TG-539, TG-1260 -->
 - **Registration**:
   - record User-Agent upon account creation & registration <!-- TG-2343 -->
 
 ### Fixed
 
+- Use correct separator for `PYTHONPATH` on Windows. <!-- TG-2302 -->
+- Addressed issue preventing the projects loader component to properly notify updates regarding projects loading
+  failures. <!-- TG-2267 -->
 - Resolved an issue related to context propagation within the middleware stack, which previously resulted 
   in incorrect parenting of logs. <!-- TG-2331 -->
-- Resolved an issue related to inconsistent ordering of keys in auto-generated files of TypeScript pipeline. 
-  <!-- TG-2336 -->
-- Resolved security issue GHSA-9wx4-h78v-vm56 in `requests` dependency. <!-- TG-2337 -->
+- Resolved an issue related to inconsistent ordering of keys in auto-generated files of TypeScript 
+  pipeline. <!-- TG-2336 -->
 
 ### Security
 
 - **Dependencies vulnerabilities**:
+  - [GHSA-7gpw-8wmc-pm8g] Upgrade `aiohttp` to 3.9.5 <!-- TG-2320 -->
   - [GHSA-g7vv-2v7x-gj9p] Upgrade `tqdm` to 4.66.4 <!-- TG-2333 -->
+  - [GHSA-9wx4-h78v-vm56] Upgrade `requests` to 2.32.1 <!-- TG-2337 -->
 
 <!-- Not worthy of inclusion
+TG-2121
 TG-2327 : ✅ improve IT configuration for performance optimization
 TG-2315 : 🚨 Enable pylint rule `raise-missing-from`
 TG-2318 : 🚨 Enable pylint rule `use-implicit-booleaness-not-comparison-to-zero`
 TG-2319 : 🚨 Enable pylint rule `use-implicit-booleaness-not-comparison-to-string`
+TG-2344
 -->
 
 
@@ -63,11 +69,6 @@ TG-2319 : 🚨 Enable pylint rule `use-implicit-booleaness-not-comparison-to-str
 - **Pipelines**:
   -  configured by default to publish in connected remote and public NPM (if applicable). <!-- TG-2254 --> 
   
-### Fixed
-
-- Addressed issue preventing the projects loader component to properly notify updates regarding projects loading 
-failures. <!-- TG-2267 -->
-
 ### Changed
 
 - **Breaking:** Refactor the `ProjectsFinder` API and its associated implementation to improve performance and
