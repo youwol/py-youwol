@@ -1,6 +1,7 @@
 <!--
-  formatted using prettier inside ./doc (see TG-1998):
-  cd doc && yarn && yarn prettier --write --tab-width=4 ../CHANGELOG.md
+  formatted using prettier inside ./doc/front-app:
+  $ cd doc/front-app && yarn && yarn prettier --write ../../CHANGELOG.md && cd ../..
+  $ git diff CHANGELOG.md
 
   All lines with an heading of second level must match the following regex, with the captured match a valid PEP 440 version string :
       /^## \[(.*)\] − (?:(?:Unreleased)|(?:\d\d\d\d-\d\d-\d\d))$/
@@ -20,53 +21,53 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 ### Added
 
 - **Documentation**:
-  -  youwol's API documentation is now generated at build time and served statically. <!-- TG-2235 -->
+  - youwol's API documentation is now generated at build time and served statically. <!-- TG-2235 -->
 - **Pipelines**:
-  -  typescript pipeline provides additional flexibility to customize auto-generated `package.json`. 
-  <!-- TG-539, TG-1260 -->
+  - typescript pipeline provides additional flexibility to customize auto-generated
+    `package.json`. <!-- TG-539, TG-1260 -->
 - **Registration**:
   - record User-Agent upon account creation & registration <!-- TG-2343 -->
 
 ### Fixed
 
-- Resolved an issue related to context propagation within the middleware stack, which previously resulted 
+- Use correct separator for `PYTHONPATH` on Windows. <!-- TG-2302 -->
+- Addressed issue preventing the projects loader component to properly notify updates regarding projects loading
+  failures. <!-- TG-2267 -->
+- Resolved an issue related to context propagation within the middleware stack, which previously resulted
   in incorrect parenting of logs. <!-- TG-2331 -->
-- Resolved an issue related to inconsistent ordering of keys in auto-generated files of TypeScript pipeline. 
-  <!-- TG-2336 -->
-- Resolved security issue GHSA-9wx4-h78v-vm56 in `requests` dependency. <!-- TG-2337 -->
+- Resolved an issue related to inconsistent ordering of keys in auto-generated files of TypeScript
+  pipeline. <!-- TG-2336 -->
 
 ### Security
 
 - **Dependencies vulnerabilities**:
+  - [GHSA-7gpw-8wmc-pm8g] Upgrade `aiohttp` to 3.9.5 <!-- TG-2320 -->
   - [GHSA-g7vv-2v7x-gj9p] Upgrade `tqdm` to 4.66.4 <!-- TG-2333 -->
+  - [GHSA-9wx4-h78v-vm56] Upgrade `requests` to 2.32.1 <!-- TG-2337 -->
 
 <!-- Not worthy of inclusion
+TG-2121
 TG-2327 : ✅ improve IT configuration for performance optimization
 TG-2315 : 🚨 Enable pylint rule `raise-missing-from`
 TG-2318 : 🚨 Enable pylint rule `use-implicit-booleaness-not-comparison-to-zero`
 TG-2319 : 🚨 Enable pylint rule `use-implicit-booleaness-not-comparison-to-string`
+TG-2344
 -->
-
 
 ## [0.1.9] − 2024-04-16
 
 ### Added
 
 - **App**:
-  -  Implemented a browser cache emulation feature to enhance performance for `GET` requests originating from browsers, 
-  while mitigating the adverse effects associated with native browser cache systems. <!-- TG-2220 -->
+  - Implemented a browser cache emulation feature to enhance performance for `GET` requests originating from browsers,
+    while mitigating the adverse effects associated with native browser cache systems. <!-- TG-2220 -->
 - **Backend components**:
-  -  automatic local installation of missing backends when requesting `backends/$NAME/$SEMVER/**`. <!-- TG-2195 -->
-  -  explicit local installation on `admin/system/backends/install` using CDN's loading graph response. <!-- TG-2205 -->
+  - automatic local installation of missing backends when requesting `backends/$NAME/$SEMVER/**`. <!-- TG-2195 -->
+  - explicit local installation on `admin/system/backends/install` using CDN's loading graph response. <!-- TG-2205 -->
 - **Pyodide components**:
-  -  intercept Pyodide resources requests to store them within the local CDN database. <!-- TG-2238 -->
+  - intercept Pyodide resources requests to store them within the local CDN database. <!-- TG-2238 -->
 - **Pipelines**:
-  -  configured by default to publish in connected remote and public NPM (if applicable). <!-- TG-2254 --> 
-  
-### Fixed
-
-- Addressed issue preventing the projects loader component to properly notify updates regarding projects loading 
-failures. <!-- TG-2267 -->
+  - configured by default to publish in connected remote and public NPM (if applicable). <!-- TG-2254 -->
 
 ### Changed
 
@@ -84,14 +85,14 @@ failures. <!-- TG-2267 -->
 - Discriminates `FailurePipelineNotFound` from `FailureImportException`. <!-- TG-2196 -->
 - In pipeline operations involving the local CDN publishing with the packagedFolders option, files located not only
   within the designated packaged folders but also within their subdirectories are now considered. <!-- TG-1683 -->
-- `GET:` `/`, `/doc`, `/co-lab`, `/webpm-client.*`: fix issue with browser caching preventing redirects to dynamically 
+- `GET:` `/`, `/doc`, `/co-lab`, `/webpm-client.*`: fix issue with browser caching preventing redirects to dynamically
   determined versions. Also, query parameters are now properly forwarded to the redirected URL. <!-- TG-2224 -->
   <!-- TG-2232 -->
 - Addressed an issue where version resolution was inaccurately handled under specific scenarios within the
   `cdn-backend` service. <!-- TG-2244 -->
-- Addressed an issue related to symbolic links resolution concerning ProjectsFinder when auto-discovery is enabled. 
+- Addressed an issue related to symbolic links resolution concerning ProjectsFinder when auto-discovery is enabled.
   <!-- TG-2270 -->
-- Fix implementation error in the javascript client of backend component regarding the `stream` function. 
+- Fix implementation error in the javascript client of backend component regarding the `stream` function.
   <!-- TG-2297 -->
 
 ### Security
@@ -104,7 +105,7 @@ failures. <!-- TG-2267 -->
 
 ### Removed
 
--  The `dev. portal` link proposed in the terminal at startup has been removed . <!-- TG-2233 -->
+- The `dev. portal` link proposed in the terminal at startup has been removed . <!-- TG-2233 -->
 
 <!-- Not worthy of inclusion
 TG-2286 : 🐛 [app] Allow missing token on `/co-lab`
@@ -128,7 +129,7 @@ TG-1218 : 🥅 [backends.cdn] => robustify semver resolution.
 TG-2201 : 🙈 [app.env] => default_ignored_paths includes .venv
 TG-1507
 TG-2210
-TG-2205 : ✨ [utils.context] => init `attributes`, `labels` from request. 
+TG-2205 : ✨ [utils.context] => init `attributes`, `labels` from request.
 TG-2187 : 🐛 [routers.local_cdn] => add missing `emit_local_cdn_status`
 TG-2213
 TG-2226
@@ -156,7 +157,7 @@ TG-2246
   - improved code snippets display. <!-- TG-2147 -->
 - **Experimental**
   - Configuration dependant browser caching (disabled by default) <!-- TG-2126 -->
-  
+
 ### Changed
 
 - **Pipeline Typescript**:
@@ -172,14 +173,14 @@ TG-2246
 - Ensure python scripts execution has correct environment variable `PYTHONPATH` <!-- TG-2136 -->
 - Fix documentation versioning for `.dev` release candidates. <!-- TG 2151 -->
 - **Pipeline python backend**:
+
   - include javascript views within youwol package. <!-- TG-2185 -->
-  - `package` step: add required `build` module in python environment. <!-- TG-2186 --> 
+  - `package` step: add required `build` module in python environment. <!-- TG-2186 -->
 
 - Sync. typescript pipeline's `template.py` generator with youwol API updates. <!-- TG-2167 -->
 - python backend pipeline: ensure python scripts execution has correct environment variable `PYTHONPATH` <!-- TG-2168 -->
 - Emit 'components update' signal when publishing a project in local database. <!-- TG-2175 -->
 - Prevent digest infinite recursion and handle more types <!-- TG-2166 -->
-
 
 ### Security
 
