@@ -355,6 +355,7 @@ async def get_and_persist_resource(
 
         async def process_response():
             session = ClientSession(auto_decompress=False)
+            # Even if 'br' is requested, we may get 'identity' (e.g. for source-maps).
             resp = await session.get(
                 url=target_url, headers={**headers, "Accept-Encoding": "br"}
             )
@@ -378,13 +379,15 @@ async def get_and_persist_resource(
                     await session.close()
                 #  This assertion is not done earlier as it does not compromise the response from pyodide.
                 #  Only persisting the resource in local components DB won't be executed.
-                if encoding != "br":
+                if encoding not in ["br", "identity"]:
                     raise ValueError(
-                        f"Resources {target_url} was requested to be 'br' encoded, but got '{encoding}'"
+                        f"Resource {target_url} requires encoding 'br' or 'identity', but got '{encoding}'"
                     )
                 target_encoding = get_content_encoding(info.file)
-                if target_encoding != "br":
+                if encoding == "br" and target_encoding == "identity":
                     content = brotli.decompress(content)
+                if encoding == "identity" and target_encoding == "br":
+                    content = brotli.compress(content)
 
                 asyncio.ensure_future(
                     persist_resource(package=info, content=content, context=ctx)
