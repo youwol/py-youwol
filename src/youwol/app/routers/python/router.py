@@ -284,22 +284,29 @@ async def try_local(info: ResourceInfo, context: Context) -> Response | None:
     Raise:
         HTTPException: If the resource is not found (HTTP 404 status).
     """
-    env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
-    cdn = LocalClients.get_cdn_client(env)
-    try:
-        resp: Response = await cdn.get_resource(
-            library_id=encode_id(info.name),
-            version=info.version,
-            rest_of_path=info.file,
-            headers=context.headers(),
-            custom_reader=aiohttp_to_starlette_response,
-        )
-        # This header will most likely be mutated by `BrowserCacheStore` as CDN resources are cached in usual scenarios.
-        resp.headers.append("youwol-origin", "local")
-        return resp
-    except HTTPException as e:
-        if e.status_code != 404:
-            raise e
+    async with context.start(action="try_local") as ctx:
+        env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
+        cdn = LocalClients.get_cdn_client(env)
+        try:
+            resp: Response = await cdn.get_resource(
+                library_id=encode_id(info.name),
+                version=info.version,
+                rest_of_path=info.file,
+                headers=ctx.headers(),
+                custom_reader=aiohttp_to_starlette_response,
+            )
+            # This header will most likely be mutated by `BrowserCacheStore` as CDN resources are cached in usual
+            # scenarios.
+            resp.headers.append("youwol-origin", "local")
+            await ctx.info(
+                "Resource found in local components DB",
+                data={"headers": resp.headers.items()},
+            )
+            return resp
+        except HTTPException as e:
+            if e.status_code != 404:
+                raise e
+            await ctx.info("Resource not found")
 
 
 async def get_and_persist_resource(
@@ -319,10 +326,17 @@ async def get_and_persist_resource(
     Return:
         The response object containing the fetched or streamed resource.
     """
-    async with context.start(action="get_and_persist_resource") as ctx:
+    async with context.start(
+        action="get_and_persist_resource", with_attributes={"target_url": target_url}
+    ) as ctx:
         info = ResourceInfo.from_url(target_url)
+        await ctx.info(f"Retrieved '{info.name}#{info.version}' resource info")
         local = await try_local(info=info, context=ctx)
         if local:
+            await ctx.info(
+                "Resource found in the local components DB, return it.",
+                data={"headers": local.headers.items()},
+            )
             return local
 
         await ctx.send(
@@ -331,6 +345,10 @@ async def get_and_persist_resource(
                 rawId=encode_id(info.name),
                 type=DownloadEventType.ENQUEUED,
             )
+        )
+        await ctx.info(
+            "Resource not found in the local components DB, proceed to fetch & download.",
+            data={"url": target_url},
         )
         black_list = ["host", "referer", "cookie"]
         headers = {h: k for h, k in request.headers.items() if h not in black_list}
