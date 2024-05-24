@@ -284,22 +284,29 @@ async def try_local(info: ResourceInfo, context: Context) -> Response | None:
     Raise:
         HTTPException: If the resource is not found (HTTP 404 status).
     """
-    env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
-    cdn = LocalClients.get_cdn_client(env)
-    try:
-        resp: Response = await cdn.get_resource(
-            library_id=encode_id(info.name),
-            version=info.version,
-            rest_of_path=info.file,
-            headers=context.headers(),
-            custom_reader=aiohttp_to_starlette_response,
-        )
-        # This header will most likely be mutated by `BrowserCacheStore` as CDN resources are cached in usual scenarios.
-        resp.headers.append("youwol-origin", "local")
-        return resp
-    except HTTPException as e:
-        if e.status_code != 404:
-            raise e
+    async with context.start(action="try_local") as ctx:
+        env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
+        cdn = LocalClients.get_cdn_client(env)
+        try:
+            resp: Response = await cdn.get_resource(
+                library_id=encode_id(info.name),
+                version=info.version,
+                rest_of_path=info.file,
+                headers=ctx.headers(),
+                custom_reader=aiohttp_to_starlette_response,
+            )
+            # This header will most likely be mutated by `BrowserCacheStore` as CDN resources are cached in usual
+            # scenarios.
+            resp.headers.append("youwol-origin", "local")
+            await ctx.info(
+                "Resource found in local components DB",
+                data={"headers": resp.headers.items()},
+            )
+            return resp
+        except HTTPException as e:
+            if e.status_code != 404:
+                raise e
+            await ctx.info("Resource not found")
 
 
 async def get_and_persist_resource(
@@ -319,10 +326,17 @@ async def get_and_persist_resource(
     Return:
         The response object containing the fetched or streamed resource.
     """
-    async with context.start(action="get_and_persist_resource") as ctx:
+    async with context.start(
+        action="get_and_persist_resource", with_attributes={"target_url": target_url}
+    ) as ctx:
         info = ResourceInfo.from_url(target_url)
+        await ctx.info(f"Retrieved '{info.name}#{info.version}' resource info")
         local = await try_local(info=info, context=ctx)
         if local:
+            await ctx.info(
+                "Resource found in the local components DB, return it.",
+                data={"headers": local.headers.items()},
+            )
             return local
 
         await ctx.send(
@@ -332,35 +346,54 @@ async def get_and_persist_resource(
                 type=DownloadEventType.ENQUEUED,
             )
         )
+        await ctx.info(
+            "Resource not found in the local components DB, proceed to fetch & download.",
+            data={"url": target_url},
+        )
         black_list = ["host", "referer", "cookie"]
         headers = {h: k for h, k in request.headers.items() if h not in black_list}
 
-        async def process_response() -> AsyncIterable[bytes]:
-            async with ClientSession(auto_decompress=False) as session2:
-                async with await session2.get(url=target_url, headers=headers) as resp:
-                    content = b""
+        async def process_response():
+            session = ClientSession(auto_decompress=False)
+            resp = await session.get(
+                url=target_url, headers={**headers, "Accept-Encoding": "br"}
+            )
+
+            response_headers = dict(resp.headers.items())
+            response_headers["Cache-Control"] = "no-cache, no-store"
+            encoding = response_headers.get("Content-Encoding", "identity")
+            await ctx.info(
+                "Got headers response from pyodide remote",
+                data={"headers": response_headers},
+            )
+
+            async def content_generator() -> AsyncIterable[bytes]:
+                content = b""
+                try:
                     async for chunk in resp.content.iter_any():
                         yield chunk
                         content += chunk
-                    if resp.headers.get("Content-Encoding") != "br":
-                        raise ValueError(
-                            f"Resources {target_url} must be encoded with brotli"
-                        )
-                    if get_content_encoding(info.file) != "br":
-                        content = brotli.decompress(content)
-
-                    asyncio.ensure_future(
-                        persist_resource(package=info, content=content, context=ctx)
+                finally:
+                    await resp.release()
+                    await session.close()
+                #  This assertion is not done earlier as it does not compromise the response from pyodide.
+                #  Only persisting the resource in local components DB won't be executed.
+                if encoding != "br":
+                    raise ValueError(
+                        f"Resources {target_url} was requested to be 'br' encoded, but got '{encoding}'"
                     )
+                target_encoding = get_content_encoding(info.file)
+                if target_encoding != "br":
+                    content = brotli.decompress(content)
 
-        async with ClientSession(auto_decompress=False) as session1:
-            async with await session1.head(
-                url=target_url, headers=headers
-            ) as resp_head:
-                headers_resp = dict(resp_head.headers.items())
-                headers_resp["Cache-Control"] = "no-cache, no-store"
+                asyncio.ensure_future(
+                    persist_resource(package=info, content=content, context=ctx)
+                )
 
-        return StreamingResponse(process_response(), headers=headers_resp)
+            return response_headers, content_generator
+
+        headers, content_gen = await process_response()
+        return StreamingResponse(content_gen(), headers=headers)
 
 
 @router.get(
