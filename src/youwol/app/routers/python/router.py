@@ -353,32 +353,47 @@ async def get_and_persist_resource(
         black_list = ["host", "referer", "cookie"]
         headers = {h: k for h, k in request.headers.items() if h not in black_list}
 
-        async def process_response() -> AsyncIterable[bytes]:
-            async with ClientSession(auto_decompress=False) as session2:
-                async with await session2.get(url=target_url, headers=headers) as resp:
-                    content = b""
+        async def process_response():
+            session = ClientSession(auto_decompress=False)
+            resp = await session.get(
+                url=target_url, headers={**headers, "Accept-Encoding": "br"}
+            )
+
+            response_headers = dict(resp.headers.items())
+            response_headers["Cache-Control"] = "no-cache, no-store"
+            encoding = response_headers.get("Content-Encoding", "identity")
+            await ctx.info(
+                "Got headers response from pyodide remote",
+                data={"headers": response_headers},
+            )
+
+            async def content_generator() -> AsyncIterable[bytes]:
+                content = b""
+                try:
                     async for chunk in resp.content.iter_any():
                         yield chunk
                         content += chunk
-                    if resp.headers.get("Content-Encoding") != "br":
-                        raise ValueError(
-                            f"Resources {target_url} must be encoded with brotli"
-                        )
-                    if get_content_encoding(info.file) != "br":
-                        content = brotli.decompress(content)
-
-                    asyncio.ensure_future(
-                        persist_resource(package=info, content=content, context=ctx)
+                finally:
+                    await resp.release()
+                    await session.close()
+                #  This assertion is not done earlier as it does not compromise the response from pyodide.
+                #  Only persisting the resource in local components DB won't be executed.
+                if encoding != "br":
+                    raise ValueError(
+                        f"Resources {target_url} was requested to be 'br' encoded, but got '{encoding}'"
                     )
+                target_encoding = get_content_encoding(info.file)
+                if target_encoding != "br":
+                    content = brotli.decompress(content)
 
-        async with ClientSession(auto_decompress=False) as session1:
-            async with await session1.head(
-                url=target_url, headers=headers
-            ) as resp_head:
-                headers_resp = dict(resp_head.headers.items())
-                headers_resp["Cache-Control"] = "no-cache, no-store"
+                asyncio.ensure_future(
+                    persist_resource(package=info, content=content, context=ctx)
+                )
 
-        return StreamingResponse(process_response(), headers=headers_resp)
+            return response_headers, content_generator
+
+        headers, content_gen = await process_response()
+        return StreamingResponse(content_gen(), headers=headers)
 
 
 @router.get(

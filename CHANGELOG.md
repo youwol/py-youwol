@@ -17,6 +17,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-0440/).
 ## [0.1.10rc1.dev] − Unreleased
 
+### Fixed
+
+- Resolved intermittent failures in retrieving Pyodide resources. <!-- TG-2351 -->
+
+
 ## [0.1.10rc] − 2024-05-22
 ## [0.1.10.dev] − Unreleased
 
