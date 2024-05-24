@@ -18,6 +18,10 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 ## [0.1.10rc2.dev] − Unreleased
 
+### Fixed
+
+- Resolved failures in retrieving Pyodide source-maps. <!-- TG-2359 -->
+
 ## [0.1.10rc1] − 2024-05-24
 
 ### Fixed
