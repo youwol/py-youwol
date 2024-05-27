@@ -18,7 +18,9 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 ## [0.1.11.dev] − Unreleased
 
 
-## [0.1.10.dev] − Unreleased
+## [0.1.11.dev] − Unreleased
+
+## [0.1.10] − 2024-05-27
 
 ### Added
 
@@ -39,6 +41,8 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
   in incorrect parenting of logs. <!-- TG-2331 -->
 - Resolved an issue related to inconsistent ordering of keys in auto-generated files of TypeScript
   pipeline. <!-- TG-2336 -->
+- Resolved intermittent failures in retrieving Pyodide resources. <!-- TG-2351 -->
+- Resolved failures in retrieving Pyodide source-maps. <!-- TG-2359 -->
 
 ### Security
 
@@ -54,6 +58,8 @@ TG-2315 : 🚨 Enable pylint rule `raise-missing-from`
 TG-2318 : 🚨 Enable pylint rule `use-implicit-booleaness-not-comparison-to-zero`
 TG-2319 : 🚨 Enable pylint rule `use-implicit-booleaness-not-comparison-to-string`
 TG-2344
+TG-2356
+TG-2347
 -->
 
 ## [0.1.9] − 2024-04-16

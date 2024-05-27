@@ -14,7 +14,7 @@ from packaging import version
 PYPROJECT_TOML = "pyproject.toml"
 VERSION_FILE = "src/youwol/__init__.py"
 CHANGELOG_MD = "CHANGELOG.md"
-CHANGELOG_HEADER_LINE = 17
+CHANGELOG_HEADER_LINE = 18
 NO_CHANGE_LINE = "_no change_"
 PYTHON_VERSION_PREFIX = "3."
 CLASSIFIER_PYTHON_VERSION = f"Programming Language :: Python :: {PYTHON_VERSION_PREFIX}"
