@@ -258,8 +258,6 @@ def generate_package_json(working_path: Path, input_template: Template):
         },
     }
     write_json(values, working_path / FileNames.package_json)
-    with open(working_path / FileNames.package_json, "a", encoding="UTF-8") as file:
-        file.write("\n")
 
 
 def generate_readme(working_path: Path, input_template: Template):
