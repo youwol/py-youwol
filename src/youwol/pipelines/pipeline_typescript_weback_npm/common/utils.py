@@ -135,8 +135,6 @@ def generate_package_json(source: Path, working_path: Path, input_template: Temp
         deep_merge({**package_json, **values}, input_template.inPackageJson or {}),
         working_path / FileNames.package_json,
     )
-    with open(working_path / FileNames.package_json, "a", encoding="UTF-8") as file:
-        file.write("\n")
 
 
 def get_imports_from_submodules(

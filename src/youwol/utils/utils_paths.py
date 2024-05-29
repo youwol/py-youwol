@@ -55,6 +55,7 @@ def parse_yaml(path: str | Path):
 def write_json(data: JSON, path: Path):
     with open(path, "w", encoding="UTF-8") as fp:
         json.dump(data, fp, indent=4)
+        fp.write("\n")
 
 
 def copy_tree(source: Path, destination: Path, replace: bool = False):

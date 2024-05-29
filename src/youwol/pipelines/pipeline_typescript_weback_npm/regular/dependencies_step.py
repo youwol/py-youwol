@@ -27,7 +27,7 @@ from youwol.app.routers.projects.projects_resolver import ProjectLoader
 # Youwol utilities
 from youwol.utils import CommandException, execute_shell_cmd, files_check_sum, to_json
 from youwol.utils.context import Context
-from youwol.utils.utils_paths import copy_tree, list_files
+from youwol.utils.utils_paths import copy_tree, list_files, write_json
 
 # Youwol pipelines
 from youwol.pipelines.pipeline_typescript_weback_npm.regular.build_step import BuildStep
@@ -217,20 +217,9 @@ class DependenciesStep(PipelineStep):
             action="run synchronization of workspace dependencies"
         ) as ctx:
             data = await get_input_data(project=project, flow_id=flow_id, context=ctx)
-            existing_modules_to_maybe_sync = [
-                name
-                for name in data.keys()
-                if (project.path / "node_modules" / name).exists()
-            ]
-
-            for name in existing_modules_to_maybe_sync:
-                shutil.rmtree(project.path / "node_modules" / name)
-
-            install_cmd = f"(cd {project.path} && yarn --check-files)"
-            return_code, outputs = await execute_shell_cmd(cmd=install_cmd, context=ctx)
-            if return_code > 0:
-                raise CommandException(command=install_cmd, outputs=outputs)
-
+            local_deps_folder = project.path / ".local-dependencies"
+            shutil.rmtree(local_deps_folder, ignore_errors=True)
+            pkg_json = parse_json(project.path / ".template" / "package.json")
             config = await get_project_configuration(
                 project_id=project.id, flow_id=flow_id, step_id=self.id, context=ctx
             )
@@ -239,33 +228,53 @@ class DependenciesStep(PipelineStep):
             destination_folders: Mapping[str, Path] = {
                 name: project.path / "node_modules" / name for name in data.keys()
             }
+            local_packages = []
             for name, p in data.items():
                 if name not in to_sync:
                     await ctx.info(text=f"keep original package {name}")
                     continue
-                if name in to_sync:
-                    await ctx.info(
-                        text=f"sync package {name}",
-                        data={
-                            "source": p.dist_folder,
-                            "destination": destination_folders[name],
-                        },
-                    )
-                copy_tree(
-                    source=p.dist_folder,
-                    destination=destination_folders[name],
-                    replace=True,
+                await ctx.info(
+                    text=f"sync package {name}",
+                    data={
+                        "source": p.dist_folder,
+                        "destination": destination_folders[name],
+                    },
                 )
-                patch_pipeline_generated_module(
-                    dependency=p,
-                    module_path=destination_folders[name],
-                    dist_folder=p.dist_folder,
+                node_module_path = project.path / "node_modules" / p.project.name
+                if node_module_path.exists():
+                    await ctx.info(f"Remove {p.project.name} from 'node_modules'")
+                    shutil.rmtree(node_module_path)
+
+                await ctx.info(f"Package dependency {p.project.name}")
+
+                return_code_pack, outputs_pack = await execute_shell_cmd(
+                    cmd="npm pack", cwd=p.project.path, context=ctx
                 )
+                if return_code_pack > 0:
+                    raise CommandException(command="npm pack", outputs=outputs_pack)
+                await ctx.info(f"Successfully packaged {p.project.name}")
+                tgz_name = f"{p.project.name.replace('@', '').replace('/', '-')}-{p.project.version}.tgz"
+                tgz_path = local_deps_folder.relative_to(project.path) / tgz_name
+                await ctx.info(f'Patch "package.json" for local package {tgz_name}')
+
+                for k in ["dependencies", "devDependencies"]:
+                    if p.project.name in pkg_json.get(k, {}):
+                        pkg_json[k][p.project.name] = f"file:{tgz_path}"
+
+                local_deps_folder.mkdir(exist_ok=True)
+                shutil.move(src=p.project.path / tgz_name, dst=local_deps_folder)
+                local_packages.append(tgz_name)
 
             selected_data = {k: v for k, v in data.items() if k in to_sync}
             all_files = functools.reduce(
                 lambda acc, e: acc + e.dist_files, selected_data.values(), []
             )
+            write_json(pkg_json, project.path / "package.json")
+
+            install_cmd = f"(cd {project.path} && yarn --check-files)"
+            return_code, outputs = await execute_shell_cmd(cmd=install_cmd, context=ctx)
+            if return_code > 0:
+                raise CommandException(command=install_cmd, outputs=outputs)
 
             return {
                 "config": config,
