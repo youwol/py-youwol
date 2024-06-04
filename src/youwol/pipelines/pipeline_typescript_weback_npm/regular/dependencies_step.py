@@ -1,6 +1,7 @@
 # standard library
 import functools
 import shutil
+import time
 
 from collections.abc import Mapping
 from pathlib import Path
@@ -217,6 +218,9 @@ class DependenciesStep(PipelineStep):
             action="run synchronization of workspace dependencies"
         ) as ctx:
             data = await get_input_data(project=project, flow_id=flow_id, context=ctx)
+            uid_suffix = (
+                f"{int(time.time())}"  # Epoch in s, used to disable yarn's cache
+            )
             local_deps_folder = project.path / ".local-dependencies"
             shutil.rmtree(local_deps_folder, ignore_errors=True)
             pkg_json = parse_json(project.path / ".template" / "package.json")
@@ -253,17 +257,24 @@ class DependenciesStep(PipelineStep):
                 if return_code_pack > 0:
                     raise CommandException(command="npm pack", outputs=outputs_pack)
                 await ctx.info(f"Successfully packaged {p.project.name}")
-                tgz_name = f"{p.project.name.replace('@', '').replace('/', '-')}-{p.project.version}.tgz"
-                tgz_path = local_deps_folder.relative_to(project.path) / tgz_name
-                await ctx.info(f'Patch "package.json" for local package {tgz_name}')
+                base_name = f"{p.project.name.replace('@', '').replace('/', '-')}-{p.project.version}"
+                tgz_to_name = f"{base_name}-{uid_suffix}.tgz"
+                tgz_from_name = f"{base_name}.tgz"
+                tgz_to_path = local_deps_folder.relative_to(project.path) / tgz_to_name
+                await ctx.info(
+                    f'Patch "package.json" for local package {tgz_from_name}'
+                )
 
                 for k in ["dependencies", "devDependencies"]:
                     if p.project.name in pkg_json.get(k, {}):
-                        pkg_json[k][p.project.name] = f"file:{tgz_path}"
+                        pkg_json[k][p.project.name] = f"file:{tgz_to_path}"
 
                 local_deps_folder.mkdir(exist_ok=True)
-                shutil.move(src=p.project.path / tgz_name, dst=local_deps_folder)
-                local_packages.append(tgz_name)
+                shutil.move(
+                    src=p.project.path / tgz_from_name,
+                    dst=local_deps_folder / tgz_to_name,
+                )
+                local_packages.append(tgz_to_name)
 
             selected_data = {k: v for k, v in data.items() if k in to_sync}
             all_files = functools.reduce(
