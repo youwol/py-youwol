@@ -23,7 +23,7 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 ### Changed
 
 - **Pipelines**:
-  - Enhance reliability of dependencies synchronisation in typescript pipeline. <!-- TG-2366 -->
+  - Enhance reliability of dependencies synchronisation in typescript pipeline. <!-- TG-2366, TG-2368 -->
 
 ## [0.1.10] − 2024-05-27
 
