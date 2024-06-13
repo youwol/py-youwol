@@ -201,7 +201,7 @@ pycryptodome==3.19.1
     # via
     #   minio
     #   youwol (pyproject.toml)
-pydantic==1.10.14
+pydantic==1.10.16
     # via
     #   fastapi
     #   youwol (pyproject.toml)
