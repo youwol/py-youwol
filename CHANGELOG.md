@@ -26,6 +26,13 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
   - Enhanced the CDN packaging process to support selective Brotli compression and explicit content type definitions, 
     allowing for more flexible packaging and optimized download performance. <!-- TG-2353 -->
 
+### Security
+
+- **Dependencies vulnerabilities**:
+  - [GHSA-34jh-p97f-mpxf] Upgrade `urllib3` to 2.2.2 <!-- TG-2386 -->
+  - [CVE-2024-37890] Upgrade npm package `ws` on documentation app. <!-- TG-2388 -->
+
+
 ## [0.1.10] − 2024-05-27
 
 ### Added
