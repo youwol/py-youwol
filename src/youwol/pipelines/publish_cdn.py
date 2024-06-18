@@ -1,10 +1,12 @@
 # standard library
 import asyncio
 import glob
+import hashlib
 import itertools
 import json
 
 from collections.abc import Iterable, Mapping
+from datetime import datetime
 from pathlib import Path
 
 # typing
@@ -13,6 +15,9 @@ from typing import cast
 # third parties
 from fastapi import HTTPException
 from pydantic import BaseModel
+
+# Youwol
+import youwol
 
 # Youwol application
 from youwol.app.environment import (
@@ -38,8 +43,20 @@ from youwol.app.routers.projects.models_project import (
 )
 
 # Youwol utilities
-from youwol.utils import encode_id, files_check_sum, to_json
+from youwol.utils import (
+    encode_id,
+    files_check_sum,
+    get_content_type,
+    md5_update_from_file,
+    to_json,
+)
 from youwol.utils.context import Context
+from youwol.utils.http_clients.cdn_backend.utils import (
+    CDN_MANIFEST_FILE,
+    CDN_METADATA_FILE,
+    CdnManifest,
+    get_content_encoding,
+)
 from youwol.utils.http_clients.tree_db_backend import DefaultDriveResponse
 from youwol.utils.utils_paths import create_zip_file
 
@@ -77,10 +94,30 @@ async def create_cdn_zip(
         target = project.pipeline.target
         yw_metadata = to_json(target(project) if callable(target) else target)
         await ctx.info(text="Append target metadata", data=yw_metadata)
+
+        yw_manifest: CdnManifest = {
+            "date": datetime.now().isoformat(),
+            "ywVersion": youwol.__version__,
+            "files": [
+                {
+                    "path": arc_name,
+                    "contentEncoding": get_content_encoding(f.name),
+                    "contentType": get_content_type(f.name),
+                    "hash": md5_update_from_file(f, hashlib.md5()).hexdigest(),
+                }
+                for f, arc_name in zip_files
+            ],
+        }
+        brotli_files = [f for f in files if get_content_encoding(f.name) == "br"]
+
         create_zip_file(
             path=zip_path,
             files_to_zip=zip_files,
-            with_data=[(".yw_metadata.json", json.dumps(yw_metadata))],
+            with_data=[
+                (CDN_METADATA_FILE, json.dumps(yw_metadata)),
+                (CDN_MANIFEST_FILE, json.dumps(yw_manifest)),
+            ],
+            to_brotli_files=brotli_files,
         )
 
 

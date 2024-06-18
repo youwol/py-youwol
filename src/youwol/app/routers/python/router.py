@@ -3,12 +3,14 @@ from __future__ import annotations
 
 # standard library
 import asyncio
+import hashlib
 import io
 import json
 import tempfile
 import zipfile
 
 from collections.abc import AsyncIterable
+from datetime import datetime
 
 # typing
 from typing import NamedTuple
@@ -23,6 +25,9 @@ from pydantic import BaseModel
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response, StreamingResponse
 
+# Youwol
+import youwol
+
 # Youwol application
 from youwol.app.environment import LocalClients, YouwolEnvironment
 from youwol.app.routers.environment import DownloadEvent, DownloadEventType
@@ -30,10 +35,20 @@ from youwol.app.routers.local_cdn import emit_local_cdn_status
 
 # Youwol backends
 from youwol.backends.cdn import publish_package
-from youwol.backends.cdn.utils import get_content_encoding
 
 # Youwol utilities
-from youwol.utils import AnyDict, Context, aiohttp_to_starlette_response, encode_id
+from youwol.utils import (
+    AnyDict,
+    Context,
+    aiohttp_to_starlette_response,
+    encode_id,
+    get_content_type,
+)
+from youwol.utils.http_clients.cdn_backend.utils import (
+    CDN_MANIFEST_FILE,
+    CdnManifest,
+    get_content_encoding,
+)
 
 router = APIRouter()
 
@@ -236,11 +251,26 @@ async def persist_resource(
             "main": package.file if package.name != "pyodide" else "pyodide.js",
             "webpm": {"type": "pyodide" if package.name != "pyodide" else "js/wasm"},
         }
-
+        content_hash = hashlib.md5()
+        content_hash.update(content)
+        yw_manifest: CdnManifest = {
+            "date": datetime.now().isoformat(),
+            "ywVersion": youwol.__version__,
+            "files": [
+                {
+                    "path": package.file,
+                    "contentEncoding": get_content_encoding(package.file),
+                    "contentType": get_content_type(package.file),
+                    "hash": content_hash.hexdigest(),
+                }
+            ],
+        }
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
             package_json_data = json.dumps(package_json).encode("utf-8")
             zip_file.writestr("package.json", package_json_data)
+            manifest_json_data = json.dumps(yw_manifest).encode("utf-8")
+            zip_file.writestr(CDN_MANIFEST_FILE, manifest_json_data)
             zip_file.writestr(package.file, content)
 
         env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
@@ -251,8 +281,6 @@ async def persist_resource(
             await publish_package(
                 file=tmp_file,
                 filename="cdn.zip",
-                # brotli is misleading: it actually means that compression has been already done appropriately
-                content_encoding="brotli",
                 configuration=cdn_config,
                 clear=package.name != "pyodide",
                 context=ctx,

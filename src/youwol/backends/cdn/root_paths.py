@@ -7,7 +7,7 @@ import json
 from typing import Any
 
 # third parties
-from fastapi import APIRouter, Depends, File, Form, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException
 from fastapi import Query as QueryParam
 from fastapi import UploadFile
 from semantic_version import NpmSpec, Version
@@ -75,28 +75,27 @@ router = APIRouter(tags=["cdn-backend"])
 async def publish_library(
     request: Request,
     file: UploadFile = File(...),
-    content_encoding: str = Form("identity"),
     configuration: Configuration = Depends(get_configuration),
 ) -> PublishResponse:
     """
     Publishes a library from a zip file:
-        *  Publish the files in the storage
-        *  Publish a document in the no-sql table
-        *  Publish files in the storage (under folder `/auto-generated/explorer`) to summarize the files' organization.
+        * Publish the files in the storage
+        * Publish a document in the no-sql table
+        * Publish files in the storage (under folder `/auto-generated/explorer`) to summarize the files' organization.
 
     Requirements:
-        *  a `package.json` file is available in the zip, its location define the **reference path**.
+        * a `package.json` file is available in the zip, its location defines the **reference path**.
         Only the files in this folder and below are published.
-        *  `package.json` is a valid JSON file, including the fields:
-           *  'name' : the package name, also UID.
-           *  'version' : the package version, need to follow [semantic versioning](https://semver.org/).
+        * `package.json` is a valid JSON file, including the fields:
+           * 'name': the package name, also UID.
+           * 'version': the package version, it needs to follow [semantic versioning](https://semver.org/).
            Pre-releases allowed are defined [here](@yw-nav-class:youwol.backends.cdn.configurations.Constants).
-           *  'main' : the path of the main entry point, with respect to the **reference path**.
+           * 'main': the path of the main entry point, with respect to the **reference path**.
+        * a `.yw_manifest.json` file available in the **reference path**. See [CdnManifest](@yw-nav-class:CdnManifest).
 
     Parameters:
         request: Incoming request.
         file: Zip file including the packaged files.
-        content_encoding: Deprecated, use the default value.
         configuration: Injected configuration of the service.
 
     Return:
@@ -107,7 +106,6 @@ async def publish_library(
         return await publish_package(
             file=file.file,
             filename=file.filename if file.filename else "uploaded_file",
-            content_encoding=content_encoding,
             configuration=configuration,
             context=ctx,
         )
