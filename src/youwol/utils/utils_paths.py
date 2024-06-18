@@ -19,6 +19,7 @@ from typing import IO, cast
 
 # third parties
 import aiohttp
+import brotli
 import yaml
 
 from pydantic import BaseModel
@@ -141,10 +142,16 @@ def create_zip_file(
     path: Path,
     files_to_zip: list[tuple[Path, str]],
     with_data: list[tuple[str, str | bytes]] | None = None,
+    to_brotli_files: list[Path] | None = None,
 ):
     with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as zipper:
         for path_file, name in files_to_zip:
-            zipper.write(filename=path_file, arcname=name)
+            if to_brotli_files and path_file in to_brotli_files:
+                with open(path_file, "rb") as f:
+                    compressed_data = brotli.compress(f.read())
+                zipper.writestr(name, compressed_data)
+            else:
+                zipper.write(filename=path_file, arcname=name)
         if with_data:
             for arc_name, raw in with_data:
                 zipper.writestr(arc_name, data=raw)

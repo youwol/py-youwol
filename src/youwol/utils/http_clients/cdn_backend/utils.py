@@ -5,7 +5,7 @@ from collections.abc import Iterable
 from pathlib import Path
 
 # typing
-from typing import cast
+from typing import Literal, TypedDict, cast
 
 # third parties
 import brotli
@@ -20,6 +20,53 @@ from youwol.utils.http_clients.cdn_backend import (
 )
 from youwol.utils.types import JSON
 from youwol.utils.utils_paths import write_json
+
+CDN_METADATA_FILE = ".yw_metadata.json"
+CDN_MANIFEST_FILE = ".yw_manifest.json"
+
+
+class CdnFileManifest(TypedDict):
+    """
+    Represents file information within a [CdnManifest](@yw-nav-class:CdnManifest)
+    """
+
+    path: str
+    """
+    Path of the file within the package, referenced from the folder including the 'package.json' file.
+    """
+    contentEncoding: Literal["identity", "br"]
+    """
+    Content encoding.
+    - "identity": No encoding.
+    - "br": Brotli compression.
+    """
+    contentType: str
+    """
+    Content type.
+    """
+    hash: str
+    """
+    Md5 file's hash.
+    """
+
+
+class CdnManifest(TypedDict):
+    """
+    Represents the manifest structure (`.yw_manifest.json`) when publishing a package in the Youwol's CDN.
+    """
+
+    date: str
+    """
+    Date of package creation in ISO 8601 (e.g., "2024-06-17T12:00:00Z").
+    """
+    ywVersion: str
+    """
+    Youwol version used to create the package.
+    """
+    files: list[CdnFileManifest]
+    """
+    Files information.
+    """
 
 
 def to_std_npm_spec(input_semver: str) -> str:
@@ -209,3 +256,16 @@ def get_library_type(lib_type: str) -> WebpmLibraryType:
         if lib_type in {"js/wasm", "backend", "pyodide"}
         else default_webpm_lib_type
     )
+
+
+def get_content_encoding(file_name: str) -> Literal["br", "identity"]:
+    if (
+        ".json" not in file_name
+        and ".js" in file_name
+        or ".css" in file_name
+        or ".data" in file_name
+        or ".wasm" in file_name
+    ):
+        return "br"
+
+    return "identity"

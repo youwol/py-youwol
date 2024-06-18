@@ -11,7 +11,7 @@ import tempfile
 from pathlib import Path
 
 # typing
-from typing import IO, NamedTuple
+from typing import IO, Literal, NamedTuple, TypedDict
 
 # third parties
 import brotli
@@ -65,6 +65,10 @@ from youwol.utils.http_clients.cdn_backend import (
     get_exported_symbol,
 )
 from youwol.utils.http_clients.cdn_backend.utils import (
+    CDN_MANIFEST_FILE,
+    CdnFileManifest,
+    CdnManifest,
+    get_content_encoding,
     get_library_type,
     is_fixed_version,
     resolve_version,
@@ -97,45 +101,63 @@ async def prepare_files_to_post(
     package_path: Path,
     zip_path: Path,
     paths: list[Path],
-    need_compression,
+    yw_manifest: CdnManifest | None,
     context: Context,
 ):
     async with context.start(
         action=f"Preparation of {len(paths) + 1} files to download in minio",
         with_labels=["filesPreparation"],
     ) as ctx:
-        return_code, outputs = await execute_shell_cmd(
-            cmd="brotli --version", context=context
-        )
-        use_os_brotli = not return_code
-        await context.info(
-            f"Brotli compression using OS brotli: {use_os_brotli}",
-            data={"outputs": outputs},
-        )
+        auto_brotli_compress: Literal["none", "lib", "os"] = "none"
+        if not yw_manifest:
+            auto_brotli_compress = "lib"
+            return_code, outputs = await execute_shell_cmd(
+                cmd="brotli --version", context=context
+            )
+            if not return_code:
+                auto_brotli_compress = "os"
+            await context.info(
+                f"Brotli compression using {auto_brotli_compress}",
+                data={"outputs": outputs},
+            )
 
         form_original = await format_download_form(
             file_path=zip_path,
             base_path=base_path,
             dir_path=package_path.parent,
-            use_os_brotli=use_os_brotli,
-            compress=need_compression,
+            auto_brotli_compress=auto_brotli_compress,
+            content_encoding="identity",
+            content_type="application/zip",
             rename=ORIGINAL_ZIP_FILE,
             context=ctx,
         )
-        forms = await asyncio.gather(
-            *[
-                format_download_form(
-                    file_path=path,
-                    base_path=base_path,
-                    dir_path=package_path.parent,
-                    use_os_brotli=use_os_brotli,
-                    compress=need_compression,
-                    rename=None,
-                    context=ctx,
-                )
-                for path in paths
-            ]
-        )
+
+        def get_file_metadata(path: Path) -> CdnFileManifest | None:
+            if not yw_manifest:
+                return None
+            relative_path = path.relative_to(package_path.parent)
+            file: CdnFileManifest | None = next(
+                (f for f in yw_manifest["files"] if f["path"] == str(relative_path)),
+                None,
+            )
+            return file
+
+        def get_download_form(path: Path):
+            metadata = get_file_metadata(path)
+            return format_download_form(
+                file_path=path,
+                base_path=base_path,
+                dir_path=package_path.parent,
+                auto_brotli_compress=auto_brotli_compress,
+                content_encoding=(
+                    metadata.get("contentEncoding", None) if metadata else None
+                ),
+                content_type=metadata.get("contentType", None) if metadata else None,
+                rename=None,
+                context=ctx,
+            )
+
+        forms = await asyncio.gather(*[get_download_form(path=path) for path in paths])
         await context.info(
             "Forms data prepared",
             data={
@@ -156,17 +178,29 @@ async def format_download_form(
     file_path: Path,
     base_path: Path,
     dir_path: Path,
-    compress: bool,
-    use_os_brotli: bool,
+    auto_brotli_compress: Literal["none", "lib", "os"],
     rename: str | None,
+    content_encoding: Literal["identity", "br"] | None,
+    content_type: str | None,
     context: Context,
 ) -> FormData:
-    if compress and get_content_encoding(file_path) == "br":
-        if not use_os_brotli:
+
+    if not content_encoding:
+        content_encoding = "identity"
+    if not content_type:
+        content_type = get_content_type(file_path.name)
+
+    if auto_brotli_compress != "none" and get_content_encoding(file_path.name) == "br":
+        # This part is for backward compatibility.
+        # It is now expected that the client publishing a package does compression on its own.
+
+        content_encoding = "br"
+        if auto_brotli_compress == "lib":
             compressed = brotli.compress(file_path.read_bytes())
             with file_path.open("wb") as f:
                 f.write(compressed)
         else:
+            # Case `auto_brotli_compress` is 'os'
             cmd = f"brotli {file_path} && mv {file_path}.br {file_path}"
             return_code, outputs = await execute_shell_cmd(cmd=cmd, context=context)
             if return_code is not None and return_code > 0:
@@ -179,30 +213,23 @@ async def format_download_form(
             if not rename
             else base_path / rename
         )
-
         return FormData(
             objectName=path_bucket,
             objectData=data,
             owner=Constants.owner,
             objectSize=len(data),
-            content_type=get_content_type(file_path.name),
-            content_encoding=get_content_encoding(file_path.name),
+            content_type=content_type,
+            content_encoding=content_encoding,
         )
 
 
 async def publish_package(
     file: IO,
     filename: str,
-    content_encoding,
     configuration: Configuration,
     context: Context,
     clear: bool = True,
 ):
-    if content_encoding not in ["identity", "brotli"]:
-        raise HTTPException(
-            status_code=422, detail="Only identity and brotli encoding are accepted "
-        )
-    need_compression = content_encoding == "identity"
     with tempfile.TemporaryDirectory() as temp_dir:
         zip_path = (Path(temp_dir) / filename).with_suffix(".zip")
 
@@ -263,13 +290,24 @@ async def publish_package(
         await context.info(
             text=f"Prepare {len(paths)} files to publish", data={"paths": paths}
         )
+        yw_manifest: CdnManifest | None = None
+        if (package_path.parent / CDN_MANIFEST_FILE).exists():
+            with open(package_path.parent / CDN_MANIFEST_FILE, encoding="UTF-8") as fp:
+                yw_manifest = json.load(fp)
+
+        if yw_manifest:
+            await context.info(
+                "Manifest file retrieved", data={"yw_manifest": yw_manifest}
+            )
+        else:
+            await context.info("No manifest file available")
 
         forms = await prepare_files_to_post(
             base_path=base_path,
             package_path=package_path,
             zip_path=zip_path,
             paths=paths,
-            need_compression=need_compression,
+            yw_manifest=yw_manifest,
             context=context,
         )
         # the fingerprint in the md5 checksum of the included files after having eventually being compressed
@@ -299,10 +337,9 @@ async def publish_package(
                     file_system.put_object(
                         object_id=str(form.objectName),
                         data=io.BytesIO(form.objectData),
-                        content_type=form.content_type or get_content_type(filename),
+                        content_type=form.content_type,
                         object_name=form.objectName.name,
-                        content_encoding=form.content_type
-                        or get_content_type(filename),
+                        content_encoding=form.content_encoding,
                         headers=ctx_post.headers(),
                     )
                     for form in forms
@@ -433,29 +470,29 @@ async def create_explorer_data(
         return data
 
 
-def get_content_encoding(file_id):
-    file_id = str(file_id)
-    if (
-        ".json" not in file_id
-        and ".js" in file_id
-        or ".css" in file_id
-        or ".data" in file_id
-        or ".wasm" in file_id
-    ):
-        return "br"
-
-    return "identity"
+class FileMetadata(TypedDict):
+    contentEncoding: Literal["identity", "br"] | None
+    contentType: str | None
 
 
 def format_response(
-    content: bytes, file_id: str, partial_content: bool, max_age: str = "31536000"
+    content: bytes,
+    metadata: FileMetadata,
+    file_id: str,
+    partial_content: bool,
+    max_age: str = "31536000",
 ) -> Response:
+    content_type = metadata.get("contentType", None)
+    content_encoding = metadata.get("contentEncoding", get_content_encoding(file_id))
+    if content_encoding not in ["identity", "br"]:
+        content_encoding = get_content_encoding(file_id)
+
     return Response(
         status_code=206 if partial_content else 200,
         content=content,
         headers={
-            "Content-Encoding": get_content_encoding(file_id),
-            "Content-Type": get_content_type(file_id),
+            "Content-Encoding": str(content_encoding),
+            "Content-Type": content_type or get_content_type(file_id),
             "cache-control": f"public, max-age={max_age}",
             "Cross-Origin-Opener-Policy": "same-origin",
             "Cross-Origin-Embedder-Policy": "require-corp",
@@ -715,11 +752,15 @@ async def fetch_resource(
     context: Context,
 ):
     range_bytes = extract_bytes_ranges(request=request)
-    content = await configuration.file_system.get_object(
-        object_id=path, ranges_bytes=range_bytes, headers=context.headers()
+    content, file_info = await asyncio.gather(
+        configuration.file_system.get_object(
+            object_id=path, ranges_bytes=range_bytes, headers=context.headers()
+        ),
+        configuration.file_system.get_info(object_id=path, headers=context.headers()),
     )
     resp = format_response(
         content=content,
+        metadata=file_info.get("metadata", {}),
         partial_content=bool(range_bytes),
         file_id=path.split("/")[-1],
         max_age=max_age,
