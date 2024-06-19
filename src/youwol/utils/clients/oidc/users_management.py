@@ -11,7 +11,6 @@ from youwol.utils.clients.oidc.service_account_client import ServiceAccountClien
 
 TWELVE_HOURS = 12 * 60 * 60
 
-
 # Visitor creation attributes
 USER_ATTR_TEMP_USER = "temporary_user"
 USER_ATTR_TEMP_USER_IP = "temporary_user_ip"
@@ -38,9 +37,14 @@ USER_ATTR_REG_PENDING_USER_AGENT_UNSET = "REGISTRATION_PENDING_USER_AGENT_UNSET"
 USER_ATTR_REG_PENDING_TIMESTAMP_UNSET = "REGISTRATION_PENDING_TIMESTAMP_UNSET"
 
 
-class User(BaseModel):
+class UserBriefRepresentation(BaseModel):
     id: str
     username: str
+    createdTimestamp: int
+
+
+class UserRepresentation(UserBriefRepresentation):
+    attributes: dict[str, list[str]] = {}
 
 
 class KeycloakUsersManagement(ServiceAccountClient):
@@ -49,16 +53,31 @@ class KeycloakUsersManagement(ServiceAccountClient):
     def __init__(self, realm_url: str, cache: CacheClient, oidc_client: OidcForClient):
         super().__init__(base_url=realm_url, cache=cache, oidc_client=oidc_client)
 
-    async def get_temporary_users(self) -> list[User]:
+    async def get_temporary_users(
+        self, first: int = 0
+    ) -> list[UserBriefRepresentation]:
+        return await self.get_users_with_query(q="temporary_user:true", first=first)
+
+    async def get_users_with_query(
+        self, q: str, first: int = 0
+    ) -> list[UserBriefRepresentation]:
         return [
-            User.parse_obj(item)
+            UserBriefRepresentation.parse_obj(item)
             for item in (
                 await self._get(
                     path="/users",
-                    params={"briefRepresentation": "true", "q": "temporary_user:true"},
+                    params={"briefRepresentation": "true", "q": q, "first": first},
                 )
             )
         ]
+
+    async def count_users(self, q: str = ""):
+        params = {"q": q} if q else {}
+        return await self._get(path="/users/count", params=params)
+
+    async def get_user_detail(self, user_id: str) -> UserRepresentation:
+        obj = await self._get(path=f"/users/{user_id}")
+        return UserRepresentation.parse_obj(obj)
 
     async def create_user(
         self, username: str, password: str, ip: str, user_agent: str
