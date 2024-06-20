@@ -18,8 +18,6 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 ## [0.1.11rc1.dev] − Unreleased
 
-## [0.1.11rc] − 2024-06-19
-
 ### Changed
 
 - **Pipelines**:
