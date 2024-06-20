@@ -18,7 +18,7 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 ## [0.1.12.dev] − Unreleased
 
-## [0.1.11.dev] − Unreleased
+## [0.1.11] − 2024-06-20
 
 ### Changed
 
