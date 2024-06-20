@@ -18,6 +18,7 @@ from starlette.requests import Request
 
 # Youwol application
 from youwol.app.environment import YouwolEnvironment, yw_config
+from youwol.app.environment.proxied_backends import ProxiedBackendConfiguration
 from youwol.app.routers.backends.implementation import (
     INSTALL_MANIFEST_FILE,
     download_install_backend,
@@ -98,13 +99,30 @@ async def folder_content(body: FolderContentBody) -> FolderContentResp:
     )
 
 
+class BackendsGraphInstallBody(LoadingGraphResponseV1):
+    """
+    Represents the body of the endpoint `/backends/install`.
+    """
+
+    partitionId: str
+
+    backendsConfig: dict[str, ProxiedBackendConfiguration] = {}
+    """
+    Configurations that will be forwarded to backends during installation.
+
+    **Keys** are backend name with optional semantic versioning to select the actual backends within the installation
+    for which the configuration apply to. E.g. `foo-backend` (target any version of `foo-backend`) or
+    `foo-backend#^1.0.0` (target any version of `foo-backend` compatible with `^1.0.0`).
+    """
+
+
 @router.post(
     "/backends/install",
     response_model=BackendsGraphInstallResponse,
     summary="Install the backends part of a loading graph from a cdn-backend response.",
 )
 async def install_graph(
-    request: Request, body: LoadingGraphResponseV1
+    request: Request, body: BackendsGraphInstallBody
 ) -> BackendsGraphInstallResponse:
     """
     This function processes the backend part of a loading graph's definition to install and ensure the running state
@@ -112,6 +130,8 @@ async def install_graph(
     It respects the hierarchical structure of the loading graph, ensuring that each layer of dependencies is correctly
     installed and started in sequence.
     Operations on backends within the same layer are performed concurrently, for efficient parallel execution.
+
+    Some comments regarding configuration
 
     Note:
         Loading graph definitions are retrieved using this [endpoint](@yw-nav-func:root_paths.resolve_loading_tree) of
@@ -133,7 +153,7 @@ async def install_graph(
     async with Context.start_ep(
         request=request,
     ) as ctx:
-
+        default_config = ProxiedBackendConfiguration()
         backends_dict = {
             entity.id: entity for entity in body.lock if entity.type == "backend"
         }
@@ -147,11 +167,13 @@ async def install_graph(
         ]
         sub_graph = [graph for graph in sub_graph if len(graph) > 0]
         flat = [d for layer in sub_graph for d in layer]
+
         await asyncio.gather(
             *[
                 download_install_backend(
                     backend_name=backend.name,
                     version=backend.version,
+                    config=body.backendsConfig.get(backend.name, default_config),
                     url=url,
                     context=ctx,
                 )
@@ -163,8 +185,10 @@ async def install_graph(
                 *[
                     ensure_running(
                         request=ctx.request,
+                        partition_id=body.partitionId,
                         backend_name=lib.name,
                         version_query=lib.version,
+                        config=body.backendsConfig.get(lib.name, default_config),
                         timeout=300,
                         context=ctx,
                     )
@@ -174,9 +198,53 @@ async def install_graph(
 
         return BackendsGraphInstallResponse(
             backends=[
-                BackendInstallResponse.from_lib_info(backend=backend)
+                BackendInstallResponse.from_lib_info(
+                    backend=backend,
+                    partition=body.partitionId,
+                    config=body.backendsConfig.get(backend.name, default_config),
+                )
                 for backend in backends_dict.values()
             ]
+        )
+
+
+@router.delete(
+    "/backends/{uid}/terminate",
+    summary="Terminate a backend",
+    response_model=TerminateResponse,
+)
+async def terminate(
+    request: Request,
+    uid: str,
+    env: YouwolEnvironment = Depends(yw_config),
+):
+    """
+    Terminate a backend.
+
+    Parameters:
+        request: Incoming request.
+        uid: Backend or partition UID
+        env: Injected current YouwolEnvironment.
+    Return:
+        Termination details.
+    """
+    async with Context.start_ep(
+        request=request,
+    ) as ctx:
+        proxieds = [
+            b for b in env.proxied_backends.store if uid in (b.partition_id, b.uid)
+        ]
+        if proxieds:
+            await asyncio.gather(
+                *[
+                    env.proxied_backends.terminate(uid=b.uid, context=ctx)
+                    for b in proxieds
+                ]
+            )
+            await emit_environment_status(context=ctx)
+            return TerminateResponse(uids=[b.uid for b in proxieds])
+        raise HTTPException(
+            status_code=400, detail="Backend or partition UID not found"
         )
 
 
@@ -185,36 +253,19 @@ async def install_graph(
     summary="Terminate a backend",
     response_model=TerminateResponse,
 )
-async def terminate(
+async def terminate_deprecated(
     request: Request,
     name: str,
     version: str,
     env: YouwolEnvironment = Depends(yw_config),
 ):
     """
-    Terminate a backend.
-
-    Parameters:
-        request: incoming request.
-        name: Name if the backend.
-        version: Version of the backend.
-        env: Injected current YouwolEnvironment.
-    Return:
-        Termination details.
+    Deprecated, use `/backends/{uid}/terminate` instead.
     """
-    async with Context.start_ep(
-        request=request,
-    ) as ctx:
-        proxied = env.proxied_backends.get(name=name, query_version=version)
-        if proxied:
-            await env.proxied_backends.terminate(
-                name=name, version=version, context=ctx
-            )
-            await emit_environment_status(context=ctx)
-
-        return TerminateResponse(
-            name=name, version=version, wasRunning=proxied is not None
-        )
+    proxied = env.proxied_backends.query_latest(
+        partition_id=None, name=name, query_version=version
+    )
+    return await terminate(request=request, uid=proxied.uid, env=env)
 
 
 @router.delete(
@@ -229,7 +280,7 @@ async def uninstall(
     env: YouwolEnvironment = Depends(yw_config),
 ):
     """
-    Uninstall a backend, eventually terminate it if running.
+    Uninstall a backend, eventually terminate associated running instances.
 
     Parameters:
         request: incoming request.
@@ -242,26 +293,26 @@ async def uninstall(
     async with Context.start_ep(
         request=request,
     ) as ctx:
-        proxied = env.proxied_backends.get(name=name, query_version=version)
-        if proxied:
-            await env.proxied_backends.terminate(
-                name=name, version=version, context=ctx
+        proxied_backends = env.proxied_backends
+        running = [
+            p for p in proxied_backends.store if p.name == name and p.version == version
+        ]
+        if running:
+            await asyncio.gather(
+                *[proxied_backends.terminate(uid=p.uid, context=ctx) for p in running]
             )
             await emit_environment_status(context=ctx)
 
-        manifest = (
-            env.pathsBook.local_cdn_component(name=name, version=version)
-            / INSTALL_MANIFEST_FILE
-        )
+        folder = env.pathsBook.local_cdn_component(name=name, version=version)
         manifest_removed = False
-        if manifest.exists():
+        for file_path in folder.glob(INSTALL_MANIFEST_FILE.replace(".txt", ".*")):
+            file_path.unlink()
             manifest_removed = True
-            manifest.unlink()
 
         return UninstallResponse(
             name=name,
             version=version,
-            backendTerminated=proxied is not None,
+            backendTerminated=len(running) > 0,
             wasInstalled=manifest_removed,
         )
 
@@ -288,7 +339,9 @@ async def query_backend_logs(
         request=request,
     ):
         logs: list[Log] = []
-        proxy = env.proxied_backends.get(name=name, query_version=version)
+        proxy = env.proxied_backends.query_latest(
+            name=name, query_version=version, partition_id=None
+        )
         if not proxy:
             raise HTTPException(
                 status_code=404,

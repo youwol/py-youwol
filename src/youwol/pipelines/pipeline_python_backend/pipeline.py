@@ -14,6 +14,10 @@ from youwol.utils.python_next.v3_12 import tomllib
 
 # Youwol application
 from youwol.app.environment import YouwolEnvironment
+from youwol.app.environment.proxied_backends import (
+    DEFAULT_PARTITION_ID,
+    ProxiedBackendConfiguration,
+)
 from youwol.app.routers.environment.router import emit_environment_status
 from youwol.app.routers.projects import (
     Artifact,
@@ -224,7 +228,9 @@ async def get_info(project: Project, context: Context):
     async with context.start("get_intput_data") as ctx:
         env = await ctx.get("env", YouwolEnvironment)
         proxy = env.proxied_backends.get_info(
-            name=project.name, query_version=project.version
+            partition_id=DEFAULT_PARTITION_ID,
+            name=project.name,
+            query_version=project.version,
         )
         if not proxy:
             raise HTTPException(status_code=404, detail="The backend is not serving")
@@ -235,13 +241,13 @@ async def stop_backend(project: Project, context: Context):
 
     async with context.start("stop_backend") as ctx:
         env = await ctx.get("env", YouwolEnvironment)
-        proxy = env.proxied_backends.get(
-            name=project.name, query_version=project.version
+        proxy = env.proxied_backends.query_latest(
+            partition_id=DEFAULT_PARTITION_ID,
+            name=project.name,
+            query_version=project.version,
         )
         if proxy:
-            await env.proxied_backends.terminate(
-                name=project.name, version=project.version, context=ctx
-            )
+            await env.proxied_backends.terminate(uid=proxy.uid, context=ctx)
             await emit_environment_status(context=ctx)
             return {"status": "backend terminated"}
 
@@ -313,8 +319,10 @@ class RunStep(PipelineStep):
             async def on_executed(process: Process | None, shell_ctx: Context):
                 if config["installDispatch"]:
                     env.proxied_backends.register(
+                        partition_id=DEFAULT_PARTITION_ID,
                         name=project.name,
                         version=project.version,
+                        configuration=ProxiedBackendConfiguration(),
                         port=port,
                         process=process,
                         install_outputs=["Backend running from sources."],

@@ -34,8 +34,7 @@ while getopts ":p:s:h" opt; do
       exit 0
       ;;
     \?)
-      echo "Invalid option: -$OPTARG"
-      exit 1
+      echo "Unused extra option: -$OPTARG"
       ;;
     :)
       echo "Option -$OPTARG requires an argument."
