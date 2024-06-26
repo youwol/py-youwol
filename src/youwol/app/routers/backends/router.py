@@ -5,6 +5,7 @@ from starlette.requests import Request
 
 # Youwol application
 from youwol.app.environment import YouwolEnvironment
+from youwol.app.environment.proxied_backends import DEFAULT_PARTITION_ID
 from youwol.app.routers.backends.implementation import ensure_running
 
 # Youwol utilities
@@ -29,19 +30,25 @@ async def dispatch_impl(
 ):
 
     env = await context.get("env", YouwolEnvironment)
+    partition_id = YouwolHeaders.get_backends_partition(request, DEFAULT_PARTITION_ID)
     backend = await ensure_running(
         request=request,
+        partition_id=partition_id,
         backend_name=backend_name,
         version_query=version_query,
+        # If the service is not already started (no explicit webpm-client install already executed),
+        # the default configuration will be used.
+        config=None,
         timeout=10,
         context=context,
     )
-    backend.endpoint_ctx_id.append(context.parent_uid)
     if not backend:
         return HTTPException(
             status_code=404,
-            detail=f"No proxied backends match the query '{backend_name}#{version_query}",
+            detail=f"No proxied backends match the query '{backend_name}#{version_query}@{partition_id}",
         )
+
+    backend.endpoint_ctx_id.append(context.parent_uid)
 
     headers = {
         **dict(request.headers.items()),

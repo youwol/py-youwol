@@ -12,10 +12,11 @@ from starlette.responses import Response
 from youwol.app.routers.environment import AssetsDownloader
 
 # Youwol utilities
-from youwol.utils import Context, encode_id
+from youwol.utils import Context, YouwolHeaders, encode_id
 from youwol.utils.request_info_factory import url_match
 
 # relative
+from ...environment import YouwolEnvironment
 from .abstract_local_cloud_dispatch import AbstractLocalCloudDispatch
 from .common import package_latest_info
 
@@ -60,6 +61,14 @@ class DownloadBackend(AbstractLocalCloudDispatch):
         package_name = params[0]
         raw_id = encode_id(package_name)
         semver = params[1]
+
+        partition = incoming_request.headers.get(YouwolHeaders.backends_partition)
+        env = await context.get("env", YouwolEnvironment)
+        if partition and env.proxied_backends.query_latest(
+            partition_id=partition, name=package_name, query_version=semver
+        ):
+            # For compatible backend running within the partition, auto upgrade disabled.
+            return None
 
         async with context.start(action="DownloadBackend.apply") as ctx:
             download_info = await package_latest_info(

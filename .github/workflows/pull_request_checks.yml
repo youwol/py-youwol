@@ -69,7 +69,7 @@ jobs:
     with:
       pyYouwolCoverage: true
       tsRepository: youwol/webpm-client
-      tsRef: ${{ inputs.webpm-client_ref }}
+      tsRef: feature/backends-with-config
       name: webpm-client
     secrets: inherit
 

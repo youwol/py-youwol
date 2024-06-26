@@ -283,7 +283,7 @@ def setup_http_routers():
         return RedirectResponse(
             status_code=308,
             url=add_query_parameters(
-                target_url="/applications/@youwol/co-lab/^0.3.0", request=request
+                target_url="/applications/@youwol/co-lab/^0.4.0", request=request
             ),
             headers=no_cache_headers,
         )

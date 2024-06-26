@@ -20,7 +20,12 @@ from starlette.requests import Request
 
 # Youwol application
 from youwol.app.environment import YouwolEnvironment
-from youwol.app.environment.proxied_backends import ProxiedBackend
+from youwol.app.environment.proxied_backends import (
+    DEFAULT_PARTITION_ID,
+    ProxiedBackend,
+    ProxiedBackendConfiguration,
+    get_build_fingerprint,
+)
 from youwol.app.routers.environment import AssetsDownloader
 from youwol.app.routers.environment.router import emit_environment_status
 from youwol.app.routers.local_cdn.router import package_info
@@ -94,6 +99,16 @@ class StartBackendEvent(BaseModel):
     Represents an event associated to a backend start.
     """
 
+    uid: str | None
+    """
+    Backend's uid, available for event `listening`.
+    """
+
+    partitionId: str
+    """
+    Encapsulating partition.
+    """
+
     name: str
     """
     Name of the backend.
@@ -148,11 +163,30 @@ class StartBackendTimeout(HTTPException):
         )
 
 
+def install_manifest_name(build_fingerprint):
+    if build_fingerprint is None:
+        return INSTALL_MANIFEST_FILE
+    return INSTALL_MANIFEST_FILE.replace(".txt", f".{build_fingerprint}.txt")
+
+
 async def install_backend_shell(
-    folder: Path, name: str, version: str, context: Context
+    folder: Path,
+    name: str,
+    version: str,
+    config: ProxiedBackendConfiguration,
+    context: Context,
 ) -> list[str]:
 
     uid = str(uuid.uuid4())
+    build_fingerprint = get_build_fingerprint(config)
+
+    def get_build_args():
+        return functools.reduce(
+            lambda acc, e: f"{acc} --{e[0]} '{e[1]}'",
+            config.build.items(),
+            f"--fingerprint {build_fingerprint}",
+        )
+
     async with context.start(
         action="install backend",
         with_labels=[Label.INSTALL_BACKEND_SH],
@@ -164,8 +198,9 @@ async def install_backend_shell(
                 name=name, version=version, event="started", installId=uid
             )
         )
+        build_args = get_build_args()
 
-        cmd_install = f"(cd {folder} &&  sh ./install.sh)"
+        cmd_install = f"(cd {folder} &&  sh ./install.sh {build_args})"
 
         return_code, outputs = await execute_shell_cmd(cmd=cmd_install, context=ctx)
         if return_code > 1:
@@ -177,10 +212,14 @@ async def install_backend_shell(
             raise InstallBackendFailed(
                 return_code=return_code, outputs=outputs, ctx_id=context.uid
             )
+        manifest_name = install_manifest_name(build_fingerprint)
+        (folder / manifest_name).write_text(
+            functools.reduce(lambda acc, e: acc + e, outputs, "")
+        )
+        # Update latest manifest
         (folder / INSTALL_MANIFEST_FILE).write_text(
             functools.reduce(lambda acc, e: acc + e, outputs, "")
         )
-
         await ctx.send(
             InstallBackendEvent(
                 name=name, version=version, event="succeeded", installId=uid
@@ -192,6 +231,7 @@ async def install_backend_shell(
 async def start_backend_shell(
     name: str,
     version: str,
+    config: ProxiedBackendConfiguration,
     folder: Path,
     port: int,
     outputs: list[str],
@@ -205,8 +245,11 @@ async def start_backend_shell(
     ) as ctx:
         env = await ctx.get("env", YouwolEnvironment)
         package_json = parse_json(folder / "package.json")
+        entry_sh = package_json["main"]
+        build_arg = f" -b {get_build_fingerprint(config)}"
+
         cmd_start = (
-            f"(cd {folder} &&  sh ./{package_json['main']} -p {port} -s {env.httpPort})"
+            f"(cd {folder} &&  sh ./{entry_sh} -p {port} -s {env.httpPort} {build_arg})"
         )
 
         await ctx.info(text=cmd_start)
@@ -251,25 +294,77 @@ async def wait_readiness(port: int, process: Process):
 
 async def ensure_running(
     request: Request,
+    partition_id: str,
     backend_name: str,
     version_query: str,
+    config: ProxiedBackendConfiguration | None,
     timeout: int,
     context: Context,
 ) -> ProxiedBackend:
+    """
+    The `config == None` means: take corresponding service if running whatever its configuration.
 
+    :param request:
+    :param partition_id:
+    :param backend_name:
+    :param version_query:
+    :param config:
+    :param timeout:
+    :param context:
+    :return:
+    """
     env = await context.get("env", YouwolEnvironment)
 
-    async with context.start(action="ensure_running") as ctx:
-        backend = env.proxied_backends.get(
-            name=backend_name, query_version=version_query
+    async with context.start(
+        action="ensure_running",
+        with_attributes={"name": backend_name, "version query": version_query},
+    ) as ctx:
+        if config is None:
+            await ctx.info(
+                f"Backend {backend_name}#{version_query} with any config accepted."
+            )
+        else:
+            await ctx.info(
+                f"Backend {backend_name}#{version_query} with only given config accepted.",
+                data={"config": config},
+            )
+
+        backend = env.proxied_backends.query_latest(
+            partition_id=partition_id, name=backend_name, query_version=version_query
         )
-        if backend:
+        if backend and config in (backend.configuration, None):
+            await ctx.info("Matching backend already running.")
             await ctx.send(
                 data=StartBackendEvent(
-                    name=backend_name, version=backend.version, event="listening"
+                    uid=backend.uid,
+                    partitionId=backend.partition_id,
+                    name=backend_name,
+                    version=backend.version,
+                    event="listening",
                 )
             )
             return backend
+
+        if backend and backend.partition_id == DEFAULT_PARTITION_ID:
+            # Within the default partition ID, used *e.g.* for dev. server, a mismatch in config is tolerated.
+            await ctx.info(
+                "Matching backend in 'Default' partition available, returning it even if config. mismatch"
+            )
+            return backend
+
+        if backend:
+            await ctx.info(
+                f"Running backend {backend.name}#{backend.version} mismatch w/ config. => terminate it",
+                data={"config": config},
+            )
+            await env.proxied_backends.terminate(uid=backend.uid, context=ctx)
+            await emit_environment_status(context=ctx)
+
+        if not config:
+            await ctx.info(
+                "No config provided, and no matching backend running => use default configuration"
+            )
+            config = ProxiedBackendConfiguration()
 
         package = await package_info(
             request=request, package_id=encode_id(backend_name)
@@ -292,15 +387,19 @@ async def ensure_running(
         folder = env.pathsBook.local_cdn_component(
             name=backend_name, version=latest_version_backend
         )
+        fp = get_build_fingerprint(config)
 
-        if not (folder / INSTALL_MANIFEST_FILE).exists():
+        if not (folder / install_manifest_name(fp)).exists():
+            await ctx.info(f"No install manifest found for build fingerprint {fp}")
             install_outputs = await install_backend_shell(
                 folder=folder,
                 name=backend_name,
                 version=latest_version_backend,
+                config=config,
                 context=ctx,
             )
         else:
+            await ctx.info(f"Install manifest found for build fingerprint {fp}")
             install_outputs = [f"Backend {backend_name} already installed"]
         port = find_available_port(start=2010, end=3000)
 
@@ -309,12 +408,16 @@ async def ensure_running(
         outputs = []
         await ctx.send(
             data=StartBackendEvent(
-                name=backend_name, version=latest_version_backend, event="starting"
+                partitionId=partition_id,
+                name=backend_name,
+                version=latest_version_backend,
+                event="starting",
             )
         )
         process, std_outputs_ctx_id = await start_backend_shell(
             name=backend_name,
             version=latest_version_backend,
+            config=config,
             folder=folder,
             port=port,
             outputs=outputs,
@@ -327,6 +430,7 @@ async def ensure_running(
                 await asyncio.sleep(1)
                 await ctx.send(
                     data=StartBackendEvent(
+                        partitionId=partition_id,
                         name=backend_name,
                         version=latest_version_backend,
                         event="failed",
@@ -336,18 +440,24 @@ async def ensure_running(
                     return_code=process.returncode, outputs=outputs, ctx_id=context.uid
                 )
 
-            await ctx.send(
-                data=StartBackendEvent(
-                    name=backend_name, version=latest_version_backend, event="listening"
-                )
-            )
             proxy = env.proxied_backends.register(
+                partition_id=partition_id,
                 name=backend_name,
                 version=latest_version_backend,
+                configuration=config,
                 port=port,
                 process=process,
                 install_outputs=install_outputs,
                 server_outputs_ctx_id=std_outputs_ctx_id,
+            )
+            await ctx.send(
+                data=StartBackendEvent(
+                    uid=proxy.uid,
+                    partitionId=proxy.partition_id,
+                    name=proxy.name,
+                    version=proxy.version,
+                    event="listening",
+                )
             )
             await emit_environment_status(context=ctx)
             return proxy
@@ -377,7 +487,11 @@ class DownloadBackendFailed(Exception):
 
 
 async def download_install_backend(
-    backend_name: str, url: str, version: str, context: Context
+    backend_name: str,
+    url: str,
+    version: str,
+    config: ProxiedBackendConfiguration,
+    context: Context,
 ) -> None:
     """
     Downloads and installs a backend from the provided URL.
@@ -386,6 +500,7 @@ async def download_install_backend(
         backend_name: The name of the backend.
         url: The entry point URL.
         version: The specific version of the backend.
+        config: configuration for the backend's installation.
         context: The current context.
 
     Raise:
@@ -424,7 +539,13 @@ async def download_install_backend(
                 )
             )
         folder = env.pathsBook.local_cdn_component(name=backend_name, version=version)
-        if not (folder / INSTALL_MANIFEST_FILE).exists():
+        build_fingerprint = get_build_fingerprint(config)
+
+        if not (folder / install_manifest_name(build_fingerprint)).exists():
             await install_backend_shell(
-                folder=folder, name=backend_name, version=version, context=ctx
+                folder=folder,
+                name=backend_name,
+                version=version,
+                config=config,
+                context=ctx,
             )

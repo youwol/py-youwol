@@ -4,8 +4,11 @@ from enum import Enum
 # third parties
 from pydantic import BaseModel
 
+# Youwol application
+from youwol.app.environment.proxied_backends import ProxiedBackendConfiguration
+
 # Youwol utilities
-from youwol.utils import JSON, LogEntry
+from youwol.utils import JSON, LogEntry, YouwolHeaders
 from youwol.utils.http_clients.cdn_backend import Library
 from youwol.utils.utils_requests import FuturesResponse, FuturesResponseEnd
 
@@ -242,19 +245,9 @@ class TerminateResponse(BaseModel):
     Response model when calling [terminate](@yw-nav-func:youwol.app.routers.system.router.terminate)
     """
 
-    name: str
+    uids: list[str]
     """
-    Backend name.
-    """
-
-    version: str
-    """
-    Backend version.
-    """
-
-    wasRunning: bool
-    """
-    Whether the backend was running.
+    Backends' UID terminated.
     """
 
 
@@ -264,6 +257,14 @@ class BackendInstallResponse(BaseModel):
     [`/admin/system/backends/install`](system.router.install_graph).
     """
 
+    baseUrl: str
+    """
+    Base Url.
+    """
+    partitionId: str
+    """
+    Encapsulating partition.
+    """
     name: str
     """
     The backend name.
@@ -280,14 +281,20 @@ class BackendInstallResponse(BaseModel):
     """
     Client's bundle.
     """
+    config: ProxiedBackendConfiguration
 
     @staticmethod
-    def from_lib_info(backend: Library):
+    def from_lib_info(
+        backend: Library, partition: str, config: ProxiedBackendConfiguration
+    ):
         url_base = f"/backends/{backend.name}/{backend.version}"
-        exported_symbol = f"{backend.name}_APIv{backend.apiKey}"
+        exported_symbol = f"{backend.name}%p-{partition}_APIv{backend.apiKey}"
         return BackendInstallResponse(
+            baseUrl=url_base,
+            partitionId=partition,
             name=backend.name,
             version=backend.version,
+            config=config,
             exportedClientSymbol=exported_symbol,
             clientBundle=f"""
 return async ({{window, webpmClient, wsData$}}) => {{
@@ -303,14 +310,26 @@ return async ({{window, webpmClient, wsData$}}) => {{
     const respText$ = (url, options) => resp$(url, options).pipe(
         switchMap((resp) => from(resp.text()))
     )
-    window[symbol] = {{
-        name: "{backend.name}",
+    const instrument = (options) => ({{
+        ...(options || {{}}),
+        headers: {{
+            ...(options?.headers || {{}}),
+            '{YouwolHeaders.backends_partition}': '{partition}'
+        }}
+    }})
+    const client = {{
+        name: "{backend.name}%p-{partition}",
+        partitionId: "{partition}",
+        exportedSymbol: "{exported_symbol}",
         version: "{backend.version}",
+        config: {config.dict()},
         urlBase: "{url_base}",
-        fetch: (url, options) => fetch(`{url_base}/${{url}}`),
-        fromFetch:  (url, options) => resp$(url, options),
-        fromFetchJson:  (url, options) => respJson$(url, options),
-        fromFetchText:  (url, options) => respText$(url, options),
+        fetch: (url, options) => fetch(`{url_base}/${{url}}`, instrument(options)),
+        fetchJson: (url, options) => fetch(`{url_base}/${{url}}`, instrument(options)).then( r => r.json()),
+        fetchText: (url, options) => fetch(`{url_base}/${{url}}`, instrument(options)).then( r => r.text()),
+        fromFetch:  (url, options) => resp$(url, instrument(options)),
+        fromFetchJson:  (url, options) => respJson$(url, instrument(options)),
+        fromFetchText:  (url, options) => respText$(url, instrument(options)),
         stream: (url, options) => {{
             channelId = options?.channelId || `${{uuid.v4()}}`
             const resp$ = new ReplaySubject()
@@ -335,6 +354,8 @@ return async ({{window, webpmClient, wsData$}}) => {{
             )
         }}
     }}
+    window[symbol] = client
+    return client
 }}
 """,
         )

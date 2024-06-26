@@ -3,6 +3,7 @@ import base64
 import datetime
 import itertools
 import json
+import zlib
 
 from collections.abc import Callable, Iterable
 from enum import Enum
@@ -92,6 +93,11 @@ class YouwolHeaders:
     This header key is to be included to enable the [BrowserCacheStore](@yw-nav-class:BrowserCacheStore) to cache
     a response, see the function
     [set_yw_browser_cache_directive](@yw-nav-attr:YouwolHeaders.set_yw_browser_cache_directive).
+    """
+
+    backends_partition: str = "x-backends-partition"
+    """
+    Target partition regarding backends calls.
     """
 
     @staticmethod
@@ -203,6 +209,17 @@ class YouwolHeaders:
             YouwolHeaders.yw_browser_cache_directive, json.dumps(directive.dict())
         )
 
+    @staticmethod
+    def get_backends_partition(request: Request, default_id: str | None) -> str | None:
+        """
+
+        Parameters:
+            request: incoming request
+        Return:
+            Correlation id of the request, if provided.
+        """
+        return request.headers.get(YouwolHeaders.backends_partition, default_id)
+
 
 def user_info(request: Request):
     return request.state.user_info
@@ -291,6 +308,7 @@ def generate_headers_downstream(
     to_propagate = [h.lower() for h in from_req_fwd(headers_keys)] + [
         "authorization",
         YouwolHeaders.py_youwol_local_only,
+        YouwolHeaders.backends_partition,
     ]
 
     return {
@@ -387,6 +405,19 @@ def decode_id(asset_id) -> str:
 def encode_id(raw_id) -> str:
     b = str.encode(raw_id)
     return base64.urlsafe_b64encode(b).decode()
+
+
+def json2uid(from_json: JSON) -> str:
+    json_config = json.dumps(from_json, sort_keys=True)
+    compressed_bytes = zlib.compress(json_config.encode("utf-8"))
+    base64_bytes = base64.urlsafe_b64encode(compressed_bytes)
+    return base64_bytes.decode("utf-8")
+
+
+def uid2json(from_uid: str) -> JSON:
+    compressed_bytes = base64.urlsafe_b64decode(from_uid)
+    json_string = zlib.decompress(compressed_bytes).decode("utf-8")
+    return json.loads(json_string)
 
 
 def to_serializable_json_leaf(v):
