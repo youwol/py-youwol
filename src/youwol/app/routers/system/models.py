@@ -245,19 +245,9 @@ class TerminateResponse(BaseModel):
     Response model when calling [terminate](@yw-nav-func:youwol.app.routers.system.router.terminate)
     """
 
-    name: str | None
+    uids: list[str]
     """
-    Backend name.
-    """
-
-    version: str | None
-    """
-    Backend version.
-    """
-
-    wasRunning: bool
-    """
-    Whether the backend was running.
+    Backends' UID terminated.
     """
 
 
@@ -335,6 +325,8 @@ return async ({{window, webpmClient, wsData$}}) => {{
         config: {config.dict()},
         urlBase: "{url_base}",
         fetch: (url, options) => fetch(`{url_base}/${{url}}`, instrument(options)),
+        fetchJson: (url, options) => fetch(`{url_base}/${{url}}`, instrument(options)).then( r => r.json()),
+        fetchText: (url, options) => fetch(`{url_base}/${{url}}`, instrument(options)).then( r => r.text()),
         fromFetch:  (url, options) => resp$(url, instrument(options)),
         fromFetchJson:  (url, options) => respJson$(url, instrument(options)),
         fromFetchText:  (url, options) => respText$(url, instrument(options)),
