@@ -17,7 +17,6 @@ from youwol.app.routers.projects.models_project import PipelineStep
 
 # Youwol backends
 from youwol.backends.cdn import get_api_key
-from youwol.backends.cdn.loading_graph_implementation import exportedSymbols
 
 # Youwol utilities
 from youwol.utils import JSON, deep_merge, parse_json, write_json
@@ -214,7 +213,7 @@ def get_externals(input_template: Template):
     )
 
     for name, dep_api_version in externals_api_version.items():
-        symbol_name = name if name not in exportedSymbols else exportedSymbols[name]
+        symbol_name = name
         exported_symbols[name] = {
             "apiKey": dep_api_version,
             "exportedSymbol": symbol_name,

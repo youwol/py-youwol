@@ -426,9 +426,9 @@ cyclonedx-python-lib==4.2.3 \
     --hash=sha256:904068b55d1665f0ea96f38307603cc14f95c3b421f1687fc2411326aefde3a6 \
     --hash=sha256:e9b923af525b6acf7bab917a35360b4b562b85dc15fde9eaa500828949adf73a
     # via pip-audit
-deepdiff==5.8.1 \
-    --hash=sha256:8d4eb2c4e6cbc80b811266419cb71dd95a157094a3947ccf937a94d44943c7b8 \
-    --hash=sha256:e9aea49733f34fab9a0897038d8f26f9d94a97db1790f1b814cced89e9e0d2b7
+deepdiff==7.0.1 \
+    --hash=sha256:260c16f052d4badbf60351b4f77e8390bee03a0b516246f6839bc813fb429ddf \
+    --hash=sha256:447760081918216aa4fd4ca78a4b6a848b81307b2ea94c810255334b759e1dc3
     # via youwol (pyproject.toml)
 defusedxml==0.7.1 \
     --hash=sha256:1bb3032db185915b62d7c6209c5a8792be6a32ab2fedacc84e01b52c51aa3e69 \

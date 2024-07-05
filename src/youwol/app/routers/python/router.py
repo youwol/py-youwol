@@ -95,19 +95,24 @@ class ResourceInfo(NamedTuple):
             The parsed resource information.
         """
 
+        # e.g.:
+        # https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js
+        # https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyparsing-3.1.2-py3-none-any.whl
+        pyodide_version = url.split("/")[-3][1:]
         if not url.endswith(".whl"):
-            # e.g. https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js
             return ResourceInfo(
-                name="pyodide", version=url.split("/")[-3][1:], file=url.split("/")[-1]
+                name="pyodide", version=pyodide_version, file=url.split("/")[-1]
             )
         file = url.split("/")[-1]
         name = file.split("-")[0]
         version = file.split("-")[1]
-
         if len(version.split(".")) == 1:
             version = f"{version}.0.0"
         if len(version.split(".")) == 2:
             version = f"{version}.0"
+        if len(version.split(".")) >= 4:
+            # It is OK to remove 'alpha', 'beta', 'post', ... as the exact version is part of the filename.
+            version = ".".join(version.split(".")[0:3])
 
         try:
             semantic_version.Version(version)
@@ -116,8 +121,8 @@ class ResourceInfo(NamedTuple):
                 f"Pyodide package {name} has version '{version}' "
                 f"that can not be harmonized to NPM standard."
             ) from exc
-
-        return ResourceInfo(name=name, version=version, file=file)
+        namespace = f"pyodide-{pyodide_version.replace('.', '-')}"
+        return ResourceInfo(name=f"@{namespace}/{name}", version=version, file=file)
 
 
 class Package(BaseModel):
