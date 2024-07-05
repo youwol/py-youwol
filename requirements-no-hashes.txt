@@ -74,7 +74,7 @@ cryptography==42.0.4
     #   types-redis
 cyclonedx-python-lib==4.2.3
     # via pip-audit
-deepdiff==5.8.1
+deepdiff==7.0.1
     # via youwol (pyproject.toml)
 defusedxml==0.7.1
     # via py-serializable

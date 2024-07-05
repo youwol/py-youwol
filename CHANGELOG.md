@@ -29,6 +29,10 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 - Upgrade `GET:/co-lab` target from `@youwol/co-lab#^0.3.0` to `@youwol/co-lab#^0.4.0`. <!-- TG-2399 -->
 
 
+<!-- Not worthy of inclusion
+TG-2415 : ⬆️ upgrade `deepdiff` to `7.0.1,<8.0.0`
+-->
+
 ## [0.1.11] − 2024-06-20
 
 ### Changed
