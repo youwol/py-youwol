@@ -34,6 +34,7 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
   py-youwol environment. <!-- TG-2416 -->
 
 <!-- Not worthy of inclusion
+TG-2414: ♻️ [pipeline TS] Stop using deprecated exported names
 TG-2415 : ⬆️ upgrade `deepdiff` to `7.0.1,<8.0.0`
 -->
 
