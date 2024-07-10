@@ -34,6 +34,11 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 - Resolved issues with fetching Pyodide resources when multiple Pyodide runtime versions are available within the
   py-youwol environment. <!-- TG-2416 -->
 
+### Security
+
+- **Dependencies vulnerabilities**:
+  - [GHSA-248v-346w-9cwc] Upgrade `certifi` to 2024.7.4 <!-- TG-2419 -->
+
 <!-- Not worthy of inclusion
 TG-2414: ♻️ [pipeline TS] Stop using deprecated exported names
 TG-2415 : ⬆️ upgrade `deepdiff` to `7.0.1,<8.0.0`

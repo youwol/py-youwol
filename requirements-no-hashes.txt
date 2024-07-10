@@ -40,7 +40,7 @@ cachecontrol[filecache]==0.13.1
     # via
     #   cachecontrol
     #   pip-audit
-certifi==2023.11.17
+certifi==2024.7.4
     # via
     #   minio
     #   requests
