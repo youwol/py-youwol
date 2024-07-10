@@ -38,6 +38,7 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 - **Dependencies vulnerabilities**:
   - [GHSA-248v-346w-9cwc] Upgrade `certifi` to 2024.7.4 <!-- TG-2419 -->
+  - [GHSA-jfmj-5v4g-7637] Upgrade `zipp` to 3.19.2 <!-- TG-2418 -->
 
 <!-- Not worthy of inclusion
 TG-2414: ♻️ [pipeline TS] Stop using deprecated exported names

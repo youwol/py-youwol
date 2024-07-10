@@ -323,7 +323,7 @@ yamllint==1.33.0
     # via youwol (pyproject.toml)
 yarl==1.9.4
     # via aiohttp
-zipp==3.17.0
+zipp==3.19.2
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
