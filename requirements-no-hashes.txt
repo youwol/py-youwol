@@ -179,7 +179,7 @@ pip-audit==2.6.1
     # via youwol (pyproject.toml)
 pip-requirements-parser==32.0.1
     # via pip-audit
-pip-tools==7.3.0
+pip-tools==7.4.1
     # via youwol (pyproject.toml)
 pkginfo==1.9.6
     # via twine
@@ -212,9 +212,7 @@ pygments==2.17.2
     #   readme-renderer
     #   rich
 pyjwt==2.4.0
-    # via
-    #   pyjwt
-    #   youwol (pyproject.toml)
+    # via youwol (pyproject.toml)
 pylint==3.0.3
     # via youwol (pyproject.toml)
 pyparsing==3.1.1
@@ -222,7 +220,9 @@ pyparsing==3.1.1
     #   pip-requirements-parser
     #   youwol (pyproject.toml)
 pyproject-hooks==1.0.0
-    # via build
+    # via
+    #   build
+    #   pip-tools
 python-daemon==3.0.1
     # via youwol (pyproject.toml)
 python-multipart==0.0.9
