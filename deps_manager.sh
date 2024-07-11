@@ -36,6 +36,8 @@ set -e
 pip_compile_default_opts=""
 pip_compile_default_opts="${pip_compile_default_opts} --allow-unsafe"
 pip_compile_default_opts="${pip_compile_default_opts} --resolver=backtracking"
+# See https://github.com/jazzband/pip-tools/issues/1613
+pip_compile_default_opts="${pip_compile_default_opts} --strip-extras"
 
 self_name=$(basename $0)
 export CUSTOM_COMPILE_COMMAND="sh ${self_name} compile"

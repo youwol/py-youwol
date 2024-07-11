@@ -27,11 +27,18 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 ### Changed
 
 - Upgrade `GET:/co-lab` target from `@youwol/co-lab#^0.3.0` to `@youwol/co-lab#^0.4.0`. <!-- TG-2399 -->
+- Upgrade dependency `requests` to 2.32.3 because [previous version has been yanked](https://pypi.org/project/requests/2.32.1/) <!-- TG-2420 -->
 
 ### Fixed
 
 - Resolved issues with fetching Pyodide resources when multiple Pyodide runtime versions are available within the
   py-youwol environment. <!-- TG-2416 -->
+
+### Security
+
+- **Dependencies vulnerabilities**:
+  - [GHSA-248v-346w-9cwc] Upgrade `certifi` to 2024.7.4 <!-- TG-2419 -->
+  - [GHSA-jfmj-5v4g-7637] Upgrade `zipp` to 3.19.2 <!-- TG-2418 -->
 
 <!-- Not worthy of inclusion
 TG-2414: ♻️ [pipeline TS] Stop using deprecated exported names
@@ -44,8 +51,8 @@ TG-2415 : ⬆️ upgrade `deepdiff` to `7.0.1,<8.0.0`
 
 - **Pipelines**:
   - Enhance reliability of dependencies synchronisation in typescript pipeline. <!-- TG-2366, TG-2368 -->
-- **CDN Packaging**: 
-  - Enhanced the CDN packaging process to support selective Brotli compression and explicit content type definitions, 
+- **CDN Packaging**:
+  - Enhanced the CDN packaging process to support selective Brotli compression and explicit content type definitions,  
     allowing for more flexible packaging and optimized download performance. <!-- TG-2353 -->
 
 ### Security
@@ -53,7 +60,6 @@ TG-2415 : ⬆️ upgrade `deepdiff` to `7.0.1,<8.0.0`
 - **Dependencies vulnerabilities**:
   - [GHSA-34jh-p97f-mpxf] Upgrade `urllib3` to 2.2.2 <!-- TG-2386 -->
   - [CVE-2024-37890] Upgrade npm package `ws` on documentation app. <!-- TG-2388 -->
-
 
 ## [0.1.10] − 2024-05-27
 

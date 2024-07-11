@@ -26,7 +26,7 @@ astroid==3.0.2
     # via pylint
 attrs==21.4.0
     # via aiohttp
-black[d]==24.3.0
+black==24.3.0
     # via youwol (pyproject.toml)
 boolean-py==4.0
     # via license-expression
@@ -36,11 +36,11 @@ build==1.1.1
     # via
     #   pip-tools
     #   youwol (pyproject.toml)
-cachecontrol[filecache]==0.13.1
+cachecontrol==0.13.1
     # via
     #   cachecontrol
     #   pip-audit
-certifi==2023.11.17
+certifi==2024.7.4
     # via
     #   minio
     #   requests
@@ -179,7 +179,7 @@ pip-audit==2.6.1
     # via youwol (pyproject.toml)
 pip-requirements-parser==32.0.1
     # via pip-audit
-pip-tools==7.3.0
+pip-tools==7.4.1
     # via youwol (pyproject.toml)
 pkginfo==1.9.6
     # via twine
@@ -211,10 +211,8 @@ pygments==2.17.2
     # via
     #   readme-renderer
     #   rich
-pyjwt[crypto]==2.4.0
-    # via
-    #   pyjwt
-    #   youwol (pyproject.toml)
+pyjwt==2.4.0
+    # via youwol (pyproject.toml)
 pylint==3.0.3
     # via youwol (pyproject.toml)
 pyparsing==3.1.1
@@ -222,7 +220,9 @@ pyparsing==3.1.1
     #   pip-requirements-parser
     #   youwol (pyproject.toml)
 pyproject-hooks==1.0.0
-    # via build
+    # via
+    #   build
+    #   pip-tools
 python-daemon==3.0.1
     # via youwol (pyproject.toml)
 python-multipart==0.0.9
@@ -236,7 +236,7 @@ readme-renderer==42.0
     # via twine
 redis==4.6.0
     # via youwol (pyproject.toml)
-requests==2.32.1
+requests==2.32.3
     # via
     #   cachecontrol
     #   pip-audit
@@ -323,11 +323,11 @@ yamllint==1.33.0
     # via youwol (pyproject.toml)
 yarl==1.9.4
     # via aiohttp
-zipp==3.17.0
+zipp==3.19.2
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==24.0
+pip==24.1.2
     # via
     #   pip-api
     #   pip-tools
