@@ -1550,9 +1550,9 @@ pip==24.1.2 \
     # via
     #   pip-api
     #   pip-tools
-setuptools==69.0.2 \
-    --hash=sha256:1e8fdff6797d3865f37397be788a4e3cba233608e9b509382a2777d25ebde7f2 \
-    --hash=sha256:735896e78a4742605974de002ac60562d286fa8051a7e2299445e8e8fbb01aa6
+setuptools==70.3.0 \
+    --hash=sha256:f171bab1dfbc86b132997f26a119f6056a57950d058587841a0082e8830f9dc5 \
+    --hash=sha256:fe384da74336c398e0d956d1cae0669bc02eed936cdb1d49b57de1990dc11ffc
     # via
     #   pip-tools
     #   python-daemon

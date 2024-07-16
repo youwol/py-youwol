@@ -331,7 +331,7 @@ pip==24.1.2
     # via
     #   pip-api
     #   pip-tools
-setuptools==69.0.2
+setuptools==70.3.0
     # via
     #   pip-tools
     #   python-daemon
