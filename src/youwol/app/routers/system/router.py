@@ -9,11 +9,8 @@ from pathlib import Path
 from typing import cast
 
 # third parties
-import griffe
-
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse
-from griffe.dataclasses import Module
 from starlette.requests import Request
 
 # Youwol application
@@ -25,15 +22,6 @@ from youwol.app.routers.backends.implementation import (
     ensure_running,
 )
 from youwol.app.routers.environment.router import emit_environment_status
-from youwol.app.routers.system.documentation import (
-    YOUWOL_MODULE,
-    check_documentation,
-    get_doc_implementation,
-)
-from youwol.app.routers.system.documentation_models import (
-    DocAnalysisResponse,
-    DocModuleResponse,
-)
 from youwol.app.routers.system.models import (
     BackendInstallResponse,
     BackendLogsResponse,
@@ -530,64 +518,3 @@ def get_status(log: LogEntry, logger: InMemoryReporter):
         return NodeLogStatus.UNRESOLVED
 
     return NodeLogStatus.SUCCEEDED
-
-
-@router.get(
-    "/documentation-check",
-    summary="Check the inlined youwol documentation.",
-    response_model=DocAnalysisResponse,
-)
-async def documentation_check(request: Request):
-    """
-    Check the inlined youwol documentation.
-
-    Parameters:
-        request: Incoming request
-    Return:
-        Analysis report.
-    """
-    async with Context.start_ep(request=request):
-        root = cast(Module, griffe.load(YOUWOL_MODULE, submodules=True))
-        return DocAnalysisResponse(crossLinkErrors=check_documentation(root))
-
-
-@router.get(
-    "/documentation/{rest_of_path:path}",
-    summary="Retrieves the documentation of a given module from this python package.",
-    response_model=DocModuleResponse,
-)
-async def get_documentation(request: Request, rest_of_path: str) -> DocModuleResponse:
-    """
-    Retrieves the documentation of a given module from this youwol package.
-
-    Only documented symbols are exposed in the documentation (modules, classes, functions, variables, attributes,
-    *etc.*). The returned module documentation provides the list of its submodules, that can be latter queried for
-    documentation if needed.
-
-    Guidelines for documenting python code:
-
-    *  Use <a href="https://mkdocstrings.github.io/griffe/docstrings/" target="_blank">Google style</a>
-     documentation for functions.
-    *  Class attributes documentation comes after their declaration, do not include it in class documentation.
-    *  For cross-reference of symbols, use a mark-down link with url given by **$Kind:$Path** where:
-        *  **$Kind** is either `@yw-nav-mod`, `@yw-nav-class`, `@yw-nav-attr`, `@yw-nav-meth`, `@yw-nav-func`,
-        `@yw-nav-glob`, to respectively link symbol of kind module, class, class' attribute,  class' method,
-         function, global variable.
-        *  **$Path** is the full (including file) 'pythonic' path to the symbol, starting with `youwol`.
-
-    Note:
-        Some section id acts as identifier for rendering: `example`, `warning`
-
-    Parameters:
-        request: incoming request
-        rest_of_path: path of the module separated with **'/'**; e.g. 'youwol/app/environment'. If empty, returns
-            an 'empty' response with 'youwol' as unique child module
-             (see <a href="@yw-nav-attr:youwol.app.routers.system.models.DocModuleResponse.childrenModules">
-            DocModuleResponse.childrenModules</a>)
-
-    Return:
-        Module documentation
-    """
-
-    async with Context.start_ep(request=request):
-        return await get_doc_implementation(module_path=rest_of_path)
