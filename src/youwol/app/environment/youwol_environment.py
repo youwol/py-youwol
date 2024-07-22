@@ -76,13 +76,13 @@ class YouwolEnvironment(BaseModel):
     httpPort: int
     """
     Serving port,
-    defined from the [Configuration](@yw-nav-attr:System.httpPort).
+    defined from the :attr:`Configuration <youwol.app.environment.models.models_config.System.httpPort>`.
     """
 
     events: Events
     """
     Plugged events,
-    defined from the [Configuration](@yw-nav-attr:Customization.events).
+    defined from the :attr:`Configuration <youwol.app.environment.models.models_config.Customization.events>`.
 
     Deprecated, should be retrieved from attribute `configuration`.
     """
@@ -91,7 +91,7 @@ class YouwolEnvironment(BaseModel):
     """
     Custom middlewares,
     defined from the
-     [Configuration](@yw-nav-attr:Customization.middlewares).
+     :attr:`Configuration <youwol.app.environment.models.models_config.Customization.middlewares>`.
 
     Deprecated, should be retrieved from attribute `configuration`.
     """
@@ -99,13 +99,13 @@ class YouwolEnvironment(BaseModel):
     projects: ProjectsResolver
     """
     References projects' lookup & creation strategies, defined from the configuration's attribute
-    [Configuration.projects](@yw-nav-attr:models.models_config.Configuration.projects).
+    :attr:`Configuration.projects <youwol.app.environment.models.models_config.Configuration.projects>`.
     """
 
     commands: dict[str, Command]
     """
     The list of commands,
-    defined from the [Configuration](@yw-nav-attr:CustomEndPoints.commands).
+    defined from the :attr:`Configuration <youwol.app.environment.models.models_config.CustomEndPoints.commands>`.
 
     Deprecated, should be retrieved from attribute `configuration`.
     """
@@ -118,7 +118,7 @@ class YouwolEnvironment(BaseModel):
     remotes: list[CloudEnvironment]
     """
     The list of available remotes,
-    defined from the [Configuration](@yw-nav-attr:System.cloudEnvironments).
+    defined from the :attr:`Configuration <youwol.app.environment.models.models_config.System.cloudEnvironments>`.
 
     Deprecated, should be retrieved from attribute `configuration`.
     """

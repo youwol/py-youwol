@@ -1,12 +1,12 @@
 """
-The purpose of this [pipeline](@yw-nav-func:youwol.pipelines.pipeline_python_backend.pipeline.pipeline)
+The purpose of this :func:`pipeline <youwol.pipelines.pipeline_python_backend.pipeline.pipeline>`
 is to package and publish a custom python backend.
 They are running separately from the youwol server on specific port,
 and proxied from the youwol server using a
-[RedirectSwitch](@yw-nav-class:RedirectSwitch).
+:class:`RedirectSwitch <youwol.app.environment.models.flow_switches.RedirectSwitch>`.
 
 A simple project's template generator is provided through this
-[function](@yw-nav-func:youwol.pipelines.pipeline_python_backend.template.template).
+:func:`function <youwol.pipelines.pipeline_python_backend.template.template>`.
 
 Stack:
     * **programing language**: [python](https://www.python.org/)
@@ -26,7 +26,7 @@ Todos:
     console.log(resp)
     ```
 
-    For a [FuturesResponse](@yw-nav-class:youwol.utils.utils_requests.FuturesResponse):
+    For a :class:`FuturesResponse <youwol.utils.utils_requests.FuturesResponse>`:
     ```js
     const {testBackend} = await youwol.install({
         backends: ['test-backend' as testBackend]

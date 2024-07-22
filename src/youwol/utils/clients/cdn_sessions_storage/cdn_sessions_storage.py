@@ -9,7 +9,7 @@ from youwol.utils.types import JSON
 @dataclass(frozen=True)
 class CdnSessionsStorageClient:
     """
-    HTTP client of the [cdn_sessions_storage](@yw-nav-mod:youwol.backends.cdn_sessions_storage) service.
+    HTTP client of the :mod:`cdn_sessions_storage <youwol.backends.cdn_sessions_storage>` service.
     """
 
     url_base: str
@@ -26,9 +26,8 @@ class CdnSessionsStorageClient:
 
     async def get(self, package: str, key: str, **kwargs):
         """
-        See description in
-        <a href='@yw-nav-func:youwol.backends.cdn_sessions_storage.root_paths.get_data_no_namespace'>
-        cdn_sessions_storage.get_data_no_namespace</a>.
+        See description in cdn_sessions_storage
+        :func:`get_data_no_namespace <youwol.backends.cdn_sessions_storage.root_paths.get_data_no_namespace>`
         """
         return await self.request_executor.get(
             url=self.base_path(package, key),
@@ -38,9 +37,8 @@ class CdnSessionsStorageClient:
 
     async def post(self, package: str, key: str, body: JSON, **kwargs):
         """
-        See description in
-        <a href='@yw-nav-func:youwol.backends.cdn_sessions_storage.root_paths.post_data_no_namespace'>
-        cdn_sessions_storage.post_data_no_namespace</a>.
+        See description in cdn_sessions_storage
+        :func:`post_data_no_namespace <youwol.backends.cdn_sessions_storage.root_paths.post_data_no_namespace>`
         """
         return await self.request_executor.post(
             url=self.base_path(package, key),

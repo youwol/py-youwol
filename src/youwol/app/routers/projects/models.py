@@ -282,7 +282,7 @@ class CreateProjectFromTemplateBody(BaseModel):
     type: str
     """
     The type ID of the template (generator) to use, should be referenced within the running configuration in
-    [Projects](@yw-nav-class:youwol.app.environment.models.models_config.Projects).
+    :class:`Projects <youwol.app.environment.models.models_project.Projects>`.
     """
 
     parameters: dict[str, str]

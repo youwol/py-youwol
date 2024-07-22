@@ -53,8 +53,8 @@ async def create_drive(
 ):
     """
     If permissions are granted, forward to
-    [tree_db.create_drive](@yw-nav-func:create_drive)
-    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    :func:`tree_db.create_group_drive <youwol.backends.tree_db.routers.groups.create_group_drive>`
+    of :mod:`tree_db <youwol.backends.tree_db>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         ensure_group_permission(request=request, group_id=group_id)
@@ -75,8 +75,8 @@ async def list_drives(
 ):
     """
     Forward to
-    [tree_db.get_drives](@yw-nav-func:tree_db.routers.groups.list_drives)
-    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    :func:`tree_db.get_drives <youwol.backends.tree_db.routers.groups.list_drives>`
+    of :mod:`tree_db <youwol.backends.tree_db>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.treedb_client.get_drives(
@@ -96,8 +96,8 @@ async def update_drive(
 ):
     """
     If permissions are granted, forward to
-    [tree_db.update_drive](@yw-nav-func:tree_db.routers.drives.update_drive)
-    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    :func:`tree_db.update_drive <youwol.backends.tree_db.routers.drives.update_drive>`
+    of :mod:`tree_db <youwol.backends.tree_db>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         drive = await configuration.treedb_client.get_drive(
@@ -119,8 +119,8 @@ async def get_drive(
 ):
     """
     Forward to
-    [tree_db.get_drive](@yw-nav-func:get_drive)
-    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    :func:`tree_db.get_drive_details <youwol.backends.tree_db.routers.drives.get_drive_details>`
+    of :mod:`tree_db <youwol.backends.tree_db>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.treedb_client.get_drive(
@@ -141,8 +141,8 @@ async def get_default_drive(
 ):
     """
     Forward to
-    [tree_db.get_default_drive](@yw-nav-func:get_default_drive)
-    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    :func:`tree_db.get_group_default_drive <youwol.backends.tree_db.routers.groups.get_group_default_drive>`
+    of :mod:`tree_db <youwol.backends.tree_db>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.treedb_client.get_default_drive(
@@ -161,8 +161,8 @@ async def get_default_user_drive(
 ):
     """
     Forward to
-    [tree_db.get_default_user_drive](@yw-nav-func:tree_db.routers.drives.get_default_user_drive)
-    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    :func:`tree_db.get_default_user_drive <youwol.backends.tree_db.routers.drives.get_default_user_drive>`
+    of :mod:`tree_db <youwol.backends.tree_db>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.treedb_client.get_default_user_drive(
@@ -183,8 +183,8 @@ async def create_folder(
 ):
     """
     Forward to
-    [tree_db.create_folder](@yw-nav-func:create_folder)
-    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    :func:`tree_db.create_child_folder <youwol.backends.tree_db.routers.folders.create_child_folder>`
+    of :mod:`tree_db <youwol.backends.tree_db>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         folder = await configuration.treedb_client.get_folder(
@@ -210,8 +210,8 @@ async def update_folder(
 ):
     """
     If permissions are granted, forward to
-    [tree_db.update_folder](@yw-nav-func:tree_db.routers.folders.update_folder)
-    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    :func:`tree_db.update_folder <youwol.backends.tree_db.routers.folders.update_folder>`
+    of :mod:`tree_db <youwol.backends.tree_db>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         folder = await configuration.treedb_client.get_folder(
@@ -236,8 +236,8 @@ async def get_folder(
 ):
     """
     Forward to
-    [tree_db.get_folder](@yw-nav-func:get_folder_details)
-    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    :func:`tree_db.get_folder <youwol.backends.tree_db.routers.folders.get_folder_details>`
+    of :mod:`tree_db <youwol.backends.tree_db>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.treedb_client.get_folder(
@@ -257,8 +257,8 @@ async def create_item(
 ):
     """
     If permissions are granted, forward to
-    [tree_db.create_item](@yw-nav-func:tree_db.routers.items.create_item)
-    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    :func:`tree_db.create_item <youwol.backends.tree_db.routers.items.create_item>`
+    of :mod:`tree_db <youwol.backends.tree_db>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         folder = await configuration.treedb_client.get_folder(
@@ -282,8 +282,8 @@ async def update_item(
 ):
     """
     If permissions are granted, forward to
-    [tree_db.update_item](@yw-nav-func:tree_db.routers.items.update_item)
-    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    :func:`tree_db.update_item <youwol.backends.tree_db.routers.items.update_item>`
+    of :mod:`tree_db <youwol.backends.tree_db>` service.
 
     Note:
         The name of the asset is also updated using the new provided name.
@@ -324,8 +324,8 @@ async def get_item(
 ):
     """
     Forward to
-    [tree_db.get_item](@yw-nav-func:tree_db.routers.items.get_item)
-    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    :func:`tree_db.get_item <youwol.backends.tree_db.routers.items.get_item>`
+    of :mod:`tree_db <youwol.backends.tree_db>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.treedb_client.get_item(
@@ -346,8 +346,8 @@ async def get_items_by_related_id(
 ):
     """
     Forward to
-    [tree_db.get_items_from_asset](@yw-nav-func:get_items_by_asset_id)
-    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    :func:`tree_db.get_items_from_asset <youwol.backends.tree_db.routers.items.get_items_by_asset_id>`
+    of :mod:`tree_db <youwol.backends.tree_db>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.treedb_client.get_items_from_asset(
@@ -368,8 +368,8 @@ async def get_path(
 ):
     """
     Forward to
-    [tree_db.get_path](@yw-nav-func:tree_db.routers.items.get_path)
-    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    :func:`tree_db.get_path <youwol.backends.tree_db.routers.items.get_path>`
+    of :mod:`tree_db <youwol.backends.tree_db>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.treedb_client.get_path(
@@ -390,8 +390,8 @@ async def get_path_folder(
 ):
     """
     Forward to
-    [tree_db.get_path_folder](@yw-nav-func:tree_db.routers.folders.get_path_folder)
-    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    :func:`tree_db.get_path_folder <youwol.backends.tree_db.routers.folders.get_path_folder>`
+    of :mod:`tree_db <youwol.backends.tree_db>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.treedb_client.get_path_folder(
@@ -408,8 +408,8 @@ async def move(
 ):
     """
     If permissions are granted, forward to
-    [tree_db.get_path_folder](@yw-nav-func:tree_db.routers.entities.move)
-    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    :func:`tree_db.get_path_folder <youwol.backends.tree_db.routers.entities.move>`
+    of :mod:`tree_db <youwol.backends.tree_db>` service.
 
     Note:
         If the item is moved in a different group, update permissions accordingly.
@@ -457,8 +457,8 @@ async def borrow(
 ):
     """
     If permissions are granted, forward to
-    [tree_db.borrow](@yw-nav-func:tree_db.routers.items.borrow)
-    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    :func:`tree_db.borrow <youwol.backends.tree_db.routers.items.borrow>`
+    of :mod:`tree_db <youwol.backends.tree_db>` service.
 
     Note:
         To be borrowed, the asset should be associated to an access policy with `share` enabled.
@@ -559,8 +559,8 @@ async def get_entity(
 ):
     """
     Forward to
-    [tree_db.get_entity](@yw-nav-func:tree_db.routers.entities.get_entity)
-    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    :func:`tree_db.get_entity <youwol.backends.tree_db.routers.entities.get_entity>`
+    of :mod:`tree_db <youwol.backends.tree_db>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.treedb_client.get_entity(
@@ -584,8 +584,8 @@ async def children(
 ):
     """
     Forward to
-    [tree_db.get_children](@yw-nav-func:tree_db.routers.folders.children)
-    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    :func:`tree_db.get_children <youwol.backends.tree_db.routers.folders.children>`
+    of :mod:`tree_db <youwol.backends.tree_db>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.treedb_client.get_children(
@@ -606,8 +606,8 @@ async def list_deleted(
 ):
     """
     Forward to
-    [tree_db.get_deleted](@yw-nav-func:list_items_deleted)
-    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    :func:`tree_db.get_deleted <youwol.backends.tree_db.routers.items.list_items_deleted>`
+    of :mod:`tree_db <youwol.backends.tree_db>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.treedb_client.get_deleted(
@@ -624,8 +624,8 @@ async def queue_delete_item(
 ):
     """
     If permissions are granted, forward to
-    [tree_db.remove_item](@yw-nav-func:tree_db.routers.items.queue_delete_item)
-    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    :func:`tree_db.remove_item <youwol.backends.tree_db.routers.items.queue_delete_item>`
+    of :mod:`tree_db <youwol.backends.tree_db>` service.
     """
 
     async with Context.start_ep(request=request) as ctx:
@@ -648,8 +648,8 @@ async def queue_delete_folder(
 ):
     """
     If permissions are granted, forward to
-    [tree_db.remove_folder](@yw-nav-func:tree_db.routers.folders.queue_delete_folder)
-    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    :func:`tree_db.remove_folder <youwol.backends.tree_db.routers.folders.queue_delete_folder>`
+    of :mod:`tree_db <youwol.backends.tree_db>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         folder = await configuration.treedb_client.get_folder(
@@ -671,8 +671,8 @@ async def delete_drive(
 ):
     """
     If permissions are granted, forward to
-    [tree_db.delete_drive](@yw-nav-func:tree_db.routers.drives.delete_drive)
-    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    :func:`tree_db.delete_drive <youwol.backends.tree_db.routers.drives.delete_drive>`
+    of :mod:`tree_db <youwol.backends.tree_db>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         drive = await configuration.treedb_client.get_drive(
@@ -698,8 +698,8 @@ async def purge_drive(
 ):
     """
     If permissions are granted, forward to
-    [tree_db.purge_drive](@yw-nav-func:tree_db.routers.drives.purge_drive)
-    of [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    :func:`tree_db.purge_drive <youwol.backends.tree_db.routers.drives.purge_drive>`
+    of :mod:`tree_db <youwol.backends.tree_db>` service.
 
     Note:
         For each item deleted, it also deletes the asset, the 'raw' part, and synchronize permissions & access policies.

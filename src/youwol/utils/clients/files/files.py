@@ -16,7 +16,7 @@ from youwol.utils.exceptions import upstream_exception_from_response
 @dataclass(frozen=True)
 class FilesClient:
     """
-    HTTP client of the [files](@yw-nav-mod:youwol.backends.files) service.
+    HTTP client of the :mod:`files <youwol.backends.files>` service.
     """
 
     url_base: str
@@ -32,7 +32,7 @@ class FilesClient:
     async def upload(self, data, **kwargs):
         """
         See description in
-        [files.upload](@yw-nav-func:youwol.backends.files.root_paths.upload).
+        :func:`files.upload <youwol.backends.files.root_paths.upload>`.
         """
         return await self.request_executor.post(
             url=f"{self.url_base}/files",
@@ -44,7 +44,7 @@ class FilesClient:
     async def get_info(self, file_id: str, **kwargs):
         """
         See description in
-        [files.get_info](@yw-nav-func:youwol.backends.files.root_paths.get_info).
+        :func:`files.get_info <youwol.backends.files.root_paths.get_info>`.
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/files/{file_id}/info",
@@ -55,7 +55,7 @@ class FilesClient:
     async def update_metadata(self, file_id: str, body, **kwargs):
         """
         See description in
-        [files.update_metadata](@yw-nav-func:youwol.backends.files.root_paths.update_metadata).
+        :func:`files.update_metadata <youwol.backends.files.root_paths.update_metadata>`.
         """
         return await self.request_executor.post(
             url=f"{self.url_base}/files/{file_id}/metadata",
@@ -72,7 +72,7 @@ class FilesClient:
     ):
         """
         See description in
-        [files.get_file](@yw-nav-func:youwol.backends.files.root_paths.get_file).
+        :func:`files.get_file <youwol.backends.files.root_paths.get_file>`.
         """
         url = f"{self.url_base}/files/{file_id}"
 
@@ -92,7 +92,7 @@ class FilesClient:
     async def remove(self, file_id: str, **kwargs):
         """
         See description in
-        [files.remove_file](@yw-nav-func:youwol.backends.files.root_paths.remove_file).
+        :func:`files.remove_file <youwol.backends.files.root_paths.remove_file>`.
         """
         return await self.request_executor.delete(
             url=f"{self.url_base}/files/{file_id}",

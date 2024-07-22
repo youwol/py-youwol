@@ -8,7 +8,7 @@ from youwol.utils.clients.request_executor import RequestExecutor, json_reader
 @dataclass(frozen=True)
 class TreeDbClient:
     """
-    HTTP client of the [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    HTTP client of the :mod:`tree_db <youwol.backends.tree_db>` service.
     """
 
     url_base: str
@@ -22,9 +22,8 @@ class TreeDbClient:
 
     async def get_drives(self, group_id: str, headers: dict[str, str], **kwargs):
         """
-        See description in
-        <a href='@yw-nav-func:youwol.backends.tree_db.root_paths.list_drives'>
-        tree_db.list_drives</a>.
+        See description in tree_db
+        :func:`list_drives <youwol.backends.tree_db.routers.groups.list_drives>`
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/groups/{group_id}/drives",
@@ -35,9 +34,8 @@ class TreeDbClient:
 
     async def get_drive(self, drive_id: str, headers: dict[str, str], **kwargs):
         """
-        See description in
-        <a href='@yw-nav-func:youwol.backends.tree_db.root_paths.get_drive'>
-        tree_db.get_drive</a>.
+        See description in tree_db
+        :func:`get_drive <youwol.backends.tree_db.routers.drives.get_drive_details>`.
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/drives/{drive_id}",
@@ -48,9 +46,8 @@ class TreeDbClient:
 
     async def get_default_drive(self, group_id: str, headers: dict[str, str], **kwargs):
         """
-        See description in
-        <a href='@yw-nav-func:youwol.backends.tree_db.root_paths.get_default_drive'>
-        tree_db.get_default_drive</a>.
+        See description in tree_db
+        :func:`get_default_drive <youwol.backends.tree_db.routers.groups.get_group_default_drive>`.
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/groups/{group_id}/default-drive",
@@ -61,9 +58,8 @@ class TreeDbClient:
 
     async def get_default_user_drive(self, headers: dict[str, str], **kwargs):
         """
-        See description in
-        <a href='@yw-nav-func:youwol.backends.tree_db.root_paths.get_default_user_drive'>
-        tree_db.get_default_user_drive</a>.
+        See description in tree_db
+        :func:`get_default_user_drive <youwol.backends.tree_db.routers.drives.get_default_user_drive>`.
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/default-drive",
@@ -76,9 +72,8 @@ class TreeDbClient:
         self, group_id: str, body, headers: dict[str, str], **kwargs
     ):
         """
-        See description in
-        <a href='@yw-nav-func:youwol.backends.tree_db.root_paths.create_drive'>
-        tree_db.create_drive</a>.
+        See description in tree_db
+        :func:`create_drive <youwol.backends.tree_db.routers.groups.create_group_drive>`.
         """
         return await self.request_executor.put(
             url=f"{self.url_base}/groups/{group_id}/drives",
@@ -92,9 +87,8 @@ class TreeDbClient:
         self, drive_id: str, body, headers: dict[str, str], **kwargs
     ):
         """
-        See description in
-        <a href='@yw-nav-func:youwol.backends.tree_db.root_paths.update_drive'>
-        tree_db.update_drive</a>.
+        See description in tree_db
+        :func:`update_drive <youwol.backends.tree_db.routers.drives.update_drive>`.
         """
         return await self.request_executor.post(
             url=f"{self.url_base}/drives/{drive_id}",
@@ -106,9 +100,8 @@ class TreeDbClient:
 
     async def delete_drive(self, drive_id: str, headers: dict[str, str], **kwargs):
         """
-        See description in
-        <a href='@yw-nav-func:youwol.backends.tree_db.root_paths.delete_drive'>
-        tree_db.delete_drive</a>.
+        See description in tree_db
+        :func:`delete_drive <youwol.backends.tree_db.routers.drives.delete_drive>`.
         """
         return await self.request_executor.delete(
             url=f"{self.url_base}/drives/{drive_id}",
@@ -121,9 +114,8 @@ class TreeDbClient:
         self, parent_folder_id: str, body, headers: dict[str, str], **kwargs
     ):
         """
-        See description in
-        <a href='@yw-nav-func:youwol.backends.tree_db.root_paths.create_folder'>
-        tree_db.create_folder</a>.
+        See description in tree_db
+        :func:`create_folder <youwol.backends.tree_db.routers.folders.create_child_folder>`.
         """
         return await self.request_executor.put(
             url=f"{self.url_base}/folders/{parent_folder_id}",
@@ -137,9 +129,8 @@ class TreeDbClient:
         self, folder_id: str, body, headers: dict[str, str], **kwargs
     ):
         """
-        See description in
-        <a href='@yw-nav-func:youwol.backends.tree_db.root_paths.update_folder'>
-        tree_db.update_folder</a>.
+        See description in tree_db
+        :func:`update_folder <youwol.backends.tree_db.routers.folders.update_folder>`.
         """
         return await self.request_executor.post(
             url=f"{self.url_base}/folders/{folder_id}",
@@ -151,9 +142,8 @@ class TreeDbClient:
 
     async def move(self, body, headers: dict[str, str], **kwargs):
         """
-        See description in
-        <a href='@yw-nav-func:youwol.backends.tree_db.root_paths.move'>
-        tree_db.move</a>.
+        See description in tree_db
+        :func:`move <youwol.backends.tree_db.routers.entities.move>`.
         """
         return await self.request_executor.post(
             url=f"{self.url_base}/move",
@@ -165,9 +155,8 @@ class TreeDbClient:
 
     async def borrow(self, item_id: str, body, headers: dict[str, str], **kwargs):
         """
-        See description in
-        <a href='@yw-nav-func:youwol.backends.tree_db.root_paths.borrow'>
-        tree_db.borrow</a>.
+        See description in tree_db
+        :func:`borrow <youwol.backends.tree_db.routers.items.borrow>`.
         """
         return await self.request_executor.post(
             url=f"{self.url_base}/items/{item_id}/borrow",
@@ -179,9 +168,8 @@ class TreeDbClient:
 
     async def remove_folder(self, folder_id: str, headers: dict[str, str], **kwargs):
         """
-        See description in
-        <a href='@yw-nav-func:youwol.backends.tree_db.root_paths.queue_delete_folder'>
-        tree_db.queue_delete_folder</a>.
+        See description in tree_db
+        :func:`queue_delete_folder <youwol.backends.tree_db.routers.folders.queue_delete_folder>`.
         """
         return await self.request_executor.delete(
             url=f"{self.url_base}/folders/{folder_id}",
@@ -192,9 +180,8 @@ class TreeDbClient:
 
     async def remove_item(self, item_id: str, headers: dict[str, str], **kwargs):
         """
-        See description in
-        <a href='@yw-nav-func:youwol.backends.tree_db.root_paths.queue_delete_item'>
-        tree_db.queue_delete_item</a>.
+        See description in tree_db
+        :func:`queue_delete_item <youwol.backends.tree_db.routers.items.queue_delete_item>`.
         """
         return await self.request_executor.delete(
             url=f"{self.url_base}/items/{item_id}",
@@ -205,9 +192,8 @@ class TreeDbClient:
 
     async def get_item(self, item_id: str, headers: dict[str, str], **kwargs):
         """
-        See description in
-        <a href='@yw-nav-func:youwol.backends.tree_db.root_paths.get_item'>
-        tree_db.get_item</a>.
+        See description in tree_db
+        :func:`get_item <youwol.backends.tree_db.routers.items.get_item>`.
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/items/{item_id}",
@@ -218,9 +204,8 @@ class TreeDbClient:
 
     async def get_path(self, item_id, headers: dict[str, str], **kwargs):
         """
-        See description in
-        <a href='@yw-nav-func:youwol.backends.tree_db.root_paths.get_path'>
-        tree_db.get_path</a>.
+        See description in tree_db
+        :func:`get_path <youwol.backends.tree_db.routers.items.get_path>`.
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/items/{item_id}/path",
@@ -232,8 +217,7 @@ class TreeDbClient:
     async def get_path_folder(self, folder_id, headers: dict[str, str], **kwargs):
         """
         See description in
-        <a href='@yw-nav-func:youwol.backends.tree_db.root_paths.get_path_folder'>
-        tree_db.get_path_folder</a>.
+        :func:`get_path_folder <youwol.backends.tree_db.routers.folders.get_path_folder>`.
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/folders/{folder_id}/path",
@@ -253,8 +237,7 @@ class TreeDbClient:
     ):
         """
         See description in
-        <a href='@yw-nav-func:youwol.backends.tree_db.root_paths.get_entity'>
-        tree_db.get_entity</a>.
+        :func:`get_entity <youwol.backends.tree_db.routers.entities.get_entity>`.
         """
         params = {
             "include-drives": int(include_drives),
@@ -274,8 +257,7 @@ class TreeDbClient:
     ):
         """
         See description in
-        <a href='@yw-nav-func:youwol.backends.tree_db.root_paths.get_items_by_asset_id'>
-        tree_db.get_items_by_asset_id</a>.
+        :func:`get_items_by_asset_id <youwol.backends.tree_db.routers.items.get_items_by_asset_id>`.
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/items/from-asset/{asset_id}",
@@ -287,8 +269,7 @@ class TreeDbClient:
     async def update_item(self, item_id: str, body, headers: dict[str, str], **kwargs):
         """
         See description in
-        <a href='@yw-nav-func:youwol.backends.tree_db.root_paths.update_item'>
-        tree_db.update_item</a>.
+        :func:`update_item <youwol.backends.tree_db.routers.items.update_item>`.
         """
         return await self.request_executor.post(
             url=f"{self.url_base}/items/{item_id}",
@@ -301,8 +282,7 @@ class TreeDbClient:
     async def get_folder(self, folder_id: str, headers: dict[str, str], **kwargs):
         """
         See description in
-        <a href='@yw-nav-func:youwol.backends.tree_db.root_paths.get_folder'>
-        tree_db.get_folder</a>.
+        :func:`get_folder_details <youwol.backends.tree_db.routers.folders.get_folder_details>`.
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/folders/{folder_id}",
@@ -314,8 +294,7 @@ class TreeDbClient:
     async def get_children(self, folder_id: str, headers: dict[str, str], **kwargs):
         """
         See description in
-        <a href='@yw-nav-func:youwol.backends.tree_db.root_paths.get_children'>
-        tree_db.get_children</a>.
+        :func:`get_children <youwol.backends.tree_db.routers.folders.children>`.
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/folders/{folder_id}/children",
@@ -327,8 +306,7 @@ class TreeDbClient:
     async def get_deleted(self, drive_id: str, headers: dict[str, str], **kwargs):
         """
         See description in
-        <a href='@yw-nav-func:youwol.backends.tree_db.root_paths.list_deleted'>
-        tree_db.list_deleted</a>.
+        :func:`list_deleted <youwol.backends.tree_db.routers.items.list_items_deleted>`.
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/drives/{drive_id}/deleted",
@@ -340,8 +318,7 @@ class TreeDbClient:
     async def purge_drive(self, drive_id: str, headers: dict[str, str], **kwargs):
         """
         See description in
-        <a href='@yw-nav-func:youwol.backends.tree_db.root_paths.purge_drive'>
-        tree_db.purge_drive</a>.
+        :func:`purge_drive <youwol.backends.tree_db.routers.drives.purge_drive>`.
         """
         return await self.request_executor.delete(
             url=f"{self.url_base}/drives/{drive_id}/purge",
@@ -355,8 +332,7 @@ class TreeDbClient:
     ):
         """
         See description in
-        <a href='@yw-nav-func:youwol.backends.tree_db.root_paths.create_item'>
-        tree_db.create_item</a>.
+        :func:`create_item <youwol.backends.tree_db.routers.items.create_item>`.
         """
         return await self.request_executor.put(
             url=f"{self.url_base}/folders/{folder_id}/items",

@@ -227,14 +227,14 @@ class OidcConfig:
     """
     OpenId configuration.
     Initialized at first call of
-    [openid_configuration](@yw-nav-meth:youwol.utils.clients.oidc.oidc_config.OidcConfig.openid_configuration)
+    :meth:`openid_configuration <youwol.utils.clients.oidc.oidc_config.OidcConfig.openid_configuration>`
     """
 
     _jwks_client: PyJWKClient | None
     """
     JSON Web Key Set (JWKS) client.
     Initialized at first call of
-    [jwks_client](@yw-nav-meth:youwol.utils.clients.oidc.oidc_config.OidcConfig.jwks_client)
+    :meth:`jwks_client <youwol.utils.clients.oidc.oidc_config.OidcConfig.jwks_client>`
     """
 
     def __init__(self, base_url: str):

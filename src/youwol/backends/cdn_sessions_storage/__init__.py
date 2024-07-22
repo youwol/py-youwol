@@ -10,7 +10,7 @@ Accessibility:
 
 Dependencies:
     *  Dependencies are gathered in the
-    [Configuration](@yw-nav-class:youwol.backends.cdn_apps_server.configurations.Configuration) class.
+    :class:`Configuration <youwol.backends.cdn_apps_server.configurations.Configuration>` class.
 """
 
 # relative

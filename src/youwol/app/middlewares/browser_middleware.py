@@ -87,7 +87,7 @@ class BrowserMiddleware(BaseHTTPMiddleware):
     """
     Middleware to control interaction with browser regarding caching, headers, cookies, *etc.*.
 
-    It is configured from the [BrowserCache](@yw-nav-class:models_config.BrowserCache) class.
+    It is configured from the :class:`BrowserCache <youwol.app.environment.models.models_config.BrowserCache>` class.
     """
 
     def __init__(
@@ -111,11 +111,13 @@ class BrowserMiddleware(BaseHTTPMiddleware):
     ) -> Response:
         """
         Middleware logic to control interaction with browser:
-            *  Eventually retrieves/caches responses from the [BrowserCacheStore](@yw-nav-class:BrowserCacheStore).
+            *  Eventually retrieves/caches responses from the
+            :class:`BrowserCacheStore <youwol.app.environment.browser_cache_store.BrowserCacheStore>`.
             If a response is cached with `BrowserCacheStore`, `Cache-Control` header is set to `no-cache, no-store`.
-            *  Set up the [`youwol` cookie](@yw-nav-class:LocalYouwolCookie).
+            *  Set up the :class:``youwol` cookie <LocalYouwolCookie>`.
             *  Apply `onEnter` and `onExit` user defined callbacks
-             (see [BrowserCache](@yw-nav-class:models_config.BrowserCache)) at the start & end of the processing.
+             (see :class:`BrowserCache <youwol.app.environment.models.models_config.BrowserCache>`)
+             at the start & end of the processing.
 
         Parameters:
             request: The incoming request.

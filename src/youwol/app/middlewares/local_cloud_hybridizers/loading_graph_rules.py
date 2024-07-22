@@ -75,7 +75,7 @@ class GetLoadingGraph(AbstractLocalCloudDispatch):
 
     It intercepts requests to
     `/api/assets-gateway/cdn-backend/queries/loading-graph` that would normally proceed to the local cdn
-    (see [here](@yw-nav-func:youwol.backends.cdn.root_paths.resolve_loading_tree)).
+    (see :func:`here <youwol.backends.cdn.root_paths.resolve_loading_tree>`).
 
     The loading graph request is redirected to the remote backend `cdn-backend` by providing as `extraIndex` the
     relevant items from the local-cdn such that the resolution couple the items available in both local & remote CDNs.

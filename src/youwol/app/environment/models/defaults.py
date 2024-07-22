@@ -1,6 +1,6 @@
 """
 This file gathers most of the non-trivial defaults values of the
-[configuration](@yw-nav-class:models_config.Configuration).
+:class:`configuration <youwol.app.environment.models.models_config.Configuration>`.
 """
 
 # standard library
@@ -25,34 +25,32 @@ default_openid_client_id: str = "tbd_test_openid_connect_js"
 default_path_data_dir: Path = Path("./databases")
 """
 Default path used in
-[LocalEnvironment.dataDir](@yw-nav-attr:models_config.LocalEnvironment.dataDir)
+:attr:`LocalEnvironment.dataDir <youwol.app.environment.models.models_config.LocalEnvironment.dataDir>`
 """
 
 default_path_cache_dir: Path = Path("./system")
 """
 Default path used in
-[LocalEnvironment.cacheDir](@yw-nav-attr:models_config.LocalEnvironment.cacheDir)
+:attr:`LocalEnvironment.cacheDir <youwol.app.environment.models.models_config.LocalEnvironment.cacheDir>`
 """
 
 default_path_projects_dir: Path = Path("Projects") / Path("youwol")
 """
 Default path used in
-<a href="@yw-nav-attr:RecursiveProjectsFinder.fromPaths">
-RecursiveProjectsFinder.fromPaths</a>
+:attr:`youwol.app.environment.models.models_project.ProjectsFinder.fromPath`.
 """
 
 default_path_tokens_storage: Path = Path("./tokens_storage.json")
 """
 Default path used in
-[TokensStoragePath.path](@yw-nav-attr:TokensStoragePath.path)
+:attr:`TokensStoragePath.path <youwol.app.environment.models.models_token_storage.TokensStoragePath.path>`
 """
 
 
 default_path_tokens_storage_encrypted: Path = Path("./tokens_storage.json.encrypted")
 """
 Default path used in
-<a href="@yw-nav-attr:TokensStorageSystemKeyring.path">
-TokensStorageSystemKeyring.path</a>>
+:attr:`youwol.app.environment.models.models_token_storage.TokensStorageSystemKeyring.path`.
 """
 
 default_port_range_start: int = 3000
@@ -67,14 +65,13 @@ default_ignored_paths: list[str] = [
 ]
 """
 Default path used in
-<a href="@yw-nav-attr:RecursiveProjectsFinder.ignoredPatterns">
-RecursiveProjectsFinder.ignoredPatterns></a>.
+:attr:`youwol.app.environment.models.models_project.ProjectsFinder.lookUpIgnore`.
 """
 
 
 def default_auth_provider(platform_host: str = default_platform_host) -> JSON:
     """
-    Return an [authProvider](@yw-nav-attr:CloudEnvironment.authProvider)
+    Return an :attr:`authProvider <youwol.app.environment.models.model_remote.CloudEnvironment.authProvider>`
     specification associated to a KeyCloak accounts manager.
 
     Parameters:

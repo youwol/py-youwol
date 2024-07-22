@@ -31,27 +31,27 @@ class LogLevel(str, Enum):
 
     DEBUG = "DEBUG"
     """
-    See [debug](@yw-nav-meth:Context.debug).
+    See :meth:`debug <youwol.utils.context.context.Context.debug>`.
     """
 
     INFO = "INFO"
     """
-    See [info](@yw-nav-meth:Context.info).
+    See :meth:`info <youwol.utils.context.context.Context.info>`.
     """
 
     WARNING = "WARNING"
     """
-    See [warning](@yw-nav-meth:Context.warning).
+    See :meth:`warning <youwol.utils.context.context.Context.warning>`.
     """
 
     ERROR = "ERROR"
     """
-    See [error](@yw-nav-meth:Context.error).
+    See :meth:`error <youwol.utils.context.context.Context.error>`.
     """
 
     DATA = "DATA"
     """
-    See [send](@yw-nav-meth:Context.send).
+    See :meth:`send <youwol.utils.context.context.Context.send>`.
     """
 
 
@@ -86,19 +86,19 @@ T = TypeVar("T")
 
 TContextAttr = int | str | bool
 """
-Allowed [context](@yw-nav-class:Context)'s attribute types.
+Allowed :class:`context <youwol.utils.context.context.Context>`'s attribute types.
 """
 
 
 class LogEntry(NamedTuple):
     """
     LogEntry represents a log, they are created from the class
-    [Context](@yw-nav-class:ContextReporter) when
-    [starting function](@yw-nav-meth:Context.start) or
-    [end-point](@yw-nav-meth:Context.start_ep) as well as
-    when logging information (e.g. [info](@yw-nav-meth:Context.info)).
+    :class:`Context <youwol.utils.context.models.ContextReporter>` when
+    :meth:`starting function <youwol.utils.context.context.Context.start>` or
+    :meth:`end-point <youwol.utils.context.context.Context.start_ep>` as well as
+    when logging information (e.g. :meth:`info <youwol.utils.context.context.Context.info>`).
 
-    Log entries are processed by [ContextReporter](@yw-nav-class:ContextReporter) that
+    Log entries are processed by :class:`WsContextReporter <youwol.utils.context.reporter.WsContextReporter>` that
     implements the action to trigger when a log entry is created.
     """
 
@@ -115,17 +115,17 @@ class LogEntry(NamedTuple):
     data: JSON
     """
     Data associated to the log (set up with the `data` argument of *e.g.*
-    [info](@yw-nav-meth:Context.info)).
+    :meth:`info <youwol.utils.context.context.Context.info>`).
     """
     labels: list[str]
     """
     Labels associated to the log (set up with the `labels` argument of *e.g.*
-    [info](@yw-nav-meth:Context.info)).
+    :meth:`info <youwol.utils.context.context.Context.info>`).
     """
     attributes: builtins.dict[str, TContextAttr]
     """
     Attributes associated to the log (set up with the `attributes` argument of *e.g.*
-    [info](@yw-nav-meth:Context.info)).
+    :meth:`info <youwol.utils.context.context.Context.info>`).
     """
     context_id: str
     """
@@ -203,16 +203,16 @@ A selector function for headers: it takes a list of header's keys in argument, a
 
 LabelsGetter = Callable[[], set[str]]
 """
-Type definition of a Label definition, used in [ContextFactory](@yw-nav-class:ContextFactory).
+Type definition of a Label definition, used in :class:`ContextFactory <youwol.utils.context.context.ContextFactory>`.
 """
 
 
 @dataclass(frozen=True)
 class ProxiedBackendCtxEnv:
     """
-    Type of the [Context.env](@yw-nav-attr:Context.env) attribute for
-    [ProxiedBackendContext](@yw-nav-glob:ProxiedBackendContext)
-    specialization of [Context](@yw-nav-class:Context).
+    Type of the :attr:`Context.env <youwol.utils.context.context.Context.env>` attribute for
+    :glob:`ProxiedBackendContext <youwol.utils.context.context.ProxiedBackendContext>`
+    specialization of :class:`Context <youwol.utils.context.context.Context>`.
 
     """
 

@@ -162,7 +162,7 @@ async def get_permissions(
     Parameters:
         request: Incoming request.
         asset_id: Asset's ID.
-        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+        configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
     Return:
         Permissions description.
@@ -189,7 +189,7 @@ async def access_info(
     Parameters:
         request: Incoming request.
         asset_id: Asset's ID.
-        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+        configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
     Return:
         Access summary.

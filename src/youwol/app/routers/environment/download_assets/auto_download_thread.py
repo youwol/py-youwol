@@ -43,8 +43,8 @@ CACHE_DOWNLOADING_KEY = "download-thread#downloading_ids"
 class DownloadTaskCreator(Protocol):
     """
     Type definition of a 'download task' creator:
-    a callable with named arguments `process_id: str, raw_id: str, asset_id: str, url: str` that return a
-    (DownloadTask)[@yw-nav-class:DownloadTask].
+    a callable with named arguments `process_id: str, raw_id: str, asset_id: str, url: str` that returns a
+    :class:`DownloadTask <youwol.app.routers.environment.download_assets.models.DownloadTask>`.
     """
 
     def __call__(
@@ -54,7 +54,7 @@ class DownloadTaskCreator(Protocol):
 
 DownloadTaskFactory = dict[str, DownloadTaskCreator]
 """
-Factory `asset's kind` -> [DownloadTaskCreator](@yw-nav-class:DownloadTaskCreator).
+Factory `asset's kind` -> :class:`DownloadTaskCreator <DownloadTaskCreator>`.
 """
 
 
@@ -239,7 +239,7 @@ class AssetsDownloader:
 
         The worker function awaits the retrieval of a task from the queue and then initiates the download
         of the asset corresponding to the provided `URL`, `kind`, `raw_id`, and `context`.
-        See [download_asset](@yw-nav-func:download_asset).
+        See :func:`download_asset <download_asset>`.
         """
         while True:
             (url, kind, raw_id, context) = await self.queue.get()

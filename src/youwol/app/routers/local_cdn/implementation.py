@@ -69,8 +69,8 @@ class TargetPackage(NamedTuple):
 
 async def emit_local_cdn_status(context: Context) -> CdnStatusResponse:
     """
-    Emit the current [CdnStatusResponse](@yw-nav-class:CdnStatusResponse) via the
-    [data web-socket channels](@yw-nav-attr:WebSocketsStore.data).
+    Emit the current :class:`CdnStatusResponse <CdnStatusResponse>` via the
+    :attr:`data web-socket channels <WebSocketsStore.data>`.
 
     Parameters:
         context: Current context.

@@ -31,7 +31,7 @@ from youwol.pipelines import (
 
 def set_environment(environment: Environment = Environment()):
     """
-    Set the global [environment](@yw-nav-class:pipeline_raw_app.pipeline.Environment) of the pipeline
+    Set the global :class:`environment <youwol.pipelines.publish_cdn.Environment>` of the pipeline
     (the remote CDN targets).
 
     Example:

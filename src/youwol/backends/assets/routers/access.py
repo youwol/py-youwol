@@ -89,7 +89,7 @@ async def put_access_policy(
         asset_id: target asset's ID.
         group_id: target group's ID.
         body: access policy.
-        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+        configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
     Return:
         Empty JSON response.
@@ -121,7 +121,7 @@ async def delete_access_policy(
         request: Incoming request.
         asset_id: target asset's ID.
         group_id: target group's ID.
-        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+        configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
     Return:
         Empty JSON response.
@@ -155,7 +155,7 @@ async def get_access_policy(
         request: Incoming request.
         asset_id: target asset's ID.
         group_id: target group's ID.
-        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+        configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
     Return:
         Access policy description.

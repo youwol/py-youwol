@@ -1,5 +1,5 @@
 """
-HTTP client & related for the [cdn-backend](@yw-nav-mod:youwol.backends.cdn) service.
+HTTP client & related for the :mod:`cdn-backend <youwol.backends.cdn>` service.
 """
 
 # relative

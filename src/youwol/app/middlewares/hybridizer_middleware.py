@@ -20,7 +20,7 @@ class LocalCloudHybridizerMiddleware(BaseHTTPMiddleware):
     actions requiring a connection to the remote environment.
 
     A typical example is the
-     [GetLoadingGraph](@yw-nav-class:youwol.app.middlewares.local_cloud_hybridizers.loading_graph_rules.GetLoadingGraph)
+     :class:`GetLoadingGraph <youwol.app.middlewares.local_cloud_hybridizers.loading_graph_rules.GetLoadingGraph>`
      dispatch: it allows to resolve dependencies by considering both:
     *  the modules available in the computer
     *  the modules available online.
@@ -51,12 +51,8 @@ class LocalCloudHybridizerMiddleware(BaseHTTPMiddleware):
 
         Parameters:
             app: ASGI application, forwarded to `BaseHTTPMiddleware`
-            dynamic_dispatch_rules:
-                set <a href="@yw-nav-attr:youwol.app.middlewares.hybridizer_middleware.LocalCloudHybridizerMiddleware
-                .dynamic_dispatch_rules">dynamic_dispatch_rules</a>.
-            disabling_header:
-                set <a href="@yw-nav-attr:youwol.app.middlewares.hybridizer_middleware.LocalCloudHybridizerMiddleware
-                .disabling_header">disabling_header</a>.
+            dynamic_dispatch_rules: set the corresponding class attribute.
+            disabling_header: set the corresponding class attribute.
         """
         super().__init__(app)
         self.dynamic_dispatch_rules = dynamic_dispatch_rules
@@ -67,8 +63,7 @@ class LocalCloudHybridizerMiddleware(BaseHTTPMiddleware):
     ) -> Response:
         """
         Call, in the order of the list, the `apply` method of the
-        <a href="@yw-nav-attr:youwol.app.middlewares.hybridizer_middleware.LocalCloudHybridizerMiddleware.
-        dynamic_dispatch_rules">dynamic_dispatch_rules</a>
+        :attr:`youwol.app.middlewares.hybridizer_middleware.LocalCloudHybridizerMiddleware.dynamic_dispatch_rules`
         list until a first element return a response (not `None`).
         This response is returned as it is.
 

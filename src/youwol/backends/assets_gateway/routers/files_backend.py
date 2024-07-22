@@ -61,25 +61,25 @@ async def upload(
 ) -> NewAssetResponse:
     """
     If access is granted, forwarded to
-    [files.upload](@yw-nav-func:youwol.backends.files.root_paths.upload)
-    endpoint of [files](@yw-nav-mod:youwol.backends.files) service.
+    :func:`files.upload <youwol.backends.files.root_paths.upload>`
+    endpoint of :mod:`files <youwol.backends.files>` service.
     Refer to the API of this function regarding inputs description (except for `folder_id` which is an extra parameter
     required here, see below).
 
     On top of uploading the file, it:
-    *  creates an asset using the [assets](@yw-nav-mod:youwol.backends.assets) service.
-    *  creates an explorer item using [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+    *  creates an asset using the :mod:`assets <youwol.backends.assets>` service.
+    *  creates an explorer item using :mod:`tree_db <youwol.backends.tree_db>` service.
 
     Warning:
         It is mandatory to provide a `folder_id` parameter, it will allow to create the asset at the right location.
         This is an extra parameter required on top of what
-        [files.upload](@yw-nav-func:youwol.backends.files.root_paths.upload) expects.
+        :func:`files.upload <youwol.backends.files.root_paths.upload>` expects.
 
     Parameters:
         request: Incoming request.
         folder_id: Folder ID (from files explorer) in which the asset is located in the file explorer.
         configuration: Injected
-            [Configuration](@yw-nav-class:youwol.backends.assets_gateway.configurations.Configuration).
+            :class:`Configuration <youwol.backends.assets_gateway.configurations.Configuration>`.
     """
 
     async with Context.start_ep(
@@ -166,8 +166,8 @@ async def get_stats(
 ):
     """
     If permissions are granted, forward to
-    [files.get_info](@yw-nav-func:youwol.backends.files.root_paths.get_info)
-    of [files](@yw-nav-mod:youwol.backends.files) service.
+    :func:`files.get_info <youwol.backends.files.root_paths.get_info>`
+    of :mod:`files <youwol.backends.files>` service.
     """
     async with Context.start_ep(request=request) as ctx:  # type: Context
         await assert_read_permissions_from_raw_id(
@@ -188,8 +188,8 @@ async def update_metadata(
 ):
     """
     If permissions are granted, forward to
-    [files.update_metadata](@yw-nav-func:youwol.backends.files.root_paths.update_metadata)
-    of [files](@yw-nav-mod:youwol.backends.files) service.
+    :func:`files.update_metadata <youwol.backends.files.root_paths.update_metadata>`
+    of :mod:`files <youwol.backends.files>` service.
     """
     async with Context.start_ep(request=request) as ctx:  # type: Context
         await assert_read_permissions_from_raw_id(
@@ -210,8 +210,8 @@ async def get_file(
 ):
     """
     If permissions are granted, forward to
-    [files.get_file](@yw-nav-func:youwol.backends.files.root_paths.get_file)
-    of [files](@yw-nav-mod:youwol.backends.files) service.
+    :func:`files.get_file <youwol.backends.files.root_paths.get_file>`
+    of :mod:`files <youwol.backends.files>` service.
     """
 
     async def reader(resp: ClientResponse):
@@ -256,8 +256,8 @@ async def remove_file(
 ):
     """
     If permissions are granted, forward to
-    [files.remove_file](@yw-nav-func:youwol.backends.files.root_paths.remove_file)
-    of [files](@yw-nav-mod:youwol.backends.files) service.
+    :func:`files.remove_file <youwol.backends.files.root_paths.remove_file>`
+    of :mod:`files <youwol.backends.files>` service.
     """
     async with Context.start_ep(request=request) as ctx:  # type: Context
         return await remove_file_impl(

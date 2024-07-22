@@ -22,20 +22,20 @@ class DocDbs:
 
     items_db: DocDb
     """
-    Table for items, see [FILES_TABLE](@yw-nav-glob:youwol.utils.http_clients.tree_db_backend.models.FILES_TABLE).
+    Table for items, see :glob:`FILES_TABLE <youwol.utils.http_clients.tree_db_backend.models.FILES_TABLE>`.
     """
     folders_db: DocDb
     """
-    Table for folders, see [FOLDERS_TABLE](@yw-nav-glob:youwol.utils.http_clients.tree_db_backend.models.FOLDERS_TABLE).
+    Table for folders, see :glob:`FOLDERS_TABLE <youwol.utils.http_clients.tree_db_backend.models.FOLDERS_TABLE>`.
     """
     drives_db: DocDb
     """
-    Table for drives, see [DRIVES_TABLE](@yw-nav-glob:youwol.utils.http_clients.tree_db_backend.models.DRIVES_TABLE).
+    Table for drives, see :glob:`DRIVES_TABLE <youwol.utils.http_clients.tree_db_backend.models.DRIVES_TABLE>`.
     """
     deleted_db: DocDb
     """
     Table for deleted entities, see
-     [DELETED_TABLE](@yw-nav-glob:youwol.utils.http_clients.tree_db_backend.models.DELETED_TABLE).
+     :glob:`DELETED_TABLE <youwol.utils.http_clients.tree_db_backend.models.DELETED_TABLE>`.
     """
 
 
@@ -480,7 +480,7 @@ FILES_TABLE = TableBody(
     clustering_columns=[],
 )
 """
-Table definition for the [tree_db](@yw-nav-mod:youwol.backends.tree_db) service regarding the indexation
+Table definition for the :mod:`tree_db <youwol.backends.tree_db>` service regarding the indexation
  of files (e.g. items).
 """
 
@@ -488,7 +488,7 @@ FILES_TABLE_PARENT_INDEX = SecondaryIndex(
     name="items_by_parent", identifier=IdentifierSI(column_name="folder_id")
 )
 """
-Secondary index for [FILES_TABLE](@yw-nav-glob:youwol.utils.http_clients.tree_db_backend.models.FILES_TABLE) to query by
+Secondary index for :glob:`FILES_TABLE <youwol.utils.http_clients.tree_db_backend.models.FILES_TABLE>` to query by
 parent's folder ID.
 """
 
@@ -497,7 +497,7 @@ FILES_TABLE_RELATED_INDEX = SecondaryIndex(
     name="items_by_related", identifier=IdentifierSI(column_name="related_id")
 )
 """
-Secondary index for [FILES_TABLE](@yw-nav-glob:youwol.utils.http_clients.tree_db_backend.models.FILES_TABLE) to query by
+Secondary index for :glob:`FILES_TABLE <youwol.utils.http_clients.tree_db_backend.models.FILES_TABLE>` to query by
 related id (i.e. asset id).
 """
 
@@ -517,14 +517,14 @@ FOLDERS_TABLE = TableBody(
     clustering_columns=[],
 )
 """
-Table definition for the  [tree_db](@yw-nav-mod:youwol.backends.tree_db) service regarding the indexation of folders.
+Table definition for the :mod:`tree_db <youwol.backends.tree_db>` service regarding the indexation of folders.
 """
 
 FOLDERS_TABLE_PARENT_INDEX = SecondaryIndex(
     name="folders_by_parent", identifier=IdentifierSI(column_name="parent_folder_id")
 )
 """
-Secondary index for [FOLDERS_TABLE](@yw-nav-glob:youwol.utils.http_clients.tree_db_backend.models.FOLDERS_TABLE)
+Secondary index for :glob:`FOLDERS_TABLE <youwol.utils.http_clients.tree_db_backend.models.FOLDERS_TABLE>`
 to query by parent's folder ID.
 """
 
@@ -541,7 +541,7 @@ DRIVES_TABLE = TableBody(
     clustering_columns=[],
 )
 """
-Table definition for the  [tree_db](@yw-nav-mod:youwol.backends.tree_db) service regarding the indexation of drives.
+Table definition for the :mod:`tree_db <youwol.backends.tree_db>` service regarding the indexation of drives.
 """
 
 
@@ -549,7 +549,7 @@ DRIVES_TABLE_PARENT_INDEX = SecondaryIndex(
     name="drives_by_parent", identifier=IdentifierSI(column_name="group_id")
 )
 """
-Secondary index for [DRIVES_TABLE](@yw-nav-glob:youwol.utils.http_clients.tree_db_backend.models.DRIVES_TABLE)
+Secondary index for :glob:`DRIVES_TABLE <youwol.utils.http_clients.tree_db_backend.models.DRIVES_TABLE>`
 to query by parent's group ID.
 """
 
@@ -571,7 +571,7 @@ DELETED_TABLE = TableBody(
     clustering_columns=[],
 )
 """
-Table definition for the  [tree_db](@yw-nav-mod:youwol.backends.tree_db) service regarding the indexation of items
+Table definition for the :mod:`tree_db <youwol.backends.tree_db>` service regarding the indexation of items
  scheduled for deletion (in the trash, before purge).
 """
 
@@ -580,7 +580,7 @@ DELETED_TABLE_DRIVE_INDEX = SecondaryIndex(
     name="deleted_by_drive", identifier=IdentifierSI(column_name="drive_id")
 )
 """
-Secondary index for [DELETED_TABLE](@yw-nav-glob:youwol.utils.http_clients.tree_db_backend.models.DELETED_TABLE)
+Secondary index for :glob:`DELETED_TABLE <youwol.utils.http_clients.tree_db_backend.models.DELETED_TABLE>`
 to query by parent's drive ID.
 """
 

@@ -60,7 +60,7 @@ async def create_asset(
     Parameters:
         request: Incoming request.
         body: Asset's properties.
-        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+        configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
     Return:
         The asset description.
@@ -122,7 +122,7 @@ async def post_asset(
     Parameters:
         request: Incoming request.
         body: Asset's properties.
-        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+        configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
     Return:
         The asset description.
@@ -178,7 +178,7 @@ async def delete_asset(
     Parameters:
         request: Incoming request.
         asset_id: Asset's ID.
-        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+        configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
     Return:
         Empty JSON.
@@ -243,7 +243,7 @@ async def get_asset(
     Parameters:
         request: Incoming request.
         asset_id: Asset's ID.
-        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+        configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
     Return:
         The asset description.

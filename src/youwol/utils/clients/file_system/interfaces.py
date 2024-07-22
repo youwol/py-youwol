@@ -31,7 +31,7 @@ class FileObject:
 class Metadata(BaseModel):
     """
     Metadata of a file w/
-    [FileSystemInterface](@yw-nav-class:youwol.utils.clients.file_system.interfaces.FileSystemInterface).
+    :class:`FileSystemInterface <youwol.utils.clients.file_system.interfaces.FileSystemInterface>`.
     """
 
     fileName: str | None

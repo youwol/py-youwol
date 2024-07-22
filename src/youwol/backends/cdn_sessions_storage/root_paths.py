@@ -57,7 +57,7 @@ async def post_data_no_namespace(
         name: Name of the data.
         body: JSON data.
         configuration: Injected
-            [Configuration](@yw-nav-class:youwol.backends.cdn_sessions_storage.configurations.Configuration).
+            :class:`Configuration <youwol.backends.cdn_sessions_storage.configurations.Configuration>`.
 
     Returns:
         Empty JSON.
@@ -90,7 +90,7 @@ async def post_data_with_namespace(
         name: Name of the data.
         body: JSON data.
         configuration: Injected
-            [Configuration](@yw-nav-class:youwol.backends.cdn_sessions_storage.configurations.Configuration).
+            :class:`Configuration <youwol.backends.cdn_sessions_storage.configurations.Configuration>`.
 
     Returns:
         Empty JSON.
@@ -141,7 +141,7 @@ async def delete_data_no_namespace(
         package: Name of the package that post the data (the owner, without namespace).
         name: Name of the data.
         configuration: Injected
-            [Configuration](@yw-nav-class:youwol.backends.cdn_sessions_storage.configurations.Configuration).
+            :class:`Configuration <youwol.backends.cdn_sessions_storage.configurations.Configuration>`.
 
     Returns:
         Empty JSON.
@@ -168,7 +168,7 @@ async def delete_data_with_namespace(
         package: Name of the package that post the data (the owner, without namespace).
         name: Name of the data.
         configuration: Injected
-            [Configuration](@yw-nav-class:youwol.backends.cdn_sessions_storage.configurations.Configuration).
+            :class:`Configuration <youwol.backends.cdn_sessions_storage.configurations.Configuration>`.
 
     Returns:
         Empty JSON.
@@ -220,7 +220,7 @@ async def get_data_no_namespace(
         package: Name of the package that post the data (the owner, without namespace).
         name: Name of the data.
         configuration: Injected
-            [Configuration](@yw-nav-class:youwol.backends.cdn_sessions_storage.configurations.Configuration).
+            :class:`Configuration <youwol.backends.cdn_sessions_storage.configurations.Configuration>`.
 
     Returns:
         Empty JSON.
@@ -247,7 +247,7 @@ async def get_data_with_namespace(
         package: Name of the package that post the data (the owner, without namespace).
         name: Name of the data.
         configuration: Injected
-            [Configuration](@yw-nav-class:youwol.backends.cdn_sessions_storage.configurations.Configuration).
+            :class:`Configuration <youwol.backends.cdn_sessions_storage.configurations.Configuration>`.
 
     Returns:
         Empty JSON.

@@ -44,7 +44,7 @@ from .models import (
 
 T = TypeVar("T")
 """
-Generic type parameter for the [Context](@yw-nav-class:Context) class.
+Generic type parameter for the :class:`Context <youwol.utils.context.context.Context>` class.
 
 It defines contextual information known at 'compile' time.
 """
@@ -57,7 +57,7 @@ class Context(Generic[T]):
     propagating contextual information.
 
     This class has a generic type parameter `TEnvironment`, defining the type of
-    [env](@yw-nav-attr:Context.env), a 'compile-time' resolved contextual information.
+    :attr:`env <youwol.utils.context.context.Context.env>`, a 'compile-time' resolved contextual information.
     """
 
     env: T | None = None
@@ -84,7 +84,7 @@ class Context(Generic[T]):
     request: Request | None = None
     """
     If the context was initiated with an incoming request (using the method
-    [start_ep](@yw-nav-meth:Context.start_ep)), it stores the original
+    :meth:`start_ep <youwol.utils.context.context.Context.start_ep>`), it stores the original
     [Request](https://fastapi.tiangolo.com/reference/request/) object.
     """
 
@@ -118,7 +118,7 @@ class Context(Generic[T]):
     with_headers: dict[str, str] = field(default_factory=dict)
     """
     Defines some headers that will gets forwarded to children context and retrieved using the method
-    [headers](@yw-nav-attr:Context.headers).
+    :attr:`headers <youwol.utils.context.context.Context.headers>`.
     """
 
     with_cookies: dict[str, str] = field(default_factory=dict)
@@ -354,7 +354,7 @@ class Context(Generic[T]):
         attributes: dict[str, TContextAttr] | None = None,
     ):
         """
-        Log information with severity [Debug](@yw-nav-att:youwol.utils.context.LogLevel.DEBUG).
+        Log information with severity :attr:`DEBUG <youwol.utils.context.models.LogLevel.DEBUG>`.
 
         Parameters:
             text: Text of the log.
@@ -378,7 +378,7 @@ class Context(Generic[T]):
         attributes: dict[str, TContextAttr] | None = None,
     ):
         """
-        Log information with severity [Info](@yw-nav-att:youwol.utils.context.LogLevel.INFO).
+        Log information with severity :attr:`INFO <youwol.utils.context.models.LogLevel.INFO>`.
 
         Parameters:
             text: Text of the log.
@@ -402,7 +402,7 @@ class Context(Generic[T]):
         attributes: dict[str, TContextAttr] | None = None,
     ):
         """
-        Log information with severity [Warning](@yw-nav-att:youwol.utils.context.LogLevel.WARNING).
+        Log information with severity :attr:`WARNING <youwol.utils.context.models.LogLevel.WARNING>`.
 
         Parameters:
             text: Text of the log.
@@ -426,7 +426,7 @@ class Context(Generic[T]):
         attributes: dict[str, TContextAttr] | None = None,
     ):
         """
-        Log information with severity [Error](@yw-nav-att:youwol.utils.context.LogLevel.ERROR).
+        Log information with severity :attr:`ERROR <youwol.utils.context.models.LogLevel.ERROR>`.
 
         Parameters:
             text: Text of the log.
@@ -450,7 +450,7 @@ class Context(Generic[T]):
         attributes: dict[str, TContextAttr] | None = None,
     ):
         """
-        Log information with severity [ERROR](@yw-nav-att:youwol.utils.context.LogLevel.ERROR) and
+        Log information with severity :attr:`ERROR <youwol.utils.context.models.LogLevel.ERROR>` and
         the tag `FAILED` to indicate that an unrecoverable failure in the encapsulated function happened
         even if no exception has been raised.
 
@@ -481,7 +481,7 @@ class Context(Generic[T]):
         attributes: dict[str, TContextAttr] | None = None,
     ):
         """
-        Log information with severity [Info](@yw-nav-att:youwol.utils.context.LogLevel.INFO) and
+        Log information with severity :attr:`INFO <youwol.utils.context.models.LogLevel.INFO>` and
         the tag `FUTURE` to indicate that an asynchronous task has been scheduled (and not awaited).
 
         Parameters:
@@ -583,13 +583,13 @@ class Context(Generic[T]):
 
 CallableBlock = Callable[[Context], Union[Awaitable, None]]
 """
-Signature for [scoped context](@yw-nav-class:ScopedContext)'s callable when
+Signature for :class:`scoped context <youwol.utils.context.context.ScopedContext>`'s callable when
 entering or exiting a block.
 """
 
 CallableBlockException = Callable[[Exception, Context], Union[Awaitable, None]]
 """
-Signature for [scoped context](@yw-nav-class:ScopedContext)'s callable when
+Signature for :class:`scoped context <youwol.utils.context.context.ScopedContext>`'s callable when
 exiting a block with exception.
 """
 
@@ -600,8 +600,8 @@ class ScopedContext(Generic[T], Context[T]):
     A context with lifecycle management logic (implementing async context manager API from python: `__aenter__`
     and `__aexit__`).
 
-    `ScopedContext` are created using the method [start](@yw-nav-meth:Context.start) and
-    [start_ep](@yw-nav-meth:Context.start_ep).
+    `ScopedContext` are created using the method :meth:`start <youwol.utils.context.context.Context.start>` and
+    :meth:`start_ep <youwol.utils.context.context.Context.start_ep>`.
     """
 
     action: str | None = None
@@ -671,7 +671,7 @@ class ScopedContext(Generic[T], Context[T]):
 
 ProxiedBackendContext = Context[ProxiedBackendCtxEnv]
 """
-Specialization of [Context](@yw-nav-class:Context) for detached backends
+Specialization of :class:`Context <youwol.utils.context.context.Context>` for detached backends
 (running on specific port) proxied by the local youwol server.
 """
 
@@ -721,9 +721,9 @@ class ContextFactory:
     @staticmethod
     def proxied_backend_context(request: Request, **kwargs) -> ProxiedBackendContext:
         """
-        Initializes a [Context](@yw-nav-class:Context) instance from
+        Initializes a :class:`Context <youwol.utils.context.context.Context>` instance from
         a request for (python) backends running on specific port & proxied using a
-        [RedirectSwitch](@yw-nav-class:RedirectSwitch).
+        :class:`RedirectSwitch <youwol.app.environment.models.flow_switches.RedirectSwitch>`.
 
          It usually starts the implementation of an endpoint, e.g.:
 
@@ -739,24 +739,24 @@ class ContextFactory:
 
         The instance created:
         *  defines the context's `env` attribute as
-         [ProxiedBackendCtxEnv](@yw-nav-class:ProxiedBackendCtxEnv).
+         :class:`ProxiedBackendCtxEnv <youwol.utils.context.models.ProxiedBackendCtxEnv>`.
         *  defines the context's `logs_reporter` attribute using a reporter that forward log's entries to the youwol
-        local server end point [post_log](@yw-nav-func:post_logs).
+        local server end point :func:`post_logs <youwol.app.routers.system.router.post_logs>`.
         In a standard configuration of youwol, they are then stored in memory and can be browsed through the
         developer portal application.
         *  defines the context's `data_reporter` attribute using a reporter that forward log's entries to the youwol
-         local server end point [post_data](@yw-nav-func:post_data).
+         local server end point :func:`post_data <youwol.app.routers.system.router.post_data>`.
         In a standard configuration of youwol, they are then emitted through the `/ws-data` web-socket channel
         of youwol.
-        This serves as constructing [FuturesResponse](@yw-nav-class:FuturesResponse) to
+        This serves as constructing :class:`FuturesResponse <youwol.utils.utils_requests.FuturesResponse>` to
         provide observable like response emitting multiple items asynchronously.
 
         Parameters:
             request: Incoming request.
 
         Return:
-            A type specialisation of [Context](@yw-nav-class:Context) with
-            [ProxiedBackendCtxEnv](@yw-nav-class:ProxiedBackendCtxEnv) generic parameter.
+            A type specialisation of :class:`Context <youwol.utils.context.context.Context>` with
+            :class:`ProxiedBackendCtxEnv <youwol.utils.context.models.ProxiedBackendCtxEnv>` generic parameter.
         """
         static_data = ContextFactory.with_static_data or {}
         static_labels = ContextFactory.with_static_labels or {}

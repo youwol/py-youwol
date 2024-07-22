@@ -1,3 +1,3 @@
 """
-This module gathers HTTP client & related for the [assets-gateway](@yw-nav-mod:youwol.backends.assets_gateway) service.
+This module gathers HTTP client & related for the :mod:`assets-gateway <youwol.backends.assets_gateway>` service.
 """

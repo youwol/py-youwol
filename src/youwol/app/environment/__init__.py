@@ -1,13 +1,13 @@
 """
 This module gather the information regarding running environment at a particular point in time.
 
-It essentially converts the [Configuration](@yw-nav-class:models_config.Configuration)
+It essentially converts the :class:`Configuration <youwol.app.environment.models.models_config.Configuration>`
 provided by the user into an instance of
-[YouwolEnvironment](@yw-nav-class:YouwolEnvironment), defining the current
+:class:`YouwolEnvironment <youwol.app.environment.youwol_environment.YouwolEnvironment>`, defining the current
 run-time.
 
 Note:
-    The current environment is available each time an instance of [Context](@yw-nav-class:Context)
+    The current environment is available each time an instance of :class:`Context <utils.context.context.Context>`
     is, using:
     <code-snippet language="python">
     ctx: Context # some instance of Context

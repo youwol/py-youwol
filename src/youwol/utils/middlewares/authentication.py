@@ -113,7 +113,7 @@ class JwtProviderCookie(JwtProvider):
     ) -> tuple[str | None, str]:
         """
         Extract the JWT token from the request's cookie using
-        [__tokens_manager](@yw-nav-attr:youwol.utils.middlewares.authentication.JwtProviderBearer.__tokens_manager).
+        :attr:`__tokens_manager <youwol.utils.middlewares.authentication.JwtProviderBearer.__tokens_manager>`.
 
         Parameters:
             request: Incoming request

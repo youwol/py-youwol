@@ -38,7 +38,7 @@ def files_check_sum(paths: Iterable[Path]):
 @dataclass(frozen=True)
 class CdnClient:
     """
-    HTTP client of the [cdn](@yw-nav-mod:youwol.backends.cdn) service.
+    HTTP client of the :mod:`cdn <youwol.backends.cdn>` service.
     """
 
     url_base: str
@@ -109,7 +109,7 @@ class CdnClient:
     async def query_loading_graph(self, body: JSON, **kwargs):
         """
         See description in
-        [cdn.resolve_loading_tree](@yw-nav-func:youwol.backends.cdn.root_paths.resolve_loading_tree).
+        :func:`cdn.resolve_loading_tree <youwol.backends.cdn.root_paths.resolve_loading_tree>`.
         """
         return await self.request_executor.post(
             url=self.loading_graph_url,
@@ -134,7 +134,7 @@ class CdnClient:
     ):
         """
         See description in
-        [cdn.get_library_info](@yw-nav-func:youwol.backends.cdn.root_paths.get_library_info).
+        :func:`cdn.get_library_info <youwol.backends.cdn.root_paths.get_library_info>`.
         """
         query_params = [
             (k, v)
@@ -155,7 +155,7 @@ class CdnClient:
     async def get_version_info(self, library_id: str, version: str, **kwargs):
         """
         See description in
-        [cdn.get_version_info](@yw-nav-func:youwol.backends.cdn.root_paths.get_version_info).
+        :func:`cdn.get_version_info <youwol.backends.cdn.root_paths.get_version_info>`.
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/libraries/{library_id}/{version}",
@@ -166,7 +166,7 @@ class CdnClient:
     async def publish(self, zip_content: bytes, **kwargs):
         """
         See description in
-        [cdn.publish_library](@yw-nav-func:youwol.backends.cdn.root_paths.publish_library).
+        :func:`cdn.publish_library <youwol.backends.cdn.root_paths.publish_library>`.
         """
         form_data = FormData()
         form_data.add_field(
@@ -182,7 +182,7 @@ class CdnClient:
     async def download_library(self, library_id: str, version: str, **kwargs):
         """
         See description in
-        [cdn.download_library](@yw-nav-func:youwol.backends.cdn.root_paths.download_library).
+        :func:`cdn.download_library <youwol.backends.cdn.root_paths.download_library>`.
         """
         return await self.request_executor.get(
             url=f"{self.download_url}/{library_id}/{version}",
@@ -202,7 +202,7 @@ class CdnClient:
     async def delete_library(self, library_id: str, **kwargs):
         """
         See description in
-        [cdn.delete_library](@yw-nav-func:youwol.backends.cdn.root_paths.delete_library).
+        :func:`cdn.delete_library <youwol.backends.cdn.root_paths.delete_library>`.
         """
         return await self.request_executor.delete(
             url=f"{self.url_base}/libraries/{library_id}",
@@ -213,7 +213,7 @@ class CdnClient:
     async def delete_version(self, library_id: str, version: str, **kwargs):
         """
         See description in
-        [cdn.delete_version](@yw-nav-func:youwol.backends.cdn.root_paths.delete_version).
+        :func:`cdn.delete_version <youwol.backends.cdn.root_paths.delete_version>`.
         """
         return await self.request_executor.delete(
             url=f"{self.url_base}/libraries/{library_id}/{version}",
@@ -226,7 +226,7 @@ class CdnClient:
     ):
         """
         See description in
-        [cdn.explorer](@yw-nav-func:youwol.backends.cdn.root_paths.explorer).
+        :func:`cdn.explorer <youwol.backends.cdn.root_paths.explorer>`.
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/explorer/{library_id}/{version}/{folder_path}",
@@ -242,7 +242,7 @@ class CdnClient:
     ):
         """
         See description in
-        [cdn.get_entry_point](@yw-nav-func:youwol.backends.cdn.root_paths.get_entry_point).
+        :func:`cdn.get_entry_point <youwol.backends.cdn.root_paths.get_entry_point>`.
         """
         return await self.get_resource(
             library_id=library_id,
@@ -260,7 +260,7 @@ class CdnClient:
     ):
         """
         See description in
-        [cdn.get_resource](@yw-nav-func:youwol.backends.cdn.root_paths.get_resource).
+        :func:`cdn.get_resource <youwol.backends.cdn.root_paths.get_resource>`.
         """
         url = (
             f"{self.url_base}/resources/{library_id}/{version}/{rest_of_path}"

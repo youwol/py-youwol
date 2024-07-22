@@ -57,8 +57,8 @@ async def create_asset(
 ) -> NewAssetResponse:
     """
     Creates an asset not affiliated to any backends; for files and packages kind of assets, use the dedicated endpoints
-    [upload](@yw-nav-func:youwol.backends.assets_gateway.routers.files_backend.upload)
-    [publish_library](@yw-nav-func:youwol.backends.assets_gateway.routers.cdn_backend.publish_library)
+    :func:`upload <youwol.backends.assets_gateway.routers.files_backend.upload>`
+    :func:`publish_library <youwol.backends.assets_gateway.routers.cdn_backend.publish_library>`
     respectively.
 
     The asset can be populated with files afterward.
@@ -68,9 +68,9 @@ async def create_asset(
         body: Asset description.
         folder_id: Folder ID (from files explorer) in which the asset is located in the file explorer.
             If not provided, use the 'downloadFolder' of the user's
-            [default drive](@yw-nav-class:tree_db.routers.drives.get_default_user_drive).
+            :class:`default drive <youwol.backends.tree_db.routers.drives.get_default_user_drive>`.
         configuration: Injected
-            [Configuration](@yw-nav-class:youwol.backends.assets_gateway.configurations.Configuration).
+            :class:`Configuration <youwol.backends.assets_gateway.configurations.Configuration>`.
 
     Return:
         New asset description (no `rawResponse` associated).
@@ -112,8 +112,8 @@ async def post_asset_files(
 ):
     """
     If permissions are granted, forward to
-    [assets.add_zip_files](@yw-nav-func:post_asset_files)
-    of [assets](@yw-nav-mod:youwol.backends.assets) service.
+    :func:`assets.add_zip_files <youwol.backends.assets.routers.files.add_zip_files>`
+    of :mod:`assets <youwol.backends.assets>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         assets_db = configuration.assets_client
@@ -146,8 +146,8 @@ async def get_file(
 ):
     """
     If permissions are granted, forward to
-    [assets.get_file](@yw-nav-func:backends.assets.routers.files.get_file)
-    of [assets](@yw-nav-mod:youwol.backends.assets) service.
+    :func:`assets.get_file <youwol.backends.assets.routers.files.get_file>`
+    of :mod:`assets <youwol.backends.assets>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         assets_db = configuration.assets_client
@@ -175,8 +175,8 @@ async def delete_files(
 ):
     """
     If permissions are granted, forward to
-    [assets.delete_files](@yw-nav-func:assets.routers.files.delete_files)
-    of [assets](@yw-nav-mod:youwol.backends.assets) service.
+    :func:`assets.delete_files <youwol.backends.assets.routers.files.delete_files>`
+    of :mod:`assets <youwol.backends.assets>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         assets_db = configuration.assets_client
@@ -202,8 +202,8 @@ async def zip_all_files(
 ):
     """
     If permissions are granted, forward to
-    [assets.get_zip_files](@yw-nav-func:add_zip_files)
-    of [assets](@yw-nav-mod:youwol.backends.assets) service.
+    :func:`assets.get_zip_files <youwol.backends.assets.routers.files.add_zip_files>`
+    of :mod:`assets <youwol.backends.assets>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         assets_db = configuration.assets_client
@@ -233,8 +233,8 @@ async def post_asset(
 ):
     """
     If permissions are granted, forward to
-    [assets.post_asset](@yw-nav-func:assets.routers.assets.post_asset)
-    of [assets](@yw-nav-mod:youwol.backends.assets) service.
+    :func:`assets.post_asset <youwol.backends.assets.routers.assets.post_asset>`
+    of :mod:`assets <youwol.backends.assets>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         asset = await configuration.assets_client.get_asset(
@@ -260,8 +260,8 @@ async def delete_asset(
 ):
     """
     If permissions are granted, forward to
-    [assets.delete_asset](@yw-nav-func:assets.routers.assets.delete_asset)
-    of [assets](@yw-nav-mod:youwol.backends.assets) service.
+    :func:`assets.delete_asset <youwol.backends.assets.routers.assets.delete_asset>`
+    of :mod:`assets <youwol.backends.assets>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         asset = await configuration.assets_client.get_asset(
@@ -285,8 +285,8 @@ async def get_asset(
 ):
     """
     If permissions are granted, forward to
-    [assets.get_asset](@yw-nav-func:assets.routers.assets.get_asset)
-    of [assets](@yw-nav-mod:youwol.backends.assets) service.
+    :func:`assets.get_asset <youwol.backends.assets.routers.assets.get_asset>`
+    of :mod:`assets <youwol.backends.assets>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.assets_client.get_asset(
@@ -305,8 +305,8 @@ async def put_access_policy(
 ):
     """
     If permissions are granted, forward to
-    [assets.put_access_policy](@yw-nav-func:assets.routers.access.put_access_policy)
-    of [assets](@yw-nav-mod:youwol.backends.assets) service.
+    :func:`assets.put_access_policy <youwol.backends.assets.routers.access.put_access_policy>`
+    of :mod:`assets <youwol.backends.assets>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         asset = await configuration.assets_client.get_asset(
@@ -331,8 +331,8 @@ async def delete_access_policy(
 ):
     """
     If permissions are granted, forward to
-    [assets.delete_access_policy](@yw-nav-func:assets.routers.access.delete_access_policy)
-    of [assets](@yw-nav-mod:youwol.backends.assets) service.
+    :func:`assets.delete_access_policy <youwol.backends.assets.routers.access.delete_access_policy>`
+    of :mod:`assets <youwol.backends.assets>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         asset = await configuration.assets_client.get_asset(
@@ -360,8 +360,8 @@ async def get_access_policy(
 ):
     """
     If permissions are granted, forward to
-    [assets.get_access_policy](@yw-nav-func:assets.routers.access.get_access_policy)
-    of [assets](@yw-nav-mod:youwol.backends.assets) service.
+    :func:`assets.get_access_policy <youwol.backends.assets.routers.access.get_access_policy>`
+    of :mod:`assets <youwol.backends.assets>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.assets_client.get_access_policy(
@@ -383,8 +383,8 @@ async def get_permissions(
 ):
     """
     If permissions are granted, forward to
-    [assets.get_permissions](@yw-nav-func:assets.routers.permissions.get_permissions)
-    of [assets](@yw-nav-mod:youwol.backends.assets) service.
+    :func:`assets.get_permissions <youwol.backends.assets.routers.permissions.get_permissions>`
+    of :mod:`assets <youwol.backends.assets>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.assets_client.get_permissions(
@@ -405,8 +405,8 @@ async def get_access_info(
 ):
     """
     If permissions are granted, forward to
-    [assets.access_info](@yw-nav-func:access_info)
-    of [assets](@yw-nav-mod:youwol.backends.assets) service.
+    :func:`assets.access_info <youwol.backends.assets.routers.permissions.access_info>`
+    of :mod:`assets <youwol.backends.assets>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.assets_client.get_access_info(
@@ -424,8 +424,8 @@ async def post_image(
 ):
     """
     If permissions are granted, forward to
-    [assets.post_image](@yw-nav-func:assets.routers.images.post_image)
-    of [assets](@yw-nav-mod:youwol.backends.assets) service.
+    :func:`assets.post_image <youwol.backends.assets.routers.images.post_image>`
+    of :mod:`assets <youwol.backends.assets>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         asset = await configuration.assets_client.get_asset(
@@ -455,8 +455,8 @@ async def remove_image(
 ):
     """
     If permissions are granted, forward to
-    [assets.remove_image](@yw-nav-func:assets.routers.images.remove_image)
-    of [assets](@yw-nav-mod:youwol.backends.assets) service.
+    :func:`assets.remove_image <youwol.backends.assets.routers.images.remove_image>`
+    of :mod:`assets <youwol.backends.assets>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         asset = await configuration.assets_client.get_asset(
@@ -481,10 +481,10 @@ async def get_media(
 ):
     """
     If permissions are granted, forward to
-    [assets.get_media_image](@yw-nav-func:get_media_image) or
-    [assets.get_media_thumbnail](@yw-nav-func:get_media_thumbnail)
+    :func:`assets.get_media_image <youwol.backends.assets.routers.images.get_media_image>` or
+    :func:`assets.get_media_thumbnail <youwol.backends.assets.routers.images.get_media_thumbnail>`
     (depending on `media_type`)
-    of [assets](@yw-nav-mod:youwol.backends.assets) service.
+    of :mod:`assets <youwol.backends.assets>` service.
     """
 
     async def reader(resp: ClientResponse):

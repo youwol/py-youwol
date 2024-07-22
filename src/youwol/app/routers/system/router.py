@@ -122,8 +122,9 @@ async def install_graph(
     Some comments regarding configuration
 
     Note:
-        Loading graph definitions are retrieved using this [endpoint](@yw-nav-func:root_paths.resolve_loading_tree) of
-        the [`cdn-backend`](@yw-nav-mod:backends.cdn) service.
+        Loading graph definitions are retrieved using this
+        :func:`endpoint <youwol.backends.cdn.root_paths.resolve_loading_tree>` of
+        the :mod:`cdn-backend <youwol.backends.cdn>` service.
 
     Parameters:
         request: Incoming request.
@@ -439,7 +440,7 @@ async def get_logs(request: Request, parent_id: str) -> LogsResponse:
 @router.post("/logs", summary="post logs")
 async def post_logs(request: Request, body: PostLogsBody):
     """
-    Forward log entries to the [Context.logs_reporters](@yw-nav-attr:Context.logs_reporters).
+    Forward log entries to the :attr:`Context.logs_reporters <youwol.utils.context.context.Context.logs_reporters>`.
 
     Parameters:
         request: Incoming request.
@@ -465,7 +466,7 @@ async def post_logs(request: Request, body: PostLogsBody):
 @router.post("/data", summary="post data")
 async def post_data(request: Request, body: PostDataBody):
     """
-    Forward data entries to the [Context.data_reporters](@yw-nav-attr:Context.data_reporters).
+    Forward data entries to the :attr:`Context.data_reporters <youwol.utils.context.context.Context.data_reporters>`.
 
     Parameters:
         request: Incoming request.

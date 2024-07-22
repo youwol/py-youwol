@@ -165,7 +165,7 @@ class UpdateApplication(AbstractLocalCloudDispatch):
         Return:
             The latest version available in remote or local environments for the application that match
             the semver query. If returned from the remote environment, the dispatch
-            [Download](@yw-nav-class:youwol.app.middlewares.local_cloud_hybridizers.download_rules.Download)
+            :class:`Download <youwol.app.middlewares.local_cloud_hybridizers.download_rules.Download>`
              will later trigger local download of the corresponding asset.
         """
 

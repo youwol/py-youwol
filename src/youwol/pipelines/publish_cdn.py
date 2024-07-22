@@ -642,6 +642,10 @@ class PublishCdnRemoteStep(PipelineStep):
 
 
 class Environment(BaseModel):
+    """
+    Environment configuration to publish in YouWol's CDN.
+    """
+
     cdnTargets: list[CdnTarget] = [
         CdnTarget(
             name="youwol",
@@ -649,3 +653,6 @@ class Environment(BaseModel):
             authId="browser",
         ),
     ]
+    """
+    List of CDN targets.
+    """

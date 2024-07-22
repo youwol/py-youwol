@@ -1,6 +1,6 @@
 """
-This file gathers [project](@yw-nav-class:models_project.Project) related models of the
-[configuration](@yw-nav-class:models_config.Configuration).
+This file gathers :class:`project <youwol.app.routers.projects.models_project.Project>` related models of the
+:class:`configuration <youwol.app.environment.models.models_config.Configuration>`.
 """
 
 # standard library
@@ -164,7 +164,7 @@ class ProjectsFinder(BaseModel):
     All projects below these paths will be discovered.
 
     By default uses
-    [default_path_projects_dir](@yw-nav-glob:default_path_projects_dir).
+    :glob:`default_path_projects_dir <youwol.app.environment.models.defaults.default_path_projects_dir>`.
     """
 
     lookUpDepth: int = 3
@@ -176,7 +176,7 @@ class ProjectsFinder(BaseModel):
     """
     List of ignored patterns to discard folder when traversing the tree.
 
-    By default uses [default_ignored_paths](@yw-nav-glob:default_ignored_paths).
+    By default uses :glob:`default_ignored_paths <youwol.app.environment.models.defaults.default_ignored_paths>`.
 
     See [fnmatch](https://docs.python.org/3/library/fnmatch.html) regarding the patterns specification.
     """
@@ -192,7 +192,7 @@ class ProjectsFinder(BaseModel):
 
 ConfigProjectsFinder = ProjectsFinder | ConfigPath
 """
-Permissive type to define [Projects.finder](@yw-nav-attr:Projects.finder).
+Permissive type to define :attr:`Projects.finder <youwol.app.environment.models.models_project.Projects.finder>`.
 """
 
 
@@ -231,7 +231,7 @@ class Projects(BaseModel):
 
     finder: list[ConfigProjectsFinder] | ConfigProjectsFinder = ProjectsFinder()
     """
-    One or more [ProjectsFinder](@yw-nav-class:ProjectsFinder).
+    One or more :class:`ProjectsFinder <youwol.app.environment.models.models_project.ProjectsFinder>`.
 
     When a `ConfigPath` is provided as `ConfigProjectsFinder`, a default `ProjectsFinder` instance is created with
     its `fromPath` attribute set to the provided value.
