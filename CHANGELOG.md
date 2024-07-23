@@ -47,6 +47,7 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 
 <!-- Not worthy of inclusion
+TG-2436 : ♻️ [doc-app] Use `mkdocs-ts` & clean documentation
 TG-2435 : 📝 Use sphinx idiom for cross-links
 TG-2414 : ♻️ [pipeline TS] Stop using deprecated exported names
 TG-2415 : ⬆️ upgrade `deepdiff` to `7.0.1,<8.0.0`
