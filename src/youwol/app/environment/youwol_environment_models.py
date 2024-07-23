@@ -1,6 +1,7 @@
 """
-This file gathers models involved in [YouwolEnvironment](@yw-nav-class:YouwolEnvironment) that
-are not already part of the module [environment.models](@yw-nav-mod:environment.models).
+This file gathers models involved in
+:class:`YouwolEnvironment <youwol.app.environment.youwol_environment.YouwolEnvironment>` that are not already part of
+ the module :mod:`environment.models <youwol.app.environment.models>`.
 """
 
 # standard library
@@ -22,7 +23,8 @@ class ProjectsResolver(BaseModel):
     The finders are responsible for locating project directories based on certain criteria,
     while the templates provide scaffolding for new projects.
 
-    It is a straightforward normalization of the [Projects](@yw-nav-class:models_project.Projects)
+    It is a straightforward normalization of the
+    :class:`Projects <youwol.app.environment.models.models_project.Projects>`
     configuration's model.
     """
 
@@ -38,8 +40,10 @@ class ProjectsResolver(BaseModel):
     @staticmethod
     def from_configuration(config_projects: ConfigProjects):
         """
-        Normalizes the [Projects.finder](@yw-nav-attr:Projects.finder) attribute from the configuration to set the
-        [YouwolEnvironment.projects](@yw-nav-attr:YouwolEnvironment.projects) attribute.
+        Normalizes the :attr:`Projects.finder <youwol.app.environment.models.models_project.Projects.finder>`
+        attribute from the configuration to set the
+        :attr:`YouwolEnvironment.projects <youwol.app.environment.youwol_environment.YouwolEnvironment.projects>`
+        attribute.
 
         Parameters:
             config_projects: Projects as defined in the configuration.

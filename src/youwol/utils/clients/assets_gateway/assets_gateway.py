@@ -17,7 +17,7 @@ from youwol.utils.clients.treedb.treedb import TreeDbClient
 @dataclass(frozen=True)
 class AssetsGatewayClient:
     """
-    HTTP client of the [assets_gateway](@yw-nav-mod:youwol.backends.assets_gateway) service.
+    HTTP client of the :mod:`assets_gateway <youwol.backends.assets_gateway>` service.
 
     This client essentially provides clients for the proxied services by `assets_gateway`.
     """

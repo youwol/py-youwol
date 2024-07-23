@@ -41,7 +41,7 @@ class CustomDispatchesResponse(BaseModel):
 
 class AuthenticationResponse(BaseModel):
     """
-    Response model corresponding to [Authentication](@yw-nav-class:model_remote.Authentication).
+    Response model corresponding to :class:`Authentication <youwol.app.environment.models.model_remote.Authentication>`.
     """
 
     authId: str
@@ -56,27 +56,29 @@ class AuthenticationResponse(BaseModel):
 
 class CloudEnvironmentResponse(BaseModel):
     """
-    Response model corresponding to [CloudEnvironment](@yw-nav-class:CloudEnvironment).
+    Response model corresponding to
+    :class:`CloudEnvironment <youwol.app.environment.models.model_remote.CloudEnvironment>`.
     """
 
     envId: str
     """
-    Environment Id, see [CloudEnvironment.envId](@yw-nav-attr:CloudEnvironment.envId).
+    Environment Id, see
+    :attr:`youwol.app.environment.models.model_remote.CloudEnvironment.envId`.
     """
     host: str
     """
-    Host, see [CloudEnvironment.host](@yw-nav-attr:CloudEnvironment.host).
+    Host, see :attr:`CloudEnvironment.host <youwol.app.environment.models.model_remote.CloudEnvironment.host>`.
     """
     authentications: list[AuthenticationResponse]
     """
     Available authentication modes, see
-    [CloudEnvironment.authentications](@yw-nav-attr:CloudEnvironment.authentications).
+    :attr:`youwol.app.environment.models.model_remote.CloudEnvironment.authentications`.
     """
 
 
 class SwitchConfigurationBody(BaseModel):
     """
-    Body model of the endpoint [`POST:/admin/environment/configuration/switch`](@yw-nav-func:switch_configuration).
+    Body model of the endpoint :func:``POST:/admin/environment/configuration/switch` <switch_configuration>`.
     """
 
     url: str
@@ -91,20 +93,20 @@ class SwitchResponse(BaseModel):
 
 class LoginBody(BaseModel):
     """
-    Body model of the endpoint [`POST:/admin/environment/login`](@yw-nav-func:router.login).
+    Body model of the endpoint :func:``POST:/admin/environment/login` <router.login>`.
     """
 
     authId: str | None
     """
     Id of the authentication, need to be referenced in the configuration file under the
-    [CloudEnvironment](@yw-nav-class:youwol.app.environment.models.models_config.CloudEnvironment) section
+    :class:`CloudEnvironment <youwol.app.environment.models.model_remote.CloudEnvironment>` section
      for the given `envId`.
     """
 
     envId: str | None
     """
     Id of the environment, need to be referenced in the configuration file under the
-    [CloudEnvironments](@yw-nav-class:youwol.app.environment.models.models_config.CloudEnvironments) section.
+    :class:`CloudEnvironments <youwol.app.environment.models.model_remote.CloudEnvironments>` section.
     """
 
 
@@ -143,17 +145,19 @@ class SyncComponentBody(BaseModel):
 
 class BrowserCacheStatusResponse(BaseModel):
     """
-    Response model of the endpoint [`DELETE:/admin/environment/browser-cache`](@yw-nav-func:router.clear_browser_cache).
+    Response model of the endpoint :func:``DELETE:/admin/environment/browser-cache` <router.clear_browser_cache>`.
     """
 
     sessionKey: str
     """
-    The session key for the cache, see [BrowserCache documentation](@yw-nav-attr:BrowserCache).
+    The session key for the cache, see
+    :class:`BrowserCache documentation <youwol.app.environment.models.models_config.BrowserCache>`.
     """
 
     file: str | None
     """
-    The file path supporting the cache (if [BrowserCache.mode](@yw-nav-attr:BrowserCache.mode) is `disk`)
+    The file path supporting the cache
+    (if :attr:`BrowserCache.mode <youwol.app.environment.models.models_config.BrowserCache.mode>` is `disk`)
     """
 
     items: list[BrowserCacheItem]
@@ -164,7 +168,7 @@ class BrowserCacheStatusResponse(BaseModel):
 
 class ClearBrowserCacheBody(BaseModel):
     """
-    Body model of the endpoint [`DELETE:/admin/environment/browser-cache`](@yw-nav-func:router.clear_browser_cache).
+    Body model of the endpoint :func:``DELETE:/admin/environment/browser-cache` <router.clear_browser_cache>`.
     """
 
     memory: bool = True
@@ -174,14 +178,14 @@ class ClearBrowserCacheBody(BaseModel):
 
     file: bool = False
     """
-    Whether to delete associated file on disk (applicable only if [BrowserCache.mode](@yw-nav-attr:BrowserCache.mode)
-    is `disk`).
+    Whether to delete associated file on disk (applicable only if
+    :attr:`BrowserCache.mode <youwol.app.environment.models.models_config.BrowserCache.mode>` is `disk`).
     """
 
 
 class ClearBrowserCacheResponse(BaseModel):
     """
-    Response model of the endpoint [`DELETE:/admin/environment/browser-cache`](@yw-nav-func:router.clear_browser_cache).
+    Response model of the endpoint :func:``DELETE:/admin/environment/browser-cache` <router.clear_browser_cache>`.
     """
 
     deleted: int

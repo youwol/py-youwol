@@ -41,18 +41,18 @@ async def publish_library(
 ):
     """
     If access is granted, forwarded to
-    [cdn.publish_library](@yw-nav-func:youwol.backends.cdn.root_paths.publish_library)
-    endpoint of [cdn](@yw-nav-mod:youwol.backends.cdn) service.
+    :func:`cdn.publish_library <youwol.backends.cdn.root_paths.publish_library>`
+    endpoint of :mod:`cdn <youwol.backends.cdn>` service.
 
     On top of uploading the package, it:
-        *  create an asset using the [assets](@yw-nav-mod:youwol.backends.assets) service.
-        *  create an explorer item using [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+        *  create an asset using the :mod:`assets <youwol.backends.assets>` service.
+        *  create an explorer item using :mod:`tree_db <youwol.backends.tree_db>` service.
 
     Parameters:
         request: Incoming request.
         folder_id: Folder ID (from files explorer) in which the asset is located in the file explorer.
         configuration: Injected
-            [Configuration](@yw-nav-class:youwol.backends.assets_gateway.configurations.Configuration).
+            :class:`Configuration <youwol.backends.assets_gateway.configurations.Configuration>`.
     """
     async with Context.start_ep(request=request) as ctx:
         form = await request.form()
@@ -85,8 +85,8 @@ async def download_library(
 ):
     """
     If permissions are granted, forward to
-    [cdn.download_library](@yw-nav-func:youwol.backends.cdn.root_paths.download_library)
-    of [cdn](@yw-nav-mod:youwol.backends.cdn) service.
+    :func:`cdn.download_library <youwol.backends.cdn.root_paths.download_library>`
+    of :mod:`cdn <youwol.backends.cdn>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         await assert_read_permissions_from_raw_id(
@@ -120,8 +120,8 @@ async def get_library_info(
 ):
     """
     If permissions are granted, forward to
-    [cdn.get_library_info](@yw-nav-func:youwol.backends.cdn.root_paths.get_library_info)
-    of [cdn](@yw-nav-mod:youwol.backends.cdn) service.
+    :func:`cdn.get_library_info <youwol.backends.cdn.root_paths.get_library_info>`
+    of :mod:`cdn <youwol.backends.cdn>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         await assert_read_permissions_from_raw_id(
@@ -147,8 +147,8 @@ async def get_version_info(
 ):
     """
     If permissions are granted, forward to
-    [cdn.get_version_info](@yw-nav-func:youwol.backends.cdn.root_paths.get_version_info)
-    of [cdn](@yw-nav-mod:youwol.backends.cdn) service.
+    :func:`cdn.get_version_info <youwol.backends.cdn.root_paths.get_version_info>`
+    of :mod:`cdn <youwol.backends.cdn>` service.
     """
     async with Context.start_ep(
         request=request, with_attributes={"library_id": library_id, "version": version}
@@ -172,8 +172,8 @@ async def delete_library(
 ):
     """
     If permissions are granted, forward to
-    [cdn.delete_library](@yw-nav-func:youwol.backends.cdn.root_paths.delete_library)
-    of [cdn](@yw-nav-mod:youwol.backends.cdn) service.
+    :func:`cdn.delete_library <youwol.backends.cdn.root_paths.delete_library>`
+    of :mod:`cdn <youwol.backends.cdn>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         await assert_write_permissions_from_raw_id(
@@ -199,8 +199,8 @@ async def delete_version(
 ):
     """
     If permissions are granted, forward to
-    [cdn.delete_version](@yw-nav-func:youwol.backends.cdn.root_paths.delete_version)
-    of [cdn](@yw-nav-mod:youwol.backends.cdn) service.
+    :func:`cdn.delete_version <youwol.backends.cdn.root_paths.delete_version>`
+    of :mod:`cdn <youwol.backends.cdn>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         await assert_write_permissions_from_raw_id(
@@ -225,8 +225,8 @@ async def resolve_loading_tree(
 ):
     """
     Forward to
-    [cdn.query_loading_graph](@yw-nav-func:cdn.root_paths.resolve_loading_tree)
-    of [cdn](@yw-nav-mod:youwol.backends.cdn) service.
+    :func:`cdn.query_loading_graph <youwol.backends.cdn.root_paths.resolve_loading_tree>`
+    of :mod:`cdn <youwol.backends.cdn>` service.
     """
     async with Context.start_ep(request=request) as ctx:
         return await configuration.cdn_client.query_loading_graph(
@@ -246,8 +246,8 @@ async def get_entry_point(
 ):
     """
     If permissions are granted, forward to
-    [cdn.get_entry_point](@yw-nav-func:youwol.backends.cdn.root_paths.get_entry_point)
-    of [cdn](@yw-nav-mod:youwol.backends.cdn) service.
+    :func:`cdn.get_entry_point <youwol.backends.cdn.root_paths.get_entry_point>`
+    of :mod:`cdn <youwol.backends.cdn>` service.
     """
     async with Context.start_ep(
         request=request, with_attributes={"library_id": library_id, "version": version}
@@ -275,8 +275,8 @@ async def get_resource(
 ):
     """
     If permissions are granted, forward to
-    [cdn.get_resource](@yw-nav-func:youwol.backends.cdn.root_paths.get_resource)
-    of [cdn](@yw-nav-mod:youwol.backends.cdn) service.
+    :func:`cdn.get_resource <youwol.backends.cdn.root_paths.get_resource>`
+    of :mod:`cdn <youwol.backends.cdn>` service.
     """
     async with Context.start_ep(
         request=request,
@@ -311,8 +311,8 @@ async def get_explorer(
 ):
     """
     If permissions are granted, forward to
-    [cdn.get_explorer](@yw-nav-func:get_explorer)
-    of [cdn](@yw-nav-mod:youwol.backends.cdn) service.
+    :func:`cdn.get_explorer <youwol.backends.assets_gateway.routers.cdn_backend.get_explorer>`
+    of :mod:`cdn <youwol.backends.cdn>` service.
     """
     async with Context.start_ep(
         request=request, with_attributes={"libraryId": library_id, version: "version"}

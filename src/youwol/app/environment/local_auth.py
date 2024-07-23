@@ -51,8 +51,7 @@ class JwtProviderDynamicIssuer(JwtProvider, ABC):
     ) -> tuple[str | None, str]:
         """
         Use the abstract `_get_token` method to implement
-        <a href="@yw-nav-attr:JwtProvider.get_token_and_openid_base_url">
-        JwtProvider.get_token_and_openid_base_url</a>.
+        :meth:`youwol.utils.middlewares.authentication.JwtProvider.get_token_and_openid_base_url`
 
         Parameters:
             request: incoming request.
@@ -77,8 +76,7 @@ class JwtProviderDelegatingDynamicIssuer(JwtProviderDynamicIssuer, ABC):
     async def _get_token(self, request: Request, context: Context) -> str | None:
         """
         Use the abstract `_get_delegate` method to implement
-        <a href="@yw-nav-attr:JwtProviderDynamicIssuer._get_token">
-        JwtProviderDynamicIssuer._get_token</a>.
+        :meth:`youwol.app.environment.JwtProviderDynamicIssuer._get_token`.
 
         Parameters:
             request: incoming request.
@@ -107,17 +105,16 @@ class JwtProviderDelegatingDynamicIssuer(JwtProviderDynamicIssuer, ABC):
 class JwtProviderBearerDynamicIssuer(JwtProviderDelegatingDynamicIssuer):
     """
     Delegating dynamic JWT provider issuer using
-    [JwtProviderBearer](@yw-nav-class:JwtProviderBearer).
+    :class:`JwtProviderBearer <youwol.utils.middlewares.authentication.JwtProviderBearer>`.
     """
 
     def _get_delegate(self) -> JwtProvider:
         """
         Implement
-        <a href="@yw-nav-meth:JwtProviderDelegatingDynamicIssuer._get_delegate">
-        JwtProviderDelegatingDynamicIssuer._get_delegate</a>
+        :meth:`youwol.app.environment.JwtProviderDelegatingDynamicIssuer._get_delegate`.
 
         Return:
-            The [JwtProviderBearer](@yw-nav-class:JwtProviderBearer) delegate.
+            The :class:`JwtProviderBearer <youwol.utils.middlewares.authentication.JwtProviderBearer>` delegate.
         """
         return JwtProviderBearer(openid_base_url="")
 
@@ -125,7 +122,7 @@ class JwtProviderBearerDynamicIssuer(JwtProviderDelegatingDynamicIssuer):
 class JwtProviderCookieDynamicIssuer(JwtProviderDelegatingDynamicIssuer):
     """
     Delegating dynamic JWT provider issuer using
-    [JwtProviderCookie](@yw-nav-class:JwtProviderCookie).
+    :class:`JwtProviderCookie <youwol.utils.middlewares.authentication.JwtProviderCookie>`.
     """
 
     __delegate: JwtProviderCookie
@@ -136,8 +133,7 @@ class JwtProviderCookieDynamicIssuer(JwtProviderDelegatingDynamicIssuer):
     def __init__(self, tokens_manager: TokensManager):
         """
         Instantiate
-        <a href="@yw-nav-meth:JwtProviderCookieDynamicIssuer.__delegate">
-        JwtProviderCookieDynamicIssuer.__delegate</a>
+        :attr:`youwol.app.environment.JwtProviderCookieDynamicIssuer.__delegate`
         from the tokens manager.
 
         Parameters:
@@ -151,11 +147,10 @@ class JwtProviderCookieDynamicIssuer(JwtProviderDelegatingDynamicIssuer):
     def _get_delegate(self) -> JwtProvider:
         """
         Implement
-        <a href="@yw-nav-meth:JwtProviderDelegatingDynamicIssuer._get_delegate">
-        JwtProviderDelegatingDynamicIssuer._get_delegate</a>
+        :meth:`youwol.app.environment.JwtProviderDelegatingDynamicIssuer._get_delegate`
 
         Return:
-            The [JwtProviderCookie](@yw-nav-class:JwtProviderCookie) delegate.
+            The :class:`JwtProviderCookie <youwol.utils.middlewares.authentication.JwtProviderCookie>` delegate.
         """
         return self.__delegate
 
@@ -168,8 +163,7 @@ class JwtProviderPyYouwol(JwtProviderDynamicIssuer):
     async def _get_token(self, request: Request, context: Context) -> str | None:
         """
         Implement
-        <a href="@yw-nav-meth:JwtProviderDynamicIssuer._get_token">
-        JwtProviderDynamicIssuer._get_token</a>.
+        :meth:`youwol.app.environment.JwtProviderDynamicIssuer._get_token`.
 
         Parameters:
             request: incoming request.
@@ -202,7 +196,7 @@ def local_tokens_id(
 async def get_connected_local_tokens(context: Context) -> Tokens:
     """
     Use the active CloudEnvironment to retrieve the auth. token using
-    [get_local_tokens](@yw-nav-func:get_local_tokens).
+    :func:`get_local_tokens <youwol.app.environment.local_auth.get_local_tokens>`.
 
     Parameters:
         context: current context, used to retrieve the connected remote environment & tokens storage.

@@ -64,14 +64,14 @@ fastapi_app: FastAPI = FastAPI(
 """
 The fast api application.
 
-The dependency [yw_config](@yw-nav-func:youwol.app.environment.youwol_environment.yw_config) inject the
- [environment](@yw-nav-class:youwol.app.environment.youwol_environment.YouwolEnvironment)
+The dependency :func:`yw_config <youwol.app.environment.youwol_environment.yw_config>` inject the
+ :class:`environment <youwol.app.environment.youwol_environment.YouwolEnvironment>`
 in the target end-points implementation
 (see FastAPI's [dependencies injection](https://fastapi.tiangolo.com/tutorial/dependencies/)).
-See also [api_configuration](@yw-nav-glob:youwol.app.environment.youwol_environment.api_configuration) regarding
+See also :glob:`api_configuration <youwol.app.environment.youwol_environment.api_configuration>` regarding
 elements related to the global API configuration.
 
-The application is instrumented in the [create_app](@yw-nav-func:youwol.app.fastapi_app.create_app) function.
+The application is instrumented in the :func:`create_app <youwol.app.fastapi_app.create_app>` function.
 
 """
 
@@ -118,22 +118,21 @@ class CustomMiddlewareWrapper(BaseHTTPMiddleware):
 
 def setup_middlewares(env: YouwolEnvironment):
     """
-    Set up the middlewares stack of the [application](@yw-nav-glob:fastapi_app):
-    *  [RootMiddleware](@yw-nav-class:RootMiddleware) using
-    [InMemoryReporter](@yw-nav-class:InMemoryReporter) for `logs_reporter` and
-    [WsDataStreamer](@yw-nav-class:WsDataStreamer) for `data_reporter`.
-    *  [AuthMiddleware](@yw-nav-class:AuthMiddleware)
+    Set up the middlewares stack of the :glob:`application <youwol.app.fastapi_app.fastapi_app>`:
+    *  :class:`RootMiddleware <youwol.utils.middlewares.root_middleware.RootMiddleware>` using
+    :class:`InMemoryReporter <youwol.utils.context.reporter.InMemoryReporter>` for `logs_reporter` and
+    :class:`WsDataStreamer <youwol.app.web_socket.WsDataStreamer>` for `data_reporter`.
+    *  :class:`AuthMiddleware <youwol.utils.middlewares.authentication.AuthMiddleware>`
     using
-    [JwtProviderBearerDynamicIssuer](@yw-nav-class:JwtProviderBearerDynamicIssuer),
-    [JwtProviderCookieDynamicIssuer](@yw-nav-class:JwtProviderCookieDynamicIssuer),
-    [JwtProviderPyYouwol](@yw-nav-class:JwtProviderPyYouwol)
-    *  <a href="@yw-nav-class:BrowserCachingMiddleware">
-    BrowserCachingMiddleware</a>
-    *  the list of [custom middlewares](@yw-nav-class:CustomMiddleware)
+    :class:`JwtProviderBearerDynamicIssuer <youwol.app.environment.local_auth.JwtProviderBearerDynamicIssuer>`,
+    :class:`JwtProviderCookieDynamicIssuer <youwol.app.environment.local_auth.JwtProviderCookieDynamicIssuer>`,
+    :class:`JwtProviderPyYouwol <youwol.app.environment.local_auth.JwtProviderPyYouwol>`
+    *  :class:`youwol.app.middlewares.browser_middleware.BrowserMiddleware`.
+    *  the list of :class:`custom middlewares <youwol.app.environment.models.models_config.CustomMiddleware>`
     defined in the configuration file.
-    *  the <a href="@yw-nav-class:LocalCloudHybridizerMiddleware">
+    *  the :class:`youwol.app.middlewares.hybridizer_middleware.LocalCloudHybridizerMiddleware`
     local/cloud hybrid middleware</a>
-     using various [dispatches](@yw-nav-mod:local_cloud_hybridizers).
+     using various :mod:`dispatches <youwol.app.middlewares.local_cloud_hybridizers>`.
 
     Parameters:
         env: the current environment, used to inject user defined middlewares.
@@ -191,16 +190,16 @@ def setup_middlewares(env: YouwolEnvironment):
 
 def setup_http_routers():
     """
-    Set up the routers of the [application](@yw-nav-glob:fastapi_app):
-    *  [native backends router](@yw-nav-mod:youwol.backends): these routers include the core services of youwol,
+    Set up the routers of the :glob:`application <youwol.app.fastapi_app.fastapi_app>`:
+    *  :mod:`native backends router <youwol.backends>`: these routers include the core services of youwol,
     they define services that are available in local and remote environments.
     Beside [cdn_app_server](@ywn-nav-mod:cdn_app_server) that is served
     under `/applications`, the other services are served under `/api/$SERVICE_NAME` (where `$SERVICE_NAME` is the name
     of the corresponding service).
-    *  [local youwol router](@yw-nav-mod:app.routers): these routers correspond to the services specific to
+    *  :mod:`local youwol router <youwol.app.routers>`: these routers correspond to the services specific to
     the local youwol server, they are served under `/admin`.
     **These services are not available in the online environment.**
-    *  [pyodide router](@yw-nav-mod:app.routers.python): this router provides endpoints to emulate pyodide
+    *  :mod:`pyodide router <youwol.app.routers.python>`: this router provides endpoints to emulate pyodide
     within youwol, the purpose is to intercept all requests to python resources to persist them in the local components'
     database. The endpoints are served under `/python`.
     **This router is not available in the online environment.**
@@ -208,10 +207,10 @@ def setup_http_routers():
 
     Notes:
         While in the local server all services are exposed, in the online environment access to the services
-        [tree_db](@yw-nav-mod:backends.tree_db),
-        [files](@yw-nav-mod:backends.files), [assets](@yw-nav-mod:backends.assets) and
-        [cdn](@yw-nav-mod:backends.cdn) are **only exposed through
-        the [assets-gateway](@yw-nav-mod:backends.assets_gateway) service**.
+        :mod:`tree_db <youwol.backends.tree_db>`,
+        :mod:`files <youwol.backends.files>`,  :mod:`assets <youwol.backends.assets>` and
+        :mod:`cdn <youwol.backends.cdn>` are **only exposed through
+        the :mod:`assets-gateway <youwol.backends.assets_gateway>` service**.
 
     """
     fastapi_app.include_router(native_backends.router)
@@ -314,7 +313,7 @@ def setup_web_sockets():
     *  `CustomCommandsRouter.webSocket.log$`
 
 
-    See also [start_web_socket](@yw-nav-func:youwol.app.web_socket.start_web_socket).
+    See also :func:`start_web_socket <youwol.app.web_socket.start_web_socket>`.
     """
 
     @fastapi_app.websocket(api_configuration.base_path + "/ws-logs")
@@ -328,8 +327,8 @@ def setup_web_sockets():
 
 def setup_exceptions_handlers():
     """
-    Add exceptions handlers, for both ['expected'](@yw-nav-func:youwol.utils.exceptions.youwol_exception_handler)
-    and ['unexpected'](@yw-nav-func:youwol.utils.exceptions.unexpected_exception_handler) ones.
+    Add exceptions handlers, for both :func:`'expected' <youwol.utils.exceptions.youwol_exception_handler>`
+    and :func:`'unexpected' <youwol.utils.exceptions.unexpected_exception_handler>` ones.
     """
 
     @fastapi_app.exception_handler(YouWolException)
@@ -365,10 +364,10 @@ async def create_app():
     """
     Create the application:
 
-    *  [setup_middlewares](@yw-nav-func:youwol.app.fastapi_app.setup_middlewares)
-    *  [setup_http_routers](@yw-nav-func:youwol.app.fastapi_app.setup_http_routers)
-    *  [setup_web_sockets](@yw-nav-func:youwol.app.fastapi_app.setup_web_sockets)
-    *  [setup_exceptions_handlers](@yw-nav-func:youwol.app.fastapi_app.setup_exceptions_handlers)
+    *  :func:`setup_middlewares <youwol.app.fastapi_app.setup_middlewares>`
+    *  :func:`setup_http_routers <youwol.app.fastapi_app.setup_http_routers>`
+    *  :func:`setup_web_sockets <youwol.app.fastapi_app.setup_web_sockets>`
+    *  :func:`setup_exceptions_handlers <youwol.app.fastapi_app.setup_exceptions_handlers>`
     """
     env = await yw_config()
     setup_middlewares(env=env)

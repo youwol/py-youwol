@@ -17,7 +17,7 @@ from youwol.utils.types import JSON
 T = TypeVar("T")
 """
 Type var definition for a response of a request,
-used as template parameter of [RequestExecutor](@yw-nav-class:youwol.utils.clients.request_executor.RequestExecutor).
+used as template parameter of :class:`RequestExecutor <youwol.utils.clients.request_executor.RequestExecutor>`.
 
 E.g. in case of aiohttp executor, it is
 [ClientResponse](https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientResponse).
@@ -127,10 +127,10 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
     [ClientResponse](https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientResponse)..
 
     Helpers regarding readers are available, see
-    [text_reader](@yw-nav-func:youwol.utils.clients.request_executor.text_reader),
-    [json_reader](@yw-nav-func:youwol.utils.clients.request_executor.json_reader),
-    [bytes_reader](@yw-nav-func:youwol.utils.clients.request_executor.bytes_reader),
-    [auto_reader](@yw-nav-func:youwol.utils.clients.request_executor.auto_reader).
+    :func:`text_reader <youwol.utils.clients.request_executor.text_reader>`,
+    :func:`json_reader <youwol.utils.clients.request_executor.json_reader>`,
+    :func:`bytes_reader <youwol.utils.clients.request_executor.bytes_reader>`,
+    :func:`auto_reader <youwol.utils.clients.request_executor.auto_reader>`.
     """
 
     client_session: ClientSession | Callable[[], ClientSession] = lambda: ClientSession(
@@ -196,7 +196,7 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
         **kwargs,
     ):
         """
-        See [RequestExecutor.post](@yw-nav-func:youwol.utils.clients.request_executor.RequestExecutor.get).
+        See :func:`RequestExecutor.post <youwol.utils.clients.request_executor.RequestExecutor.get>`.
         """
         return await self._request(
             "GET",
@@ -216,7 +216,7 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
         **kwargs,
     ):
         """
-        See [RequestExecutor.post](@yw-nav-func:youwol.utils.clients.request_executor.RequestExecutor.post).
+        See :func:`RequestExecutor.post <youwol.utils.clients.request_executor.RequestExecutor.post>`.
         """
         return await self._request(
             "POST",
@@ -236,7 +236,7 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
         **kwargs,
     ):
         """
-        See [RequestExecutor.put](@yw-nav-func:youwol.utils.clients.request_executor.RequestExecutor.put).
+        See :func:`RequestExecutor.put <youwol.utils.clients.request_executor.RequestExecutor.put>`.
         """
         return await self._request(
             "PUT",
@@ -256,7 +256,7 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
         **kwargs,
     ):
         """
-        See [RequestExecutor.delete](@yw-nav-func:youwol.utils.clients.request_executor.RequestExecutor.delete).
+        See :func:`RequestExecutor.delete <youwol.utils.clients.request_executor.RequestExecutor.delete>`.
         """
         return await self._request(
             "DELETE",

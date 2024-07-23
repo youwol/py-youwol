@@ -19,3 +19,6 @@ type DevTags =
     | 'span'
     | 'pre'
     | 'footer'
+    | 'button'
+    | 'input'
+    | 'img'

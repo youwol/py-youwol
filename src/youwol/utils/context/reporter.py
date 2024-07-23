@@ -25,7 +25,7 @@ class WsContextReporter(ContextReporter):
     websockets_getter: Callable[[], list[WebSocket]]
     """
     Callback that provides a list of web socket channels to use.
-    This function is evaluated each time [log](@yw-nav-meth:WsContextReporter.log) is called.
+    This function is evaluated each time :meth:`log <youwol.utils.context.reporter.WsContextReporter.log>` is called.
     """
 
     mute_exceptions: bool
@@ -43,16 +43,16 @@ class WsContextReporter(ContextReporter):
 
         Parameters:
             websockets_getter: see
-                [websockets_getter](@yw-nav-attr:WsContextReporter.websockets_getter)
+                :attr:`websockets_getter <youwol.utils.context.reporter.WsContextReporter.websockets_getter>`
             mute_exceptions: see
-                [websockets_getter](@yw-nav-attr:WsContextReporter.mute_exceptions)
+                :attr:`websockets_getter <youwol.utils.context.reporter.WsContextReporter.mute_exceptions>`
         """
         self.websockets_getter = websockets_getter
         self.mute_exceptions = mute_exceptions
 
     async def log(self, entry: LogEntry):
         """
-        Send a [LogEntry](@yw-nav-class:LogEntry) in the web-socket channels.
+        Send a :class:`LogEntry <youwol.utils.context.models.LogEntry>` in the web-socket channels.
 
         Parameters:
             entry: log to process.
@@ -75,7 +75,7 @@ class WsContextReporter(ContextReporter):
 
 class DeployedContextReporter(ContextReporter):
     """
-    This [ContextReporter](@yw-nav-class:ContextReporter) logs into the standard
+    This :class:`ContextReporter <youwol.utils.context.models.ContextReporter>` logs into the standard
     output using a format understood by most cloud providers (*e.g.* using spanId, traceId).
     """
 
@@ -119,7 +119,7 @@ class DeployedContextReporter(ContextReporter):
 
 class ConsoleContextReporter(ContextReporter):
     """
-    This [ContextReporter](@yw-nav-class:ContextReporter) logs into the standard
+    This :class:`ContextReporter <youwol.utils.context.models.ContextReporter>` logs into the standard
     output.
     """
 
@@ -143,12 +143,12 @@ class ConsoleContextReporter(ContextReporter):
 
 class PyYouwolContextReporter(ContextReporter):
     """
-    This [ContextReporter](@yw-nav-class:ContextReporter) send logs through
+    This :class:`ContextReporter <youwol.utils.context.models.ContextReporter>` send logs through
     an API call to a running youwol server in localhost.
 
     It uses a POST request at `http://localhost:{self.py_youwol_port}/admin/system/logs` with provided headers.
 
-    See [post_logs](@yw-nav-func:post_logs).
+    See :func:`post_logs <youwol.app.routers.system.router.post_logs>`.
     """
 
     py_youwol_port: int
@@ -166,9 +166,9 @@ class PyYouwolContextReporter(ContextReporter):
 
         Parameters:
             py_youwol_port: see
-                [py_youwol_port](@yw-nav-attr:PyYouwolContextReporter.py_youwol_port)
+                :attr:`py_youwol_port <youwol.utils.context.reporter.PyYouwolContextReporter.py_youwol_port>`
             headers: see
-                [headers](@yw-nav-attr:PyYouwolContextReporter.headers)
+                :attr:`headers <youwol.utils.context.reporter.PyYouwolContextReporter.headers>`
         """
         super().__init__()
         self.py_youwol_port = py_youwol_port
@@ -177,8 +177,8 @@ class PyYouwolContextReporter(ContextReporter):
     async def log(self, entry: LogEntry):
         """
         Send the log to a py-youwol running server using provided
-        [port](@yw-nav-attr:PyYouwolContextReporter.py_youwol_port) and
-        [headers](@yw-nav-attr:PyYouwolContextReporter.headers).
+        :attr:`port <youwol.utils.context.reporter.PyYouwolContextReporter.py_youwol_port>` and
+        :attr:`headers <youwol.utils.context.reporter.PyYouwolContextReporter.headers>`.
 
         Parameters:
             entry: log entry to print.
@@ -225,14 +225,14 @@ class InMemoryReporter(ContextReporter):
     """
     The list of all 'node' logs: those associated to a function execution (and associated to children logs).
 
-    They are created from the context using [Context.start](@yw-nav-meth:Context.start) or
-    [Context.start_ep](@yw-nav-meth:Context.start_ep).
+    They are created from the context using :meth:`Context.start <youwol.utils.context.context.Context.start>` or
+    :meth:`Context.start_ep <youwol.utils.context.context.Context.start_ep>`.
     """
 
     leaf_logs: list[LogEntry] = []
     """
     The list of all 'leaf' logs: those associated to a simple log
-     (e.g. [Context.info](@yw-nav-meth:Context.info)).
+     (e.g. :meth:`Context.info <youwol.utils.context.context.Context.info>`).
     """
     errors: set[str] = set()
     """

@@ -1,13 +1,33 @@
 import { render } from '@youwol/rx-vdom'
 import { navigation } from './navigation'
-import { AppState, AppView } from './app'
 import { setup } from '../auto-generated'
+import { Router, Views } from '@youwol/mkdocs-ts'
 
-export const appState = new AppState({
+export const router = new Router({
     navigation,
-    basePath: `/applications/${setup.name}/${setup.version}`,
 })
 
-document
-    .getElementById('content')
-    .appendChild(render(new AppView({ appState })))
+document.getElementById('content').appendChild(
+    render(
+        new Views.DefaultLayoutView({
+            router,
+            name: 'Py-YouWol',
+            topBanner: (params) =>
+                new Views.TopBannerClassicView({
+                    ...params,
+                    logo: {
+                        tag: 'img',
+                        src: '../assets/logo_YouWol.svg',
+                        style: {
+                            height: '30px',
+                        },
+                    },
+                    badge: new Views.SourcesLink({
+                        href: 'https://github.com/youwol/py-youwol/',
+                        version: setup.version,
+                        name: 'py-youwol',
+                    }),
+                }),
+        }),
+    ),
+)

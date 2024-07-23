@@ -1,6 +1,6 @@
 """
-This file gathers [TokensStorageConf](@yw-nav-class:models_token_storage.TokensStorageConf) related models of the
-[configuration](@yw-nav-class:models_config.Configuration).
+This file gathers :class:`TokensStorageConf <youwol.app.environment.models.models_token_storage.TokensStorageConf>`
+ related models of the :class:`configuration <youwol.app.environment.models.models_config.Configuration>`.
 """
 
 # standard library
@@ -44,8 +44,7 @@ class TokensStorageSystemKeyring(TokensStorageConf, BaseModel):
     """
     The path of the system keyring encrypted file.
 
-    See <a href="@yw-nav-glob:default_path_tokens_storage_encrypted">
-    default_path_tokens_storage_encrypted</a>
+    See :glob:`youwol.app.environment.models.defaults.default_path_tokens_storage_encrypted`
     regarding default value.
     """
 
@@ -77,7 +76,7 @@ class TokensStoragePath(TokensStorageConf, BaseModel):
     """
     Path where the file is saved on disk.
 
-    See [default_path_tokens_storage](@yw-nav-glob:default_path_tokens_storage)
+    See :glob:`default_path_tokens_storage <youwol.app.environment.models.defaults.default_path_tokens_storage>`
      regarding default value.
     """
 

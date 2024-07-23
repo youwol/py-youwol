@@ -39,7 +39,7 @@ async def add_zip_files(
         request: Incoming request.
         asset_id: Asset's ID.
         file: the zip file.
-        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+        configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
     Return:
         Files upload description.
@@ -88,7 +88,7 @@ async def get_file(
         request: Incoming request.
         asset_id: Asset's ID.
         rest_of_path: Path to the file.
-        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+        configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
     Return:
         The file content.
@@ -130,7 +130,7 @@ async def delete_files(
     Parameters:
         request: Incoming request.
         asset_id: Asset's ID.
-        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+        configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
     Return:
         Empty JSON.
@@ -160,7 +160,7 @@ async def get_zip_files(
     Parameters:
         request: Incoming request.
         asset_id: Asset's ID.
-        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+        configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
     Return:
         The zip file..

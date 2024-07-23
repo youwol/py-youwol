@@ -1,3 +1,3 @@
 """
-HTTP client & related for the [assets](@yw-nav-mod:youwol.backends.assets) service.
+HTTP client & related for the :mod:`assets <youwol.backends.assets>` service.
 """

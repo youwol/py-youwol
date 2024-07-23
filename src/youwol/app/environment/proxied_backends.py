@@ -83,7 +83,7 @@ class ProxiedBackend(BaseModel):
 
 class ProxyInfo(BaseModel):
     """
-    Serialization of a [ProxiedBackend](@yw-nav-class:ProxiedBackend).
+    Serialization of a :class:`ProxiedBackend <youwol.app.environment.proxied_backends.ProxiedBackend>`.
     """
 
     uid: str

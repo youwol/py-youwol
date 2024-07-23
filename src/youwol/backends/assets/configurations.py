@@ -29,7 +29,7 @@ class Configuration:
     file_system: FileSystemInterface
     """
     File system client using a bucket defined by this
-    [namespace](@yw-nav-attr:youwol.backends.assets.configurations.Constants.namespace).
+    :attr:`namespace <youwol.backends.assets.configurations.Constants.namespace>`.
     """
     storage: Storage
     """
@@ -39,14 +39,14 @@ class Configuration:
     """
     doc_db_asset: DocDb
     """
-    NoSql client for this [table](@yw-nav-glob:youwol.utils.http_clients.assets_backend.models.ASSETS_TABLE)
-    included in this [namespace](@yw-nav-attr:youwol.backends.assets.configurations.Constants.namespace).
+    NoSql client for this :glob:`table <youwol.utils.http_clients.assets_backend.models.ASSETS_TABLE>`
+    included in this :attr:`namespace <youwol.backends.assets.configurations.Constants.namespace>`.
     """
     doc_db_access_history: DocDb
     doc_db_access_policy: DocDb
     """
-    NoSql client for this [table](@yw-nav-glob:youwol.utils.http_clients.assets_backend.models.ACCESS_POLICY)
-    included in this [namespace](@yw-nav-attr:youwol.backends.assets.configurations.Constants.namespace).
+    NoSql client for this :glob:`table <youwol.utils.http_clients.assets_backend.models.ACCESS_POLICY>`
+    included in this :attr:`namespace <youwol.backends.assets.configurations.Constants.namespace>`.
     """
     admin_headers: dict[str, str] | None = None
 

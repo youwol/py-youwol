@@ -1,5 +1,5 @@
 """
-This file gathers top level [configuration](@yw-nav-class:models_config.Configuration)'s models.
+This file gathers top level :class:`configuration <youwol.app.environment.models.models_config.Configuration>`'s models.
 """
 
 # future
@@ -111,17 +111,16 @@ class LocalEnvironment(BaseModel):
     """
     Defines folder location in which persisted data are saved.
 
-    See [default_path_data_dir](@yw-nav-glob:default_path_data_dir)
-     regarding default value.
-    value.
+    See :glob:`default_path_data_dir <youwol.app.environment.models.defaults.default_path_data_dir>`
+    regarding default value.
     """
 
     cacheDir: ConfigPath = default_path_cache_dir
     """
     Defines folder location of cached data.
 
-    See [default_path_cache_dir](@yw-nav-glob:default_path_cache_dir)
-     regarding default value.
+    See :glob:`default_path_cache_dir <youwol.app.environment.models.defaults.default_path_cache_dir>`
+    regarding default value.
     """
 
 
@@ -141,7 +140,7 @@ class BrowserCache(BaseModel):
 
     Details:
         The cache is only populated by responses that include a header specified by
-        [YouwolHeaders.yw_browser_cache_directive](@yw-nav-attr:YouwolHeaders.yw_browser_cache_directive),
+        :attr:`YouwolHeaders.yw_browser_cache_directive <youwol.utils.utils.YouwolHeaders.yw_browser_cache_directive>`,
         which is an opt-in feature from the backends that create the response.
 
         Persisted cached elements (if `mode=='disk'`) are gathered in files on the user disk:
@@ -158,21 +157,24 @@ class BrowserCache(BaseModel):
 
         When a response is cached, any associated `Cache-Control` header is replaced by `no-cache, no-store`.
 
-        Implementation details can be found in the [BrowserCacheStore](@yw-nav-class:BrowserCacheStore) documentation.
+        Implementation details can be found in the
+        :class:`BrowserCacheStore <youwol.app.environment.browser_cache_store.BrowserCacheStore>` documentation.
 
     Note:
         By default, the configuration part of the key is the path of the local database, which should suffice for
         most use cases and allows sharing the cache for configurations that share the same local database.
 
         For scenario where elements of the configuration re-route some incoming requests out of their normal
-        destination, it may be necessary to adjust the attributes [key](@yw-nav-attr:BrowserCache.key) and/or
-        [ignore](@yw-nav-attr:BrowserCache.ignore).
+        destination, it may be necessary to adjust the attributes
+        :attr:`key <youwol.app.environment.models.models_config.BrowserCache.key>` and/or
+        :attr:`ignore <youwol.app.environment.models.models_config.BrowserCache.ignore>`.
 
     Warning:
-        If the [key](@yw-nav-attr:BrowserCache.key) attribute reference the local database (which definitely should),
-        manual changes within the local database introduce potentials un-synchronization
-        with the persisted caching files. It can lead to resources being fetched from the cache while not existing
-        in the local databases (preventing *e.g.* their download).
+        If the :attr:`key <youwol.app.environment.models.models_config.BrowserCache.key>`
+        attribute reference the local database (which definitely should), manual changes within the local database
+        introduce potentials un-synchronization with the persisted caching files.
+        It can lead to resources being fetched from the cache while not existing in the local databases
+        (preventing *e.g.* their download).
     """
 
     key: Callable[[Configuration], Any] = (
@@ -214,7 +216,8 @@ class BrowserCache(BaseModel):
     returns `True`.
 
     Example:
-        It can be employed to disregard any routes aligning with a [CdnSwitch](@yw-nav-class:CdnSwitch) in
+        It can be employed to disregard any routes aligning with a
+        :class:`CdnSwitch <youwol.app.environment.models.flow_switches.CdnSwitch>` in
         the configuration, if a corresponding dev-server is active.
         However, it's worth noting that dev-servers should operate using a 'work-in-progress' version
         (denoted by a suffix `-wip`), ensuring that caching is disabled, allowing the default configuration
@@ -277,7 +280,8 @@ class BrowserEnvironment(BaseModel):
     """
     Collects configuration options related to the browser.
 
-    This class is associated with the [BrowserMiddleware](@yw-nav-class:BrowserMiddleware),
+    This class is associated with the
+    :class:`BrowserMiddleware <youwol.app.middlewares.browser_middleware.BrowserMiddleware>`,
     which is one of the initial middlewares intercepting incoming requests in the YouWol server.
     """
 
@@ -288,12 +292,15 @@ class BrowserEnvironment(BaseModel):
     onEnter: Callable[[Request, Context], Request] | None = None
     """
     If provided, this function is called on the incoming request at the beginning of processing by the
-    [BrowserMiddleware](@yw-nav-class:BrowserMiddleware), allowing for potential side effects.
+    :class:`BrowserMiddleware <youwol.app.middlewares.browser_middleware.BrowserMiddleware>`,
+    allowing for potential side effects.
     """
     onExit: Callable[[Request, Response, Context], Response] | None = None
     """
     If provided, this function is called on both the incoming request and outgoing response at the end of
-    processing by the [BrowserMiddleware](@yw-nav-class:BrowserMiddleware), allowing for potential side effects.
+    processing by the
+    :class:`BrowserMiddleware <youwol.app.middlewares.browser_middleware.BrowserMiddleware>`,
+    allowing for potential side effects.
     """
 
 
@@ -321,7 +328,7 @@ class System(BaseModel):
     *  it connects to `platform.youwol.com` to download missing assets, using a browser based authentication
     (through cookies)
     *  it persists the assets in a common place on your computer
-    (see [LocalEnvironment](@yw-nav-class:models_config.LocalEnvironment))
+    (see :class:`LocalEnvironment <youwol.app.environment.models.models_config.LocalEnvironment>`)
 
     The above example is equivalent to:
     <code-snippet language="python">
@@ -375,12 +382,12 @@ class System(BaseModel):
     """
     How to store JWT tokens:
 
-    * [TokensStorageSystemKeyring()](@yw-nav-class:TokensStorageSystemKeyring):
-    use system keyring
-    * [TokensStoragePath()](@yw-nav-class:TokensStoragePath) :
-     store in file
-    * [TokensStorageInMemory()](@yw-nav-class:TokensStorageInMemory) :
-     store in memory
+    * :class:`youwol.app.environment.models.models_token_storage.TokensStorageSystemKeyring`:
+    use system keyring.
+    * :class:`youwol.app.environment.models.models_token_storage.TokensStoragePath` :
+     store in file.
+    * :class:`youwol.app.environment.models.models_token_storage.TokensStorageInMemory` :
+     store in memory.
     """
 
     cloudEnvironments: CloudEnvironments = CloudEnvironments(
@@ -489,7 +496,7 @@ class CustomEndPoints(BaseModel):
 class CustomMiddleware(BaseModel, ABC):
     """
     Abstract class to define middleware, see for instance the
-    [FlowSwitcherMiddleware](@yw-nav-class:FlowSwitcherMiddleware).
+    :class:`FlowSwitcherMiddleware <youwol.app.environment.models.flow_switches.FlowSwitcherMiddleware>`.
 
     Derived implementation must provide the **dispatch** method.
 
@@ -530,7 +537,7 @@ class CustomMiddleware(BaseModel, ABC):
         Attributes:
             incoming_request: incoming [Request](https://fastapi.tiangolo.com/reference/request/)
             call_next: trigger the next target in the call stack
-            context: [Context](@yw-nav-class:Context)
+            context: :class:`Context <Context>`
 
         Return:
             The response
@@ -603,7 +610,7 @@ class Customization(BaseModel):
         *  **events**: allows to react to some events, here the `onLoad` event (configuration loaded).
         *  **middlewares**: attribute provide the ability to plug custom middlewares.
         *  **endPoints**: attribute allows to add end-points to the youwol server, usually as
-        [Command](@yw-nav-class:Command).
+        :class:`Command <youwol.app.environment.models.models_config.Command>`.
 
     """
 

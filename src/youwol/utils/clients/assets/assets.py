@@ -22,7 +22,7 @@ from youwol.utils.exceptions import upstream_exception_from_response
 @dataclass(frozen=True)
 class AssetsClient:
     """
-    HTTP client of the [assets](@yw-nav-mod:youwol.backends.assets) service.
+    HTTP client of the :mod:`assets <youwol.backends.assets>` service.
     """
 
     url_base: str
@@ -38,13 +38,11 @@ class AssetsClient:
     async def create_asset(self, body, **kwargs):
         """
         See description in
-        [assets.create_asset](@yw-nav-func:youwol.backends.assets.root_paths.create_asset).
+        :func:`assets.create_asset <youwol.backends.assets.routers.assets.create_asset>`.
 
         Warning:
             When used through the
-            <a href="@yw-nav-func:youwol.utils.clients.assets_gateway.AssetsGatewayClient.get_assets_backend_router">
-            assets-gateway client
-            </a>,
+            :meth:`youwol.utils.clients.assets_gateway.assets_gateway.AssetsGatewayClient.get_assets_backend_router`,
              the `params` parameters (URL query parameters) need
             to feature a `folder-id` value: the destination folder ID of the created asset within the explorer.
         """
@@ -58,7 +56,7 @@ class AssetsClient:
     async def add_zip_files(self, asset_id: str, data: bytes, **kwargs):
         """
         See description in
-        [assets.add_zip_files](@yw-nav-func:youwol.backends.assets.root_paths.add_zip_files).
+        :func:`assets.add_zip_files <youwol.backends.assets.routers.files.add_zip_files>`.
         """
         form_data = FormData()
         form_data.add_field(
@@ -82,7 +80,7 @@ class AssetsClient:
     ):
         """
         See description in
-        [assets.get_file](@yw-nav-func:youwol.backends.assets.root_paths.get_file).
+        :func:`assets.get_file <youwol.backends.assets.routers.files.get_file>`.
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/assets/{asset_id}/files/{path}",
@@ -93,7 +91,7 @@ class AssetsClient:
     async def delete_files(self, asset_id: str, **kwargs):
         """
         See description in
-        [assets.delete_files](@yw-nav-func:youwol.backends.assets.root_paths.delete_files).
+        :func:`assets.delete_files <youwol.backends.assets.routers.files.delete_files>`.
         """
         return await self.request_executor.delete(
             url=f"{self.url_base}/assets/{asset_id}/files",
@@ -104,7 +102,7 @@ class AssetsClient:
     async def get_zip_files(self, asset_id: str, **kwargs):
         """
         See description in
-        [assets.get_zip_files](@yw-nav-func:youwol.backends.assets.root_paths.get_zip_files).
+        :func:`assets.get_zip_files <youwol.backends.assets.routers.files.get_zip_files>`.
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/assets/{asset_id}/files",
@@ -115,7 +113,7 @@ class AssetsClient:
     async def update_asset(self, asset_id: str, body, **kwargs):
         """
         See description in
-        [assets.post_asset](@yw-nav-func:youwol.backends.assets.root_paths.post_asset).
+        :func:`assets.post_asset <youwol.backends.assets.routers.assets.post_asset>`.
         """
         return await self.request_executor.post(
             url=f"{self.url_base}/assets/{asset_id}",
@@ -127,7 +125,7 @@ class AssetsClient:
     async def put_access_policy(self, asset_id: str, group_id: str, body, **kwargs):
         """
         See description in
-        [assets.put_access_policy](@yw-nav-func:youwol.backends.assets.root_paths.put_access_policy).
+        :func:`assets.put_access_policy <youwol.backends.assets.routers.access.put_access_policy>`.
         """
         return await self.request_executor.put(
             url=f"{self.url_base}/assets/{asset_id}/access/{group_id}",
@@ -139,7 +137,7 @@ class AssetsClient:
     async def delete_access_policy(self, asset_id: str, group_id: str, **kwargs):
         """
         See description in
-        [assets.delete_access_policy](@yw-nav-func:youwol.backends.assets.root_paths.delete_access_policy).
+        :func:`assets.delete_access_policy <youwol.backends.assets.routers.access.delete_access_policy>`.
         """
         return await self.request_executor.delete(
             url=f"{self.url_base}/assets/{asset_id}/access/{group_id}",
@@ -150,7 +148,7 @@ class AssetsClient:
     async def post_image(self, asset_id: str, filename: str, src: bytes, **kwargs):
         """
         See description in
-        [assets.post_image](@yw-nav-func:youwol.backends.assets.root_paths.post_image).
+        :func:`assets.post_image <youwol.backends.assets.routers.images.post_image>`.
         """
         form_data = FormData()
         form_data.add_field(
@@ -167,7 +165,7 @@ class AssetsClient:
     async def remove_image(self, asset_id: str, filename: str, **kwargs):
         """
         See description in
-        [assets.remove_image](@yw-nav-func:youwol.backends.assets.root_paths.remove_image).
+        :func:`assets.remove_image <youwol.backends.assets.routers.images.remove_image>`.
         """
         return await self.request_executor.delete(
             url=f"{self.url_base}/assets/{asset_id}/images/{filename}",
@@ -185,8 +183,8 @@ class AssetsClient:
     ):
         """
         See description in
-        [assets.get_media_image](@yw-nav-func:youwol.backends.assets.root_paths.get_media_image) or
-        [assets.get_media_thumbnail](@yw-nav-func:youwol.backends.assets.root_paths.get_media_thumbnail).
+        :func:`assets.get_media_image <youwol.backends.assets.routers.images.get_media_image>` or
+        :func:`assets.get_media_thumbnail <youwol.backends.assets.routers.images.get_media_thumbnail>`.
         """
 
         async def _reader(resp: ClientResponse):
@@ -221,14 +219,14 @@ class AssetsClient:
     async def get_asset(self, asset_id: str, **kwargs):
         """
         See description in
-        [assets.get_asset](@yw-nav-func:youwol.backends.assets.root_paths.get_asset).
+        :func:`assets.get_asset <youwol.backends.assets.routers.assets.get_asset>`.
         """
         return await self.get(asset_id=asset_id, **kwargs)
 
     async def delete_asset(self, asset_id: str, **kwargs):
         """
         See description in
-        [assets.delete_asset](@yw-nav-func:youwol.backends.assets.root_paths.delete_asset).
+        :func:`assets.delete_asset <youwol.backends.assets.routers.assets.delete_asset>`.
         """
         return await self.request_executor.delete(
             url=f"{self.url_base}/assets/{asset_id}",
@@ -239,7 +237,7 @@ class AssetsClient:
     async def get_access_policy(self, asset_id: str, group_id: str, **kwargs):
         """
         See description in
-        [assets.get_access_policy](@yw-nav-func:youwol.backends.assets.root_paths.get_access_policy).
+        :func:`assets.get_access_policy <youwol.backends.assets.routers.access.get_access_policy>`.
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/assets/{asset_id}/access/{group_id}",
@@ -250,7 +248,7 @@ class AssetsClient:
     async def get_permissions(self, asset_id: str, **kwargs):
         """
         See description in
-        [assets.get_permissions](@yw-nav-func:youwol.backends.assets.root_paths.get_permissions).
+        :func:`assets.get_permissions <youwol.backends.assets.routers.permissions.get_permissions>`.
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/assets/{asset_id}/permissions",
@@ -261,7 +259,7 @@ class AssetsClient:
     async def get_access_info(self, asset_id: str, **kwargs):
         """
         See description in
-        [assets.access_info](@yw-nav-func:youwol.backends.assets.root_paths.access_info).
+        :func:`assets.access_info <youwol.backends.assets.routers.permissions.access_info>`.
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/assets/{asset_id}/access-info",

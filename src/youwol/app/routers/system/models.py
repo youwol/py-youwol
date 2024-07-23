@@ -32,7 +32,7 @@ class FolderContentResp(BaseModel):
 class FolderContentBody(BaseModel):
     """
     Body used to query folder content
-    using [folder_content](@yw-nav-func:youwol.app.routers.system.router.folder_content).
+    using :func:`folder_content <youwol.app.routers.system.router.folder_content>`.
     """
 
     path: str
@@ -45,7 +45,7 @@ class QueryRootLogsBody(BaseModel):
 
 class Log(BaseModel):
     """
-    Base class for logs generated from a [context](@yw-nav-class:Context) object.
+    Base class for logs generated from a :class:`context <youwol.utils.context.context.Context>` object.
     """
 
     level: str
@@ -74,13 +74,13 @@ class Log(BaseModel):
 
     contextId: str
     """
-    ID of the context that was used to generate the log (see [Context](@yw-nav-class:Context)).
+    ID of the context that was used to generate the log (see :class:`Context <youwol.utils.context.context.Context>`).
     """
 
     parentContextId: str | None
     """
     ID of the parent context of the context that was used to generate the log
-    (see [Context](@yw-nav-class:Context)).
+    (see :class:`Context <youwol.utils.context.context.Context>`).
     """
 
     timestamp: float
@@ -102,10 +102,10 @@ class Log(BaseModel):
 class LeafLogResponse(Log):
     """
     A leaf log corresponds to a message - there is no log that will have as
-    [parentContextId](@yw-nav-attr:youwol.app.routers.system.models.Log.parentContextId)
-    the [contextId](@yw-nav-attr:youwol.app.routers.system.models.Log.contextId) of this log.
+    :attr:`parentContextId <youwol.app.routers.system.models.Log.parentContextId>`
+    the :attr:`contextId <youwol.app.routers.system.models.Log.contextId>` of this log.
 
-    It is created when using *e.g.* [Context.info](@yw-nav-meth:Context.info).
+    It is created when using *e.g.* :meth:`Context.info <youwol.utils.context.context.Context.info>`.
     """
 
 
@@ -132,11 +132,11 @@ class NodeLogResponse(Log):
     A 'node' log is associated to a function execution, it is likely associated to children: the logs generated
     within the function.
 
-    It is created when using *e.g.* [Context.start](@yw-nav-meth:Context.start).
+    It is created when using *e.g.* :meth:`Context.start <youwol.utils.context.context.Context.start>`.
 
     The children logs have as
-    [parentContextId](@yw-nav-attr:youwol.app.routers.system.models.Log.parentContextId)
-    the [contextId](@yw-nav-attr:youwol.app.routers.system.models.Log.contextId) of this log.
+    :attr:`parentContextId <youwol.app.routers.system.models.Log.parentContextId>`
+    the :attr:`contextId <youwol.app.routers.system.models.Log.contextId>` of this log.
     """
 
     failed: bool
@@ -188,7 +188,7 @@ class PostLogBody(Log):
 class PostLogsBody(BaseModel):
     """
     Body of the end point defined by the function
-     [post_logs](@yw-nav-func:youwol.app.routers.system.router.post_logs).
+     :func:`post_logs <youwol.app.routers.system.router.post_logs>`.
     """
 
     logs: list[PostLogBody]
@@ -200,7 +200,7 @@ class PostLogsBody(BaseModel):
 class PostDataBody(BaseModel):
     """
     Body of the end point defined by the function
-     [post_data](@yw-nav-func:youwol.app.routers.system.router.post_data).
+     :func:`post_data <youwol.app.routers.system.router.post_data>`.
     """
 
     data: list[PostLogBody]
@@ -217,7 +217,7 @@ class BackendLogsResponse(BaseModel):
 
 class UninstallResponse(BaseModel):
     """
-    Response model when calling [uninstall](@yw-nav-func:youwol.app.routers.system.router.uninstall)
+    Response model when calling :func:`uninstall <youwol.app.routers.system.router.uninstall>`
     """
 
     name: str
@@ -242,7 +242,7 @@ class UninstallResponse(BaseModel):
 
 class TerminateResponse(BaseModel):
     """
-    Response model when calling [terminate](@yw-nav-func:youwol.app.routers.system.router.terminate)
+    Response model when calling :func:`terminate <youwol.app.routers.system.router.terminate>`
     """
 
     uids: list[str]

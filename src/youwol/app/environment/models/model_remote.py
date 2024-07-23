@@ -1,6 +1,6 @@
 """
-This file gathers [configuration](@yw-nav-class:models_config.Configuration)'s models related to remote environments
-and authorizations.
+This file gathers :class:`configuration <youwol.app.environment.models.models_config.Configuration>`'s models related
+to remote environments and authorizations.
 """
 
 # third parties
@@ -31,14 +31,14 @@ class Authentication(BaseModel):
     Virtual base class for authentication modes.
 
     See
-    [BrowserAuth](@yw-nav-class:BrowserAuth) or
-    [DirectAuth](@yw-nav-class:DirectAuth)
+    :class:`BrowserAuth <youwol.app.environment.models.model_remote.BrowserAuth>` or
+    :class:`DirectAuth <youwol.app.environment.models.model_remote.DirectAuth>`
     """
 
     authId: str
     """
     Unique id of the authentication for encapsulating in
-    [CloudEnvironment](@yw-nav-class:CloudEnvironment).
+    :class:`CloudEnvironment <youwol.app.environment.models.model_remote.CloudEnvironment>`.
     """
 
 
@@ -112,7 +112,7 @@ class CloudEnvironment(BaseModel):
     Specification of the authorization provider.
 
     For a Keycloak authentication provider including a properly configured `youwol` realm, the function
-     [default_auth_provider](@yw-nav-func:default_auth_provider) is available.
+    :func:`default_auth_provider <youwol.app.environment.models.defaults.default_auth_provider>` is available.
     """
 
     authentications: list[Authentication]
@@ -129,13 +129,13 @@ class Connection(BaseModel):
     envId: str
     """
     Reference an environment ID provided in
-     [CloudEnvironments](@yw-nav-attr:CloudEnvironments.environments).
+    :attr:`CloudEnvironments <youwol.app.environment.models.model_remote.CloudEnvironments.environments>`.
     """
 
     authId: str
     """
     Reference an authentication ID provided in the
-     [CloudEnvironment](@yw-nav-class:CloudEnvironment) with ID `envId`.
+    :class:`CloudEnvironment <youwol.app.environment.models.model_remote.CloudEnvironment>` with ID `envId`.
     """
 
 
@@ -148,9 +148,9 @@ class CloudEnvironments(BaseModel):
 
     Example:
         Below is an example declaring 2 cloud environments, one related to a hypothetical remote environment of
-        a company `foo`, and the second the regular youwol remote environment :
-        <code-snippet language="python">
+        a company `foo`, and the second the regular youwol remote environment:
 
+        <code-snippet language="python">
         from pathlib import Path
 
         from youwol.app.environment import (
@@ -189,7 +189,7 @@ class CloudEnvironments(BaseModel):
                 )
             )
         )
-        <code-snippet>
+        </code-snippet>
     """
 
     defaultConnection: Connection
@@ -197,7 +197,7 @@ class CloudEnvironments(BaseModel):
     Connection used when py-youwol is started.
 
     To switch connection after youwol has started, see end-point
-     [Login](@yw-nav-func:login).
+    :func:`Login <youwol.app.routers.environment.router.login>`.
     """
 
     environments: list[CloudEnvironment]

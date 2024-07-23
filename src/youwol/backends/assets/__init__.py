@@ -9,12 +9,12 @@ Responsibilities:
 Accessibility:
     *  It is served from the path `/api/assets-backend`.
     *  In its remote version, it is accessible only via the
-        [assets_gateway](@yw-nav-mod:youwol.backends.assets_gateway) service (to allow permissions validation).
+        :mod:`assets_gatewayr <youwol.backends.assets_gateway>` service (to allow permissions validation).
         In this case, it is served from the path `/api/assets-gateway/assets-backend`.
 
 Dependencies:
     *  Dependencies are gathered in the
-    [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration) class.
+    :class:`Configuration <youwol.backends.assets.configurations.Configuration>` class.
 """
 
 # relative

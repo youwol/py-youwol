@@ -28,7 +28,7 @@ from youwol.utils.crypto.digest import compute_digest
 
 class BrowserCacheItem(BaseModel):
     """
-    Represents an item in the [BrowserCacheStore](@yw-nav-class:BrowserCacheStore).
+    Represents an item in the :class:`BrowserCacheStore <youwol.app.environment.browser_cache_store.BrowserCacheStore>`.
     """
 
     key: str
@@ -52,7 +52,7 @@ class BrowserCacheItem(BaseModel):
 class BrowserCacheResponse(NamedTuple):
     """
     The response when recovered from the YouWol browser cache using
-    [BrowserCacheStore.try_get](@yw-nav-meth:BrowserCacheStore.try_get).
+    :meth:`BrowserCacheStore.try_get <youwol.app.environment.browser_cache_store.BrowserCacheStore.try_get>`.
     """
 
     response: Response
@@ -69,7 +69,8 @@ class BrowserCacheResponse(NamedTuple):
 class BrowserCacheStore:
     """
     Class responsible for managing the emulated browser cache within YouWol.
-    Configuration settings are inherited from the [BrowserCache](@yw-nav-class:models_config.BrowserCache) class,
+    Configuration settings are inherited from the
+    :class:`BrowserCache <youwol.app.environment.models.models_config.BrowserCache>` class,
     its documentation provides the rationales and overall explanations of this layer.
 
     Caching a resource within this store is an opt-in feature chosen by the backend that initially serves the resource.
@@ -106,13 +107,13 @@ class BrowserCacheStore:
         *  The cache is properly initialized.
         *  The incoming request is a `GET` request and originates directly from the browser.
         *  The response is explicitly marked for caching via the
-           [YouwolHeaders.yw_browser_cache_directive](@yw-nav-attr:YouwolHeaders.yw_browser_cache_directive) header.
+           :attr:`youwol.utils.utils.YouwolHeaders.yw_browser_cache_directive` header.
         *  The `cache-control` header in the response does not include any of `["no-cache", "no-store", "max-age=0"]`,
            but explicitly includes a `max-age` directive.
-        *  the [BrowserCache.ignore](@yw-nav-attr:models_config.BrowserCache.ignore) attribute does not resolve to
-        `True`.
-        *  the [BrowserCache.disable_write](@yw-nav-attr:models_config.BrowserCache.disable_write) attribute does not
-        resolve to `True`.
+        *  the :attr:`BrowserCache.ignore <youwol.app.environment.models.models_config.BrowserCache.ignore>` attribute
+           does not resolve to `True`.
+        *  the :attr:`youwol.app.environment.models.models_config.BrowserCache.disable_write` attribute does not
+           resolve to `True`.
 
         Parameters:
             request: The incoming request.
@@ -184,8 +185,8 @@ class BrowserCacheStore:
         Conditions to succeed:
         *  The cache is properly initialized.
         *  The incoming request is a `GET` request and originates directly from the browser.
-        *  the [BrowserCache.ignore](@yw-nav-attr:models_config.BrowserCache.ignore) attribute does not resolve to
-        `True`.
+        *  the :attr:`BrowserCache.ignore <youwol.app.environment.models.models_config.BrowserCache.ignore>` attribute
+           does not resolve to `True`.
         *  The key computed from the incoming request is associated to an item in the cache.
         *  The file associated to the item does exist on the disk.
         *  The content-length of the file did not change since the original publication.
@@ -268,8 +269,8 @@ class BrowserCacheStore:
 
     def stop(self):
         """
-        Closes the underlying file on disk if [BrowserCache.mode](@yw-nav-attr:models_config.BrowserCache.mode)
-        is `disk`.
+        Closes the underlying file on disk if
+        :attr:`BrowserCache.mode <youwol.app.environment.models.models_config.BrowserCache.mode>` is `disk`.
         """
         if self._output_file:
             log_info("BrowserCacheStore: close file")
@@ -284,7 +285,7 @@ class BrowserCacheStore:
     def output_file_path(self) -> Path:
         """
         Returns the path of the persisted file on disk
-        (if [BrowserCache.mode](@yw-nav-attr:models_config.BrowserCache.mode) is `disk`).
+        (if :attr:`BrowserCache.mode <youwol.app.environment.models.models_config.BrowserCache.mode>` is `disk`).
         """
         return self._output_file_path
 

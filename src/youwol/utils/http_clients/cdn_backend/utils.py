@@ -27,7 +27,7 @@ CDN_MANIFEST_FILE = ".yw_manifest.json"
 
 class CdnFileManifest(TypedDict):
     """
-    Represents file information within a [CdnManifest](@yw-nav-class:CdnManifest)
+    Represents file information within a :class:`CdnManifest <youwol.utils.http_clients.cdn_backend.utils.CdnManifest>`
     """
 
     path: str
@@ -150,7 +150,8 @@ async def resolve_version(
 
     Notes:
     - The function assumes versions may include "-wip" postfixes to denote work-in-progress versions.
-    - The `input_semver` is a slightly extended NPM specification, see [to_std_npm_spec](@yw-nav-func:to_std_npm_spec).
+    - The `input_semver` is a slightly extended NPM specification,
+      see :func:`to_std_npm_spec <youwol.utils.http_clients.cdn_backend.utils.to_std_npm_spec>`.
     """
 
     async with context.start(

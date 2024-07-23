@@ -74,7 +74,7 @@ class GetChildrenDispatch(AbstractLocalCloudDispatch):
 
         Return:
             A modified version of
-            [ChildrenResponse](@yw-nav-class:youwol.utils.http_clients.tree_db_backend.models.ChildrenResponse)
+            :class:`ChildrenResponse <youwol.utils.http_clients.tree_db_backend.models.ChildrenResponse>`
             that include both local and remote children, each child being annotated with an attribute `origin`:
             ```
             "origin": {

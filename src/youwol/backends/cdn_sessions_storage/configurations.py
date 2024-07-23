@@ -28,7 +28,7 @@ class Configuration:
     storage: Storage
     """
     File system client using a bucket defined by this
-    [namespace](@yw-nav-attr:cdn_sessions_storage.configurations.Constants.namespace).
+    :attr:`namespace <youwol.backends.cdn_sessions_storage.configurations.Constants.namespace>`.
     """
 
 

@@ -1,5 +1,5 @@
 """
-Models for the [files](@yw-nav-mod:youwol.backends.files) service.
+Models for the :mod:`files <youwol.backends.files>` service.
 """
 
 # relative

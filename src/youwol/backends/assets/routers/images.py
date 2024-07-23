@@ -52,7 +52,7 @@ async def post_image(
         asset_id: Asset's ID.
         filename: Name of the image.
         file: the image bytes content.
-        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+        configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
     Return:
         The asset description.
@@ -143,7 +143,7 @@ async def remove_image(
         request: Incoming request.
         asset_id: Asset's ID.
         filename: Name of the image.
-        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+        configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
     Return:
         The asset description.
@@ -231,7 +231,7 @@ async def get_media_image(
         request: Incoming request.
         asset_id: Asset's ID.
         name: Name of the image.
-        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+        configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
     Return:
         The image.
@@ -263,7 +263,7 @@ async def get_media_thumbnail(
         request: Incoming request.
         asset_id: Asset's ID.
         name: Name of the image.
-        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.assets.configurations.Configuration).
+        configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
     Return:
         The image.

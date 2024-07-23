@@ -290,7 +290,7 @@ class RunStep(PipelineStep):
     """
     Commands associated to the step:
     *  `get_info` : return the info of associated backend.
-    See [get_info](@yw-nav-meth:youwol.app.environment.proxied_backends.BackendsStore.get_info).
+    See :meth:`get_info <youwol.app.environment.proxied_backends.BackendsStore.get_info>`.
     *  `stop_backend` : stop the backend proxied from the associated project's name & version.
     """
 
@@ -381,7 +381,7 @@ class PackageStep(PipelineStep):
     files.
 
     The source files of the step is provided by
-    [default_packaging_files](@yw-nav-glob:youwol.pipelines.pipeline_python_backend.pipeline.default_packaging_files).
+    :glob:`default_packaging_files <youwol.pipelines.pipeline_python_backend.pipeline.default_packaging_files>`.
     """
 
     id: str = "package"
@@ -438,17 +438,17 @@ async def pipeline(config: PipelineConfig, context: Context):
     Instantiates the pipeline.
 
     It includes the following steps:
-    *  [SetupStep](@yw-nav-class:youwol.pipelines.pipeline_python_backend.pipeline.SetupStep):
+    *  :class:`SetupStep <youwol.pipelines.pipeline_python_backend.pipeline.SetupStep>`:
     Initializes of auto-generated files.
-    *  [DependenciesStep](@yw-nav-class:youwol.pipelines.pipeline_python_backend.pipeline.DependenciesStep):
+    *  :class:`DependenciesStep <youwol.pipelines.pipeline_python_backend.pipeline.DependenciesStep>`:
     Creates & setups a virtual environment.
-    *  [PackageStep](@yw-nav-class:youwol.pipelines.pipeline_python_backend.pipeline.PackageStep):
+    *  :class:`PackageStep <youwol.pipelines.pipeline_python_backend.pipeline.PackageStep>`:
     Packages selected files into a single artifact.
-    *  [PublishCdnLocalStep](@yw-nav-class:youwol.pipelines.publish_cdn.PublishCdnLocalStep):
+    *  :class:`PublishCdnLocalStep <youwol.pipelines.publish_cdn.PublishCdnLocalStep>`:
     Publishes in the local ecosystem the artifact from the `PackageStep`.
-    *  One or more [PublishCdnRemoteStep](@yw-nav-class:youwol.pipelines.publish_cdn.PublishCdnLocalStep):
+    *  One or more :class:`PublishCdnRemoteStep <youwol.pipelines.publish_cdn.PublishCdnLocalStep>`:
     Publishes in remote ecosystem(s) the package from the local ecosystem.
-    *  [RunStep](@yw-nav-class:youwol.pipelines.pipeline_python_backend.pipeline.RunStep):
+    *  :class:`RunStep <youwol.pipelines.pipeline_python_backend.pipeline.RunStep>`:
     Runs the service.
 
     It includes the following flows:

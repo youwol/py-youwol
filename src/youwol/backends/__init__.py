@@ -11,8 +11,8 @@ Communication is supported through HTTP calls, with javascript helpers provided 
 
 For the local YouWol server, all services are exposed directly. However, in the online environment, it is imperative
  to communicate using the `assets-gateway` service (also acting as proxy) for the following services:
-  [tree_db](@yw-nav-mod:youwol.backends.tree_db),
-  [files](@yw-nav-mod:youwol.backends.files),
-  [assets](@yw-nav-mod:youwol.backends.assets), and [cdn](@yw-nav-mod:youwol.backends.cdn).
+  :mod:`tree_db <youwol.backends.tree_db>`,
+  :mod:`files <youwol.backends.files>`,
+  :mod:`assets <youwol.backends.assets>`, and :mod:`cdn <youwol.backends.cdn>`.
 
 """

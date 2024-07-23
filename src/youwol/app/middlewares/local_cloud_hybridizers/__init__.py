@@ -1,14 +1,11 @@
 """
 This module gathers the multiple
-<a href="@yw-nav-class:youwol.app.middlewares.local_cloud_hybridizers.abstract_local_cloud_dispatch.
-AbstractLocalCloudDispatch">AbstractLocalCloudDispatch</a>
+:class:`youwol.app.middlewares.local_cloud_hybridizers.abstract_local_cloud_dispatch.AbstractLocalCloudDispatch`
 used in
-<a href="@yw-nav-class:youwol.app.middlewares.hybridizer_middleware.LocalCloudHybridizerMiddleware">
-LocalCloudHybridizerMiddleware</a>
+:class:`youwol.app.middlewares.hybridizer_middleware.LocalCloudHybridizerMiddleware`
 to accomplish actions (e.g. downloads, queries) requiring
 HTTP calls to the
-<a href="@yw-nav-attr:youwol.app.environment.youwol_environment.YouwolEnvironment.currentConnection">
-YouwolEnvironment.currentConnection</a> (to the remote ecosystem).
+:attr:`youwol.app.environment.youwol_environment.YouwolEnvironment.currentConnection` (the remote ecosystem).
 
 """
 

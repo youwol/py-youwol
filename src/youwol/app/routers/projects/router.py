@@ -68,13 +68,15 @@ flatten = itertools.chain.from_iterable
 )
 async def status(request: Request) -> ProjectsLoadingResults:
     """
-    Return and emit (via the [data web-socket channels](@yw-nav-attr:WebSocketsStore.data)) the current status of
-    loaded projects.
+    Return and emit (via the :attr:`data web-socket channels <youwol.app.web_socket.WebSocketsStore.data>`)
+    the current status of loaded projects.
 
     Note:
-        *  This call **does not** trigger scanning from the [ProjectsFinder](@yw-nav-class:ProjectsFinder) involved
+        *  This call **does not** trigger scanning from the
+        :class:`ProjectsFinder <youwol.app.environment.models.models_project.ProjectsFinder>` involved
         in the configuration. It only notifies about the current projects' loading state.
-        *  See the endpoint [index_projects](@yw-nav-func:projects.router.index_projects) to perform indexation.
+        *  See the endpoint :func:`index_projects <youwol.app.routers.projects.router.index_projects>` to perform
+        indexation.
 
     Parameters:
         request: Incoming request
@@ -97,12 +99,15 @@ async def index_projects(request: Request) -> ProjectsLoadingResults:
     """
     Perform indexation of projects.
 
-    The updated status is returned and sent via the [data web-socket channels](@yw-nav-attr:WebSocketsStore.data).
+    The updated status is returned and sent via the
+    :attr:`data web-socket channels <youwol.app.web_socket.WebSocketsStore.data>`.
 
     Note:
-        *  This call **does** trigger scanning from the [ProjectsFinder](@yw-nav-class:ProjectsFinder) involved
+        *  This call **does** trigger scanning from the
+        :class:`ProjectsFinder <youwol.app.environment.models.models_project.ProjectsFinder>` involved
         in the configuration.
-        *  See the endpoint [status](@yw-nav-func:projects.router.status) to only retrieve the current status.
+        *  See the endpoint :func:`status <youwol.app.routers.projects.router.status>` to only retrieve the
+        current status.
 
     Parameters:
         request: Incoming request
@@ -555,7 +560,7 @@ async def run_pipeline_step(
 ) -> Response:
     """
     Run a step of a pipeline asynchronously. Result of the run will be sent in a future data message using the
-    `data` WebSocket with a [PipelineStepEvent](@yw-nav-class:youwol.app.routers.projects.models.PipelineStepEvent).
+    `data` WebSocket with a :class:`PipelineStepEvent <youwol.app.routers.projects.models.PipelineStepEvent>`.
 
     Parameters:
         request: incoming request
@@ -731,7 +736,7 @@ async def pipeline_step_view(
     ```
 
     In practice, the view often interact with commands defined by the step (usually to retrieve data).
-    See [do_cmd_get_pipeline_step](@yw-nav-func:youwol.app.routers.projects.router.do_cmd_get_pipeline_step).
+    See :func:`do_cmd_get_pipeline_step <youwol.app.routers.projects.router.do_cmd_get_pipeline_step>`.
 
     Parameters:
         request (Starlette.Request): incoming request

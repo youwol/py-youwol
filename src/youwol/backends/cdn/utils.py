@@ -704,9 +704,10 @@ async def resolve_resource(
     """
     This function resolves a resource (library) based on the provided library identifier and semantic versioning range.
     It first converts the input_semver to a standard NPM specification
-    (see [to_std_npm_spec](@yw-nav-func:to_std_npm_spec)), and returns
+    (see :func:`to_std_npm_spec <youwol.utils.http_clients.cdn_backend.utils.to_std_npm_spec>`), and returns
     the package name, semver, and caching max age.
-    See [resolve_caching_max_age](@yw-nav-func:resolve_caching_max_age) regarding caching max age strategy.
+    See :func:`resolve_caching_max_age <youwol.backends.cdn.utils.resolve_caching_max_age>` regarding caching max
+    age strategy.
 
     Parameters:
         library_id: The identifier of the library for which the resource needs to be resolved.

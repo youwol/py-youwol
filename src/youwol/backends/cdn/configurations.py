@@ -18,8 +18,8 @@ from youwol.utils.http_clients.cdn_backend import LIBRARIES_TABLE
 Storage = Union[RemoteStorage, LocalStorage]
 DocDb = Union[RemoteDocDb, LocalDocDb]
 """
-See [LocalDocDb](@yw-nav-class:youwol.utils.clients.docdb.local_docdb.LocalDocDbClient) or
-[RemoteDocDb](@yw-nav-class:youwol.utils.clients.docdb.docdb.DocDbClient).
+See :class:`LocalDocDb <youwol.utils.clients.docdb.local_docdb.LocalDocDbClient>` or
+:class:`RemoteDocDb <youwol.utils.clients.docdb.docdb.DocDbClient>`.
 """
 
 
@@ -42,7 +42,7 @@ class Constants:
 
     schema_docdb = LIBRARIES_TABLE
     """
-    [Schema](@yw-nav-glob:youwol.utils.http_clients.cdn_backend.models.LIBRARIES_TABLE) of the no-sql database.
+    :glob:`Schema <youwol.utils.http_clients.cdn_backend.models.LIBRARIES_TABLE>` of the no-sql database.
     """
 
 
@@ -55,13 +55,13 @@ class Configuration:
     file_system: FileSystemInterface
     """
     File system client using a bucket defined by this
-    [namespace](@yw-nav-attr:youwol.backends.cdn.configurations.Constants.namespace).
+    :attr:`namespace <youwol.backends.cdn.configurations.Constants.namespace>`.
     """
 
     doc_db: DocDb
     """
-    NoSql client for this [table](@yw-nav-glob:youwol.utils.http_clients.cdn_backend.models.LIBRARIES_TABLE)
-    included in this [namespace](@yw-nav-attr:youwol.backends.cdn.configurations.Constants.namespace).
+    NoSql client for this :glob:`table <youwol.utils.http_clients.cdn_backend.models.LIBRARIES_TABLE>`
+    included in this :attr:`namespace <youwol.backends.cdn.configurations.Constants.namespace>`.
     """
 
 

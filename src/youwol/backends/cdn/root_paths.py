@@ -89,9 +89,10 @@ async def publish_library(
         * `package.json` is a valid JSON file, including the fields:
            * 'name': the package name, also UID.
            * 'version': the package version, it needs to follow [semantic versioning](https://semver.org/).
-           Pre-releases allowed are defined [here](@yw-nav-class:youwol.backends.cdn.configurations.Constants).
+           Pre-releases allowed are defined :class:`here <youwol.backends.cdn.configurations.Constants>`.
            * 'main': the path of the main entry point, with respect to the **reference path**.
-        * a `.yw_manifest.json` file available in the **reference path**. See [CdnManifest](@yw-nav-class:CdnManifest).
+        * a `.yw_manifest.json` file available in the **reference path**.
+          See :class:`CdnManifest <youwol.utils.http_clients.cdn_backend.utils.CdnManifest>`.
 
     Parameters:
         request: Incoming request.

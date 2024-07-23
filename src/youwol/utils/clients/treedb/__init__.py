@@ -1,3 +1,3 @@
 """
-HTTP client & related for the [tree_db](@yw-nav-mod:youwol.backends.tree_db) service.
+HTTP client & related for the :mod:`tree_db <youwol.backends.tree_db>` service.
 """

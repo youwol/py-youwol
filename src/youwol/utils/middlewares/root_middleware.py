@@ -21,8 +21,8 @@ class RootMiddleware(BaseHTTPMiddleware):
     """
     The first Middleware intercepting the request.
 
-    Its purpose is mostly to set up the initial [context](@yw-nav-class:Context),
-    from the method [get_context](@yw-nav-meth:RootMiddleware.get_context)
+    Its purpose is mostly to set up the initial :class:`context <youwol.utils.context.context.Context>`,
+    from the method :meth:`get_context <youwol.utils.middlewares.root_middleware.RootMiddleware.get_context>`
 
     The context created here is then propagated through the middlewares stack up to the end-point destination.
     """
@@ -44,9 +44,9 @@ class RootMiddleware(BaseHTTPMiddleware):
 
         Parameters:
             app: The FastAPI application
-            logs_reporter: The initial [logs reporter](@yw-nav-attr:youwol.utils.context.Context.logs_reporters)
+            logs_reporter: The initial :attr:`logs reporter <youwol.utils.context.context.Context.logs_reporters>`
                 used by the context created at incoming request and propagated up to the target end-point.
-            data_reporter: The initial [data reporter](@yw-nav-attr:youwol.utils.context.Context.data_reporters)
+            data_reporter: The initial :attr:`data reporter <youwol.utils.context.context.Context.data_reporters>`
                 used by the context created at incoming request and propagated up to the target end-point.
             dispatch: Optional, forwarded to the parent starlette's `BaseHTTPMiddleware`.
 
@@ -59,11 +59,11 @@ class RootMiddleware(BaseHTTPMiddleware):
         """
         Set up the initial context:
             *  retrieve eventual `trace_id` and `correlation_id` from the incoming request's headers to set
-            the  [context.trace_uid](@yw-nav-attr:youwol.utils.context.Context.trace_uid) and
-             [context.parent_uid](@yw-nav-attr:youwol.utils.context.Context.parent_uid) respectively.
-             See [YouwolHeaders.get_trace_id](@yw-nav-meth:youwol.utils.utils.YouwolHeaders.get_trace_id) and
-            [YouwolHeaders.get_correlation_id](@yw-nav-meth:youwol.utils.utils.YouwolHeaders.get_correlation_id).
-            *  set up the [ContextReporter](@yw-nav-class:youwol.utils.context.ContextReporter) for both logs and data.
+            the  :attr:`context.trace_uid <youwol.utils.context.context.Context.trace_uid>` and
+             :attr:`context.parent_uid <youwol.utils.context.context.Context.parent_uid>` respectively.
+             See :meth:`YouwolHeaders.get_trace_id <youwol.utils.utils.YouwolHeaders.get_trace_id>` and
+            :meth:`YouwolHeaders.get_correlation_id <youwol.utils.utils.YouwolHeaders.get_correlation_id>`.
+            *  set up the :class:`ContextReporter <youwol.utils.context.models.ContextReporter>` for both logs and data.
 
         Parameters:
             request: incoming request

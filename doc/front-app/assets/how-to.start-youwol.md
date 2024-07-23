@@ -1,7 +1,7 @@
 # Start YouWol
 
 The full list of command line options to start youwol is described in
-[MainArguments](@nav/references/youwol/app.main_args.MainArguments), it can also be displayed using `youwol -help`.
+[MainArguments](@nav/api/app.main_args.MainArguments), it can also be displayed using `youwol -help`.
 
 The most important parameter is `--conf`: it defines the server's configuration file.
 When starting youwol, it searches for the configuration file in the following order:
@@ -15,7 +15,7 @@ When starting youwol, it searches for the configuration file in the following or
 
 The configuration file is a python file that either:
 
-- yields a [Configuration](@nav/references/youwol/app/environment/models.models_config.Configuration) as last statement:
+- yields a [Configuration](@nav/api/app/environment/models.models_config.Configuration) as last statement:
 
 ```python
 from youwol.app.environment import Configuration
@@ -24,7 +24,7 @@ Configuration()
 ```
 
 - defines a `ConfigurationFactory` class implementing
-  [IConfigurationFactory](@nav/references/youwol/app/environment.config_from_module.IConfigurationFactory):
+  [IConfigurationFactory](@nav/api/app/environment.config_from_module.IConfigurationFactory):
 
 ```python
 from youwol.app.environment import Configuration, IConfigurationFactory

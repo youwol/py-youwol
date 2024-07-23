@@ -1,22 +1,20 @@
 # standard library
 import asyncio
 import json
+import os
 import pprint
 import shutil
 import subprocess
 
 from collections.abc import Iterable
 from pathlib import Path
+from typing import cast
 
 # Youwol
 import youwol
 
 # Youwol Surrogate for next versions of Python
 from youwol.utils.python_next.v3_12 import tomllib
-
-# Youwol application
-from youwol.app.routers.system.documentation import get_doc_implementation
-from youwol.app.routers.system.documentation_models import DocReporter
 
 # Youwol utilities
 from youwol.utils import (
@@ -55,7 +53,7 @@ with open(pkg_json_path, "w", encoding="UTF-8") as fp:
 print(f"-  package's version synchronized to: {yw_doc_version()}")
 
 externals_deps = {
-    "@youwol/mkdocs-ts": "^0.3.2",
+    "@youwol/mkdocs-ts": "^0.5.5",
     "@youwol/rx-vdom": "^1.0.1",
     "@youwol/webpm-client": "^3.0.0",
     "rxjs": "^7.5.6",
@@ -173,22 +171,63 @@ print_git_status()
 Below is the generation of the documentation responses of the various py-youwol modules.
 """
 
-write_folder = Path(__file__).parent / "assets" / "api"
-shutil.rmtree(write_folder, ignore_errors=True)
-write_folder.mkdir(exist_ok=True)
+try:
+    from mkdocs_py_griffe import generate_api, Configuration, std_links
+    import griffe
+    print("Generate Python API files")
 
+    DST = Path(__file__).parent / 'assets' / 'api'
 
-async def execute(path: str):
-    doc = await get_doc_implementation(module_path=path)
-    filepath = (write_folder / path).with_suffix(".json")
-    filepath.parent.mkdir(exist_ok=True)
-    write_json(doc.dict(), filepath)
-    await asyncio.gather(
-        *[execute(m.path.replace(".", "/")) for m in doc.childrenModules]
+    config = Configuration(
+        base_nav="/api",
+        external_links={
+            **std_links(),
+            'aiohttp': 'https://docs.aiohttp.org/en/stable/client_reference.html',
+            'aiohttp.ClientResponse':
+                'https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientResponse',
+            'aiohttp.ClientSession':
+                'https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientSession',
+            'aiohttp.FormData':
+                'https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.FormData',
+            'aiohttp.TCPConnector':
+                'https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.TCPConnector',
+            'aiohttp.web_request.Request':
+                'https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.web.Request',
+            'fastapi.APIRouter': 'https://fastapi.tiangolo.com/reference/apirouter/',
+            'fastapi.Depends': 'https://fastapi.tiangolo.com/tutorial/dependencies/',
+            'fastapi.FastAPI': '',
+            'fastapi.File': 'https://fastapi.tiangolo.com/tutorial/request-files/',
+            'fastapi.HTTPException':
+                'https://fastapi.tiangolo.com/reference/exceptions/',
+            'fastapi.Query': 'https://fastapi.tiangolo.com/tutorial/query-params/',
+            'fastapi.Request':
+                'https://fastapi.tiangolo.com/advanced/using-request-directly/',
+            'fastapi.UploadFile': 'https://fastapi.tiangolo.com/reference/uploadfile/',
+            'fastapi.responses.FileResponse':
+                'https://fastapi.tiangolo.com/advanced/custom-response/#fileresponse',
+            'starlette.middleware.base.BaseHTTPMiddleware':
+                'https://www.starlette.io/middleware/#basehttpmiddleware',
+            'starlette.middleware.base.DispatchFunction':
+                'https://www.starlette.io/middleware/#basehttpmiddleware',
+            'starlette.middleware.base.RequestResponseEndpoint':
+                'https://www.starlette.io/middleware/#basehttpmiddleware',
+            'starlette.requests.Request': 'https://www.starlette.io/requests/',
+            'starlette.responses.FileResponse':
+                'https://www.starlette.io/responses/#fileresponse',
+            'starlette.responses.JSONResponse':
+                'https://www.starlette.io/responses/#jsonresponse',
+            'starlette.responses.Response':
+                'https://www.starlette.io/responses/#response',
+            'starlette.types.ASGIApp':
+                'https://github.com/encode/starlette/blob/master/starlette/types.py',
+            'starlette.websockets.WebSocket': 'https://www.starlette.io/websockets/',
+            'pydantic.BaseModel':'https://docs.pydantic.dev/latest/api/base_model/'
+        },
+        out=DST
     )
-    print(f"Doc created for {path}")
-    if path == "youwol":
-        pprint.pprint(DocReporter.errors)
+    global_doc = cast(griffe.Module, griffe.load("youwol", submodules=True))
+    generate_api(global_doc, config)
+except ModuleNotFoundError:
+    print("mkdocs_py_griffe not available: API documentation files not generated.")
 
 
-asyncio.run(execute("youwol"))

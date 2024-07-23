@@ -130,7 +130,7 @@ class Package(BaseModel):
     Represents the 'packages' in the 'pyodide-lock.json' file.
     See *e.g.* <a href="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide-lock.json" target="_blank>here</a>.
 
-    It is part of the definition of [StatusResponse](@yw-nav-class:python.router.StatusResponse).
+    It is part of the definition of :class:`StatusResponse <youwol.app.routers.python.router.StatusResponse>`.
     """
 
     name: str
@@ -156,7 +156,7 @@ class PyodideInfo(BaseModel):
     Represents the 'info' in the 'pyodide-lock.json' file.
     See *e.g.* <a href="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide-lock.json" target="_blank>here</a>.
 
-    It is part of the definition of [StatusResponse](@yw-nav-class:python.router.StatusResponse).
+    It is part of the definition of :class:`StatusResponse <youwol.app.routers.python.router.StatusResponse>`.
     """
 
     arch: str
@@ -182,7 +182,7 @@ class Runtime(BaseModel):
     Represents the structure of the 'pyodide-lock.json' file.
     See *e.g.* <a href="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide-lock.json" target="_blank>here</a>.
 
-    It is part of the definition of [StatusResponse](@yw-nav-class:python.router.StatusResponse).
+    It is part of the definition of :class:`StatusResponse <youwol.app.routers.python.router.StatusResponse>`.
     """
 
     info: PyodideInfo
@@ -221,7 +221,7 @@ class Runtime(BaseModel):
 
 class StatusResponse(BaseModel):
     """
-    Python environment status, as returned by the endpoint [status](@yw-nav-func:python.router.status).
+    Python environment status, as returned by the endpoint :func:`status <youwol.app.routers.python.router.status>`.
     """
 
     runtimes: list[Runtime]
@@ -482,7 +482,7 @@ async def package_info(request: Request, name: str) -> JSONResponse:
 
     This endpoint fetches information about a Python package from the Python Package Index (PyPI).
     The fetched information includes details about the package and its files, the files' URL are patched to be
-    intercepted by latter call to [get_pypi_file](@yw-nav-func:python.router.get_pypi_file).
+    intercepted by latter call to :func:`get_pypi_file <youwol.app.routers.python.router.get_pypi_file>`.
 
     Parameters:
         request: Incoming request.
@@ -523,7 +523,7 @@ async def package_info(request: Request, name: str) -> JSONResponse:
 async def get_pyodide_file(request: Request, version: str, rest_of_path: str):
     """
     Intercepts `GET` request to a pyodide file, forward it to
-    [FILES_PYODIDE_HOSTED](@yw-nav-glob:python.router.FILES_PYODIDE_HOSTED) and eventually persist it in
+    :glob:`FILES_PYODIDE_HOSTED <youwol.app.routers.python.router.FILES_PYODIDE_HOSTED>` and eventually persist it in
     the component's database.
 
     Parameters:
@@ -549,12 +549,13 @@ async def get_pyodide_file(request: Request, version: str, rest_of_path: str):
 async def get_pypi_file(request: Request, rest_of_path: str):
     """
     Intercepts `GET` request to a pypi file, forward it to
-    [FILES_PYPI_HOSTED](@yw-nav-glob:python.router.FILES_PYPI_HOSTED) and eventually persist it in
+    :glob:`FILES_PYPI_HOSTED <youwol.app.routers.python.router.FILES_PYPI_HOSTED>` and eventually persist it in
     the component's database.
 
     Parameters:
         request: Incoming request.
-        rest_of_path: The path within the [FILES_PYPI_HOSTED](@yw-nav-glob:python.router.FILES_PYPI_HOSTED) server.
+        rest_of_path: The path within the
+            :glob:`FILES_PYPI_HOSTED <youwol.app.routers.python.router.FILES_PYPI_HOSTED>` server.
 
     Return:
         The resource.

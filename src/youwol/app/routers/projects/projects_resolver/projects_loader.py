@@ -43,20 +43,14 @@ class FailuresReport(BaseModel):
 
     directoriesNotFound: list[FailureDirectoryNotFound] = []
     """
-    *List[[FailureDirectoryNotFound](@yw-nav-class:youwol.app.routers.projects.models.FailureDirectoryNotFound)]*
-
     Failure because of a directory not found.
     """
     pipelinesNotFound: list[FailurePipelineNotFound] = []
     """
-    *List[[FailurePipelineNotFound](@yw-nav-class:youwol.app.routers.projects.models.FailurePipelineNotFound)]*
-
     Failure because of a `yw_pipeline.py` file not found.
     """
     importExceptions: list[FailureImportException] = []
     """
-    *List[[FailureImportException](@yw-nav-class:youwol.app.routers.projects.models.FailureImportException)]*
-
     Failure because of an exception while parsing `yw_pipeline.py`.
     """
 
@@ -68,13 +62,13 @@ class ProjectsLoadingResults(BaseModel):
 
     results: list[Project]
     """
-    *List[[Project](@yw-nav-class:youwol.app.routers.projects.models_project.Project)]*
+    *List:class:`[Project <youwol.app.routers.projects.models_project.Project>`]*
 
     The list of projects that loaded successfully.
     """
     failures: FailuresReport
     """
-    *List[[FailuresReport](@yw-nav-class:FailuresReport)]*
+    *List:class:`[FailuresReport <youwol.app.routers.projects.projects_resolver.projects_loader.FailuresReport>`]*
 
     The list of projects that did not loaded successfully.
     """
@@ -83,7 +77,8 @@ class ProjectsLoadingResults(BaseModel):
 class ProjectLoader:
     """
     Manages loading and synchronization of projects within the Youwol environment from multiple
-    [ProjectsFinderImpl](@yw-nav-class:ProjectsFinderImpl) defined from [ProjectsFinder](@yw-nav-class:ProjectsFinder)
+    :class:`youwol.app.routers.projects.projects_resolver.projects_finder_handlers.ProjectsFinderImpl`
+    defined from :class:`ProjectsFinder <youwol.app.environment.models.models_project.ProjectsFinder>`
     models from the configuration.
 
     This class is responsible for loading, updating, and synchronizing projects based on changes detected in
@@ -125,13 +120,16 @@ class ProjectLoader:
     ) -> None:
         """
         Synchronizes projects based on the provided update information. This function is called by
-        [ProjectsFinderImpl](@yw-nav-class:ProjectsFinderImpl) when updates in the HD filesystem involving projects
+        :class:`youwol.app.routers.projects.projects_resolver.projects_finder_handlers.ProjectsFinderImpl`
+        when updates in the HD filesystem involving projects
         have been caught.
 
         Parameters:
             update: (i) a string indicating the name of the
-                [ProjectsFinder](@yw-nav-class:models.ProjectsFinder) that discovered  the updates, (ii) a list of
-                `Path` objects representing the projects that were added, and (iii) a list of `Path` objects
+                :class:`ProjectsFinder <youwol.app.environment.models.models_project.ProjectsFinder>` that discovered
+                 the updates,
+                 (ii) a list of `Path` objects representing the projects that were added,
+                  and (iii) a list of `Path` objects
                 representing the projects that were removed.
             env: Current environment.
         """
@@ -217,7 +215,9 @@ class ProjectLoader:
     async def refresh(context: Context) -> ProjectsLoadingResults:
         """
         Explicit refresh of the project loader, updating the project list based on the current environment.
-        The multiple [ProjectsFinderImpl](@yw-nav-class:ProjectsFinderImpl) are triggered to re-index projects.
+        The multiple
+        :class:`youwol.app.routers.projects.projects_resolver.projects_finder_handlers.ProjectsFinderImpl`
+        are triggered to re-index projects.
 
         Parameters:
             context: Current context.
@@ -238,7 +238,9 @@ class ProjectLoader:
     @staticmethod
     def stop():
         """
-        Stops the multiple activated [ProjectsWatcher thread](@yw-nav-class:ProjectsWatcher) owned by this class.
+        Stops the multiple activated
+        :class:`youwol.app.routers.projects.projects_resolver.projects_finder_handlers.ProjectsWatcher`
+        owned by this class.
         """
         if ProjectLoader.handler:
             ProjectLoader.handler.release()

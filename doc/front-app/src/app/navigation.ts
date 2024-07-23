@@ -1,8 +1,7 @@
-import { fromMarkdown, Views } from '@youwol/mkdocs-ts'
+import { fromMarkdown, installCodeApiModule, Views } from '@youwol/mkdocs-ts'
 import { setup } from '../auto-generated'
 import { youwolInfo } from '../auto-generated-toml'
 import { formatPythonVersions } from './utils'
-import { pyDocNav } from './py-doc'
 
 const tableOfContent = Views.tocView
 function fromMd({
@@ -18,8 +17,23 @@ function fromMd({
     })
 }
 
+const CodeApiModule = await installCodeApiModule()
+
+const configuration = {
+    ...CodeApiModule.configurationPython,
+    codeUrl: ({ path, startLine }: { path: string; startLine: number }) => {
+        const baseUrl = 'https://github.com/youwol/py-youwol/tree'
+        const target = setup.version.endsWith('-wip')
+            ? 'main'
+            : `v${setup.version}`
+        return `${baseUrl}/${target}/src/youwol/${path}#L${startLine}`
+    },
+}
 export const navigation = {
-    name: 'YouWol',
+    name: 'Py-YouWol',
+    decoration: {
+        icon: { tag: 'div' as const, class: 'fas fa-home mr-2' },
+    },
     tableOfContent,
     html: fromMd({
         file: 'index.md',
@@ -28,23 +42,11 @@ export const navigation = {
             '{PYTHON_RECOMMENDED}': youwolInfo.pythons.slice(-1)[0],
         },
     }),
-    '/tutorials': {
-        name: 'Tutorials',
-        tableOfContent,
-        html: fromMd({ file: 'tutorials.md' }),
-        // '/dyn-deps': {
-        //     name: 'Dynamic dependencies',
-        //     tableOfContent,
-        //     html: fromMd({ file: 'tutorials.dynamic-dependencies.md' }),
-        // },
-        // '/raw-app': {
-        //     name: "Publish a 'raw' app.",
-        //     tableOfContent,
-        //     html: fromMd({ file: 'tutorials.publish-raw-app.md' }),
-        // },
-    },
     '/how-to': {
-        name: 'How-To Guides',
+        name: 'How-To',
+        decoration: {
+            icon: { tag: 'div' as const, class: 'fas fa-list-ul mr-2' },
+        },
         tableOfContent,
         html: fromMd({ file: 'how-to.md' }),
         '/install-youwol': {
@@ -63,19 +65,20 @@ export const navigation = {
             html: fromMd({ file: 'how-to.start-youwol.md' }),
         },
     },
-    '/gallery': {
-        name: 'Gallery',
-        tableOfContent,
-        html: fromMd({ file: 'gallery.md' }),
-    },
-    '/references': {
-        name: 'References',
-        tableOfContent,
-        html: fromMd({ file: 'references.md' }),
-        '/youwol': pyDocNav('static'),
-    },
+    '/api': CodeApiModule.codeApiEntryNode({
+        name: 'API',
+        decoration: {
+            icon: { tag: 'div', class: 'fas fa-code mr-2' },
+        },
+        entryModule: 'youwol',
+        docBasePath: '../assets/api',
+        configuration: configuration,
+    }),
     '/change-log': {
         name: 'Change Log',
+        decoration: {
+            icon: { tag: 'div' as const, class: 'fas fa-bookmark mr-2' },
+        },
         tableOfContent,
         html: fromMd({ file: 'CHANGELOG.md' }),
     },

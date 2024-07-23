@@ -66,54 +66,56 @@ flatten = itertools.chain.from_iterable
 
 class YouwolEnvironmentResponse(BaseModel):
     """
-    Response model corresponding to [YouwolEnvironment](@yw-nav-class:YouwolEnvironment).
+    Response model corresponding to
+    :class:`YouwolEnvironment <youwol.app.environment.youwol_environment.YouwolEnvironment>`.
     """
 
     httpPort: int
     """
     Serving port,
-    see [YouwolEnvironment.httpPort](@yw-nav-attr:YouwolEnvironment.httPort).
+    see :attr:`youwol.app.environment.youwol_environment.YouwolEnvironment.httpPort`.
     """
     customMiddlewares: list[dict[str, Any]]
     """
     Custom middlewares,
-    see [YouwolEnvironment.customMiddlewares](@yw-nav-attr:YouwolEnvironment.customMiddlewares).
+    see :attr:`youwol.app.environment.youwol_environment.YouwolEnvironment.customMiddlewares`.
     """
     projects: ProjectsResolver
     """
     Projects resolver,
-    see [YouwolEnvironment.projects](@yw-nav-attr:YouwolEnvironment.projects).
+    see :attr:`youwol.app.environment.youwol_environment.YouwolEnvironment.projects`.
     """
     commands: dict[str, Command]
     """
     Commands list,
-    see [YouwolEnvironment.commands](@yw-nav-attr:YouwolEnvironment.commands).
+    see :attr:`youwol.app.environment.youwol_environment.YouwolEnvironment.commands`.
     """
     currentConnection: Connection
     """
     Current connection,
-    see [YouwolEnvironment.currentConnection](@yw-nav-attr:YouwolEnvironment.currentConnection).
+    see :attr:`youwol.app.environment.youwol_environment.YouwolEnvironment.currentConnection`.
     """
     pathsBook: PathsBook
     """
     List of predefined paths related to the configuration,
-    see [YouwolEnvironment.pathsBook](@yw-nav-attr:YouwolEnvironment.pathsBook).
+    see :attr:`youwol.app.environment.youwol_environment.YouwolEnvironment.pathsBook`.
     """
     proxiedBackends: list[ProxyInfo]
     """
     List of proxied backends,
-    see [YouwolEnvironment.proxiedBackends](@yw-nav-attr:YouwolEnvironment.proxiedBackends).
+    see :attr:`youwol.app.environment.youwol_environment.YouwolEnvironment.proxied_backends`.
     """
     remotes: list[CloudEnvironmentResponse]
     """
     List of available remotes environment,
-    see [YouwolEnvironment.remotes](@yw-nav-attr:YouwolEnvironment.remotes).
+    see :attr:`youwol.app.environment.youwol_environment.YouwolEnvironment.remotes`.
     """
 
     @staticmethod
     def from_yw_environment(yw_env: YouwolEnvironment):
         """
-        Converter from [YouwolEnvironment](@yw-nav-class:YouwolEnvironment) instance.
+        Converter from
+        :class:`YouwolEnvironment <youwol.app.environment.youwol_environment.YouwolEnvironment>` instance.
 
         Parameters:
             yw_env: Instance to serialize.
@@ -170,12 +172,13 @@ class YouwolEnvironmentResponse(BaseModel):
 
 class EnvironmentStatusResponse(BaseModel):
     """
-    Response when calling [`/admin/environment/status`](@yw-nav-func:environment.router.status).
+    Response when calling :func:`/admin/environment/status <youwol.app.routers.environment.router.status>`.
     """
 
     configuration: YouwolEnvironmentResponse
     """
-    Deprecated, use attribute [youwolEnvironment](@yw-nav-attr:EnvironmentStatusResponse.youwolEnvironment).
+    Deprecated, use attribute
+    :attr:`youwolEnvironment <youwol.app.routers.environment.router.EnvironmentStatusResponse.youwolEnvironment>`.
 
     Warning:
         Deprecated in 0.1.9
@@ -183,14 +186,15 @@ class EnvironmentStatusResponse(BaseModel):
 
     youwolEnvironment: YouwolEnvironmentResponse
     """
-    Serialization of [YouwolEnvironment](@yw-nav-class:YouwolEnvironment), it essentially reflects the provided
-    [Configuration](@yw-nav-class:models_config.Configuration).
+    Serialization of :class:`YouwolEnvironment <youwol.app.environment.youwol_environment.YouwolEnvironment>`,
+    it essentially reflects the provided
+    :class:`Configuration <youwol.app.environment.models.models_config.Configuration>`.
     """
 
     users: list[str]
     """
     Deprecated, user information can be retrieved from attribute
-     [youwolEnvironment](@yw-nav-attr:EnvironmentStatusResponse.youwolEnvironment).
+     :attr:`youwolEnvironment <youwol.app.routers.environment.router.EnvironmentStatusResponse.youwolEnvironment>`.
 
     Warning:
         Deprecated in 0.1.9
@@ -199,7 +203,7 @@ class EnvironmentStatusResponse(BaseModel):
     userInfo: UserInfo
     """
     Deprecated, user information should be retrieved from attribute
-     [youwolEnvironment](@yw-nav-attr:EnvironmentStatusResponse.youwolEnvironment).
+     :attr:`youwolEnvironment <youwol.app.routers.environment.router.EnvironmentStatusResponse.youwolEnvironment>`.
 
     Warning:
         Deprecated in 0.1.9
@@ -208,7 +212,7 @@ class EnvironmentStatusResponse(BaseModel):
     remoteGatewayInfo: CloudEnvironmentResponse | None
     """
     Deprecated, remotes information should be retrieved from attribute
-     [youwolEnvironment](@yw-nav-attr:EnvironmentStatusResponse.youwolEnvironment).
+     :attr:`youwolEnvironment <youwol.app.routers.environment.router.EnvironmentStatusResponse.youwolEnvironment>`.
 
     Warning:
         Deprecated in 0.1.9
@@ -217,7 +221,7 @@ class EnvironmentStatusResponse(BaseModel):
     remotesInfo: list[CloudEnvironmentResponse]
     """
     Deprecated, remotes information should be retrieved from attribute
-     [youwolEnvironment](@yw-nav-attr:EnvironmentStatusResponse.youwolEnvironment).
+     :attr:`youwolEnvironment <youwol.app.routers.environment.router.EnvironmentStatusResponse.youwolEnvironment>`.
 
     Warning:
         Deprecated in 0.1.9
@@ -341,10 +345,12 @@ async def switch_configuration(
           youwol's python environment) can be referenced.
           *  The new configuration is not able to change the serving HTTP port of youwol.
           *  Switch involving change in remote host using
-           [browser based authentication](@yw-nav-class:model_remote.BrowserAuth) may not necessarily work. To function,
+           :class:`browser based authentication <youwol.app.environment.models.model_remote.BrowserAuth>`
+           may not necessarily work. To function,
            a session ID corresponding to the new targeted host should be available in the
-           [TokensStorage](@yw-nav-class:TokensStorage).
-          *  [Custom Middlewares](@yw-nav-class:models_config.CustomMiddleware) changes are not effective.
+           :class:`TokensStorage <youwol.utils.clients.oidc.tokens_manager.TokensStorage>`.
+          *  :class:`Custom Middlewares <youwol.app.environment.models.models_config.CustomMiddleware>`
+          changes are not effective.
 
     Parameters:
         request: Incoming request.
@@ -383,8 +389,8 @@ async def switch_configuration(
 
 async def emit_environment_status(context: Context) -> EnvironmentStatusResponse:
     """
-    Emit the current [environment](@yw-nav-class:EnvironmentStatusResponse) via the
-    [data web-socket channels](@yw-nav-attr:WebSocketsStore.data).
+    Emit the current :class:`environment <youwol.app.routers.environment.router.EnvironmentStatusResponse>` via the
+    :attr:`data web-socket channels <youwol.app.web_socket.WebSocketsStore.data>`.
 
     Parameters:
         context: Current context.
@@ -437,7 +443,8 @@ async def emit_environment_status(context: Context) -> EnvironmentStatusResponse
 @router.get("/status", summary="status")
 async def status(request: Request) -> EnvironmentStatusResponse:
     """
-    Return  the current environment and emit it using the [data web-socket channels](@yw-nav-attr:WebSocketsStore.data).
+    Return  the current environment and emit it using the
+    :attr:`data web-socket channels <youwol.app.web_socket.WebSocketsStore.data>`.
 
     Parameters:
         request: Incoming request.
@@ -489,7 +496,8 @@ async def custom_dispatches(
 async def login(request: Request, body: LoginBody) -> UserInfo:
     """
     Login to a particular environment using a specific authentication mode (referenced
-    from the configuration's models [CloudEnvironment](@yw-nav-class:CloudEnvironment)).
+    from the configuration's models
+    :class:`CloudEnvironment <youwol.app.environment.models.model_remote.CloudEnvironment>`).
 
     Parameters:
         request: Incoming request.
@@ -562,7 +570,7 @@ async def browser_cache_status(
     request: Request, env: YouwolEnvironment = Depends(yw_config)
 ) -> BrowserCacheStatusResponse:
     """
-    Retrieves status of the [BrowserCacheStore](@yw-nav-class:BrowserCacheStore).
+    Retrieves status of the :class:`BrowserCacheStore <youwol.app.environment.browser_cache_store.BrowserCacheStore>`.
 
     Parameters:
         request: Incoming request.
@@ -593,7 +601,7 @@ async def clear_browser_cache(
     env: YouwolEnvironment = Depends(yw_config),
 ) -> ClearBrowserCacheResponse:
     """
-    Clear the [BrowserCacheStore](@yw-nav-class:BrowserCacheStore).
+    Clear the :class:`BrowserCacheStore <youwol.app.environment.browser_cache_store.BrowserCacheStore>`.
 
     Parameters:
         request: Incoming request.

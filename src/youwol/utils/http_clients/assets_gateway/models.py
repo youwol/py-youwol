@@ -62,7 +62,7 @@ class AssetWithPermissionResponse(AssetResponse):
 class NewAssetResponse(AssetResponse):
     """
     Asset description when creating an asset using
-    [create_asset](@yw-nav-func:youwol.backends.assets_gateway.routers.assets_backend.create_asset)
+    :func:`create_asset <youwol.backends.assets_gateway.routers.assets_backend.create_asset>`
     """
 
     itemId: str

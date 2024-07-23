@@ -76,7 +76,7 @@ class Link(BaseModel):
 
 class Artifact(BaseModel):
     """
-    Artifact of a [PipelineStep](@yw-nav-class:youwol.app.routers.projects.models_project.PipelineStep).
+    Artifact of a :class:`PipelineStep <youwol.app.routers.projects.models_project.PipelineStep>`.
     """
 
     id: str = ""
@@ -151,7 +151,11 @@ class Manifest(BaseModel):
 
 
 class ExplicitNone(BaseModel):
-    pass
+    """
+    Used to explicitely mark the `run` attribute of a
+    :class:`PipelineStep <youwol.app.routers.projects.models_project.PipelineStep>` as `None`.
+    It means that a function `executeRun` is provided instead.
+    """
 
 
 StatusFct = Callable[
@@ -161,6 +165,10 @@ StatusFct = Callable[
 RunImplicit = Callable[
     ["PipelineStep", "Project", FlowId, Context], Union[str, Awaitable[str]]
 ]
+"""
+Type alias used in :attr:`PipelineStep.run <youwol.app.routers.projects.models_project.PipelineStep.run>`
+"""
+
 SourcesFct = Callable[
     ["PipelineStep", "Project", FlowId, Context], Union[Any, Awaitable[Any]]
 ]
@@ -177,7 +185,7 @@ SourcesFctExplicit = Callable[
 class CommandPipelineStep(BaseModel):
     """
     A command associated to an HTTP end-point for a
-    [PipelineStep](@yw-nav-class:youwol.app.routers.projects.models_project.PipelineStep).
+    :class:`PipelineStep <youwol.app.routers.projects.models_project.PipelineStep>`.
 
     They can be triggered using the URL:
     `GET/POST/PUT/DELETE: /admin/projects/{project_id}/flows/{flow_id}/steps/{step_id}/commands/{command_id}`
@@ -194,9 +202,9 @@ class CommandPipelineStep(BaseModel):
 
     Arguments of the callable:
 
-        *  Project : reference on the [Project](@yw-nav-class:youwol.app.routers.projects.models_project.Project)
+        *  Project : reference on the :class:`Project <youwol.app.routers.projects.models_project.Project>`
         *  str : flow ID
-        *  Context : current execution [Context](@yw-nav-class:Context)]
+        *  Context : current execution :class:`Context <youwol.utils.context.context.Context>`]
     """
 
     do_post: None | (
@@ -207,10 +215,10 @@ class CommandPipelineStep(BaseModel):
 
     Arguments of the callable:
 
-        *  Project : reference on the [Project](@yw-nav-class:youwol.app.routers.projects.models_project.Project)
+        *  Project : reference on the :class:`Project <youwol.app.routers.projects.models_project.Project>`
         *  str : flow ID
         *  JSON : body of the POST
-        *  Context : current execution [Context](@yw-nav-class:Context)]
+        *  Context : current execution :class:`Context <youwol.utils.context.context.Context>`]
     """
 
     do_put: None | (
@@ -221,10 +229,10 @@ class CommandPipelineStep(BaseModel):
 
     Arguments of the callable:
 
-        *  Project : reference on the [Project](@yw-nav-class:youwol.app.routers.projects.models_project.Project)
+        *  Project : reference on the :class:`Project <youwol.app.routers.projects.models_project.Project>`
         *  str : flow ID
         *  JSON : body of the PUT
-        *  Context : current execution [Context](@yw-nav-class:Context)
+        *  Context : current execution :class:`Context <youwol.utils.context.context.Context>`
     """
 
     do_delete: None | (Callable[["Project", str, Context], Awaitable[JSON] | JSON]) = (
@@ -234,9 +242,9 @@ class CommandPipelineStep(BaseModel):
     Declare a `DELETE` end-point.
 
     Arguments of the callable:
-        *  Project : reference on the [Project](@yw-nav-class:youwol.app.routers.projects.models_project.Project)
+        *  Project : reference on the :class:`Project <youwol.app.routers.projects.models_project.Project>`
         *  str : flow ID
-        *  Context : current execution [Context](@yw-nav-class:Context)
+        *  Context : current execution :class:`Context <youwol.utils.context.context.Context>`
     """
 
 
@@ -260,9 +268,9 @@ class PipelineStep(BaseModel):
     generated it. For instance, in a typescript project it would include all the `.ts` files as well as some
     configuration files.
 
-    In many scenarios using [FileListing](@yw-nav-class:youwol.app.routers.projects.models_project.FileListing) is
+    In many scenarios using :class:`FileListing <youwol.app.routers.projects.models_project.FileListing>` is
     enough, the other type of input can be useful when a reference on the actual project is needed.
-    When using a [FileListing](@yw-nav-class:youwol.app.routers.projects.models_project.FileListing), the path are
+    When using a :class:`FileListing <youwol.app.routers.projects.models_project.FileListing>`, the path are
     referenced from the path of the project.
 
     Yet, in some other scenario, the status of a step does not relies on files, in this case `sources` can
@@ -311,7 +319,7 @@ class PipelineStep(BaseModel):
     """
     List of custom HTTP endpoints exposed for the step. Usually used within the `view` attribute.
     They are exposed from the router
-    [pipeline_step_view](@yw-nav-func:youwol.app.routers.projects.router.pipeline_step_view).
+    :func:`pipeline_step_view <youwol.app.routers.projects.router.pipeline_step_view>`.
     """
 
     async def get_sources(
@@ -383,8 +391,8 @@ class PipelineStep(BaseModel):
     Behavior w/ the type provided:
 
     *  *str* : the value is executed as shell command from the folder of the project
-    *  [RunImplicit](@yw-nav-class:youwol.app.routers.projects.models_project.RunImplicit): the callback is called
-    *  [ExplicitNone](@yw-nav-class:youwol.app.routers.projects.models_project.ExplicitNone): you should override
+    *  :class:`RunImplicit <youwol.app.routers.projects.models_project.RunImplicit>`: the callback is called
+    *  :class:`ExplicitNone <youwol.app.routers.projects.models_project.ExplicitNone>`: you should override
         the `async def execute_run(self, project: "Project", flow_id: FlowId, context: Context)` method of this class.
 
     """
@@ -446,7 +454,7 @@ class PipelineStep(BaseModel):
 class Flow(BaseModel):
     """
     Describes the connection between
-    [PipelineStep](@yw-nav-class:youwol.app.routers.projects.models_project.PipelineStep).
+    :class:`PipelineStep <youwol.app.routers.projects.models_project.PipelineStep>`.
 
     **Example**
 
@@ -454,7 +462,7 @@ class Flow(BaseModel):
     flow = Flow(name='flow', steps=['init > build > publish', 'init > doc > publish'])
     </code-snippet>
     Where `init`, `build`, `doc`, `publish` refers to ID of steps included in the
-     [Pipeline](@yw-nav-class:youwol.app.routers.projects.models_project.Pipeline).
+     :class:`Pipeline <youwol.app.routers.projects.models_project.Pipeline>`.
     """
 
     name: str
@@ -471,7 +479,7 @@ class Flow(BaseModel):
 class Family(Enum):
     """
     The family of the target produced by a
-    [Pipeline](@yw-nav-class:youwol.app.routers.projects.models_project.Pipeline).
+    :class:`Pipeline <youwol.app.routers.projects.models_project.Pipeline>`.
     """
 
     APPLICATION = "application"
@@ -491,12 +499,12 @@ class Family(Enum):
 class Target(BaseModel):
     """
     Base class to describe what kind of target a
-    [Pipeline](@yw-nav-class:youwol.app.routers.projects.models_project.Pipeline)
+    :class:`Pipeline <youwol.app.routers.projects.models_project.Pipeline>`
      is aiming to produce as well as some associated links.
 
      Prefer using concrete class
-     [BrowserLibBundle](@yw-nav-class:youwol.app.routers.projects.models_project.BrowserLibBundle) or
-     [BrowserAppBundle](@yw-nav-class:youwol.app.routers.projects.models_project.BrowserAppBundle).
+     :class:`BrowserLibBundle <youwol.app.routers.projects.models_project.BrowserLibBundle>` or
+     :class:`BrowserAppBundle <youwol.app.routers.projects.models_project.BrowserAppBundle>`.
     """
 
     family: Family
@@ -567,7 +575,7 @@ class FromAsset(Parametrization):
 class OpenWith(Parametrization):
     """
     Describes how to open an application from an
-     [Asset](@yw-nav-class:youwol.app.routers.projects.models_project.Asset).
+     :class:`Asset <youwol.app.routers.projects.models_project.Asset>`.
 
     For instance `OpenWith(match={"kind": "story"}, parameters={"id": "rawId"})` will:
 
@@ -591,7 +599,8 @@ class OpenWith(Parametrization):
 
 class Execution(BaseModel):
     """
-    Describes the execution mode of a [BrowserAppBundle](@yw-nav-class:BrowserAppBundle)
+    Describes the execution mode of a
+    :class:`BrowserAppBundle <youwol.app.routers.projects.models_project.BrowserAppBundle>`
     application.
     """
 
@@ -661,7 +670,7 @@ class Pipeline(BaseModel):
 
     target: Target | Callable[["Project"], Target]
     """
-    The pipeline [target](@yw-nav-class:youwol.app.routers.projects.models_project.Target).
+    The pipeline :class:`target <youwol.app.routers.projects.models_project.Target>`.
     """
 
     tags: list[str] = []
@@ -687,7 +696,7 @@ class Pipeline(BaseModel):
     dependencies: Callable[["Project", Context], set[str]] = None
     """
     Callback function that returns the list of dependencies name from a
-    [project](@yw-nav-class:youwol.app.routers.projects.models_project.Project) (e.g. from `requirements.txt` in python,
+    :class:`project <youwol.app.routers.projects.models_project.Project>` (e.g. from `requirements.txt` in python,
     `package.json` in javascript).
     """
     projectName: Callable[[Path], str]
@@ -712,7 +721,7 @@ class IPipelineFactory(ABC):
 class Project(BaseModel):
     """
     Describes a project, generated from a folder on the disk and a
-    [Pipeline](@yw-nav-class:youwol.app.routers.projects.models_project.Pipeline).
+    :class:`Pipeline <youwol.app.routers.projects.models_project.Pipeline>`.
     """
 
     pipeline: Pipeline

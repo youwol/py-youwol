@@ -1,64 +1,45 @@
-# YouWol
+# Py-YouWol
 
-YouWol, your web-based open laboratory, offers a collaborative environment for developing and sharing browser-based
-applications.
-It's an innovative hybrid solution, seamlessly blending the flexibility of local customization,
-typical of PC environments, with the accessibility of cloud technologies, all operating directly on your PC via your
-web browser.
-
-<!--
-**Because it runs in a browser**:
-
-*  Seamless and transparent lazy fetching of everything (backends, frontends, data) when accessing a URL.
-*  Frontend libraries are executed in an OS-independent environment, taking advantages of a standardized API
-to access diverse peripherals as well as performance-oriented solutions.
-
-**Because it is hosted in your PC**:
-
-*  After initial fetched, data are persisted forever, improving performances
-*  Applications can rely on backends, that gets downloaded and run transparently in your PC
-*  Applications can use data that only exists in your PC
-*  Linking an application against libraries or backends accounts for versions that may only exist
-in your computer (before publishing them).
-
-It is a novel type of hybrid local/cloud solution that aims to provide an environment highly customizable
-(just like PC), as well as widely accessible (just like cloud platform).
-
-Here's a practical example for clarification. Suppose a user is using an application called `foo` that relies on a component
-named `bar` (be it frontend or backend). When this user release a new compatible version of `bar` locally on his computer,
-`foo` will automatically pick the change. Subsequently, when he published the updated version of `bar` online,
-everyone else will receive the update the next time they use `foo` on their computer. In the same line, this mechanism
-also applies for data. Constructed using contemporary and standard web technologies (1), it positions YouWol as an ideal
-collaborative space for research and development, fostering innovation.
-{ .annotate }
-1.  Thinking of Multi-threading, GPU, WebAssembly, Python, ESM, *etc*
-
--->
+<note level='hint' label="">
+Py-YouWol is a Python server running on your PC, emulating a cloud server. 
+It automatically installs and links executable units—JavaScript ESM modules, backend services, and Pyodide modules—
+each time applications are loaded from your web browser.
+</note>
 
 The solution is built on three foundational concepts:
 
-- **Online Ecosystem**: This ecosystem brings together a range of assets, including front-end applications/libraries,
-  backend services, and data. They get installed in your PC transparently upon request (usually when accessing a URL).
-- **Dynamic linking**: While regular web application are statically linked to front-end libraries or backend services,
-  in youwol dependencies are linked dynamically. _E.g._ an application always get the latest compatible version of a dependency,
-  including a version that may only exist in your computer (e.g. before publishing it).
-- **Local Python-Based Server**: Serving as the orchestrator, this server facilitates access and potential downloads
-  of various assets from the ecosystem to the user's PC.
-  It provides services for data management, user sessions, authentications, and maintains flexibility to meet diverse developer needs.
+- **Online Ecosystem**: This ecosystem integrates a range of assets, including front-end applications/libraries,
+  backend services, and data.
+  These assets are transparently installed on your PC upon request, typically when accessing a URL.
+- **Dynamic linking**: Applications can dynamically install and link components based on semantic versioning,
+  ensuring you always get the latest compatible versions of the required components.
+  Additionally, dependency resolution considers both the online ecosystem and your local projects.
+- **Local Python-Based Server**: Acting as the orchestrator, this server facilitates the access and download of various
+  assets from the ecosystem to your PC. It provides services for data management, user sessions, authentication,
+  and maintains flexibility to meet diverse developer needs.
 
-<!--
-The essence of YouWol lies in fostering collaboration:
+Benefits include:
 
-*  **Automatic Data Sharing**: In YouWol, data behaves like files organized in a tree structure resembling a file system.
-Upon publishing, data automatically downloads when requested by any YouWol user (subject to permissions).
-*  **Automatic Code Sharing**: When new versions of libraries/backends get published, either in the ecosystem or in your
-PC as work in progress, they get automatically caught up by application and linked dynamically.
-*  **Collaborative Operating System**: Building on the previous points, YouWol facilitates the emulation of
-an operating system within web browsers. Going beyond conventional OS, it can be accessed from any browser, enables
-seamless sharing of environments & profiles, and more.
--->
+- **Powerful applications**: The ability to install and link components on the fly—including backends—offers great
+  opportunities to build complex applications.
+- **Security**: Since Py-YouWol runs on your PC, your applications can consume data only available locally.
+- **Efficiency**: Once downloaded, assets remain on your PC and are not re-downloaded unless a new version is
+  available and requested.
+  Additionally, the local server offers multiple mechanisms to enhance efficiency at various levels.
+- **Reduced development cycle**: Dynamic dependency resolution that includes local projects leads to a more agile and
+  responsive development process.
+  Additionally, Py-YouWol provides a dedicated application called co-lab to manage your local projects and environments.
+
+<note level="warning" label="Important">
+When developing components for Py-YouWol, there is little to no specific consideration required.
+Py-YouWol offers solutions that you can choose to use or not.
+</note>
 
 ## Getting started
+
+<note level="warning" label="Windows">
+Currently, py-youwol is not yet compatible with the Windows OS. We are actively working on adding support.
+</note>
 
 We recommend using [pipx](https://github.com/pypa/pipx) to run youwol using the latest compatible version of python ({PYTHON_RECOMMENDED}):
 
@@ -66,10 +47,10 @@ We recommend using [pipx](https://github.com/pypa/pipx) to run youwol using the 
 pipx run youwol=={YW_VERSION}
 ```
 
-Once started (assuming the default port `2000`is used),
+Once started (assuming the default port `2000` is used),
 any application available in the ecosystem can be loaded through the URL:
 
-`locahost:2000/applications/$APP_NAME/$APP_VERSION`
+`http://locahost:2000/applications/$APP_NAME/$APP_VERSION`
 
 where:
 
@@ -79,15 +60,46 @@ where:
 More information regarding installation can be found [here](@nav/how-to/install-youwol.md),
 command line options to start youwol are explained [here](@nav/how-to/start-youwol.md).
 
-## Documentation organization
+<note level="hint">
+Applications that do not require a backend can be accessed online, if the necessary components
+are published and accessible, at the following URL:
 
-From now on, the documentation is assuming that youwol is running on your computer from the port `2000`.
+`https://platform.youwol.com/applications/$APP_NAME/$APP_VERSION`
+</note>
 
-The section **Gallery** provides some links of selected applications, they serve as illustration of the kind
-of applications that can be developed within YouWol.
+## Next Steps
 
-For developers who want to contribute to the ecosystem, the **Tutorials** section is a great place
-to start. In a couple of minutes you will be able to publish and share applications, libraries as well as backends.
+<note level="warning">
+The following links assume Py-YouWol running on the port `2000`.
+</note>
 
-Advanced topics are presented in the sections **How-To Guides**, while the **References** section describes
-the YouWol API.
+### Interactive Tutorial
+
+The Py-YouWol server includes a front-end application called [CoLab](http://localhost:2000/co-lab),
+which exposes the current environment, downloaded components, your projects, and more.
+It features a dedicated section for [documentation](http://localhost:2000/co-lab/doc), providing tutorials that guide
+you through the solution's features and usage, particularly for publishing your projects.
+
+### WebPM Client
+
+WebPM is the JavaScript client library that enables dynamic installation and linking of dependencies.
+Its [documentation](http://localhost:2000/applications/@youwol/webpm-client-doc/latest) covers topics such as
+installing ESM, Pyodide, and backend modules, as well as creating web-worker pools.
+
+### Gallery
+
+Our [gallery](http://localhost:2000/applications/@youwol/gallery/latest) showcases a collection of selected
+applications, often presented in the form of notebooks.
+These examples illustrate the capabilities of Py-YouWol and what can be achieved with it.
+
+### Notebook
+
+One of our most popular libraries is `@youwol/mkdocs-ts`, which provides tools to create hierarchical documents
+like this one.
+It also enables the inclusion of notebook-like pages with advanced features thanks to Py-YouWol solutions.
+You can find presentations and tutorials
+[here](http://localhost:2000/applications/@youwol/mkdocs-ts-doc/0.5.5-wip?nav=/tutorials/notebook).
+
+### API Documentation
+
+The API documentation of Py-YouWol can be found within this document in the [API](@nav/api) section.

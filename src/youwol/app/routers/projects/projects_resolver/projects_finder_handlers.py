@@ -37,8 +37,8 @@ Defines a callback type that is invoked when there is an update in the count of 
 are added or removed.
 
 It takes as arguments a tuple containing:
-1.  A string indicating the name of the [ProjectsFinder](@yw-nav-class:models_project.ProjectsFinder)
-that discovered the updates.
+1.  A string indicating the name of the
+:class:`ProjectsFinder <youwol.app.environment.models.models_project.ProjectsFinder>` that discovered the updates.
 2.  A list of Path objects representing the projects that were added.
 3.  A list of Path objects representing the projects that were removed.
 
@@ -142,7 +142,9 @@ class ProjectsWatcherEventsHandler(PatternMatchingEventHandler):
     An event handler designed for watching project directories and triggering actions on project creation and deletion.
 
     Projects are identified by the presence of a `.yw_pipeline/yw_pipeline.py` file;
-    it notifies an [owner](@yw-nav-class:ProjectsFinderImpl) object about changes in the projects' count.
+    it notifies an
+    :class:`owner <youwol.app.routers.projects.projects_resolver.projects_finder_handlers.ProjectsFinderImpl>`
+    object about changes in the projects' count.
     """
 
     def __init__(
@@ -155,8 +157,9 @@ class ProjectsWatcherEventsHandler(PatternMatchingEventHandler):
             owner: The owner instance responsible for handling updates on project counts.
             ignored_patterns: A list of glob patterns to ignore regarding folders.
                 Folders matching these patterns will not trigger events.
-            from_path: The path from which projects' path are expressed.
-                E.g., if referencing a symbolic link, notification to the [owner](@yw-nav-class:ProjectsFinderImpl)
+            from_path: The path from which projects' paths are expressed.
+                E.g., if referencing a symbolic link, notifications to the owning
+                :class:`youwol.app.routers.projects.projects_resolver.projects_finder_handlers.ProjectsFinderImpl`
                 are expressed with it (and not from its absolute counterpart).
 
         Parameters are set as class attributes.
@@ -221,8 +224,11 @@ class ProjectsWatcher(Thread):
 
     This class extends `Thread` to continuously watch a specified path for file system events that suggest a
      project has been created or deleted.
-     It uses an instance of [ProjectsWatcherEventsHandler](@yw-nav-class:ProjectsWatcherEventsHandler) to handle these
-     events and notify an [owner}(@yw-nav-class:ProjectsFinderImpl) of the changes.
+     It uses an instance of
+     :class:`youwol.app.routers.projects.projects_resolver.projects_finder_handlers.ProjectsWatcherEventsHandler`
+     to handle these events and notify an
+     :class:`owner <youwol.app.routers.projects.projects_resolver.projects_finder_handlers.ProjectsFinderImpl>`
+     of the changes.
     """
 
     def __init__(
@@ -287,8 +293,10 @@ class ProjectsWatcher(Thread):
 @dataclasses.dataclass
 class ProjectsFinderImpl:
     """
-    Implementation of a [project finder](@yw-nav-class:models_project.ProjectsFinder) that scans a specified directory
-    path for projects, with options for depth control, ignoring certain paths, and dynamically watching for changes.
+    Implementation of a
+    :class:`project finder <youwol.app.environment.models.models_project.ProjectsFinder>`
+    that scans a specified directory path for projects, with options for depth control, ignoring certain paths,
+    and dynamically watching for changes.
 
     It uses a combination of directory scanning and filesystem event monitoring to maintain an up-to-date view of
     projects within a specified path.
@@ -425,8 +433,9 @@ class ProjectsFinderImpl:
 
 class GlobalProjectsFinder:
     """
-    Manages multiple [project finder instances](@yw-nav-class:ProjectsFinderImpl) to collectively scan and
-    monitor projects across different paths.
+    Manages multiple project finder
+    :class:`instances <youwol.app.routers.projects.projects_resolver.projects_finder_handlers.ProjectsFinderImpl>`
+    to collectively scan and monitor projects across different paths.
     """
 
     def __init__(

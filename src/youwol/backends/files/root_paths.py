@@ -81,11 +81,11 @@ async def upload(
             *  `file_name`: The name of the file.
             *  `content_type`: Optional, the content type.
             If not provided it is guessed from the extension of the name (see
-            [get_content_type](@yw-nav-func:youwol.utils.utils.get_content_type)).
+            :func:`get_content_type <youwol.utils.utils.get_content_type>`).
             *  `content_encoding`: Optional, the content encoding.
             If not provided it is guessed from the extension of the name (see
-            [get_content_encoding](@yw-nav-func:youwol.utils.utils.get_content_encoding)).
-        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.files.configurations.Configuration).
+            :func:`get_content_encoding <youwol.utils.utils.get_content_encoding>`).
+        configuration: Injected :class:`Configuration <youwol.backends.files.configurations.Configuration>`.
 
     Return:
         File information
@@ -146,7 +146,7 @@ async def get_info(
     Parameters:
         request: Incoming request.
         file_id: File's ID.
-        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.files.configurations.Configuration).
+        configuration: Injected :class:`Configuration <youwol.backends.files.configurations.Configuration>`.
 
     Return:
         The file's metadata.
@@ -169,7 +169,7 @@ async def update_metadata(
         request: Incoming request.
         file_id: File's ID.
         body: metadata description.
-        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.files.configurations.Configuration).
+        configuration: Injected :class:`Configuration <youwol.backends.files.configurations.Configuration>`.
 
     Return:
         Empty JSON.
@@ -193,7 +193,7 @@ async def get_file(
     Parameters:
         request: Incoming request.
         file_id: File's ID.
-        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.files.configurations.Configuration).
+        configuration: Injected :class:`Configuration <youwol.backends.files.configurations.Configuration>`.
 
     Return:
         The file's content.
@@ -228,7 +228,7 @@ async def remove_file(
     Parameters:
         request: Incoming request.
         file_id: File's ID.
-        configuration: Injected [Configuration](@yw-nav-class:youwol.backends.files.configurations.Configuration).
+        configuration: Injected :class:`Configuration <youwol.backends.files.configurations.Configuration>`.
 
     Return:
         Empty JSON.

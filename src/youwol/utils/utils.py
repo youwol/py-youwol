@@ -36,7 +36,8 @@ PYPROJECT_TOML = "pyproject.toml"
 
 class YwBrowserCacheDirective(BaseModel):
     """
-    Cache directive to the intention of [BrowserCacheStore](@yw-nav-class:BrowserCacheStore).
+    Cache directive to the intention of
+    :class:`BrowserCacheStore <youwol.app.environment.browser_cache_store.BrowserCacheStore>`.
     """
 
     filepath: str
@@ -84,15 +85,16 @@ class YouwolHeaders:
     Convey the port on which py-youwol is serving on `local-host`.
 
     This is useful when *e.g.* writing an external backends connected using
-    a [RedirectSwitch](@yw-nav-class:youwol.app.environment.models.models_config.RedirectSwitch) in which
+    a :class:`RedirectSwitch <youwol.app.environment.models.flow_switches.RedirectSwitch>` in which
     requests to the youwol local server are executed.
     """
 
     yw_browser_cache_directive = "yw_browser_cache_directive"
     """
-    This header key is to be included to enable the [BrowserCacheStore](@yw-nav-class:BrowserCacheStore) to cache
-    a response, see the function
-    [set_yw_browser_cache_directive](@yw-nav-attr:YouwolHeaders.set_yw_browser_cache_directive).
+    This header key is to be included to enable the
+    :class:`BrowserCacheStore <youwol.app.environment.browser_cache_store.BrowserCacheStore>` to cache a response,
+    see the function
+    :attr:`set_yw_browser_cache_directive <youwol.utils.utils.YouwolHeaders.set_yw_browser_cache_directive>`.
     """
 
     backends_partition: str = "x-backends-partition"
@@ -179,11 +181,12 @@ class YouwolHeaders:
         response: Response,
     ) -> YwBrowserCacheDirective | None:
         """
-        Retrieves an eventual directive regarding caching within [BrowserCacheStore](@yw-nav-class:BrowserCacheStore).
+        Retrieves an eventual directive regarding caching within
+        :class:`BrowserCacheStore <youwol.app.environment.browser_cache_store.BrowserCacheStore>`.
 
         Parameters:
             response: Response to retrieve the directive from, using the header
-            [YouwolHeaders.yw_browser_cache_directive](@yw-nav-attr:YouwolHeaders.yw_browser_cache_directive).
+            :attr:`YouwolHeaders.yw_browser_cache_directive <YouwolHeaders.yw_browser_cache_directive>`.
 
         Return:
             The directive if found.
@@ -199,7 +202,8 @@ class YouwolHeaders:
         response: Response, directive: YwBrowserCacheDirective
     ) -> None:
         """
-        Set directive for YouWol's [BrowserCacheStore](@yw-nav-class:BrowserCacheStore) to cache a response.
+        Set directive for YouWol's
+        :class:`BrowserCacheStore <youwol.app.environment.browser_cache_store.BrowserCacheStore>` to cache a response.
 
         Parameters:
             response: The response to instrument for caching.
@@ -528,7 +532,7 @@ def yw_doc_version() -> str:
     This function determines the version of the YouWol documentation app based on the version of the YouWol platform.
     Due to limitations in the semantic versioning supported for components in the CDN-backend service,
     a transformation is required from the YouWol version to the documentation app version.
-    See [publish_library](@yw-nav-func:cdn.root_paths.publish_library).
+    See :func:`publish_library <youwol.backends.cdn.root_paths.publish_library>`.
 
     Return:
         Documentation app. version.
