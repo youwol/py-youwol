@@ -148,10 +148,6 @@ class DocDbClient:
     """
     Default headers to pass to the HTTP calls.
     """
-    connector = aiohttp.TCPConnector(verify_ssl=False)
-    """
-    Connector use for HTTP calls.
-    """
 
     secondary_indexes: list[SecondaryIndex] = field(default_factory=lambda: [])
     """

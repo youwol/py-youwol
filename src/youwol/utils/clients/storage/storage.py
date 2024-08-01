@@ -30,7 +30,6 @@ class StorageClient:
     version: str = "v0-alpha1"
 
     headers: dict[str, str] = field(default_factory=lambda: {})
-    connector = aiohttp.TCPConnector(verify_ssl=False)
 
     @property
     def create_bucket_url(self):
