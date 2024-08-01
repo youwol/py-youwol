@@ -380,7 +380,7 @@ class DocDbClient:
         Return:
             The retrieved document.
         """
-        params = {"owner": owner}
+        params = {"owner": owner or "youwol-users"}
         params_part = self.get_primary_key_query_parameters(
             {**partition_keys, **clustering_keys}
         )
