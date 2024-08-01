@@ -148,10 +148,6 @@ class DocDbClient:
     """
     Default headers to pass to the HTTP calls.
     """
-    connector = aiohttp.TCPConnector(verify_ssl=False)
-    """
-    Connector use for HTTP calls.
-    """
 
     secondary_indexes: list[SecondaryIndex] = field(default_factory=lambda: [])
     """
@@ -384,7 +380,7 @@ class DocDbClient:
         Return:
             The retrieved document.
         """
-        params = {"owner": owner}
+        params = {"owner": owner or "youwol-users"}
         params_part = self.get_primary_key_query_parameters(
             {**partition_keys, **clustering_keys}
         )

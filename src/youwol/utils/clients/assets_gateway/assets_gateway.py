@@ -1,9 +1,6 @@
 # standard library
 from dataclasses import dataclass
 
-# third parties
-import aiohttp
-
 # Youwol utilities
 from youwol.utils.clients.assets.assets import AssetsClient
 from youwol.utils.clients.cdn import CdnClient
@@ -31,10 +28,6 @@ class AssetsGatewayClient:
     """
     Request executor.
     """
-
-    @staticmethod
-    def get_aiohttp_connector():
-        return aiohttp.TCPConnector(verify_ssl=False)
 
     def get_assets_backend_router(self) -> AssetsClient:
         """
