@@ -13,6 +13,7 @@ from aiostream import stream
 
 # Youwol utilities
 from youwol.utils.context import Context
+from youwol.utils.context.models import Label
 
 
 class CommandException(Exception):
@@ -34,8 +35,11 @@ async def execute_shell_cmd(
     on_executed: Callable[[Process, Context], Awaitable[None]] | None = None,
     **kwargs,
 ) -> tuple[int, list[str]]:
+
     async with context.start(
-        action="execute 'shell' command", with_labels=["BASH"]
+        action="execute 'shell' command",
+        # BASH is deprecated
+        with_labels=["BASH", Label.STD_OUTPUT],
     ) as ctx:
         await ctx.info(text=cmd)
         p = await asyncio.create_subprocess_shell(

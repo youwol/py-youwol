@@ -52,6 +52,7 @@ from .models.models_token_storage import TokensStoragePath, TokensStorageSystemK
 from .native_backends_config import BackendConfigurations, native_backends_config
 from .paths import PathsBook, app_dirs, ensure_config_file_exists_or_create_it
 from .proxied_backends import BackendsStore
+from .proxied_esm_servers import EsmServersStore
 from .youwol_environment_models import ProjectsResolver
 
 
@@ -141,6 +142,11 @@ class YouwolEnvironment(BaseModel):
     the name and version of the proxied backend).
     """
 
+    proxied_esm_servers: EsmServersStore = EsmServersStore()
+    """
+    The store regarding proxied ESM servers. Proxied ESM servers are usually front app/lib running on their
+    own port using a dev server.
+    """
     browserCacheStore: BrowserCacheStore
     """
     The store regarding cached resources for browser's requests.

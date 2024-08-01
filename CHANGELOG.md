@@ -19,7 +19,8 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 ## [0.1.12.dev] − Unreleased
 
 ### Added
-
+- **ESM live servers**:
+  - Add API to provide the ability to install ESM live servers dynamically. <!-- TG-2441 -->
 - **Custom Backends**:
   - Custom backends now run within isolated partitions and can be dynamically configured during the build stage.
     <!-- TG-2389 -->

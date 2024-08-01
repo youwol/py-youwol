@@ -38,6 +38,7 @@ from youwol.app.environment import (
 )
 from youwol.app.environment.models import predefined_configs
 from youwol.app.environment.proxied_backends import ProxyInfo
+from youwol.app.environment.proxied_esm_servers import ProxiedEsmServerInfo
 from youwol.app.routers.local_cdn import emit_local_cdn_status
 from youwol.app.routers.projects import ProjectLoader, emit_projects_status
 from youwol.app.web_socket import LogsStreamer
@@ -105,6 +106,11 @@ class YouwolEnvironmentResponse(BaseModel):
     List of proxied backends,
     see :attr:`youwol.app.environment.youwol_environment.YouwolEnvironment.proxied_backends`.
     """
+    proxiedEsmServers: list[ProxiedEsmServerInfo]
+    """
+    List of proxied backends,
+    see :attr:`youwol.app.environment.youwol_environment.YouwolEnvironment.proxied_backends`.
+    """
     remotes: list[CloudEnvironmentResponse]
     """
     List of available remotes environment,
@@ -136,6 +142,7 @@ class YouwolEnvironmentResponse(BaseModel):
             )
             for proxy in yw_env.proxied_backends.store
         ]
+        proxied_esm = [proxy.info() for proxy in yw_env.proxied_esm_servers.store]
         remotes = [
             CloudEnvironmentResponse(
                 envId=remote.envId,
@@ -166,6 +173,7 @@ class YouwolEnvironmentResponse(BaseModel):
             currentConnection=yw_env.currentConnection,
             pathsBook=yw_env.pathsBook,
             proxiedBackends=proxied_backends,
+            proxiedEsmServers=proxied_esm,
             remotes=remotes,
         )
 

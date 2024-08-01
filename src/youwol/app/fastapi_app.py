@@ -22,7 +22,11 @@ from youwol.app.environment import (
     api_configuration,
     yw_config,
 )
-from youwol.app.middlewares import BrowserMiddleware, LocalCloudHybridizerMiddleware
+from youwol.app.middlewares import (
+    BrowserMiddleware,
+    EsmServersMiddleware,
+    LocalCloudHybridizerMiddleware,
+)
 from youwol.app.routers import admin, backends, native_backends, python
 from youwol.app.routers.environment import AssetsDownloader
 from youwol.app.routers.environment.download_assets import (
@@ -152,6 +156,8 @@ def setup_middlewares(env: YouwolEnvironment):
         ],
         disabling_header=YouwolHeaders.py_youwol_local_only,
     )
+
+    fastapi_app.add_middleware(EsmServersMiddleware)
 
     for middleware in reversed(env.customMiddlewares):
         fastapi_app.add_middleware(CustomMiddlewareWrapper, model_config=middleware)
