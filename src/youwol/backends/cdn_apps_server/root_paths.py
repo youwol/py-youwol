@@ -32,9 +32,7 @@ async def get_raw_resource(
     full_name = f"{namespace}/{name}" if namespace else name
     raw_id = base64.urlsafe_b64encode(str.encode(full_name)).decode()
     config = await get_configuration()
-    url = (
-        f"{config.assets_gtw_client.url_base}/raw/package/{raw_id}/{version}/{resource}"
-    )
+    url = f"{config.assets_gtw_client.url_base}/cdn-backend/resources/{raw_id}/{version}/{resource}"
 
     cors_headers = {
         "cross-origin-opener-policy": "same-origin",
