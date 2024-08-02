@@ -29,7 +29,7 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 ### Changed
 
-- Upgrade `GET:/co-lab` target from `@youwol/co-lab#^0.3.0` to `@youwol/co-lab#^0.4.0`. <!-- TG-2399 -->
+- Upgrade `GET:/co-lab` target from `@youwol/co-lab#^0.3.0` to `@youwol/co-lab#^0.5.0`. <!-- TG-2399 --> <!-- TG-2444 ->
 - Upgrade dependency `requests` to 2.32.3 because [previous version has been yanked](https://pypi.org/project/requests/2.32.1/) <!-- TG-2420 -->
 
 ### Fixed
