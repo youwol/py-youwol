@@ -19,6 +19,8 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 ## [0.1.12.dev] − Unreleased
 
 ### Added
+- **Pipeline TS**:
+  - Add `DevServerStep` for projects producing applications. <!-- TG-2445 -->
 - **ESM live servers**:
   - Add API to provide the ability to install ESM live servers dynamically. <!-- TG-2441 -->
 - **Custom Backends**:
