@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 # Youwol application
 from youwol.app.routers.projects.models_project import (
+    BrowserAppBundle,
     BrowserLibBundle,
     BrowserTarget,
     Flow,
@@ -24,6 +25,7 @@ from youwol.pipelines.publish_cdn import PublishCdnLocalStep
 from .build_step import BuildStep
 from .common import Paths, get_dependencies
 from .dependencies_step import DependenciesStep
+from .dev_server_step import DevServerStep
 from .doc_step import DocStep
 from .setup_step import SetupStep
 from .test_step import TestStep, TestStepConfig
@@ -55,6 +57,7 @@ async def pipeline(config: PipelineConfig, context: Context):
             DependenciesStep(),
             BuildStep(id="build-dev", run="yarn build:dev"),
             BuildStep(id="build-prod", run="yarn build:prod"),
+            DevServerStep(),
             DocStep(),
             TestStep(
                 id="test",
@@ -71,6 +74,11 @@ async def pipeline(config: PipelineConfig, context: Context):
         steps_dict = {
             step.id: overriden_steps.get(step.id, step) for step in default_steps
         }
+        dev_server_flow = (
+            ["dependencies > dev-server"]
+            if isinstance(config.target, BrowserAppBundle)
+            else []
+        )
         return Pipeline(
             target=config.target,
             tags=["typescript", "webpack", "npm"] + config.with_tags,
@@ -86,6 +94,7 @@ async def pipeline(config: PipelineConfig, context: Context):
                     dag=[
                         "setup > dependencies > build-prod > test > cdn-local",
                         "build-prod > doc > cdn-local",
+                        *dev_server_flow,
                         *dags,
                     ],
                 )
