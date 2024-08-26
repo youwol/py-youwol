@@ -4,7 +4,9 @@
 #
 #    sh deps_manager.sh compile
 #
-aiohttp==3.9.5
+aiohappyeyeballs==2.4.0
+    # via aiohttp
+aiohttp==3.10.5
     # via
     #   black
     #   youwol (pyproject.toml)
