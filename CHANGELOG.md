@@ -19,6 +19,7 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 ## [0.1.12.dev] − Unreleased
 
 ### Added
+
 - **Pipeline TS**:
   - Add `DevServerStep` for projects producing applications. <!-- TG-2445 -->
 - **ESM live servers**:
@@ -47,9 +48,8 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 ### Removed
 
-- Dynamic generation of code documentation and associated `admin/system/documentation` endpoint have been removed. 
+- Dynamic generation of code documentation and associated `admin/system/documentation` endpoint have been removed.
   <!-- TG-2432 -->
-
 
 <!-- Not worthy of inclusion
 TG-2377 : Use mkdocs-ts python API backend for API doc
