@@ -19,6 +19,7 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 ## [0.1.12.dev] − Unreleased
 
 ### Added
+
 - **Pipeline TS**:
   - Add `DevServerStep` for projects producing applications. <!-- TG-2445 -->
 - **ESM live servers**:
@@ -42,18 +43,24 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 - **Dependencies vulnerabilities**:
   - [GHSA-248v-346w-9cwc] Upgrade `certifi` to 2024.7.4 <!-- TG-2419 -->
   - [GHSA-jfmj-5v4g-7637] Upgrade `zipp` to 3.19.2 <!-- TG-2418 -->
+  - [GHSA-cx63-2mw6-8hw5] Upgrade `setuptools` to 70.3.0 <!-- TG-2422 -->
+  - [GHSA-jwhx-xcg6-8xhj] Upgrade `aiohttp` to 3.10.5 <!-- TG-2450 -->
 
 ### Removed
 
-- Dynamic generation of code documentation and associated `admin/system/documentation` endpoint have been removed. 
+- Dynamic generation of code documentation and associated `admin/system/documentation` endpoint have been removed.
   <!-- TG-2432 -->
 
-
 <!-- Not worthy of inclusion
+TG-2377 : Use mkdocs-ts python API backend for API doc
+TG-2380 : Pipeline TS => expose 'dev-server' step
 TG-2436 : ♻️ [doc-app] Use `mkdocs-ts` & clean documentation
 TG-2435 : 📝 Use sphinx idiom for cross-links
 TG-2414 : ♻️ [pipeline TS] Stop using deprecated exported names
 TG-2415 : ⬆️ upgrade `deepdiff` to `7.0.1,<8.0.0`
+TG-2439 : 📌 `aiohttp<3.10.0`
+TG-2438 : 🔥 [yw-utils] Remove unused `aiohttp.TCPConnector`
+TG-2452 : Py-youwol v0.1.12
 -->
 
 ## [0.1.11] − 2024-06-20
@@ -112,6 +119,7 @@ TG-2319 : 🚨 Enable pylint rule `use-implicit-booleaness-not-comparison-to-str
 TG-2344
 TG-2356
 TG-2347
+TG-2392 : Py-youwol v0.1.11
 -->
 
 ## [0.1.9] − 2024-04-16
