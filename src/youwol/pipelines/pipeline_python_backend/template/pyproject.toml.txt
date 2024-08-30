@@ -11,7 +11,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
-    "youwol>=0.1.11"
+    "youwol>={{minimal_youwol_version}}"
 ]
 
 [build-system]
