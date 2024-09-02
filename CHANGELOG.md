@@ -18,6 +18,9 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 ## [0.1.13.dev] − Unreleased
 
+<!-- Not worthy of inclusion
+TG-1461 : 💚 [release] allow installing local release in venv
+-->
 ## [0.1.12.dev] − Unreleased
 
 ### Added
