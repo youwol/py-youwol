@@ -23,6 +23,10 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 - **Pipeline Python Backend**:
     - `youwol` dependency minimal version no longer hard-coded, use the release version <!-- TG-2460 -->
 
+### Changed
+
+- Increase the timeout (20 seconds) to wait for readiness of a custom backend.  <!-- TG-2455 -->
+
 ### Fixed
 
 - Resolved an issue preventing retrieving the PID of a proxied ESM server from its port. <!-- TG-2456 -->
