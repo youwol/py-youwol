@@ -127,6 +127,7 @@ jobs:
           name: config_integration-tests
           path: integrations/
           retention-days: 1
+          include-hidden-files: true
 
       - name: Push Versions Bump
         id: push_versions_bump

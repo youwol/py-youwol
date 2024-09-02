@@ -65,6 +65,7 @@ jobs:
           name: ${{ steps.get_version_details.outputs.config_dir }}
           path: integrations/
           retention-days: 1
+          include-hidden-files: true
 
 
   tests:
