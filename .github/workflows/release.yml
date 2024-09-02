@@ -50,10 +50,10 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       python_versions: ${{ steps.job-output.outputs.python_versions }}
-      install_from: ${{ steps.job-output.outputs.install_from }}
       version: ${{ steps.bump_version.outputs.version }}
       commit: ${{ steps.bump_version.outputs.commit }}
       artifact: ${{ steps.bump_version.outputs.artifact }}
+      job_branch: ${{ steps.push_versions_bump.outputs.job_branch }}
 
     steps:
 
@@ -128,11 +128,12 @@ jobs:
           path: integrations/
           retention-days: 1
 
-      - name: Push
-        if: "! ${{ inputs.dry-run }}"
-        id: publish_test_pypi
+      - name: Push Versions Bump
+        id: push_versions_bump
         run: |
-          git push
+          job_branch=jobs/release/${GITHUB_RUN_ID}
+          git push -u origin HEAD:${job_branch}
+          echo job_branch=${job_branch} >> $GITHUB_OUTPUT
         shell: sh
 
       - name: Job Output
@@ -311,12 +312,12 @@ jobs:
       - doc_app
 
     steps:
-      - name: Checkout release branch
+      - name: Checkout Job Branch
         id: checkout
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.PAT_NESTOR_PYYOUWOL_PUSH }}
-          ref: release/${{ inputs.final_version }}
+          ref: ${{ needs.build.outputs.job_branch }}
           fetch-depth: 2
 
       - name: Prepare Python 3.12
@@ -354,6 +355,8 @@ jobs:
           TWINE_NON_INTERACTIVE: batch
           VERSION: ${{ needs.build.outputs.version }}
           COMMIT: ${{ needs.build.outputs.commit }}
+          FINAL_VERSION: ${{ inputs.final_version }}
+          JOB_BRANCH: ${{ needs.build.outputs.job_branch }}
         run: |
           tag_msg_1st_line="Published release $VERSION on pypi.org"
           tag_msg_2nd_line="https://pypi.org/project/youwol/$VERSION/"
@@ -364,4 +367,6 @@ jobs:
             -m "${tag_msg_2nd_line}" \
             $COMMIT
           git push --follow-tags
+          git push -u origin HEAD:release/${FINAL_VERSION}
+          git push -u origin :${JOB_BRANCH}
         shell: sh
