@@ -7,6 +7,9 @@ from pathlib import Path
 # typing
 from typing import NamedTuple
 
+# Youwol
+from youwol import __release_version__
+
 # Youwol application
 from youwol.app.environment import ProjectTemplate
 
@@ -103,6 +106,7 @@ async def generate_template(folder: Path, parameters: dict[str, str], context: C
             for source, replacement in [
                 ["package_name", inputs.name],
                 ["default_port", str(inputs.port)],
+                ["minimal_youwol_version", __release_version__],
             ]:
                 sed_inplace(file_to_sed, "{{" + source + "}}", replacement)
 

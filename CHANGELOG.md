@@ -18,6 +18,9 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 ## [0.1.12rc1.dev] − Unreleased
 
+- **Pipeline Python Backend**:
+  - `youwol` dependency minimal version no longer hard-coded, use the release version <!-- TG-2460 -->
+
 ## [0.1.12rc] − 2024-08-27
 
 ### Added
