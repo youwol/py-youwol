@@ -225,6 +225,7 @@ jobs:
         id: setup_env
         run: |
           echo "PY_YOUWOL_BIN=$(which youwol)" >> "$GITHUB_ENV"
+          echo "PIP_FIND_LINKS=$(ls -1 $(pwd)/youwol-*.whl)" >> "$GITHUB_ENV"
         shell: sh
 
       - name: Run py-youwol with int conf
