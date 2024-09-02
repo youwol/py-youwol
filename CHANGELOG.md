@@ -18,23 +18,6 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 ## [0.1.12rc2.dev] − Unreleased
 
-## [0.1.12rc1] − 2024-09-02
-
-### Added
-
-- **Pipeline Python Backend**:
-    - `youwol` dependency minimal version no longer hard-coded, use the release version <!-- TG-2460 -->
-
-### Changed
-
-- Increase the timeout (20 seconds) to wait for readiness of a custom backend.  <!-- TG-2455 -->
-
-### Fixed
-
-- Resolved an issue preventing retrieving the PID of a proxied ESM server from its port. <!-- TG-2456 -->
-
-## [0.1.12rc] − 2024-08-27
-
 ### Added
 
 - **Pipeline TS**:
@@ -44,16 +27,26 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 - **Custom Backends**:
   - Custom backends now run within isolated partitions and can be dynamically configured during the build stage.
     <!-- TG-2389 -->
+- **Pipeline Python Backend**:
+  - `youwol` dependency minimal version no longer hard-coded, use the release version <!-- TG-2460 -->
 
 ### Changed
 
 - Upgrade `GET:/co-lab` target from `@youwol/co-lab#^0.3.0` to `@youwol/co-lab#^0.5.0`. <!-- TG-2399 --> <!-- TG-2444 ->
-- Upgrade dependency `requests` to 2.32.3 because [previous version has been yanked](https://pypi.org/project/requests/2.32.1/) <!-- TG-2420 -->
+- Upgrade dependency `requests` to 2.32.3
+  because [previous version has been yanked](https://pypi.org/project/requests/2.32.1/) <!-- TG-2420 -->
+- Increase the timeout (20 seconds) to wait for readiness of a custom backend. <!-- TG-2455 -->
 
 ### Fixed
 
 - Resolved issues with fetching Pyodide resources when multiple Pyodide runtime versions are available within the
   py-youwol environment. <!-- TG-2416 -->
+- Resolved an issue preventing retrieving the PID of a proxied ESM server from its port. <!-- TG-2456 -->
+
+### Removed
+
+- Dynamic generation of code documentation and associated `admin/system/documentation` endpoint have been removed.
+  <!-- TG-2432 -->
 
 ### Security
 
@@ -62,11 +55,6 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
   - [GHSA-jfmj-5v4g-7637] Upgrade `zipp` to 3.19.2 <!-- TG-2418 -->
   - [GHSA-cx63-2mw6-8hw5] Upgrade `setuptools` to 70.3.0 <!-- TG-2422 -->
   - [GHSA-jwhx-xcg6-8xhj] Upgrade `aiohttp` to 3.10.5 <!-- TG-2450 -->
-
-### Removed
-
-- Dynamic generation of code documentation and associated `admin/system/documentation` endpoint have been removed.
-  <!-- TG-2432 -->
 
 <!-- Not worthy of inclusion
 TG-2377 : Use mkdocs-ts python API backend for API doc
@@ -87,7 +75,8 @@ TG-2452 : Py-youwol v0.1.12
 - **Pipelines**:
   - Enhance reliability of dependencies synchronisation in typescript pipeline. <!-- TG-2366, TG-2368 -->
 - **CDN Packaging**:
-  - Enhanced the CDN packaging process to support selective Brotli compression and explicit content type definitions,  
+  - Enhanced the CDN packaging process to support selective Brotli compression and explicit content type
+    definitions,  
     allowing for more flexible packaging and optimized download performance. <!-- TG-2353 -->
 
 ### Security
@@ -148,7 +137,8 @@ TG-2392 : Py-youwol v0.1.11
     while mitigating the adverse effects associated with native browser cache systems. <!-- TG-2220 -->
 - **Backend components**:
   - automatic local installation of missing backends when requesting `backends/$NAME/$SEMVER/**`. <!-- TG-2195 -->
-  - explicit local installation on `admin/system/backends/install` using CDN's loading graph response. <!-- TG-2205 -->
+  - explicit local installation on `admin/system/backends/install` using CDN's loading graph
+    response. <!-- TG-2205 -->
 - **Pyodide components**:
   - intercept Pyodide resources requests to store them within the local CDN database. <!-- TG-2238 -->
 - **Pipelines**:
@@ -249,7 +239,8 @@ TG-2246
   - upgrade shared configuration `^1.2.1` for latest dependencies:
     - ESlint `^8.56.0` <!-- TG-1997 -->
     - Prettier `^3.2.5` <!-- TG-2070 -->
-  - remove pinning of `@types/node` after [chokidar bug correction](https://github.com/paulmillr/chokidar/issues/1299) <!-- TG-1983 -->
+  - remove pinning of `@types/node`
+    after [chokidar bug correction](https://github.com/paulmillr/chokidar/issues/1299) <!-- TG-1983 -->
 - Component's type is either `js/wasm` or `backend`. <!-- TG-2080 -->
 
 ### Fixed
@@ -263,7 +254,8 @@ TG-2246
   - `package` step: add required `build` module in python environment. <!-- TG-2186 -->
 
 - Sync. typescript pipeline's `template.py` generator with youwol API updates. <!-- TG-2167 -->
-- python backend pipeline: ensure python scripts execution has correct environment variable `PYTHONPATH` <!-- TG-2168 -->
+- python backend pipeline: ensure python scripts execution has correct environment variable
+  `PYTHONPATH` <!-- TG-2168 -->
 - Emit 'components update' signal when publishing a project in local database. <!-- TG-2175 -->
 - Prevent digest infinite recursion and handle more types <!-- TG-2166 -->
 
@@ -310,7 +302,8 @@ TG-2169
 
 ### Added
 
-- New Py-youwol documentation application **@youwol/py-youwol-doc** <!-- TG-1923, TG-1924, TG-1925, TG-1951, TG-1952, TG-1961 -->
+- New Py-youwol documentation application **@youwol/py-youwol-doc
+  ** <!-- TG-1923, TG-1924, TG-1925, TG-1951, TG-1952, TG-1961 -->
 
 ### Changed
 
@@ -335,7 +328,8 @@ TG-2169
   - allow modifying dependency defined by pipeline using `template.py` <!-- TG-1911 -->
   - format `src/test/fake.ts` <!-- TG-1706 -->
   - pin `@types/node` to `18.19.9`
-    for applications until [chokidar issue #1299](https://github.com/paulmillr/chokidar/issues/1299) is resolved <!-- TG-1983 -->
+    for applications until [chokidar issue #1299](https://github.com/paulmillr/chokidar/issues/1299) is
+    resolved <!-- TG-1983 -->
 
 ### Security
 
