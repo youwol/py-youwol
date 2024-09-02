@@ -43,7 +43,7 @@ class ProxiedEsmServerInfo(BaseModel):
     """
     pid: int | None
     """
-    Process ID of the starting shell command if the backend has been started through py-youwol.
+    Process ID of the starting shell command if the server has been started through py-youwol.
     """
     serverPid: int | None
     """
@@ -83,7 +83,7 @@ class ProxiedEsmServer(BaseModel):
     """
     process: Process | None
     """
-    Associated process if the backend has been started through py-youwol.
+    Associated process if the server has been started through py-youwol.
     """
     dispatch: Callable[[EsmServerDispatchInput, Context], Awaitable[Response | None]]
     """
@@ -200,7 +200,7 @@ class EsmServersStore:
 
     async def terminate(self, uid: str, context: Context) -> None:
         """
-        Terminate a backend (if execution owned by youwol) and remove associated proxy.
+        Terminate a server (if execution owned by youwol) and remove associated proxy.
 
         Parameters:
             uid: Proxy unique identifier.
@@ -217,7 +217,7 @@ class EsmServersStore:
                 # actual process of the uvicorn server (the actual pid of the uvicorn process is usually
                 # `proxy.process.pid + 1`).
                 # Not sure about the best option to deal with that issue. For now, we use the serving port to retrieve
-                # the actual PID of the backend's server.
+                # the actual PID of the server.
                 pid_from_port = proxy.info().serverPid
                 if pid_from_port:
                     psutil.Process(pid_from_port).terminate()
