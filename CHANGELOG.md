@@ -18,6 +18,13 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 ## [0.1.13.dev] − Unreleased
 
+<!-- Not worthy of inclusion
+TG-1461 : 💚 [release] allow installing local release in venv
+TG-1462 : 💚 [release] push versions bump after publishing
+TG-1464 : 👽️ [workflows] hidden files in uploaded config
+TG-1467 : 💚 [release] Checkout with depth=3 for publishing
+-->
+
 ## [0.1.12] − 2024-09-02
 
 ### Added
