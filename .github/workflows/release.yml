@@ -317,7 +317,7 @@ jobs:
         with:
           token: ${{ secrets.PAT_NESTOR_PYYOUWOL_PUSH }}
           ref: ${{ needs.build.outputs.job_branch }}
-          fetch-depth: 2
+          fetch-depth: 3
 
       - name: Prepare Python 3.12
         id: prepare_python
