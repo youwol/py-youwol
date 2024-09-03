@@ -164,13 +164,14 @@ class DevServerStep(PipelineStep):
 
             async def on_executed(process: Process | None, shell_ctx: Context):
                 if config["installDispatch"]:
-                    env.proxied_esm_servers.register(
+                    await env.proxied_esm_servers.register(
                         uid=proxy_uid,
                         package=project.name,
                         version=project.version,
                         port=port,
                         process=process,
                         dispatch=self.dispatch,
+                        wait_timeout=5,
                     )
                     await emit_environment_status(context=shell_ctx)
                     await shell_ctx.info(

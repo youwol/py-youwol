@@ -1,4 +1,5 @@
 # standard library
+import asyncio
 import dataclasses
 import subprocess
 
@@ -43,7 +44,7 @@ class ProxiedEsmServerInfo(BaseModel):
     """
     pid: int | None
     """
-    Process ID of the starting shell command if the backend has been started through py-youwol.
+    Process ID of the starting shell command if the server has been started through py-youwol.
     """
     serverPid: int | None
     """
@@ -83,7 +84,7 @@ class ProxiedEsmServer(BaseModel):
     """
     process: Process | None
     """
-    Associated process if the backend has been started through py-youwol.
+    Associated process if the server has been started through py-youwol.
     """
     dispatch: Callable[[EsmServerDispatchInput, Context], Awaitable[Response | None]]
     """
@@ -145,8 +146,12 @@ class ProxiedEsmServer(BaseModel):
         except AccessDenied:
             # On e.g. macOS `psutil.net_connections()` can not be called without elevated privileges,
             # fallback using 'lsof' in this case.
-            output = subprocess.check_output(["lsof", "-i", f"tcp:{port}", "-t"])
-            return int(output.decode().strip())
+            try:
+                output = subprocess.check_output(["lsof", "-i", f"tcp:{port}", "-t"])
+                return int(output.decode().strip())
+            except subprocess.CalledProcessError:
+                # No process found
+                pass
 
         return None
 
@@ -162,7 +167,7 @@ class EsmServersStore:
     The stateful store at a particular point in time.
     """
 
-    def register(
+    async def register(
         self,
         uid: str,
         package: str,
@@ -172,6 +177,7 @@ class EsmServersStore:
         dispatch: Callable[
             [EsmServerDispatchInput, Context], Awaitable[Response | None]
         ],
+        wait_timeout: float = 0,
     ) -> ProxiedEsmServer:
         """
         Register an ESM server to be proxied within py-youwol.
@@ -182,7 +188,11 @@ class EsmServersStore:
             version: Version of the ESM module targeted.
             port: Serving's port.
             process: Associated process that started the server (if known).
-            dispatch: Function to dispatch the incoming request to the dev. server.
+            dispatch: Function to dispatch the incoming request to the proxied server.
+            wait_timeout: If > 0, wait for the PID on the server listening on the given port, try every half a second
+            until the PID is retrieved or this timeout is reached.
+            The timeout should be a multiple of 0.5s.
+            If 0, proceed directly.
         Return:
             The associated proxy.
         """
@@ -195,12 +205,26 @@ class EsmServersStore:
             process=process,
             dispatch=dispatch,
         )
+        if not wait_timeout:
+            store.append(proxied)
+            return proxied
+
+        pid = None
+        for _ in range(int(wait_timeout * 2)):
+            pid = ProxiedEsmServer.get_pid_using_port(port=port)
+            if pid:
+                break
+            await asyncio.sleep(0.5)
+        if not pid:
+            raise RuntimeError(
+                f"The ESM proxied server for {package} on port {port} did not respond its PID."
+            )
         store.append(proxied)
         return proxied
 
     async def terminate(self, uid: str, context: Context) -> None:
         """
-        Terminate a backend (if execution owned by youwol) and remove associated proxy.
+        Terminate a server (if execution owned by youwol) and remove associated proxy.
 
         Parameters:
             uid: Proxy unique identifier.
@@ -217,7 +241,7 @@ class EsmServersStore:
                 # actual process of the uvicorn server (the actual pid of the uvicorn process is usually
                 # `proxy.process.pid + 1`).
                 # Not sure about the best option to deal with that issue. For now, we use the serving port to retrieve
-                # the actual PID of the backend's server.
+                # the actual PID of the server.
                 pid_from_port = proxy.info().serverPid
                 if pid_from_port:
                     psutil.Process(pid_from_port).terminate()

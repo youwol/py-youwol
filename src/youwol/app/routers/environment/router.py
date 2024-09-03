@@ -419,7 +419,6 @@ async def emit_environment_status(context: Context) -> EnvironmentStatusResponse
             for auth in env.get_remote_info().authentications
             if isinstance(auth, DirectAuth)
         ]
-        conf_response = YouwolEnvironmentResponse.from_yw_environment(env)
         youwol_env = YouwolEnvironmentResponse.from_yw_environment(env)
         response = EnvironmentStatusResponse(
             users=users,
@@ -437,10 +436,10 @@ async def emit_environment_status(context: Context) -> EnvironmentStatusResponse
             youwolEnvironment=youwol_env,
             remoteGatewayInfo=next(
                 r
-                for r in conf_response.remotes
-                if r.envId == conf_response.currentConnection.envId
+                for r in youwol_env.remotes
+                if r.envId == youwol_env.currentConnection.envId
             ),
-            remotesInfo=conf_response.remotes,
+            remotesInfo=youwol_env.remotes,
         )
         # disable projects loading for now
         # await ctx.send(ProjectsLoadingResults(results=await ProjectLoader.get_results(config, ctx)))

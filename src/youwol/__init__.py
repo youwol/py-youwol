@@ -19,3 +19,4 @@ They formalize steps such as initialization, building, testing, and deployment.
 """
 
 __version__ = "0.1.13.dev"
+__release_version__ = "0.1.12"

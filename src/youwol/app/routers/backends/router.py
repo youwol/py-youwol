@@ -39,7 +39,9 @@ async def dispatch_impl(
         # If the service is not already started (no explicit webpm-client install already executed),
         # the default configuration will be used.
         config=None,
-        timeout=10,
+        # Timeout for the server to respond (in second).
+        # E.g., on macOS python backends take time to listen on the first run.
+        timeout=20,
         context=context,
     )
     if not backend:
