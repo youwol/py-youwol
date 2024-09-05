@@ -80,16 +80,15 @@ class RunningInstanceView{
         ]
       },
       {
-        tag: "div",
-        class:'d-flex align-items-center  fv-pointer',
-        children: [{
-            tag:'i',
-            class: "fas fa-stop",
-          }],
+        tag: "button",
+        class:'btn btn-light btn-sm rounded p-2 border fas fa-stop',
+        style:{
+          width:'fit-content'
+        },
         onclick: () => {
           state.stop()
         },
-      }
+      },
     ]
   }
 }
@@ -134,19 +133,11 @@ class NewInstanceView{
       },
       { tag: 'div', class:'my-2'},
       {
-        tag: "div",
-        class:'d-flex align-items-center fv-pointer border rounded p-1 fv-hover-text-focus',
+        tag: "button",
+        class:'btn btn-light btn-sm rounded p-2 border fas fa-play',
         style:{
           width:'fit-content'
         },
-        children: [
-          {
-            tag:'i',
-            class: "fas fa-check fv-text-success mr-1",
-          },{
-            tag:'div',
-            innerText: "Apply & run",
-          }],
         onclick: () => {
           state.run()
         },
@@ -159,14 +150,13 @@ class NewInstanceView{
 class ConfigView {
   tag = "div";
   class =
-    "h-100 w-100 rounded yw-animate-in p-3";
+    "h-100 w-100 rounded p-3";
 
   constructor({ state }) {
     this.children = [
       {
         source$: state.inputs$,
         vdomMap: (info) => {
-          console.log("Dev server Info", info)
           if(info.status === 404){
             return new NewInstanceView(state, {project: state.project})
           }

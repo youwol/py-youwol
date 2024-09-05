@@ -24,6 +24,7 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
   -  Pipeline does not produce auto-generated `requirements.txt` anymore. <!-- TG-2459 -->
 
 <!-- Not worthy of inclusion
+TG-2474 : 💄 [pipelines] Improve styling of config. step views
 TG-1461 : 💚 [release] allow installing local release in venv
 TG-1462 : 💚 [release] push versions bump after publishing
 TG-1464 : 👽️ [workflows] hidden files in uploaded config
