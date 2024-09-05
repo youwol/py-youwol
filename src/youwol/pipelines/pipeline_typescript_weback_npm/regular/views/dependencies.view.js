@@ -46,19 +46,14 @@ class State {
 class SyncDependenciesView {
   tag = "div";
   class =
-    "h-100 w-100 rounded fv-bg-background-alt yw-animate-in yw-box-shadow p-3";
+    "h-100 w-100 rounded p-3";
 
   constructor({ state }) {
     this.children = [
       {
-        tag: "h1",
-        class: "w-100 text-center",
-        innerText: "Dependencies Step",
-      },
-      {
         tag: "div",
         innerText:
-          "Check the dependencies you want to synchronized from the projects",
+          "Dependencies synchronized from your projects:",
       },
       {
         tag: "ul",
@@ -91,13 +86,12 @@ class SyncDependenciesView {
         },
       },
       {
-        tag: "div",
+        tag: "button",
         class:
-          "fv-bg-secondary rounded p-2 border fv-hover-xx-lighter fv-pointer",
+          "button btn-light btn-sm rounded p-2 border fas fa-play",
         style: {
-          width: "fit-content",
+           width: "fit-content",
         },
-        innerText: "Apply & run",
         onclick: () => {
           state.run();
         },
