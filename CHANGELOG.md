@@ -26,6 +26,8 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 ### Changed
 
+- **Custom Backends**:
+  - Custom backends can now be executed within a Docker container. <!-- TG-2486 -->
 - **Pipeline Python Backend**:
   - Pipeline does not produce auto-generated `requirements.txt` anymore. <!-- TG-2459 -->
 

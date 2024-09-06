@@ -47,7 +47,8 @@ def start(shutdown_script_path: Path | None = None):
         # noinspection PyTypeChecker
         uvicorn.run(
             fastapi_app,
-            host="localhost",
+            # Not 'localhost' because backends running in containers need to be able to communicate with this server.
+            host="0.0.0.0",
             port=env.httpPort,
             log_level=uvicorn_log_level,
         )
