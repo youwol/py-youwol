@@ -82,7 +82,7 @@ template = Template(
         ),
     ),
     userGuide=True,
-    devServer=DevServer(port=3021),
+    devServer=DevServer(port=3021)
 )
 
 generate_template(template)
