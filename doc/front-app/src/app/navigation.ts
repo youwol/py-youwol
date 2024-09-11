@@ -12,7 +12,7 @@ function fromMd({
     placeholders?: { [_: string]: string }
 }) {
     return fromMarkdown({
-        url: `/api/assets-gateway/raw/package/${setup.assetId}/${setup.version}/assets/${file}`,
+        url: `/api/assets-gateway/cdn-backend/resources/${setup.assetId}/${setup.version}/assets/${file}`,
         placeholders,
     })
 }
@@ -65,15 +65,32 @@ export const navigation = {
             html: fromMd({ file: 'how-to.start-youwol.md' }),
         },
     },
-    '/api': CodeApiModule.codeApiEntryNode({
+    '/api': {
         name: 'API',
         decoration: {
-            icon: { tag: 'div', class: 'fas fa-code mr-2' },
+            icon: { tag: 'div' as const, class: 'fas fa-code mr-2' },
         },
-        entryModule: 'youwol',
-        docBasePath: '../assets/api',
-        configuration: configuration,
-    }),
+        tableOfContent,
+        html: fromMd({ file: 'api.md' }),
+        '/youwol': CodeApiModule.codeApiEntryNode({
+            name: 'youwol',
+            decoration: {
+                icon: { tag: 'div', class: 'fas fa-box-open mr-2' },
+            },
+            entryModule: 'youwol',
+            docBasePath: '../assets/api',
+            configuration: configuration,
+        }),
+        '/yw-clients': CodeApiModule.codeApiEntryNode({
+            name: 'yw_clients',
+            decoration: {
+                icon: { tag: 'div', class: 'fas fa-box-open mr-2' },
+            },
+            entryModule: 'yw_clients',
+            docBasePath: '../assets/api',
+            configuration: configuration,
+        }),
+    },
     '/change-log': {
         name: 'Change Log',
         decoration: {
