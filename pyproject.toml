@@ -161,6 +161,7 @@ known_yw_app = "youwol.app"
 known_yw_backends = "youwol.backends"
 known_yw_utils = "youwol.utils"
 known_yw_pipelines = "youwol.pipelines"
+known_yw_clients = "yw_clients"
 sections = [
     "FUTURE",
     "STDLIB",
@@ -173,6 +174,7 @@ sections = [
     "YW_UTILS",
     "YW_PIPELINES",
     "LOCALFOLDER",
+    "YW_CLIENTS"
 ]
 import_heading_future = "future"
 import_heading_stdlib = "standard library"
@@ -183,6 +185,7 @@ import_heading_firstparty = "Youwol"
 import_heading_yw_app = "Youwol application"
 import_heading_yw_backends = "Youwol backends"
 import_heading_yw_utils = "Youwol utilities"
+import_heading_yw_clients = "Youwol clients"
 import_heading_yw_pipelines = "Youwol pipelines"
 import_heading_localfolder = "relative"
 

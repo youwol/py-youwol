@@ -1,0 +1,101 @@
+# standard library
+from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
+
+# typing
+from typing import Any
+
+# third parties
+from aiohttp import ClientResponse
+
+# Youwol clients
+from yw_clients.http.exceptions import upstream_exception_from_response
+from yw_clients.http.request_executor import RequestExecutor, json_reader
+
+
+@dataclass(frozen=True)
+class FilesClient:
+    """
+    HTTP client of the :mod:`files <youwol.backends.files>` service.
+    """
+
+    url_base: str
+    """
+    Base URL used for the request.
+    """
+
+    request_executor: RequestExecutor
+    """
+    Request executor.
+    """
+
+    async def upload(self, data, **kwargs):
+        """
+        See description in
+        :func:`files.upload <youwol.backends.files.root_paths.upload>`.
+        """
+        return await self.request_executor.post(
+            url=f"{self.url_base}/files",
+            default_reader=json_reader,
+            data=data,
+            **kwargs,
+        )
+
+    async def get_info(self, file_id: str, **kwargs):
+        """
+        See description in
+        :func:`files.get_info <youwol.backends.files.root_paths.get_info>`.
+        """
+        return await self.request_executor.get(
+            url=f"{self.url_base}/files/{file_id}/info",
+            default_reader=json_reader,
+            **kwargs,
+        )
+
+    async def update_metadata(self, file_id: str, body, **kwargs):
+        """
+        See description in
+        :func:`files.update_metadata <youwol.backends.files.root_paths.update_metadata>`.
+        """
+        return await self.request_executor.post(
+            url=f"{self.url_base}/files/{file_id}/metadata",
+            default_reader=json_reader,
+            json={k: v for k, v in body.items() if v},
+            **kwargs,
+        )
+
+    async def get(
+        self,
+        file_id: str,
+        reader: Callable[[ClientResponse], Awaitable[Any]] | None = None,
+        **kwargs,
+    ):
+        """
+        See description in
+        :func:`files.get_file <youwol.backends.files.root_paths.get_file>`.
+        """
+        url = f"{self.url_base}/files/{file_id}"
+
+        async def _reader(resp):
+            if resp.status == 200:
+                if reader:
+                    return await reader(resp)
+                return await resp.read()
+            raise await upstream_exception_from_response(resp, url=url)
+
+        return await self.request_executor.get(
+            url=url,
+            default_reader=_reader,
+            **kwargs,
+        )
+
+    async def remove(self, file_id: str, **kwargs):
+        """
+        See description in
+        :func:`files.remove_file <youwol.backends.files.root_paths.remove_file>`.
+        """
+        return await self.request_executor.delete(
+            url=f"{self.url_base}/files/{file_id}",
+            default_reader=json_reader,
+            **kwargs,
+        )
