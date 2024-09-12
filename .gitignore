@@ -7,7 +7,7 @@ youwol_data/**/*
 !youwol_data/users-info.json
 !youwol_data/remotes-info.json
 !youwol_data/__init__.py
-youwol.egg-info
+*.egg-info
 *.pyc
 workspace/**
 build/
@@ -22,6 +22,6 @@ tooling/test_install/**/*
 .publish_venv
 __pycache__
 /.idea/
-/*.iml
+**/*.iml
 
 /.py-youwol_target/

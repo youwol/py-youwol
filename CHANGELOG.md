@@ -18,12 +18,19 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 ## [0.1.13.dev] − Unreleased
 
+### Added
+
+-  **yw_clients**:
+  - Add new python package `yw_clients` in `/lib`. It provides HTTP clients and logs management to interact
+    with YouWol's backends. <!-- TG-2480 -->
+
 ### Changed
 
 - **Pipeline Python Backend**:
   -  Pipeline does not produce auto-generated `requirements.txt` anymore. <!-- TG-2459 -->
 
 <!-- Not worthy of inclusion
+TG-2480 : 📝 [doc-app] Add `yw_clients` page
 TG-2474 : 💄 [pipelines] Improve styling of config. step views
 TG-1461 : 💚 [release] allow installing local release in venv
 TG-1462 : 💚 [release] push versions bump after publishing

@@ -82,7 +82,7 @@ template = Template(
         ),
     ),
     userGuide=True,
-    devServer=DevServer(port=3021),
+    devServer=DevServer(port=3021)
 )
 
 generate_template(template)
@@ -175,58 +175,74 @@ try:
     from mkdocs_py_griffe import generate_api, Configuration, std_links
     import griffe
     print("Generate Python API files")
+    print("#### youwol ####")
 
     DST = Path(__file__).parent / 'assets' / 'api'
-
-    config = Configuration(
-        base_nav="/api",
-        external_links={
-            **std_links(),
-            'aiohttp': 'https://docs.aiohttp.org/en/stable/client_reference.html',
-            'aiohttp.ClientResponse':
-                'https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientResponse',
-            'aiohttp.ClientSession':
-                'https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientSession',
-            'aiohttp.FormData':
-                'https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.FormData',
-            'aiohttp.TCPConnector':
-                'https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.TCPConnector',
-            'aiohttp.web_request.Request':
-                'https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.web.Request',
-            'fastapi.APIRouter': 'https://fastapi.tiangolo.com/reference/apirouter/',
-            'fastapi.Depends': 'https://fastapi.tiangolo.com/tutorial/dependencies/',
-            'fastapi.FastAPI': '',
-            'fastapi.File': 'https://fastapi.tiangolo.com/tutorial/request-files/',
-            'fastapi.HTTPException':
-                'https://fastapi.tiangolo.com/reference/exceptions/',
-            'fastapi.Query': 'https://fastapi.tiangolo.com/tutorial/query-params/',
-            'fastapi.Request':
-                'https://fastapi.tiangolo.com/advanced/using-request-directly/',
-            'fastapi.UploadFile': 'https://fastapi.tiangolo.com/reference/uploadfile/',
-            'fastapi.responses.FileResponse':
-                'https://fastapi.tiangolo.com/advanced/custom-response/#fileresponse',
-            'starlette.middleware.base.BaseHTTPMiddleware':
-                'https://www.starlette.io/middleware/#basehttpmiddleware',
-            'starlette.middleware.base.DispatchFunction':
-                'https://www.starlette.io/middleware/#basehttpmiddleware',
-            'starlette.middleware.base.RequestResponseEndpoint':
-                'https://www.starlette.io/middleware/#basehttpmiddleware',
-            'starlette.requests.Request': 'https://www.starlette.io/requests/',
-            'starlette.responses.FileResponse':
-                'https://www.starlette.io/responses/#fileresponse',
-            'starlette.responses.JSONResponse':
-                'https://www.starlette.io/responses/#jsonresponse',
-            'starlette.responses.Response':
-                'https://www.starlette.io/responses/#response',
-            'starlette.types.ASGIApp':
-                'https://github.com/encode/starlette/blob/master/starlette/types.py',
-            'starlette.websockets.WebSocket': 'https://www.starlette.io/websockets/',
-            'pydantic.BaseModel':'https://docs.pydantic.dev/latest/api/base_model/'
-        },
+    external_links ={
+        **std_links(),
+        'aiohttp': 'https://docs.aiohttp.org/en/stable/client_reference.html',
+        'aiohttp.ClientResponse':
+            'https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientResponse',
+        'aiohttp.ClientSession':
+            'https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientSession',
+        'aiohttp.FormData':
+            'https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.FormData',
+        'aiohttp.TCPConnector':
+            'https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.TCPConnector',
+        'aiohttp.web_request.Request':
+            'https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.web.Request',
+        'fastapi.APIRouter': 'https://fastapi.tiangolo.com/reference/apirouter/',
+        'fastapi.Depends': 'https://fastapi.tiangolo.com/tutorial/dependencies/',
+        'fastapi.FastAPI': '',
+        'fastapi.File': 'https://fastapi.tiangolo.com/tutorial/request-files/',
+        'fastapi.HTTPException':
+            'https://fastapi.tiangolo.com/reference/exceptions/',
+        'fastapi.Query': 'https://fastapi.tiangolo.com/tutorial/query-params/',
+        'fastapi.Request':
+            'https://fastapi.tiangolo.com/advanced/using-request-directly/',
+        'fastapi.UploadFile': 'https://fastapi.tiangolo.com/reference/uploadfile/',
+        'fastapi.responses.FileResponse':
+            'https://fastapi.tiangolo.com/advanced/custom-response/#fileresponse',
+        'starlette.middleware.base.BaseHTTPMiddleware':
+            'https://www.starlette.io/middleware/#basehttpmiddleware',
+        'starlette.middleware.base.DispatchFunction':
+            'https://www.starlette.io/middleware/#basehttpmiddleware',
+        'starlette.middleware.base.RequestResponseEndpoint':
+            'https://www.starlette.io/middleware/#basehttpmiddleware',
+        'starlette.requests.Request': 'https://www.starlette.io/requests/',
+        'starlette.responses.FileResponse':
+            'https://www.starlette.io/responses/#fileresponse',
+        'starlette.responses.JSONResponse':
+            'https://www.starlette.io/responses/#jsonresponse',
+        'starlette.responses.Response':
+            'https://www.starlette.io/responses/#response',
+        'starlette.types.ASGIApp':
+            'https://github.com/encode/starlette/blob/master/starlette/types.py',
+        'starlette.websockets.WebSocket': 'https://www.starlette.io/websockets/',
+        'pydantic.BaseModel':'https://docs.pydantic.dev/latest/api/base_model/'
+    }
+    config_yw = Configuration(
+        base_nav="/api/youwol",
+        external_links=external_links,
         out=DST
     )
     global_doc = cast(griffe.Module, griffe.load("youwol", submodules=True))
-    generate_api(global_doc, config)
+    generate_api(global_doc, config_yw)
+
+    print("#### yw_clients ####")
+
+    config_clients = Configuration(
+        base_nav="/api/yw-clients",
+        external_links=external_links,
+        cross_linked_packages={
+            "youwol": "/api/youwol"
+        },
+        out=DST
+    )
+    import yw_clients
+    clients_doc = cast(griffe.Module, griffe.load('yw_clients', submodules=True))
+    generate_api(clients_doc, config_clients)
+
 except ModuleNotFoundError:
     print("mkdocs_py_griffe not available: API documentation files not generated.")
 
