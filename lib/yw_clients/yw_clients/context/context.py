@@ -18,8 +18,8 @@ from typing import Generic, Literal, TypeVar, Union, cast
 # third parties
 import aiohttp
 
-from fastapi import HTTPException
 from pydantic import BaseModel
+from starlette.exceptions import HTTPException
 from starlette.requests import Request
 
 # Youwol clients

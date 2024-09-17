@@ -3,7 +3,7 @@ from typing import Any
 
 # third parties
 from aiohttp import ClientResponse, ContentTypeError
-from fastapi import HTTPException
+from starlette.exceptions import HTTPException
 
 # Youwol clients
 from yw_clients.common.json_utils import AnyDict
