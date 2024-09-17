@@ -38,9 +38,9 @@ from yw_clients.context.models import (
     StringLike,
     TContextAttr,
 )
+from yw_clients.http.aiohttp_utils import AioHttpExecutor
 from yw_clients.http.assets_gateway import AssetsGatewayClient
 from yw_clients.http.cdn_sessions_storage import CdnSessionsStorageClient
-from yw_clients.http.request_executor import AioHttpExecutor
 
 T = TypeVar("T")
 """
