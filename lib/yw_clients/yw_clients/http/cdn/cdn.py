@@ -36,7 +36,7 @@ def files_check_sum(paths: Iterable[Path]):
 
 
 @dataclass(frozen=True)
-class CdnClient:
+class WebpmClient:
     """
     HTTP client of the :mod:`cdn <youwol.backends.cdn>` service.
     """

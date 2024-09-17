@@ -3,10 +3,10 @@ from dataclasses import dataclass
 
 # Youwol clients
 from yw_clients.http.assets import AssetsClient
-from yw_clients.http.cdn import CdnClient
 from yw_clients.http.explorer import ExplorerClient
 from yw_clients.http.files import FilesClient
 from yw_clients.http.request_executor import RequestExecutor
+from yw_clients.http.webpm import WebpmClient
 
 
 @dataclass(frozen=True)
@@ -27,7 +27,7 @@ class AssetsGatewayClient:
     Request executor.
     """
 
-    def get_assets_backend_router(self) -> AssetsClient:
+    def assets(self) -> AssetsClient:
         """
         Return the proxied `AssetsClient`.
 
@@ -39,9 +39,9 @@ class AssetsGatewayClient:
             request_executor=self.request_executor,
         )
 
-    def get_treedb_backend_router(self) -> ExplorerClient:
+    def explorer(self) -> ExplorerClient:
         """
-        Return the proxied `TreeDbClient`.
+        Return the proxied `ExplorerClient`.
 
         Return:
             The HTTP client
@@ -51,7 +51,7 @@ class AssetsGatewayClient:
             request_executor=self.request_executor,
         )
 
-    def get_files_backend_router(self) -> FilesClient:
+    def files(self) -> FilesClient:
         """
         Return the proxied `FilesClient`.
 
@@ -63,14 +63,14 @@ class AssetsGatewayClient:
             request_executor=self.request_executor,
         )
 
-    def get_cdn_backend_router(self) -> CdnClient:
+    def webpm(self) -> WebpmClient:
         """
-        Return the proxied `CdnClient`.
+        Return the proxied `WebpmClient`.
 
         Return:
             The HTTP client
         """
-        return CdnClient(
+        return WebpmClient(
             url_base=f"{self.url_base}/cdn-backend",
             request_executor=self.request_executor,
         )
