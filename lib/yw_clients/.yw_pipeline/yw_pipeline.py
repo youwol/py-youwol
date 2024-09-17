@@ -82,15 +82,16 @@ class CodeQualityStep(PipelineStep):
 
     id = "quality"
 
-    run = ("( cd ../../ && "
-           "black lib/yw_clients/yw_clients && "
-           "isort lib/yw_clients/yw_clients && "
-           "pylint lib/yw_clients/yw_clients &&"
-           " mypy lib/yw_clients/yw_clients)")
+    run = (
+        "( cd ../../ && "
+        "black lib/yw_clients/yw_clients && "
+        "isort lib/yw_clients/yw_clients && "
+        "pylint lib/yw_clients/yw_clients &&"
+        " mypy lib/yw_clients/yw_clients)"
+    )
 
     artifacts: list[Artifact] = [Artifact(id="dist", files=dist_files)]
     sources: FileListing = FileListing(include=["yw_clients/**", PYPROJECT_TOML])
-
 
 
 class PublishStep(PipelineStep):
@@ -142,10 +143,7 @@ async def pipeline(context: Context):
             flows=[
                 Flow(
                     name="prod",
-                    dag=[
-                        "setup > build > publish",
-                        "setup > quality"
-                    ],
+                    dag=["setup > build > publish", "setup > quality"],
                 )
             ],
         )
