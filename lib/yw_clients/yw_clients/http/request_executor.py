@@ -4,16 +4,17 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
 # typing
-from typing import Any, Generic, TypeVar
+from typing import Any, Generic, Type, TypeVar
 
 # third parties
 from aiohttp import ClientResponse, ClientSession
+from pydantic import BaseModel
 
 # Youwol clients
 from yw_clients.common.json_utils import JSON
 from yw_clients.http.exceptions import upstream_exception_from_response
 
-T = TypeVar("T")
+ClientResponseT = TypeVar("ClientResponseT", ClientResponse, Any)
 """
 Type var definition for a response of a request,
 used as template parameter of :class:`RequestExecutor <yw_clients.http.request_executor.RequestExecutor>`.
@@ -22,8 +23,44 @@ E.g. in case of aiohttp executor, it is
 [ClientResponse](https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientResponse).
 """
 
+ParsedResponseT = TypeVar("ParsedResponseT")
+BaseModelT = TypeVar("BaseModelT", bound=BaseModel)
 
-class RequestExecutor(ABC, Generic[T]):
+
+class EmptyResponse(BaseModel):
+    """
+    Empty response.
+    """
+
+
+@dataclass(frozen=True)
+class FileResponse(ABC, Generic[ClientResponseT]):
+
+    resp: ClientResponseT
+
+    @abstractmethod
+    async def read(self) -> bytes:
+        """
+        Return:
+            Bytes content.
+        """
+
+    @abstractmethod
+    async def json(self, **kwargs) -> JSON:
+        """
+        Return:
+            Content parsed in JSON.
+        """
+
+    @abstractmethod
+    async def text(self, **kwargs) -> str:
+        """
+        Return:
+            Content parsed in string.
+        """
+
+
+class RequestExecutor(ABC, Generic[ClientResponseT]):
     """
     Abstract class for requests executor.
 
@@ -34,18 +71,16 @@ class RequestExecutor(ABC, Generic[T]):
     async def get(
         self,
         url: str,
-        default_reader: Callable[[T], Awaitable[Any]],
-        custom_reader: Callable[[T], Awaitable[Any]] | None = None,
+        reader: Callable[[ClientResponseT], Awaitable[ParsedResponseT]],
         headers: dict[str, str] | None = None,
         **kwargs,
-    ):
+    ) -> ParsedResponseT:
         """
         Execute a `GET` request.
 
         Parameters:
             url: URL of the request.
-            default_reader: the default reader to parse the response.
-            custom_reader: if provided, this custom reader is used in place of the `default_reader`.
+            reader: the reader used to parse the response.
             headers: headers to use with the request
 
         Return:
@@ -56,18 +91,16 @@ class RequestExecutor(ABC, Generic[T]):
     async def post(
         self,
         url: str,
-        default_reader: Callable[[T], Awaitable[Any]],
-        custom_reader: Callable[[T], Awaitable[Any]] | None = None,
+        reader: Callable[[ClientResponseT], Awaitable[ParsedResponseT]],
         headers: dict[str, str] | None = None,
         **kwargs,
-    ):
+    ) -> ParsedResponseT:
         """
         Execute a `POST` request.
 
         Parameters:
             url: URL of the request.
-            default_reader: the default reader to parse the response.
-            custom_reader: if provided, this custom reader is used in place of the `default_reader`.
+            reader: the reader used to parse the response.
             headers: headers to use with the request
 
         Return:
@@ -78,18 +111,16 @@ class RequestExecutor(ABC, Generic[T]):
     async def put(
         self,
         url: str,
-        default_reader: Callable[[T], Awaitable[Any]],
-        custom_reader: Callable[[T], Awaitable[Any]] | None = None,
+        reader: Callable[[ClientResponseT], Awaitable[ParsedResponseT]],
         headers: dict[str, str] | None = None,
         **kwargs,
-    ):
+    ) -> ParsedResponseT:
         """
         Execute a `PUT` request.
 
         Parameters:
             url: URL of the request.
-            default_reader: the default reader to parse the response.
-            custom_reader: if provided, this custom reader is used in place of the `default_reader`.
+            reader: the reader used to parse the response.
             headers: headers to use with the request
 
         Return:
@@ -100,23 +131,63 @@ class RequestExecutor(ABC, Generic[T]):
     async def delete(
         self,
         url: str,
-        default_reader: Callable[[T], Awaitable[Any]],
-        custom_reader: Callable[[T], Awaitable[Any]] | None = None,
+        reader: Callable[[ClientResponseT], Awaitable[ParsedResponseT]],
         headers: dict[str, str] | None = None,
         **kwargs,
-    ):
+    ) -> ParsedResponseT:
         """
         Execute a `DELETE` request.
 
         Parameters:
             url: URL of the request.
-            default_reader: the default reader to parse the response.
-            custom_reader: if provided, this custom reader is used in place of the `default_reader`.
+            reader: the reader used to parse the response.
             headers: headers to use with the request
 
         Return:
             The type of the response depends on the `default_reader` or `̀custom_reader` if provided.
         """
+
+    @abstractmethod
+    async def json_reader(self, resp: ClientResponseT, **kwargs) -> JSON:
+        """Client response to JSON."""
+
+    @abstractmethod
+    async def text_reader(self, resp: ClientResponseT, **kwargs) -> str:
+        """Client response to string."""
+
+    @abstractmethod
+    async def bytes_reader(self, resp: ClientResponseT, **kwargs) -> bytes:
+        """Client response to bytes."""
+
+    @abstractmethod
+    async def file_reader(self, resp: ClientResponseT, **kwargs) -> FileResponse:
+        """Client response to file."""
+
+    @abstractmethod
+    def typed_reader(
+        self,
+        target: Type[BaseModelT],
+    ) -> Callable[[ClientResponseT], Awaitable[BaseModelT]]:
+        """
+        Return the response as expected pydantic's BaseModel.
+
+        Parameters:
+            target: The type expected.
+        Return:
+            The reader function.
+        """
+
+
+class AioHttpFileResponse(FileResponse[ClientResponse]):
+
+    async def read(self) -> bytes:
+        return await self.resp.read()
+
+    async def json(self, **kwargs) -> JSON:
+        return await self.resp.json(**kwargs)
+
+    async def text(self, **kwargs) -> str:
+        return await self.resp.text(**kwargs)
 
 
 @dataclass(frozen=True)
@@ -149,7 +220,7 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
         return ClientSession(auto_decompress=False)
 
     async def _trigger_request(
-        self, request: Callable[[ClientSession], Awaitable[Any]]
+        self, request: Callable[[ClientSession], Awaitable[ParsedResponseT]]
     ):
         if isinstance(self.client_session, ClientSession):
             return await request(self.client_session)
@@ -169,14 +240,12 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
         self,
         method: str,
         url: str,
-        default_reader: Callable[[ClientResponse], Awaitable[Any]],
-        custom_reader: Callable[[ClientResponse], Awaitable[Any]] | None = None,
+        reader: Callable[[ClientResponseT], Awaitable[ParsedResponseT]],
         headers: dict[str, str] | None = None,
         **kwargs,
-    ):
+    ) -> ParsedResponseT:
         resolved_headers = await self._resolve_headers(headers)
         kwargs.pop("headers", None)
-        reader = custom_reader or default_reader
 
         async def request(session: ClientSession):
             async with await session.request(
@@ -189,19 +258,17 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
     async def get(
         self,
         url: str,
-        default_reader: Callable[[ClientResponse], Awaitable[Any]],
-        custom_reader: Callable[[ClientResponse], Awaitable[Any]] | None = None,
+        reader: Callable[[ClientResponseT], Awaitable[ParsedResponseT]],
         headers: dict[str, str] | None = None,
         **kwargs,
-    ):
+    ) -> ParsedResponseT:
         """
         See :func:`RequestExecutor.post <yw_clients.http.request_executor.RequestExecutor.get>`.
         """
         return await self._request(
             "GET",
             url=url,
-            default_reader=default_reader,
-            custom_reader=custom_reader,
+            reader=reader,
             headers=headers,
             **kwargs,
         )
@@ -209,19 +276,17 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
     async def post(
         self,
         url: str,
-        default_reader: Callable[[ClientResponse], Any],
-        custom_reader: Callable[[ClientResponse], Any] | None = None,
+        reader: Callable[[ClientResponseT], Awaitable[ParsedResponseT]],
         headers: dict[str, str] | None = None,
         **kwargs,
-    ):
+    ) -> ParsedResponseT:
         """
         See :func:`RequestExecutor.post <yw_clients.http.request_executor.RequestExecutor.post>`.
         """
         return await self._request(
             "POST",
             url=url,
-            default_reader=default_reader,
-            custom_reader=custom_reader,
+            reader=reader,
             headers=headers,
             **kwargs,
         )
@@ -229,19 +294,17 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
     async def put(
         self,
         url: str,
-        default_reader: Callable[[ClientResponse], Any],
-        custom_reader: Callable[[ClientResponse], Any] | None = None,
+        reader: Callable[[ClientResponseT], Awaitable[ParsedResponseT]],
         headers: dict[str, str] | None = None,
         **kwargs,
-    ):
+    ) -> ParsedResponseT:
         """
         See :func:`RequestExecutor.put <yw_clients.http.request_executor.RequestExecutor.put>`.
         """
         return await self._request(
             "PUT",
             url=url,
-            default_reader=default_reader,
-            custom_reader=custom_reader,
+            reader=reader,
             headers=headers,
             **kwargs,
         )
@@ -249,101 +312,68 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
     async def delete(
         self,
         url: str,
-        default_reader: Callable[[ClientResponse], Any],
-        custom_reader: Callable[[ClientResponse], Any] | None = None,
+        reader: Callable[[ClientResponseT], Awaitable[ParsedResponseT]],
         headers: dict[str, str] | None = None,
         **kwargs,
-    ):
+    ) -> ParsedResponseT:
         """
         See :func:`RequestExecutor.delete <yw_clients.http.request_executor.RequestExecutor.delete>`.
         """
         return await self._request(
             "DELETE",
             url=url,
-            default_reader=default_reader,
-            custom_reader=custom_reader,
+            reader=reader,
             headers=headers,
             **kwargs,
         )
 
+    async def json_reader(self, resp: ClientResponse, **kwargs) -> JSON:
+        if resp.status < 300:
+            resp_json = await resp.json()
+            return resp_json
 
-async def text_reader(resp: ClientResponse) -> str:
-    """
-    Text reader from aiohttp's
-    [ClientResponse](https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientResponse).
+        raise await upstream_exception_from_response(resp, url=resp.url)
 
-    Parameters:
-        resp: The response.
+    async def text_reader(self, resp: ClientResponse, **kwargs) -> str:
+        if resp.status < 300:
+            resp_text = await resp.text()
+            return resp_text
 
-    Return:
-        The content as string.
-    """
-    if resp.status < 300:
-        resp_text = await resp.text()
-        return resp_text
+        raise await upstream_exception_from_response(resp, url=resp.url)
 
-    raise await upstream_exception_from_response(resp, url=resp.url)
+    async def bytes_reader(self, resp: ClientResponse, **kwargs) -> bytes:
+        if resp.status < 300:
+            resp_bytes = await resp.read()
+            return resp_bytes
 
+        raise await upstream_exception_from_response(resp, url=resp.url)
 
-async def json_reader(resp: ClientResponse) -> JSON:
-    """
-    JSON reader from aiohttp's
-    [ClientResponse](https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientResponse).
+    async def file_reader(self, resp: ClientResponse, **kwargs) -> AioHttpFileResponse:
+        if resp.status < 300:
+            return AioHttpFileResponse(resp=resp)
 
-    Parameters:
-        resp: The response.
+        raise await upstream_exception_from_response(resp)
 
-    Return:
-        The content as JSON.
-    """
-    if resp.status < 300:
-        resp_json = await resp.json()
-        return resp_json
+    def typed_reader(
+        self,
+        target: Type[BaseModelT],
+    ) -> Callable[[ClientResponse], Awaitable[BaseModelT]]:
+        """
+        Return the response as expected pydantic's BaseModel.
 
-    raise await upstream_exception_from_response(resp, url=resp.url)
+        Parameters:
+            target: The type expected.
+        Return:
+            The reader function.
+        """
 
+        async def reader(resp: ClientResponseT) -> BaseModelT:
+            if resp.status < 300:
+                resp_json = await self.json_reader(resp)
+                if not isinstance(resp_json, dict):
+                    raise ValueError("The response recieved is not a valid dict")
+                return target(**resp_json)
 
-async def bytes_reader(resp: ClientResponse) -> bytes:
-    """
-    Bytes reader from aiohttp's
-    [ClientResponse](https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientResponse).
+            raise await upstream_exception_from_response(resp, url=resp.url)
 
-    Parameters:
-        resp: The response.
-
-    Return:
-        The content as bytes.
-    """
-    if resp.status < 300:
-        resp_bytes = await resp.read()
-        return resp_bytes
-
-    raise await upstream_exception_from_response(resp, url=resp.url)
-
-
-async def auto_reader(resp: ClientResponse) -> JSON | str | bytes:
-    """
-    Automatic selection of reader from the response's `content_type`.
-    See code implementation regarding switching strategy.
-
-    Parameters:
-        resp: The response.
-
-    Return:
-        The content as JSON, string or bytes (default).
-    """
-    if resp.status < 300:
-        content_type = resp.content_type
-
-        if content_type == "application/json":
-            return await resp.json()
-
-        text_applications = ["rtf", "xml", "x-sh"]
-        if content_type.startswith("text/") or content_type in [
-            f"application/{app}" for app in text_applications
-        ]:
-            return await resp.text()
-
-        return await resp.read()
-
-    raise await upstream_exception_from_response(resp)
+        return reader

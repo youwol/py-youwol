@@ -1,5 +1,4 @@
 # standard library
-from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -7,15 +6,23 @@ from pathlib import Path
 from typing import Any
 
 # third parties
-from aiohttp import ClientResponse, FormData
+from aiohttp import FormData
 
 # Youwol clients
-from yw_clients.http.exceptions import upstream_exception_from_response
+from yw_clients.http.assets.models import (
+    AccessInfoResp,
+    AccessPolicyBody,
+    AccessPolicyResp,
+    AddFilesResponse,
+    AssetResponse,
+    NewAssetBody,
+    PermissionsResp,
+    UpdateAssetBody,
+)
 from yw_clients.http.request_executor import (
+    EmptyResponse,
+    FileResponse,
     RequestExecutor,
-    auto_reader,
-    bytes_reader,
-    json_reader,
 )
 
 
@@ -35,7 +42,12 @@ class AssetsClient:
     Request executor.
     """
 
-    async def create_asset(self, body, **kwargs):
+    async def create_asset(
+        self,
+        body: NewAssetBody,
+        headers: dict[str, str],
+        **kwargs: dict[str, Any] | None,
+    ) -> AssetResponse:
         """
         See description in
         :func:`assets.create_asset <youwol.backends.assets.routers.assets.create_asset>`.
@@ -48,12 +60,15 @@ class AssetsClient:
         """
         return await self.request_executor.put(
             url=f"{self.url_base}/assets",
-            default_reader=json_reader,
-            json=body,
+            reader=self.request_executor.typed_reader(AssetResponse),
+            json=body.json(),
+            headers=headers,
             **kwargs,
         )
 
-    async def add_zip_files(self, asset_id: str, data: bytes, **kwargs):
+    async def add_zip_files(
+        self, asset_id: str, data: bytes, headers: dict[str, str], **kwargs
+    ) -> AddFilesResponse:
         """
         See description in
         :func:`assets.add_zip_files <youwol.backends.assets.routers.files.add_zip_files>`.
@@ -67,85 +82,112 @@ class AssetsClient:
         )
         return await self.request_executor.post(
             url=f"{self.url_base}/assets/{asset_id}/files",
-            default_reader=json_reader,
+            reader=self.request_executor.typed_reader(AddFilesResponse),
             data=form_data,
+            headers=headers,
             **kwargs,
         )
 
     async def get_file(
-        self,
-        asset_id: str,
-        path: Path | str,
-        **kwargs,
-    ):
+        self, asset_id: str, path: Path | str, headers: dict[str, str], **kwargs
+    ) -> FileResponse:
         """
         See description in
         :func:`assets.get_file <youwol.backends.assets.routers.files.get_file>`.
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/assets/{asset_id}/files/{path}",
-            default_reader=auto_reader,
+            reader=self.request_executor.file_reader,
+            headers=headers,
             **kwargs,
         )
 
-    async def delete_files(self, asset_id: str, **kwargs):
+    async def delete_files(
+        self, asset_id: str, headers: dict[str, str], **kwargs
+    ) -> EmptyResponse:
         """
         See description in
         :func:`assets.delete_files <youwol.backends.assets.routers.files.delete_files>`.
         """
         return await self.request_executor.delete(
             url=f"{self.url_base}/assets/{asset_id}/files",
-            default_reader=json_reader,
+            default_reader=self.request_executor.json_reader,
+            reader=self.request_executor.typed_reader(EmptyResponse),
+            headers=headers,
             **kwargs,
         )
 
-    async def get_zip_files(self, asset_id: str, **kwargs):
+    async def get_zip_files(
+        self, asset_id: str, headers: dict[str, str], **kwargs
+    ) -> FileResponse:
         """
         See description in
         :func:`assets.get_zip_files <youwol.backends.assets.routers.files.get_zip_files>`.
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/assets/{asset_id}/files",
-            default_reader=bytes_reader,
+            reader=self.request_executor.file_reader,
+            headers=headers,
             **kwargs,
         )
 
-    async def update_asset(self, asset_id: str, body, **kwargs):
+    async def update_asset(
+        self, asset_id: str, body: UpdateAssetBody, headers: dict[str, str], **kwargs
+    ) -> AssetResponse:
         """
         See description in
         :func:`assets.post_asset <youwol.backends.assets.routers.assets.post_asset>`.
         """
         return await self.request_executor.post(
             url=f"{self.url_base}/assets/{asset_id}",
-            default_reader=json_reader,
-            json=body,
+            json=body.json(),
+            reader=self.request_executor.typed_reader(AssetResponse),
+            headers=headers,
             **kwargs,
         )
 
-    async def put_access_policy(self, asset_id: str, group_id: str, body, **kwargs):
+    async def put_access_policy(
+        self,
+        asset_id: str,
+        group_id: str,
+        body: AccessPolicyBody,
+        headers: dict[str, str],
+        **kwargs,
+    ) -> EmptyResponse:
         """
         See description in
         :func:`assets.put_access_policy <youwol.backends.assets.routers.access.put_access_policy>`.
         """
         return await self.request_executor.put(
             url=f"{self.url_base}/assets/{asset_id}/access/{group_id}",
-            default_reader=json_reader,
-            json=body,
+            reader=self.request_executor.typed_reader(EmptyResponse),
+            json=body.json(),
+            headers=headers,
             **kwargs,
         )
 
-    async def delete_access_policy(self, asset_id: str, group_id: str, **kwargs):
+    async def delete_access_policy(
+        self, asset_id: str, group_id: str, headers: dict[str, str], **kwargs
+    ) -> EmptyResponse:
         """
         See description in
         :func:`assets.delete_access_policy <youwol.backends.assets.routers.access.delete_access_policy>`.
         """
         return await self.request_executor.delete(
             url=f"{self.url_base}/assets/{asset_id}/access/{group_id}",
-            default_reader=json_reader,
+            reader=self.request_executor.typed_reader(EmptyResponse),
+            headers=headers,
             **kwargs,
         )
 
-    async def post_image(self, asset_id: str, filename: str, src: bytes, **kwargs):
+    async def post_image(
+        self,
+        asset_id: str,
+        filename: str,
+        src: bytes,
+        headers: dict[str, str],
+        **kwargs,
+    ) -> AssetResponse:
         """
         See description in
         :func:`assets.post_image <youwol.backends.assets.routers.images.post_image>`.
@@ -157,19 +199,23 @@ class AssetsClient:
 
         return await self.request_executor.post(
             url=f"{self.url_base}/assets/{asset_id}/images/{filename}",
-            default_reader=json_reader,
+            reader=self.request_executor.typed_reader(AssetResponse),
             data=form_data,
+            headers=headers,
             **kwargs,
         )
 
-    async def remove_image(self, asset_id: str, filename: str, **kwargs):
+    async def remove_image(
+        self, asset_id: str, filename: str, headers: dict[str, str], **kwargs
+    ) -> AssetResponse:
         """
         See description in
         :func:`assets.remove_image <youwol.backends.assets.routers.images.remove_image>`.
         """
         return await self.request_executor.delete(
             url=f"{self.url_base}/assets/{asset_id}/images/{filename}",
-            default_reader=json_reader,
+            reader=self.request_executor.typed_reader(AssetResponse),
+            headers=headers,
             **kwargs,
         )
 
@@ -178,114 +224,85 @@ class AssetsClient:
         asset_id: str,
         media_type: str,
         name: str,
-        reader: Callable[[ClientResponse], Awaitable[Any]] | None = None,
+        headers: dict[str, str],
         **kwargs,
-    ):
+    ) -> FileResponse:
         """
         See description in
         :func:`assets.get_media_image <youwol.backends.assets.routers.images.get_media_image>` or
         :func:`assets.get_media_thumbnail <youwol.backends.assets.routers.images.get_media_thumbnail>`.
         """
-
-        async def _reader(resp: ClientResponse):
-            if resp.status == 200:
-                if reader:
-                    return await reader(resp)
-                return resp.read()
-
-            raise await upstream_exception_from_response(resp, **kwargs)
-
         return await self.request_executor.get(
             url=f"{self.url_base}/assets/{asset_id}/{media_type}/{name}",
-            default_reader=_reader,
+            default_reader=self.request_executor.file_reader,
+            headers=headers,
             **kwargs,
         )
 
-    async def query(self, body, **kwargs):
-        return await self.request_executor.post(
-            url=f"{self.url_base}/query",
-            default_reader=json_reader,
-            json=body,
-            **kwargs,
-        )
-
-    async def get(self, asset_id: str, **kwargs):
-        return await self.request_executor.get(
-            url=f"{self.url_base}/assets/{asset_id}",
-            default_reader=json_reader,
-            **kwargs,
-        )
-
-    async def get_asset(self, asset_id: str, **kwargs):
+    async def get_asset(self, asset_id: str, headers: dict[str, str], **kwargs):
         """
         See description in
         :func:`assets.get_asset <youwol.backends.assets.routers.assets.get_asset>`.
         """
-        return await self.get(asset_id=asset_id, **kwargs)
+        return await self.request_executor.get(
+            url=f"{self.url_base}/assets/{asset_id}",
+            default_reader=self.request_executor.typed_reader(AssetResponse),
+            headers=headers,
+            **kwargs,
+        )
 
-    async def delete_asset(self, asset_id: str, **kwargs):
+    async def delete_asset(
+        self, asset_id: str, headers: dict[str, str], **kwargs
+    ) -> EmptyResponse:
         """
         See description in
         :func:`assets.delete_asset <youwol.backends.assets.routers.assets.delete_asset>`.
         """
         return await self.request_executor.delete(
             url=f"{self.url_base}/assets/{asset_id}",
-            default_reader=json_reader,
+            default_reader=self.request_executor.json_reader,
+            headers=headers,
             **kwargs,
         )
 
-    async def get_access_policy(self, asset_id: str, group_id: str, **kwargs):
+    async def get_access_policy(
+        self, asset_id: str, group_id: str, headers: dict[str, str], **kwargs
+    ) -> AccessPolicyResp:
         """
         See description in
         :func:`assets.get_access_policy <youwol.backends.assets.routers.access.get_access_policy>`.
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/assets/{asset_id}/access/{group_id}",
-            default_reader=json_reader,
+            reader=self.request_executor.typed_reader(AccessPolicyResp),
+            headers=headers,
             **kwargs,
         )
 
-    async def get_permissions(self, asset_id: str, **kwargs):
+    async def get_permissions(
+        self, asset_id: str, headers: dict[str, str], **kwargs
+    ) -> PermissionsResp:
         """
         See description in
         :func:`assets.get_permissions <youwol.backends.assets.routers.permissions.get_permissions>`.
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/assets/{asset_id}/permissions",
-            default_reader=json_reader,
+            reader=self.request_executor.typed_reader(PermissionsResp),
+            headers=headers,
             **kwargs,
         )
 
-    async def get_access_info(self, asset_id: str, **kwargs):
+    async def get_access_info(
+        self, asset_id: str, headers: dict[str, str], **kwargs
+    ) -> AccessInfoResp:
         """
         See description in
         :func:`assets.access_info <youwol.backends.assets.routers.permissions.access_info>`.
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/assets/{asset_id}/access-info",
-            default_reader=json_reader,
-            **kwargs,
-        )
-
-    async def get_records(self, body, **kwargs):
-        return await self.request_executor.post(
-            url=f"{self.url_base}/records",
-            default_reader=json_reader,
-            json=body,
-            **kwargs,
-        )
-
-    async def record_access(self, raw_id: str, **kwargs):
-        return await self.request_executor.put(
-            url=f"{self.url_base}/raw/access/{raw_id}",
-            default_reader=json_reader,
-            **kwargs,
-        )
-
-    async def query_latest_access(self, asset_id: str, max_count=100, **kwargs):
-        return await self.request_executor.get(
-            url=f"{self.url_base}/raw/access/{asset_id}/query-latest",
-            default_reader=json_reader,
-            params={"max-count": max_count},
+            default_reader=self.request_executor.json_reader,
+            headers=headers,
             **kwargs,
         )

@@ -1,16 +1,17 @@
 # standard library
-from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
-# typing
-from typing import Any
-
-# third parties
-from aiohttp import ClientResponse
-
 # Youwol clients
-from yw_clients.http.exceptions import upstream_exception_from_response
-from yw_clients.http.request_executor import RequestExecutor, json_reader
+from yw_clients.http.files.models import (
+    GetInfoResponse,
+    PostFileResponse,
+    PostMetadataBody,
+)
+from yw_clients.http.request_executor import (
+    EmptyResponse,
+    FileResponse,
+    RequestExecutor,
+)
 
 
 @dataclass(frozen=True)
@@ -29,73 +30,77 @@ class FilesClient:
     Request executor.
     """
 
-    async def upload(self, data, **kwargs):
+    async def upload(self, data, headers: dict[str, str], **kwargs) -> PostFileResponse:
         """
         See description in
         :func:`files.upload <youwol.backends.files.root_paths.upload>`.
         """
         return await self.request_executor.post(
             url=f"{self.url_base}/files",
-            default_reader=json_reader,
+            reader=self.request_executor.typed_reader(PostFileResponse),
             data=data,
+            headers=headers,
             **kwargs,
         )
 
-    async def get_info(self, file_id: str, **kwargs):
+    async def get_info(
+        self, file_id: str, headers: dict[str, str], **kwargs
+    ) -> GetInfoResponse:
         """
         See description in
         :func:`files.get_info <youwol.backends.files.root_paths.get_info>`.
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/files/{file_id}/info",
-            default_reader=json_reader,
+            reader=self.request_executor.typed_reader(GetInfoResponse),
+            headers=headers,
             **kwargs,
         )
 
-    async def update_metadata(self, file_id: str, body, **kwargs):
+    async def update_metadata(
+        self, file_id: str, body: PostMetadataBody, headers: dict[str, str], **kwargs
+    ) -> EmptyResponse:
         """
         See description in
         :func:`files.update_metadata <youwol.backends.files.root_paths.update_metadata>`.
         """
         return await self.request_executor.post(
             url=f"{self.url_base}/files/{file_id}/metadata",
-            default_reader=json_reader,
-            json={k: v for k, v in body.items() if v},
+            reader=self.request_executor.typed_reader(EmptyResponse),
+            json=body.json(),
+            headers=headers,
             **kwargs,
         )
 
     async def get(
         self,
         file_id: str,
-        reader: Callable[[ClientResponse], Awaitable[Any]] | None = None,
+        headers: dict[str, str],
         **kwargs,
-    ):
+    ) -> FileResponse:
         """
         See description in
         :func:`files.get_file <youwol.backends.files.root_paths.get_file>`.
         """
         url = f"{self.url_base}/files/{file_id}"
 
-        async def _reader(resp):
-            if resp.status == 200:
-                if reader:
-                    return await reader(resp)
-                return await resp.read()
-            raise await upstream_exception_from_response(resp, url=url)
-
         return await self.request_executor.get(
             url=url,
-            default_reader=_reader,
+            reader=self.request_executor.file_reader,
+            headers=headers,
             **kwargs,
         )
 
-    async def remove(self, file_id: str, **kwargs):
+    async def remove(
+        self, file_id: str, headers: dict[str, str], **kwargs
+    ) -> EmptyResponse:
         """
         See description in
         :func:`files.remove_file <youwol.backends.files.root_paths.remove_file>`.
         """
         return await self.request_executor.delete(
             url=f"{self.url_base}/files/{file_id}",
-            default_reader=json_reader,
+            reader=self.request_executor.typed_reader(EmptyResponse),
+            headers=headers,
             **kwargs,
         )
