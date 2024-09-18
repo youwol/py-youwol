@@ -37,6 +37,8 @@ def parse_toml(project_folder: Path):
 
 dist_files = FileListing(include=["dist/yw_clients-*"])
 
+SRC_FOLDER = "yw_clients/**"
+
 
 class SetupStep(PipelineStep):
 
@@ -75,7 +77,7 @@ class BuildStep(PipelineStep):
     run = "rm -rf ./dist/** && python3 -m build"
 
     artifacts: list[Artifact] = [Artifact(id="dist", files=dist_files)]
-    sources: FileListing = FileListing(include=["yw_clients/**", PYPROJECT_TOML])
+    sources: FileListing = FileListing(include=[SRC_FOLDER, PYPROJECT_TOML])
 
 
 class CodeQualityStep(PipelineStep):
@@ -84,14 +86,21 @@ class CodeQualityStep(PipelineStep):
 
     run = (
         "( cd ../../ && "
-        "black lib/yw_clients/yw_clients && "
-        "isort lib/yw_clients/yw_clients && "
-        "pylint lib/yw_clients/yw_clients &&"
-        " mypy lib/yw_clients/yw_clients)"
+        "black lib/yw_clients && "
+        "isort lib/yw_clients && "
+        "pylint lib/yw_clients &&"
+        " mypy lib/yw_clients)"
     )
 
     artifacts: list[Artifact] = [Artifact(id="dist", files=dist_files)]
-    sources: FileListing = FileListing(include=["yw_clients/**", PYPROJECT_TOML])
+    sources: FileListing = FileListing(include=[SRC_FOLDER, PYPROJECT_TOML])
+
+
+class TestStep(PipelineStep):
+    id = "test"
+
+    run = "pytest"
+    sources: FileListing = FileListing(include=[SRC_FOLDER, "tests/**"])
 
 
 class PublishStep(PipelineStep):
@@ -123,7 +132,7 @@ async def pipeline(context: Context):
     async with context.start(action="pipeline") as ctx:
         await ctx.info(text="Instantiate pipeline")
 
-        steps = [SetupStep(), BuildStep(), PublishStep(), CodeQualityStep()]
+        steps = [SetupStep(), BuildStep(), TestStep(), PublishStep(), CodeQualityStep()]
 
         return Pipeline(
             target=lambda project: Target(
@@ -143,7 +152,7 @@ async def pipeline(context: Context):
             flows=[
                 Flow(
                     name="prod",
-                    dag=["setup > build > publish", "setup > quality"],
+                    dag=["setup > test > build > publish", "setup > quality"],
                 )
             ],
         )
