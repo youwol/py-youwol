@@ -336,7 +336,7 @@ class ItemBody(BaseModel):
     metadata: str = "{}"
 
 
-class MoveItemBody(BaseModel):
+class MoveEntityBody(BaseModel):
     """
     Body specification to move an entity.
     """
@@ -394,7 +394,7 @@ class FolderBody(BaseModel):
     """
 
 
-class DriveBody(BaseModel):
+class NewDriveBody(BaseModel):
     """
     Body specification to create a drive.
     """

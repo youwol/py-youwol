@@ -1,0 +1,23 @@
+from typing import Any, TypeVar, Generic
+
+from pydantic import BaseModel
+
+from yw_clients.http.assets import AssetResponse
+
+RawT = TypeVar('RawT', bound=BaseModel)
+
+class NewAssetResponse(AssetResponse, Generic[RawT]):
+    """
+    Asset description when creating an asset using
+    :func:`create_asset <youwol.backends.assets_gateway.routers.assets_backend.create_asset>`
+    """
+
+    itemId: str
+    """
+    Item ID
+    """
+    rawResponse: RawT | None
+    """
+    Response from the underlying service manager of the 'raw' part of the asset; if any.
+    """
+

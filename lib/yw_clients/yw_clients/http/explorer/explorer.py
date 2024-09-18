@@ -6,7 +6,6 @@ from yw_clients.http.explorer.models import (
     BorrowBody,
     ChildrenResponse,
     DefaultDriveResponse,
-    DriveBody,
     DriveResponse,
     DrivesResponse,
     EntityResponse,
@@ -15,8 +14,9 @@ from yw_clients.http.explorer.models import (
     ItemBody,
     ItemResponse,
     ItemsResponse,
-    MoveItemBody,
+    MoveEntityBody,
     MoveResponse,
+    NewDriveBody,
     PathResponse,
     PurgeResponse,
     RenameBody,
@@ -96,7 +96,7 @@ class ExplorerClient:
         )
 
     async def create_drive(
-        self, group_id: str, body: DriveBody, headers: dict[str, str], **kwargs
+        self, group_id: str, body: NewDriveBody, headers: dict[str, str], **kwargs
     ) -> DriveResponse:
         """
         See description in tree_db
@@ -169,7 +169,7 @@ class ExplorerClient:
         )
 
     async def move(
-        self, body: MoveItemBody, headers: dict[str, str], **kwargs
+        self, body: MoveEntityBody, headers: dict[str, str], **kwargs
     ) -> MoveResponse:
         """
         See description in tree_db

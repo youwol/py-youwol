@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 # typing
-from typing import Any
+from typing import Any, Literal
 
 # third parties
 from aiohttp import FormData
@@ -221,7 +221,7 @@ class AssetsClient:
     async def get_media(
         self,
         asset_id: str,
-        media_type: str,
+        media_type: Literal["thumbnails", "images"],
         name: str,
         headers: dict[str, str],
         **kwargs,

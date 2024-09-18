@@ -157,14 +157,14 @@ class WebpmClient:
 
     async def download_library(
         self, library_id: str, version: str, headers: dict[str, str], **kwargs
-    ) -> bytes:
+    ) -> FileResponse:
         """
         See description in
         :func:`cdn.download_library <youwol.backends.cdn.root_paths.download_library>`.
         """
         return await self.request_executor.get(
             url=f"{self.download_url}/{library_id}/{version}",
-            reader=self.request_executor.bytes_reader,
+            reader=self.request_executor.file_reader,
             headers=headers,
             **kwargs,
         )

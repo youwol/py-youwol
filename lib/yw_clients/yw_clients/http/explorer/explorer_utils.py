@@ -1,5 +1,5 @@
 # Youwol clients
-from yw_clients.http.explorer import DriveBody, ExplorerClient, FolderBody
+from yw_clients.http.explorer import ExplorerClient, FolderBody, NewDriveBody
 
 
 async def ensure_pathname(
@@ -13,7 +13,7 @@ async def ensure_pathname(
     drive = next((d for d in resp_drives.drives if d.name == drive_name), None)
     if not drive:
         drive = await treedb_client.create_drive(
-            group_id=group_id, body=DriveBody(name=drive_name), headers=headers
+            group_id=group_id, body=NewDriveBody(name=drive_name), headers=headers
         )
 
     parent_folder_id = drive.driveId
