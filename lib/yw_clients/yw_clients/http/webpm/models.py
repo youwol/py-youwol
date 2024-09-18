@@ -283,7 +283,7 @@ class LoadingGraphBody(BaseModel):
     Allows to pin the dependencies of some libraries to override the version that would normally be picked.
     In the form of a dict with key being library name and value the explicit version.
     """
-    extraIndex: str | None
+    extraIndex: str | None = None
     """
     A brotli encoded dictionary of an extra CDN database to account for when resolving the dependencies.
     """

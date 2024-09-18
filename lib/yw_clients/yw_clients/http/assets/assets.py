@@ -9,6 +9,11 @@ from typing import Any, Literal
 from aiohttp import FormData
 
 # Youwol clients
+from yw_clients.http.aiohttp_utils import (
+    AioHttpExecutor,
+    AioHttpFileResponse,
+    EmptyResponse,
+)
 from yw_clients.http.assets.models import (
     AccessInfoResp,
     AccessPolicyBody,
@@ -18,11 +23,6 @@ from yw_clients.http.assets.models import (
     NewAssetBody,
     PermissionsResp,
     UpdateAssetBody,
-)
-from yw_clients.http.aiohttp_utils import (
-    EmptyResponse,
-    AioHttpFileResponse,
-    AioHttpExecutor,
 )
 
 

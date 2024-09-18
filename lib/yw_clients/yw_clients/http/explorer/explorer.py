@@ -2,6 +2,7 @@
 from dataclasses import dataclass
 
 # Youwol clients
+from yw_clients.http.aiohttp_utils import AioHttpExecutor, EmptyResponse
 from yw_clients.http.explorer.models import (
     BorrowBody,
     ChildrenResponse,
@@ -21,7 +22,6 @@ from yw_clients.http.explorer.models import (
     PurgeResponse,
     RenameBody,
 )
-from yw_clients.http.aiohttp_utils import EmptyResponse, AioHttpExecutor
 
 
 @dataclass(frozen=True)

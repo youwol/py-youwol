@@ -2,10 +2,10 @@
 from dataclasses import dataclass
 
 # Youwol clients
+from yw_clients.http.aiohttp_utils import AioHttpExecutor
 from yw_clients.http.assets import AssetsClient
 from yw_clients.http.explorer import ExplorerClient
 from yw_clients.http.files import FilesClient
-from yw_clients.http.aiohttp_utils import AioHttpExecutor
 from yw_clients.http.webpm import WebpmClient
 
 

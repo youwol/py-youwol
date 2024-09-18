@@ -14,7 +14,6 @@ from starlette.responses import Response
 from yw_clients.common.json_utils import JSON
 from yw_clients.http.exceptions import upstream_exception_from_response
 
-
 ParsedResponseT = TypeVar("ParsedResponseT")
 BaseModelT = TypeVar("BaseModelT", bound=BaseModel)
 
@@ -23,7 +22,6 @@ class EmptyResponse(BaseModel):
     """
     Empty response.
     """
-
 
 
 async def aiohttp_to_starlette_response(resp: ClientResponse) -> Response:

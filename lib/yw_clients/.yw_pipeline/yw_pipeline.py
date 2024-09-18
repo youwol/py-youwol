@@ -27,9 +27,6 @@ from youwol.app.routers.projects import (
 # Youwol utilities
 from youwol.utils.context import Context
 
-# Youwol pipelines
-from youwol.pipelines.pipeline_python_backend import pipeline
-
 PYPROJECT_TOML = "pyproject.toml"
 
 
@@ -53,12 +50,15 @@ class SetupStep(PipelineStep):
         async with context.start(
             action="SetupStep",
         ):
-            project_name = lambda path: parse_toml(path)["project"]["name"]
+
+            def project_name(path):
+                return parse_toml(path)["project"]["name"]
+
             init_file = project.path / project_name(project.path) / "__init__.py"
-            with open(init_file, "r") as file:
+            with open(init_file, "r", encoding="utf-8") as file:
                 content = file.read()
 
-            with open(init_file, "w") as file:
+            with open(init_file, "w", encoding="utf-8") as file:
                 file.write(
                     re.sub(
                         r"__version__\s*=\s*[\'\"]([^\'\"]*)[\'\"]",

@@ -3,16 +3,19 @@ import functools
 
 from dataclasses import dataclass
 
+# typing
+from typing import Any, cast
+
 # third parties
 from aiohttp import FormData
 
-from yw_clients.http.assets_gateway.models import NewAssetResponse
 # Youwol clients
 from yw_clients.http.aiohttp_utils import (
-    EmptyResponse,
-    AioHttpFileResponse,
     AioHttpExecutor,
+    AioHttpFileResponse,
+    EmptyResponse,
 )
+from yw_clients.http.assets_gateway.models import NewAssetResponse
 from yw_clients.http.webpm.models import (
     DeleteLibraryResponse,
     ExplorerResponse,
@@ -119,7 +122,7 @@ class WebpmClient:
         )
 
     async def publish(
-        self, zip_content: bytes, headers: dict[str, str], **kwargs
+        self, zip_content: bytes, headers: dict[str, str], **kwargs: dict[str, Any]
     ) -> PublishResponse | NewAssetResponse[PublishResponse]:
         """
         See description in
@@ -134,18 +137,21 @@ class WebpmClient:
         form_data.add_field(
             "file", zip_content, filename="cdn.zip", content_type="identity"
         )
-        is_wrapped = 'params' in kwargs and 'folder-id' in kwargs.get('params')
-        resp = await self.request_executor.post(
-            url=self.publish_url,
-            data=form_data,
-            reader=self.request_executor.json_reader,
-            headers=headers,
-            **kwargs,
+        is_wrapped = "params" in kwargs and "folder-id" in kwargs.get("params", {})
+        resp = cast(
+            dict[str, Any],
+            await self.request_executor.post(
+                url=self.publish_url,
+                data=form_data,
+                reader=self.request_executor.json_reader,
+                headers=headers,
+                **kwargs,
+            ),
         )
         if is_wrapped:
-            raw_resp = PublishResponse(**resp['rawResponse'])
-            asset_resp = NewAssetResponse(**resp)
-            asset_resp.rawResponse = raw_resp
+            raw_resp = PublishResponse(**resp["rawResponse"])
+            del resp["rawResponse"]
+            asset_resp = NewAssetResponse(**resp, rawResponse=raw_resp)
             return asset_resp
 
         return PublishResponse(**resp)

@@ -1,10 +1,14 @@
-from typing import Any, TypeVar, Generic
+# typing
+from typing import Generic, TypeVar
 
+# third parties
 from pydantic import BaseModel
 
+# Youwol clients
 from yw_clients.http.assets import AssetResponse
 
-RawT = TypeVar('RawT', bound=BaseModel)
+RawT = TypeVar("RawT", bound=BaseModel)
+
 
 class NewAssetResponse(AssetResponse, Generic[RawT]):
     """
@@ -16,8 +20,7 @@ class NewAssetResponse(AssetResponse, Generic[RawT]):
     """
     Item ID
     """
-    rawResponse: RawT | None
+    rawResponse: RawT
     """
     Response from the underlying service manager of the 'raw' part of the asset; if any.
     """
-
