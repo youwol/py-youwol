@@ -20,14 +20,18 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 ### Added
 
--  **yw_clients**:
+- **yw_clients**:
   - Add new python package `yw_clients` in `/lib`. It provides HTTP clients and logs management to interact
     with YouWol's backends. <!-- TG-2480 -->
 
 ### Changed
 
 - **Pipeline Python Backend**:
-  -  Pipeline does not produce auto-generated `requirements.txt` anymore. <!-- TG-2459 -->
+  - Pipeline does not produce auto-generated `requirements.txt` anymore. <!-- TG-2459 -->
+
+### Fixed
+
+- **OpenID Connect Discovery**: Remove trailing slash from Issuer when requesting `.well-known` (see [specification](https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfig)) <!-- TG-2489 -->
 
 <!-- Not worthy of inclusion
 TG-2480 : 📝 [doc-app] Add `yw_clients` page
