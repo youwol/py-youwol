@@ -19,10 +19,10 @@ from yw_clients.http.assets.models import (
     PermissionsResp,
     UpdateAssetBody,
 )
-from yw_clients.http.request_executor import (
+from yw_clients.http.aiohttp_utils import (
     EmptyResponse,
-    FileResponse,
-    RequestExecutor,
+    AioHttpFileResponse,
+    AioHttpExecutor,
 )
 
 
@@ -37,7 +37,7 @@ class AssetsClient:
     Base URL used for the request.
     """
 
-    request_executor: RequestExecutor
+    request_executor: AioHttpExecutor
     """
     Request executor.
     """
@@ -90,7 +90,7 @@ class AssetsClient:
 
     async def get_file(
         self, asset_id: str, path: Path | str, headers: dict[str, str], **kwargs
-    ) -> FileResponse:
+    ) -> AioHttpFileResponse:
         """
         See description in
         :func:`assets.get_file <youwol.backends.assets.routers.files.get_file>`.
@@ -118,7 +118,7 @@ class AssetsClient:
 
     async def get_zip_files(
         self, asset_id: str, headers: dict[str, str], **kwargs
-    ) -> FileResponse:
+    ) -> AioHttpFileResponse:
         """
         See description in
         :func:`assets.get_zip_files <youwol.backends.assets.routers.files.get_zip_files>`.
@@ -225,7 +225,7 @@ class AssetsClient:
         name: str,
         headers: dict[str, str],
         **kwargs,
-    ) -> FileResponse:
+    ) -> AioHttpFileResponse:
         """
         See description in
         :func:`assets.get_media_image <youwol.backends.assets.routers.images.get_media_image>` or

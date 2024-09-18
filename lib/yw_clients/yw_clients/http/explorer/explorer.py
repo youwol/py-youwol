@@ -21,7 +21,7 @@ from yw_clients.http.explorer.models import (
     PurgeResponse,
     RenameBody,
 )
-from yw_clients.http.request_executor import EmptyResponse, RequestExecutor
+from yw_clients.http.aiohttp_utils import EmptyResponse, AioHttpExecutor
 
 
 @dataclass(frozen=True)
@@ -34,7 +34,7 @@ class ExplorerClient:
     """
     Base URL used for the request.
     """
-    request_executor: RequestExecutor
+    request_executor: AioHttpExecutor
     """
     Request executor.
     """

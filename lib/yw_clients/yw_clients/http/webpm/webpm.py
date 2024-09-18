@@ -8,10 +8,10 @@ from aiohttp import FormData
 
 from yw_clients.http.assets_gateway.models import NewAssetResponse
 # Youwol clients
-from yw_clients.http.request_executor import (
+from yw_clients.http.aiohttp_utils import (
     EmptyResponse,
-    FileResponse,
-    RequestExecutor,
+    AioHttpFileResponse,
+    AioHttpExecutor,
 )
 from yw_clients.http.webpm.models import (
     DeleteLibraryResponse,
@@ -35,7 +35,7 @@ class WebpmClient:
     Base URL used for the request.
     """
 
-    request_executor: RequestExecutor
+    request_executor: AioHttpExecutor
     """
     Request executor.
     """
@@ -152,7 +152,7 @@ class WebpmClient:
 
     async def download_library(
         self, library_id: str, version: str, headers: dict[str, str], **kwargs
-    ) -> FileResponse:
+    ) -> AioHttpFileResponse:
         """
         See description in
         :func:`cdn.download_library <youwol.backends.cdn.root_paths.download_library>`.
@@ -217,7 +217,7 @@ class WebpmClient:
         version: str,
         headers: dict[str, str],
         **kwargs,
-    ) -> FileResponse:
+    ) -> AioHttpFileResponse:
         """
         See description in
         :func:`cdn.get_entry_point <youwol.backends.cdn.root_paths.get_entry_point>`.
@@ -237,7 +237,7 @@ class WebpmClient:
         rest_of_path: str,
         headers: dict[str, str],
         **kwargs,
-    ) -> FileResponse:
+    ) -> AioHttpFileResponse:
         """
         See description in
         :func:`cdn.get_resource <youwol.backends.cdn.root_paths.get_resource>`.

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 # Youwol clients
 from yw_clients.common.json_utils import JSON
-from yw_clients.http.request_executor import EmptyResponse, RequestExecutor
+from yw_clients.http.aiohttp_utils import EmptyResponse, AioHttpExecutor
 
 
 @dataclass(frozen=True)
@@ -16,7 +16,7 @@ class CdnSessionsStorageClient:
     """
     Base URL used for the request.
     """
-    request_executor: RequestExecutor
+    request_executor: AioHttpExecutor
     """
     Request executor.
     """

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from yw_clients.http.assets import AssetsClient
 from yw_clients.http.explorer import ExplorerClient
 from yw_clients.http.files import FilesClient
-from yw_clients.http.request_executor import RequestExecutor
+from yw_clients.http.aiohttp_utils import AioHttpExecutor
 from yw_clients.http.webpm import WebpmClient
 
 
@@ -22,7 +22,7 @@ class AssetsGatewayClient:
     Base URL used for the request.
     """
 
-    request_executor: RequestExecutor
+    request_executor: AioHttpExecutor
     """
     Request executor.
     """

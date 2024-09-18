@@ -10,10 +10,10 @@ from yw_clients.http.files.models import (
     PostFileResponse,
     PostMetadataBody,
 )
-from yw_clients.http.request_executor import (
+from yw_clients.http.aiohttp_utils import (
     EmptyResponse,
-    FileResponse,
-    RequestExecutor,
+    AioHttpFileResponse,
+    AioHttpExecutor,
 )
 
 
@@ -28,7 +28,7 @@ class FilesClient:
     Base URL used for the request.
     """
 
-    request_executor: RequestExecutor
+    request_executor: AioHttpExecutor
     """
     Request executor.
     """
@@ -109,7 +109,7 @@ class FilesClient:
         file_id: str,
         headers: dict[str, str],
         **kwargs,
-    ) -> FileResponse:
+    ) -> AioHttpFileResponse:
         """
         See description in
         :func:`files.get_file <youwol.backends.files.root_paths.get_file>`.

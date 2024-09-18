@@ -3,22 +3,27 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 # typing
-from typing import Any, Awaitable, Type
+from typing import Any, Awaitable, Type, TypeVar
 
 # third parties
 from aiohttp import ClientResponse, ClientSession, FormData
+from pydantic import BaseModel
 from starlette.responses import Response
 
 # Youwol clients
 from yw_clients.common.json_utils import JSON
 from yw_clients.http.exceptions import upstream_exception_from_response
-from yw_clients.http.request_executor import (
-    BaseModelT,
-    ClientResponseT,
-    FileResponse,
-    ParsedResponseT,
-    RequestExecutor,
-)
+
+
+ParsedResponseT = TypeVar("ParsedResponseT")
+BaseModelT = TypeVar("BaseModelT", bound=BaseModel)
+
+
+class EmptyResponse(BaseModel):
+    """
+    Empty response.
+    """
+
 
 
 async def aiohttp_to_starlette_response(resp: ClientResponse) -> Response:
@@ -62,7 +67,9 @@ def aiohttp_file_form(
     return form_data
 
 
-class AioHttpFileResponse(FileResponse[ClientResponse]):
+@dataclass(frozen=True)
+class AioHttpFileResponse:
+    resp: ClientResponse
 
     async def read(self) -> bytes:
         return await self.resp.read()
@@ -75,7 +82,7 @@ class AioHttpFileResponse(FileResponse[ClientResponse]):
 
 
 @dataclass(frozen=True)
-class AioHttpExecutor(RequestExecutor[ClientResponse]):
+class AioHttpExecutor:
     """
     Request executor using [AioHTTP](https://docs.aiohttp.org/en/stable/) instantiated using the template parameter
     [ClientResponse](https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientResponse)..
@@ -124,7 +131,7 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
         self,
         method: str,
         url: str,
-        reader: Callable[[ClientResponseT], Awaitable[ParsedResponseT]],
+        reader: Callable[[ClientResponse], Awaitable[ParsedResponseT]],
         headers: dict[str, str] | None = None,
         **kwargs,
     ) -> ParsedResponseT:
@@ -142,7 +149,7 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
     async def get(
         self,
         url: str,
-        reader: Callable[[ClientResponseT], Awaitable[ParsedResponseT]],
+        reader: Callable[[ClientResponse], Awaitable[ParsedResponseT]],
         headers: dict[str, str] | None = None,
         **kwargs,
     ) -> ParsedResponseT:
@@ -160,7 +167,7 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
     async def post(
         self,
         url: str,
-        reader: Callable[[ClientResponseT], Awaitable[ParsedResponseT]],
+        reader: Callable[[ClientResponse], Awaitable[ParsedResponseT]],
         headers: dict[str, str] | None = None,
         **kwargs,
     ) -> ParsedResponseT:
@@ -178,7 +185,7 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
     async def put(
         self,
         url: str,
-        reader: Callable[[ClientResponseT], Awaitable[ParsedResponseT]],
+        reader: Callable[[ClientResponse], Awaitable[ParsedResponseT]],
         headers: dict[str, str] | None = None,
         **kwargs,
     ) -> ParsedResponseT:
@@ -196,7 +203,7 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
     async def delete(
         self,
         url: str,
-        reader: Callable[[ClientResponseT], Awaitable[ParsedResponseT]],
+        reader: Callable[[ClientResponse], Awaitable[ParsedResponseT]],
         headers: dict[str, str] | None = None,
         **kwargs,
     ) -> ParsedResponseT:
@@ -213,26 +220,26 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
 
     async def json_reader(self, resp: ClientResponse, **kwargs) -> JSON:
         if resp.status < 300:
-            resp_json = await resp.json()
+            resp_json = await resp.json(**kwargs)
             return resp_json
 
         raise await upstream_exception_from_response(resp, url=resp.url)
 
     async def text_reader(self, resp: ClientResponse, **kwargs) -> str:
         if resp.status < 300:
-            resp_text = await resp.text()
+            resp_text = await resp.text(**kwargs)
             return resp_text
 
         raise await upstream_exception_from_response(resp, url=resp.url)
 
-    async def bytes_reader(self, resp: ClientResponse, **kwargs) -> bytes:
+    async def bytes_reader(self, resp: ClientResponse) -> bytes:
         if resp.status < 300:
             resp_bytes = await resp.read()
             return resp_bytes
 
         raise await upstream_exception_from_response(resp, url=resp.url)
 
-    async def file_reader(self, resp: ClientResponse, **kwargs) -> AioHttpFileResponse:
+    async def file_reader(self, resp: ClientResponse) -> AioHttpFileResponse:
         if resp.status < 300:
             return AioHttpFileResponse(resp=resp)
 
@@ -251,7 +258,7 @@ class AioHttpExecutor(RequestExecutor[ClientResponse]):
             The reader function.
         """
 
-        async def reader(resp: ClientResponseT) -> BaseModelT:
+        async def reader(resp: ClientResponse) -> BaseModelT:
             if resp.status < 300:
                 resp_json = await self.json_reader(resp)
                 if not isinstance(resp_json, dict):
