@@ -111,7 +111,6 @@ class AssetsClient:
         """
         return await self.request_executor.delete(
             url=f"{self.url_base}/assets/{asset_id}/files",
-            default_reader=self.request_executor.json_reader,
             reader=self.request_executor.typed_reader(EmptyResponse),
             headers=headers,
             **kwargs,
@@ -234,7 +233,7 @@ class AssetsClient:
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/assets/{asset_id}/{media_type}/{name}",
-            default_reader=self.request_executor.file_reader,
+            reader=self.request_executor.file_reader,
             headers=headers,
             **kwargs,
         )
@@ -246,7 +245,7 @@ class AssetsClient:
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/assets/{asset_id}",
-            default_reader=self.request_executor.typed_reader(AssetResponse),
+            reader=self.request_executor.typed_reader(AssetResponse),
             headers=headers,
             **kwargs,
         )
@@ -260,7 +259,7 @@ class AssetsClient:
         """
         return await self.request_executor.delete(
             url=f"{self.url_base}/assets/{asset_id}",
-            default_reader=self.request_executor.json_reader,
+            reader=self.request_executor.typed_reader(EmptyResponse),
             headers=headers,
             **kwargs,
         )
@@ -302,7 +301,7 @@ class AssetsClient:
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/assets/{asset_id}/access-info",
-            default_reader=self.request_executor.json_reader,
+            reader=self.request_executor.typed_reader(AccessInfoResp),
             headers=headers,
             **kwargs,
         )
