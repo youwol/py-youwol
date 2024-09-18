@@ -61,7 +61,7 @@ class AssetsClient:
         return await self.request_executor.put(
             url=f"{self.url_base}/assets",
             reader=self.request_executor.typed_reader(AssetResponse),
-            json=body.json(),
+            json=body.dict(),
             headers=headers,
             **kwargs,
         )
@@ -140,7 +140,7 @@ class AssetsClient:
         """
         return await self.request_executor.post(
             url=f"{self.url_base}/assets/{asset_id}",
-            json=body.json(),
+            json=body.dict(),
             reader=self.request_executor.typed_reader(AssetResponse),
             headers=headers,
             **kwargs,
@@ -161,7 +161,7 @@ class AssetsClient:
         return await self.request_executor.put(
             url=f"{self.url_base}/assets/{asset_id}/access/{group_id}",
             reader=self.request_executor.typed_reader(EmptyResponse),
-            json=body.json(),
+            json=body.dict(),
             headers=headers,
             **kwargs,
         )

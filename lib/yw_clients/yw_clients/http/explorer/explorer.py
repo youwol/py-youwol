@@ -105,7 +105,7 @@ class ExplorerClient:
         return await self.request_executor.put(
             url=f"{self.url_base}/groups/{group_id}/drives",
             reader=self.request_executor.typed_reader(DriveResponse),
-            json=body.json(),
+            json=body.dict(),
             headers=headers,
             **kwargs,
         )
@@ -120,7 +120,7 @@ class ExplorerClient:
         return await self.request_executor.post(
             url=f"{self.url_base}/drives/{drive_id}",
             reader=self.request_executor.typed_reader(DriveResponse),
-            json=body.json(),
+            json=body.dict(),
             **kwargs,
         )
 
@@ -148,7 +148,7 @@ class ExplorerClient:
         return await self.request_executor.put(
             url=f"{self.url_base}/folders/{parent_folder_id}",
             reader=self.request_executor.typed_reader(FolderResponse),
-            json=body.json(),
+            json=body.dict(),
             headers=headers,
             **kwargs,
         )
@@ -163,7 +163,7 @@ class ExplorerClient:
         return await self.request_executor.post(
             url=f"{self.url_base}/folders/{folder_id}",
             reader=self.request_executor.typed_reader(FolderResponse),
-            json=body.json(),
+            json=body.dict(),
             headers=headers,
             **kwargs,
         )
@@ -178,7 +178,7 @@ class ExplorerClient:
         return await self.request_executor.post(
             url=f"{self.url_base}/move",
             reader=self.request_executor.typed_reader(MoveResponse),
-            json=body.json(),
+            json=body.dict(),
             headers=headers,
             **kwargs,
         )
@@ -193,7 +193,7 @@ class ExplorerClient:
         return await self.request_executor.post(
             url=f"{self.url_base}/items/{item_id}/borrow",
             reader=self.request_executor.typed_reader(ItemResponse),
-            json=body.json(),
+            json=body.dict(),
             headers=headers,
             **kwargs,
         )
@@ -318,7 +318,7 @@ class ExplorerClient:
         return await self.request_executor.post(
             url=f"{self.url_base}/items/{item_id}",
             reader=self.request_executor.typed_reader(ItemResponse),
-            json=body.json(),
+            json=body.dict(),
             headers=headers,
             **kwargs,
         )
@@ -389,7 +389,7 @@ class ExplorerClient:
         return await self.request_executor.put(
             url=f"{self.url_base}/folders/{folder_id}/items",
             reader=self.request_executor.typed_reader(ItemResponse),
-            json=body.json(),
+            json=body.dict(),
             headers=headers,
             **kwargs,
         )

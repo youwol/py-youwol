@@ -88,7 +88,7 @@ class WebpmClient:
         return await self.request_executor.post(
             url=self.loading_graph_url,
             reader=self.request_executor.typed_reader(LoadingGraphResponseV1),
-            json=body.json(),
+            json=body.dict(),
             headers=headers,
             **kwargs,
         )

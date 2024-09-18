@@ -67,7 +67,7 @@ class FilesClient:
         return await self.request_executor.post(
             url=f"{self.url_base}/files/{file_id}/metadata",
             reader=self.request_executor.typed_reader(EmptyResponse),
-            json=body.json(),
+            json=body.dict(),
             headers=headers,
             **kwargs,
         )
