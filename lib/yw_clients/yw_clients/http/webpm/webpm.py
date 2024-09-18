@@ -1,14 +1,12 @@
 # standard library
 import functools
-import hashlib
 
-from collections.abc import Iterable
 from dataclasses import dataclass
-from pathlib import Path
 
 # third parties
 from aiohttp import FormData
 
+from yw_clients.http.assets_gateway.models import NewAssetResponse
 # Youwol clients
 from yw_clients.http.request_executor import (
     EmptyResponse,
@@ -24,22 +22,6 @@ from yw_clients.http.webpm.models import (
     LoadingGraphResponseV1,
     PublishResponse,
 )
-
-
-def md5_update_from_file(filename: str | Path, current_hash):
-    with open(str(filename), "rb") as f:
-        for chunk in iter(lambda: f.read(4096), b""):
-            current_hash.update(chunk)
-    return current_hash
-
-
-def files_check_sum(paths: Iterable[Path]):
-    sha_hash = hashlib.md5()
-
-    for path in sorted(paths, key=lambda p: str(p).lower()):
-        sha_hash.update(path.name.encode())
-        sha_hash = md5_update_from_file(path, sha_hash)
-    return sha_hash.hexdigest()
 
 
 @dataclass(frozen=True)
