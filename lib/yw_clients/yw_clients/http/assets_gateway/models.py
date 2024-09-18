@@ -8,6 +8,9 @@ from pydantic import BaseModel
 from yw_clients.http.assets import AssetResponse
 
 RawT = TypeVar("RawT", bound=BaseModel)
+"""
+Generic specification of the type of a raw response when creating an asset.
+"""
 
 
 class NewAssetResponse(AssetResponse, Generic[RawT]):

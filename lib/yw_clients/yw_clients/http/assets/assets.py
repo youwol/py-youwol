@@ -54,7 +54,7 @@ class AssetsClient:
 
         Warning:
             When used through the
-            :meth:`yw_clients.http.assets_gateway.assets_gateway.AssetsGatewayClient.get_assets_backend_router`,
+            :meth:`yw_clients.http.assets_gateway.assets_gateway.AssetsGatewayClient.assets`,
              the `params` parameters (URL query parameters) need
             to feature a `folder-id` value: the destination folder ID of the created asset within the explorer.
         """

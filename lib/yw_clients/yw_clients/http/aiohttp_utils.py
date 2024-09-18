@@ -15,7 +15,13 @@ from yw_clients.common.json_utils import JSON
 from yw_clients.http.exceptions import upstream_exception_from_response
 
 ParsedResponseT = TypeVar("ParsedResponseT")
+"""
+Generic representing a parsed response.
+"""
 BaseModelT = TypeVar("BaseModelT", bound=BaseModel)
+"""
+Generic representing a pydantic BaseModel.
+"""
 
 
 class EmptyResponse(BaseModel):
@@ -67,15 +73,31 @@ def aiohttp_file_form(
 
 @dataclass(frozen=True)
 class AioHttpFileResponse:
+    """
+    Wrapper over aiohttp's ClientResponse to handle responses pointing to a file.
+    """
+
     resp: ClientResponse
 
     async def read(self) -> bytes:
+        """
+        Return:
+             Bytes content.
+        """
         return await self.resp.read()
 
     async def json(self, **kwargs) -> JSON:
+        """
+        Return:
+             File's content parsed as JSON.
+        """
         return await self.resp.json(**kwargs)
 
     async def text(self, **kwargs) -> str:
+        """
+        Return:
+             File's content parsed as text.
+        """
         return await self.resp.text(**kwargs)
 
 
@@ -83,13 +105,7 @@ class AioHttpFileResponse:
 class AioHttpExecutor:
     """
     Request executor using [AioHTTP](https://docs.aiohttp.org/en/stable/) instantiated using the template parameter
-    [ClientResponse](https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientResponse)..
-
-    Helpers regarding readers are available, see
-    :func:`text_reader <yw_clients.http.request_executor.text_reader>`,
-    :func:`json_reader <yw_clients.http.request_executor.json_reader>`,
-    :func:`bytes_reader <yw_clients.http.request_executor.bytes_reader>`,
-    :func:`auto_reader <yw_clients.http.request_executor.auto_reader>`.
+    [ClientResponse](https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientResponse).
     """
 
     client_session: ClientSession | Callable[[], ClientSession] = lambda: ClientSession(
@@ -152,7 +168,15 @@ class AioHttpExecutor:
         **kwargs,
     ) -> ParsedResponseT:
         """
-        See :func:`RequestExecutor.post <yw_clients.http.request_executor.RequestExecutor.get>`.
+        Execute a `GET` request.
+
+        Parameters:
+            url: URL of the request.
+            reader: The reader used to parse the response.
+            headers: Headers to use with the request.
+
+        Return:
+            The type of the response depends on the `reader` attribute.
         """
         return await self._request(
             "GET",
@@ -170,7 +194,15 @@ class AioHttpExecutor:
         **kwargs,
     ) -> ParsedResponseT:
         """
-        See :func:`RequestExecutor.post <yw_clients.http.request_executor.RequestExecutor.post>`.
+        Execute a `POST` request.
+
+        Parameters:
+            url: URL of the request.
+            reader: The reader used to parse the response.
+            headers: Headers to use with the request.
+
+        Return:
+            The type of the response depends on the `reader` attribute.
         """
         return await self._request(
             "POST",
@@ -188,7 +220,15 @@ class AioHttpExecutor:
         **kwargs,
     ) -> ParsedResponseT:
         """
-        See :func:`RequestExecutor.put <yw_clients.http.request_executor.RequestExecutor.put>`.
+        Execute a `PUT` request.
+
+        Parameters:
+            url: URL of the request.
+            reader: The reader used to parse the response.
+            headers: Headers to use with the request.
+
+        Return:
+            The type of the response depends on the `reader` attribute.
         """
         return await self._request(
             "PUT",
@@ -206,7 +246,15 @@ class AioHttpExecutor:
         **kwargs,
     ) -> ParsedResponseT:
         """
-        See :func:`RequestExecutor.delete <yw_clients.http.request_executor.RequestExecutor.delete>`.
+        Execute a `DELETE` request.
+
+        Parameters:
+            url: URL of the request.
+            reader: The reader used to parse the response.
+            headers: Headers to use with the request.
+
+        Return:
+            The type of the response depends on the `reader` attribute.
         """
         return await self._request(
             "DELETE",

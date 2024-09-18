@@ -35,8 +35,18 @@ ReadPolicyEnumFactory = {
 
 
 class SharePolicyEnum(str, Enum):
+    """
+    The share policy values.
+    """
+
     FORBIDDEN = "forbidden"
+    """
+    The asset can not be shared.
+    """
     AUTHORIZED = "authorized"
+    """
+    The asset can be shared.
+    """
 
 
 SharePolicyEnumFactory = {
@@ -124,15 +134,38 @@ class OwningGroup(BaseModel):
 
 
 class GroupAccess(BaseModel):
+    """
+    Describes access for a group.
+    """
+
     read: ReadPolicyEnum
+    """
+    Access policy regarding read operations.
+    """
     share: SharePolicyEnum
+    """
+    Access policy regarding share operations.
+    """
     expiration: None | str
 
 
 class ExposingGroup(BaseModel):
+    """
+    Describes group information regarding access.
+    """
+
     name: str
+    """
+    Name of the group.
+    """
     groupId: str
+    """
+    ID of the group
+    """
     access: GroupAccess
+    """
+    Access policies associated.
+    """
 
 
 class OwnerInfo(BaseModel):
@@ -320,9 +353,22 @@ WhereClause = dict
 
 
 class UpdateAssetBody(BaseModel):
+    """
+    Describes the body content to update an asset.
+    """
+
     name: str | None = None
+    """
+    Update the name to this value if provided.
+    """
     tags: list[str] | None = None
+    """
+    Update the tags to this value if provided.
+    """
     description: str | None = None
+    """
+    Update the description to this value if provided.
+    """
 
 
 class QueryAssetBody(BaseModel):

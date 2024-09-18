@@ -6,6 +6,9 @@ from pydantic import BaseModel
 from semantic_version import Version
 
 WebpmLibraryType = Literal["js/wasm", "backend", "pyodide"]
+"""
+The possible types for a package published in webpm.
+"""
 default_webpm_lib_type: WebpmLibraryType = "js/wasm"
 
 
@@ -156,6 +159,10 @@ class DeleteBody(BaseModel):
 
 
 class DeleteLibraryResponse(BaseModel):
+    """
+    Describes the response when deleting a library.
+    """
+
     deletedVersionsCount: int
 
 
