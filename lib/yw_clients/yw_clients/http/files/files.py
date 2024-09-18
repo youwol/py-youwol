@@ -1,6 +1,9 @@
 # standard library
 from dataclasses import dataclass
 
+from aiohttp import FormData
+
+from yw_clients.http.assets_gateway.models import NewAssetResponse
 # Youwol clients
 from yw_clients.http.files.models import (
     GetInfoResponse,
@@ -30,18 +33,47 @@ class FilesClient:
     Request executor.
     """
 
-    async def upload(self, data, headers: dict[str, str], **kwargs) -> PostFileResponse:
+    async def upload(self, content: bytes, filename: str, headers: dict[str, str], content_type:str | None = None, content_encoding: str | None = None,file_id: str | None = None, **kwargs) -> PostFileResponse | NewAssetResponse[PostFileResponse]:
         """
         See description in
         :func:`files.upload <youwol.backends.files.root_paths.upload>`.
+
+        Warning:
+            When proxied by the assets-gateway service, the `params` parameters (URL query parameters) need
+            to feature a `folder-id` value: the destination folder ID of the created asset within the explorer.
+            In this case the return type is `NewAssetResponse[PostFileResponse]`.
         """
-        return await self.request_executor.post(
+        form_data = FormData()
+        form_data.add_field(
+            "file", content, filename=filename, content_type="identity"
+        )
+        form_data.add_field(
+            "file_name", filename
+        )
+        if content_type:
+            form_data.add_field("content_type", content_type)
+        if content_encoding:
+            form_data.add_field("content_encoding", content_encoding)
+        if file_id:
+            form_data.add_field("file_id", file_id)
+
+        is_wrapped = 'params' in kwargs and 'folder-id' in kwargs.get('params')
+
+        resp = await self.request_executor.post(
             url=f"{self.url_base}/files",
-            reader=self.request_executor.typed_reader(PostFileResponse),
-            data=data,
+            reader=self.request_executor.json_reader,
+            data=form_data,
             headers=headers,
             **kwargs,
         )
+        if is_wrapped:
+            raw_resp = PostFileResponse(**resp['rawResponse'])
+            asset_resp = NewAssetResponse(**resp)
+            asset_resp.rawResponse = raw_resp
+            return asset_resp
+
+        return PostFileResponse(**resp)
+
 
     async def get_info(
         self, file_id: str, headers: dict[str, str], **kwargs

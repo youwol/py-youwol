@@ -138,22 +138,35 @@ class WebpmClient:
 
     async def publish(
         self, zip_content: bytes, headers: dict[str, str], **kwargs
-    ) -> PublishResponse:
+    ) -> PublishResponse | NewAssetResponse[PublishResponse]:
         """
         See description in
         :func:`cdn.publish_library <youwol.backends.cdn.root_paths.publish_library>`.
+
+        Warning:
+            When proxied by the assets-gateway service, the `params` parameters (URL query parameters) need
+            to feature a `folder-id` value: the destination folder ID of the created asset within the explorer.
+            In this case the return type is `NewAssetResponse[PublishResponse]`.
         """
         form_data = FormData()
         form_data.add_field(
             "file", zip_content, filename="cdn.zip", content_type="identity"
         )
-        return await self.request_executor.post(
+        is_wrapped = 'params' in kwargs and 'folder-id' in kwargs.get('params')
+        resp = await self.request_executor.post(
             url=self.publish_url,
             data=form_data,
-            reader=self.request_executor.typed_reader(PublishResponse),
+            reader=self.request_executor.json_reader,
             headers=headers,
             **kwargs,
         )
+        if is_wrapped:
+            raw_resp = PublishResponse(**resp['rawResponse'])
+            asset_resp = NewAssetResponse(**resp)
+            asset_resp.rawResponse = raw_resp
+            return asset_resp
+
+        return PublishResponse(**resp)
 
     async def download_library(
         self, library_id: str, version: str, headers: dict[str, str], **kwargs
