@@ -310,7 +310,9 @@ class OidcConfig:
 
         """
         if self._openid_configuration is None:
-            well_known_url = f"{self.base_url}/.well-known/openid-configuration"
+            well_known_url = (
+                f"{self.base_url.rstrip('/')}/.well-known/openid-configuration"
+            )
             async with aiohttp.ClientSession() as session:
                 async with session.get(well_known_url) as resp:
                     if resp.status != 200:
