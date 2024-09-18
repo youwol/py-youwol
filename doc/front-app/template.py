@@ -219,6 +219,8 @@ try:
         'starlette.types.ASGIApp':
             'https://github.com/encode/starlette/blob/master/starlette/types.py',
         'starlette.websockets.WebSocket': 'https://www.starlette.io/websockets/',
+        'starlette.exceptions.HTTPException':
+            'https://www.starlette.io/exceptions/#httpexception',
         'pydantic.BaseModel':'https://docs.pydantic.dev/latest/api/base_model/'
     }
     config_yw = Configuration(

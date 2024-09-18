@@ -1,42 +1,34 @@
 # standard library
 import functools
-import hashlib
 
-from collections.abc import Iterable
 from dataclasses import dataclass
-from pathlib import Path
+
+# typing
+from typing import Any, cast
 
 # third parties
 from aiohttp import FormData
 
 # Youwol clients
-from yw_clients.common.json_utils import JSON
-from yw_clients.http.request_executor import (
-    RequestExecutor,
-    auto_reader,
-    bytes_reader,
-    json_reader,
+from yw_clients.http.aiohttp_utils import (
+    AioHttpExecutor,
+    AioHttpFileResponse,
+    EmptyResponse,
+)
+from yw_clients.http.assets_gateway.models import NewAssetResponse
+from yw_clients.http.webpm.models import (
+    DeleteLibraryResponse,
+    ExplorerResponse,
+    Library,
+    ListVersionsResponse,
+    LoadingGraphBody,
+    LoadingGraphResponseV1,
+    PublishResponse,
 )
 
 
-def md5_update_from_file(filename: str | Path, current_hash):
-    with open(str(filename), "rb") as f:
-        for chunk in iter(lambda: f.read(4096), b""):
-            current_hash.update(chunk)
-    return current_hash
-
-
-def files_check_sum(paths: Iterable[Path]):
-    sha_hash = hashlib.md5()
-
-    for path in sorted(paths, key=lambda p: str(p).lower()):
-        sha_hash.update(path.name.encode())
-        sha_hash = md5_update_from_file(path, sha_hash)
-    return sha_hash.hexdigest()
-
-
 @dataclass(frozen=True)
-class CdnClient:
+class WebpmClient:
     """
     HTTP client of the :mod:`cdn <youwol.backends.cdn>` service.
     """
@@ -46,22 +38,14 @@ class CdnClient:
     Base URL used for the request.
     """
 
-    request_executor: RequestExecutor
+    request_executor: AioHttpExecutor
     """
     Request executor.
     """
 
     @property
-    def packs_url(self):
-        return f"{self.url_base}/queries/flux-packs"
-
-    @property
     def libraries_url(self):
         return f"{self.url_base}/queries/libraries"
-
-    @property
-    def dependencies_url(self):
-        return f"{self.url_base}/queries/dependencies-latest"
 
     @property
     def loading_graph_url(self):
@@ -79,59 +63,29 @@ class CdnClient:
     def push_url(self):
         return f"{self.url_base}/publish_libraries"
 
-    async def query_packs(self, namespace: str | None = None, **kwargs):
-        url = (
-            self.packs_url
-            if not namespace
-            else f"{self.packs_url}?namespace={namespace}"
-        )
-        return await self.request_executor.get(
-            url=url,
-            default_reader=json_reader,
-            **kwargs,
-        )
-
-    async def query_libraries(self, **kwargs):
-        return await self.request_executor.get(
-            url=self.libraries_url,
-            default_reader=json_reader,
-            **kwargs,
-        )
-
-    async def query_dependencies_latest(self, libraries: list[str], **kwargs):
-        return await self.request_executor.post(
-            url=self.dependencies_url,
-            default_reader=json_reader,
-            json={"libraries": libraries},
-            **kwargs,
-        )
-
-    async def query_loading_graph(self, body: JSON, **kwargs):
+    async def query_loading_graph(
+        self, body: LoadingGraphBody, headers: dict[str, str], **kwargs
+    ) -> LoadingGraphResponseV1:
         """
         See description in
         :func:`cdn.resolve_loading_tree <youwol.backends.cdn.root_paths.resolve_loading_tree>`.
         """
         return await self.request_executor.post(
             url=self.loading_graph_url,
-            default_reader=json_reader,
-            json=body,
-            **kwargs,
-        )
-
-    async def get_json(self, url: Path | str, **kwargs):
-        return await self.request_executor.get(
-            url=f"{self.url_base}/{str(url)}",
-            default_reader=json_reader,
+            reader=self.request_executor.typed_reader(LoadingGraphResponseV1),
+            json=body.dict(),
+            headers=headers,
             **kwargs,
         )
 
     async def get_library_info(
         self,
         library_id: str,
+        headers: dict[str, str],
         semver: str | None = None,
         max_count: int | None = None,
         **kwargs,
-    ):
+    ) -> ListVersionsResponse:
         """
         See description in
         :func:`cdn.get_library_info <youwol.backends.cdn.root_paths.get_library_info>`.
@@ -148,89 +102,118 @@ class CdnClient:
         url = f"{self.url_base}/libraries/{library_id}?{suffix}"
         return await self.request_executor.get(
             url=url,
-            default_reader=json_reader,
+            reader=self.request_executor.typed_reader(ListVersionsResponse),
+            headers=headers,
             **kwargs,
         )
 
-    async def get_version_info(self, library_id: str, version: str, **kwargs):
+    async def get_version_info(
+        self, library_id: str, version: str, headers: dict[str, str], **kwargs
+    ) -> Library:
         """
         See description in
         :func:`cdn.get_version_info <youwol.backends.cdn.root_paths.get_version_info>`.
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/libraries/{library_id}/{version}",
-            default_reader=json_reader,
+            reader=self.request_executor.typed_reader(Library),
+            headers=headers,
             **kwargs,
         )
 
-    async def publish(self, zip_content: bytes, **kwargs):
+    async def publish(
+        self, zip_content: bytes, headers: dict[str, str], **kwargs: dict[str, Any]
+    ) -> PublishResponse | NewAssetResponse[PublishResponse]:
         """
         See description in
         :func:`cdn.publish_library <youwol.backends.cdn.root_paths.publish_library>`.
+
+        Warning:
+            When proxied by the assets-gateway service, the `params` parameters (URL query parameters) need
+            to feature a `folder-id` value: the destination folder ID of the created asset within the explorer.
+            In this case the return type is `NewAssetResponse[PublishResponse]`.
         """
         form_data = FormData()
         form_data.add_field(
             "file", zip_content, filename="cdn.zip", content_type="identity"
         )
-        return await self.request_executor.post(
-            url=self.publish_url,
-            data=form_data,
-            default_reader=json_reader,
-            **kwargs,
+        is_wrapped = "params" in kwargs and "folder-id" in kwargs.get("params", {})
+        resp = cast(
+            dict[str, Any],
+            await self.request_executor.post(
+                url=self.publish_url,
+                data=form_data,
+                reader=self.request_executor.json_reader,
+                headers=headers,
+                **kwargs,
+            ),
         )
+        if is_wrapped:
+            raw_resp = PublishResponse(**resp["rawResponse"])
+            del resp["rawResponse"]
+            asset_resp = NewAssetResponse(**resp, rawResponse=raw_resp)
+            return asset_resp
 
-    async def download_library(self, library_id: str, version: str, **kwargs):
+        return PublishResponse(**resp)
+
+    async def download_library(
+        self, library_id: str, version: str, headers: dict[str, str], **kwargs
+    ) -> AioHttpFileResponse:
         """
         See description in
         :func:`cdn.download_library <youwol.backends.cdn.root_paths.download_library>`.
         """
         return await self.request_executor.get(
             url=f"{self.download_url}/{library_id}/{version}",
-            default_reader=bytes_reader,
+            reader=self.request_executor.file_reader,
+            headers=headers,
             **kwargs,
         )
 
-    async def publish_libraries(self, zip_path: Path | str, **kwargs):
-        with open(zip_path, "rb") as fp:
-            return await self.request_executor.post(
-                url=self.push_url,
-                data={"file": fp},
-                default_reader=json_reader,
-                **kwargs,
-            )
-
-    async def delete_library(self, library_id: str, **kwargs):
+    async def delete_library(
+        self, library_id: str, headers: dict[str, str], **kwargs
+    ) -> DeleteLibraryResponse:
         """
         See description in
         :func:`cdn.delete_library <youwol.backends.cdn.root_paths.delete_library>`.
         """
         return await self.request_executor.delete(
             url=f"{self.url_base}/libraries/{library_id}",
-            default_reader=json_reader,
+            reader=self.request_executor.typed_reader(DeleteLibraryResponse),
+            headers=headers,
             **kwargs,
         )
 
-    async def delete_version(self, library_id: str, version: str, **kwargs):
+    async def delete_version(
+        self, library_id: str, version: str, headers: dict[str, str], **kwargs
+    ) -> EmptyResponse:
         """
         See description in
         :func:`cdn.delete_version <youwol.backends.cdn.root_paths.delete_version>`.
         """
         return await self.request_executor.delete(
             url=f"{self.url_base}/libraries/{library_id}/{version}",
-            default_reader=json_reader,
+            reader=self.request_executor.typed_reader(EmptyResponse),
+            headers=headers,
             **kwargs,
         )
 
     async def get_explorer(
-        self, library_id: str, version: str, folder_path: str, **kwargs
-    ):
+        self,
+        library_id: str,
+        version: str,
+        folder_path: str,
+        headers: dict[str, str],
+        **kwargs,
+    ) -> ExplorerResponse:
         """
         See description in
         :func:`cdn.explorer <youwol.backends.cdn.root_paths.explorer>`.
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/explorer/{library_id}/{version}/{folder_path}",
-            default_reader=json_reader,
+            reader=self.request_executor.typed_reader(ExplorerResponse),
+            headers=headers,
             **kwargs,
         )
 
@@ -238,8 +221,9 @@ class CdnClient:
         self,
         library_id: str,
         version: str,
+        headers: dict[str, str],
         **kwargs,
-    ):
+    ) -> AioHttpFileResponse:
         """
         See description in
         :func:`cdn.get_entry_point <youwol.backends.cdn.root_paths.get_entry_point>`.
@@ -248,6 +232,7 @@ class CdnClient:
             library_id=library_id,
             version=version,
             rest_of_path="",
+            headers=headers,
             **kwargs,
         )
 
@@ -256,8 +241,9 @@ class CdnClient:
         library_id: str,
         version: str,
         rest_of_path: str,
+        headers: dict[str, str],
         **kwargs,
-    ):
+    ) -> AioHttpFileResponse:
         """
         See description in
         :func:`cdn.get_resource <youwol.backends.cdn.root_paths.get_resource>`.
@@ -270,6 +256,7 @@ class CdnClient:
 
         return await self.request_executor.get(
             url=url,
-            default_reader=auto_reader,
+            reader=self.request_executor.file_reader,
+            headers=headers,
             **kwargs,
         )

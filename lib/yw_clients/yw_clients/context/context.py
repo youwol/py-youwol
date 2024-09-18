@@ -18,8 +18,8 @@ from typing import Generic, Literal, TypeVar, Union, cast
 # third parties
 import aiohttp
 
-from fastapi import HTTPException
 from pydantic import BaseModel
+from starlette.exceptions import HTTPException
 from starlette.requests import Request
 
 # Youwol clients
@@ -38,9 +38,9 @@ from yw_clients.context.models import (
     StringLike,
     TContextAttr,
 )
+from yw_clients.http.aiohttp_utils import AioHttpExecutor
 from yw_clients.http.assets_gateway import AssetsGatewayClient
 from yw_clients.http.cdn_sessions_storage import CdnSessionsStorageClient
-from yw_clients.http.request_executor import AioHttpExecutor
 
 T = TypeVar("T")
 """

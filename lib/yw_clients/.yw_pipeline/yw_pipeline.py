@@ -27,9 +27,6 @@ from youwol.app.routers.projects import (
 # Youwol utilities
 from youwol.utils.context import Context
 
-# Youwol pipelines
-from youwol.pipelines.pipeline_python_backend import pipeline
-
 PYPROJECT_TOML = "pyproject.toml"
 
 
@@ -39,6 +36,8 @@ def parse_toml(project_folder: Path):
 
 
 dist_files = FileListing(include=["dist/yw_clients-*"])
+
+SRC_FOLDER = "yw_clients/**"
 
 
 class SetupStep(PipelineStep):
@@ -53,12 +52,15 @@ class SetupStep(PipelineStep):
         async with context.start(
             action="SetupStep",
         ):
-            project_name = lambda path: parse_toml(path)["project"]["name"]
+
+            def project_name(path):
+                return parse_toml(path)["project"]["name"]
+
             init_file = project.path / project_name(project.path) / "__init__.py"
-            with open(init_file, "r") as file:
+            with open(init_file, "r", encoding="utf-8") as file:
                 content = file.read()
 
-            with open(init_file, "w") as file:
+            with open(init_file, "w", encoding="utf-8") as file:
                 file.write(
                     re.sub(
                         r"__version__\s*=\s*[\'\"]([^\'\"]*)[\'\"]",
@@ -75,22 +77,30 @@ class BuildStep(PipelineStep):
     run = "rm -rf ./dist/** && python3 -m build"
 
     artifacts: list[Artifact] = [Artifact(id="dist", files=dist_files)]
-    sources: FileListing = FileListing(include=["yw_clients/**", PYPROJECT_TOML])
+    sources: FileListing = FileListing(include=[SRC_FOLDER, PYPROJECT_TOML])
 
 
 class CodeQualityStep(PipelineStep):
 
     id = "quality"
 
-    run = ("( cd ../../ && "
-           "black lib/yw_clients/yw_clients && "
-           "isort lib/yw_clients/yw_clients && "
-           "pylint lib/yw_clients/yw_clients &&"
-           " mypy lib/yw_clients/yw_clients)")
+    run = (
+        "( cd ../../ && "
+        "black lib/yw_clients && "
+        "isort lib/yw_clients && "
+        "pylint lib/yw_clients &&"
+        " mypy lib/yw_clients)"
+    )
 
     artifacts: list[Artifact] = [Artifact(id="dist", files=dist_files)]
-    sources: FileListing = FileListing(include=["yw_clients/**", PYPROJECT_TOML])
+    sources: FileListing = FileListing(include=[SRC_FOLDER, PYPROJECT_TOML])
 
+
+class TestStep(PipelineStep):
+    id = "test"
+
+    run = "pytest"
+    sources: FileListing = FileListing(include=[SRC_FOLDER, "tests/**"])
 
 
 class PublishStep(PipelineStep):
@@ -122,7 +132,7 @@ async def pipeline(context: Context):
     async with context.start(action="pipeline") as ctx:
         await ctx.info(text="Instantiate pipeline")
 
-        steps = [SetupStep(), BuildStep(), PublishStep(), CodeQualityStep()]
+        steps = [SetupStep(), BuildStep(), TestStep(), PublishStep(), CodeQualityStep()]
 
         return Pipeline(
             target=lambda project: Target(
@@ -142,10 +152,7 @@ async def pipeline(context: Context):
             flows=[
                 Flow(
                     name="prod",
-                    dag=[
-                        "setup > build > publish",
-                        "setup > quality"
-                    ],
+                    dag=["setup > test > build > publish", "setup > quality"],
                 )
             ],
         )
