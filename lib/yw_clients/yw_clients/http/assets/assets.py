@@ -1,4 +1,5 @@
 # standard library
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -6,13 +7,15 @@ from pathlib import Path
 from typing import Any, Literal
 
 # third parties
-from aiohttp import FormData
+from aiohttp import ClientResponse, FormData
 
 # Youwol clients
 from yw_clients.http.aiohttp_utils import (
     AioHttpExecutor,
-    AioHttpFileResponse,
     EmptyResponse,
+    ParsedResponseT,
+    bytes_reader,
+    typed_reader,
 )
 from yw_clients.http.assets.models import (
     AccessInfoResp,
@@ -60,7 +63,7 @@ class AssetsClient:
         """
         return await self.request_executor.put(
             url=f"{self.url_base}/assets",
-            reader=self.request_executor.typed_reader(AssetResponse),
+            reader=typed_reader(AssetResponse),
             json=body.dict(),
             headers=headers,
             **kwargs,
@@ -82,22 +85,27 @@ class AssetsClient:
         )
         return await self.request_executor.post(
             url=f"{self.url_base}/assets/{asset_id}/files",
-            reader=self.request_executor.typed_reader(AddFilesResponse),
+            reader=typed_reader(AddFilesResponse),
             data=form_data,
             headers=headers,
             **kwargs,
         )
 
     async def get_file(
-        self, asset_id: str, path: Path | str, headers: dict[str, str], **kwargs
-    ) -> AioHttpFileResponse:
+        self,
+        asset_id: str,
+        path: Path | str,
+        reader: Callable[[ClientResponse], Awaitable[ParsedResponseT]],
+        headers: dict[str, str],
+        **kwargs,
+    ) -> ParsedResponseT:
         """
         See description in
         :func:`assets.get_file <youwol.backends.assets.routers.files.get_file>`.
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/assets/{asset_id}/files/{path}",
-            reader=self.request_executor.file_reader,
+            reader=reader,
             headers=headers,
             **kwargs,
         )
@@ -111,21 +119,21 @@ class AssetsClient:
         """
         return await self.request_executor.delete(
             url=f"{self.url_base}/assets/{asset_id}/files",
-            reader=self.request_executor.typed_reader(EmptyResponse),
+            reader=typed_reader(EmptyResponse),
             headers=headers,
             **kwargs,
         )
 
     async def get_zip_files(
         self, asset_id: str, headers: dict[str, str], **kwargs
-    ) -> AioHttpFileResponse:
+    ) -> bytes:
         """
         See description in
         :func:`assets.get_zip_files <youwol.backends.assets.routers.files.get_zip_files>`.
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/assets/{asset_id}/files",
-            reader=self.request_executor.file_reader,
+            reader=bytes_reader,
             headers=headers,
             **kwargs,
         )
@@ -140,7 +148,7 @@ class AssetsClient:
         return await self.request_executor.post(
             url=f"{self.url_base}/assets/{asset_id}",
             json=body.dict(),
-            reader=self.request_executor.typed_reader(AssetResponse),
+            reader=typed_reader(AssetResponse),
             headers=headers,
             **kwargs,
         )
@@ -159,7 +167,7 @@ class AssetsClient:
         """
         return await self.request_executor.put(
             url=f"{self.url_base}/assets/{asset_id}/access/{group_id}",
-            reader=self.request_executor.typed_reader(EmptyResponse),
+            reader=typed_reader(EmptyResponse),
             json=body.dict(),
             headers=headers,
             **kwargs,
@@ -174,7 +182,7 @@ class AssetsClient:
         """
         return await self.request_executor.delete(
             url=f"{self.url_base}/assets/{asset_id}/access/{group_id}",
-            reader=self.request_executor.typed_reader(EmptyResponse),
+            reader=typed_reader(EmptyResponse),
             headers=headers,
             **kwargs,
         )
@@ -198,7 +206,7 @@ class AssetsClient:
 
         return await self.request_executor.post(
             url=f"{self.url_base}/assets/{asset_id}/images/{filename}",
-            reader=self.request_executor.typed_reader(AssetResponse),
+            reader=typed_reader(AssetResponse),
             data=form_data,
             headers=headers,
             **kwargs,
@@ -213,7 +221,7 @@ class AssetsClient:
         """
         return await self.request_executor.delete(
             url=f"{self.url_base}/assets/{asset_id}/images/{filename}",
-            reader=self.request_executor.typed_reader(AssetResponse),
+            reader=typed_reader(AssetResponse),
             headers=headers,
             **kwargs,
         )
@@ -223,9 +231,10 @@ class AssetsClient:
         asset_id: str,
         media_type: Literal["thumbnails", "images"],
         name: str,
+        reader: Callable[[ClientResponse], Awaitable[ParsedResponseT]],
         headers: dict[str, str],
         **kwargs,
-    ) -> AioHttpFileResponse:
+    ) -> ParsedResponseT:
         """
         See description in
         :func:`assets.get_media_image <youwol.backends.assets.routers.images.get_media_image>` or
@@ -233,19 +242,21 @@ class AssetsClient:
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/assets/{asset_id}/{media_type}/{name}",
-            reader=self.request_executor.file_reader,
+            reader=reader,
             headers=headers,
             **kwargs,
         )
 
-    async def get_asset(self, asset_id: str, headers: dict[str, str], **kwargs):
+    async def get_asset(
+        self, asset_id: str, headers: dict[str, str], **kwargs
+    ) -> AssetResponse:
         """
         See description in
         :func:`assets.get_asset <youwol.backends.assets.routers.assets.get_asset>`.
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/assets/{asset_id}",
-            reader=self.request_executor.typed_reader(AssetResponse),
+            reader=typed_reader(AssetResponse),
             headers=headers,
             **kwargs,
         )
@@ -259,7 +270,7 @@ class AssetsClient:
         """
         return await self.request_executor.delete(
             url=f"{self.url_base}/assets/{asset_id}",
-            reader=self.request_executor.typed_reader(EmptyResponse),
+            reader=typed_reader(EmptyResponse),
             headers=headers,
             **kwargs,
         )
@@ -273,7 +284,7 @@ class AssetsClient:
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/assets/{asset_id}/access/{group_id}",
-            reader=self.request_executor.typed_reader(AccessPolicyResp),
+            reader=typed_reader(AccessPolicyResp),
             headers=headers,
             **kwargs,
         )
@@ -287,7 +298,7 @@ class AssetsClient:
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/assets/{asset_id}/permissions",
-            reader=self.request_executor.typed_reader(PermissionsResp),
+            reader=typed_reader(PermissionsResp),
             headers=headers,
             **kwargs,
         )
@@ -301,7 +312,7 @@ class AssetsClient:
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/assets/{asset_id}/access-info",
-            reader=self.request_executor.typed_reader(AccessInfoResp),
+            reader=typed_reader(AccessInfoResp),
             headers=headers,
             **kwargs,
         )

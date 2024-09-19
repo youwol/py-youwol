@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 
 # Youwol clients
-from yw_clients.http.aiohttp_utils import AioHttpExecutor, EmptyResponse
+from yw_clients.http.aiohttp_utils import AioHttpExecutor, EmptyResponse, typed_reader
 from yw_clients.http.explorer.models import (
     BorrowBody,
     ChildrenResponse,
@@ -48,7 +48,7 @@ class ExplorerClient:
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/groups/{group_id}/drives",
-            reader=self.request_executor.typed_reader(DrivesResponse),
+            reader=typed_reader(DrivesResponse),
             headers=headers,
             **kwargs,
         )
@@ -62,7 +62,7 @@ class ExplorerClient:
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/drives/{drive_id}",
-            reader=self.request_executor.typed_reader(DriveResponse),
+            reader=typed_reader(DriveResponse),
             headers=headers,
             **kwargs,
         )
@@ -76,7 +76,7 @@ class ExplorerClient:
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/groups/{group_id}/default-drive",
-            reader=self.request_executor.typed_reader(DefaultDriveResponse),
+            reader=typed_reader(DefaultDriveResponse),
             headers=headers,
             **kwargs,
         )
@@ -90,7 +90,7 @@ class ExplorerClient:
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/default-drive",
-            reader=self.request_executor.typed_reader(DefaultDriveResponse),
+            reader=typed_reader(DefaultDriveResponse),
             headers=headers,
             **kwargs,
         )
@@ -104,7 +104,7 @@ class ExplorerClient:
         """
         return await self.request_executor.put(
             url=f"{self.url_base}/groups/{group_id}/drives",
-            reader=self.request_executor.typed_reader(DriveResponse),
+            reader=typed_reader(DriveResponse),
             json=body.dict(),
             headers=headers,
             **kwargs,
@@ -119,7 +119,7 @@ class ExplorerClient:
         """
         return await self.request_executor.post(
             url=f"{self.url_base}/drives/{drive_id}",
-            reader=self.request_executor.typed_reader(DriveResponse),
+            reader=typed_reader(DriveResponse),
             json=body.dict(),
             **kwargs,
         )
@@ -133,7 +133,7 @@ class ExplorerClient:
         """
         return await self.request_executor.delete(
             url=f"{self.url_base}/drives/{drive_id}",
-            reader=self.request_executor.typed_reader(EmptyResponse),
+            reader=typed_reader(EmptyResponse),
             headers=headers,
             **kwargs,
         )
@@ -147,7 +147,7 @@ class ExplorerClient:
         """
         return await self.request_executor.put(
             url=f"{self.url_base}/folders/{parent_folder_id}",
-            reader=self.request_executor.typed_reader(FolderResponse),
+            reader=typed_reader(FolderResponse),
             json=body.dict(),
             headers=headers,
             **kwargs,
@@ -162,7 +162,7 @@ class ExplorerClient:
         """
         return await self.request_executor.post(
             url=f"{self.url_base}/folders/{folder_id}",
-            reader=self.request_executor.typed_reader(FolderResponse),
+            reader=typed_reader(FolderResponse),
             json=body.dict(),
             headers=headers,
             **kwargs,
@@ -177,7 +177,7 @@ class ExplorerClient:
         """
         return await self.request_executor.post(
             url=f"{self.url_base}/move",
-            reader=self.request_executor.typed_reader(MoveResponse),
+            reader=typed_reader(MoveResponse),
             json=body.dict(),
             headers=headers,
             **kwargs,
@@ -192,7 +192,7 @@ class ExplorerClient:
         """
         return await self.request_executor.post(
             url=f"{self.url_base}/items/{item_id}/borrow",
-            reader=self.request_executor.typed_reader(ItemResponse),
+            reader=typed_reader(ItemResponse),
             json=body.dict(),
             headers=headers,
             **kwargs,
@@ -207,7 +207,7 @@ class ExplorerClient:
         """
         return await self.request_executor.delete(
             url=f"{self.url_base}/folders/{folder_id}",
-            reader=self.request_executor.typed_reader(EmptyResponse),
+            reader=typed_reader(EmptyResponse),
             headers=headers,
             **kwargs,
         )
@@ -221,7 +221,7 @@ class ExplorerClient:
         """
         return await self.request_executor.delete(
             url=f"{self.url_base}/items/{item_id}",
-            reader=self.request_executor.typed_reader(EmptyResponse),
+            reader=typed_reader(EmptyResponse),
             headers=headers,
             **kwargs,
         )
@@ -235,7 +235,7 @@ class ExplorerClient:
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/items/{item_id}",
-            reader=self.request_executor.typed_reader(ItemResponse),
+            reader=typed_reader(ItemResponse),
             headers=headers,
             **kwargs,
         )
@@ -249,7 +249,7 @@ class ExplorerClient:
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/items/{item_id}/path",
-            reader=self.request_executor.typed_reader(PathResponse),
+            reader=typed_reader(PathResponse),
             headers=headers,
             **kwargs,
         )
@@ -263,7 +263,7 @@ class ExplorerClient:
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/folders/{folder_id}/path",
-            reader=self.request_executor.typed_reader(PathResponse),
+            reader=typed_reader(PathResponse),
             headers=headers,
             **kwargs,
         )
@@ -288,7 +288,7 @@ class ExplorerClient:
         }
         return await self.request_executor.get(
             url=f"{self.url_base}/entities/{entity_id}",
-            reader=self.request_executor.typed_reader(EntityResponse),
+            reader=typed_reader(EntityResponse),
             headers=headers,
             params=params,
             **kwargs,
@@ -303,7 +303,7 @@ class ExplorerClient:
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/items/from-asset/{asset_id}",
-            reader=self.request_executor.typed_reader(ItemsResponse),
+            reader=typed_reader(ItemsResponse),
             headers=headers,
             **kwargs,
         )
@@ -317,7 +317,7 @@ class ExplorerClient:
         """
         return await self.request_executor.post(
             url=f"{self.url_base}/items/{item_id}",
-            reader=self.request_executor.typed_reader(ItemResponse),
+            reader=typed_reader(ItemResponse),
             json=body.dict(),
             headers=headers,
             **kwargs,
@@ -332,7 +332,7 @@ class ExplorerClient:
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/folders/{folder_id}",
-            reader=self.request_executor.typed_reader(FolderResponse),
+            reader=typed_reader(FolderResponse),
             headers=headers,
             **kwargs,
         )
@@ -346,7 +346,7 @@ class ExplorerClient:
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/folders/{folder_id}/children",
-            reader=self.request_executor.typed_reader(ChildrenResponse),
+            reader=typed_reader(ChildrenResponse),
             headers=headers,
             **kwargs,
         )
@@ -360,7 +360,7 @@ class ExplorerClient:
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/drives/{drive_id}/deleted",
-            reader=self.request_executor.typed_reader(ChildrenResponse),
+            reader=typed_reader(ChildrenResponse),
             headers=headers,
             **kwargs,
         )
@@ -374,7 +374,7 @@ class ExplorerClient:
         """
         return await self.request_executor.delete(
             url=f"{self.url_base}/drives/{drive_id}/purge",
-            reader=self.request_executor.typed_reader(PurgeResponse),
+            reader=typed_reader(PurgeResponse),
             headers=headers,
             **kwargs,
         )
@@ -388,7 +388,7 @@ class ExplorerClient:
         """
         return await self.request_executor.put(
             url=f"{self.url_base}/folders/{folder_id}/items",
-            reader=self.request_executor.typed_reader(ItemResponse),
+            reader=typed_reader(ItemResponse),
             json=body.dict(),
             headers=headers,
             **kwargs,

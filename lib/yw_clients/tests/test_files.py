@@ -9,12 +9,7 @@ import pytest
 import requests
 
 # Youwol clients
-from yw_clients import (
-    AioHttpExecutor,
-    AioHttpFileResponse,
-    EmptyResponse,
-    YouwolHeaders,
-)
+from yw_clients import AioHttpExecutor, EmptyResponse, YouwolHeaders, bytes_reader
 from yw_clients.http.assets_gateway import AssetsGatewayClient
 from yw_clients.http.assets_gateway.models import NewAssetResponse
 from yw_clients.http.files import GetInfoResponse, PostFileResponse, PostMetadataBody
@@ -61,7 +56,9 @@ class TestFilesClient:
             headers=headers,
         )
         assert isinstance(empty_resp, EmptyResponse)
-        file_resp = await self.client.get(file_id=file_id, headers=headers)
-        assert isinstance(file_resp, AioHttpFileResponse)
+        file_resp = await self.client.get(
+            file_id=file_id, reader=bytes_reader, headers=headers
+        )
+        assert isinstance(file_resp, bytes)
         empty_resp = await self.client.remove(file_id=file_id, headers=headers)
         assert isinstance(empty_resp, EmptyResponse)

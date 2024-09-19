@@ -6,12 +6,7 @@ import pytest
 import requests
 
 # Youwol clients
-from yw_clients import (
-    AioHttpExecutor,
-    AioHttpFileResponse,
-    EmptyResponse,
-    YouwolHeaders,
-)
+from yw_clients import AioHttpExecutor, EmptyResponse, YouwolHeaders, bytes_reader
 from yw_clients.http.assets import (
     AccessInfoResp,
     AccessPolicyBody,
@@ -79,9 +74,10 @@ class TestAssetsClient:
             asset_id=asset.assetId,
             media_type="thumbnails",
             name=image_filename,
+            reader=bytes_reader,
             headers=headers,
         )
-        assert isinstance(media, AioHttpFileResponse)
+        assert isinstance(media, bytes)
         asset = await self.client.remove_image(
             asset_id=asset.assetId, filename=image_filename, headers=headers
         )
@@ -96,13 +92,16 @@ class TestAssetsClient:
             )
         assert isinstance(files, AddFilesResponse)
         file_resp = await self.client.get_file(
-            asset_id=asset.assetId, path="innerFolder/innerFile.json", headers=headers
+            asset_id=asset.assetId,
+            path="innerFolder/innerFile.json",
+            reader=bytes_reader,
+            headers=headers,
         )
-        assert isinstance(file_resp, AioHttpFileResponse)
+        assert isinstance(file_resp, bytes)
         zipfile = await self.client.get_zip_files(
             asset_id=asset.assetId, headers=headers
         )
-        assert isinstance(zipfile, AioHttpFileResponse)
+        assert isinstance(zipfile, bytes)
         empty_resp = await self.client.delete_files(
             asset_id=asset.assetId, headers=headers
         )

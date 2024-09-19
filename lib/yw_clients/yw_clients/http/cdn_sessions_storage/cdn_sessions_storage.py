@@ -3,7 +3,12 @@ from dataclasses import dataclass
 
 # Youwol clients
 from yw_clients.common.json_utils import JSON
-from yw_clients.http.aiohttp_utils import AioHttpExecutor, EmptyResponse
+from yw_clients.http.aiohttp_utils import (
+    AioHttpExecutor,
+    EmptyResponse,
+    json_reader,
+    typed_reader,
+)
 
 
 @dataclass(frozen=True)
@@ -33,7 +38,7 @@ class CdnSessionsStorageClient:
         """
         return await self.request_executor.get(
             url=self.base_path(package, key),
-            reader=self.request_executor.json_reader,
+            reader=json_reader,
             headers=headers,
             **kwargs,
         )
@@ -47,7 +52,7 @@ class CdnSessionsStorageClient:
         """
         return await self.request_executor.post(
             url=self.base_path(package, key),
-            reader=self.request_executor.typed_reader(EmptyResponse),
+            reader=typed_reader(EmptyResponse),
             json=body,
             headers=headers,
             **kwargs,
