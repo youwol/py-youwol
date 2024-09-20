@@ -33,8 +33,10 @@ from youwol.app.routers.projects import (
     Pipeline,
     PipelineStep,
     Project,
+    RunImplicit,
+    SourcesFctImplicit,
     Target,
-    get_project_configuration, RunImplicit, SourcesFctImplicit,
+    get_project_configuration,
 )
 
 # Youwol utilities
@@ -122,6 +124,7 @@ class SetupStep(PipelineStep):
         async with context.start(
             action="SetupStep",
         ):
+            shutil.rmtree(project.path / "dist", ignore_errors=True)
             with open(project.path / PYPROJECT_TOML, "rb") as f:
                 pyproject = tomllib.load(f)
 
@@ -253,14 +256,35 @@ class CodeQualityStep(PipelineStep):
 
     id = "quality"
 
-    run: RunImplicit = lambda _step, project, _flow, _ctx: \
-        (f"(. {VENV_NAME}/bin/activate && "
-         f"black ./{project.name} "
-         f"&& isort ./{project.name} "
-         f"&& pylint ./{project.name} "
-         f"&& mypy ./{project.name})")
+    run: RunImplicit = lambda _step, project, _flow, _ctx: (
+        f"(. {VENV_NAME}/bin/activate && "
+        f"black ./{project.name} "
+        f"&& isort ./{project.name} "
+        f"&& pylint ./{project.name} "
+        f"&& mypy ./{project.name})"
+    )
 
-    sources: SourcesFctImplicit = lambda _step, project, _flow, _ctx: FileListing(include=[project.name, PYPROJECT_TOML])
+    sources: SourcesFctImplicit = lambda _step, project, _flow, _ctx: FileListing(
+        include=[project.name, PYPROJECT_TOML]
+    )
+
+
+class DocStep(PipelineStep):
+
+    id = "doc"
+
+    run: RunImplicit = lambda _step, project, _flow, _ctx: (
+        f"(. {VENV_NAME}/bin/activate && "
+        f"pdoc ./{project.name} -d google --output-dir ./dist/docs )"
+    )
+
+    sources: SourcesFctImplicit = lambda _step, project, _flow, _ctx: FileListing(
+        include=[project.name, PYPROJECT_TOML]
+    )
+
+    artifacts: list[Artifact] = [
+        Artifact(id="doc", files=FileListing(include=["dist/docs/**"]))
+    ]
 
 
 class RunStep(PipelineStep):
@@ -402,7 +426,7 @@ class PackageStep(PipelineStep):
         The flows defined in this pipelines reference this ID, in common scenarios it should not be modified.
     """
 
-    run: str = "(rm -rf dist/** && python -m build)"
+    run: str = "python -m build"
 
     sources: FileListing = default_packaging_files
     """
@@ -418,7 +442,7 @@ class PackageStep(PipelineStep):
             files=FileListing(
                 include=[
                     "deps/*",
-                    "dist/*",
+                    "dist/*.whl",
                     "Dockerfile",
                     "start.sh",
                     "install.sh",
@@ -487,9 +511,10 @@ async def pipeline(config: PipelineConfig, context: Context):
             dependencies_step,
             package_step,
             RunStep(),
+            DocStep(),
             CodeQualityStep(),
             PublishCdnLocalStep(
-                packagedArtifacts=["package"],
+                packagedArtifacts=["package", "doc"],
             ),
             *publish_remote_steps,
         ]
@@ -506,7 +531,8 @@ async def pipeline(config: PipelineConfig, context: Context):
                         name="Swagger",
                         url=f"/backends/{project.name}/{project.version}/docs",
                         kind=LinkKind.PLAIN_URL,
-                    )
+                    ),
+                    Link(name="API-Doc", url="dist/docs/index.html"),
                 ],
             ),
             tags=config.with_tags,
@@ -520,7 +546,8 @@ async def pipeline(config: PipelineConfig, context: Context):
                         "setup > dependencies > package > cdn-local",
                         *dags,
                         "dependencies > run",
-                        "dependencies > quality"
+                        "dependencies > quality",
+                        "dependencies > doc > cdn-local",
                     ],
                 )
             ],

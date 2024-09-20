@@ -14,7 +14,6 @@ parser.add_argument("--port", help="Specify the port on which the service is run
 parser.add_argument(
     "--yw_port", help="Specify the port on which the youwol server is running"
 )
-args = parser.parse_args()
 
 
 def main() -> None:
@@ -24,6 +23,8 @@ def main() -> None:
     The serving port and youwol's server port should be provided as command line arguments
     (using `--port` and `--yw_port` respectively).
     """
+
+    args = parser.parse_args()
     localhost = "localhost"
     start(
         configuration=Configuration(
@@ -37,4 +38,5 @@ def main() -> None:
     )
 
 
-main()
+if __name__ == '__main__':
+    main()
