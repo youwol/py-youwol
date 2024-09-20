@@ -7,8 +7,13 @@ from collections.abc import Callable
 from pathlib import Path
 
 # third parties
+import packaging.version
+
 from fastapi import HTTPException
 from pydantic import BaseModel
+
+# Youwol
+from youwol import __version__
 
 # Youwol Surrogate for next versions of Python
 from youwol.utils.python_next.v3_12 import tomllib
@@ -49,6 +54,7 @@ from youwol.utils import (
     execute_shell_cmd,
     find_available_port,
     write_json,
+    yw_repo_path,
 )
 
 # Youwol pipelines
@@ -206,11 +212,24 @@ class DependenciesStep(PipelineStep):
         # for now this is required: 'sudo apt install python3.12-venv'
         async with context.start(
             action="DependenciesStep",
-        ):
+        ) as ctx:
             # this is all temporary until py-youwol#0.1.7 is released
             venv_path = project.path / VENV_NAME
             if venv_path.exists():
                 shutil.rmtree(venv_path)
+
+            if packaging.version.parse(__version__).is_devrelease and yw_repo_path():
+                await ctx.info(
+                    text="Youwol is a dev release, built and link `yw_clients` from sources"
+                )
+
+                (project.path / "deps").mkdir(exist_ok=True)
+                yw_clients_path = yw_repo_path() / "lib" / "yw_clients"
+                cmd = (
+                    f"python3 -m build {yw_clients_path} --wheel && "
+                    f"mv {yw_clients_path}/dist/yw_clients-{__version__}*.whl {project.path}/deps"
+                )
+                await execute_shell_cmd(cmd=cmd, context=context, cwd=project.path)
 
             cmd = (
                 f"(python3 -m venv {VENV_NAME} "
