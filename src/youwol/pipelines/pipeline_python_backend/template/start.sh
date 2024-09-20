@@ -13,16 +13,20 @@ fi
 show_usage() {
     echo "Usage: $0 -p <port> -h <host> [other_arguments]"
     echo "Example: $0 -p 2010 -s 2000"
+    echo "  -b, --build              build ID"
     echo "  -p, --serving-port       Specify serving port"
     echo "  -s, --server-port        Specify the server (youwol) port"
     echo "  -h, --help               Display this help message"
 }
 
-
+BUILD=""
 
 # Parse command-line options
-while getopts ":p:s:h" opt; do
+while getopts ":b:p:s:h" opt; do
   case $opt in
+    b)
+        BUILD="$OPTARG"
+        ;;
     p)
       PORT="$OPTARG"
       ;;
@@ -48,9 +52,11 @@ shift $((OPTIND-1))
 
 echo "Package name: $name"
 echo "Package version: $version"
+echo "Build ID: $BUILD"
 echo "Serving port: $PORT"
 echo "Server port: $HOST"
 
-. .venv/bin/activate
+# shellcheck source=/dev/null
+. ".venv_$BUILD/bin/activate"
 
-python -m "$name".main  --port="$PORT" --yw_port="$HOST"
+python -m "$name".main_localhost  --port="$PORT" --yw_port="$HOST"

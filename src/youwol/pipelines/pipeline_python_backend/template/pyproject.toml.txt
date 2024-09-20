@@ -1,7 +1,7 @@
 [project]
 name = "{{package_name}}"
 version = "0.1.0"
-description = "A backend created by the youwol's pipeline 'pipeline_python_backend'."
+description = "A backend created by the youwol pipeline 'pipeline_python_backend'."
 requires-python = "~=3.10"
 classifiers = [
     "License :: OSI Approved :: MIT License",
@@ -11,13 +11,41 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
-    "youwol>={{minimal_youwol_version}}"
+    "fastapi>=0.109.1,<0.110.0",
+    "uvicorn>=0.24,<0.25",
+    "cowsay>=6.1,<7.0.0",
+    "yw_clients"
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pip-tools",
+    "pip-audit",
+    "pylint",
+    "pycodestyle",
+    "pydocstyle",
+    "isort",
+    "black[d]",
+    "mypy","pdoc3",
+    "build",
+    "twine",
+]
 [build-system]
 requires = [
     "setuptools>=67.7.2",
 ]
+
+[tool.setuptools]
+packages = ["{{package_name}}"]
+
+[tool.pylint.'MESSAGES CONTROL']
+extension-pkg-whitelist = "pydantic"
+
+[tool.mypy]
+# ignore_missing_imports = true
+
+[project.scripts]
+run_{{package_name}} = "{{package_name}}.main_docker:main"
 
 [youwol]
 default-port = {{default_port}}

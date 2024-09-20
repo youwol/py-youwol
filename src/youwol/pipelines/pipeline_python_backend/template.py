@@ -134,7 +134,7 @@ async def generate_template(folder: Path, parameters: dict[str, str], context: C
             dst = package_folder / file.name.replace(".txt", "")
             shutil.copyfile(
                 src=file,
-                dst=package_folder / file.name.replace(".txt", ""),
+                dst=dst,
             )
             replace_patterns(dst)
 
@@ -147,11 +147,13 @@ async def generate_template(folder: Path, parameters: dict[str, str], context: C
 
         # Backend API scripts
 
-        for file in ["install.sh", "start.sh"]:
+        for file in ["install.sh", "start.sh", "Dockerfile.txt"]:
+            dst = project_folder / file.replace(".txt", "")
             shutil.copyfile(
                 src=Path(__file__).parent / "template" / file,
-                dst=project_folder / file,
+                dst=dst,
             )
+            replace_patterns(dst)
 
         # Pipeline definition, need to be at the end (such that `ProjectFindersImpl` can 'auto-discover'
         # a valid project when `watch` is `True`).
@@ -161,6 +163,7 @@ async def generate_template(folder: Path, parameters: dict[str, str], context: C
             dst=pipeline_folder / "yw_pipeline.py",
         )
 
+        shutil.copytree(src=src_template_folder / "deps", dst=project_folder / "deps")
         return parameters["name"], project_folder
 
 

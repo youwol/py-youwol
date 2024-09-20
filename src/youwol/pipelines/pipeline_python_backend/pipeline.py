@@ -1,4 +1,5 @@
 # standard library
+import re
 import shutil
 
 from asyncio.subprocess import Process
@@ -124,33 +125,42 @@ class SetupStep(PipelineStep):
             with open(project.path / PYPROJECT_TOML, "rb") as f:
                 pyproject = tomllib.load(f)
 
-                package_json = SetupStep.__package_json(pyproject)
-                write_json(package_json, project.path / "package.json")
+                package_json = SetupStep.__write_package_json(project, pyproject)
+                SetupStep.__write_init_py(project, pyproject)
 
-                auto_generated = SetupStep.__auto_generated_py(pyproject)
-                (project.path / project.name / "auto_generated.py").write_text(
-                    auto_generated
-                )
-
-                return {
-                    "package_json": package_json,
-                    "auto_generated": auto_generated,
-                }
+                return {"package_json": package_json}
 
     @staticmethod
-    def __package_json(pyproject: AnyDict) -> AnyDict:
+    def __write_package_json(project: Project, pyproject: AnyDict) -> AnyDict:
         project_name = pyproject["project"]["name"]
-        return {
+        package_json = {
             "name": project_name,
             "version": pyproject["project"]["version"],
-            "main": "start.sh",
+            "main": f"dist/{project.name}-{project.version}-py3-none-any.whl",
             "webpm": {"type": "backend"},
         }
+        write_json(package_json, project.path / "package.json")
+        return package_json
 
     @staticmethod
-    def __auto_generated_py(pyproject: AnyDict) -> str:
-        return f"""default_port = {pyproject['youwol']['default-port']}
-version = "{pyproject["project"]["version"]}" \n"""
+    def __write_init_py(project: Project, pyproject: AnyDict) -> None:
+        init_file = project.path / pyproject["project"]["name"] / "__init__.py"
+        with open(init_file, "r", encoding="utf-8") as file:
+            content = file.read()
+
+        with open(init_file, "w", encoding="utf-8") as file:
+            patched_version = re.sub(
+                r"__version__\s*=\s*[\'\"]([^\'\"]*)[\'\"]",
+                f'__version__ = "{pyproject["project"]["version"]}"',
+                content,
+            )
+            default_port = pyproject["youwol"]["default-port"]
+            patched_default_port = re.sub(
+                r"(__default__port__\s*=\s*)\d+",
+                f"__default__port__ = {default_port}",
+                patched_version,
+            )
+            file.write(patched_default_port)
 
 
 class DependenciesStep(PipelineStep):
@@ -169,7 +179,7 @@ class DependenciesStep(PipelineStep):
 
     run: ExplicitNone = ExplicitNone()
 
-    sources: FileListing = FileListing(include=[PYPROJECT_TOML])
+    sources: FileListing = FileListing(include=[PYPROJECT_TOML, "deps/*"])
     """
     Source files of the step.
 
@@ -202,7 +212,7 @@ class DependenciesStep(PipelineStep):
             cmd = (
                 f"(python3 -m venv {VENV_NAME} "
                 f"&& . {VENV_NAME}/bin/activate "
-                f"&& pip install -e ./ --force-reinstall)"
+                f"&& pip install -e .[dev] --force-reinstall --find-links ./deps)"
             )
 
             await execute_shell_cmd(cmd=cmd, context=context, cwd=project.path)
@@ -304,6 +314,7 @@ class RunStep(PipelineStep):
             async def on_executed(process: Process | None, shell_ctx: Context):
                 if config["installDispatch"]:
                     env.proxied_backends.register(
+                        uid=str(process.pid),
                         partition_id=DEFAULT_PARTITION_ID,
                         name=project.name,
                         version=project.version,
@@ -326,7 +337,7 @@ class RunStep(PipelineStep):
             if config["autoRun"]:
                 shell_cmd = (
                     f"(. {VENV_NAME}/bin/activate "
-                    f"&& python {project.name}/main.py --port={port} --yw_port={env.httpPort})"
+                    f"&& python {project.name}/main_localhost.py --port={port} --yw_port={env.httpPort})"
                 )
                 return_code, outputs = await execute_shell_cmd(
                     cmd=shell_cmd,
@@ -377,7 +388,7 @@ class PackageStep(PipelineStep):
         The flows defined in this pipelines reference this ID, in common scenarios it should not be modified.
     """
 
-    run: str = "python -m build"
+    run: str = "(rm -rf dist/** && python -m build)"
 
     sources: FileListing = default_packaging_files
     """
@@ -392,10 +403,12 @@ class PackageStep(PipelineStep):
             id="package",
             files=FileListing(
                 include=[
+                    "deps/*",
                     "dist/*",
-                    "package.json",
+                    "Dockerfile",
                     "start.sh",
                     "install.sh",
+                    "package.json",
                     PYPROJECT_TOML,
                 ]
             ),

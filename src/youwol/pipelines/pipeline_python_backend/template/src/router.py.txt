@@ -1,37 +1,42 @@
-# standard library
+"""
+Module gathering the definition of endpoints.
+"""
+
 import asyncio
 import time
 import zipfile
 from io import BytesIO
-from typing import List, Optional
 
-# third parties
-from fastapi import FastAPI, Query
-from pydantic import BaseModel
+import cowsay # type: ignore
+from fastapi import APIRouter, Depends, Query
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
-# Youwol utilities
-from youwol.utils import FuturesResponse, aiohttp_file_form, text_reader
-from youwol.utils.context import ContextFactory, ProxiedBackendContext
+from yw_clients import FuturesResponse, ProxiedBackendContext, text_reader
+from yw_clients.http.assets import NewAssetBody
 
-from {{package_name}}.auto_generated import version
-from {{package_name}}.dependencies import dependencies
+from {{package_name}}.environment import Configuration, Environment
+from {{package_name}}.schemas import (AsyncTaskResult, CowSayBody,
+                                     CustomAssetBody)
 
-app: FastAPI = FastAPI(
-    title="my backend",
-    root_path=f"http://localhost:{dependencies().yw_port}/backends/{{package_name}}/{version}",
-)
+router = APIRouter()
+"""
+The router object.
+"""
 
 
-@app.get("/")
+@router.get("/")
 async def home():
-    # When proxied through py-youwol, this end point is always triggered, when testing weather a backend
-    # is listening. The line is `if not self.is_listening():` in `RedirectSwitch`
+    """
+    When proxied through py-youwol, this end point is always triggered when
+    testing whether a backend is listening.
+    """
     return Response(status_code=200)
 
 
-@app.get("/hello-world")
-async def hello_world(request: Request):
+@router.get("/hello-world")
+async def hello_world(
+    request: Request, config: Configuration = Depends(Environment.get_config)
+):
     """
     How-to 'create and end-point & log messages'.
 
@@ -39,45 +44,59 @@ async def hello_world(request: Request):
 
     Parameters:
         request: Incoming request.
+        config: Injected configuration.
 
     Return:
-        A json response `{"endpoint": "/hello-world"}`
+        A JSON response `{"endpoint": "/hello-world"}`
 
     """
-    async with ContextFactory.proxied_backend_context(request).start(
-        action="/hello-world"
-    ) as ctx:
+    async with config.context(request).start(action="/hello-world") as ctx:
         await ctx.info("Hello world")
         return JSONResponse({"endpoint": "/hello-world"})
 
 
-class AsyncTaskResult(BaseModel):
-    result: str
+@router.post("/cow-say")
+async def cow_say(
+    body: CowSayBody,
+):
+    """
+    Howto 'handle a `POST` request'.
+    It returns a `cow-say` message given inputs in the parameter `body`.
+
+    Parameters:
+        body: Request's body.
+
+    Returns:
+        Text message representing the cow-say.
+    """
+    return cowsay.get_output_string(body.character, body.message)
 
 
-@app.get("/async-job")
+@router.get("/async-job")
 async def async_job(
     request: Request,
     channel_id: str = Query(alias="channel-id", default=str(time.time() * 1e6)),
+    config: Configuration = Depends(Environment.get_config),
 ):
     """
-    How-to 'create asynchronous computations'.
+    Howto 'create asynchronous computations'.
 
     This example triggers a long-running job (ticking every second for 10 seconds),
-    sending the result in the `/ws-data` websocket of py-youwol (can be monitored from the developer-portal
-    application's debug panel, tab 'network').
+    sending the result in the `/ws-data` websocket of py-youwol (can be monitored from the
+    developer-portal application's debug panel, tab 'network').
     The endpoint does not wait for the computations to finish, it completes right away.
 
-    In order to be callable from the default javascript client, such asynchronous computations **must** declare
-    an optional query parameter with alias 'channel-id' used to instantiate the `FuturesResponse`.
+    To be callable from the default JavaScript client, such asynchronous computations **must**
+    declare an optional query parameter with alias 'channel-id' used to instantiate the
+    `FuturesResponse`.
 
     Parameters:
         request: Incoming request.
         channel_id: Optional provided channel_id. If not provided, pick the epoch in second.
-
+        config: Injected configuration.
     Return:
-         An acknowledged response (status code `202`), including the `channel_id` to be able to retrieve the results
-         of the scheduled computation from the websocket `/ws-data`.
+         An acknowledged response (status code `202`), including the `channel_id` to be able to
+         retrieve the results of the scheduled computation from the websocket `/ws-data`.
     """
 
     async def tick_every_second(
@@ -93,47 +112,42 @@ async def async_job(
                 await asyncio.sleep(1)
             await streamer.close(context=ctx_ticks)
 
-    async with ContextFactory.proxied_backend_context(request).start(
-        action="/async-job"
-    ) as ctx:
+    async with config.context(request).start(action="/async-job") as ctx:
         response = FuturesResponse(channel_id=channel_id)
         await ctx.info("Use web socket to send async. messages")
         asyncio.ensure_future(tick_every_second(response, ctx))
         return response
 
 
-@app.get("/read-file")
+@router.get("/read-file")
 async def read_file(
     request: Request,
     file_id: str = Query(
         alias="file-id", default="8f94c951-7b37-4340-abae-1ba2fec0fe07"
     ),
+    config: Configuration = Depends(Environment.get_config),
 ):
     """
-    How-to 'read a file'.
+    Howto 'read a file'.
 
-    This example illustrates how to read a file through the `context.env.assets_gateway` client, and how to forward
-    authorization (through `ctx.cookies()`) & trace info (through `ctx.headers()`).
+    This example illustrates how to read a file through the `context.env.assets_gateway` client,
+    and how to forward authorization (using `ctx.cookies()`) & trace info (using `ctx.headers()`).
 
     Parameters:
         request: Incoming request.
         file_id: The file ID (retrieved from the application `@youwol/explorer` with right-click).
-            If not provided, the  `file_id` refers to the file with path
+            If not provided, the `file_id` refers to the file with the path
             `youwol-users/Default drive/galapagosData/allChambers-T.ts`.
-
+        config: Injected configuration.
     Return:
-        A JSON response with attribute 'content' being the (text) content of the file.
+        A JSON response with an attribute 'content' being the (text) content of the file.
     """
-    async with ContextFactory.proxied_backend_context(request).start(
-        action="/read-file"
-    ) as ctx:
-        file_client = ctx.env.assets_gateway.get_files_backend_router()
-
+    async with config.context(request).start(action="/read-file") as ctx:
+        file_client = ctx.env.assets_gateway.files()
         await ctx.info(f"Read the file with fileId={file_id}")
 
         content = await file_client.get(
             file_id=file_id,
-            #  `text_reader` because the file encode a text content (it returns a string) (return `bytes`by default).
             reader=text_reader,
             #  'cookies' encode authorisation
             cookies=ctx.cookies(),
@@ -142,26 +156,26 @@ async def read_file(
         return JSONResponse({"content": content})
 
 
-@app.post("/write-file")
+@router.post("/write-file")
 async def write_file(
     request: Request,
     file_id: str = Query(alias="file-id", default="a-default-id-for-generated-file"),
+    config: Configuration = Depends(Environment.get_config),
 ):
     """
-    How-to 'write a file'.
+    Howto 'write a file'.
 
     Parameters:
         request: Incoming request.
-        file_id: The ID of the file created. If not provided, pick `a-default-id-for-generated-file`.
-
+        file_id: The ID of the file created.
+            If not provided, pick `a-default-id-for-generated-file`.
+        config: Injected configuration.
     Return:
-        A JSON response representing the asset created & its path.
+        A JSON response representing the asset created and its path.
     """
-    async with ContextFactory.proxied_backend_context(request).start(
-        action="/write-file"
-    ) as ctx:
-        files_client = ctx.env.assets_gateway.get_files_backend_router()
-        explorer_client = ctx.env.assets_gateway.get_treedb_backend_router()
+    async with config.context(request).start(action="/write-file") as ctx:
+        files_client = ctx.env.assets_gateway.files()
+        explorer_client = ctx.env.assets_gateway.explorer()
 
         await ctx.info(f"Write a file with fileId={file_id}")
 
@@ -169,38 +183,30 @@ async def write_file(
         default_drive = await explorer_client.get_default_user_drive(
             cookies=ctx.cookies(), headers=ctx.headers()
         )
-        folder_id = default_drive["tmpFolderId"]
+        folder_id = default_drive.tmpFolderId
         await ctx.info(f"Upload file in folder {folder_id}", data=default_drive)
         asset = await files_client.upload(
-            data=aiohttp_file_form(
-                filename="{{package_name}}.uploaded.txt",
-                content_type="text/plain",
-                content="the content of the file",
-                file_id=file_id,
-            ),
-            params={"folder-id": default_drive["tmpFolderId"]},
+            filename="{{package_name}}.uploaded.txt",
+            content_type="text/plain",
+            content="the content of the file",
+            file_id=file_id,
+            params={"folder-id": folder_id},
             headers=ctx.headers(),
             cookies=ctx.cookies(),
         )
 
         await ctx.info("Retrieve the file's path in the explorer.")
         path = await explorer_client.get_path(
-            item_id=asset["itemId"], headers=ctx.headers(), cookies=ctx.cookies()
+            item_id=asset.itemId, headers=ctx.headers(), cookies=ctx.cookies()
         )
         return {"asset": asset, "explorerPath": path}
 
 
-class CustomAssetBody(BaseModel):
-    name: Optional[str] = "foo"
-    id: Optional[str] = "{{package_name}}-custom-foo-id"
-    tags: Optional[List[str]] = ["{{package_name}}", "create-asset"]
-    description: Optional[str] = "A foo asset."
-
-
-@app.post("/create-asset")
+@router.post("/create-asset")
 async def create_asset(
     request: Request,
     body: CustomAssetBody,
+    config: Configuration = Depends(Environment.get_config),
 ):
     """
     How-to 'create a custom asset' and bind an initial set of files.
@@ -212,18 +218,16 @@ async def create_asset(
     Parameters:
         request: Incoming request.
         body: Asset description.
-
+        config: Injected configuration.
     Return:
-        A JSON response representing the asset created & its path.
+        A JSON response representing the asset created and its path.
     """
-    async with ContextFactory.proxied_backend_context(request).start(
-        action="/create-asset"
-    ) as ctx:
+    async with config.context(request).start(action="/create-asset") as ctx:
         await ctx.info(
             "Retrieves the user's default drive (to get a destination `folder_id`)"
         )
 
-        explorer_client = ctx.env.assets_gateway.get_treedb_backend_router()
+        explorer_client = ctx.env.assets_gateway.explorer()
         default_drive = await explorer_client.get_default_user_drive(
             cookies=ctx.cookies(), headers=ctx.headers()
         )
@@ -232,16 +236,16 @@ async def create_asset(
             "Creates a new 'empty' asset (no files associated) in `system/tmp` folder."
         )
 
-        assets_client = ctx.env.assets_gateway.get_assets_backend_router()
+        assets_client = ctx.env.assets_gateway.assets()
         asset = await assets_client.create_asset(
-            body={
-                "rawId": body.id,
-                "name": body.name,
-                "kind": "{{package_name}}-project",
-                "description": body.description,
-                "tags": body.tags,
-            },
-            params={"folder-id": default_drive["tmpFolderId"]},
+            body=NewAssetBody(
+                rawId=body.id,
+                name=body.name,
+                kind="{{package_name}}-project",
+                description=body.description,
+                tags=body.tags,
+            ),
+            params={"folder-id": default_drive.tmpFolderId},
             headers=ctx.headers(),
             cookies=ctx.cookies(),
         )
@@ -249,7 +253,7 @@ async def create_asset(
         await ctx.info("Post a .zip file to populate the asset.")
         zip_data = create_zip()
         await assets_client.add_zip_files(
-            asset_id=asset["assetId"],
+            asset_id=asset.assetId,
             data=zip_data,
             cookies=ctx.cookies(),
             headers=ctx.headers(),
@@ -258,8 +262,9 @@ async def create_asset(
         await ctx.info("Retrieves the first file 'file1.txt'")
 
         file1 = await assets_client.get_file(
-            asset_id=asset["assetId"],
+            asset_id=asset.assetId,
             path="file1.txt",
+            reader=text_reader,
             cookies=ctx.cookies(),
             headers=ctx.headers(),
         )
@@ -267,8 +272,9 @@ async def create_asset(
         await ctx.info("Retrieves the second file 'folder/file2.txt'")
 
         file2 = await assets_client.get_file(
-            asset_id=asset["assetId"],
+            asset_id=asset.assetId,
             path="folder/file2.txt",
+            reader=text_reader,
             cookies=ctx.cookies(),
             headers=ctx.headers(),
         )
@@ -277,7 +283,9 @@ async def create_asset(
 
 def create_zip() -> bytes:
     """
-    This function creates a predefined zip file with 2 files in memory to upload it in an asset.
+    This function creates a predefined zip file in memory with two files in it:
+    *  `file1.txt` with the content "Hello, this is the content of the first file."
+    *  `folder/file2.txt` with the content "And here is the content of the second file."
     """
     in_memory_zip = BytesIO()
     with zipfile.ZipFile(
