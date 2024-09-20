@@ -38,6 +38,9 @@ requires = [
 [tool.setuptools]
 packages = ["{{package_name}}"]
 
+[tool.isort]
+profile = "black"
+
 [tool.pylint.'MESSAGES CONTROL']
 extension-pkg-whitelist = "pydantic"
 

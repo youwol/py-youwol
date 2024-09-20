@@ -34,7 +34,7 @@ from youwol.app.routers.projects import (
     PipelineStep,
     Project,
     Target,
-    get_project_configuration,
+    get_project_configuration, RunImplicit, SourcesFctImplicit,
 )
 
 # Youwol utilities
@@ -247,6 +247,20 @@ async def stop_backend(project: Project, context: Context):
             return {"status": "backend terminated"}
 
         return {"status": "backend or PID not found"}
+
+
+class CodeQualityStep(PipelineStep):
+
+    id = "quality"
+
+    run: RunImplicit = lambda _step, project, _flow, _ctx: \
+        (f"(. {VENV_NAME}/bin/activate && "
+         f"black ./{project.name} "
+         f"&& isort ./{project.name} "
+         f"&& pylint ./{project.name} "
+         f"&& mypy ./{project.name})")
+
+    sources: SourcesFctImplicit = lambda _step, project, _flow, _ctx: FileListing(include=[project.name, PYPROJECT_TOML])
 
 
 class RunStep(PipelineStep):
@@ -473,6 +487,7 @@ async def pipeline(config: PipelineConfig, context: Context):
             dependencies_step,
             package_step,
             RunStep(),
+            CodeQualityStep(),
             PublishCdnLocalStep(
                 packagedArtifacts=["package"],
             ),
@@ -505,6 +520,7 @@ async def pipeline(config: PipelineConfig, context: Context):
                         "setup > dependencies > package > cdn-local",
                         *dags,
                         "dependencies > run",
+                        "dependencies > quality"
                     ],
                 )
             ],
