@@ -35,5 +35,5 @@ requires = [
 version = {attr = "yw_clients.__version__"}
 [tool.setuptools.package-data]
 "yw_clients" = ["py.typed"]
-[tool.setuptools]
-packages = ["yw_clients"]
+[tool.setuptools.packages.find]
+include = ["yw_clients*"]
