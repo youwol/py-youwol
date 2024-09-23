@@ -1438,14 +1438,14 @@
     "@youwol/http-primitives" "^0.2.3"
     rxjs "^7.5.6"
 
-"@youwol/mkdocs-ts@^0.5.5":
-  version "0.5.6"
-  resolved "https://registry.yarnpkg.com/@youwol/mkdocs-ts/-/mkdocs-ts-0.5.6.tgz#fa29016f34b61e89540eb8c206c08cf0313fd410"
-  integrity sha512-w4NJfPAVX+PGHxKEjk71zfd2msLp/2ZBIqCyc4KbhdN3+85FP3/sTmnmieNSsGrnLYtiURr5sV3Z/9Uf5uvxuQ==
+"@youwol/mkdocs-ts@^0.6.2":
+  version "0.6.2"
+  resolved "https://registry.yarnpkg.com/@youwol/mkdocs-ts/-/mkdocs-ts-0.6.2.tgz#fbd12ef5f6925c73dc88c3535b075d2e09a55dba"
+  integrity sha512-fX73mYW0eUR3Wfi2+CqFyoC0qKwBzPn6IAvHsfGK7xCW+MdonRjKVirlFnieZ27AgM0avy545gtEEZnliMyCZg==
   dependencies:
     "@youwol/http-primitives" "^0.2.3"
     "@youwol/os-top-banner" "^0.2.0"
-    "@youwol/rx-tree-views" "^0.3.3"
+    "@youwol/rx-tree-views" "^0.3.4"
     "@youwol/rx-vdom" "^1.0.1"
     "@youwol/webpm-client" "^3.0.0"
     codemirror "^5.52.0"
@@ -1490,7 +1490,7 @@
     "@youwol/rx-vdom" "^1.0.1"
     rxjs "^7.5.6"
 
-"@youwol/rx-tree-views@^0.3.3":
+"@youwol/rx-tree-views@^0.3.4":
   version "0.3.4"
   resolved "https://registry.yarnpkg.com/@youwol/rx-tree-views/-/rx-tree-views-0.3.4.tgz#df586aa381d1ad2a748a7334211f20fc1866e18f"
   integrity sha512-LYF6cx/JLugmLm+HWXcqdoOTcE++SrHv5Dp+Mk7wnYmyu4ykbqp7eWKjCTnnoEFE/37szHAQVF0j1dcyuWhkdw==

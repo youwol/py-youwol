@@ -32,7 +32,7 @@ const configuration = {
 export const navigation = {
     name: 'Py-YouWol',
     decoration: {
-        icon: { tag: 'div' as const, class: 'fas fa-home mr-2' },
+        icon: { tag: 'div' as const, class: 'fas fa-home me-2' },
     },
     tableOfContent,
     html: fromMd({
@@ -45,7 +45,7 @@ export const navigation = {
     '/how-to': {
         name: 'How-To',
         decoration: {
-            icon: { tag: 'div' as const, class: 'fas fa-list-ul mr-2' },
+            icon: { tag: 'div' as const, class: 'fas fa-list-ul me-2' },
         },
         tableOfContent,
         html: fromMd({ file: 'how-to.md' }),
@@ -68,14 +68,14 @@ export const navigation = {
     '/api': {
         name: 'API',
         decoration: {
-            icon: { tag: 'div' as const, class: 'fas fa-code mr-2' },
+            icon: { tag: 'div' as const, class: 'fas fa-code me-2' },
         },
         tableOfContent,
         html: fromMd({ file: 'api.md' }),
         '/youwol': CodeApiModule.codeApiEntryNode({
             name: 'youwol',
             decoration: {
-                icon: { tag: 'div', class: 'fas fa-box-open mr-2' },
+                icon: { tag: 'div', class: 'fas fa-box-open me-2' },
             },
             entryModule: 'youwol',
             docBasePath: '../assets/api',
@@ -84,7 +84,7 @@ export const navigation = {
         '/yw-clients': CodeApiModule.codeApiEntryNode({
             name: 'yw_clients',
             decoration: {
-                icon: { tag: 'div', class: 'fas fa-box-open mr-2' },
+                icon: { tag: 'div', class: 'fas fa-box-open me-2' },
             },
             entryModule: 'yw_clients',
             docBasePath: '../assets/api',
@@ -94,7 +94,7 @@ export const navigation = {
     '/change-log': {
         name: 'Change Log',
         decoration: {
-            icon: { tag: 'div' as const, class: 'fas fa-bookmark mr-2' },
+            icon: { tag: 'div' as const, class: 'fas fa-bookmark me-2' },
         },
         tableOfContent,
         html: fromMd({ file: 'CHANGELOG.md' }),
