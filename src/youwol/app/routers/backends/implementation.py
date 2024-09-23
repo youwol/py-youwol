@@ -1,6 +1,8 @@
 # standard library
 import asyncio
 import functools
+import json
+import subprocess
 import uuid
 
 from asyncio.subprocess import Process
@@ -39,7 +41,6 @@ from youwol.utils import (
     encode_id,
     execute_shell_cmd,
     find_available_port,
-    parse_json,
 )
 
 router = APIRouter()
@@ -169,6 +170,46 @@ def install_manifest_name(build_fingerprint):
     return INSTALL_MANIFEST_FILE.replace(".txt", f".{build_fingerprint}.txt")
 
 
+def is_containerized(folder: Path):
+    return (folder / "Dockerfile").exists()
+
+
+async def get_install_cmd(
+    folder: Path,
+    name: str,
+    version: str,
+    config: ProxiedBackendConfiguration,
+    context: Context,
+):
+
+    async with context.start(
+        action="get_install_cmd",
+        with_reporters=[LogsStreamer()],
+    ) as ctx:
+
+        build_fingerprint = get_build_fingerprint(
+            name=name, version=version, config=config
+        )
+
+        if is_containerized(folder=folder):
+            build_args = functools.reduce(
+                lambda acc, e: f'{acc} --build-arg {e[0]}="{e[1]}"',
+                config.build.items(),
+                "",
+            )
+            cmd = f"docker build {build_args} -t {name}:{version} -t {name}:{build_fingerprint} -t {name}:youwol ."
+            await ctx.info(f"Install containerized backend: '{cmd}'")
+            return cmd
+        build_args = functools.reduce(
+            lambda acc, e: f"{acc} --{e[0]} '{e[1]}'",
+            config.build.items(),
+            f"--fingerprint {build_fingerprint}",
+        )
+        cmd = f"sh ./install.sh {build_args}"
+        await ctx.info(f"Install localhost backend: '{cmd}'")
+        return cmd
+
+
 async def install_backend_shell(
     folder: Path,
     name: str,
@@ -177,36 +218,32 @@ async def install_backend_shell(
     context: Context,
 ) -> list[str]:
 
-    uid = str(uuid.uuid4())
-    build_fingerprint = get_build_fingerprint(config)
-
-    def get_build_args():
-        return functools.reduce(
-            lambda acc, e: f"{acc} --{e[0]} '{e[1]}'",
-            config.build.items(),
-            f"--fingerprint {build_fingerprint}",
-        )
+    install_id = str(uuid.uuid4())
 
     async with context.start(
         action="install backend",
         with_labels=[Label.INSTALL_BACKEND_SH],
-        with_attributes={"name": name, "version": version, "installId": uid},
+        with_attributes={"name": name, "version": version, "installId": install_id},
         with_reporters=[LogsStreamer()],
     ) as ctx:
+        build_fingerprint = get_build_fingerprint(
+            name=name, version=version, config=config
+        )
         await ctx.send(
             InstallBackendEvent(
-                name=name, version=version, event="started", installId=uid
+                name=name, version=version, event="started", installId=install_id
             )
         )
-        build_args = get_build_args()
-
-        cmd_install = f"(cd {folder} &&  sh ./install.sh {build_args})"
-
-        return_code, outputs = await execute_shell_cmd(cmd=cmd_install, context=ctx)
+        cmd_install = await get_install_cmd(
+            folder=folder, name=name, version=version, config=config, context=ctx
+        )
+        return_code, outputs = await execute_shell_cmd(
+            cmd=cmd_install, cwd=folder, context=ctx
+        )
         if return_code > 1:
             await ctx.send(
                 InstallBackendEvent(
-                    name=name, version=version, event="failed", installId=uid
+                    name=name, version=version, event="failed", installId=install_id
                 )
             )
             raise InstallBackendFailed(
@@ -222,16 +259,44 @@ async def install_backend_shell(
         )
         await ctx.send(
             InstallBackendEvent(
-                name=name, version=version, event="succeeded", installId=uid
+                name=name, version=version, event="succeeded", installId=install_id
             )
         )
         return outputs
+
+
+async def get_start_command(
+    name: str,
+    version: str,
+    config: ProxiedBackendConfiguration,
+    instance_id: str,
+    folder: Path,
+    port: int,
+    context: Context,
+):
+
+    async with context.start(action="get_start_command") as ctx:
+        env = await ctx.get("env", YouwolEnvironment)
+        fp = get_build_fingerprint(name=name, version=version, config=config)
+        if (folder / "Dockerfile").exists():
+            await ctx.info("Backend started within container")
+            yw_host = get_docker_bridge_ipam_gateway()
+            return (
+                f"docker run --name {instance_id} --env YW_HOST={yw_host} --env YW_PORT={env.httpPort}"
+                f" -p {port}:8080 {name}:{fp}"
+            )
+        await ctx.info("Backend started within host")
+        build_arg = f" -b {fp}"
+        return (
+            f"(cd {folder} &&  sh ./start.sh -p {port} -s {env.httpPort} {build_arg})"
+        )
 
 
 async def start_backend_shell(
     name: str,
     version: str,
     config: ProxiedBackendConfiguration,
+    instance_id: str,
     folder: Path,
     port: int,
     outputs: list[str],
@@ -243,18 +308,20 @@ async def start_backend_shell(
         with_attributes={"name": name, "version": version},
         with_reporters=[LogsStreamer()],
     ) as ctx:
-        env = await ctx.get("env", YouwolEnvironment)
-        package_json = parse_json(folder / "package.json")
-        entry_sh = package_json["main"]
-        build_arg = f" -b {get_build_fingerprint(config)}"
-
-        cmd_start = (
-            f"(cd {folder} &&  sh ./{entry_sh} -p {port} -s {env.httpPort} {build_arg})"
+        cmd_start = await get_start_command(
+            name=name,
+            version=version,
+            config=config,
+            instance_id=instance_id,
+            folder=folder,
+            port=port,
+            context=ctx,
         )
 
         await ctx.info(text=cmd_start)
         p = await asyncio.create_subprocess_shell(
             cmd=cmd_start,
+            cwd=folder,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             shell=True,
@@ -387,7 +454,9 @@ async def ensure_running(
         folder = env.pathsBook.local_cdn_component(
             name=backend_name, version=latest_version_backend
         )
-        fp = get_build_fingerprint(config)
+        fp = get_build_fingerprint(
+            name=backend_name, version=latest_version_backend, config=config
+        )
 
         if not (folder / install_manifest_name(fp)).exists():
             await ctx.info(f"No install manifest found for build fingerprint {fp}")
@@ -403,11 +472,15 @@ async def ensure_running(
             install_outputs = [f"Backend {backend_name} already installed"]
         port = find_available_port(start=2010, end=3000)
 
-        await ctx.info(text=f"Start backend from '{folder}' on port {port}")
+        instance_id = str(uuid.uuid4())
+        await ctx.info(
+            text=f"Start backend from '{folder}' on port {port} with ID {instance_id}"
+        )
 
         outputs = []
         await ctx.send(
             data=StartBackendEvent(
+                uid=instance_id,
                 partitionId=partition_id,
                 name=backend_name,
                 version=latest_version_backend,
@@ -417,6 +490,7 @@ async def ensure_running(
         process, std_outputs_ctx_id = await start_backend_shell(
             name=backend_name,
             version=latest_version_backend,
+            instance_id=instance_id,
             config=config,
             folder=folder,
             port=port,
@@ -441,6 +515,7 @@ async def ensure_running(
                 )
 
             proxy = env.proxied_backends.register(
+                uid=instance_id,
                 partition_id=partition_id,
                 name=backend_name,
                 version=latest_version_backend,
@@ -539,7 +614,9 @@ async def download_install_backend(
                 )
             )
         folder = env.pathsBook.local_cdn_component(name=backend_name, version=version)
-        build_fingerprint = get_build_fingerprint(config)
+        build_fingerprint = get_build_fingerprint(
+            name=backend_name, version=version, config=config
+        )
 
         if not (folder / install_manifest_name(build_fingerprint)).exists():
             await install_backend_shell(
@@ -549,3 +626,11 @@ async def download_install_backend(
                 config=config,
                 context=ctx,
             )
+
+
+def get_docker_bridge_ipam_gateway():
+    output = subprocess.check_output(
+        ["docker", "network", "inspect", "bridge", "-f", "{{json .IPAM.Config}}"]
+    )
+    ipam_config = json.loads(output)[0]
+    return ipam_config["Gateway"]

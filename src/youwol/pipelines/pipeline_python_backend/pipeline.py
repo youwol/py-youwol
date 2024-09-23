@@ -1,4 +1,5 @@
 # standard library
+import re
 import shutil
 
 from asyncio.subprocess import Process
@@ -6,8 +7,13 @@ from collections.abc import Callable
 from pathlib import Path
 
 # third parties
+import packaging.version
+
 from fastapi import HTTPException
 from pydantic import BaseModel
+
+# Youwol
+from youwol import __version__
 
 # Youwol Surrogate for next versions of Python
 from youwol.utils.python_next.v3_12 import tomllib
@@ -32,6 +38,8 @@ from youwol.app.routers.projects import (
     Pipeline,
     PipelineStep,
     Project,
+    RunImplicit,
+    SourcesFctImplicit,
     Target,
     get_project_configuration,
 )
@@ -46,6 +54,7 @@ from youwol.utils import (
     execute_shell_cmd,
     find_available_port,
     write_json,
+    yw_repo_path,
 )
 
 # Youwol pipelines
@@ -121,36 +130,46 @@ class SetupStep(PipelineStep):
         async with context.start(
             action="SetupStep",
         ):
+            shutil.rmtree(project.path / "dist", ignore_errors=True)
             with open(project.path / PYPROJECT_TOML, "rb") as f:
                 pyproject = tomllib.load(f)
 
-                package_json = SetupStep.__package_json(pyproject)
-                write_json(package_json, project.path / "package.json")
+                package_json = SetupStep.__write_package_json(project, pyproject)
+                SetupStep.__write_init_py(project, pyproject)
 
-                auto_generated = SetupStep.__auto_generated_py(pyproject)
-                (project.path / project.name / "auto_generated.py").write_text(
-                    auto_generated
-                )
-
-                return {
-                    "package_json": package_json,
-                    "auto_generated": auto_generated,
-                }
+                return {"package_json": package_json}
 
     @staticmethod
-    def __package_json(pyproject: AnyDict) -> AnyDict:
+    def __write_package_json(project: Project, pyproject: AnyDict) -> AnyDict:
         project_name = pyproject["project"]["name"]
-        return {
+        package_json = {
             "name": project_name,
             "version": pyproject["project"]["version"],
-            "main": "start.sh",
+            "main": f"dist/{project.name}-{project.version}-py3-none-any.whl",
             "webpm": {"type": "backend"},
         }
+        write_json(package_json, project.path / "package.json")
+        return package_json
 
     @staticmethod
-    def __auto_generated_py(pyproject: AnyDict) -> str:
-        return f"""default_port = {pyproject['youwol']['default-port']}
-version = "{pyproject["project"]["version"]}" \n"""
+    def __write_init_py(project: Project, pyproject: AnyDict) -> None:
+        init_file = project.path / pyproject["project"]["name"] / "__init__.py"
+        with open(init_file, "r", encoding="utf-8") as file:
+            content = file.read()
+
+        with open(init_file, "w", encoding="utf-8") as file:
+            patched_version = re.sub(
+                r"__version__\s*=\s*[\'\"]([^\'\"]*)[\'\"]",
+                f'__version__ = "{pyproject["project"]["version"]}"',
+                content,
+            )
+            default_port = pyproject["youwol"]["default-port"]
+            patched_default_port = re.sub(
+                r"(__default__port__\s*=\s*)\d+",
+                f"__default__port__ = {default_port}",
+                patched_version,
+            )
+            file.write(patched_default_port)
 
 
 class DependenciesStep(PipelineStep):
@@ -169,7 +188,7 @@ class DependenciesStep(PipelineStep):
 
     run: ExplicitNone = ExplicitNone()
 
-    sources: FileListing = FileListing(include=[PYPROJECT_TOML])
+    sources: FileListing = FileListing(include=[PYPROJECT_TOML, "deps/*"])
     """
     Source files of the step.
 
@@ -193,16 +212,29 @@ class DependenciesStep(PipelineStep):
         # for now this is required: 'sudo apt install python3.12-venv'
         async with context.start(
             action="DependenciesStep",
-        ):
+        ) as ctx:
             # this is all temporary until py-youwol#0.1.7 is released
             venv_path = project.path / VENV_NAME
             if venv_path.exists():
                 shutil.rmtree(venv_path)
 
+            if packaging.version.parse(__version__).is_devrelease and yw_repo_path():
+                await ctx.info(
+                    text="Youwol is a dev release, built and link `yw_clients` from sources"
+                )
+
+                (project.path / "deps").mkdir(exist_ok=True)
+                yw_clients_path = yw_repo_path() / "lib" / "yw_clients"
+                cmd = (
+                    f"python3 -m build {yw_clients_path} --wheel && "
+                    f"mv {yw_clients_path}/dist/yw_clients-{__version__}*.whl {project.path}/deps"
+                )
+                await execute_shell_cmd(cmd=cmd, context=context, cwd=project.path)
+
             cmd = (
                 f"(python3 -m venv {VENV_NAME} "
                 f"&& . {VENV_NAME}/bin/activate "
-                f"&& pip install -e ./ --force-reinstall)"
+                f"&& pip install -e .[dev] --force-reinstall --find-links ./deps)"
             )
 
             await execute_shell_cmd(cmd=cmd, context=context, cwd=project.path)
@@ -237,6 +269,41 @@ async def stop_backend(project: Project, context: Context):
             return {"status": "backend terminated"}
 
         return {"status": "backend or PID not found"}
+
+
+class CodeQualityStep(PipelineStep):
+
+    id = "quality"
+
+    run: RunImplicit = lambda _step, project, _flow, _ctx: (
+        f"(. {VENV_NAME}/bin/activate && "
+        f"black ./{project.name} "
+        f"&& isort ./{project.name} "
+        f"&& pylint ./{project.name} "
+        f"&& mypy ./{project.name})"
+    )
+
+    sources: SourcesFctImplicit = lambda _step, project, _flow, _ctx: FileListing(
+        include=[project.name, PYPROJECT_TOML]
+    )
+
+
+class DocStep(PipelineStep):
+
+    id = "doc"
+
+    run: RunImplicit = lambda _step, project, _flow, _ctx: (
+        f"(. {VENV_NAME}/bin/activate && "
+        f"pdoc ./{project.name} -d google --output-dir ./dist/docs )"
+    )
+
+    sources: SourcesFctImplicit = lambda _step, project, _flow, _ctx: FileListing(
+        include=[project.name, PYPROJECT_TOML]
+    )
+
+    artifacts: list[Artifact] = [
+        Artifact(id="doc", files=FileListing(include=["dist/docs/**"]))
+    ]
 
 
 class RunStep(PipelineStep):
@@ -304,6 +371,7 @@ class RunStep(PipelineStep):
             async def on_executed(process: Process | None, shell_ctx: Context):
                 if config["installDispatch"]:
                     env.proxied_backends.register(
+                        uid=str(process.pid),
                         partition_id=DEFAULT_PARTITION_ID,
                         name=project.name,
                         version=project.version,
@@ -326,7 +394,7 @@ class RunStep(PipelineStep):
             if config["autoRun"]:
                 shell_cmd = (
                     f"(. {VENV_NAME}/bin/activate "
-                    f"&& python {project.name}/main.py --port={port} --yw_port={env.httpPort})"
+                    f"&& python {project.name}/main_localhost.py --port={port} --yw_port={env.httpPort})"
                 )
                 return_code, outputs = await execute_shell_cmd(
                     cmd=shell_cmd,
@@ -392,10 +460,12 @@ class PackageStep(PipelineStep):
             id="package",
             files=FileListing(
                 include=[
-                    "dist/*",
-                    "package.json",
+                    "deps/*",
+                    "dist/*.whl",
+                    "Dockerfile",
                     "start.sh",
                     "install.sh",
+                    "package.json",
                     PYPROJECT_TOML,
                 ]
             ),
@@ -460,8 +530,10 @@ async def pipeline(config: PipelineConfig, context: Context):
             dependencies_step,
             package_step,
             RunStep(),
+            DocStep(),
+            CodeQualityStep(),
             PublishCdnLocalStep(
-                packagedArtifacts=["package"],
+                packagedArtifacts=["package", "doc"],
             ),
             *publish_remote_steps,
         ]
@@ -478,7 +550,8 @@ async def pipeline(config: PipelineConfig, context: Context):
                         name="Swagger",
                         url=f"/backends/{project.name}/{project.version}/docs",
                         kind=LinkKind.PLAIN_URL,
-                    )
+                    ),
+                    Link(name="API-Doc", url="dist/docs/index.html"),
                 ],
             ),
             tags=config.with_tags,
@@ -492,6 +565,8 @@ async def pipeline(config: PipelineConfig, context: Context):
                         "setup > dependencies > package > cdn-local",
                         *dags,
                         "dependencies > run",
+                        "dependencies > quality",
+                        "dependencies > doc > cdn-local",
                     ],
                 )
             ],

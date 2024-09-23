@@ -72,36 +72,6 @@ def aiohttp_file_form(
 
 
 @dataclass(frozen=True)
-class AioHttpFileResponse:
-    """
-    Wrapper over aiohttp's ClientResponse to handle responses pointing to a file.
-    """
-
-    resp: ClientResponse
-
-    async def read(self) -> bytes:
-        """
-        Return:
-             Bytes content.
-        """
-        return await self.resp.read()
-
-    async def json(self, **kwargs) -> JSON:
-        """
-        Return:
-             File's content parsed as JSON.
-        """
-        return await self.resp.json(**kwargs)
-
-    async def text(self, **kwargs) -> str:
-        """
-        Return:
-             File's content parsed as text.
-        """
-        return await self.resp.text(**kwargs)
-
-
-@dataclass(frozen=True)
 class AioHttpExecutor:
     """
     Request executor using [AioHTTP](https://docs.aiohttp.org/en/stable/) instantiated using the template parameter
@@ -264,92 +234,109 @@ class AioHttpExecutor:
             **kwargs,
         )
 
-    async def json_reader(self, resp: ClientResponse, **kwargs) -> JSON:
-        if resp.status < 300:
-            resp_json = await resp.json(**kwargs)
-            return resp_json
 
-        raise await upstream_exception_from_response(resp, url=resp.url)
-
-    async def text_reader(self, resp: ClientResponse, **kwargs) -> str:
-        if resp.status < 300:
-            resp_text = await resp.text(**kwargs)
-            return resp_text
-
-        raise await upstream_exception_from_response(resp, url=resp.url)
-
-    async def bytes_reader(self, resp: ClientResponse) -> bytes:
-        if resp.status < 300:
-            resp_bytes = await resp.read()
-            return resp_bytes
-
-        raise await upstream_exception_from_response(resp, url=resp.url)
-
-    async def file_reader(self, resp: ClientResponse) -> AioHttpFileResponse:
-        if resp.status < 300:
-            return AioHttpFileResponse(resp=resp)
-
-        raise await upstream_exception_from_response(resp)
-
-    def typed_reader(
-        self,
-        target: Type[BaseModelT],
-    ) -> Callable[[ClientResponse], Awaitable[BaseModelT]]:
-        """
-        Return the response as expected pydantic's BaseModel.
-
-        Parameters:
-            target: The type expected.
-        Return:
-            The reader function.
-        """
-
-        async def reader(resp: ClientResponse) -> BaseModelT:
-            if resp.status < 300:
-                resp_json = await self.json_reader(resp)
-                if not isinstance(resp_json, dict):
-                    raise ValueError("The response recieved is not a valid dict")
-                return target(**resp_json)
-
-            raise await upstream_exception_from_response(resp, url=resp.url)
-
-        return reader
-
-
-async def parse_file_response(
-    file_resp: AioHttpFileResponse,
+async def auto_reader(
+    resp: ClientResponse,
 ) -> JSON | str | bytes:
     """
     Automatic selection of reader from the response's `content_type`.
     See code implementation regarding switching strategy.
 
     Parameters:
-        file_resp: The response.
+        resp: The aiohttp client response.
 
-    Return:
+    Returns:
         The content as JSON, string or bytes (default).
     """
-    if file_resp.resp.status < 300:
-        content_type = (
-            file_resp.resp.content_type.lower() if file_resp.resp.content_type else ""
-        )
+    if resp.status < 300:
+        content_type = resp.content_type.lower() if resp.content_type else ""
 
         # Handle JSON response and variations of JSON content types
         if "application/json" in content_type or content_type.endswith("+json"):
-            return await file_resp.json()
+            return await resp.json()
 
         # Handle common text-based responses and variations
         text_applications = ["rtf", "xml", "x-sh", "html", "javascript"]
         if content_type.startswith("text/") or any(
             app in content_type for app in text_applications
         ):
-            return await file_resp.resp.text()
+            return await resp.text()
 
         # Handle other text-like content types with explicit charset
         if "charset" in content_type:
-            return await file_resp.resp.text()
+            return await resp.text()
 
         # Handle any other unrecognized or binary content type
-        return await file_resp.resp.read()
+        return await resp.read()
 
-    raise await upstream_exception_from_response(file_resp.resp)
+    raise await upstream_exception_from_response(resp)
+
+
+async def json_reader(resp: ClientResponse, **kwargs) -> JSON:
+    """
+    Parameters:
+        resp: The aiohttp response.
+
+    Returns:
+        The response's content as JSON.
+    """
+    if resp.status < 300:
+        resp_json = await resp.json(**kwargs)
+        return resp_json
+
+    raise await upstream_exception_from_response(resp, url=resp.url)
+
+
+async def text_reader(resp: ClientResponse, **kwargs) -> str:
+    """
+    Parameters:
+        resp: The aiohttp response.
+
+    Returns:
+        The response's content as string.
+    """
+    if resp.status < 300:
+        resp_text = await resp.text(**kwargs)
+        return resp_text
+
+    raise await upstream_exception_from_response(resp, url=resp.url)
+
+
+async def bytes_reader(resp: ClientResponse) -> bytes:
+    """
+    Parameters:
+        resp: The aiohttp response.
+
+    Returns:
+        The response's content as bytes.
+    """
+    if resp.status < 300:
+        resp_bytes = await resp.read()
+        return resp_bytes
+
+    raise await upstream_exception_from_response(resp, url=resp.url)
+
+
+def typed_reader(
+    target: Type[BaseModelT],
+) -> Callable[[ClientResponse], Awaitable[BaseModelT]]:
+    """
+    Return a function that generates an expected Pydantic BaseModel from an aiohttp response.
+
+    Parameters:
+        target: The type expected.
+
+    Returns:
+        The reader function.
+    """
+
+    async def reader(resp: ClientResponse) -> BaseModelT:
+        if resp.status < 300:
+            resp_json = await json_reader(resp)
+            if not isinstance(resp_json, dict):
+                raise ValueError("The response received is not a valid dict")
+            return target(**resp_json)
+
+        raise await upstream_exception_from_response(resp, url=resp.url)
+
+    return reader

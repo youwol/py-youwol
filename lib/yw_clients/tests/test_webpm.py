@@ -11,9 +11,10 @@ import requests
 # Youwol clients
 from yw_clients import (
     AioHttpExecutor,
-    AioHttpFileResponse,
     EmptyResponse,
     YouwolHeaders,
+    json_reader,
+    text_reader,
 )
 from yw_clients.http.assets_gateway import AssetsGatewayClient
 from yw_clients.http.assets_gateway.models import NewAssetResponse
@@ -72,16 +73,17 @@ class TestWebpmClient:
         )
         assert isinstance(version, Library)
         entry = await self.client.get_entry_point(
-            library_id=library_id, version="7.8.1", headers=headers
+            library_id=library_id, version="7.8.1", reader=text_reader, headers=headers
         )
-        assert isinstance(entry, AioHttpFileResponse)
+        assert isinstance(entry, str)
         resource = await self.client.get_resource(
             library_id=library_id,
             version="7.8.1",
             rest_of_path="package.json",
+            reader=json_reader,
             headers=headers,
         )
-        assert isinstance(resource, AioHttpFileResponse)
+        assert isinstance(resource, dict)
         explorer = await self.client.get_explorer(
             library_id=library_id,
             version="7.8.1",
@@ -96,7 +98,7 @@ class TestWebpmClient:
         download = await self.client.download_library(
             library_id=library_id, version="7.8.1", headers=headers
         )
-        assert isinstance(download, AioHttpFileResponse)
+        assert isinstance(download, bytes)
         empty_resp = await self.client.delete_version(
             library_id=library_id, version="7.8.1", headers=headers
         )

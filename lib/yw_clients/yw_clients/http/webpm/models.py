@@ -3,57 +3,12 @@ from typing import Any, Literal
 
 # third parties
 from pydantic import BaseModel
-from semantic_version import Version
 
 WebpmLibraryType = Literal["js/wasm", "backend", "pyodide"]
 """
 The possible types for a package published in webpm.
 """
 default_webpm_lib_type: WebpmLibraryType = "js/wasm"
-
-
-def get_api_key(version: str | Version):
-    parsed = version if isinstance(version, Version) else Version(version)
-    if parsed.major:
-        return f"{parsed.major}"
-    if parsed.minor:
-        return f"0{parsed.minor}"
-    return f"00{parsed.patch}"
-
-
-def get_exported_symbol(name: str):
-    return exportedSymbols[name] if name in exportedSymbols else name
-
-
-def patch_loading_graph(loading_graph: dict[str, Any]):
-    if loading_graph["graphType"] == "sequential-v1":
-        #  add missing apiKey & exportedSymbol in 'lock' attribute
-        for lock in loading_graph["lock"]:
-            lock["apiKey"] = get_api_key(lock["version"])
-            lock["exportedSymbol"] = get_exported_symbol(lock["name"])
-        loading_graph["graphType"] = "sequential-v2"
-
-
-exportedSymbols = {
-    "lodash": "_",
-    "three": "THREE",
-    "typescript": "ts",
-    "three-trackballcontrols": "TrackballControls",
-    "codemirror": "CodeMirror",
-    "highlight.js": "hljs",
-    "@pyodide/pyodide": "loadPyodide",
-    "plotly.js": "Plotly",
-    "plotly.js-gl2d-dist": "Plotly",
-    "jquery": "$",
-    "popper.js": "Popper",
-    "reflect-metadata": "Reflect",
-    "js-beautify": "js_beautify",
-    "mathjax": "Mathjax",
-    "@pyodide/scikit-learn": "sklearn",
-    "@pyodide/python-dateutil": "dateutil",
-    "@tweenjs/tween.js": "TWEEN",
-    "@youwol/potree": "Potree",
-}
 
 
 class PublishResponse(BaseModel):

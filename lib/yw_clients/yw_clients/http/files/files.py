@@ -1,17 +1,20 @@
 # standard library
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
 # typing
 from typing import Any, cast
 
 # third parties
-from aiohttp import FormData
+from aiohttp import ClientResponse, FormData
 
 # Youwol clients
 from yw_clients.http.aiohttp_utils import (
     AioHttpExecutor,
-    AioHttpFileResponse,
     EmptyResponse,
+    ParsedResponseT,
+    json_reader,
+    typed_reader,
 )
 from yw_clients.http.assets_gateway.models import NewAssetResponse
 from yw_clients.http.files.models import (
@@ -72,7 +75,7 @@ class FilesClient:
             dict[str, Any],
             await self.request_executor.post(
                 url=f"{self.url_base}/files",
-                reader=self.request_executor.json_reader,
+                reader=json_reader,
                 data=form_data,
                 headers=headers,
                 **kwargs,
@@ -95,7 +98,7 @@ class FilesClient:
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/files/{file_id}/info",
-            reader=self.request_executor.typed_reader(GetInfoResponse),
+            reader=typed_reader(GetInfoResponse),
             headers=headers,
             **kwargs,
         )
@@ -109,7 +112,7 @@ class FilesClient:
         """
         return await self.request_executor.post(
             url=f"{self.url_base}/files/{file_id}/metadata",
-            reader=self.request_executor.typed_reader(EmptyResponse),
+            reader=typed_reader(EmptyResponse),
             json=body.dict(),
             headers=headers,
             **kwargs,
@@ -119,8 +122,9 @@ class FilesClient:
         self,
         file_id: str,
         headers: dict[str, str],
+        reader: Callable[[ClientResponse], Awaitable[ParsedResponseT]],
         **kwargs,
-    ) -> AioHttpFileResponse:
+    ) -> ParsedResponseT:
         """
         See description in
         :func:`files.get_file <youwol.backends.files.root_paths.get_file>`.
@@ -129,7 +133,7 @@ class FilesClient:
 
         return await self.request_executor.get(
             url=url,
-            reader=self.request_executor.file_reader,
+            reader=reader,
             headers=headers,
             **kwargs,
         )
@@ -143,7 +147,7 @@ class FilesClient:
         """
         return await self.request_executor.delete(
             url=f"{self.url_base}/files/{file_id}",
-            reader=self.request_executor.typed_reader(EmptyResponse),
+            reader=typed_reader(EmptyResponse),
             headers=headers,
             **kwargs,
         )

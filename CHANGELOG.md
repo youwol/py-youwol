@@ -26,7 +26,13 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 ### Changed
 
+- **Custom Backends**:
+  - Custom backends can now be executed within a Docker container. <!-- TG-2486 -->
 - **Pipeline Python Backend**:
+  - Introduced a new DocStep in the pipeline. <!-- TG-2491 -->
+  - Introduced a new CodeQualityStep in the pipeline. <!-- TG-2492 -->
+  - Now includes a Docker-based deployment template. Removed dependency on `py-youwol` (replaced with `yw_clients`) 
+    and cleaned up the provided template source code. <!-- TG-2487 -->
   - Pipeline does not produce auto-generated `requirements.txt` anymore. <!-- TG-2459 -->
 
 ### Fixed

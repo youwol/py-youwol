@@ -92,7 +92,6 @@ class CodeQualityStep(PipelineStep):
         " mypy lib/yw_clients)"
     )
 
-    artifacts: list[Artifact] = [Artifact(id="dist", files=dist_files)]
     sources: FileListing = FileListing(include=[SRC_FOLDER, PYPROJECT_TOML])
 
 

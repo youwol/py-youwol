@@ -40,6 +40,7 @@ async def execute_shell_cmd(
         action="execute 'shell' command",
         # BASH is deprecated
         with_labels=["BASH", Label.STD_OUTPUT],
+        with_attributes={"cwd": str(kwargs.get("cwd", "None"))},
     ) as ctx:
         await ctx.info(text=cmd)
         p = await asyncio.create_subprocess_shell(

@@ -3,7 +3,7 @@ from youwol.utils.http_clients.flux_backend import FactoryId, Module, Workflow
 
 ROOT_ID = "root-component"
 # noinspection SpellCheckingInspection
-html = f"""
+HTML = f"""
 <div id='Component_{ROOT_ID}' class='flux-element flux-component' data-gjs-name='{ROOT_ID}'>
     <div class='d-flex flex-column justify-content-around text-center h-100 fv-bg-background fv-text-primary'
     data-gjs-name='welcome-page' >
@@ -20,7 +20,7 @@ QHlvdXdvbC9mbHV4LXlvdXdvbC1lc3NlbnRpYWxz/latest/assets/images/logo_YouWol_Platfo
     </div>
 </div>
 """
-css = f"""#Component_{ROOT_ID}{{
+CSS = f"""#Component_{ROOT_ID}{{
     width: 100%;
     height: 100%;
     padding: 15px
@@ -32,7 +32,7 @@ workflow_new_project = Workflow(
             configuration={
                 "title": "Root component",
                 "description": "This is the root component",
-                "data": {"html": html, "css": css},
+                "data": {"html": HTML, "css": CSS},
             },
             moduleId="Component_root-component",
             factoryId=FactoryId(module="Component", pack="@youwol/flux-core"),

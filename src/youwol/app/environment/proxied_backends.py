@@ -1,10 +1,13 @@
 # standard library
 import dataclasses
+import hashlib
+import json
 import subprocess
 import time
 import uuid
 
 from asyncio.subprocess import Process
+from subprocess import CalledProcessError
 
 # third parties
 import psutil
@@ -14,7 +17,7 @@ from pydantic import BaseModel
 from semantic_version import Spec, Version
 
 # Youwol utilities
-from youwol.utils import Context, json2uid
+from youwol.utils import Context
 
 DEFAULT_PARTITION_ID = "Default"
 
@@ -124,8 +127,12 @@ class ProxyInfo(BaseModel):
     """
 
 
-def get_build_fingerprint(config: ProxiedBackendConfiguration) -> str:
-    return json2uid(config.build)
+def get_build_fingerprint(
+    name: str, version: str, config: ProxiedBackendConfiguration
+) -> str:  # Convert JSON to string and compute its hash
+    config_str = json.dumps(config.build, sort_keys=True)
+    uid = hashlib.sha256(config_str.encode("utf-8")).hexdigest()[:16]
+    return f"{name}_{version}_{uid}"
 
 
 @dataclasses.dataclass(frozen=False)
@@ -141,6 +148,7 @@ class BackendsStore:
 
     def register(
         self,
+        uid: str | None,
         partition_id: str,
         name: str,
         version: str,
@@ -154,6 +162,7 @@ class BackendsStore:
         Register a backend to be proxied.
 
         Parameters:
+            uid: backend instance id.
             partition_id: Encapsulating partition.
             name: Name of the backend targeted.
             version:  Version of the backend targeted.
@@ -171,7 +180,7 @@ class BackendsStore:
             name=name,
             version=version,
             configuration=configuration,
-            uid=str(uuid.uuid4()),
+            uid=uid or str(uuid.uuid4()),
             started_at=time.time(),
             port=port,
             process=process,
@@ -202,7 +211,12 @@ class BackendsStore:
                 pid_from_port = BackendsStore.get_pid_using_port(proxy.port)
                 if pid_from_port:
                     psutil.Process(pid_from_port).terminate()
-
+                # Need to check if the container with the given UID is running
+                try:
+                    subprocess.check_output(["docker", "stop", uid])
+                except CalledProcessError:
+                    # Likely the backend is not running through a container
+                    pass
             self.store = [backend for backend in self.store if backend != proxy]
 
     def get(self, uid: str) -> ProxyInfo | None:

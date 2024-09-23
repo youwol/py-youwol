@@ -1,19 +1,23 @@
 # standard library
 import functools
 
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
 # typing
 from typing import Any, cast
 
 # third parties
-from aiohttp import FormData
+from aiohttp import ClientResponse, FormData
 
 # Youwol clients
 from yw_clients.http.aiohttp_utils import (
     AioHttpExecutor,
-    AioHttpFileResponse,
     EmptyResponse,
+    ParsedResponseT,
+    bytes_reader,
+    json_reader,
+    typed_reader,
 )
 from yw_clients.http.assets_gateway.models import NewAssetResponse
 from yw_clients.http.webpm.models import (
@@ -72,7 +76,7 @@ class WebpmClient:
         """
         return await self.request_executor.post(
             url=self.loading_graph_url,
-            reader=self.request_executor.typed_reader(LoadingGraphResponseV1),
+            reader=typed_reader(LoadingGraphResponseV1),
             json=body.dict(),
             headers=headers,
             **kwargs,
@@ -102,7 +106,7 @@ class WebpmClient:
         url = f"{self.url_base}/libraries/{library_id}?{suffix}"
         return await self.request_executor.get(
             url=url,
-            reader=self.request_executor.typed_reader(ListVersionsResponse),
+            reader=typed_reader(ListVersionsResponse),
             headers=headers,
             **kwargs,
         )
@@ -116,7 +120,7 @@ class WebpmClient:
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/libraries/{library_id}/{version}",
-            reader=self.request_executor.typed_reader(Library),
+            reader=typed_reader(Library),
             headers=headers,
             **kwargs,
         )
@@ -143,7 +147,7 @@ class WebpmClient:
             await self.request_executor.post(
                 url=self.publish_url,
                 data=form_data,
-                reader=self.request_executor.json_reader,
+                reader=json_reader,
                 headers=headers,
                 **kwargs,
             ),
@@ -158,14 +162,14 @@ class WebpmClient:
 
     async def download_library(
         self, library_id: str, version: str, headers: dict[str, str], **kwargs
-    ) -> AioHttpFileResponse:
+    ) -> bytes:
         """
         See description in
         :func:`cdn.download_library <youwol.backends.cdn.root_paths.download_library>`.
         """
         return await self.request_executor.get(
             url=f"{self.download_url}/{library_id}/{version}",
-            reader=self.request_executor.file_reader,
+            reader=bytes_reader,
             headers=headers,
             **kwargs,
         )
@@ -179,7 +183,7 @@ class WebpmClient:
         """
         return await self.request_executor.delete(
             url=f"{self.url_base}/libraries/{library_id}",
-            reader=self.request_executor.typed_reader(DeleteLibraryResponse),
+            reader=typed_reader(DeleteLibraryResponse),
             headers=headers,
             **kwargs,
         )
@@ -193,7 +197,7 @@ class WebpmClient:
         """
         return await self.request_executor.delete(
             url=f"{self.url_base}/libraries/{library_id}/{version}",
-            reader=self.request_executor.typed_reader(EmptyResponse),
+            reader=typed_reader(EmptyResponse),
             headers=headers,
             **kwargs,
         )
@@ -212,7 +216,7 @@ class WebpmClient:
         """
         return await self.request_executor.get(
             url=f"{self.url_base}/explorer/{library_id}/{version}/{folder_path}",
-            reader=self.request_executor.typed_reader(ExplorerResponse),
+            reader=typed_reader(ExplorerResponse),
             headers=headers,
             **kwargs,
         )
@@ -221,9 +225,10 @@ class WebpmClient:
         self,
         library_id: str,
         version: str,
+        reader: Callable[[ClientResponse], Awaitable[ParsedResponseT]],
         headers: dict[str, str],
         **kwargs,
-    ) -> AioHttpFileResponse:
+    ) -> ParsedResponseT:
         """
         See description in
         :func:`cdn.get_entry_point <youwol.backends.cdn.root_paths.get_entry_point>`.
@@ -232,6 +237,7 @@ class WebpmClient:
             library_id=library_id,
             version=version,
             rest_of_path="",
+            reader=reader,
             headers=headers,
             **kwargs,
         )
@@ -241,9 +247,10 @@ class WebpmClient:
         library_id: str,
         version: str,
         rest_of_path: str,
+        reader: Callable[[ClientResponse], Awaitable[ParsedResponseT]],
         headers: dict[str, str],
         **kwargs,
-    ) -> AioHttpFileResponse:
+    ) -> ParsedResponseT:
         """
         See description in
         :func:`cdn.get_resource <youwol.backends.cdn.root_paths.get_resource>`.
@@ -256,7 +263,7 @@ class WebpmClient:
 
         return await self.request_executor.get(
             url=url,
-            reader=self.request_executor.file_reader,
+            reader=reader,
             headers=headers,
             **kwargs,
         )
