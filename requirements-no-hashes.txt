@@ -24,7 +24,7 @@ argon2-cffi-bindings==21.2.0
     # via argon2-cffi
 asgiref==3.7.2
     # via youwol (pyproject.toml)
-astroid==3.0.2
+astroid==3.3.3
     # via pylint
 attrs==21.4.0
     # via aiohttp
@@ -211,7 +211,7 @@ pygments==2.17.2
     #   rich
 pyjwt==2.4.0
     # via youwol (pyproject.toml)
-pylint==3.0.3
+pylint==3.3.0
     # via youwol (pyproject.toml)
 pyparsing==3.1.1
     # via
