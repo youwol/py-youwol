@@ -78,3 +78,4 @@ the `co-lab` application.
 
 # relative
 from .pipeline import *
+from .template import *
