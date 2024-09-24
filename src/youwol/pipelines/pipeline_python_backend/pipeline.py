@@ -218,7 +218,7 @@ class DependenciesStep(PipelineStep):
             if venv_path.exists():
                 shutil.rmtree(venv_path)
 
-            if packaging.version.parse(__version__).is_devrelease and yw_repo_path():
+            if packaging.version.parse(__version__).is_devrelease:
                 await ctx.info(
                     text="Youwol is a dev release, built and link `yw_clients` from sources"
                 )
