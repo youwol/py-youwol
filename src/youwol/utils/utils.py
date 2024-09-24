@@ -3,6 +3,7 @@ import base64
 import datetime
 import itertools
 import json
+import os
 import zlib
 
 from collections.abc import Callable, Iterable
@@ -495,34 +496,44 @@ def deep_merge(from_dict: AnyDict, with_dict: AnyDict):
     return deep_merge_impl(from_dict, with_dict)
 
 
-def yw_repo_path() -> Path | None:
+def yw_repo_path() -> Path:
     """Return the path of the py-youwol source repository, expected to contain `pyproject.toml`.
 
-    At first assume running from sources, then fallback to search `pyproject.toml` in parents of
+    Use environment variable `PY_YOUWOL_SOURCES`, if set.
+    If not, assume running from sources, then fallback to search `pyproject.toml` in parents of
     current working directory.
 
     Raise:
-        `RuntimeError`: If `pyproject.toml` cannot be found
+        `RuntimeError`: If `pyproject.toml` cannot be found in `PY_YOUWOL_SOURCES`, if set,
+        or in searched directories if not set.
     """
 
-    result = None
+    py_youwol_sources = os.environ.get("PY_YOUWOL_SOURCES")
+    if py_youwol_sources:
+        pyproject_toml_path = (Path(py_youwol_sources) / PYPROJECT_TOML).absolute()
+        if pyproject_toml_path.exists():
+            return Path(py_youwol_sources).absolute()
+        raise RuntimeError(
+            f"Env `PY_YOUWOL_SOURCES` set to '{py_youwol_sources}' but '{str(pyproject_toml_path)}' not found"
+        )
 
     path_youwol__init__ = Path(youwol.__file__).resolve()
     path_repo = path_youwol__init__.parent.parent.parent
     if (path_repo / PYPROJECT_TOML).exists():
-        result = path_repo
-    else:
-        candidate_dir = Path.cwd().resolve()
-        while candidate_dir != candidate_dir.parent:
-            if (candidate_dir / PYPROJECT_TOML).exists():
-                result = candidate_dir
-                break
-            candidate_dir = candidate_dir.parent
+        return path_repo.absolute()
+
+    result = None
+    candidate_dir = Path.cwd().resolve()
+    while candidate_dir != candidate_dir.parent:
+        if (candidate_dir / PYPROJECT_TOML).exists():
+            result = candidate_dir
+            break
+        candidate_dir = candidate_dir.parent
 
     if result is None:
         raise RuntimeError(f"{PYPROJECT_TOML} not found")
 
-    return result
+    return result.absolute()
 
 
 def yw_doc_version() -> str:
