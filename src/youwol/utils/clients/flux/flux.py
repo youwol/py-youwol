@@ -11,6 +11,10 @@ from youwol.utils.clients.request_executor import (
 
 @dataclass(frozen=True)
 class FluxClient:
+    """
+    Client for the flux backend (deprecated, the backend will be removed soon).
+    """
+
     url_base: str
 
     request_executor: RequestExecutor

@@ -43,15 +43,54 @@ class PermissionsResponse(BaseModel):
 
 
 class AssetResponse(BaseModel):
+    """
+    Asset description.
+    """
+
     assetId: str
+    """
+    Asset's ID.
+    """
     description: str
+    """
+    Asset's description.
+    """
     images: list[str]
+    """
+    Asset's images URL.
+    """
     thumbnails: list[str]
+    """
+    Asset's thumbnails URL.
+    """
     kind: str
+    """
+    Asset's kind.
+
+    This property has a similar purpose to the usual 'extension' of files in a PC:
+    it serves at linking actions (e.g. opening applications, right click on the explorer), previews, icon, *etc.*.
+
+    These bindings can be provided through the implementation of 'installers', see for instance those implemented by
+    youwol <a href="https://github.com/youwol/installers/blob/main/src/lib/basic/index.ts" target='_blank'> here </a>.
+    Installers are referenced in the user's environment using the
+    <a href="/applications/@youwol/platform/latest" target='_blank'> platform </a> application.
+    """
     name: str
+    """
+    Asset's name.
+    """
     rawId: str
+    """
+    Asset's raw-id (relevant when the asset is associated to an entity in another database for its 'raw' content).
+    """
     groupId: str
+    """
+    Owning group ID.
+    """
     tags: list[str]
+    """
+    Asset's tags.
+    """
     permissions: PermissionsResponse | None
 
 

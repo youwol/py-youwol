@@ -105,12 +105,13 @@ class DependencyErrorData(BaseModel):
 class DependenciesError(YouWolException):
     exceptionType = "DependenciesError"
 
-    def __init__(self, context: str, errors: list[dict[str, Any]], **kwargs):
+    def __init__(self, context: str, errors: list[dict[str, Any]], **kwargs: Any):
         """
 
-        :param context: context of the error
-        :param errors: An error as a dict like {'key':str, 'paths': List[str], 'detail': str}
-        :param kwargs: forwarding arguments to YouWolException
+        Parameters:
+            context: context of the error
+            errors: An error as a dict like {'key':str, 'paths': List[str], 'detail': str}
+            kwargs: forwarding arguments to YouWolException
         """
         YouWolException.__init__(
             self,
@@ -327,7 +328,7 @@ YouwolExceptions: list[type[YouWolException]] = [
 
 
 async def upstream_exception_from_response(
-    raw_resp: ClientResponse, **kwargs
+    raw_resp: ClientResponse, **kwargs: Any
 ) -> UpstreamResponseException:
     """
     Format an `UpstreamResponseException` from http responses.

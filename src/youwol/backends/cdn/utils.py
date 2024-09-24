@@ -679,7 +679,7 @@ async def resolve_explicit_version(
     return version
 
 
-async def resolve_caching_max_age(semver: str, context: Context):
+async def resolve_caching_max_age(semver: str, context: Context) -> str:
     """
     This function resolves the caching max age based on the provided semantic version. If the version contains "-wip"
     postfix, or it's not a fixed version, indicating a work-in-progress or non-specific version query, the caching
@@ -689,7 +689,7 @@ async def resolve_caching_max_age(semver: str, context: Context):
         semver: The semantic versioning string for which the caching max age needs to be resolved.
         context: An execution context object for logging the resolution process.
 
-    Return:
+    Returns:
         The resolved caching max age in seconds.
     """
     if "-wip" in semver or not is_fixed_version(semver=semver):
@@ -700,7 +700,7 @@ async def resolve_caching_max_age(semver: str, context: Context):
 
 async def resolve_resource(
     library_id: str, input_semver: str, configuration: Configuration, context: Context
-):
+) -> tuple[str, str, str]:
     """
     This function resolves a resource (library) based on the provided library identifier and semantic versioning range.
     It first converts the input_semver to a standard NPM specification
@@ -715,7 +715,7 @@ async def resolve_resource(
         configuration: The service's configuration.
         context: An execution context object for logging and tracking the resolution process.
 
-    Return:
+    Returns:
         A tuple containing the resolved package name, version, and caching max age.
 
 
@@ -742,7 +742,7 @@ async def resolve_resource(
         configuration=configuration,
         context=context,
     )
-    return package_name, version, 0
+    return package_name, version, "0"
 
 
 async def fetch_resource(

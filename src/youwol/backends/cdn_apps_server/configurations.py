@@ -23,6 +23,10 @@ class Dependencies:
 
 
 async def get_configuration() -> Configuration:
+    """
+    Returns:
+        The configuration of the service.
+    """
     conf = Dependencies.get_configuration()
     if isinstance(conf, Configuration):
         return conf

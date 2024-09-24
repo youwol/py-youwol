@@ -44,6 +44,7 @@ from youwol.app.routers.projects.models_project import (
 
 # Youwol utilities
 from youwol.utils import (
+    JSON,
     encode_id,
     files_check_sum,
     get_content_type,
@@ -238,8 +239,8 @@ class PublishCdnLocalStep(PipelineStep):
             last_manifest: manifest from the last execution.
             context: Current context.
 
-        Return:
-            Manifest of the execution
+        Returns:
+            The status.
         """
         async with context.start(action="PublishCdnLocalStep.get_status") as ctx:
             env = await context.get("env", YouwolEnvironment)
@@ -303,7 +304,9 @@ class PublishCdnLocalStep(PipelineStep):
 
             return PipelineStepStatus.OUTDATED
 
-    async def execute_run(self, project: Project, flow_id: str, context: Context):
+    async def execute_run(
+        self, project: Project, flow_id: str, context: Context
+    ) -> dict[str, str]:
         """
         Trigger step execution.
 
@@ -312,7 +315,7 @@ class PublishCdnLocalStep(PipelineStep):
             flow_id: ID of the flow associated.
             context: Current context.
 
-        Return:
+        Returns:
             Manifest of the execution
         """
         async with context.start(action="PublishCdnLocalStep.execute_run") as ctx:
@@ -383,7 +386,7 @@ class PublishCdnLocalStep(PipelineStep):
     @staticmethod
     async def _retrieve_publish_folder_id(
         project_name: str, asset_id: str, context: Context
-    ):
+    ) -> str:
         """
         Retrieve the parent folder id to publish the package, it eventually creates the asset.
         Rules are as follows:
@@ -392,10 +395,13 @@ class PublishCdnLocalStep(PipelineStep):
          folder is retrieved
         *  if none of the above, the `download` folder of the user's private drive is used.
 
-        :param project_name: name of the project
-        :param asset_id: corresponding asset_id
-        :param context: context
-        :return:
+        Parameters:
+            project_name: Name of the project.
+            asset_id: Corresponding asset_id.
+            context: Executing context.
+
+        Returns:
+            The folder ID.
         """
         async with context.start(
             action="PublishCdnLocalStep._retrieve_publish_folder_id"
@@ -536,8 +542,8 @@ class PublishCdnRemoteStep(PipelineStep):
             last_manifest: manifest from the last execution.
             context: Current context.
 
-        Return:
-            Manifest of the execution
+        Returns:
+            The status.
         """
         async with context.start(action="PublishCdnRemoteStep.get_status") as ctx:
             env = await context.get("env", YouwolEnvironment)
@@ -597,7 +603,9 @@ class PublishCdnRemoteStep(PipelineStep):
             )
             return PipelineStepStatus.OUTDATED
 
-    async def execute_run(self, project: Project, flow_id: str, context: Context):
+    async def execute_run(
+        self, project: Project, flow_id: str, context: Context
+    ) -> JSON:
         """
         Trigger step execution.
 
@@ -606,8 +614,8 @@ class PublishCdnRemoteStep(PipelineStep):
             flow_id: ID of the flow associated.
             context: Current context.
 
-        Return:
-            Manifest of the execution
+        Returns:
+            Manifest of the execution.
         """
         env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
 

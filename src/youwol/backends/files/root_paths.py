@@ -10,7 +10,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 # Youwol utilities
-from youwol.utils import AnyDict, get_content_encoding, get_content_type
+from youwol.utils import JSON, AnyDict, get_content_encoding, get_content_type
 from youwol.utils.clients.file_system.interfaces import Metadata
 from youwol.utils.context import Context
 from youwol.utils.http_clients.files_backend import (
@@ -87,7 +87,7 @@ async def upload(
             :func:`get_content_encoding <youwol.utils.utils.get_content_encoding>`).
         configuration: Injected :class:`Configuration <youwol.backends.files.configurations.Configuration>`.
 
-    Return:
+    Returns:
         File information
     """
     async with Context.start_ep(request=request):
@@ -148,7 +148,7 @@ async def get_info(
         file_id: File's ID.
         configuration: Injected :class:`Configuration <youwol.backends.files.configurations.Configuration>`.
 
-    Return:
+    Returns:
         The file's metadata.
     """
     async with Context.start_ep(request=request):
@@ -161,7 +161,7 @@ async def update_metadata(
     file_id: str,
     body: PostMetadataBody,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> JSON:
     """
     Update file's metadata.
 
@@ -171,7 +171,7 @@ async def update_metadata(
         body: metadata description.
         configuration: Injected :class:`Configuration <youwol.backends.files.configurations.Configuration>`.
 
-    Return:
+    Returns:
         Empty JSON.
     """
     async with Context.start_ep(request=request):
@@ -195,7 +195,7 @@ async def get_file(
         file_id: File's ID.
         configuration: Injected :class:`Configuration <youwol.backends.files.configurations.Configuration>`.
 
-    Return:
+    Returns:
         The file's content.
     """
     async with Context.start_ep(
@@ -221,7 +221,7 @@ async def remove_file(
     request: Request,
     file_id: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> JSON:
     """
     Remove a file.
 
@@ -230,7 +230,7 @@ async def remove_file(
         file_id: File's ID.
         configuration: Injected :class:`Configuration <youwol.backends.files.configurations.Configuration>`.
 
-    Return:
+    Returns:
         Empty JSON.
     """
     async with Context.start_ep(request=request):

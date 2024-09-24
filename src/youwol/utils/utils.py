@@ -33,6 +33,9 @@ from youwol.utils.types import JSON, AnyDict
 flatten = itertools.chain.from_iterable
 
 PYPROJECT_TOML = "pyproject.toml"
+"""
+Filename of the `PYPROJECT_TOML`.
+"""
 
 
 class YwBrowserCacheDirective(BaseModel):
@@ -106,10 +109,10 @@ class YouwolHeaders:
     @staticmethod
     def get_correlation_id(request: Request) -> str | None:
         """
-
         Parameters:
             request: incoming request
-        Return:
+
+        Returns:
             Correlation id of the request, if provided.
         """
         return request.headers.get(YouwolHeaders.correlation_id, None)
@@ -117,10 +120,10 @@ class YouwolHeaders:
     @staticmethod
     def get_trace_id(request: Request) -> str | None:
         """
-
         Parameters:
             request: incoming request
-        Return:
+
+        Returns:
             Trace id of the request, if provided.
         """
         return request.headers.get(YouwolHeaders.trace_id, None)
@@ -132,7 +135,7 @@ class YouwolHeaders:
         Parameters:
             request: Incoming request.
 
-        Return:
+        Returns:
             Trace's labels from the request's headers, if provided.
 
         Raise:
@@ -151,7 +154,7 @@ class YouwolHeaders:
         Parameters:
             request: Incoming request.
 
-        Return:
+        Returns:
             Trace's attributes from the request's headers, if provided.
 
         Raise:
@@ -172,7 +175,8 @@ class YouwolHeaders:
 
         Parameters:
             request: incoming request
-        Return:
+
+        Returns:
             The value of the header 'py-youwol-local-only' if included in the request.
         """
         return request.headers.get(YouwolHeaders.py_youwol_local_only, None)
@@ -187,9 +191,9 @@ class YouwolHeaders:
 
         Parameters:
             response: Response to retrieve the directive from, using the header
-            :attr:`YouwolHeaders.yw_browser_cache_directive <YouwolHeaders.yw_browser_cache_directive>`.
+                :attr:`yw_browser_cache_directive <youwol.utils.utils.YouwolHeaders.yw_browser_cache_directive>`.
 
-        Return:
+        Returns:
             The directive if found.
         """
         info = response.headers.get(YouwolHeaders.yw_browser_cache_directive, None)
@@ -220,7 +224,8 @@ class YouwolHeaders:
 
         Parameters:
             request: incoming request
-        Return:
+
+        Returns:
             Correlation id of the request, if provided.
         """
         return request.headers.get(YouwolHeaders.backends_partition, default_id)
@@ -347,7 +352,7 @@ def get_content_type(file_name: str | Path) -> str:
     Parameters:
         file_name: Name or path of the file.
 
-    Return:
+    Returns:
         The content-type, default is "application/octet-stream".
     """
     extensions = Path(file_name).name.split(".")[1:]
@@ -376,14 +381,14 @@ def get_content_type(file_name: str | Path) -> str:
     return "application/octet-stream"
 
 
-def get_content_encoding(file_name: str | Path):
+def get_content_encoding(file_name: str | Path) -> str:
     """
     Return a guessed content encoding from the extension.
 
     Parameters:
         file_name: Name or path of the file.
 
-    Return:
+    Returns:
         The content-type, default is "identity".
     """
     extension = Path(file_name).name.split(".")[-1]
@@ -545,7 +550,7 @@ def yw_doc_version() -> str:
     a transformation is required from the YouWol version to the documentation app version.
     See :func:`publish_library <youwol.backends.cdn.root_paths.publish_library>`.
 
-    Return:
+    Returns:
         Documentation app. version.
     """
     version = youwol.__version__

@@ -43,7 +43,7 @@ async def get_groups(request: Request) -> GroupsResponse:
     Parameters:
         request: Incoming request.
 
-    Return:
+    Returns:
         User's groups.
     """
     user = user_info(request)
@@ -76,7 +76,7 @@ async def create_group_drive(
         drive: Description of the drive.
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         Drive attributes.
     """
 
@@ -107,7 +107,7 @@ async def list_drives(
         group_id: Group in which the drives belong.
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         The list of available drives.
     """
     async with Context.start_ep(
@@ -147,7 +147,7 @@ async def get_group_default_drive(
         group_id: ID of the parent group.
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         Description of the drive.
     """
     return await get_default_drive(request, group_id, configuration)

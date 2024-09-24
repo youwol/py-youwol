@@ -52,7 +52,7 @@ class ForwardOnly(AbstractLocalCloudDispatch):
             call_next: The next endpoint in the chain.
             context: The current context.
 
-        Return:
+        Returns:
             The local or remote response.
         """
         patterns = [

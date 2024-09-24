@@ -86,10 +86,13 @@ class Label(Enum):
 
 
 T = TypeVar("T")
+"""
+Generic type definition to parametrize the class :class:`Context <youwol.utils.context.context.Context>`.
+"""
 
 TContextAttr = int | str | bool
 """
-Allowed :class:`context <youwol.utils.context.context.Context>`'s attribute types.
+Allowed :class:`Context <youwol.utils.context.context.Context>`'s attribute types.
 """
 
 
@@ -196,7 +199,9 @@ def format_message(entry: LogEntry):
 
 
 StringLike = Any
-
+"""
+Alias for anything that can be stringify.
+"""
 
 HeadersFwdSelector = Callable[[list[str]], list[str]]
 """

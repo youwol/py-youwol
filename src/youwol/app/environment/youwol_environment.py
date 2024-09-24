@@ -58,9 +58,22 @@ from .youwol_environment_models import ProjectsResolver
 
 @dataclass(frozen=True)
 class FwdArgumentsReload:
+    """
+    Arguments forwarded when reloading a configuration.
+    """
+
     path: Path | None = None
+    """
+    Path of the configuration to switch to, if any.
+    """
     token_storage: TokensStorage | None = None
+    """
+    An instance of tokens storage to reuse, if any.
+    """
     remote_connection: Connection | None = None
+    """
+    An instance of connection to reuse, if any.
+    """
     http_port: int | None = None
 
 
@@ -370,7 +383,7 @@ async def yw_config() -> YouwolEnvironment:
     """
     Return the current environment, used in particular to inject it in FastAPI registered end-points.
 
-    Return:
+    Returns:
         Current environment
     """
     return await YouwolEnvironmentFactory.get()

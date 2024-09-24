@@ -12,6 +12,7 @@ from starlette.requests import Request
 from youwol.backends.tree_db.configurations import Configuration, get_configuration
 
 # Youwol utilities
+from youwol.utils import JSON
 from youwol.utils.context import Context
 from youwol.utils.http_clients.tree_db_backend import (
     ChildrenResponse,
@@ -60,7 +61,7 @@ async def create_child_folder(
         folder: folder properties.
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         Description of the folder.
     """
     async with Context.start_ep(
@@ -96,7 +97,7 @@ async def update_folder(
         body: Update details.
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         Description of the drive.
     """
     async with Context.start_ep(
@@ -134,7 +135,7 @@ async def get_folder_details(
         folder_id: ID of the folder.
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         Description of the folder.
     """
     async with Context.start_ep(
@@ -166,7 +167,7 @@ async def get_path_folder(
         folder_id: ID of the folder.
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         Description of the path.
     """
     async with Context.start_ep(
@@ -206,7 +207,7 @@ async def children(
         folder_id: parent folder's ID (or parent's drive ID to request a drive's children).
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         Description of the children.
     """
     async with Context.start_ep(
@@ -223,7 +224,7 @@ async def queue_delete_folder(
     request: Request,
     folder_id: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> JSON:
     """
     Queues a folder for deletion (moves into the 'trash').
 
@@ -232,7 +233,7 @@ async def queue_delete_folder(
         folder_id: Folder's ID.
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         Empty JSON response.
     """
     async with Context.start_ep(

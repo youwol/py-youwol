@@ -18,25 +18,76 @@ from youwol.utils.context import Context
 
 
 class TreeItem(BaseModel):
+    """
+    Represents an explorer item associated to a library.
+    """
+
     name: str
+    """
+    Name.
+    """
     itemId: str
+    """
+    ID.
+    """
     group: str
+    """
+    Owning group.
+    """
     borrowed: bool
+    """
+    Whether it is borrowed.
+    """
     rawId: str
+    """
+    Associated raw ID.
+    """
 
 
 class Release(BaseModel):
+    """
+    Represents a release when uploading a library.
+    """
+
     version: str
+    """
+    Version.
+    """
     fingerprint: str
+    """
+    Fingerprint.
+    """
 
 
 class Library(BaseModel):
+    """
+    Represents a library (or package) to upload.
+    """
+
     assetId: str
+    """
+    Corresponding asset's ID.
+    """
     libraryName: str
+    """
+    Name of the library.
+    """
     namespace: str
+    """
+    Namespace of the library.
+    """
     treeItems: list[TreeItem]
+    """
+    Tree items associated.
+    """
     releases: list[Release]
+    """
+    Releases associated.
+    """
     rawId: str
+    """
+    Raw ID of the library.
+    """
 
 
 def get_local_package(asset_id: str, config: YouwolEnvironment) -> Library:

@@ -62,7 +62,7 @@ async def create_asset(
         body: Asset's properties.
         configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
-    Return:
+    Returns:
         The asset description.
     """
     async with Context.start_ep(request=request) as ctx:
@@ -124,7 +124,7 @@ async def post_asset(
         body: Asset's properties.
         configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
-    Return:
+    Returns:
         The asset description.
     """
 
@@ -180,7 +180,7 @@ async def delete_asset(
         asset_id: Asset's ID.
         configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
-    Return:
+    Returns:
         Empty JSON.
     """
     async with Context.start_ep(request=request) as ctx:  # type: Context
@@ -245,7 +245,7 @@ async def get_asset(
         asset_id: Asset's ID.
         configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
-    Return:
+    Returns:
         The asset description.
     """
     async with Context.start_ep(request=request) as ctx:  # type: Context

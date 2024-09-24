@@ -126,7 +126,7 @@ class WebpmClient:
         )
 
     async def publish(
-        self, zip_content: bytes, headers: dict[str, str], **kwargs: dict[str, Any]
+        self, zip_content: bytes, headers: dict[str, str], **kwargs: Any
     ) -> PublishResponse | NewAssetResponse[PublishResponse]:
         """
         See description in

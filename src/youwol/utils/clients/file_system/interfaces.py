@@ -95,7 +95,7 @@ class FileSystemInterface(ABC):
         Parameters:
             object_id: Unique identifier for the object.
             kwargs: Additional keyword arguments.
-        Return:
+        Returns:
             Metadata and information about the object.
         """
         raise NotImplementedError
@@ -132,7 +132,7 @@ class FileSystemInterface(ABC):
                     Only one range is supported.
             kwargs: Additional keyword arguments.
 
-        Return:
+        Returns:
             Content of the object and metadata.
         """
         raise NotImplementedError
@@ -174,7 +174,7 @@ class FileSystemInterface(ABC):
             recursive: If true, do a recursive lookup.
             kwargs: Additional keyword arguments.
 
-        Return:
+        Returns:
             Iterable over the objects.
         """
         raise NotImplementedError

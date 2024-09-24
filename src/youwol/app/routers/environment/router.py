@@ -118,7 +118,7 @@ class YouwolEnvironmentResponse(BaseModel):
     """
 
     @staticmethod
-    def from_yw_environment(yw_env: YouwolEnvironment):
+    def from_yw_environment(yw_env: YouwolEnvironment) -> "YouwolEnvironmentResponse":
         """
         Converter from
         :class:`YouwolEnvironment <youwol.app.environment.youwol_environment.YouwolEnvironment>` instance.
@@ -126,7 +126,7 @@ class YouwolEnvironmentResponse(BaseModel):
         Parameters:
             yw_env: Instance to serialize.
 
-        Return:
+        Returns:
              Serialized `yw_env`.
         """
         proxied_backends = [
@@ -274,7 +274,7 @@ async def configuration(
     Parameters:
         config: Actual environment - automatically injected.
 
-    Return:
+    Returns:
         The environment.
     """
     return YouwolEnvironmentResponse.from_yw_environment(config)
@@ -296,7 +296,7 @@ async def reload_configuration(
     Parameters:
         request: Incoming request.
 
-    Return:
+    Returns:
         The environment status.
     """
     async with Context.start_ep(
@@ -363,9 +363,9 @@ async def switch_configuration(
     Parameters:
         request: Incoming request.
         body: Specifies the new configuration to switch to, essentially an URL pointing to the content of the new
-        configuration file.
+            configuration file.
 
-    Return:
+    Returns:
         The environment status.
     """
     async with Context.start_ep(
@@ -403,7 +403,7 @@ async def emit_environment_status(context: Context) -> EnvironmentStatusResponse
     Parameters:
         context: Current context.
 
-    Return:
+    Returns:
         The current environment.
     """
 
@@ -456,7 +456,7 @@ async def status(request: Request) -> EnvironmentStatusResponse:
     Parameters:
         request: Incoming request.
 
-    Return:
+    Returns:
         The current environment.
     """
     async with Context.start_ep(
@@ -510,7 +510,7 @@ async def login(request: Request, body: LoginBody) -> UserInfo:
         request: Incoming request.
         body: Login body.
 
-    Return:
+    Returns:
         User info of logged-in user.
 
     Raise:
@@ -583,7 +583,7 @@ async def browser_cache_status(
         request: Incoming request.
         env: Current environment (automatically injected).
 
-    Return:
+    Returns:
         Info regarding the current state of the browser's cache of YouWol.
     """
 
@@ -615,7 +615,7 @@ async def clear_browser_cache(
         body: Options.
         env: Current environment (automatically injected).
 
-    Return:
+    Returns:
         Info regarding the current state of the browser's cache of YouWol.
     """
 

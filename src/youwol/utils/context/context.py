@@ -155,7 +155,7 @@ class Context(Generic[T]):
             on_exception: function to execute if an exception is raised during the context's scope
             with_data: deprecated
 
-        Return:
+        Returns:
             new child
 
         **Example:**
@@ -240,7 +240,7 @@ class Context(Generic[T]):
             body: body of the request (deprecated)
             response: response of the request (deprecated)
 
-        Return:
+        Returns:
             The new scoped context.
 
         **Example:**
@@ -552,7 +552,7 @@ class Context(Generic[T]):
             from_req_fwd: selector returning the list of header's keys to forward given the header's keys
         of the initiating request of the context.
 
-        Return:
+        Returns:
             headers with all contribution (from YouWol, from original request & from eventual contribution at each
             context's scope)
         """
@@ -573,7 +573,7 @@ class Context(Generic[T]):
     def cookies(self):
         """
 
-        Return:
+        Returns:
             The cookie associated to the original request.
             If the context has not been generated from a request, return `{}`
         """
@@ -754,7 +754,7 @@ class ContextFactory:
         Parameters:
             request: Incoming request.
 
-        Return:
+        Returns:
             A type specialisation of :class:`Context <youwol.utils.context.context.Context>` with
             :class:`ProxiedBackendCtxEnv <youwol.utils.context.models.ProxiedBackendCtxEnv>` generic parameter.
         """

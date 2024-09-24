@@ -11,6 +11,7 @@ from youwol.app.environment import YouwolEnvironment, yw_config
 from youwol.app.web_socket import LogsStreamer
 
 # Youwol utilities
+from youwol.utils import JSON
 from youwol.utils.context import Context
 
 router = APIRouter()
@@ -49,7 +50,18 @@ def get_command(command_name: str, method: CmdMethod, env: YouwolEnvironment):
 @router.get("/{command_name}", summary="execute a GET custom command")
 async def execute_command(
     request: Request, command_name: str, env: YouwolEnvironment = Depends(yw_config)
-):
+) -> JSON:
+    """
+    Execute a `GET` command.
+
+    Parameters:
+        request: Incoming request.
+        command_name: Command name.
+        env: Current environment.
+
+    Returns:
+        Response from the execution of the command's `.do_get()`.
+    """
     async with Context.start_ep(
         request=request,
         with_attributes={
@@ -67,7 +79,18 @@ async def execute_command(
 @router.post("/{command_name}", summary="execute a POST custom command")
 async def execute_post_command(
     request: Request, command_name: str, env: YouwolEnvironment = Depends(yw_config)
-):
+) -> JSON:
+    """
+    Execute a `POST` command.
+
+    Parameters:
+        request: Incoming request.
+        command_name: Command name.
+        env: Current environment.
+
+    Returns:
+        Response from the execution of the command's `.do_post()`.
+    """
     async with Context.start_ep(
         request=request,
         with_attributes={
@@ -86,7 +109,18 @@ async def execute_post_command(
 @router.put("/{command_name}", summary="execute a PUT custom command")
 async def execute_put_command(
     request: Request, command_name: str, env: YouwolEnvironment = Depends(yw_config)
-):
+) -> JSON:
+    """
+    Execute a `PUT` command.
+
+    Parameters:
+        request: Incoming request.
+        command_name: Command name.
+        env: Current environment.
+
+    Returns:
+        Response from the execution of the command's `.do_put()`.
+    """
     async with Context.start_ep(
         request=request,
         with_attributes={
@@ -105,7 +139,18 @@ async def execute_put_command(
 @router.delete("/{command_name}", summary="execute a DELETE custom command")
 async def execute_delete_command(
     request: Request, command_name: str, env: YouwolEnvironment = Depends(yw_config)
-):
+) -> JSON:
+    """
+    Execute a `DELETE` command.
+
+    Parameters:
+        request: Incoming request.
+        command_name: Command name.
+        env: Current environment.
+
+    Returns:
+        Response from the execution of the command's `.do_delete()`.
+    """
     async with Context.start_ep(
         request=request,
         with_attributes={

@@ -539,7 +539,7 @@ class CustomMiddleware(BaseModel, ABC):
             call_next: trigger the next target in the call stack
             context: :class:`Context <Context>`
 
-        Return:
+        Returns:
             The response
         """
         raise NotImplementedError("CustomMiddleware.switch not implemented")

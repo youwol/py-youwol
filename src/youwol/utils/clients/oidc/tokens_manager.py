@@ -30,7 +30,7 @@ class TokensStorage(ABC, DigestExclude):
         Parameters:
             tokens_id: The unique identifier for the tokens.
 
-        Return:
+        Returns:
             The retrieved token data or None if not found.
         """
 
@@ -55,7 +55,7 @@ class TokensStorage(ABC, DigestExclude):
         Parameters:
             session_id (str): The session identifier.
 
-        Return:
+        Returns:
             A tuple containing the tokens identifier and associated token data or (None, None) if not found.
         """
 
@@ -104,7 +104,7 @@ class Tokens:
         """
         Returns the unique identifier for the tokens.
 
-        Return:
+        Returns:
             The unique identifier for the tokens.
         """
         return self.__id
@@ -113,7 +113,7 @@ class Tokens:
         """
         Returns the username associated with the ID token.
 
-        Return:
+        Returns:
             The username associated with the ID token.
         """
         self.__assert_refresh_not_expired()
@@ -131,7 +131,7 @@ class Tokens:
         """
         Returns the subject identifier associated with the ID token.
 
-        Return:
+        Returns:
             The subject identifier associated with the ID token.
         """
         self.__assert_refresh_not_expired()
@@ -142,7 +142,7 @@ class Tokens:
         """
         Returns the access token, refreshing it if necessary.
 
-        Return:
+        Returns:
             The access token.
         """
         self.__assert_refresh_not_expired()
@@ -156,7 +156,7 @@ class Tokens:
         """
         Returns the ID token.
 
-        Return:
+        Returns:
             The ID token.
         """
         self.__assert_refresh_not_expired()
@@ -190,7 +190,7 @@ class Tokens:
         """
         Returns the remaining time (in seconds) until the next token refresh.
 
-        Return:
+        Returns:
             int: The remaining time until the next token refresh.
         """
         self.__assert_refresh_not_expired()
@@ -237,7 +237,7 @@ class TokensManager:
             tokens_id: The ID associated with the tokens.
             tokens_data: The data representing the tokens.
 
-        Return:
+        Returns:
              The created token.
         """
         tokens = Tokens(
@@ -259,7 +259,7 @@ class TokensManager:
         Parameters:
             tokens_id: The ID associated with the tokens.
 
-        Return:
+        Returns:
             An instance of Tokens if found, otherwise None.
         """
         result = None
@@ -294,7 +294,7 @@ class TokensManager:
         Parameters:
             session_id: The session ID associated with the tokens.
 
-        Return:
+        Returns:
             An instance of Tokens if found, otherwise None.
         """
         tokens_id, tokens_data = await self.__storage.get_by_sid(session_id)
@@ -350,7 +350,7 @@ class TokensStorageCache(TokensStorage):
         Parameters:
             tokens_id: The ID associated with the tokens.
 
-        Return:
+        Returns:
             An instance of TokensData if data is found in the cache, otherwise None.
         """
         cache_token_key = TokensStorageCache.cache_token_key(tokens_id)
@@ -452,7 +452,7 @@ class SessionLessTokenManager:
         cache_key: str,
         cache: CacheClient,
         oidc_client: OidcForClient,
-        expires_at_threshold=__TOKEN_EXPIRES_AT_THRESHOLD,
+        expires_at_threshold: int = __TOKEN_EXPIRES_AT_THRESHOLD,
     ) -> None:
         """
         Initializes a new instance.

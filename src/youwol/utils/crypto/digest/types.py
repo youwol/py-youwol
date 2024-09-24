@@ -23,6 +23,9 @@ class FnTrace(Protocol):
 
 
 T_contra = TypeVar("T_contra", contravariant=True)
+"""
+Generic contravariant type w/ the encapsulating type.
+"""
 
 
 class Hash(Protocol):

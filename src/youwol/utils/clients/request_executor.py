@@ -39,7 +39,7 @@ class RequestExecutor(ABC, Generic[T], DigestExclude):
         custom_reader: Callable[[T], Awaitable[Any]] | None = None,
         headers: dict[str, str] | None = None,
         **kwargs,
-    ):
+    ) -> Any:
         """
         Execute a `GET` request.
 
@@ -49,7 +49,7 @@ class RequestExecutor(ABC, Generic[T], DigestExclude):
             custom_reader: if provided, this custom reader is used in place of the `default_reader`.
             headers: headers to use with the request
 
-        Return:
+        Returns:
             The type of the response depends on the `default_reader` or `̀custom_reader` if provided.
         """
 
@@ -61,7 +61,7 @@ class RequestExecutor(ABC, Generic[T], DigestExclude):
         custom_reader: Callable[[T], Awaitable[Any]] | None = None,
         headers: dict[str, str] | None = None,
         **kwargs,
-    ):
+    ) -> Any:
         """
         Execute a `POST` request.
 
@@ -71,7 +71,7 @@ class RequestExecutor(ABC, Generic[T], DigestExclude):
             custom_reader: if provided, this custom reader is used in place of the `default_reader`.
             headers: headers to use with the request
 
-        Return:
+        Returns:
             The type of the response depends on the `default_reader` or `̀custom_reader` if provided.
         """
 
@@ -83,7 +83,7 @@ class RequestExecutor(ABC, Generic[T], DigestExclude):
         custom_reader: Callable[[T], Awaitable[Any]] | None = None,
         headers: dict[str, str] | None = None,
         **kwargs,
-    ):
+    ) -> Any:
         """
         Execute a `PUT` request.
 
@@ -93,7 +93,7 @@ class RequestExecutor(ABC, Generic[T], DigestExclude):
             custom_reader: if provided, this custom reader is used in place of the `default_reader`.
             headers: headers to use with the request
 
-        Return:
+        Returns:
             The type of the response depends on the `default_reader` or `̀custom_reader` if provided.
         """
 
@@ -105,7 +105,7 @@ class RequestExecutor(ABC, Generic[T], DigestExclude):
         custom_reader: Callable[[T], Awaitable[Any]] | None = None,
         headers: dict[str, str] | None = None,
         **kwargs,
-    ):
+    ) -> Any:
         """
         Execute a `DELETE` request.
 
@@ -115,7 +115,7 @@ class RequestExecutor(ABC, Generic[T], DigestExclude):
             custom_reader: if provided, this custom reader is used in place of the `default_reader`.
             headers: headers to use with the request
 
-        Return:
+        Returns:
             The type of the response depends on the `default_reader` or `̀custom_reader` if provided.
         """
 
@@ -276,7 +276,7 @@ async def text_reader(resp: ClientResponse) -> str:
     Parameters:
         resp: The response.
 
-    Return:
+    Returns:
         The content as string.
     """
     if resp.status < 300:
@@ -294,7 +294,7 @@ async def json_reader(resp: ClientResponse) -> JSON:
     Parameters:
         resp: The response.
 
-    Return:
+    Returns:
         The content as JSON.
     """
     if resp.status < 300:
@@ -312,7 +312,7 @@ async def bytes_reader(resp: ClientResponse) -> bytes:
     Parameters:
         resp: The response.
 
-    Return:
+    Returns:
         The content as bytes.
     """
     if resp.status < 300:
@@ -330,7 +330,7 @@ async def auto_reader(resp: ClientResponse) -> JSON | str | bytes:
     Parameters:
         resp: The response.
 
-    Return:
+    Returns:
         The content as JSON, string or bytes (default).
     """
     if resp.status < 300:

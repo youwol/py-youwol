@@ -255,7 +255,7 @@ class OidcConfig:
         Parameters:
             client: The OIDC client.
 
-        Return:
+        Returns:
             An instance of OidcForClient.
         """
         return OidcForClient(self, client)
@@ -283,7 +283,7 @@ class OidcConfig:
         """
         Retrieve the supported JSON Web Token (JWT) algorithms from the OpenID Configuration.
 
-        Return:
+        Returns:
             A list of supported JWT algorithms.
         """
         conf = await self.openid_configuration()
@@ -293,7 +293,7 @@ class OidcConfig:
         """
         Retrieve or create a JSON Web Key Set (JWKS) client.
 
-        Return:
+        Returns:
             PyJWKClient: The JWKS client.
         """
         if self._jwks_client is None:
@@ -305,7 +305,7 @@ class OidcConfig:
         """
         Retrieve or fetch the OpenID Configuration.
 
-        Return:
+        Returns:
             OpenIdConfiguration: The OpenID Configuration.
 
         """
@@ -386,7 +386,7 @@ class OidcForClient:
                                 User is authenticated)
             login_hint: username to pre-fill login form.
 
-        Return:
+        Returns:
                 * the URL to request End-User authentication
                 * the code verifier for PKCE
                 * the ID token nonce for mitigating replay attacks
@@ -444,7 +444,7 @@ class OidcForClient:
             code_verifier: the code verifier for PKCE
             nonce: the ID token nonce for mitigating replay attacks
 
-        Return:
+        Returns:
             representation of tokens issued by the Authorization Server
         """
         data = await self.__post_token_endpoint(
@@ -470,7 +470,7 @@ class OidcForClient:
 
         See https://datatracker.ietf.org/doc/html/rfc6749#section-4.4
 
-        Return:
+        Returns:
             representation of access token issued by the Authorization Server
 
         Raises:
@@ -492,7 +492,7 @@ class OidcForClient:
             username: the username
             password: the password
 
-        Return:
+        Returns:
             representation of tokens issued by the Authorization Server
         """
         data = await self.__post_token_endpoint(
@@ -512,7 +512,7 @@ class OidcForClient:
             requested_subject: the sub of the User to impersonate
             subject_token: access token for the real User
 
-        Return:
+        Returns:
            representation of tokens issued by the Authorization Server
         """
         data = await self.__post_token_endpoint(
@@ -533,7 +533,7 @@ class OidcForClient:
         Parameters:
             refresh_token: the refresh token
 
-        Return:
+        Returns:
            representation of tokens issued by the Authorization Server
         """
         data = await self.__post_token_endpoint(
@@ -555,7 +555,7 @@ class OidcForClient:
             state: opaque value, to maintain state between this request ond the callback
             id_token_hint: token hint
 
-        Return:
+        Returns:
             the log-out URL
         """
         conf = await self.__config.openid_configuration()
@@ -577,7 +577,7 @@ class OidcForClient:
         Parameters:
             token: token to decode
 
-        Return:
+        Returns:
              The JSON representation of the token
         """
         return await self.__config.token_decode(token)
@@ -586,7 +586,7 @@ class OidcForClient:
         """
         Retrieve the client ID associated with the client.
 
-        Return:
+        Returns:
              The client ID.
         """
         return self.__client.client_id

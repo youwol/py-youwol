@@ -119,7 +119,7 @@ class BrowserCacheStore:
             request: The incoming request.
             response: The outgoing response.
 
-        Return:
+        Returns:
             The cached item if the response has been cached, otherwise None.
         """
         async with context.start(action="BrowserCacheStore.cache_if_needed") as ctx:
@@ -195,7 +195,7 @@ class BrowserCacheStore:
             request: The incoming request.
             context: Current executing context.
 
-        Return:
+        Returns:
             The cached response & item if the function succeed, otherwise None.
         """
 
@@ -304,7 +304,7 @@ class BrowserCacheStore:
             file: If `True`, clear associated file (if applicable: `mode` is `disk`).
             context: Current executing context.
 
-        Return:
+        Returns:
             Number of items deleted.
         """
         async with context.start(action="BrowserCacheStore.clear") as ctx:

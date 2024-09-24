@@ -216,12 +216,18 @@ try:
             'https://www.starlette.io/responses/#jsonresponse',
         'starlette.responses.Response':
             'https://www.starlette.io/responses/#response',
+        'starlette.responses.PlainTextResponse':
+            'https://www.starlette.io/responses/#plaintextresponse',
         'starlette.types.ASGIApp':
             'https://github.com/encode/starlette/blob/master/starlette/types.py',
         'starlette.websockets.WebSocket': 'https://www.starlette.io/websockets/',
+        'starlette.datastructures.URL': 'https://www.starlette.io/requests/',
         'starlette.exceptions.HTTPException':
             'https://www.starlette.io/exceptions/#httpexception',
-        'pydantic.BaseModel':'https://docs.pydantic.dev/latest/api/base_model/'
+        'pydantic.BaseModel':'https://docs.pydantic.dev/latest/api/base_model/',
+        'jwt.PyJWKClient': 'https://pyjwt.readthedocs.io/en/stable/usage.html',
+        'minio.Minio': "https://min.io/docs/minio/linux/developers/python/API.html",
+        "tqdm.tqdm":"https://tqdm.github.io/docs/tqdm/#tqdm-objects"
     }
     config_yw = Configuration(
         base_nav="/api/youwol",

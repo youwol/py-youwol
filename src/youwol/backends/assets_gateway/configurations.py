@@ -42,7 +42,11 @@ class Dependencies:
     get_configuration: Callable[[], Configuration | Awaitable[Configuration]]
 
 
-async def get_configuration():
+async def get_configuration() -> Configuration:
+    """
+    Returns:
+        The configuration of the service.
+    """
     conf = Dependencies.get_configuration()
     if isinstance(conf, Configuration):
         return conf

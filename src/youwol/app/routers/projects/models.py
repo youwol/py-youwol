@@ -13,7 +13,14 @@ from pydantic import BaseModel
 from .models_project import Link, Manifest, PipelineStepStatus, Project
 
 ArtifactId = str
+"""
+Alias to represents the ID of an artifact of a pipeline.
+"""
+
 PipelineStepId = str
+"""
+Alias to represents the ID of the step of a pipeline.
+"""
 
 
 class ListProjectsResponse(BaseModel):

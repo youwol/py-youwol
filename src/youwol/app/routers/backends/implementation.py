@@ -369,16 +369,20 @@ async def ensure_running(
     context: Context,
 ) -> ProxiedBackend:
     """
-    The `config == None` means: take corresponding service if running whatever its configuration.
+    Ensure a backend is running, eventually installing and starting it.
 
-    :param request:
-    :param partition_id:
-    :param backend_name:
-    :param version_query:
-    :param config:
-    :param timeout:
-    :param context:
-    :return:
+    Parameters:
+        request: Incoming request.
+        partition_id: Expected partition ID.
+        backend_name: Backend's name.
+        version_query: Semver query for the backend's version.
+        config: Expected backend's configuration. None` means: take corresponding service if running whatever
+            its configuration.
+        timeout: Timeout for the all process.
+        context: Executing context.
+
+    Returns:
+        Proxied backend information.
     """
     env = await context.get("env", YouwolEnvironment)
 

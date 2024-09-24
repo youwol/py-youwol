@@ -48,7 +48,7 @@ class DownloadBackend(AbstractLocalCloudDispatch):
             call_next: The next endpoint in the chain.
             context: The current context.
 
-        Return:
+        Returns:
             Eventually download the backend if not included in the local components at the relevant version,
             then proceed to the target destination and return the response.
         """

@@ -1,3 +1,7 @@
+"""
+This module gathers implementation regarding assets download from the remote ecosystem to the local one.
+"""
+
 # relative
 from .auto_download_thread import *
 from .common import *

@@ -91,7 +91,7 @@ async def put_access_policy(
         body: access policy.
         configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
-    Return:
+    Returns:
         Empty JSON response.
     """
     async with Context.start_ep(request=request) as ctx:
@@ -123,7 +123,7 @@ async def delete_access_policy(
         group_id: target group's ID.
         configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
-    Return:
+    Returns:
         Empty JSON response.
     """
     async with Context.start_ep(request=request) as ctx:
@@ -157,7 +157,7 @@ async def get_access_policy(
         group_id: target group's ID.
         configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
-    Return:
+    Returns:
         Access policy description.
     """
 

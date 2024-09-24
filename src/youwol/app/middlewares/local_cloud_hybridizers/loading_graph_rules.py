@@ -40,7 +40,7 @@ async def get_extra_index(context: Context) -> str | None:
     Parameters:
         context: Current context
 
-    Return:
+    Returns:
         The list of selected items compressed in bytes.
     """
     env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
@@ -96,7 +96,7 @@ class GetLoadingGraph(AbstractLocalCloudDispatch):
             call_next: The next endpoint in the chain.
             context: The current context.
 
-        Return:
+        Returns:
             The response after dispatching the loading graph query.
         """
 

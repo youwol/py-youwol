@@ -76,7 +76,7 @@ def to_std_npm_spec(input_semver: str) -> str:
     Parameters:
         input_semver: a valid NPM specification that may include 'latest' in place of '*'.
 
-    Return:
+    Returns:
         Semantic versioning string matching NPM specification.
 
     Raise:
@@ -144,7 +144,7 @@ async def resolve_version(
         versions: A collection of available version strings for the library.
         context: Current context object for logging and tracking the version resolution process.
 
-    Return:
+    Returns:
         The most appropriate version string based on the input version range and available versions.
         Returns None if no suitable version is found.
 

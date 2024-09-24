@@ -23,6 +23,10 @@ def post_drive_body(name: str):
 
 @dataclass(frozen=True)
 class StorageClient:
+    """
+    Virtual class for the clients of storage service used in YouWol.
+    """
+
     bucket_name: str
 
     url_base: str

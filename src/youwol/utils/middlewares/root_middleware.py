@@ -96,7 +96,7 @@ class RootMiddleware(BaseHTTPMiddleware):
             request: incoming request
             call_next: trigger function of the next middleware
 
-        Return:
+        Returns:
             HTTP Response
         """
         context = self.get_context(request=request)

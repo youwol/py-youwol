@@ -32,6 +32,10 @@ def create_dir_if_needed(full_path: Path):
 
 @dataclass(frozen=True)
 class LocalStorageClient:
+    """
+    Client for the storage service used in the local YouWol server.
+    """
+
     root_path: Path
     bucket_name: str
 

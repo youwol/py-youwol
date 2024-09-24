@@ -164,7 +164,7 @@ async def get_permissions(
         asset_id: Asset's ID.
         configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
-    Return:
+    Returns:
         Permissions description.
     """
     async with Context.start_ep(request=request) as ctx:  # type: Context
@@ -191,7 +191,7 @@ async def access_info(
         asset_id: Asset's ID.
         configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
-    Return:
+    Returns:
         Access summary.
     """
     max_policies_count = 1000

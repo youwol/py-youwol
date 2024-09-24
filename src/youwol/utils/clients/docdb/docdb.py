@@ -20,7 +20,7 @@ from youwol.utils.clients.docdb.models import (
 )
 from youwol.utils.clients.utils import aiohttp_resp_parameters
 from youwol.utils.exceptions import upstream_exception_from_response
-from youwol.utils.types import AnyDict
+from youwol.utils.types import JSON, AnyDict
 
 
 def patch_query_body(query_body: QueryBody, table_body: TableBody) -> QueryBody:
@@ -225,14 +225,14 @@ class DocDbClient:
                     resp, message="Can not get the table"
                 )
 
-    async def delete_table(self, **kwargs) -> AnyDict:
+    async def delete_table(self, **kwargs: Any) -> AnyDict:
         """
         Delete the table.
 
         Parameters:
             kwargs: keywords arg. forwarded to internal calls.
 
-        Return:
+        Returns:
             Response of the service.
         """
         if not await self._keyspace_exists(**kwargs) or not await self._table_exists(
@@ -299,15 +299,12 @@ class DocDbClient:
                     resp, message="Creation of the index failed"
                 )
 
-    async def ensure_table(self, **kwargs):
+    async def ensure_table(self, **kwargs: Any) -> None:
         """
         Ensure the table exists, creates it if needed.
 
         Parameters:
             kwargs: keywords arg. forwarded to internal calls.
-
-        Return:
-            Response of the service.
         """
         if not await self._keyspace_exists(**kwargs):
             print(f"keyspace {self.keyspace_name} does not exist")
@@ -341,14 +338,14 @@ class DocDbClient:
             for index in self.secondary_indexes:
                 await self._create_index(index, **kwargs)
 
-    async def get_table(self, **kwargs) -> AnyDict:
+    async def get_table(self, **kwargs: Any) -> AnyDict:
         """
         Get description of a table.
 
         Parameters:
             kwargs: keywords arg. forwarded to internal calls.
 
-        Return:
+        Returns:
             Response of the service.
         """
         async with aiohttp.ClientSession(headers=self.headers) as session:
@@ -366,7 +363,7 @@ class DocDbClient:
         partition_keys: dict[str, Any],
         clustering_keys: dict[str, Any],
         owner: str | None,
-        **kwargs,
+        **kwargs: Any,
     ) -> AnyDict:
         """
         Get a document based on partition and clustering keys.
@@ -377,7 +374,7 @@ class DocDbClient:
             owner: The owner of the document. Please provide always `youwol-users`.
             kwargs:  keywords arg. forwarded to internal calls.
 
-        Return:
+        Returns:
             The retrieved document.
         """
         params = {"owner": owner or "youwol-users"}
@@ -400,7 +397,7 @@ class DocDbClient:
         self,
         query_body: QueryBody | str,
         owner: str | None,
-        **kwargs,
+        **kwargs: Any,
     ) -> AnyDict:
         """
         Execute a query on the table.
@@ -410,7 +407,7 @@ class DocDbClient:
             owner: The owner of the document. Please provide always `youwol-users`.
             kwargs:  keywords arg. forwarded to internal calls.
 
-        Return:
+        Returns:
             The query result.
         """
         typed_query_body = patch_query_body(
@@ -446,7 +443,7 @@ class DocDbClient:
                 )
 
     async def create_document(
-        self, doc: AnyDict, owner: str | None, **kwargs
+        self, doc: AnyDict, owner: str | None, **kwargs: Any
     ) -> AnyDict:
         """
         Create a new document in the database.
@@ -456,7 +453,7 @@ class DocDbClient:
             owner: The owner of the document. Please provide always `youwol-users`.
             kwargs:  keywords arg. forwarded to internal calls.
 
-        Return:
+        Returns:
             Response from the service.
         """
         params = {"owner": owner} if owner else {}
@@ -472,7 +469,7 @@ class DocDbClient:
                 )
 
     async def update_document(
-        self, doc: AnyDict, owner: str | None, **kwargs
+        self, doc: AnyDict, owner: str | None, **kwargs: Any
     ) -> AnyDict:
         """
         Update a new document in the database.
@@ -482,7 +479,7 @@ class DocDbClient:
             owner: The owner of the document. Please provide always `youwol-users`.
             kwargs:  keywords arg. forwarded to internal calls.
 
-        Return:
+        Returns:
             Response from the service.
         """
         params = {"owner": owner} if owner else {}
@@ -497,7 +494,9 @@ class DocDbClient:
                     resp, message="Can not update the document", params=params, doc=doc
                 )
 
-    async def delete_document(self, doc: dict[str, Any], owner: str | None, **kwargs):
+    async def delete_document(
+        self, doc: dict[str, Any], owner: str | None, **kwargs: Any
+    ) -> JSON:
         """
         Delete a document from the database.
 
@@ -506,7 +505,7 @@ class DocDbClient:
             owner: The owner of the document. Please provide always `youwol-users`.
             kwargs:  keywords arg. forwarded to internal calls.
 
-        Return:
+        Returns:
             Empty JSON object.
         """
         params_part = self.get_primary_key_query_parameters(doc)

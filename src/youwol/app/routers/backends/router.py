@@ -2,6 +2,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from starlette.requests import Request
+from starlette.responses import Response
 
 # Youwol application
 from youwol.app.environment import YouwolEnvironment
@@ -89,7 +90,9 @@ async def dispatch_impl(
 @router.get(
     "/{backend_name}/{version_query}/{rest_of_path:path}", summary="Dispatch GET."
 )
-async def dispatch_get(request: Request, backend_name: str, version_query: str):
+async def dispatch_get(
+    request: Request, backend_name: str, version_query: str
+) -> Response:
     """
     Dispatch.
 
@@ -98,7 +101,7 @@ async def dispatch_get(request: Request, backend_name: str, version_query: str):
         backend_name: target backend's name
         version_query: semantic versioning query
 
-    Return:
+    Returns:
         The response
     """
 
@@ -116,7 +119,9 @@ async def dispatch_get(request: Request, backend_name: str, version_query: str):
 @router.post(
     "/{backend_name}/{version_query}/{rest_of_path:path}", summary="Dispatch POST"
 )
-async def dispatch_post(request: Request, backend_name: str, version_query: str):
+async def dispatch_post(
+    request: Request, backend_name: str, version_query: str
+) -> Response:
     """
     Dispatch.
 
@@ -125,7 +130,7 @@ async def dispatch_post(request: Request, backend_name: str, version_query: str)
         backend_name: target backend's name
         version_query: semantic versioning query
 
-    Return:
+    Returns:
         The response
     """
 
@@ -143,7 +148,9 @@ async def dispatch_post(request: Request, backend_name: str, version_query: str)
 @router.put(
     "/{backend_name}/{version_query}/{rest_of_path:path}", summary="Dispatch POST"
 )
-async def dispatch_put(request: Request, backend_name: str, version_query: str):
+async def dispatch_put(
+    request: Request, backend_name: str, version_query: str
+) -> Response:
     """
     Dispatch.
 
@@ -152,7 +159,7 @@ async def dispatch_put(request: Request, backend_name: str, version_query: str):
         backend_name: target backend's name
         version_query: semantic versioning query
 
-    Return:
+    Returns:
         The response
     """
 
@@ -170,7 +177,9 @@ async def dispatch_put(request: Request, backend_name: str, version_query: str):
 @router.delete(
     "/{backend_name}/{version_query}/{rest_of_path:path}", summary="Dispatch POST"
 )
-async def dispatch_delete(request: Request, backend_name: str, version_query: str):
+async def dispatch_delete(
+    request: Request, backend_name: str, version_query: str
+) -> Response:
     """
     Dispatch.
 
@@ -179,7 +188,7 @@ async def dispatch_delete(request: Request, backend_name: str, version_query: st
         backend_name: target backend's name
         version_query: semantic versioning query
 
-    Return:
+    Returns:
         The response
     """
 

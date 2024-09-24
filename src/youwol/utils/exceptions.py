@@ -109,12 +109,12 @@ class DependencyErrorData(BaseModel):
 class DependenciesError(YouWolException):
     exceptionType = "DependenciesError"
 
-    def __init__(self, context: str, errors: list[dict[str, Any]], **kwargs):
+    def __init__(self, context: str, errors: list[dict[str, Any]], **kwargs: Any):
         """
-
-        :param context: context of the error
-        :param errors: An error as a dict like {'key':str, 'paths': List[str], 'detail': str}
-        :param kwargs: forwarding arguments to YouWolException
+        Parameters:
+            context: context of the error
+            errors: An error as a dict like {'key':str, 'paths': List[str], 'detail': str}
+            kwargs: forwarding arguments to YouWolException
         """
         YouWolException.__init__(
             self,
@@ -344,7 +344,7 @@ async def youwol_exception_handler(
         request: Associated request from which the exception happened.
         exc: The exception generated.
 
-    Return:
+    Returns:
         JSON representation of the exception.
     """
     if request.state and request.state.context:
@@ -357,7 +357,9 @@ async def youwol_exception_handler(
     return JSONResponse(status_code=exc.status_code, content=content)
 
 
-async def unexpected_exception_handler(request: Request, exc: Exception):
+async def unexpected_exception_handler(
+    request: Request, exc: Exception
+) -> PlainTextResponse:
     """
     Handler for [Exception](https://docs.python.org/3/library/exceptions.html#Exception) that are not
     :class:`YouWolException <youwol.utils.exceptions.YouWolException>`.
@@ -370,8 +372,8 @@ async def unexpected_exception_handler(request: Request, exc: Exception):
         request: Associated request from which the exception happened.
         exc: The exception generated.
 
-    Return:
-        JSON representation of the exception.
+    Returns:
+        Representation of the exception.
     """
 
     if request.state and request.state.context:
@@ -388,7 +390,7 @@ async def unexpected_exception_handler(request: Request, exc: Exception):
 
 
 async def upstream_exception_from_response(
-    raw_resp: ClientResponse, **kwargs
+    raw_resp: ClientResponse, **kwargs: Any
 ) -> UpstreamResponseException:
     """
     Format an `UpstreamResponseException` from http responses.

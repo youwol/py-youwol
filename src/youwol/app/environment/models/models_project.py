@@ -31,7 +31,7 @@ class ProjectTemplate(BaseModel):
     In most practical cases, project template generator are exposed by python packages and consumed in the configuration
     file, for instance regarding the typescript pipeline of youwol:
 
-    <code-snippet language="python" highlightedLines="5 11">
+    <code-snippet language="python" highlightedLines="4 10">
     from youwol.app.environment import (
         Configuration,
         Projects,
@@ -93,7 +93,7 @@ class ProjectsFinder(BaseModel):
         Folders whose names begin with a `.` are excluded from the search process.
 
     Example:
-        <code-snippet language="python" highlightedLines="6 13-17">
+        <code-snippet language="python" highlightedLines="5 12-17">
         from pathlib import Path
 
         from youwol.app.environment import (

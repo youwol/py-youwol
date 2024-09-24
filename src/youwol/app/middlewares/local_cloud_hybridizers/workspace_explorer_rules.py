@@ -72,7 +72,7 @@ class GetChildrenDispatch(AbstractLocalCloudDispatch):
             call_next: The next endpoint in the chain.
             context: The current context.
 
-        Return:
+        Returns:
             A modified version of
             :class:`ChildrenResponse <youwol.utils.http_clients.tree_db_backend.models.ChildrenResponse>`
             that include both local and remote children, each child being annotated with an attribute `origin`:

@@ -55,7 +55,6 @@ async def post_data_no_namespace(
         request: Incoming request.
         package: Name of the package that post the data (the owner, without namespace).
         name: Name of the data.
-        body: JSON data.
         configuration: Injected
             :class:`Configuration <youwol.backends.cdn_sessions_storage.configurations.Configuration>`.
 
@@ -88,7 +87,6 @@ async def post_data_with_namespace(
         namespace: Namespace of the package.
         package: Name of the package that post the data (the owner, without namespace).
         name: Name of the data.
-        body: JSON data.
         configuration: Injected
             :class:`Configuration <youwol.backends.cdn_sessions_storage.configurations.Configuration>`.
 

@@ -41,11 +41,30 @@ router = APIRouter(tags=["assets-gateway.flux-backend"])
 
 
 class NewEmptyAssetBody(BaseModel):
+    """
+    Body to create an empty asset that can be populated with files afterward.
+    """
+
     rawId: str | None
+    """
+    Optional rawId (e.g. if the resource is managed somewhere else and identified by an ID).
+    """
     kind: str
+    """
+    Asset's kind.
+    """
     name: str = ""
+    """
+    Asset's name.
+    """
     description: str = ""
+    """
+    Asset's description.
+    """
     tags: list[str] = []
+    """
+    Asset's tags.
+    """
 
 
 @router.put("/assets", response_model=NewAssetResponse, summary="new asset")
@@ -72,7 +91,7 @@ async def create_asset(
         configuration: Injected
             :class:`Configuration <youwol.backends.assets_gateway.configurations.Configuration>`.
 
-    Return:
+    Returns:
         New asset description (no `rawResponse` associated).
     """
     # This end point create an asset not affiliated to any backends.

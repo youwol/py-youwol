@@ -53,7 +53,7 @@ class Download(AbstractLocalCloudDispatch):
             call_next: The next endpoint in the chain.
             context: The current context.
 
-        Return:
+        Returns:
             The local or remote response. Side effects: the target asset eventually queued for download (in dedicated
             thread).
         """
@@ -162,11 +162,11 @@ class UpdateApplication(AbstractLocalCloudDispatch):
             call_next: The next endpoint in the chain.
             context: The current context.
 
-        Return:
+        Returns:
             The latest version available in remote or local environments for the application that match
             the semver query. If returned from the remote environment, the dispatch
             :class:`Download <youwol.app.middlewares.local_cloud_hybridizers.download_rules.Download>`
-             will later trigger local download of the corresponding asset.
+            will later trigger local download of the corresponding asset.
         """
 
         match, params = url_match(incoming_request, "GET:/applications/**")

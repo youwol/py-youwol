@@ -46,6 +46,7 @@ from youwol.app.routers.projects import (
 
 # Youwol utilities
 from youwol.utils import (
+    JSON,
     PYPROJECT_TOML,
     AnyDict,
     CommandException,
@@ -84,6 +85,9 @@ def get_environment() -> Environment:
 
 
 VENV_NAME = ".venv"
+"""
+Name for a python virtual environment.
+"""
 
 
 class SetupStep(PipelineStep):
@@ -115,7 +119,9 @@ class SetupStep(PipelineStep):
         If those did not change since last execution, the step is considered in sync.
     """
 
-    async def execute_run(self, project: Project, flow_id: str, context: Context):
+    async def execute_run(
+        self, project: Project, flow_id: str, context: Context
+    ) -> JSON:
         """
         Trigger step execution.
 
@@ -124,7 +130,7 @@ class SetupStep(PipelineStep):
             flow_id: ID of the flow associated.
             context: Current context.
 
-        Return:
+        Returns:
             Manifest of the execution
         """
         async with context.start(
@@ -196,7 +202,9 @@ class DependenciesStep(PipelineStep):
         If those did not change since last execution, the step is considered in sync.
     """
 
-    async def execute_run(self, project: Project, flow_id: str, context: Context):
+    async def execute_run(
+        self, project: Project, flow_id: str, context: Context
+    ) -> None:
         """
         Trigger step execution.
 
@@ -205,8 +213,6 @@ class DependenciesStep(PipelineStep):
             flow_id: ID of the flow associated.
             context: Current context.
 
-        Return:
-            Manifest of the execution
         """
 
         # for now this is required: 'sudo apt install python3.12-venv'
@@ -240,10 +246,21 @@ class DependenciesStep(PipelineStep):
             await execute_shell_cmd(cmd=cmd, context=context, cwd=project.path)
 
 
-async def get_info(project: Project, context: Context):
+async def get_info(project: Project, context: Context) -> AnyDict:
+    """
+    Implementation of the http command 'get_info' of the
+    :class:`RunStep <youwol.pipelines.pipeline_python_backend.pipeline.RunStep>`.
+
+    Parameters:
+        project: The project.
+        context: Executing context.
+
+    Returns:
+        Proxy information. See :class:`ProxyInfo <youwol.app.environment.proxied_backends.ProxyInfo>`.
+    """
 
     async with context.start("get_intput_data") as ctx:
-        env = await ctx.get("env", YouwolEnvironment)
+        env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
         proxy = env.proxied_backends.get_info(
             partition_id=DEFAULT_PARTITION_ID,
             name=project.name,
@@ -251,11 +268,21 @@ async def get_info(project: Project, context: Context):
         )
         if not proxy:
             raise HTTPException(status_code=404, detail="The backend is not serving")
-        return proxy
+        return proxy.dict()
 
 
-async def stop_backend(project: Project, context: Context):
+async def stop_backend(project: Project, context: Context) -> dict[str, str]:
+    """
+    Implementation of the http command 'stop_backend' of the
+    :class:`RunStep <youwol.pipelines.pipeline_python_backend.pipeline.RunStep>`.
 
+    Parameters:
+        project: The project.
+        context: Executing context.
+
+    Returns:
+        Either `{"status": "backend terminated"}` or `{"status": "backend or PID not found"}`.
+    """
     async with context.start("stop_backend") as ctx:
         env = await ctx.get("env", YouwolEnvironment)
         proxy = env.proxied_backends.query_latest(
@@ -488,7 +515,7 @@ class PipelineConfig(BaseModel):
     """
 
 
-async def pipeline(config: PipelineConfig, context: Context):
+async def pipeline(config: PipelineConfig, context: Context) -> Pipeline:
     """
     Instantiates the pipeline.
 
@@ -514,7 +541,7 @@ async def pipeline(config: PipelineConfig, context: Context):
         config: configuration of the pipeline
         context: current context
 
-    Return:
+    Returns:
         The pipeline instance.
     """
     async with context.start(action="pipeline") as ctx:
