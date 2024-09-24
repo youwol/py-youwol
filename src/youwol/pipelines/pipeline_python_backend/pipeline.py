@@ -154,7 +154,7 @@ class SetupStep(PipelineStep):
     @staticmethod
     def __write_init_py(project: Project, pyproject: AnyDict) -> None:
         init_file = project.path / pyproject["project"]["name"] / "__init__.py"
-        with open(init_file, "r", encoding="utf-8") as file:
+        with open(init_file, encoding="utf-8") as file:
             content = file.read()
 
         with open(init_file, "w", encoding="utf-8") as file:
