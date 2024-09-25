@@ -61,14 +61,8 @@ async def get_session_details(
     conf: Configuration = Depends(get_configuration),
 ) -> SessionDetails:
     """
-        Return the details of the current session, as determined by AuthMiddleware
-        Also indicate the login_hint, if any.
-
-    :param request:
-    :param yw_jwt_t:
-    :param yw_login_hint:
-    :param conf:
-    :return:
+    Return the details of the current session, as determined by AuthMiddleware
+    Also indicate the login_hint, if any.
     """
 
     user_info = user_info_from_json(request.state.user_info)

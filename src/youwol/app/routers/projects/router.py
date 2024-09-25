@@ -81,7 +81,7 @@ async def status(request: Request) -> ProjectsLoadingResults:
     Parameters:
         request: Incoming request
 
-    Return:
+    Returns:
         The description of the projects list in the workspace.
     """
     async with Context.start_ep(
@@ -112,7 +112,7 @@ async def index_projects(request: Request) -> ProjectsLoadingResults:
     Parameters:
         request: Incoming request
 
-    Return:
+    Returns:
         The description of the projects list in the workspace.
     """
     async with Context.start_ep(
@@ -140,7 +140,7 @@ async def pipeline_step_status(
         flow_id: id of the flow
         step_id: id of the step
 
-    Return:
+    Returns:
         The status of target step.
     """
 
@@ -176,7 +176,7 @@ async def project_status(
         project_id: id of the project
         config: the current environment
 
-    Return:
+    Returns:
         The status of the target project.
     """
     async with Context.start_ep(
@@ -227,7 +227,7 @@ async def flow_status(
         project_id: id of the project
         flow_id: id of the flow
 
-    Return:
+    Returns:
         The status of the target flow.
     """
 
@@ -273,7 +273,7 @@ async def project_artifacts(
         project_id: id of the project
         flow_id: id of the flow
 
-    Return:
+    Returns:
         The list artifacts.
     """
 
@@ -357,7 +357,7 @@ async def get_configuration(
         flow_id: id of the flow
         step_id: id of the step
 
-    Return:
+    Returns:
         The configuration of a step
     """
     async with Context.from_request(request).start(action="get_configuration") as ctx:
@@ -392,7 +392,7 @@ async def update_configuration(
         body: configuration's definition
         env: current environment
 
-    Return:
+    Returns:
         Update response
     """
     async with Context.from_request(request).start(
@@ -569,7 +569,7 @@ async def run_pipeline_step(
         step_id: id of the step
         run_upstream: whether to run upstream steps
 
-    Return:
+    Returns:
         Response(status_code=202) : acknowledged
     """
     async with Context.start_ep(
@@ -607,7 +607,7 @@ async def cdn_status(
         project_id: id of the project
         config: current environment
 
-    Return:
+    Returns:
         The status response.
     """
 
@@ -660,7 +660,7 @@ async def new_project_from_template(
         body: generator reference
         config: current environment
 
-    Return:
+    Returns:
         Information on the created project
     """
 
@@ -743,7 +743,7 @@ async def pipeline_step_view(
         project_id: id of the project
         step_id: id of the step
 
-    Return:
+    Returns:
         text/javascript FileResponse with returned `getView` function when executed.
     """
     async with Context.from_request(request).start(
@@ -784,7 +784,7 @@ async def do_cmd_get_pipeline_step(
         step_id: id of the step
         command_id: id of the command
 
-    Return:
+    Returns:
         The response from the associated command.
     """
 

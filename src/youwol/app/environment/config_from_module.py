@@ -66,7 +66,7 @@ class IConfigurationFactory(ABC):
         Parameters:
             main_args: Arguments provided from the command line when starting youwol.
 
-        Return:
+        Returns:
             The configuration instance.
         """
         return NotImplemented
@@ -75,8 +75,11 @@ class IConfigurationFactory(ABC):
 def try_last_expression_as_config(config_path: Path) -> Configuration | None:
     """
 
-    :param config_path: path of the config file
-    :return: either the configuration if the last statement is a Configuration else None
+    Parameters:
+        config_path: Path of the config file.
+
+    Returns:
+        Either the configuration if the last statement is a Configuration else None.
     """
     # first import the config file as module, retrieve all the globals
     module_name = config_path.stem

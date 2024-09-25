@@ -10,7 +10,7 @@ from starlette.requests import Request
 from youwol.backends.tree_db.configurations import Configuration, get_configuration
 
 # Youwol utilities
-from youwol.utils import private_group_id, user_info
+from youwol.utils import JSON, private_group_id, user_info
 from youwol.utils.context import Context
 from youwol.utils.http_clients.tree_db_backend import (
     DefaultDriveResponse,
@@ -59,7 +59,7 @@ async def update_drive(
         body: Update details.
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         Description of the drive.
     """
     async with Context.start_ep(
@@ -101,7 +101,7 @@ async def get_default_user_drive(
         request: Incoming request.
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         Description of the drive.
     """
     user = user_info(request)
@@ -129,7 +129,7 @@ async def get_drive_details(
         drive_id: ID of the drive.
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         Description of the drive.
     """
 
@@ -152,7 +152,7 @@ async def delete_drive(
     request: Request,
     drive_id: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> JSON:
     """
     Delete a drive, the drive needs to be empty.
 
@@ -161,7 +161,7 @@ async def delete_drive(
         drive_id: Drive's ID.
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         Empty JSON response.
     """
 
@@ -208,7 +208,7 @@ async def purge_drive(
         drive_id: Drive's ID.
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         Purge description.
     """
     async with Context.start_ep(

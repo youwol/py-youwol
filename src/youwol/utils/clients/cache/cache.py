@@ -8,22 +8,45 @@ from youwol.utils.types import JSON
 
 
 class TTL(int):
-    pass
+    """
+    Expresses time to live deadline in seconds.
+    """
 
 
 class AT(int):
-    pass
+    """
+    Expresses absolute time deadline in seconds since the Epoch.
+    """
 
 
 @dataclass(frozen=False)
 class CacheClient:
+    """
+    Virtual class for cache implementation.
+    """
+
     prefix: str = ""
 
     def get(self, name: str) -> JSON | None:
+        """
+        Parameters:
+            name: Name of the entry.
+
+        Returns:
+            Corresponding value if the entry is found.
+        """
         val = self._impl_get(self._name_to_key(name))
         return json.loads(val) if val else None
 
     def set(self, name: str, content: JSON, expire: TTL | AT | None = None) -> None:
+        """
+        Set an entry in the cache.
+
+        Parameters:
+            name: Entry's name.
+            content: Entry's value.
+            expire: Express validity duration, if any.
+        """
         key = self._name_to_key(name)
         value = json.dumps(content)
 

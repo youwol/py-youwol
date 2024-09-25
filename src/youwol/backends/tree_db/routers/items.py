@@ -10,6 +10,7 @@ from starlette.requests import Request
 from youwol.backends.tree_db.configurations import Configuration, get_configuration
 
 # Youwol utilities
+from youwol.utils import JSON
 from youwol.utils.context import Context
 from youwol.utils.http_clients.tree_db_backend import (
     BorrowBody,
@@ -85,7 +86,7 @@ async def create_item(
         item: item properties.
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         Description of the folder.
     """
     async with Context.start_ep(
@@ -119,7 +120,7 @@ async def update_item(
         body: Update details.
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         Description of the item.
     """
     async with Context.start_ep(
@@ -166,7 +167,7 @@ async def get_item(
         item_id: ID of the item.
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         Description of the item.
     """
     async with Context.start_ep(
@@ -197,7 +198,7 @@ async def get_items_by_asset_id(
         asset_id: ID of the corresponding asset.
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         Description of the item.
     """
     async with Context.start_ep(
@@ -232,7 +233,7 @@ async def get_path(
         item_id: ID of the item.
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         Description of the path.
     """
     async with Context.start_ep(
@@ -272,7 +273,7 @@ async def borrow(
         body: Borrow specification
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         Description of the resulting item.
     """
     async with Context.start_ep(
@@ -316,7 +317,7 @@ async def list_items_deleted(
         drive_id: parent drive's ID of the 'trash'.
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         Description of the children.
     """
     async with Context.start_ep(
@@ -337,7 +338,7 @@ async def queue_delete_item(
     item_id: str,
     erase: bool = False,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> JSON:
     """
     Queues an item for deletion (moves into the 'trash').
 
@@ -347,7 +348,7 @@ async def queue_delete_item(
         erase: if `True`, the entity is deleted directly (and not queued for deletion).
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         Empty JSON response.
     """
     async with Context.start_ep(

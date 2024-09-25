@@ -27,7 +27,7 @@ from youwol.utils.crypto.digest import DigestExclude
 from youwol.utils.http_clients.cdn_backend.utils import (
     create_local_scylla_db_docs_file_if_needed,
 )
-from youwol.utils.types import AnyDict
+from youwol.utils.types import JSON, AnyDict
 
 
 def get_local_nosql_instance(
@@ -103,7 +103,7 @@ class LocalDocDbClient(DigestExclude):
         Parameters:
             doc: The document.
 
-        Return:
+        Returns:
             The primary key identifier.
         """
         return str(
@@ -111,7 +111,7 @@ class LocalDocDbClient(DigestExclude):
             + [[k, doc[k]] for k in self.table_body.clustering_columns]
         )
 
-    async def delete_table(self, **_kwargs) -> None:
+    async def delete_table(self, **_kwargs: Any) -> None:
         """
         Delete the table and its data.
 
@@ -126,7 +126,7 @@ class LocalDocDbClient(DigestExclude):
         """
         Ensure the existence of the table.
 
-        Return:
+        Returns:
             Whether the table already existed.
         """
         return True
@@ -137,7 +137,7 @@ class LocalDocDbClient(DigestExclude):
         clustering_keys: dict[str, Any],
         owner: str | None = None,
         allow_filtering: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ) -> AnyDict:
         """
         Get a document based on partition and clustering keys.
@@ -149,7 +149,7 @@ class LocalDocDbClient(DigestExclude):
             allow_filtering: Whether to allow filtering (default: False).
             kwargs: Additional keyword arguments.
 
-        Return:
+        Returns:
             The retrieved document.
         """
         valid_for_indexes = [
@@ -190,7 +190,7 @@ class LocalDocDbClient(DigestExclude):
         query_body: QueryBody | str,
         owner: str | None,
         headers: Mapping[str, str] | None = None,
-        **_kwargs,
+        **_kwargs: Any,
     ) -> AnyDict:
         """
         Execute a query on the table.
@@ -201,7 +201,7 @@ class LocalDocDbClient(DigestExclude):
             headers: Deprecated: do not provide.
             _kwargs: Additional keyword arguments.
 
-        Return:
+        Returns:
             The query result.
         """
         if not headers:
@@ -254,8 +254,8 @@ class LocalDocDbClient(DigestExclude):
         doc: AnyDict,
         owner: str | None = None,
         headers: dict[str, str] | None = None,
-        **_kwargs,
-    ):
+        **_kwargs: Any,
+    ) -> JSON:
         """
         Create a new document in the database.
 
@@ -265,7 +265,7 @@ class LocalDocDbClient(DigestExclude):
             headers: Deprecated: do not provide.
             _kwargs: Additional keyword arguments.
 
-        Return:
+        Returns:
             Empty JSON object
         """
         return await self.update_document(doc, owner, headers, **_kwargs)
@@ -275,8 +275,8 @@ class LocalDocDbClient(DigestExclude):
         doc: AnyDict,
         owner: str | None = None,
         headers: dict[str, str] | None = None,
-        **_kwargs,
-    ):
+        **_kwargs: Any,
+    ) -> JSON:
         """
         Update an existing document in the database.
 
@@ -286,7 +286,7 @@ class LocalDocDbClient(DigestExclude):
             headers: Deprecated: do not provide.
             _kwargs: Additional keyword arguments.
 
-        Return:
+        Returns:
             Empty JSON object
         """
         if not headers:
@@ -314,8 +314,8 @@ class LocalDocDbClient(DigestExclude):
         doc: dict[str, Any],
         owner: str | None = None,
         headers: Mapping[str, str] | None = None,
-        **_kwargs,
-    ):
+        **_kwargs: Any,
+    ) -> JSON:
         """
         Delete a document from the database.
 
@@ -325,7 +325,7 @@ class LocalDocDbClient(DigestExclude):
             headers: Deprecated: do not provide.
             _kwargs: Additional keyword arguments.
 
-        Return:
+        Returns:
             Empty JSON object.
         """
 

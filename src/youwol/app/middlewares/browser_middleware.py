@@ -101,7 +101,6 @@ class BrowserMiddleware(BaseHTTPMiddleware):
 
         Parameters:
            app: The ASGI application, forwarded to `BaseHTTPMiddleware`.
-           config_dependant_browser_caching: Enable cache dependent_browser_cache
            dispatch: The dispatch function, forwarded to `BaseHTTPMiddleware`.
         """
         super().__init__(app, dispatch)

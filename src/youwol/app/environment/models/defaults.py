@@ -15,11 +15,18 @@ from youwol.utils.clients.oidc.oidc_config import PublicClient
 # Changing values defined in this file usually required updates in the documentation of models_config.
 
 default_http_port: int = 2000
+"""
+Default port to start the local YouWol server.
+"""
+
 default_platform_host: str = (
     os.getenv("PY_YOUWOL_REMOTE")
     if os.getenv("PY_YOUWOL_REMOTE")
     else "platform.youwol.com"
 )
+"""
+Default YouWol's platform host.
+"""
 
 default_openid_client_id: str = "tbd_test_openid_connect_js"
 default_path_data_dir: Path = Path("./databases")
@@ -77,7 +84,7 @@ def default_auth_provider(platform_host: str = default_platform_host) -> JSON:
     Parameters:
         platform_host: platform host (e.g. `platform.youwol.com`)
 
-    Return:
+    Returns:
         The authentication provider configuration
     """
     return {

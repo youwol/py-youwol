@@ -16,6 +16,7 @@ from youwol.app.routers.projects import (
     Pipeline,
     PipelineStep,
     PipelineStepStatus,
+    Project,
 )
 
 # Youwol utilities
@@ -114,6 +115,9 @@ default_files = FileListing(
         "**/node_modules",
     ],
 )
+"""
+Default files packaged.
+"""
 
 
 class PackageConfig(BaseModel):
@@ -154,7 +158,7 @@ class PackageStep(PipelineStep):
 
     async def get_status(
         self,
-        project: "Project",
+        project: Project,
         flow_id: str,
         last_manifest: Manifest | None,
         context: Context,
@@ -240,7 +244,7 @@ class PipelineConfig(BaseModel):
     publishConfig: PublishConfig = PublishConfig()
 
 
-async def pipeline(config: PipelineConfig, context: Context):
+async def pipeline(config: PipelineConfig, context: Context) -> Pipeline:
     """
     Instantiate the pipeline.
 
@@ -248,7 +252,7 @@ async def pipeline(config: PipelineConfig, context: Context):
         config: configuration of the pipeline
         context: current context
 
-    Return:
+    Returns:
         The pipeline instance.
     """
     async with context.start(action="pipeline") as ctx:
@@ -281,7 +285,7 @@ async def pipeline(config: PipelineConfig, context: Context):
 
         return Pipeline(
             target=config.target,
-            tags=config.with_tags,
+            tags=["javascript", *config.with_tags],
             projectName=lambda path: sanity_check(path)
             and parse_json(path / package_json)["name"],
             projectVersion=lambda path: sanity_check(path)

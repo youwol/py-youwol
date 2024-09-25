@@ -41,7 +41,7 @@ async def add_zip_files(
         file: the zip file.
         configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
-    Return:
+    Returns:
         Files upload description.
     """
     async with Context.start_ep(request=request) as ctx:  # type: Context
@@ -90,7 +90,7 @@ async def get_file(
         rest_of_path: Path to the file.
         configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
-    Return:
+    Returns:
         The file content.
     """
     async with Context.start_ep(request=request) as ctx:  # type: Context
@@ -132,7 +132,7 @@ async def delete_files(
         asset_id: Asset's ID.
         configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
-    Return:
+    Returns:
         Empty JSON.
     """
     async with Context.start_ep(request=request) as ctx:  # type: Context
@@ -162,7 +162,7 @@ async def get_zip_files(
         asset_id: Asset's ID.
         configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
-    Return:
+    Returns:
         The zip file..
     """
     async with Context.start_ep(request=request) as ctx:  # type: Context

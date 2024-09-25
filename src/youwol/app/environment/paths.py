@@ -40,7 +40,7 @@ class PathsBook(BaseModel):
     def local_storage(self) -> Path:
         """
 
-        Return:
+        Returns:
             The path of the root storage (for files) of user's data.
         """
         return self.databases / "storage"
@@ -49,7 +49,7 @@ class PathsBook(BaseModel):
     def local_cdn_storage(self) -> Path:
         """
 
-        Return:
+        Returns:
             The path of the CDN database for files.
         """
         return self.local_storage / "cdn" / "youwol-users"
@@ -59,7 +59,7 @@ class PathsBook(BaseModel):
         Parameters:
             name: Name of the package
             version: Version of the package
-        Return:
+        Returns:
             The folder path associated to the component in the CDN database.
         """
         return self.local_cdn_storage / "libraries" / name / version
@@ -115,7 +115,7 @@ class PathsBook(BaseModel):
         Parameters:
             project_name: name of the project.
             flow_id: id of the flow.
-        Return:
+        Returns:
             The path of the parent folder.
         """
         return self.system / project_name / flow_id
@@ -129,7 +129,7 @@ class PathsBook(BaseModel):
             project_name: name of the project.
             flow_id: id of the flow.
             step_id: id of the step.
-        Return:
+        Returns:
             The path of the parent folder.
         """
 
@@ -147,7 +147,7 @@ class PathsBook(BaseModel):
             flow_id: id of the flow.
             step_id: id of the step.
             artifact_id: id of the artifact.
-        Return:
+        Returns:
             The path of the parent folder.
         """
 
@@ -166,7 +166,7 @@ class PathsBook(BaseModel):
             project_name: name of the project.
             flow_id: id of the flow.
             step_id: id of the step.
-        Return:
+        Returns:
             The path of the manifest file.
         """
 

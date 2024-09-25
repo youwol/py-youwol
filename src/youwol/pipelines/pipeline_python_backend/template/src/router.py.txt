@@ -46,7 +46,7 @@ async def hello_world(
         request: Incoming request.
         config: Injected configuration.
 
-    Return:
+    Returns:
         A JSON response `{"endpoint": "/hello-world"}`
 
     """
@@ -94,7 +94,7 @@ async def async_job(
         request: Incoming request.
         channel_id: Optional provided channel_id. If not provided, pick the epoch in second.
         config: Injected configuration.
-    Return:
+    Returns:
          An acknowledged response (status code `202`), including the `channel_id` to be able to
          retrieve the results of the scheduled computation from the websocket `/ws-data`.
     """
@@ -139,7 +139,7 @@ async def read_file(
             If not provided, the `file_id` refers to the file with the path
             `youwol-users/Default drive/galapagosData/allChambers-T.ts`.
         config: Injected configuration.
-    Return:
+    Returns:
         A JSON response with an attribute 'content' being the (text) content of the file.
     """
     async with config.context(request).start(action="/read-file") as ctx:
@@ -170,7 +170,7 @@ async def write_file(
         file_id: The ID of the file created.
             If not provided, pick `a-default-id-for-generated-file`.
         config: Injected configuration.
-    Return:
+    Returns:
         A JSON response representing the asset created and its path.
     """
     async with config.context(request).start(action="/write-file") as ctx:
@@ -219,7 +219,7 @@ async def create_asset(
         request: Incoming request.
         body: Asset description.
         config: Injected configuration.
-    Return:
+    Returns:
         A JSON response representing the asset created and its path.
     """
     async with config.context(request).start(action="/create-asset") as ctx:

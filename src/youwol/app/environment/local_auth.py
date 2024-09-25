@@ -41,7 +41,7 @@ class JwtProviderDynamicIssuer(JwtProvider, ABC):
             request: incoming request.
             context: current context
 
-        Return:
+        Returns:
              The JWT token.
         """
         raise NotImplementedError()
@@ -57,7 +57,7 @@ class JwtProviderDynamicIssuer(JwtProvider, ABC):
             request: incoming request.
             context: current context, used to retrieve the connected remote environment.
 
-        Return:
+        Returns:
             A tuple of string with optional JWT token and openId base URL.
         """
         env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
@@ -76,13 +76,13 @@ class JwtProviderDelegatingDynamicIssuer(JwtProviderDynamicIssuer, ABC):
     async def _get_token(self, request: Request, context: Context) -> str | None:
         """
         Use the abstract `_get_delegate` method to implement
-        :meth:`youwol.app.environment.JwtProviderDynamicIssuer._get_token`.
+        :meth:`youwol.app.environment.local_auth.JwtProviderDynamicIssuer._get_token`.
 
         Parameters:
             request: incoming request.
             context: current context, used to retrieve the connected remote environment.
 
-        Return:
+        Returns:
             JWT token.
         """
         return (
@@ -96,7 +96,7 @@ class JwtProviderDelegatingDynamicIssuer(JwtProviderDynamicIssuer, ABC):
         """
         Define abstract method interface.
 
-        Return:
+        Returns:
              The JWT provider delegate.
         """
         raise NotImplementedError()
@@ -111,9 +111,9 @@ class JwtProviderBearerDynamicIssuer(JwtProviderDelegatingDynamicIssuer):
     def _get_delegate(self) -> JwtProvider:
         """
         Implement
-        :meth:`youwol.app.environment.JwtProviderDelegatingDynamicIssuer._get_delegate`.
+        :meth:`youwol.app.environment.local_auth.JwtProviderDelegatingDynamicIssuer._get_delegate`.
 
-        Return:
+        Returns:
             The :class:`JwtProviderBearer <youwol.utils.middlewares.authentication.JwtProviderBearer>` delegate.
         """
         return JwtProviderBearer(openid_base_url="")
@@ -133,7 +133,7 @@ class JwtProviderCookieDynamicIssuer(JwtProviderDelegatingDynamicIssuer):
     def __init__(self, tokens_manager: TokensManager):
         """
         Instantiate
-        :attr:`youwol.app.environment.JwtProviderCookieDynamicIssuer.__delegate`
+        :attr:`youwol.app.environment.local_auth.JwtProviderCookieDynamicIssuer.__delegate`
         from the tokens manager.
 
         Parameters:
@@ -147,9 +147,9 @@ class JwtProviderCookieDynamicIssuer(JwtProviderDelegatingDynamicIssuer):
     def _get_delegate(self) -> JwtProvider:
         """
         Implement
-        :meth:`youwol.app.environment.JwtProviderDelegatingDynamicIssuer._get_delegate`
+        :meth:`youwol.app.environment.local_auth.JwtProviderDelegatingDynamicIssuer._get_delegate`
 
-        Return:
+        Returns:
             The :class:`JwtProviderCookie <youwol.utils.middlewares.authentication.JwtProviderCookie>` delegate.
         """
         return self.__delegate
@@ -163,13 +163,13 @@ class JwtProviderPyYouwol(JwtProviderDynamicIssuer):
     async def _get_token(self, request: Request, context: Context) -> str | None:
         """
         Implement
-        :meth:`youwol.app.environment.JwtProviderDynamicIssuer._get_token`.
+        :meth:`youwol.app.environment.local_auth.JwtProviderDynamicIssuer._get_token`.
 
         Parameters:
             request: incoming request.
             context: current context, used to retrieve the connected remote environment.
 
-        Return:
+        Returns:
             JWT token.
         """
         env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
@@ -201,7 +201,7 @@ async def get_connected_local_tokens(context: Context) -> Tokens:
     Parameters:
         context: current context, used to retrieve the connected remote environment & tokens storage.
 
-    Return:
+    Returns:
         The tokens
     """
     env: YouwolEnvironment = await context.get("env", YouwolEnvironment)
@@ -226,7 +226,7 @@ async def get_local_tokens(
         auth_provider: an auth. provider
         auth_infos: authentication info
 
-    Return:
+    Returns:
         Tokens
     """
     tokens_id = local_tokens_id(auth_provider=auth_provider, auth_infos=auth_infos)

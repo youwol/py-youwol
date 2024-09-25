@@ -70,10 +70,10 @@ def auto_detect_projects(
         max_depth: The maximum depth of recursion during the directory search. If None, the search
             will explore directories recursively without limit. Defaults to None.
 
-    Return:
+    Returns:
         A list of `Path` objects, each representing a project directory (containing a
         `.yw_pipeline/yw_pipeline.py` file).
-         If no projects are found, or if `root_folder` does not exist, an empty list is returned.
+        If no projects are found, or if `root_folder` does not exist, an empty list is returned.
     """
     root_folder = Path(root_folder)
     if not root_folder.exists():
@@ -111,7 +111,7 @@ def directories_finder(
         max_depth: The maximum depth of subdirectories to traverse. A value of None indicates no limit
             on the depth of the search. The depth is calculated relative to the `folder`.
 
-    Return:
+    Returns:
         A list of Path objects, each representing a directory that satisfies the condition.
     """
 
@@ -183,7 +183,7 @@ class ProjectsWatcherEventsHandler(PatternMatchingEventHandler):
             log_info(f"ProjectsWatcherEventsHandler: project created: {project_path}")
             asyncio.run(self.owner.trigger_update(([project_path], [])))
 
-    def on_deleted(self, event):
+    def on_deleted(self, event: FileSystemEvent):
         """
         Similar to `on_created` but handles project deletion events.
 
@@ -205,7 +205,7 @@ class ProjectsWatcherEventsHandler(PatternMatchingEventHandler):
         Parameters:
             event: source event
 
-        Return:
+        Returns:
             A `Path` if the event is associated to a project creation, `None` otherwise.
         """
         path = Path(event.src_path)
@@ -223,12 +223,12 @@ class ProjectsWatcher(Thread):
     A thread that monitors a directory tree for changes indicating the creation or deletion of projects.
 
     This class extends `Thread` to continuously watch a specified path for file system events that suggest a
-     project has been created or deleted.
-     It uses an instance of
-     :class:`youwol.app.routers.projects.projects_resolver.projects_finder_handlers.ProjectsWatcherEventsHandler`
-     to handle these events and notify an
-     :class:`owner <youwol.app.routers.projects.projects_resolver.projects_finder_handlers.ProjectsFinderImpl>`
-     of the changes.
+    project has been created or deleted.
+    It uses an instance of
+    :class:`youwol.app.routers.projects.projects_resolver.projects_finder_handlers.ProjectsWatcherEventsHandler`
+    to handle these events and notify an
+    :class:`owner <youwol.app.routers.projects.projects_resolver.projects_finder_handlers.ProjectsFinderImpl>`
+    of the changes.
     """
 
     def __init__(

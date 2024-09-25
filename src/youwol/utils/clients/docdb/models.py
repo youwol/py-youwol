@@ -119,13 +119,33 @@ class SecondaryIndex(BaseModel):
 
 
 class SelectClause(BaseModel):
+    """
+    Specify a selector of a query to the indexed database.
+    """
+
     selector: str
+    """
+    Selector value.
+    """
 
 
 class WhereClause(BaseModel):
+    """
+    Specify the 'where' clause of a query to the indexed database.
+    """
+
     column: str
+    """
+    Name of the column.
+    """
     relation: str
+    """
+    Relation expected.
+    """
     term: Any
+    """
+    Term expected.
+    """
 
     def is_matching(self, doc: dict[str, Any]) -> bool:
         factory_clauses: dict[str, Callable[[float, float], bool]] = {
@@ -143,18 +163,47 @@ class WhereClause(BaseModel):
 
 
 class Query(BaseModel):
+    """
+    Represents a query to the indexed database.
+    """
+
     where_clause: list[WhereClause] = []
+    """
+    Where clause.
+    """
     ordering_clause: list[OrderingClause] = []
+    """
+    Ordering clause.
+    """
 
 
 class QueryBody(BaseModel):
+    """
+    Represents the inputs to query entries to the indexed database.
+    """
+
     allow_filtering: bool = False
+    """
+    Whether or not to allow filtering.
+    """
     max_results: int = 100
+    """
+    Max results count.
+    """
     iterator: str | None = None
+    """
+    Iterator for paging.
+    """
     mode: str = "documents"
     distinct: list[str] = []
     select_clauses: list[SelectClause] = []
+    """
+    Select clauses.
+    """
     query: Query
+    """
+    Actual query.
+    """
 
     @staticmethod
     def parse(query_str):

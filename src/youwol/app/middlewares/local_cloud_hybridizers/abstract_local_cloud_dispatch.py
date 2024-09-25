@@ -23,7 +23,7 @@ class AbstractLocalCloudDispatch(BaseModel):
         """
         Default implementation of a dispatch info.
 
-        Return:
+        Returns:
             The Dispatch information
         """
         return DispatchInfo(
@@ -46,7 +46,7 @@ class AbstractLocalCloudDispatch(BaseModel):
             call_next: The ext endpoint in the chain
             context: Current context
 
-        Return:
+        Returns:
             The response after applying the dispatch, or `None` if the incoming request is not a match for the
             dispatch.
         """

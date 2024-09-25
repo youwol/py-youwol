@@ -91,7 +91,7 @@ class ResourceInfo(NamedTuple):
         Parameters:
             url: The URL of the resource.
 
-        Return:
+        Returns:
             The parsed resource information.
         """
 
@@ -196,14 +196,14 @@ class Runtime(BaseModel):
     """
 
     @staticmethod
-    def from_pyodide_lock(lock: AnyDict):
+    def from_pyodide_lock(lock: AnyDict) -> Runtime:
         """
         Extracts runtime information from a 'pyodide-lock.json' file content.
 
         Parameters:
             lock: JSON dict of 'pyodide-lock.json'
 
-        Return:
+        Returns:
             The parsed runtime information.
         """
         packages = [
@@ -311,7 +311,7 @@ async def try_local(info: ResourceInfo, context: Context) -> Response | None:
         info: The information of the resource to fetch.
         context: The context object used for tracking and logging.
 
-    Return:
+    Returns:
         The response object containing the fetched resource or None if not found.
 
     Raise:
@@ -356,7 +356,7 @@ async def get_and_persist_resource(
         request: The incoming request.
         context: The context object used for tracking and logging.
 
-    Return:
+    Returns:
         The response object containing the fetched or streamed resource.
     """
     async with context.start(
@@ -442,7 +442,7 @@ async def status(request: Request) -> StatusResponse:
     Parameters:
         request: Incoming request.
 
-    Return:
+    Returns:
         Pyodide environment status.
     """
     async with Context.start_ep(
@@ -488,7 +488,7 @@ async def package_info(request: Request, name: str) -> JSONResponse:
         request: Incoming request.
         name: The name of the Python package to retrieve information for.
 
-    Return:
+    Returns:
         A JSON response containing information about the specified Python package.
     """
 
@@ -520,7 +520,9 @@ async def package_info(request: Request, name: str) -> JSONResponse:
 
 
 @router.get("/pyodide/{version}/{rest_of_path:path}", summary="Dispatch GET.")
-async def get_pyodide_file(request: Request, version: str, rest_of_path: str):
+async def get_pyodide_file(
+    request: Request, version: str, rest_of_path: str
+) -> Response:
     """
     Intercepts `GET` request to a pyodide file, forward it to
     :glob:`FILES_PYODIDE_HOSTED <youwol.app.routers.python.router.FILES_PYODIDE_HOSTED>` and eventually persist it in
@@ -531,7 +533,7 @@ async def get_pyodide_file(request: Request, version: str, rest_of_path: str):
         version: Target Pyodide distribution.
         rest_of_path:  The path within the Pyodide distribution to the file.
 
-    Return:
+    Returns:
         The resource.
     """
     url = f"{FILES_PYODIDE_HOSTED}/v{version}/full/{rest_of_path.split('/')[-1]}"
@@ -546,7 +548,7 @@ async def get_pyodide_file(request: Request, version: str, rest_of_path: str):
 
 
 @router.get("/pypi/files/{rest_of_path:path}", summary="Dispatch GET.")
-async def get_pypi_file(request: Request, rest_of_path: str):
+async def get_pypi_file(request: Request, rest_of_path: str) -> Response:
     """
     Intercepts `GET` request to a pypi file, forward it to
     :glob:`FILES_PYPI_HOSTED <youwol.app.routers.python.router.FILES_PYPI_HOSTED>` and eventually persist it in
@@ -557,7 +559,7 @@ async def get_pypi_file(request: Request, rest_of_path: str):
         rest_of_path: The path within the
             :glob:`FILES_PYPI_HOSTED <youwol.app.routers.python.router.FILES_PYPI_HOSTED>` server.
 
-    Return:
+    Returns:
         The resource.
     """
     url = f"{FILES_PYPI_HOSTED}/{rest_of_path}"

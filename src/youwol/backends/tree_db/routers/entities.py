@@ -50,7 +50,7 @@ async def move(
         body: Move specification
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         Description of the executed task result.
     """
     async with Context.start_ep(request=request, action="move", body=body) as ctx:
@@ -250,7 +250,7 @@ async def get_entity(
         include_items: Whether to look up in items.
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         Description of the entity.
     """
     async with Context.start_ep(

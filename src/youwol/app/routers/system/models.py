@@ -110,6 +110,10 @@ class LeafLogResponse(Log):
 
 
 class NodeLogStatus(Enum):
+    """
+    Status of a logging node upon completion.
+    """
+
     SUCCEEDED = "Succeeded"
     """
     The log has a succeeded status: it signals that the parent function has ran as expected.
@@ -210,9 +214,23 @@ class PostDataBody(BaseModel):
 
 
 class BackendLogsResponse(BaseModel):
+    """
+    Response model when querying logs of a backend.
+    See :func:`query_backend_logs <youwol.app.routers.system.router.query_backend_logs>`.
+    """
+
     logs: list[Log]
+    """
+    List of the logs node.
+    """
     server_outputs: list[str]
+    """
+    Server standard output.
+    """
     install_outputs: list[str] | None
+    """
+    Install outputs (when installed).
+    """
 
 
 class UninstallResponse(BaseModel):

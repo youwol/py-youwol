@@ -1,3 +1,7 @@
+"""
+This module gathers implementation of digest computation.
+"""
+
 # relative
 from .defaults import compute_digest
 from .traces import dump_trace_to_stdout, get_dump_trace_to_file

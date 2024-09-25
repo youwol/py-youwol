@@ -1,9 +1,11 @@
 # standard library
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from urllib import parse
 
 # third parties
 from jwt import InvalidTokenError, PyJWKClientError
+from starlette.datastructures import URL
 from starlette.middleware.base import (
     BaseHTTPMiddleware,
     DispatchFunction,
@@ -35,7 +37,7 @@ class JwtProvider(ABC):
             request: incoming request
             context: current context
 
-        Return:
+        Returns:
             A tuple of string with optional JWT token and openId base URL.
         """
         raise NotImplementedError()
@@ -65,7 +67,7 @@ class JwtProviderBearer(JwtProvider):
             request: Incoming request
             context: Current context.
 
-        Return:
+        Returns:
             A tuple of string with optional JWT token and openId base URL.
         """
         header_value = request.headers.get("Authorization")
@@ -113,13 +115,13 @@ class JwtProviderCookie(JwtProvider):
     ) -> tuple[str | None, str]:
         """
         Extract the JWT token from the request's cookie using
-        :attr:`__tokens_manager <youwol.utils.middlewares.authentication.JwtProviderBearer.__tokens_manager>`.
+        :attr:`__tokens_manager <youwol.utils.middlewares.authentication.JwtProviderCookie.__tokens_manager>`.
 
         Parameters:
             request: Incoming request
             context: Current context.
 
-        Return:
+        Returns:
             A tuple of string with optional JWT token and openId base URL.
         """
         tokens_id = request.cookies.get("yw_jwt")
@@ -149,8 +151,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
         self,
         app: ASGIApp,
         jwt_providers: JwtProvider | list[JwtProvider],
-        predicate_public_path=lambda url: False,
-        on_missing_token=lambda url, text: Response(
+        predicate_public_path: Callable[[URL], bool] = lambda url: False,
+        on_missing_token: Callable[[URL, str], Response] = lambda url, text: Response(
             content=f"Authentication failure : {text}", status_code=403
         ),
         dispatch: DispatchFunction | None = None,
@@ -184,7 +186,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
             request: incoming request
             call_next: trigger to proceed to the next destination
 
-        Return:
+        Returns:
             HTTP response
         """
         async with Context.from_request(request).start_middleware(

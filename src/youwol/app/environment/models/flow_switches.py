@@ -88,7 +88,7 @@ class FlowSwitch(BaseModel):
         Parameters:
             incoming_request: incoming [request](https://fastapi.tiangolo.com/reference/request/)
             context: current :class:`context <youwol.utils.context.context.Context>`
-        Return:
+        Returns:
             `True` if the switch match against the request, `False` otherwise
         """
         raise NotImplementedError("FlowSwitchMiddleware.is_matching not implemented")
@@ -102,7 +102,7 @@ class FlowSwitch(BaseModel):
         Parameters:
             incoming_request: incoming [request](https://fastapi.tiangolo.com/reference/request/)
             context: current :class:`context <youwol.utils.context.context.Context>`
-        Return:
+        Returns:
             The response
         """
         raise NotImplementedError("AbstractDispatch.switch not implemented")

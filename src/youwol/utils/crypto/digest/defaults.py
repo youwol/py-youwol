@@ -144,10 +144,17 @@ default_updaters: list[HashUpdater] = [
 ]
 
 DEFAULT_HASH_FUNCTION: FnHash = hashlib.sha1
-
+"""
+Default hashing function.
+"""
 DEFAULT_FN_TRACE: FnTrace = noop_trace
-
+"""
+Default tracing function.
+"""
 DEFAULT_TRACE_PATH_ROOT = "ROOT"
+"""
+Default tracing root path.
+"""
 
 
 def compute_digest(

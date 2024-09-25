@@ -60,7 +60,7 @@ class Configuration:
         Parameters:
             request: Incoming request.
 
-        Return:
+        Returns:
             The context.
         """
         return ContextFactory.proxied_backend_context(

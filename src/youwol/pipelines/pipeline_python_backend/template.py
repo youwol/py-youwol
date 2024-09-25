@@ -53,7 +53,7 @@ def template(folder: Path) -> ProjectTemplate:
     Parameters:
         folder: path of the folder in which templates are added.
 
-    Return:
+    Returns:
         Project's template specification.
     """
     return ProjectTemplate(

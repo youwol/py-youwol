@@ -28,17 +28,11 @@ async def start_impersonate(
     conf: Configuration = Depends(get_configuration),
 ) -> Response:
     """
-        Create a new session impersonating user, if current user has the correct role.
-        user_id can be the sub or the login name af the user to impersonate
+    Create a new session impersonating user, if current user has the correct role.
+    user_id can be the sub or the login name af the user to impersonate
 
-        Save access token in cookie.
-        Redirect to the root path.
-
-    :param yw_jwt_t:
-    :param details:
-    :param yw_jwt:
-    :param conf:
-    :return:
+    Save access token in cookie.
+    Redirect to the root path.
     """
 
     if conf.keycloak_admin_client is None:

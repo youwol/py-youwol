@@ -73,7 +73,7 @@ class LocalCloudHybridizerMiddleware(BaseHTTPMiddleware):
         Parameters:
             request: The incoming request
             call_next: The next endpoint in the chain
-        Return:
+        Returns:
             The response after middleware processing.
         """
         async with Context.from_request(request).start_middleware(

@@ -54,7 +54,8 @@ class DownloadTaskCreator(Protocol):
 
 DownloadTaskFactory = dict[str, DownloadTaskCreator]
 """
-Factory `asset's kind` -> :class:`DownloadTaskCreator <DownloadTaskCreator>`.
+Factory `asset's kind` ->
+:class:`DownloadTaskCreator <app.routers.environment.download_assets.auto_download_thread.DownloadTaskCreator>`.
 """
 
 
@@ -103,7 +104,7 @@ async def download_asset(
         pbar: A tqdm progress bar instance used to visually track the progress of asset downloads.
         context: Current executing context.
 
-    Return:
+    Returns:
         Status of the download if it has been processed, `None` otherwise (meaning the asset is `up-to-date` or already
         queued for download).
     """
@@ -189,7 +190,7 @@ class AssetsDownloader:
     and report on their completion status. It utilizes an `asyncio.Queue` to handle concurrent downloads.
     """
 
-    def __init__(self, factories, worker_count: int):
+    def __init__(self, factories: DownloadTaskFactory, worker_count: int):
         """
         Initializes the instance.
 
@@ -215,7 +216,7 @@ class AssetsDownloader:
             raw_id: Raw ID of the asset.
             env: Current YouwolEnvironment.
 
-        Return:
+        Returns:
             Whether the asset is currently being downloaded.
         """
         if CACHE_DOWNLOADING_KEY not in env.cache_py_youwol:
@@ -239,7 +240,7 @@ class AssetsDownloader:
 
         The worker function awaits the retrieval of a task from the queue and then initiates the download
         of the asset corresponding to the provided `URL`, `kind`, `raw_id`, and `context`.
-        See :func:`download_asset <download_asset>`.
+        See :func:`download_asset <app.routers.environment.download_assets.auto_download_thread.download_asset>`.
         """
         while True:
             (url, kind, raw_id, context) = await self.queue.get()
@@ -263,9 +264,6 @@ class AssetsDownloader:
             kind: Kind of the asset.
             raw_id: Raw ID of the asset.
             context: Current context.
-
-        Return:
-            Whether the asset is currently being downloaded.
         """
 
         async with context.start(
@@ -292,7 +290,7 @@ class AssetsDownloader:
             kind: Kind of the asset
             raw_id: Raw ID of the asset
             context: Current context
-        Return:
+        Returns:
             Download status.
         """
         async with context.start(action="Wait asset"):

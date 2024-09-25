@@ -17,6 +17,9 @@ from youwol.utils.clients.docdb.models import (
 )
 
 WebpmLibraryType = Literal["js/wasm", "backend", "pyodide"]
+"""
+Types allowed for a WebPM package.
+"""
 default_webpm_lib_type: WebpmLibraryType = "js/wasm"
 
 
@@ -176,6 +179,10 @@ class DeleteBody(BaseModel):
 
 
 class DeleteLibraryResponse(BaseModel):
+    """
+    Describes the response when deleting a library.
+    """
+
     deletedVersionsCount: int
 
 

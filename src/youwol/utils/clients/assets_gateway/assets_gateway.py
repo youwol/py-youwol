@@ -33,7 +33,7 @@ class AssetsGatewayClient:
         """
         Return the proxied `AssetsClient`.
 
-        Return:
+        Returns:
             The HTTP client
         """
         return AssetsClient(
@@ -45,7 +45,7 @@ class AssetsGatewayClient:
         """
         Return the proxied `TreeDbClient`.
 
-        Return:
+        Returns:
             The HTTP client
         """
         return TreeDbClient(
@@ -57,7 +57,7 @@ class AssetsGatewayClient:
         """
         Return the proxied `FilesClient`.
 
-        Return:
+        Returns:
             The HTTP client
         """
         return FilesClient(
@@ -81,7 +81,7 @@ class AssetsGatewayClient:
         """
         Return the proxied `CdnClient`.
 
-        Return:
+        Returns:
             The HTTP client
         """
         return CdnClient(

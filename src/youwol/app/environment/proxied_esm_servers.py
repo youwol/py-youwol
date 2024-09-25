@@ -54,11 +54,31 @@ class ProxiedEsmServerInfo(BaseModel):
 
 @dataclasses.dataclass(frozen=True)
 class EsmServerDispatchInput:
+    """
+    Describes the inputs to define a dispatch implementation to a particular kind of ESM server.
+    See :class:`dispatch <youwol.app.environment.proxied_esm_servers.ProxiedEsmServer.dispatch>`.
+    """
+
     package: str
+    """
+    Package targeted.
+    """
     version: str
+    """
+    Version targeted.
+    """
     port: int
+    """
+    Port on which the ESM server is listening.
+    """
     target: list[str]
+    """
+    The path of the target resource.
+    """
     request: Request
+    """
+    The incoming request.
+    """
 
 
 class ProxiedEsmServer(BaseModel):
@@ -190,10 +210,10 @@ class EsmServersStore:
             process: Associated process that started the server (if known).
             dispatch: Function to dispatch the incoming request to the proxied server.
             wait_timeout: If > 0, wait for the PID on the server listening on the given port, try every half a second
-            until the PID is retrieved or this timeout is reached.
-            The timeout should be a multiple of 0.5s.
-            If 0, proceed directly.
-        Return:
+                until the PID is retrieved or this timeout is reached.
+                The timeout should be a multiple of 0.5s.
+                If 0, proceed directly.
+        Returns:
             The associated proxy.
         """
         store = self.store
@@ -255,7 +275,7 @@ class EsmServersStore:
         Parameters:
             package: Name of the proxied ESM module targeted.
             version: Version of the ESM module targeted.
-        Return:
+        Returns:
             The info if found, None otherwise.
         """
         return next(

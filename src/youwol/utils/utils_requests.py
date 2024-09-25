@@ -124,7 +124,7 @@ def aiohttp_file_form(
         content: The actual content of the file.
         file_id: An explicit file's ID if provided (generated if not).
 
-    Return:
+    Returns:
         The form data.
     """
     form_data = FormData()

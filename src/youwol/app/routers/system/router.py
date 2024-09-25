@@ -55,7 +55,7 @@ async def get_file(rest_of_path: str) -> FileResponse:
     Parameters:
         rest_of_path: the path of the file.
 
-    Return:
+    Returns:
         The file content.
     """
     return FileResponse(rest_of_path)
@@ -73,7 +73,7 @@ async def folder_content(body: FolderContentBody) -> FolderContentResp:
     Parameters:
         body: target folder.
 
-    Return:
+    Returns:
         The content of the folder.
     """
     path = Path(body.path)
@@ -129,14 +129,14 @@ async def install_graph(
     Parameters:
         request: Incoming request.
         body: An object containing the lock and definition of the loading graph, which specifies the backend components
-         to be installed and their dependencies.
+            to be installed and their dependencies.
 
-    Return:
+    Returns:
         Description of the backends installed, including their client bundle.
 
     Raise:
     - Potential exceptions from download_install_backend and ensure_running functions, including network errors,
-      installation failures, and timeouts in starting backends.
+        installation failures, and timeouts in starting backends.
     """
 
     async with Context.start_ep(
@@ -206,7 +206,7 @@ async def terminate(
     request: Request,
     uid: str,
     env: YouwolEnvironment = Depends(yw_config),
-):
+) -> TerminateResponse:
     """
     Terminate a backend.
 
@@ -214,7 +214,7 @@ async def terminate(
         request: Incoming request.
         uid: Backend or partition UID
         env: Injected current YouwolEnvironment.
-    Return:
+    Returns:
         Termination details.
     """
     async with Context.start_ep(
@@ -267,7 +267,7 @@ async def uninstall(
     name: str,
     version: str,
     env: YouwolEnvironment = Depends(yw_config),
-):
+) -> UninstallResponse:
     """
     Uninstall a backend, eventually terminate associated running instances.
 
@@ -276,7 +276,7 @@ async def uninstall(
         name: Name if the backend.
         version: Version of the backend.
         env: Injected current YouwolEnvironment.
-    Return:
+    Returns:
         Uninstallation details.
     """
     async with Context.start_ep(
@@ -321,7 +321,7 @@ async def query_backend_logs(
         name: Name if the backend
         version: Version of the backend
         env: Injected current YouwolEnvironment
-    Return:
+    Returns:
         logs list.
     """
     async with Context.start_ep(
@@ -367,7 +367,7 @@ async def query_logs(
         from_timestamp: return only logs emitted after this timestamp (time since epoch in seconds)
         max_count: maximum number of root logs returned
 
-    Return:
+    Returns:
         logs list.
     """
 
@@ -405,7 +405,7 @@ async def get_logs(request: Request, parent_id: str) -> LogsResponse:
         request: incoming request
         parent_id: parent ID requested
 
-    Return:
+    Returns:
         The list of logs.
     """
 
@@ -498,8 +498,6 @@ async def clear_logs(request: Request):
     Parameters:
         request: incoming request
 
-    Return:
-        None
     """
 
     context = Context.from_request(request=request)

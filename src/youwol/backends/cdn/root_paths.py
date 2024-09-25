@@ -99,7 +99,7 @@ async def publish_library(
         file: Zip file including the packaged files.
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         Publication summary.
     """
 
@@ -128,7 +128,7 @@ async def download_library(
         version: explicit version (no semver allowed)
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         Response
     """
     async with Context.start_ep(request=request, with_labels=["Download"]) as ctx:
@@ -170,7 +170,7 @@ async def get_library_info(
         max_count: Maximum count of versions returned.
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         Response
     """
     async with Context.start_ep(request=request) as ctx:
@@ -260,7 +260,7 @@ async def get_version_info(
         version: Explicit version.
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         Response
     """
     async with Context.start_ep(
@@ -292,7 +292,7 @@ async def delete_library(
         library_id: Base64 encoded library name.
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         Response
     """
     async with Context.start_ep(
@@ -342,7 +342,7 @@ async def delete_version(
         version: Explicit version.
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         A dictionary with attribute `deletedCount`.
     """
     async with Context.start_ep(
@@ -397,7 +397,7 @@ async def resolve_loading_tree(
         body: requested libraries.
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         The loading graph.
     """
 
@@ -519,7 +519,7 @@ async def get_entry_point(
         version: semantic versioning request.
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         Response
     """
 
@@ -574,7 +574,7 @@ async def get_resource(
         rest_of_path: Path of the file within the library.
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         Response
     """
     if not rest_of_path:
@@ -630,7 +630,7 @@ async def explorer_root(
         version: semantic versioning request.
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         Response
     """
 
@@ -665,7 +665,7 @@ async def explorer(
         rest_of_path: path of the folder (referenced from the root folder of the library).
         configuration: Injected configuration of the service.
 
-    Return:
+    Returns:
         Response
     """
 

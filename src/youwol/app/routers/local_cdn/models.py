@@ -11,8 +11,18 @@ CDN_TOPIC = "cdn"
 
 
 class CdnVersionLight(BaseModel):
+    """
+    Light description of a version of a package.
+    """
+
     version: str
+    """
+    Version.
+    """
     type: WebpmLibraryType
+    """
+    Type of the package.
+    """
 
 
 class CdnVersion(CdnVersionLight):
@@ -27,13 +37,33 @@ class CdnPackage(BaseModel):
 
 
 class CdnPackageLight(BaseModel):
+    """
+    Light description of a package.
+    """
+
     name: str
+    """
+    Name.
+    """
     id: str
+    """
+    ID.
+    """
     versions: list[CdnVersionLight]
+    """
+    Versions list.
+    """
 
 
 class CdnStatusResponse(BaseModel):
+    """
+    Status of the CDN.
+    """
+
     packages: list[CdnPackageLight]
+    """
+    Description of the packages.
+    """
 
 
 class CdnPackageResponse(CdnPackage):

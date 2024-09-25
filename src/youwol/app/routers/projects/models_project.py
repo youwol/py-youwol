@@ -23,6 +23,9 @@ from youwol.utils.context import Context
 from youwol.utils.utils_paths import matching_files, parse_json
 
 FlowId = str
+"""
+ID of specific flow of a pipeline.
+"""
 
 
 class LinkKind(Enum):
@@ -176,10 +179,16 @@ SourcesFctImplicit = Callable[
     ["PipelineStep", "Project", FlowId, Context],
     Union[FileListing, Awaitable[FileListing]],
 ]
+"""
+Implicit definition of project's sources (returns `FileListing`).
+"""
 SourcesFctExplicit = Callable[
     ["PipelineStep", "Project", FlowId, Context],
     Union[Iterable[Path], Awaitable[Iterable[Path]]],
 ]
+"""
+Implicit definition of project's sources (returns `Iterable[Path]`).
+"""
 
 
 class CommandPipelineStep(BaseModel):
@@ -196,7 +205,7 @@ class CommandPipelineStep(BaseModel):
     name of the command
     """
 
-    do_get: None | (Callable[["Project", str, Context], Awaitable[JSON] | JSON]) = None
+    do_get: (Callable[["Project", str, Context], Awaitable[JSON] | JSON]) | None = None
     """
     Declare a `GET` end-point.
 
@@ -207,9 +216,9 @@ class CommandPipelineStep(BaseModel):
         *  Context : current execution :class:`Context <youwol.utils.context.context.Context>`]
     """
 
-    do_post: None | (
+    do_post: (
         Callable[["Project", str, JSON, Context], Awaitable[JSON] | JSON]
-    ) = None
+    ) | None = None
     """
     Declare a `POST` end-point.
 
@@ -221,9 +230,9 @@ class CommandPipelineStep(BaseModel):
         *  Context : current execution :class:`Context <youwol.utils.context.context.Context>`]
     """
 
-    do_put: None | (
+    do_put: (
         Callable[["Project", str, JSON, Context], Awaitable[JSON] | JSON]
-    ) = None
+    ) | None = None
     """
     Declare a `PUT` end-point.
 
@@ -235,7 +244,7 @@ class CommandPipelineStep(BaseModel):
         *  Context : current execution :class:`Context <youwol.utils.context.context.Context>`
     """
 
-    do_delete: None | (Callable[["Project", str, Context], Awaitable[JSON] | JSON]) = (
+    do_delete: (Callable[["Project", str, Context], Awaitable[JSON] | JSON]) | None = (
         None
     )
     """
@@ -518,7 +527,11 @@ class Target(BaseModel):
 
 
 class BrowserTarget(Target):
-    pass
+    """
+    Represents a browser target, either
+    :class:`BrowserLibBundle <youwol.app.routers.projects.models_project.BrowserLibBundle>` or
+    :class:`BrowserAppBundle <youwol.app.routers.projects.models_project.BrowserAppBundle>`
+    """
 
 
 class BrowserLibBundle(BrowserTarget):
@@ -564,7 +577,12 @@ class Asset(BaseModel):
 
 
 class Parametrization(BaseModel):
-    pass
+    """
+    Specifies a parametrization schemas to plug execution of the application from an asset.
+    See:
+        -  :class:`Execution <youwol.app.routers.projects.models_project.Execution>`
+        -  :class:`OpenWith <youwol.app.routers.projects.models_project.OpenWith>`
+    """
 
 
 class FromAsset(Parametrization):

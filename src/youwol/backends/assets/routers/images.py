@@ -54,7 +54,7 @@ async def post_image(
         file: the image bytes content.
         configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
-    Return:
+    Returns:
         The asset description.
     """
     async with Context.start_ep(request=request) as ctx:  # type: Context
@@ -135,7 +135,7 @@ async def remove_image(
     asset_id: str,
     filename: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> AssetResponse:
     """
     Removes an image of an asset. The associated thumbnail is also removed.
 
@@ -145,7 +145,7 @@ async def remove_image(
         filename: Name of the image.
         configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
-    Return:
+    Returns:
         The asset description.
     """
     async with Context.start_ep(request=request) as ctx:  # type: Context
@@ -233,7 +233,7 @@ async def get_media_image(
         name: Name of the image.
         configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
-    Return:
+    Returns:
         The image.
     """
     async with Context.start_ep(request=request) as ctx:  # type: Context
@@ -255,7 +255,7 @@ async def get_media_thumbnail(
     asset_id: str,
     name: str,
     configuration: Configuration = Depends(get_configuration),
-):
+) -> Response:
     """
     Retrieves the thumbnail of a persisted image of an asset.
 
@@ -265,7 +265,7 @@ async def get_media_thumbnail(
         name: Name of the image.
         configuration: Injected :class:`Configuration <youwol.backends.assets.configurations.Configuration>`.
 
-    Return:
+    Returns:
         The image.
     """
     async with Context.start_ep(request=request) as ctx:  # type: Context

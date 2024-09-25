@@ -59,7 +59,7 @@ async def catch_all_no_namespace(request: Request, rest_of_path: str) -> Respons
         rest_of_path: in the form `$APP_NAME/$SEMVER` where `$APP_NAME` is the package name
             (*e.g.*  `@youwol/platform`), and `$SEMVER` a semver query (*e.g.* `^0.1.2`, `0.x`, `latest`).
 
-    Return:
+    Returns:
         The entry point.
     """
     async with Context.start_ep(action="fetch application", request=request) as ctx:

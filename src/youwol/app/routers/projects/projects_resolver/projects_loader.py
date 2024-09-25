@@ -222,7 +222,7 @@ class ProjectLoader:
         Parameters:
             context: Current context.
 
-        Return:
+        Returns:
             The projects loaded successfully and the loading failures.
         """
         async with context.start("ProjectLoader.refresh"):
@@ -275,7 +275,7 @@ async def get_project(
         env: The current youwol environment.
         context: The current context.
 
-    Return:
+    Returns:
         An instance of the Project class representing the retrieved project information,
         or a Failure object indicating any encountered errors during the retrieval process.
     """

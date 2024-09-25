@@ -54,17 +54,17 @@ async def package_latest_info(
     compares these versions, and determines if downloading the newer version is necessary. It utilizes an execution
     context for logging and state management throughout the process.
 
+    This function handles exceptions internally and logs warnings through the provided context object.
+    It is designed to proceed with execution unless critical errors occur, in which case it may raise
+    environment-specific or network-related exceptions not explicitly caught within the function.
+
     Parameters:
         package_name: The name of the package for which to check available versions.
         semver: The semantic versioning filter to apply when searching for the package versions.
         context: The execution context object.
 
-    Return:
+    Returns:
         An object containing information about the package request
-
-    Raises: This function handles exceptions internally and logs warnings through the provided context object.
-        It is designed to proceed with execution unless critical errors occur, in which case it may raise
-        environment-specific or network-related exceptions not explicitly caught within the function.
 
     Example:
     <code-snippet language="python">

@@ -49,7 +49,7 @@ class AssetsClient:
         self,
         body: NewAssetBody,
         headers: dict[str, str],
-        **kwargs: dict[str, Any] | None,
+        **kwargs: Any,
     ) -> AssetResponse:
         """
         See description in

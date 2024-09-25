@@ -40,8 +40,18 @@ ReadPolicyEnumFactory = {
 
 
 class SharePolicyEnum(str, Enum):
+    """
+    The share policy values.
+    """
+
     FORBIDDEN = "forbidden"
+    """
+    The asset can not be shared.
+    """
     AUTHORIZED = "authorized"
+    """
+    The asset can be shared.
+    """
 
 
 SharePolicyEnumFactory = {
@@ -129,15 +139,38 @@ class OwningGroup(BaseModel):
 
 
 class GroupAccess(BaseModel):
+    """
+    Describes access for a group.
+    """
+
     read: ReadPolicyEnum
+    """
+    Access policy regarding read operations.
+    """
     share: SharePolicyEnum
+    """
+    Access policy regarding share operations.
+    """
     expiration: None | str
 
 
 class ExposingGroup(BaseModel):
+    """
+    Describes group information regarding access.
+    """
+
     name: str
+    """
+    Name of the group.
+    """
     groupId: str
+    """
+    ID of the group
+    """
     access: GroupAccess
+    """
+    Access policies associated.
+    """
 
 
 class OwnerInfo(BaseModel):
@@ -345,7 +378,13 @@ class ParsedFile(NamedTuple):
 
 
 SCYLLA_DB_TEXT = "text"
+"""
+Alias for text attribute in scylladb.
+"""
 SCYLLA_DB_LIST_TEXT = "list<text>"
+"""
+Alias for list<text> attribute in scylladb.
+"""
 
 ASSETS_TABLE = TableBody(
     name="entities",

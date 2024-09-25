@@ -41,19 +41,22 @@ async def authorization_flow(
     conf: Configuration = Depends(get_configuration),
 ) -> Response:
     """
-        Initiate an Authorization Code Grant authentification.
-        Could be call directly or by /openid_rp/login endpoint
-        Must be called by an interactive User Agent (not from script, backend, etc.).
-        target_uri must match valid redirect URI as defined in the Identity Provider for the OpenId client
-        yw_login_hint is nothing more than a hint (usually the default value for the login form)
+    Initiate an Authorization Code Grant authentification.
+    Could be call directly or by /openid_rp/login endpoint
+    Must be called by an interactive User Agent (not from script, backend, etc.).
+    target_uri must match valid redirect URI as defined in the Identity Provider for the OpenId client
+    yw_login_hint is nothing more than a hint (usually the default value for the login form)
 
-        Redirect to the Identity Provider, which will ultimately redirect to /openid_rp/cb endpoint.
+    Redirect to the Identity Provider, which will ultimately redirect to /openid_rp/cb endpoint.
 
-    :param request:
-    :param target_uri:
-    :param yw_login_hint:
-    :param conf:
-    :return:
+    Parameters:
+        request: Incoming request.
+        target_uri: Target redirection URI.
+        yw_login_hint: Login hint.
+        conf: Current environment.
+
+    Returns:
+        Response from the redirect.
     """
     login_hint = (
         yw_login_hint[5:]
@@ -85,19 +88,13 @@ async def authorization_flow_callback(
     conf: Configuration = Depends(get_configuration),
 ) -> Response:
     """
-        Callback for an ongoing Authorization Code Grant authentification.
-        Shall be called by an interactive User Agent after the Identity Provider redirect it.
+    Callback for an ongoing Authorization Code Grant authentification.
+    Shall be called by an interactive User Agent after the Identity Provider redirect it.
 
-        Save access token in cookie.
-        Also store logged-in user in yw_login_hint (see /openid_rp/login and /openid_rp/auth endpoints).
-        Redirect to the target_uri passed to authorization_flow(request, target_uri) − this target_uri is passed
-        around in base64 and is in the param state.
-
-    :param request:
-    :param state:
-    :param code:
-    :param conf:
-    :return:
+    Save access token in cookie.
+    Also store logged-in user in yw_login_hint (see /openid_rp/login and /openid_rp/auth endpoints).
+    Redirect to the target_uri passed to authorization_flow(request, target_uri) − this target_uri is passed
+    around in base64 and is in the param state.
     """
     try:
         (
@@ -165,19 +162,13 @@ async def logout(
     conf: Configuration = Depends(get_configuration),
 ) -> Response:
     """
-        Logout user.
-        Must be call by an interactive User Agent.
-        The same rule apply to target_uri as with /openid_rp/auth endpoint
+    Logout user.
+    Must be call by an interactive User Agent.
+    The same rule apply to target_uri as with /openid_rp/auth endpoint
 
-        Delete access token cookie
-        Optionally delete yw_login_hint, if forget_me param is true
-        Redirect to Identity Provider for logout, which will ultimately redirect to target_uri.
-
-    :param request:
-    :param target_uri:
-    :param forget_me:
-    :param conf:
-    :return:
+    Delete access token cookie
+    Optionally delete yw_login_hint, if forget_me param is true
+    Redirect to Identity Provider for logout, which will ultimately redirect to target_uri.
     """
     if yw_jwt is None:
         return JSONResponse(
@@ -247,23 +238,16 @@ async def login(
     conf: Configuration = Depends(get_configuration),
 ) -> Response:
     """
-        Log in user.
-        Must be call by an interactive User Agent.
-        The same rule apply to target_uri as with /openid_rp/auth endpoint.
+    Log in user.
+    Must be call by an interactive User Agent.
+    The same rule apply to target_uri as with /openid_rp/auth endpoint.
 
-        Will either call /openid_rp/auth or /openid_rp/temp_user, based on flow param:
-        - 'user' => /openid_rp/auth
-        - 'temp' => /openid_rp/temp_user
-        - 'auto' (default) =>
-                cookie yw_login_hint => /openid_rp/auth
-                no cookie yw_login_hint => /openid_rp/temp_user
-
-    :param request:
-    :param target_uri:
-    :param flow:
-    :param yw_login_hint:
-    :param conf:
-    :return:
+    Will either call /openid_rp/auth or /openid_rp/temp_user, based on flow param:
+    - 'user' => /openid_rp/auth
+    - 'temp' => /openid_rp/temp_user
+    - 'auto' (default) =>
+            cookie yw_login_hint => /openid_rp/auth
+            no cookie yw_login_hint => /openid_rp/temp_user
     """
     if flow == "auto":
         flow = (
@@ -289,15 +273,11 @@ async def login_as_temp_user(
     conf: Configuration = Depends(get_configuration),
 ) -> Response:
     """
-        Create a temporary user and get an access token for it.
-        Could be call directly or by /openid_rp/login endpoint
+    Create a temporary user and get an access token for it.
+    Could be call directly or by /openid_rp/login endpoint
 
-        Save access token in cookie.
-        Redirect to target_path (can be relative to this endpoint URI)
-
-    :param target_uri:
-    :param conf:
-    :return:
+    Save access token in cookie.
+    Redirect to target_path (can be relative to this endpoint URI).
     """
     if conf.keycloak_users_management is None:
         return JSONResponse(
