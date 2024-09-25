@@ -640,17 +640,6 @@ class Configuration(BaseModel):
 
     Configuration()
     </code-snippet>
-
-    Which is equivalent to:
-    <code-snippet language="python">
-    from youwol.app.environment import Configuration, System, Projects, Customization
-
-    Configuration(
-        system=System(),
-        projects=Projects(),
-        customization=Customization()
-    )
-    </code-snippet>
     """
 
     system: System = System()
@@ -663,9 +652,12 @@ class Configuration(BaseModel):
     *  *etc*
     """
 
-    projects: Projects = Projects()
+    projects: Projects | None = None
     """
     Related to the projects the user is working on (*e.g.* libraries, applications, backends).
+
+    If `None` is provided, a default configuration including standard YouWol projects type will be used.
+    See :func:`youwol.app.environment.youwol_environment_models.get_default_projects_configuration`.
     """
 
     customization: Customization = Customization()
