@@ -88,6 +88,12 @@ jobs:
           - macos-latest
 
     steps:
+      - name: Checkout Py-youwol Sources
+        id: checkout_py_youwol_sources
+        uses: actions/checkout@v4
+        with:
+          path: .py_youwol_sources
+
       - name: Prepare Python ${{ matrix.python_version }}
         id: prepare_python
         uses: actions/setup-python@v5
@@ -158,6 +164,7 @@ jobs:
         id: setup_env
         run: |
           echo "PY_YOUWOL_BIN=$(which youwol)" >> "$GITHUB_ENV"
+          echo "PY_YOUWOL_SOURCES=${GITHUB_WORKSPACE}/.py_youwol_sources" >> $GITHUB_ENV
         shell: sh
 
       - name: Run py-youwol with int conf

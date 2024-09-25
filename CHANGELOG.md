@@ -48,6 +48,7 @@ TG-1464 : 👽️ [workflows] hidden files in uploaded config
 TG-1467 : 💚 [release] Checkout with depth=3 for publishing
 TG-2493 : ✨ [yw_repo_path] first try env `PY_YOUWOL_SOURCES`
 TG-2494 : 📝 Add & fix code documentation
+TG-2496 : 💚 [nightly] py-youwol sources for tests
 -->
 
 ## [0.1.12] − 2024-09-02
