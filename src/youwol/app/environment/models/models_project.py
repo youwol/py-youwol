@@ -159,12 +159,9 @@ class ProjectsFinder(BaseModel):
     Reference name, if not provided the name of the associated `fromPath` folder is used.
     """
 
-    fromPath: ConfigPath = Path.home() / default_path_projects_dir
+    fromPath: ConfigPath = default_path_projects_dir
     """
     All projects below these paths will be discovered.
-
-    By default uses
-    :glob:`default_path_projects_dir <youwol.app.environment.models.defaults.default_path_projects_dir>`.
     """
 
     lookUpDepth: int = 3
@@ -206,7 +203,7 @@ class Projects(BaseModel):
     Example:
         A typical example of this section of the configuration looks like:
 
-        <code-snippet language="python" highlightedLines="5 6 8 13 14 15 16 17 18">
+        <code-snippet language="python" highlightedLines="4-5 7 12-17">
         from pathlib import Path
 
         from youwol.app.environment import (

@@ -41,10 +41,12 @@ Default path used in
 :attr:`LocalEnvironment.cacheDir <youwol.app.environment.models.models_config.LocalEnvironment.cacheDir>`
 """
 
-default_path_projects_dir: Path = Path("Projects") / Path("youwol")
+default_path_projects_dir: Path = Path.home() / "Projects" / "youwol"
 """
-Default path used in
-:attr:`youwol.app.environment.models.models_project.ProjectsFinder.fromPath`.
+Default path for projects look-up.
+Used in *e.g.*:
+*  :attr:`youwol.app.environment.models.models_project.ProjectsFinder.fromPath`.
+*  :func:`youwol.app.environment.youwol_environment_models.get_default_projects_configuration`
 """
 
 default_path_tokens_storage: Path = Path("./tokens_storage.json")

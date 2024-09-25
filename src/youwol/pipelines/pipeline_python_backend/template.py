@@ -57,7 +57,7 @@ def template(folder: Path) -> ProjectTemplate:
         Project's template specification.
     """
     return ProjectTemplate(
-        icon={"tag": "img", "src": PY_ICON},
+        icon={"tag": "img", "src": PY_ICON, "style": {"width": "32px"}},
         type="python backend",
         folder=folder,
         parameters={
