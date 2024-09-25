@@ -1,12 +1,13 @@
 import { render } from '@youwol/rx-vdom'
 import { navigation } from './navigation'
 import { setup } from '../auto-generated'
-import { Router, Views } from '@youwol/mkdocs-ts'
+import { Router, Views, MdWidgets } from '@youwol/mkdocs-ts'
+import { firstValueFrom } from 'rxjs'
 
-export const router = new Router({
+await firstValueFrom(MdWidgets.CodeSnippetView.fetchCmDependencies$('python'))
+const router = new Router({
     navigation,
 })
-
 document.getElementById('content').appendChild(
     render(
         new Views.DefaultLayoutView({

@@ -34,6 +34,8 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
   - Now includes a Docker-based deployment template. Removed dependency on `py-youwol` (replaced with `yw_clients`)
     and cleaned up the provided template source code. <!-- TG-2487 -->
   - Pipeline does not produce auto-generated `requirements.txt` anymore. <!-- TG-2459 -->
+- **Pipeline Raw App**:
+  - Now offers the ability to create simple project skeleton. <!-- TG-2495 -->
 
 ### Fixed
 

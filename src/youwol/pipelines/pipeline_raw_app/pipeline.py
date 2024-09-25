@@ -35,57 +35,53 @@ def set_environment(environment: Environment = Environment()):
     Set the global :class:`environment <youwol.pipelines.publish_cdn.Environment>` of the pipeline
     (the remote CDN targets).
 
-    Example:
+    **Example**
 
-        The pipeline can be configured to publish in custom remote CDN targets from the youwol's configuration file
-        as illustrated below:
+    The pipeline can be configured to publish in custom remote CDN targets from the youwol's configuration file
+    as illustrated below:
 
-        ```python hl_lines="37-45"
-        from youwol.pipelines import CdnTarget
-        from youwol.app.environment import (CloudEnvironment, get_standard_auth_provider, BrowserAuth,
-         AuthorizationProvider, PublicClient, PrivateClient, DirectAuth)
+    <code-snippet language="python">
+    from youwol.pipelines import CdnTarget
+    from youwol.app.environment import (CloudEnvironment, get_standard_auth_provider, BrowserAuth,
+     AuthorizationProvider, PublicClient, PrivateClient, DirectAuth)
 
-        import youwol.pipelines.pipeline_raw_app as pipeline_raw_app
+    import youwol.pipelines.pipeline_raw_app as pipeline_raw_app
 
+    # Define the regular `platform.youwol.com` environment authenticated through browser'
+    prod_env = CloudEnvironment(
+        envId="prod",
+        host="platform.youwol.com",
+        authProvider=get_standard_auth_provider("platform.youwol.com"),
+        authentications=[BrowserAuth(authId="browser")],
+    )
 
-        prod_env = CloudEnvironment(
-            envId="prod",
-            host="platform.youwol.com",
-            authProvider=get_standard_auth_provider("platform.youwol.com"),
-            authentications=[BrowserAuth(authId="browser")],
-        )  # (1)
-
-
-        bar_env = CloudEnvironment(
-            envId="bar",
-            host="platform.bar.com",
-            authProvider=AuthorizationProvider(
-                openidClient=PublicClient(client_id="openid_client_id"),
-                openidBaseUrl="https://platform.bar.com/auth/realms/youwol",
+    # This is a custom environment (managed by keycloak regarding identity & access management),
+    # hosted on `platform.bar.com`, and authenticated using user-name & password.
+    bar_env = CloudEnvironment(
+        envId="bar",
+        host="platform.bar.com",
+        authProvider=AuthorizationProvider(
+            openidClient=PublicClient(client_id="openid_client_id"),
+            openidBaseUrl="https://platform.bar.com/auth/realms/youwol",
+        ),
+        authentications=[
+            DirectAuth(
+                authId="foo",
+                userName="foo@bar.com",
+                password="foo-pwd",
             ),
-            authentications=[
-                DirectAuth(
-                    authId="foo",
-                    userName="foo@bar.com",
-                    password="foo-pwd",
-                ),
-            ],
-        )  # (2)
+        ],
+    )
 
-        pipeline_raw_app.set_environment(
-            environment=pipeline_raw_app.Environment(
-                cdnTargets=[
-                    CdnTarget(name="bar", cloudTarget=bar_env, authId="foo"),
-                    CdnTarget(name="prod", cloudTarget=prod_env, authId="browser"),
-                ]
-            )
+    pipeline_raw_app.set_environment(
+        environment=pipeline_raw_app.Environment(
+            cdnTargets=[
+                CdnTarget(name="bar", cloudTarget=bar_env, authId="foo"),
+                CdnTarget(name="prod", cloudTarget=prod_env, authId="browser"),
+            ]
         )
-        ```
-
-        1.  Define the regular `platform.youwol.com` environment authenticated through browser'
-        2.  This is a custom environment (managed by keycloak regarding identity & access management),
-        hosted on `platform.bar.com`, and authenticated using user-name & password.
-
+    )
+    </code-snippet>
 
     Parameters:
         environment: environment listing the CDNs targets
@@ -116,7 +112,8 @@ default_files = FileListing(
     ],
 )
 """
-Default files packaged.
+The definition of the default files included in the package when running the
+:class:`PackageStep <youwol.pipelines.pipeline_raw_app.pipeline.PackageStep>`.
 """
 
 
@@ -133,7 +130,8 @@ class PackageConfig(BaseModel):
 
 class PackageStep(PipelineStep):
     """
-    This step does not trigger any action (beside the 'echo').
+    The purpose of this step is to package the sources files into a package artifact, later published to local and
+    remote component databases.
     """
 
     id: str = "package"
@@ -216,8 +214,21 @@ class PackageStep(PipelineStep):
 
 
 class PublishConfig(BaseModel):
+    """
+    Configuration regarding publication in the components' databases.
+
+    By default, it only publishes the `package` artifact created by the
+    :class:`PackageStep <youwol.pipelines.pipeline_raw_app.pipeline.PackageStep>`.
+    """
+
     packagedArtifacts: list[str] = ["package"]
+    """
+    List of packaged artifacts' ID.
+    """
     packagedFolders: list[str] = []
+    """
+    Path of extra folder's (not part of the `packagedArtifacts`) that needs to be included in the published component
+     as well. Paths are relative from the project's folder. """
 
 
 class PipelineConfig(BaseModel):
@@ -227,7 +238,18 @@ class PipelineConfig(BaseModel):
 
     target: BrowserAppBundle
     """
-    Defines the target.
+    Defines the target, for instance:
+
+    <code-snippet language="python">
+    graphics = BrowserAppGraphics(
+        appIcon={ 'class': 'far fa-laugh-beam fa-2x' }
+    )
+    target=BrowserAppBundle(
+        displayName="My application",
+        execution=Execution(standalone=True),
+        graphics=graphics
+    )
+    </code-snippet>
     """
 
     with_tags: list[str] = []
@@ -237,11 +259,14 @@ class PipelineConfig(BaseModel):
 
     packageConfig: PackageConfig = PackageConfig()
     """
-    Configuration specifying the packaging.
+    Configuration of the :class:`PackageStep <youwol.pipelines.pipeline_raw_app.pipeline.PackageStep>`.
     """
 
     # Implementation details
     publishConfig: PublishConfig = PublishConfig()
+    """
+    Configuration elements regarding publication in the components' databases.
+    """
 
 
 async def pipeline(config: PipelineConfig, context: Context) -> Pipeline:

@@ -1,0 +1,13 @@
+{
+  "name": "{{application_name}}",
+  "version": "0.1.0-wip",
+  "main": "src/index.html",
+  "scripts": {},
+  "youwol": {
+    "type": "application"
+  },
+  "devDependencies": {
+    "@youwol/eslint-config": "^1.2.0",
+    "@youwol/prettier-config": "^1.2.0"
+  }
+}
