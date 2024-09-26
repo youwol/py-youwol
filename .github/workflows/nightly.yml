@@ -84,10 +84,23 @@ jobs:
           - tarball
           - wheel
         runs_on:
+          - macos-13
           - ubuntu-latest
-          - macos-latest
 
     steps:
+      - name: Setup Docker on macOS
+        if: ${{ matrix.runs_on == 'macos-13' }}
+        id: setup_docker_macos
+        uses: douglascamata/setup-docker-macos-action@v1-alpha.14
+
+      - name: Test docker
+        id: test_docker
+        run: |
+          docker run hello-world
+          docker run -d --rm --name test_container -p 4321:8000 crccheck/hello-world
+          curl http://localhost:4321/
+          docker stop test_container
+
       - name: Checkout Py-youwol Sources
         id: checkout_py_youwol_sources
         uses: actions/checkout@v4
@@ -186,6 +199,13 @@ jobs:
           _${{ matrix.runs_on }}\
           _${{ matrix.python_version }}"
 
+      - name: Tests local-youwol-client
+        id: tests_local_youwol_client
+        working-directory: ${{ runner.temp }}/local-youwol-client
+        run: |
+          yarn -s test --reporters=default --reporters=github-actions
+        shell: sh
+
       - name: Tests http-clients
         id: tests_http-clients
         working-directory: ${{ runner.temp }}/http-clients
@@ -203,13 +223,6 @@ jobs:
       - name: Tests vsf-core
         id: tests_vsf-core
         working-directory: ${{ runner.temp }}/vsf-core
-        run: |
-          yarn -s test --reporters=default --reporters=github-actions
-        shell: sh
-
-      - name: Tests local-youwol-client
-        id: tests_local_youwol_client
-        working-directory: ${{ runner.temp }}/local-youwol-client
         run: |
           yarn -s test --reporters=default --reporters=github-actions
         shell: sh
