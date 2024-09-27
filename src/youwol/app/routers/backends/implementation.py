@@ -1,8 +1,6 @@
 # standard library
 import asyncio
 import functools
-import json
-import subprocess
 import uuid
 
 from asyncio.subprocess import Process
@@ -282,12 +280,12 @@ async def get_start_command(
         fp = get_build_fingerprint(name=name, version=version, config=config)
         if (folder / "Dockerfile").exists():
             await ctx.info("Backend started within container")
-            yw_host = get_docker_bridge_ipam_gateway()
+            yw_host = "host.docker.internal"
             return StartCommand(
                 runningMode="container",
                 cmd=(
-                    f"docker run --name {instance_id} --env YW_HOST={yw_host} --env YW_PORT={env.httpPort}"
-                    f" -p {port}:8080 {name}:{fp}"
+                    f"docker run --add-host {yw_host}=host-gateway --name {instance_id} "
+                    f"--env YW_HOST={yw_host} --env YW_PORT={env.httpPort} -p {port}:8080 {name}:{fp}"
                 ),
                 cwd=folder,
             )
@@ -643,11 +641,3 @@ async def download_install_backend(
                 config=config,
                 context=ctx,
             )
-
-
-def get_docker_bridge_ipam_gateway():
-    output = subprocess.check_output(
-        ["docker", "network", "inspect", "bridge", "-f", "{{json .IPAM.Config}}"]
-    )
-    ipam_config = json.loads(output)[0]
-    return ipam_config["Gateway"]
