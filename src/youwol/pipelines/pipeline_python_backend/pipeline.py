@@ -23,6 +23,8 @@ from youwol.app.environment import YouwolEnvironment
 from youwol.app.environment.proxied_backends import (
     DEFAULT_PARTITION_ID,
     ProxiedBackendConfiguration,
+    StartCommand,
+    Trigger,
 )
 from youwol.app.routers.environment.router import emit_environment_status
 from youwol.app.routers.projects import (
@@ -378,7 +380,7 @@ class RunStep(PipelineStep):
         Serve the service and install the proxy.
         """
         async with context.start("run_command") as ctx:
-            env = await ctx.get("env", YouwolEnvironment)
+            env: YouwolEnvironment = await ctx.get("env", YouwolEnvironment)
             config = await get_project_configuration(
                 project_id=project.id, flow_id=flow_id, step_id=self.id, context=ctx
             )
@@ -395,16 +397,27 @@ class RunStep(PipelineStep):
                     pyproject = tomllib.load(f)
                     port = pyproject["youwol"]["default-port"]
 
+            start_cmd = StartCommand(
+                cmd=f"(. {VENV_NAME}/bin/activate "
+                f"&& python {project.name}/main_localhost.py --port={port} --yw_port={env.httpPort})",
+                runningMode="localhost",
+                cwd=project.path,
+            )
+
             async def on_executed(process: Process | None, shell_ctx: Context):
                 if config["installDispatch"]:
                     env.proxied_backends.register(
-                        uid=str(process.pid),
+                        uid=process and str(process.pid),
+                        trigger=(
+                            Trigger(cmd=start_cmd, process=process)
+                            if config["autoRun"]
+                            else None
+                        ),
                         partition_id=DEFAULT_PARTITION_ID,
                         name=project.name,
                         version=project.version,
                         configuration=ProxiedBackendConfiguration(),
                         port=port,
-                        process=process,
                         install_outputs=["Backend running from sources."],
                         server_outputs_ctx_id=shell_ctx.uid,
                     )
@@ -419,20 +432,16 @@ class RunStep(PipelineStep):
                     )
 
             if config["autoRun"]:
-                shell_cmd = (
-                    f"(. {VENV_NAME}/bin/activate "
-                    f"&& python {project.name}/main_localhost.py --port={port} --yw_port={env.httpPort})"
-                )
                 return_code, outputs = await execute_shell_cmd(
-                    cmd=shell_cmd,
+                    cmd=start_cmd.cmd,
                     context=ctx,
                     log_outputs=True,
                     on_executed=on_executed,
                     env=clone_environ(env_variables={"PYTHONPATH": str(project.path)}),
-                    cwd=project.path,
+                    cwd=start_cmd.cwd,
                 )
                 if return_code > 0:
-                    raise CommandException(command=shell_cmd, outputs=outputs)
+                    raise CommandException(command=start_cmd.cmd, outputs=outputs)
                 return outputs
 
             await on_executed(process=None, shell_ctx=ctx)

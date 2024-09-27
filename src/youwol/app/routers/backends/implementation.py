@@ -1,8 +1,6 @@
 # standard library
 import asyncio
 import functools
-import json
-import subprocess
 import uuid
 
 from asyncio.subprocess import Process
@@ -26,6 +24,8 @@ from youwol.app.environment.proxied_backends import (
     DEFAULT_PARTITION_ID,
     ProxiedBackend,
     ProxiedBackendConfiguration,
+    StartCommand,
+    Trigger,
     get_build_fingerprint,
 )
 from youwol.app.routers.environment import AssetsDownloader
@@ -273,22 +273,30 @@ async def get_start_command(
     folder: Path,
     port: int,
     context: Context,
-):
+) -> StartCommand:
 
     async with context.start(action="get_start_command") as ctx:
         env = await ctx.get("env", YouwolEnvironment)
         fp = get_build_fingerprint(name=name, version=version, config=config)
         if (folder / "Dockerfile").exists():
             await ctx.info("Backend started within container")
-            yw_host = get_docker_bridge_ipam_gateway()
-            return (
-                f"docker run --name {instance_id} --env YW_HOST={yw_host} --env YW_PORT={env.httpPort}"
-                f" -p {port}:8080 {name}:{fp}"
+            yw_host = "host.docker.internal"
+            return StartCommand(
+                runningMode="container",
+                cmd=(
+                    f"docker run --add-host {yw_host}=host-gateway --name {instance_id} "
+                    f"--env YW_HOST={yw_host} --env YW_PORT={env.httpPort} -p {port}:8080 {name}:{fp} --rm"
+                ),
+                cwd=folder,
             )
         await ctx.info("Backend started within host")
         build_arg = f" -b {fp}"
-        return (
-            f"(cd {folder} &&  sh ./start.sh -p {port} -s {env.httpPort} {build_arg})"
+        return StartCommand(
+            runningMode="localhost",
+            cmd=(
+                f"(cd {folder} &&  sh ./start.sh -p {port} -s {env.httpPort} {build_arg})"
+            ),
+            cwd=folder,
         )
 
 
@@ -301,7 +309,7 @@ async def start_backend_shell(
     port: int,
     outputs: list[str],
     context: Context,
-) -> tuple[Process, str]:
+) -> tuple[StartCommand, Process, str]:
     async with context.start(
         action="start backend",
         with_labels=[Label.START_BACKEND_SH],
@@ -318,10 +326,10 @@ async def start_backend_shell(
             context=ctx,
         )
 
-        await ctx.info(text=cmd_start)
+        await ctx.info(text=cmd_start.cmd)
         p = await asyncio.create_subprocess_shell(
-            cmd=cmd_start,
-            cwd=folder,
+            cmd=cmd_start.cmd,
+            cwd=cmd_start.cwd,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             shell=True,
@@ -337,7 +345,7 @@ async def start_backend_shell(
             await p.communicate()
 
         asyncio.ensure_future(collect_outputs())
-        return p, ctx.uid
+        return cmd_start, p, ctx.uid
 
 
 async def wait_readiness(port: int, process: Process):
@@ -491,7 +499,7 @@ async def ensure_running(
                 event="starting",
             )
         )
-        process, std_outputs_ctx_id = await start_backend_shell(
+        start_cmd, process, std_outputs_ctx_id = await start_backend_shell(
             name=backend_name,
             version=latest_version_backend,
             instance_id=instance_id,
@@ -517,7 +525,9 @@ async def ensure_running(
                 raise StartBackendCrashed(
                     return_code=process.returncode, outputs=outputs, ctx_id=context.uid
                 )
-
+            # If the backend is running in a container, there is no 'owning process'
+            # Btw, in macOS, the process here when doing 'docker run ...' is the docker desktop process.
+            owned_process = process if start_cmd.runningMode == "localhost" else None
             proxy = env.proxied_backends.register(
                 uid=instance_id,
                 partition_id=partition_id,
@@ -525,7 +535,7 @@ async def ensure_running(
                 version=latest_version_backend,
                 configuration=config,
                 port=port,
-                process=process,
+                trigger=Trigger(cmd=start_cmd, process=owned_process),
                 install_outputs=install_outputs,
                 server_outputs_ctx_id=std_outputs_ctx_id,
             )
@@ -541,7 +551,8 @@ async def ensure_running(
             await emit_environment_status(context=ctx)
             return proxy
         except TimeoutError as exc:
-            process.terminate()
+            if owned_process:
+                owned_process.terminate()
             raise StartBackendTimeout(outputs=outputs, ctx_id=context.uid) from exc
 
 
@@ -630,11 +641,3 @@ async def download_install_backend(
                 config=config,
                 context=ctx,
             )
-
-
-def get_docker_bridge_ipam_gateway():
-    output = subprocess.check_output(
-        ["docker", "network", "inspect", "bridge", "-f", "{{json .IPAM.Config}}"]
-    )
-    ipam_config = json.loads(output)[0]
-    return ipam_config["Gateway"]
