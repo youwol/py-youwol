@@ -137,7 +137,9 @@ class YouwolEnvironmentResponse(BaseModel):
                 version=proxy.version,
                 port=proxy.port,
                 startedAt=proxy.started_at,
-                pid=proxy.process and proxy.process.pid,
+                pid=proxy.trigger
+                and proxy.trigger.process
+                and proxy.trigger.process.pid,
                 configuration=proxy.configuration,
             )
             for proxy in yw_env.proxied_backends.store
