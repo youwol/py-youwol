@@ -285,7 +285,7 @@ async def get_start_command(
                 runningMode="container",
                 cmd=(
                     f"docker run --add-host {yw_host}=host-gateway --name {instance_id} "
-                    f"--env YW_HOST={yw_host} --env YW_PORT={env.httpPort} -p {port}:8080 {name}:{fp}"
+                    f"--env YW_HOST={yw_host} --env YW_PORT={env.httpPort} -p {port}:8080 {name}:{fp} --rm"
                 ),
                 cwd=folder,
             )
