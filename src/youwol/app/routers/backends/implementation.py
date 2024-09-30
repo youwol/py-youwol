@@ -1,6 +1,7 @@
 # standard library
 import asyncio
 import functools
+import subprocess
 import uuid
 
 from asyncio.subprocess import Process
@@ -170,10 +171,6 @@ def install_manifest_name(build_fingerprint):
     return INSTALL_MANIFEST_FILE.replace(".txt", f".{build_fingerprint}.txt")
 
 
-def is_containerized(folder: Path):
-    return (folder / "Dockerfile").exists()
-
-
 async def get_install_cmd(
     folder: Path,
     name: str,
@@ -187,11 +184,13 @@ async def get_install_cmd(
         with_reporters=[LogsStreamer()],
     ) as ctx:
 
+        install_sh = folder / "install.sh"
+        dockerfile = folder / "Dockerfile"
         build_fingerprint = get_build_fingerprint(
             name=name, version=version, config=config
         )
 
-        if is_containerized(folder=folder):
+        if dockerfile.exists() and is_docker_available():
             build_args = functools.reduce(
                 lambda acc, e: f'{acc} --build-arg {e[0]}="{e[1]}"',
                 config.build.items(),
@@ -200,14 +199,31 @@ async def get_install_cmd(
             cmd = f"docker build {build_args} -t {name}:{version} -t {name}:{build_fingerprint} -t {name}:youwol ."
             await ctx.info(f"Install containerized backend: '{cmd}'")
             return cmd
-        build_args = functools.reduce(
-            lambda acc, e: f"{acc} --{e[0]} '{e[1]}'",
-            config.build.items(),
-            f"--fingerprint {build_fingerprint}",
-        )
-        cmd = f"sh ./install.sh {build_args}"
-        await ctx.info(f"Install localhost backend: '{cmd}'")
-        return cmd
+
+        if install_sh.exists():
+            if dockerfile.exists():
+                await ctx.warning(
+                    text="Docker is not available on host, fallback to 'install.sh' to install service."
+                )
+
+            build_args = functools.reduce(
+                lambda acc, e: f"{acc} --{e[0]} '{e[1]}'",
+                config.build.items(),
+                f"--fingerprint {build_fingerprint}",
+            )
+            cmd = f"sh ./install.sh {build_args}"
+            await ctx.info(f"Install localhost backend: '{cmd}'")
+            return cmd
+
+        if not dockerfile.exists() and not install_sh.exists():
+            raise RuntimeError(
+                "Can not install service as neither 'Dockerfile' nor 'start.sh' are found"
+            )
+
+        if dockerfile.exists():
+            raise RuntimeError(
+                "Only docker based backend setup is available, but Docker is not available on host."
+            )
 
 
 async def install_backend_shell(
@@ -278,7 +294,9 @@ async def get_start_command(
     async with context.start(action="get_start_command") as ctx:
         env = await ctx.get("env", YouwolEnvironment)
         fp = get_build_fingerprint(name=name, version=version, config=config)
-        if (folder / "Dockerfile").exists():
+        dockerfile = folder / "Dockerfile"
+        start_sh = folder / "start.sh"
+        if dockerfile.exists() and is_docker_available():
             await ctx.info("Backend started within container")
             yw_host = "host.docker.internal"
             return StartCommand(
@@ -289,15 +307,30 @@ async def get_start_command(
                 ),
                 cwd=folder,
             )
-        await ctx.info("Backend started within host")
-        build_arg = f" -b {fp}"
-        return StartCommand(
-            runningMode="localhost",
-            cmd=(
-                f"(cd {folder} &&  sh ./start.sh -p {port} -s {env.httpPort} {build_arg})"
-            ),
-            cwd=folder,
-        )
+        if start_sh.exists():
+            if dockerfile.exists():
+                await ctx.warning(
+                    text="Docker is not available on host, fallback to 'start.sh' to start service."
+                )
+            await ctx.info("Backend started within host")
+            build_arg = f" -b {fp}"
+            return StartCommand(
+                runningMode="localhost",
+                cmd=(
+                    f"(cd {folder} &&  sh ./start.sh -p {port} -s {env.httpPort} {build_arg})"
+                ),
+                cwd=folder,
+            )
+
+        if not dockerfile.exists() and not start_sh.exists():
+            raise RuntimeError(
+                "Can not start service as neither 'Dockerfile' nor 'start.sh' are found"
+            )
+
+        if dockerfile.exists():
+            raise RuntimeError(
+                "Only docker based backend setup is available, but Docker is not available on host."
+            )
 
 
 async def start_backend_shell(
@@ -641,3 +674,13 @@ async def download_install_backend(
                 config=config,
                 context=ctx,
             )
+
+
+def is_docker_available():
+    try:
+        subprocess.run(["docker", "--version"], check=True)
+        return True
+    except subprocess.CalledProcessError:
+        return False
+    except FileNotFoundError:
+        return False
