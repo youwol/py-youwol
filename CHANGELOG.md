@@ -54,6 +54,7 @@ TG-2493 : ✨ [yw_repo_path] first try env `PY_YOUWOL_SOURCES`
 TG-2494 : 📝 Add & fix code documentation
 TG-2496 : 💚 [nightly] py-youwol sources for tests
 TG-2499 : 🐛 [app.custom-backend] Fix host IP address provisioning in container
+TG-2500 : 🥅 [custom-backends] Fallback to local-install if docker not available.
 -->
 
 ## [0.1.12] − 2024-09-02
