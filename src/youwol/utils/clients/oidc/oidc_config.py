@@ -76,6 +76,10 @@ class OpenIdConfiguration(BaseModel):
 
 
 class InvalidTokensData(RuntimeError):
+    """
+    Represents errors due to invalid tokens data.
+    """
+
     def __init__(self, msg: str) -> None:
         super().__init__(f"Invalid tokens data: {msg}")
 
