@@ -28,7 +28,7 @@ async def dispatch_impl(
     backend_name: str,
     version_query: str,
     context: Context,
-):
+) -> Response:
     """
     Implementation for dispatch on `/backends/{NAME}/{SEMVER}/rest/of/path`, whatever the request's method.
 

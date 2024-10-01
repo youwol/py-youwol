@@ -1,9 +1,11 @@
 # standard library
 import asyncio
 import os
+import subprocess
 import time
 
 from pathlib import Path
+from sys import platform
 
 # typing
 from typing import cast
@@ -11,7 +13,9 @@ from typing import cast
 # third parties
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse
+from starlette import status
 from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 # Youwol application
 from youwol.app.environment import YouwolEnvironment, yw_config
@@ -34,6 +38,7 @@ from youwol.app.routers.system.models import (
     NodeLogResponse,
     NodeLogsResponse,
     NodeLogStatus,
+    OpenFolderBody,
     PostDataBody,
     PostLogsBody,
     TerminateResponse,
@@ -85,6 +90,63 @@ async def folder_content(body: FolderContentBody) -> FolderContentResp:
         files=[item for item in items if os.path.isfile(path / item)],
         folders=[item for item in items if os.path.isdir(path / item)],
     )
+
+
+@router.post(
+    "/folder-open",
+    response_model=FolderContentResp,
+    summary="Open a folder within host's files explorer",
+)
+async def folder_open(body: OpenFolderBody) -> JSONResponse:
+    """
+    Open a folder using host's files explorer.
+
+    Parameters:
+        body: Specifies the target folder.
+
+    Returns:
+        A status message of the opening action.
+
+    Raises:
+        HTTPException: A problem occurred while opening the folder:
+            *  `404` : The specified path does not exist.
+            *  `400` : The specified path is not a folder
+            *  `501` : Platform not supported.
+            *  `500` : Error occurred while opening the host's explorer.
+    """
+    abs_path = Path(body.path)
+
+    if not abs_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Path does not exist: {abs_path}",
+        )
+
+    if not abs_path.is_dir():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"The specified path is not a folder: {abs_path}",
+        )
+
+    try:
+        if platform.startswith("win32"):
+            # `startfile` only available for Windows
+            os.startfile(abs_path)  # pylint: disable=no-member
+        elif platform.startswith("darwin"):
+            subprocess.run(["open", abs_path], check=True)
+        elif platform.startswith("linux"):
+            subprocess.run(["xdg-open", abs_path], check=True)
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_501_NOT_IMPLEMENTED,
+                detail=f"Platform '{platform}' not supported",
+            )
+    except subprocess.CalledProcessError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error opening path in file explorer: {str(e)}",
+        ) from e
+    return JSONResponse(content={"status": f"Folder {body.path} opened"})
 
 
 class BackendsGraphInstallBody(LoadingGraphResponseV1):

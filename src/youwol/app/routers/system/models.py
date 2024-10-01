@@ -38,6 +38,15 @@ class FolderContentBody(BaseModel):
     path: str
 
 
+class OpenFolderBody(BaseModel):
+    """
+    Body used to open folder on host
+    using :func:`folder_open <youwol.app.routers.system.router.folder_open>`.
+    """
+
+    path: str
+
+
 class QueryRootLogsBody(BaseModel):
     fromTimestamp: int
     maxCount: int
