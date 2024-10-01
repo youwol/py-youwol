@@ -42,6 +42,8 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
   - Now offers the ability to create simple project skeleton. <!-- TG-2495 -->
 - **Configuration**:
   - Default project configuration now includes the YouWol's project templates. <!-- TG-2497 -->
+-  **API**:
+  - Upgrade `GET:/co-lab` target to `@youwol/co-lab#^0.6.0`. <!-- TG-2508 -->
 
 ### Fixed
 
