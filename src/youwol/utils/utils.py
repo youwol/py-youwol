@@ -226,7 +226,7 @@ class YouwolHeaders:
             request: incoming request
 
         Returns:
-            Correlation id of the request, if provided.
+            Target partition ID, if available.
         """
         return request.headers.get(YouwolHeaders.backends_partition, default_id)
 

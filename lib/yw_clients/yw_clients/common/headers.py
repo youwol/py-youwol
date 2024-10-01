@@ -133,7 +133,7 @@ class YouwolHeaders:
             request: Incoming request.
             default_id: Default partition id to use if no partition id is provided.
         Return:
-            Correlation id of the request, if provided.
+            Target partition ID, if available.
         """
         return request.headers.get(YouwolHeaders.backends_partition, default_id)
 

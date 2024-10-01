@@ -128,7 +128,19 @@ class StartBackendEvent(BaseModel):
 
 
 class InstallBackendFailed(HTTPException):
-    def __init__(self, return_code, outputs: list[str], ctx_id: str):
+    """
+    Represents errors occurring while installing a backend using execution of a shell command.
+    """
+
+    def __init__(self, return_code: int, outputs: list[str], ctx_id: str):
+        """
+        Initializes the instance.
+
+        Parameters:
+            return_code: Return code when the `install` command has been executed.
+            outputs: Command's outputs.
+            ctx_id: Failing execution context ID.
+        """
         super().__init__(
             status_code=500,
             detail={
@@ -141,7 +153,19 @@ class InstallBackendFailed(HTTPException):
 
 
 class StartBackendCrashed(HTTPException):
-    def __init__(self, return_code, outputs: list[str], ctx_id: str):
+    """
+    Represents errors occurring while starting a backend using execution of a shell command.
+    """
+
+    def __init__(self, return_code: int, outputs: list[str], ctx_id: str):
+        """
+        Initializes the instance.
+
+        Parameters:
+            return_code: Return code when the `install` command has been executed.
+            outputs: Command's outputs.
+            ctx_id: Failing execution context ID.
+        """
         super().__init__(
             status_code=500,
             detail={
@@ -154,7 +178,18 @@ class StartBackendCrashed(HTTPException):
 
 
 class StartBackendTimeout(HTTPException):
+    """
+    Represents errors occurring while starting a backend using a shell command and a time-out is reached.
+    """
+
     def __init__(self, outputs: list[str], ctx_id: str):
+        """
+        Initializes the instance.
+
+        Parameters:
+            outputs: Command's outputs.
+            ctx_id: Failing execution context ID.
+        """
         super().__init__(
             status_code=408,
             detail={
@@ -177,7 +212,29 @@ async def get_install_cmd(
     version: str,
     config: ProxiedBackendConfiguration,
     context: Context,
-):
+) -> str:
+    """
+    Generate the command to install a backend service, either using `Docker` or a local shell script.
+
+    This function checks the existence of `Dockerfile` and `install.sh` in the provided folder and generates
+    the appropriate installation command based on the available method (Docker or shell script). If `Docker` and
+    `Dockerfile` are available, it constructs a Docker build command; otherwise, it falls back to the shell script
+    if present.
+
+    Parameters:
+        folder: The directory containing the backend service's installation files (`Dockerfile` or `install.sh`).
+        name: The name of the backend service to be installed.
+        version: The version of the backend service.
+        config: Configuration object containing build parameters for the backend service.
+        context: The execution context used for logging, event tracking, and retrieving environment details.
+
+    Returns:
+        str: The generated command to install the backend service.
+
+    Raises:
+        RuntimeError: If neither `Dockerfile` nor `install.sh` is found in the specified folder, or if only
+            `Dockerfile` is found but `docker` is not available on the host.
+    """
 
     async with context.start(
         action="get_install_cmd",
@@ -233,7 +290,29 @@ async def install_backend_shell(
     config: ProxiedBackendConfiguration,
     context: Context,
 ) -> list[str]:
+    """
+    Installs a backend service by running a shell command (either Docker-based or shell-script based).
 
+    This function initiates the installation process for a backend service. It first generates an installation command
+    using :func:`youwol.app.routers.backends.implementation.get_install_cmd`, then executes the command in the
+    provided folder.
+    The installation process is tracked within the provided `context`, including logging, event sending,
+    and error handling.
+
+    Parameters:
+        folder: The directory containing the backend's installation files (`Dockerfile` or `install.sh`).
+        name: The name of the backend service to be installed.
+        version: The version of the backend service.
+        config: Configuration object containing build parameters and options for
+            the backend service.
+        context: The execution context used for logging, event tracking, and retrieving environment details.
+
+    Returns:
+        A list of output strings from the shell command executed during the installation.
+
+    Raises:
+        InstallBackendFailed: If the installation process fails (i.e., if the shell command returns a non-zero code).
+    """
     install_id = str(uuid.uuid4())
 
     async with context.start(
@@ -290,7 +369,34 @@ async def get_start_command(
     port: int,
     context: Context,
 ) -> StartCommand:
+    """
+    Generates the appropriate command to start a backend service, either in a Docker container or locally via a
+    shell script.
 
+    The function determines whether the backend service should be started within a Docker container or using a local
+    shell script (`start.sh`). Based on the available files in the given folder (either a `Dockerfile` or `start.sh`),
+    and the availability of  ̀docker`, the function returns the necessary start command for the backend.
+
+    Parameters:
+        name: The name of the backend service to start.
+        version: The version of the backend service.
+        config: Configuration object containing the backend's build parameters and environment settings.
+        instance_id: Unique identifier for the backend instance to be started.
+        folder: Directory containing the backend's files (`Dockerfile` or `start.sh`).
+        port: The port on which the backend service should be exposed.
+        context: The execution context used for logging, event tracking, and retrieving environment details.
+
+    Returns:
+        The starting command description.
+
+    Raises:
+        RuntimeError: If neither a `Dockerfile` nor a `start.sh` script is found in the specified folder,
+            or if a `Dockerfile` exists, not the `start.sh` script, and Docker is not available on the host.
+
+    Notes:
+        - When running within a Docker container, the backend will communicate with the host through the `YW_HOST`
+          environment variable, which is set to `host.docker.internal`.
+    """
     async with context.start(action="get_start_command") as ctx:
         env = await ctx.get("env", YouwolEnvironment)
         fp = get_build_fingerprint(name=name, version=version, config=config)
@@ -343,6 +449,31 @@ async def start_backend_shell(
     outputs: list[str],
     context: Context,
 ) -> tuple[StartCommand, Process, str]:
+    """
+    Starts a backend service by executing either a `Docker` command or a shell script,
+    depending on the configuration and environment.
+
+    This function orchestrates the starting process of a backend service by:
+    1. Retrieving the appropriate :func:`start command<youwol.app.routers.backends.implementation.get_start_command>`.
+    2. Running the command as a subprocess.
+    3. Collecting and streaming the subprocess output in real-time.
+
+    Parameters:
+        name: The name of the backend service to start.
+        version: The version of the backend service.
+        config: Configuration object containing the backend's environment and build settings.
+        instance_id: Unique identifier for the backend instance.
+        folder: The directory where the command is executed.
+        port: The port to expose the backend service.
+        outputs: A list that will be populated with the backend's output logs (stdout and stderr).
+        context: The execution context used for logging, event tracking, and other runtime information.
+
+    Returns:
+        A tuple containing:
+            - **StartCommand**: Description of the command used to start the backend.
+            - **Process**: The subprocess object representing the running backend service.
+            - **str**: The unique context ID (`ctx.uid`) for tracking the execution.
+    """
     async with context.start(
         action="start backend",
         with_labels=[Label.START_BACKEND_SH],
@@ -410,7 +541,9 @@ async def ensure_running(
     context: Context,
 ) -> ProxiedBackend:
     """
-    Ensure a backend is running, eventually installing and starting it.
+    Ensure a backend is running, eventually
+    :func:`installing<youwol.app.routers.backends.implementation.install_backend_shell>` and
+    :func:`starting<youwol.app.routers.backends.implementation.start_backend_shell>` it.
 
     Parameters:
         request: Incoming request.
@@ -420,10 +553,15 @@ async def ensure_running(
         config: Expected backend's configuration. None` means: take corresponding service if running whatever
             its configuration.
         timeout: Timeout for the all process.
-        context: Executing context.
+        context: The execution context used for logging, event tracking, and retrieving environment details.
 
     Returns:
         Proxied backend information.
+
+    Raises:
+        HTTPException: Not matching version for the requested backend exists.
+        StartBackendCrashed: The backend's starting command returned with error.
+        StartBackendTimeout: The provided timeout has been reached before the backend was able to respond.
     """
     env = await context.get("env", YouwolEnvironment)
 
@@ -626,8 +764,8 @@ async def download_install_backend(
         config: configuration for the backend's installation.
         context: The current context.
 
-    Raise:
-        [`DownloadBackendFailed`](DownloadBackendFailed): If the download of the backend fails.
+    Raises:
+        DownloadBackendFailed: If the download of the backend fails.
     """
     async with context.start(
         action="download_install",
