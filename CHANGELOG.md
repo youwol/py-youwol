@@ -24,6 +24,10 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
   - Add new python package `yw_clients` in `/lib`. It provides HTTP clients and logs management to interact
     with YouWol's backends. <!-- TG-2480 -->
 
+- **API**:
+  - Introduced the `POST /admin/system/folder-open` endpoint, which allows users to open the host's file explorer at a 
+    specified folder path. <!-- TG-2502 -->
+
 ### Changed
 
 - **Custom Backends**:
