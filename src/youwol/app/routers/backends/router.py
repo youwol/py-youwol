@@ -29,7 +29,25 @@ async def dispatch_impl(
     version_query: str,
     context: Context,
 ):
+    """
+    Implementation for dispatch on `/backends/{NAME}/{SEMVER}/rest/of/path`, whatever the request's method.
 
+    Main steps:
+    *  retrieves an eventual `partition_id`
+        from :meth:`headers <youwol.utils.utils.YouwolHeaders.get_backends_partition>`.
+    *  ensure the target backend is running, see :func:`youwol.app.routers.backends.implementation.ensure_running`.
+    Retrieves the proxied backend :class:`information <youwol.app.environment.proxied_backends.ProxiedBackend>`.
+    *  redirect the request.
+
+    Parameters:
+        request: Incoming request.
+        backend_name: Target backend's name.
+        version_query: Semantic versioning query.
+        context: Current execution context.
+
+    Returns:
+        The response.
+    """
     env = await context.get("env", YouwolEnvironment)
     partition_id = YouwolHeaders.get_backends_partition(request, DEFAULT_PARTITION_ID)
     backend = await ensure_running(
@@ -94,15 +112,15 @@ async def dispatch_get(
     request: Request, backend_name: str, version_query: str
 ) -> Response:
     """
-    Dispatch.
+    Dispatch `GET` requests.
 
     Parameters:
-        request: incoming request
-        backend_name: target backend's name
-        version_query: semantic versioning query
+        request: Incoming request.
+        backend_name: Target backend's name.
+        version_query: Semantic versioning query.
 
     Returns:
-        The response
+        The response.
     """
 
     async with Context.start_ep(
@@ -123,15 +141,15 @@ async def dispatch_post(
     request: Request, backend_name: str, version_query: str
 ) -> Response:
     """
-    Dispatch.
+    Dispatch `POST` requests.
 
     Parameters:
-        request: incoming request
-        backend_name: target backend's name
-        version_query: semantic versioning query
+        request: Incoming request.
+        backend_name: Target backend's name.
+        version_query: Semantic versioning query.
 
     Returns:
-        The response
+        The response.
     """
 
     async with Context.start_ep(
@@ -152,15 +170,15 @@ async def dispatch_put(
     request: Request, backend_name: str, version_query: str
 ) -> Response:
     """
-    Dispatch.
+    Dispatch `PUT` requests.
 
     Parameters:
-        request: incoming request
-        backend_name: target backend's name
-        version_query: semantic versioning query
+        request: Incoming request.
+        backend_name: Target backend's name.
+        version_query: Semantic versioning query.
 
     Returns:
-        The response
+        The response.
     """
 
     async with Context.start_ep(
@@ -181,15 +199,15 @@ async def dispatch_delete(
     request: Request, backend_name: str, version_query: str
 ) -> Response:
     """
-    Dispatch.
+    Dispatch `DELETE` requests.
 
     Parameters:
-        request: incoming request
-        backend_name: target backend's name
-        version_query: semantic versioning query
+        request: Incoming request.
+        backend_name: Target backend's name.
+        version_query: Semantic versioning query.
 
     Returns:
-        The response
+        The response.
     """
 
     async with Context.start_ep(

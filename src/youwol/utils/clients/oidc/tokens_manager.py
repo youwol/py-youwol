@@ -10,6 +10,10 @@ from youwol.utils.crypto.digest import DigestExclude
 
 
 class TokensExpiredError(RuntimeError):
+    """
+    Represents errors due to expired tokens.
+    """
+
     def __init__(self) -> None:
         super().__init__("Tokens expired")
 
