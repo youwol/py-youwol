@@ -62,6 +62,7 @@ TG-2496 : 💚 [nightly] py-youwol sources for tests
 TG-2499 : 🐛 [app.custom-backend] Fix host IP address provisioning in container
 TG-2500 : 🥅 [custom-backends] Fallback to local-install if docker not available.
 TG-2501 : 📝 [custom-backends] Code documentation
+TG-2509 : 🐛 [pipeline-py-backend] `DependenciesStep` handle errors & outputs
 -->
 
 ## [0.1.12] − 2024-09-02

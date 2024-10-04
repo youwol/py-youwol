@@ -135,6 +135,6 @@ async def dispatch_dev_server(
         },
     )
     raise ResourcesNotFoundException(
-        path=f"{rest_of_path_dynamic} or ${rest_of_path_dynamic}",
+        path=f"{rest_of_path_dynamic} or {rest_of_path_static}",
         detail="No resource found",
     )
