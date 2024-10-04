@@ -245,7 +245,12 @@ class DependenciesStep(PipelineStep):
                 f"&& pip install -e .[dev] --force-reinstall --find-links ./deps)"
             )
 
-            await execute_shell_cmd(cmd=cmd, context=context, cwd=project.path)
+            return_code, outputs = await execute_shell_cmd(
+                cmd=cmd, context=context, cwd=project.path
+            )
+            if return_code > 0:
+                raise CommandException(command=cmd, outputs=outputs)
+            return outputs
 
 
 async def get_info(project: Project, context: Context) -> AnyDict:
