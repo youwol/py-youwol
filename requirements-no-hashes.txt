@@ -88,7 +88,7 @@ fastapi==0.115.2
     # via youwol (pyproject.toml)
 filelock==3.12.4
     # via cachecontrol
-frozenlist==1.4.0
+frozenlist==1.4.1
     # via
     #   aiohttp
     #   aiosignal
