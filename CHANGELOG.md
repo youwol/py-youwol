@@ -21,11 +21,12 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 ### Added
 
 - **yw_clients**:
+
   - Add new python package `yw_clients` in `/lib`. It provides HTTP clients and logs management to interact
     with YouWol's backends. <!-- TG-2480 -->
 
 - **API**:
-  - Introduced the `POST /admin/system/folder-open` endpoint, which allows users to open the host's file explorer at a 
+  - Introduced the `POST /admin/system/folder-open` endpoint, which allows users to open the host's file explorer at a
     specified folder path. <!-- TG-2502 -->
 
 ### Changed
@@ -42,12 +43,17 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
   - Now offers the ability to create simple project skeleton. <!-- TG-2495 -->
 - **Configuration**:
   - Default project configuration now includes the YouWol's project templates. <!-- TG-2497 -->
--  **API**:
+- **API**:
   - Upgrade `GET:/co-lab` target to `@youwol/co-lab#^0.6.0`. <!-- TG-2508 -->
 
 ### Fixed
 
 - **OpenID Connect Discovery**: Remove trailing slash from Issuer when requesting `.well-known` (see [specification](https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfig)) <!-- TG-2489 -->
+
+### Security
+
+- **Dependencies vulnerabilities**:
+  - [GHSA-f96h-pmfr-66vw] Upgrade `starlette` to 0.40.0 <!-- TG-2524 -->
 
 <!-- Not worthy of inclusion
 TG-2480 : 📝 [doc-app] Add `yw_clients` page
