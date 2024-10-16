@@ -17,7 +17,7 @@ classifiers = [
 ]
 dependencies = [
     "aiohttp>=3.8.1,<4.0.0",
-    "starlette>=0.36.3,<0.37.0",
+    "starlette>=0.40,<0.41",
     "pydantic<2.0.0"
 ]
 [project.optional-dependencies]
