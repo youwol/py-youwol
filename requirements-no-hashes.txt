@@ -84,7 +84,7 @@ docutils==0.20.1
     # via
     #   python-daemon
     #   readme-renderer
-fastapi==0.109.2
+fastapi==0.115.2
     # via youwol (pyproject.toml)
 filelock==3.12.4
     # via cachecontrol
@@ -265,7 +265,7 @@ snowballstemmer==2.2.0
     # via pydocstyle
 sortedcontainers==2.4.0
     # via cyclonedx-python-lib
-starlette==0.36.3
+starlette==0.40.0
     # via fastapi
 toml==0.10.2
     # via pip-audit
