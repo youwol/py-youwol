@@ -49,6 +49,11 @@ and this project adheres to [PEP 440 Versioning](https://peps.python.org/pep-044
 
 - **OpenID Connect Discovery**: Remove trailing slash from Issuer when requesting `.well-known` (see [specification](https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfig)) <!-- TG-2489 -->
 
+### Security
+
+- **Dependencies vulnerabilities**:
+  - [GHSA-f96h-pmfr-66vw] Upgrade `starlette` to 0.40.0 <!-- TG-2524 -->
+
 <!-- Not worthy of inclusion
 TG-2480 : 📝 [doc-app] Add `yw_clients` page
 TG-2474 : 💄 [pipelines] Improve styling of config. step views
