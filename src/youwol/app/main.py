@@ -20,6 +20,7 @@ def assert_python():
         (version_info.major == 3 and version_info.minor == 10)
         or (version_info.major == 3 and version_info.minor == 11)
         or (version_info.major == 3 and version_info.minor == 12)
+        or (version_info.major == 3 and version_info.minor == 13)
         or (version_info.major == 3 and version_info.minor == 9)
     ):
         print(
