@@ -1,5 +1,6 @@
 # standard library
 import asyncio
+import fnmatch
 import glob
 import hashlib
 import itertools
@@ -67,6 +68,7 @@ async def create_cdn_zip(
     project: Project,
     flow_id: str,
     files: Iterable[Path],
+    ignore: list[str],
     context: Context,
 ):
     async with context.start(action="create_cdn_zip") as ctx:
@@ -87,10 +89,17 @@ async def create_cdn_zip(
             except ValueError:
                 return path.relative_to(project.path).parts
 
-        zip_files = [(f, "/".join(arc_name(f))) for f in files]
+        zip_files = [(f, Path(*arc_name(f))) for f in files]
+        filtered_zip_files = [
+            (f, str(arc))
+            for f, arc in zip_files
+            if not any(fnmatch.fnmatch(str(arc), pattern) for pattern in ignore)
+        ]
         await ctx.info(
             text="create CDN zip: files recovered",
-            data={"files": [f"{name} -> {str(path)}" for path, name in zip_files]},
+            data={
+                "files": [f"{name} -> {str(path)}" for path, name in filtered_zip_files]
+            },
         )
         target = project.pipeline.target
         yw_metadata = to_json(target(project) if callable(target) else target)
@@ -101,19 +110,19 @@ async def create_cdn_zip(
             "ywVersion": youwol.__version__,
             "files": [
                 {
-                    "path": arc_name,
+                    "path": str(arc_name),
                     "contentEncoding": get_content_encoding(f.name),
                     "contentType": get_content_type(f.name),
                     "hash": md5_update_from_file(f, hashlib.md5()).hexdigest(),
                 }
-                for f, arc_name in zip_files
+                for f, arc_name in filtered_zip_files
             ],
         }
         brotli_files = [f for f in files if get_content_encoding(f.name) == "br"]
 
         create_zip_file(
             path=zip_path,
-            files_to_zip=zip_files,
+            files_to_zip=filtered_zip_files,
             with_data=[
                 (CDN_METADATA_FILE, json.dumps(yw_metadata)),
                 (CDN_MANIFEST_FILE, json.dumps(yw_manifest)),
@@ -189,6 +198,13 @@ class PublishCdnLocalStep(PipelineStep):
     packagedFolders: list[str] = []
     """
     A list of folder's paths to include in the package (in addition to the artifacts).
+    """
+    ignore: list[str] = []
+    """
+    A list of file patterns used to exclude files from the package.
+
+    Patterns are matched using `fnmatch(file, pattern)`, where `file` is the path of the file as
+    it would be included in the package.
     """
 
     run: ExplicitNone = ExplicitNone()
@@ -329,6 +345,7 @@ class PublishCdnLocalStep(PipelineStep):
                 project=project,
                 flow_id=flow_id,
                 files=files,
+                ignore=self.ignore,
                 context=ctx,
             )
 

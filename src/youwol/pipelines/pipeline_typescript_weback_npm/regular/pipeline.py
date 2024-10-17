@@ -34,6 +34,7 @@ from .test_step import TestStep, TestStepConfig
 class PublishConfig(BaseModel):
     packagedArtifacts: list[str] = ["dist", "docs", "test-coverage"]
     packagedFolders: list[str] = []
+    ignore: list[str] = []
 
 
 class PipelineConfig(BaseModel):
@@ -67,6 +68,7 @@ async def pipeline(config: PipelineConfig, context: Context):
             PublishCdnLocalStep(
                 packagedArtifacts=config.publishConfig.packagedArtifacts,
                 packagedFolders=config.publishConfig.packagedFolders,
+                ignore=config.publishConfig.ignore,
             ),
             *publish_remote_steps,
         ]

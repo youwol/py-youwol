@@ -71,6 +71,8 @@ TG-2499 : 🐛 [app.custom-backend] Fix host IP address provisioning in containe
 TG-2500 : 🥅 [custom-backends] Fallback to local-install if docker not available.
 TG-2501 : 📝 [custom-backends] Code documentation
 TG-2509 : 🐛 [pipeline-py-backend] `DependenciesStep` handle errors & outputs
+TG-2532 : ✨ [pipeline-TS] Allow `ignore` files in publication
+TG-2533 : 🔧 [pipeline-py-backend] `pyproject.toml` finds submodules 
 -->
 
 ## [0.1.12] − 2024-09-02

@@ -36,8 +36,10 @@ requires = [
     "setuptools>=67.7.2",
 ]
 
-[tool.setuptools]
-packages = ["{{package_name}}"]
+[tool.setuptools.packages.find]
+where = ["./"]
+include = ["{{package_name}}","{{package_name}}.*"]
+exclude = []
 
 [tool.isort]
 profile = "black"
