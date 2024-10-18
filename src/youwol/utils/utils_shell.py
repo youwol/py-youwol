@@ -20,7 +20,7 @@ class CommandException(Exception):
     def __init__(self, command: str, outputs: list[str]):
         self.command = command
         self.outputs = outputs
-        super().__init__(f"{self.command} failed")
+        super().__init__(f"{self.command} failed.\n\nOutputs:{''.join(outputs)}")
 
 
 def clone_environ(env_variables: dict[str, str]) -> dict[str, str]:
