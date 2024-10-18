@@ -467,6 +467,10 @@ class ConfigurationFactory(IConfigurationFactory):
                             do_post=apply_test_labels_logs,
                         ),
                         Command(
+                            name="print-server-std-out",
+                            do_post=lambda body, _ctx: print(body['text']),
+                        ),
+                        Command(
                             name="encode-extra-index",
                             do_post=encode_extra_index,
                         ),
