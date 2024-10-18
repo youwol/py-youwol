@@ -269,6 +269,10 @@ class DependenciesStep(PipelineStep):
                     if p.project.name in pkg_json.get(k, {}):
                         pkg_json[k][p.project.name] = f"file:{tgz_to_path}"
 
+                resolutions = pkg_json.get("resolutions", {})
+                resolutions[p.project.name] = f"file:{tgz_to_path}"
+                pkg_json["resolutions"] = resolutions
+
                 local_deps_folder.mkdir(exist_ok=True)
                 shutil.move(
                     src=p.project.path / tgz_from_name,

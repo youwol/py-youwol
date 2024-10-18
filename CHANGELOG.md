@@ -74,6 +74,7 @@ TG-2509 : 🐛 [pipeline-py-backend] `DependenciesStep` handle errors & outputs
 TG-2532 : ✨ [pipeline-TS] Allow `ignore` files in publication
 TG-2533 : 🔧 [pipeline-py-backend] `pyproject.toml` finds submodules 
 TG-2525 : 🔊 [utils] `CommandException` reports its outputs
+TG-2375 : 🐛 [pipeline-ts] Fix indirect deps. synchronization
 -->
 
 ## [0.1.12] − 2024-09-02
