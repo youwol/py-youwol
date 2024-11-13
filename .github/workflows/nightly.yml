@@ -4,8 +4,8 @@ name: Nightly
 
 on:  # yamllint disable-line rule:truthy
   workflow_dispatch:
-  schedule:
-    - cron: '34 3 * * *'
+#  schedule:
+#    - cron: '34 3 * * *'
 
 jobs:
   build:
